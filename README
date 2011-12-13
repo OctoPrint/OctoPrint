@@ -6,12 +6,16 @@ The final result is a release package for Windows which should be ready to run w
 ====What is changed====
 * All: Do not show settings when ran from command line
 * All: Run PyPy to slice a model instead of normal python
+* All: Changing "Perimeter width over thickness (ratio)" into "Perimeter width".
+	With 5D machines this makes more sense, as you have good control over the width.
+* All: Save settings in .skeinforge_pypy to not mess up normal skeinforge profiles.
+* All: Default settings changed to match Ultimaker with dimension firmware (Marlin or Sprinter)
 * SF41: Dimensions patch against short pauses
 * SF41: Speedup patch in euclidean.py (Merged in mainline SF43)
 
 ====Bugs====
 The graphical analize plugins don't work (Skeinlayer and Skeiniso)
 
-====How does it work===
+====How does it work====
 The user interface still runs in normal python (as PyPy with TK is a bit hard to build, especially for windows), and when you slice it will run command line PyPy to slice the model.
 
