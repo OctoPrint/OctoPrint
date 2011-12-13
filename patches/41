@@ -1,0 +1,185 @@
+diff -r -x'*.pyc' -u ori/41/fabmetheus_utilities/euclidean.py target/SF41/fabmetheus_utilities/euclidean.py
+--- ori/41/fabmetheus_utilities/euclidean.py	2011-04-15 02:32:27.000000000 +0200
++++ target/SF41/fabmetheus_utilities/euclidean.py	2011-12-13 15:35:53.000000000 +0100
+@@ -64,7 +64,7 @@
+ 
+ def addElementToPixelList( element, pixelDictionary, x, y ):
+ 	'Add an element to the pixel list.'
+-	stepKey = getStepKey(x, y)
++	stepKey = (x, y)
+ 	addElementToListDictionary( element, stepKey, pixelDictionary )
+ 
+ def addElementToPixelListFromPoint( element, pixelDictionary, point ):
+@@ -116,7 +116,7 @@
+ 
+ def addPixelToPixelTable( pixelDictionary, value, x, y ):
+ 	'Add pixel to the pixel table.'
+-	pixelDictionary[getStepKey(x, y)] = value
++	pixelDictionary[(x, y)] = value
+ 
+ def addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, value, x, y ):
+ 	'Add pixels to the pixel table with steepness.'
+@@ -174,12 +174,20 @@
+ 	xBegin = int(round(beginComplex.real))
+ 	xEnd = int(round(endComplex.real))
+ 	yIntersection = beginComplex.imag - beginComplex.real * gradient
+-	addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, None, xBegin, int( round( beginComplex.imag ) ) )
+-	addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, None, xEnd, int( round( endComplex.imag ) ) )
+-	for x in xrange( xBegin + 1, xEnd ):
+-		y = int( math.floor( yIntersection + x * gradient ) )
+-		addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, None, x, y )
+-		addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, None, x, y + 1 )
++	if isSteep:
++		pixelDictionary[( int( round( beginComplex.imag ) ), xBegin)] = None
++		pixelDictionary[( int( round( endComplex.imag ) ), xEnd )] = None
++		for x in xrange( xBegin + 1, xEnd ):
++			y = int( math.floor( yIntersection + x * gradient ) )
++			pixelDictionary[(y, x)] = None
++			pixelDictionary[(y + 1, x)] = None
++	else:
++		pixelDictionary[(xBegin, int( round( beginComplex.imag ) ) )] = None
++		pixelDictionary[(xEnd, int( round( endComplex.imag ) ) )] = None
++		for x in xrange( xBegin + 1, xEnd ):
++			y = int( math.floor( yIntersection + x * gradient ) )
++			pixelDictionary[(x, y)] = None
++			pixelDictionary[(x, y + 1)] = None
+ 
+ def addSquareTwoToPixelDictionary(pixelDictionary, point, value, width):
+ 	'Add square with two pixels around the center to pixel dictionary.'
+@@ -188,7 +196,7 @@
+ 	y = int(round(point.imag))
+ 	for xStep in xrange(x - 2, x + 3):
+ 		for yStep in xrange(y - 2, y + 3):
+-			pixelDictionary[getStepKey(xStep, yStep)] = value
++			pixelDictionary[(xStep, yStep)] = value
+ 
+ def addSurroundingLoopBeginning( distanceFeedRate, loop, z ):
+ 	'Add surrounding loop beginning to gcode output.'
+@@ -244,12 +252,20 @@
+ 	xBegin = int(round(beginComplex.real))
+ 	xEnd = int(round(endComplex.real))
+ 	yIntersection = beginComplex.imag - beginComplex.real * gradient
+-	addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, value, xBegin, int( round( beginComplex.imag ) ) )
+-	addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, value, xEnd, int( round( endComplex.imag ) ) )
+-	for x in xrange( xBegin + 1, xEnd ):
+-		y = int( math.floor( yIntersection + x * gradient ) )
+-		addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, value, x, y )
+-		addPixelToPixelTableWithSteepness( isSteep, pixelDictionary, value, x, y + 1 )
++	if isSteep:
++		pixelDictionary[(int( round( beginComplex.imag ) ), xBegin)] = value
++		pixelDictionary[(int( round( endComplex.imag ) ), xEnd)] = value
++		for x in xrange( xBegin + 1, xEnd ):
++			y = int( math.floor( yIntersection + x * gradient ) )
++			pixelDictionary[(y, x)] = value
++			pixelDictionary[(y + 1, x)] = value
++	else:
++		pixelDictionary[(xBegin, int( round( beginComplex.imag ) ))] = value
++		pixelDictionary[(xEnd, int( round( endComplex.imag ) ))] = value
++		for x in xrange( xBegin + 1, xEnd ):
++			y = int( math.floor( yIntersection + x * gradient ) )
++			pixelDictionary[(x, y)] = value
++			pixelDictionary[(x, y + 1)] = value
+ 
+ def addValueToOutput(depth, keyInput, output, value):
+ 	'Add value to the output.'
+@@ -468,8 +484,7 @@
+ 		y = int(point.imag * oneOverOverlapDistance)
+ 		if not getSquareIsOccupied(pixelDictionary, x, y):
+ 			away.append(point)
+-			stepKey = getStepKey(x, y)
+-			pixelDictionary[stepKey] = None
++			pixelDictionary[(x, y)] = None
+ 	return away
+ 
+ def getBackOfLoops(loops):
+@@ -1592,7 +1607,7 @@
+ 	squareValues = []
+ 	for xStep in xrange(x - 1, x + 2):
+ 		for yStep in xrange(y - 1, y + 2):
+-			stepKey = getStepKey(xStep, yStep)
++			stepKey = (xStep, yStep)
+ 			if stepKey in pixelDictionary:
+ 				return True
+ 	return False
+@@ -1608,7 +1623,7 @@
+ 	squareValues = []
+ 	for xStep in xrange(x - 1, x + 2):
+ 		for yStep in xrange(y - 1, y + 2):
+-			stepKey = getStepKey(xStep, yStep)
++			stepKey = (xStep, yStep)
+ 			if stepKey in pixelDictionary:
+ 				squareValues += pixelDictionary[ stepKey ]
+ 	return squareValues
+diff -r -x'*.pyc' -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py
+--- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py	2011-03-22 21:08:23.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py	2011-12-13 15:18:15.000000000 +0100
+@@ -160,9 +160,11 @@
+ 
+ 	def addLinearMoveExtrusionDistanceLine( self, extrusionDistance ):
+ 		"Get the extrusion distance string from the extrusion distance."
+-		self.distanceFeedRate.output.write('G1 F%s\n' % self.extruderRetractionSpeedMinuteString )
+-		self.distanceFeedRate.output.write('G1%s\n' % self.getExtrusionDistanceStringFromExtrusionDistance( extrusionDistance ) )
+-		self.distanceFeedRate.output.write('G1 F%s\n' % self.distanceFeedRate.getRounded( self.feedRateMinute ) )
++
++		if self.repository.retractionDistance.value != 0.0: 
++			self.distanceFeedRate.output.write('G1 F%s\n' % self.extruderRetractionSpeedMinuteString )
++			self.distanceFeedRate.output.write('G1%s\n' % self.getExtrusionDistanceStringFromExtrusionDistance( extrusionDistance ) )
++			self.distanceFeedRate.output.write('G1 F%s\n' % self.distanceFeedRate.getRounded( self.feedRateMinute ) )
+ 
+ 	def getCraftedGcode(self, gcodeText, repository):
+ 		"Parse gcode text and store the dimension gcode."
+@@ -262,9 +264,12 @@
+ 			self.absoluteDistanceMode = False
+ 		elif firstWord == 'M101':
+ 			self.addLinearMoveExtrusionDistanceLine( self.restartDistance )
+-			if not self.repository.relativeExtrusionDistance.value:
+-				self.distanceFeedRate.addLine('G92 E0')
+-				self.totalExtrusionDistance = 0.0
++
++			if self.totalExtrusionDistance > 999999.0: 
++				if not self.repository.relativeExtrusionDistance.value:
++					self.distanceFeedRate.addLine('G92 E0')
++					self.totalExtrusionDistance = 0.0
++
+ 			self.isExtruderActive = True
+ 		elif firstWord == 'M103':
+ 			self.addLinearMoveExtrusionDistanceLine( - self.repository.retractionDistance.value )
+diff -r -x'*.pyc' -u ori/41/skeinforge_application/skeinforge.py target/SF41/skeinforge_application/skeinforge.py
+--- ori/41/skeinforge_application/skeinforge.py	2011-04-27 02:14:25.000000000 +0200
++++ target/SF41/skeinforge_application/skeinforge.py	2011-12-13 15:18:15.000000000 +0100
+@@ -228,6 +228,7 @@
+ from skeinforge_application.skeinforge_utilities import skeinforge_profile
+ import os
+ import sys
++import platform
+ 
+ 
+ # infill or inset bug
+@@ -545,7 +546,6 @@
+ 	repository = getNewRepository()
+ 	repository.fileNameInput.value = fileName
+ 	repository.execute()
+-	settings.startMainLoopFromConstructor(repository)
+ 
+ 
+ class SkeinforgeRepository:
+@@ -568,13 +568,17 @@
+ 		settings.LabelDisplay().getFromName('', self)
+ 		importantFileNames = ['craft', 'profile']
+ 		getRadioPluginsAddPluginGroupFrame(archive.getSkeinforgePluginsPath(), importantFileNames, getPluginFileNames(), self)
+-		self.executeTitle = 'Skeinforge'
++		self.executeTitle = 'Skeinforge a file...'
+ 
+ 	def execute(self):
+ 		'Skeinforge button has been clicked.'
+ 		fileNames = skeinforge_polyfile.getFileOrDirectoryTypesUnmodifiedGcode(self.fileNameInput.value, fabmetheus_interpret.getImportPluginFileNames(), self.fileNameInput.wasCancelled)
+ 		for fileName in fileNames:
+-			skeinforge_craft.writeOutput(fileName)
++			if platform.python_implementation() == "PyPy":
++				skeinforge_craft.writeOutput(fileName)
++			else:
++				pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy-1.7/pypy"));
++				os.system(pypyExe + " '" + fileName + "'");
+ 
+ 	def save(self):
+ 		'Profile has been saved and profile menu should be updated.'

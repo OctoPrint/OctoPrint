@@ -14,3 +14,4 @@ The graphical analize plugins don't work (Skeinlayer and Skeiniso)
 
 ====How does it work===
 The user interface still runs in normal python (as PyPy with TK is a bit hard to build, especially for windows), and when you slice it will run command line PyPy to slice the model.
+
