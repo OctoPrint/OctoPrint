@@ -1,6 +1,6 @@
 diff -r -x'*.pyc' -N -u ori/41/fabmetheus_utilities/archive.py target/SF41/fabmetheus_utilities/archive.py
 --- ori/41/fabmetheus_utilities/archive.py	2011-04-12 00:32:25.000000000 +0200
-+++ target/SF41/fabmetheus_utilities/archive.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/fabmetheus_utilities/archive.py	2011-12-15 10:57:21.000000000 +0100
 @@ -18,7 +18,7 @@
  __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
  
@@ -12,7 +12,7 @@ diff -r -x'*.pyc' -N -u ori/41/fabmetheus_utilities/archive.py target/SF41/fabme
  def addToNamePathDictionary(directoryPath, namePathDictionary):
 diff -r -x'*.pyc' -N -u ori/41/fabmetheus_utilities/euclidean.py target/SF41/fabmetheus_utilities/euclidean.py
 --- ori/41/fabmetheus_utilities/euclidean.py	2011-04-15 02:32:27.000000000 +0200
-+++ target/SF41/fabmetheus_utilities/euclidean.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/fabmetheus_utilities/euclidean.py	2011-12-15 10:57:21.000000000 +0100
 @@ -64,7 +64,7 @@
  
  def addElementToPixelList( element, pixelDictionary, x, y ):
@@ -124,7 +124,7 @@ diff -r -x'*.pyc' -N -u ori/41/fabmetheus_utilities/euclidean.py target/SF41/fab
  	return squareValues
 diff -r -x'*.pyc' -N -u ori/41/fabmetheus_utilities/settings.py target/SF41/fabmetheus_utilities/settings.py
 --- ori/41/fabmetheus_utilities/settings.py	2011-04-26 10:32:32.000000000 +0200
-+++ target/SF41/fabmetheus_utilities/settings.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/fabmetheus_utilities/settings.py	2011-12-15 10:57:21.000000000 +0100
 @@ -271,7 +271,7 @@
  		if repository.baseNameSynonym != None:
  			text = archive.getFileText(archive.getProfilesPath(getProfileBaseNameSynonym(repository)), False)
@@ -136,7 +136,7 @@ diff -r -x'*.pyc' -N -u ori/41/fabmetheus_utilities/settings.py target/SF41/fabm
  			readSettingsFromText(repository, text)
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/alterations/end.gcode target/SF41/skeinforge_application/alterations/end.gcode
 --- ori/41/skeinforge_application/alterations/end.gcode	1970-01-01 01:00:00.000000000 +0100
-+++ target/SF41/skeinforge_application/alterations/end.gcode	2011-12-14 15:01:34.000000000 +0100
++++ target/SF41/skeinforge_application/alterations/end.gcode	2011-12-15 10:57:21.000000000 +0100
 @@ -0,0 +1,10 @@
 +(start of end.gcode)
 +M104 S0                (extruder heat off)
@@ -150,7 +150,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/alterations/end.gcode targ
 +
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/alterations/start.gcode target/SF41/skeinforge_application/alterations/start.gcode
 --- ori/41/skeinforge_application/alterations/start.gcode	1970-01-01 01:00:00.000000000 +0100
-+++ target/SF41/skeinforge_application/alterations/start.gcode	2011-12-14 15:02:41.000000000 +0100
++++ target/SF41/skeinforge_application/alterations/start.gcode	2011-12-15 10:57:21.000000000 +0100
 @@ -0,0 +1,30 @@
 +(start of start.txt)
 +M92 E926.5 (the number of extruder steps to take in 1mm of filament)
@@ -184,7 +184,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/alterations/start.gcode ta
 +
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeiniso.py target/SF41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeiniso.py
 --- ori/41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeiniso.py	2011-04-14 06:57:37.000000000 +0200
-+++ target/SF41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeiniso.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeiniso.py	2011-12-15 10:57:21.000000000 +0100
 @@ -297,7 +297,7 @@
  		self.baseNameSynonym = 'behold.csv'
  		self.fileNameInput = settings.FileNameInput().getFromFileName( [ ('Gcode text files', '*.gcode') ], 'Open File for Skeiniso', self, '')
@@ -196,7 +196,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/analyze
  		settings.LabelSeparator().getFromRepository(self)
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeinlayer.py target/SF41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeinlayer.py
 --- ori/41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeinlayer.py	2011-04-14 06:57:37.000000000 +0200
-+++ target/SF41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeinlayer.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/analyze_plugins/skeinlayer.py	2011-12-15 10:57:21.000000000 +0100
 @@ -195,7 +195,7 @@
  		self.baseNameSynonym = 'skeinview.csv'
  		self.fileNameInput = settings.FileNameInput().getFromFileName( [ ('Gcode text files', '*.gcode') ], 'Open File for Skeinlayer', self, '')
@@ -208,7 +208,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/analyze
  		self.goAroundExtruderOffTravel = settings.BooleanSetting().getFromValue('Go Around Extruder Off Travel', self, False )
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/carve.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/carve.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/carve.py	2011-04-08 10:20:48.000000000 +0200
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/carve.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/carve.py	2011-12-15 10:57:21.000000000 +0100
 @@ -157,7 +157,7 @@
  		self.extraDecimalPlaces = settings.FloatSpin().getFromValue(0.0, 'Extra Decimal Places (float):', self, 3.0, 2.0)
  		self.importCoarseness = settings.FloatSpin().getFromValue( 0.5, 'Import Coarseness (ratio):', self, 2.0, 1.0 )
@@ -247,7 +247,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  			carving.getCarveCornerMaximum(),
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/chamber.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/chamber.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/chamber.py	2011-02-09 08:31:34.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/chamber.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/chamber.py	2011-12-15 10:57:21.000000000 +0100
 @@ -166,7 +166,7 @@
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.chamber.html', self )
  		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Chamber', self, '')
@@ -259,7 +259,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		self.holdingForce = settings.FloatSpin().getFromValue( 0.0, 'Holding Force (bar):', self, 100.0, 0.0 )
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/clip.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/clip.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/clip.py	2011-02-22 08:41:38.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/clip.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/clip.py	2011-12-15 10:57:21.000000000 +0100
 @@ -86,7 +86,7 @@
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.clip.html', self )
  		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Clip', self, '')
@@ -271,7 +271,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		self.executeTitle = 'Clip'
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/comb.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/comb.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/comb.py	2011-02-22 08:41:38.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/comb.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/comb.py	2011-12-15 10:57:21.000000000 +0100
 @@ -126,7 +126,7 @@
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.comb.html', self )
  		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Comb', self, '')
@@ -283,7 +283,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  	def execute(self):
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/cool.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/cool.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/cool.py	2011-03-08 08:30:18.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/cool.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/cool.py	2011-12-15 10:57:21.000000000 +0100
 @@ -142,7 +142,7 @@
  		self.orbit = settings.MenuRadio().getFromMenuButtonDisplay(self.coolType, 'Orbit', self, False)
  		self.slowDown = settings.MenuRadio().getFromMenuButtonDisplay(self.coolType, 'Slow Down', self, True)
@@ -295,7 +295,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		settings.LabelSeparator().getFromRepository(self)
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py	2011-03-22 21:08:23.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py	2011-12-15 10:57:21.000000000 +0100
 @@ -124,7 +124,7 @@
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.dimension.html', self )
  		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Dimension', self, '')
@@ -347,7 +347,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  			self.addLinearMoveExtrusionDistanceLine( - self.repository.retractionDistance.value )
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/export.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/export.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/export.py	2011-02-09 08:28:22.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/export.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/export.py	2011-12-15 10:57:21.000000000 +0100
 @@ -214,7 +214,7 @@
  		self.exportLabel = settings.LabelDisplay().getFromName('Export Operations: ', self)
  		self.exportPlugins = []
@@ -368,7 +368,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		self.fileExtension = settings.StringSetting().getFromValue('File Extension:', self, 'gcode')
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/fill.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/fill.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/fill.py	2011-03-29 22:07:15.000000000 +0200
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/fill.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/fill.py	2011-12-15 10:57:21.000000000 +0100
 @@ -808,7 +808,7 @@
  		self.infillPatternLine = settings.Radio().getFromRadio( infillLatentStringVar, 'Line', self, True )
  		self.infillPerimeterOverlap = settings.FloatSpin().getFromValue( 0.0, 'Infill Perimeter Overlap (ratio):', self, 0.4, 0.15 )
@@ -389,7 +389,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
   
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/home.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/home.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/home.py	2011-02-22 08:41:38.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/home.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/home.py	2011-12-15 10:57:21.000000000 +0100
 @@ -82,7 +82,7 @@
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.home.html', self)
  		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Home', self, '')
@@ -401,7 +401,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/jitter.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/jitter.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/jitter.py	2011-04-19 09:36:28.000000000 +0200
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/jitter.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/jitter.py	2011-12-15 10:57:21.000000000 +0100
 @@ -113,7 +113,7 @@
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.jitter.html', self)
  		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Jitter', self, '')
@@ -413,7 +413,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/limit.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/limit.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/limit.py	2011-02-09 08:31:44.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/limit.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/limit.py	2011-12-15 10:57:21.000000000 +0100
 @@ -88,7 +88,7 @@
  		'Set the default settings, execute title & settings fileName.'
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.limit.html', self )
@@ -425,7 +425,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		self.executeTitle = 'Limit'
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/multiply.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/multiply.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/multiply.py	2011-02-09 08:33:32.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/multiply.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/multiply.py	2011-12-15 10:57:21.000000000 +0100
 @@ -105,7 +105,7 @@
  		self.fileNameInput = settings.FileNameInput().getFromFileName(
  			fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Multiply', self, '')
@@ -437,7 +437,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		self.centerX = settings.FloatSpin().getFromValue(-100.0, 'Center X (mm):', self, 100.0, 0.0)
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py	2011-04-23 09:44:37.000000000 +0200
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py	2011-12-15 11:41:05.000000000 +0100
 @@ -358,7 +358,7 @@
  		self.baseInfillDensity = settings.FloatSpin().getFromValue(0.3, 'Base Infill Density (ratio):', self, 0.9, 0.5)
  		self.baseLayerThicknessOverLayerThickness = settings.FloatSpin().getFromValue(
@@ -456,9 +456,62 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		self.interfaceNozzleLiftOverInterfaceLayerThickness = settings.FloatSpin().getFromValue(
  			0.25, 'Interface Nozzle Lift over Interface Layer Thickness (ratio):', self, 0.85, 0.45)
  		settings.LabelSeparator().getFromRepository(self)
+@@ -385,7 +385,7 @@
+ 		self.nameOfSupportStartFile = settings.StringSetting().getFromValue(
+ 			'Name of Support Start File:', self, 'support_start.gcode')
+ 		settings.LabelSeparator().getFromRepository(self)
+-		settings.LabelDisplay().getFromName('- Object First Layer -', self)
++		settings.LabelDisplay().getFromName('- Object First Layers -', self)
+ 		self.objectFirstLayerFeedRateInfillMultiplier = settings.FloatSpin().getFromValue(
+ 			0.2, 'Object First Layer Feed Rate Infill Multiplier (ratio):', self, 1.0, 0.4)
+ 		self.objectFirstLayerFeedRatePerimeterMultiplier = settings.FloatSpin().getFromValue(
+@@ -394,6 +394,8 @@
+ 			0.2, 'Object First Layer Flow Rate Infill Multiplier (ratio):', self, 1.0, 0.4)
+ 		self.objectFirstLayerFlowRatePerimeterMultiplier = settings.FloatSpin().getFromValue(
+ 			0.2, 'Object First Layer Flow Rate Perimeter Multiplier (ratio):', self, 1.0, 0.4)
++		self.objectFirstLayersLayerAmount = settings.IntSpin().getFromValue(
++			1, 'Object First Layers Amount Of Layers For Speed Change:', self, 10, 3)
+ 		settings.LabelSeparator().getFromRepository(self)
+ 		self.operatingNozzleLiftOverLayerThickness = settings.FloatSpin().getFromValue(
+ 			0.3, 'Operating Nozzle Lift over Layer Thickness (ratio):', self, 0.7, 0.5)
+@@ -744,9 +746,9 @@
+ 		paths = euclidean.getPathsFromEndpoints(endpoints, 1.5 * self.interfaceStep, aroundPixelTable, aroundWidth)
+ 		feedRateMinuteMultiplied = self.feedRateMinute
+ 		supportFlowRateMultiplied = self.supportFlowRate
+-		if self.layerIndex == 0:
+-			feedRateMinuteMultiplied *= self.repository.objectFirstLayerFeedRateInfillMultiplier.value
+-			supportFlowRateMultiplied *= self.repository.objectFirstLayerFlowRateInfillMultiplier.value
++		if self.layerIndex < self.repository.objectFirstLayersLayerAmount.value:
++			feedRateMinuteMultiplied *= ((self.repository.objectFirstLayerFeedRateInfillMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
++			supportFlowRateMultiplied *= ((self.repository.objectFirstLayerFlowRatePerimeterMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
+ 		self.addFlowRateValueIfDifferent(supportFlowRateMultiplied)
+ 		for path in paths:
+ 			self.distanceFeedRate.addGcodeFromFeedRateThreadZ(feedRateMinuteMultiplied, path, self.travelFeedRateMinute, z)
+@@ -874,14 +876,17 @@
+ 			z += self.operatingJump
+ 		flowRate = self.oldFlowRateInput
+ 		temperature = self.objectNextLayersTemperature
++		if self.layerIndex < self.repository.objectFirstLayersLayerAmount.value:
++			if self.isPerimeterPath:
++				feedRateMinuteMultiplied *= self.repository.objectFirstLayerFeedRatePerimeterMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
++				flowRate *= self.repository.objectFirstLayerFlowRatePerimeterMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
++			else:
++				feedRateMinuteMultiplied *= self.repository.objectFirstLayerFeedRateInfillMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
++				flowRate *= self.repository.objectFirstLayerFlowRateInfillMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
+ 		if self.layerIndex == 0:
+ 			if self.isPerimeterPath:
+-				feedRateMinuteMultiplied *= self.repository.objectFirstLayerFeedRatePerimeterMultiplier.value
+-				flowRate *= self.repository.objectFirstLayerFlowRatePerimeterMultiplier.value
+ 				temperature = self.objectFirstLayerPerimeterTemperature
+ 			else:
+-				feedRateMinuteMultiplied *= self.repository.objectFirstLayerFeedRateInfillMultiplier.value
+-				flowRate *= self.repository.objectFirstLayerFlowRateInfillMultiplier.value
+ 				temperature = self.objectFirstLayerInfillTemperature
+ 		self.addFlowRateValueIfDifferent(flowRate)
+ 		self.addTemperatureLineIfDifferent(temperature)
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/speed.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/speed.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/speed.py	2011-02-22 08:41:38.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/speed.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/speed.py	2011-12-15 10:57:21.000000000 +0100
 @@ -148,15 +148,15 @@
  		self.dutyCycleAtBeginning = settings.FloatSpin().getFromValue( 0.0, 'Duty Cyle at Beginning (portion):', self, 1.0, 1.0 )
  		self.dutyCycleAtEnding = settings.FloatSpin().getFromValue( 0.0, 'Duty Cyle at Ending (portion):', self, 1.0, 0.0 )
@@ -482,7 +535,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  	def execute(self):
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/temperature.py target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/temperature.py
 --- ori/41/skeinforge_application/skeinforge_plugins/craft_plugins/temperature.py	2011-02-09 08:31:01.000000000 +0100
-+++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/temperature.py	2011-12-13 16:40:24.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge_plugins/craft_plugins/temperature.py	2011-12-15 10:57:21.000000000 +0100
 @@ -122,7 +122,7 @@
  		"Set the default settings, execute title & settings fileName."
  		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.temperature.html', self )
@@ -494,7 +547,7 @@ diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge_plugins/craft_p
  		self.coolingRate = settings.FloatSpin().getFromValue( 1.0, 'Cooling Rate (Celcius/second):', self, 20.0, 3.0 )
 diff -r -x'*.pyc' -N -u ori/41/skeinforge_application/skeinforge.py target/SF41/skeinforge_application/skeinforge.py
 --- ori/41/skeinforge_application/skeinforge.py	2011-04-27 02:14:25.000000000 +0200
-+++ target/SF41/skeinforge_application/skeinforge.py	2011-12-14 15:07:47.000000000 +0100
++++ target/SF41/skeinforge_application/skeinforge.py	2011-12-15 10:57:21.000000000 +0100
 @@ -228,6 +228,7 @@
  from skeinforge_application.skeinforge_utilities import skeinforge_profile
  import os
