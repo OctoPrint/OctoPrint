@@ -1,13 +1,21 @@
 #!/bin/sh
 
+7z > /dev/null 2>&1
+if [ $? != 0 ]; then
+	echo $0 requires 7zip to run.
+	exit 1
+fi
+
 #Get portable python and extract it.
 if [ ! -f "PortablePython_2.7.2.1.exe" ]; then
 	wget http://ftp.nluug.nl/languages/python/portablepython/v2.7/PortablePython_2.7.2.1.exe
 fi
 if [ ! -d target/python ]; then
 	7z x PortablePython_2.7.2.1.exe \$_OUTDIR/App
+	7z x PortablePython_2.7.2.1.exe \$_OUTDIR/Lib/site-packages/wx-2.8-msw-unicode
 	mkdir -p target/python
 	mv \$_OUTDIR/App/* target/python
+	mv \$_OUTDIR/Lib target/python
 	rm -rf \$_OUTDIR
 fi
 
