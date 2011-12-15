@@ -10,13 +10,20 @@ fi
 if [ ! -f "PortablePython_2.7.2.1.exe" ]; then
 	wget http://ftp.nluug.nl/languages/python/portablepython/v2.7/PortablePython_2.7.2.1.exe
 fi
+if [ ! -f pyserial.exe ]; then
+	wget http://sourceforge.net/projects/pyserial/files/pyserial/2.5/pyserial-2.5.win32.exe/download
+	mv download pyserial.exe
+fi
 if [ ! -d target/python ]; then
 	7z x PortablePython_2.7.2.1.exe \$_OUTDIR/App
-	7z x PortablePython_2.7.2.1.exe \$_OUTDIR/Lib/site-packages/wx-2.8-msw-unicode
+	7z x PortablePython_2.7.2.1.exe \$_OUTDIR/Lib/site-packages
+	7z x pyserial.exe PURELIB
 	mkdir -p target/python
 	mv \$_OUTDIR/App/* target/python
-	mv \$_OUTDIR/Lib target/python
+	mv \$_OUTDIR/Lib/site-packages/wx* target/python/Lib/site-packages/
+	mv PURELIB/serial target/python/Lib
 	rm -rf \$_OUTDIR
+	rm -rf PURELIB
 fi
 
 #Get pypy and extract it
