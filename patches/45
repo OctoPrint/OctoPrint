@@ -192,8 +192,8 @@ diff -r -x'*.pyc' -N -u ori/45/skeinforge_application/skeinforge_plugins/craft_p
  		self.maximumEValueBeforeReset = settings.FloatSpin().getFromValue(0.0, 'Maximum E Value before Reset (float):', self, 999999.9, 91234.0)
 diff -r -x'*.pyc' -N -u ori/45/skeinforge_application/skeinforge_plugins/craft_plugins/export.py target/SF45/skeinforge_application/skeinforge_plugins/craft_plugins/export.py
 --- ori/45/skeinforge_application/skeinforge_plugins/craft_plugins/export.py	2011-10-17 22:31:29.000000000 +0200
-+++ target/SF45/skeinforge_application/skeinforge_plugins/craft_plugins/export.py	2011-12-15 11:43:14.000000000 +0100
-@@ -339,7 +339,7 @@
++++ target/SF45/skeinforge_application/skeinforge_plugins/craft_plugins/export.py	2011-12-15 16:15:45.000000000 +0100
+@@ -339,17 +339,20 @@
  		self.exportLabel = settings.LabelDisplay().getFromName('Export Operations: ', self)
  		self.exportPlugins = []
  		exportLatentStringVar = settings.LatentStringVar()
@@ -202,12 +202,18 @@ diff -r -x'*.pyc' -N -u ori/45/skeinforge_application/skeinforge_plugins/craft_p
  		self.doNotChangeOutput.directoryPath = None
  		allExportPluginFileNames = exportPluginFileNames + exportStaticPluginFileNames
  		for exportPluginFileName in allExportPluginFileNames:
-@@ -349,7 +349,7 @@
- 				exportPlugin = settings.RadioCapitalizedButton().getFromPath(exportLatentStringVar, exportPluginFileName, path, self, False)
+ 			exportPlugin = None
++			default = False
++			if exportPluginFileName == "gcode_small":
++				default = True
+ 			if exportPluginFileName in exportPluginFileNames:
+ 				path = os.path.join(exportPluginsFolderPath, exportPluginFileName)
+-				exportPlugin = settings.RadioCapitalizedButton().getFromPath(exportLatentStringVar, exportPluginFileName, path, self, False)
++				exportPlugin = settings.RadioCapitalizedButton().getFromPath(exportLatentStringVar, exportPluginFileName, path, self, default)
  				exportPlugin.directoryPath = exportPluginsFolderPath
  			else:
 -				exportPlugin = settings.RadioCapitalized().getFromRadio(exportLatentStringVar, exportPluginFileName, self, False)
-+				exportPlugin = settings.RadioCapitalized().getFromRadio(exportLatentStringVar, exportPluginFileName, self, True)
++				exportPlugin = settings.RadioCapitalized().getFromRadio(exportLatentStringVar, exportPluginFileName, self, default)
  				exportPlugin.directoryPath = exportStaticDirectoryPath
  			self.exportPlugins.append(exportPlugin)
  		self.fileExtension = settings.StringSetting().getFromValue('File Extension:', self, 'gcode')
@@ -388,7 +394,7 @@ diff -r -x'*.pyc' -N -u ori/45/skeinforge_application/skeinforge_plugins/craft_p
  		self.coolingRate = settings.FloatSpin().getFromValue( 1.0, 'Cooling Rate (Celcius/second):', self, 20.0, 3.0 )
 diff -r -x'*.pyc' -N -u ori/45/skeinforge_application/skeinforge.py target/SF45/skeinforge_application/skeinforge.py
 --- ori/45/skeinforge_application/skeinforge.py	2011-11-08 10:32:18.000000000 +0100
-+++ target/SF45/skeinforge_application/skeinforge.py	2011-12-15 11:43:14.000000000 +0100
++++ target/SF45/skeinforge_application/skeinforge.py	2011-12-15 15:29:07.000000000 +0100
 @@ -228,6 +228,7 @@
  from skeinforge_application.skeinforge_utilities import skeinforge_profile
  import os
@@ -405,7 +411,7 @@ diff -r -x'*.pyc' -N -u ori/45/skeinforge_application/skeinforge.py target/SF45/
  
  
  class SkeinforgeRepository:
-@@ -576,13 +576,35 @@
+@@ -576,13 +576,36 @@
  		settings.LabelDisplay().getFromName('', self)
  		importantFileNames = ['craft', 'profile']
  		getRadioPluginsAddPluginGroupFrame(archive.getSkeinforgePluginsPath(), importantFileNames, getPluginFileNames(), self)
@@ -439,7 +445,8 @@ diff -r -x'*.pyc' -N -u ori/45/skeinforge_application/skeinforge.py target/SF45/
 +			if pypyExe == False or platform.python_implementation() == "PyPy":
 +				skeinforge_craft.writeOutput(fileName)
 +			else:
-+				os.system(pypyExe + " '" + fileName + "'");
++				if os.system(pypyExe + " '" + fileName + "'") > 0:
++					skeinforge_craft.writeOutput(fileName)
  
  	def save(self):
  		'Profile has been saved and profile menu should be updated.'
