@@ -45,7 +45,7 @@ for NR in `ls patches`; do
 	cd target/SF${NR}
 	patch -p 2 < ../../patches/${NR}
 	cd ../..
-	echo "python/python.exe SF${NR}/skeinforge_application/skeinforge.py" > target/SF${NR}.bat
+	echo "python\\python.exe SF${NR}\\skeinforge_application\\skeinforge.py" > target/SF${NR}.bat
 	echo $NR
 done
 
