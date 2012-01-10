@@ -4565,7 +4565,7 @@
 +			if pypyExe == False or platform.python_implementation() == "PyPy":
 +				skeinforge_craft.writeOutput(fileName)
 +			else:
-+				subprocess.call([pypyExe, fileName])
++				subprocess.call([pypyExe, __file__, fileName])
  
  	def save(self):
  		'Profile has been saved and profile menu should be updated.'
