@@ -3,6 +3,12 @@ The code consists out of a few patches and a build script.
 
 The final result is a release package for Windows which should be ready to run without any additional requirements.
 
+====What is THIS?====
+READ THIS! PLEASE!
+
+These source files are just patch files on skeinforge. If you want to use this don't look at the source files. Look at the download section in github at:
+https://github.com/daid/Skeinforge_PyPy/downloads
+
 ====What is changed====
 * All: Do not show settings when ran from command line
 * All: Run PyPy to slice a model instead of normal python
