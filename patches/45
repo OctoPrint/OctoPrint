@@ -35,7 +35,7 @@
 +
 --- ori/45/skeinforge_application/alterations/start.gcode
 +++ target/SF45/skeinforge_application/alterations/start.gcode
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,31 @@
 +(start of start.txt)
 +M92 E926.5 (the number of extruder steps to take in 1mm of filament)
 +G21        (metric values)
@@ -44,25 +44,26 @@
 +G21
 +G90        (absolute positioning)
 +G21
-+G28        (move X/Y/Z to min endstops)
++G28 X0 Y0  (move X/Y to min endstops)
++G28 Z0     (move Z to min endstops)
 +G21
 +G21        ( if your prints start too high, try changing the Z0.0 below )
 +G21        ( to Z1.0 - the number after the Z is the actual, physical )
 +G21        ( height of the nozzle in mm. This can take some messing around )
 +G21        ( with to get just right... )
 +G21
-+G92 X-105 Y-105 Z0.0 E0 (reset software position to front/left/z=0.0)
++G92 X0 Y0 Z0 E0 (reset software position to front/left/z=0.0)
 +G21
 +G1 Z15.0 F400  (move the platform down 15mm)
-+G1 X0 Y0 F3500 (go to the middle of the platform)
 +G92 E0         (zero the extruded length)
 +G21
-+G1 F75 E15     (extrude 15mm of feed stock)
-+G1 F75 E13.5   (reverse feed stock by 1.5mm)
++G1 F75 E5     (extrude 5mm of feed stock)
++G1 F75 E3.5   (reverse feed stock by 1.5mm)
 +G92 E0         (zero the extruded length again)
 +G21
 +M1             (Clean the nozzle then press YES to continue...)
 +G21
++G1 X100 Y100 F3500 (go to the middle of the platform)
 +G1 Z0.0 F400   (back to Z=0 and start the print!)
 +(end of start.txt)
 +
@@ -260,7 +261,7 @@
  
 --- ori/45/skeinforge_application/skeinforge_plugins/craft_plugins/multiply.py
 +++ target/SF45/skeinforge_application/skeinforge_plugins/craft_plugins/multiply.py
-@@ -112,7 +112,7 @@
+@@ -112,11 +112,11 @@
  		self.fileNameInput = settings.FileNameInput().getFromFileName(
  			fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Multiply', self, '')
  		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute('http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Multiply')
@@ -268,7 +269,13 @@
 +		self.activateMultiply = settings.BooleanSetting().getFromValue('Activate Multiply', self, True)
  		settings.LabelSeparator().getFromRepository(self)
  		settings.LabelDisplay().getFromName('- Center -', self )
- 		self.centerX = settings.FloatSpin().getFromValue(-100.0, 'Center X (mm):', self, 100.0, 0.0)
+-		self.centerX = settings.FloatSpin().getFromValue(-100.0, 'Center X (mm):', self, 100.0, 0.0)
+-		self.centerY = settings.FloatSpin().getFromValue(-100.0, 'Center Y (mm):', self, 100.0, 0.0)
++		self.centerX = settings.FloatSpin().getFromValue(-100.0, 'Center X (mm):', self, 100.0, 105.0)
++		self.centerY = settings.FloatSpin().getFromValue(-100.0, 'Center Y (mm):', self, 100.0, 105.0)
+ 		settings.LabelSeparator().getFromRepository(self)
+ 		settings.LabelDisplay().getFromName('- Number of Cells -', self)
+ 		self.numberOfColumns = settings.IntSpin().getFromValue(1, 'Number of Columns (integer):', self, 10, 1)
 --- ori/45/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py
 +++ target/SF45/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py
 @@ -338,7 +338,7 @@
