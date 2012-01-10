@@ -56,6 +56,11 @@ for NR in `ls patches`; do
 	echo $NR
 done
 
+rm -rf Printrun
+git clone git://github.com/daid/Printrun.git
+rm -rf Printrun/.git
+echo "python\\python.exe printrun\\pronterface.py" > printrun.bat
+
 cd target
 7z a ../Skeinforge_PyPy.zip *
 cd ..
