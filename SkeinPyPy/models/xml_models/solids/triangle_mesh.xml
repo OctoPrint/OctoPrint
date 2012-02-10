@@ -1,0 +1,15 @@
+<?xml version='1.0'?>
+<fabmetheus>
+	<trianglemesh id='tetrahedron'>
+		<matrix m11='0.0' m13='1.0' m21='-1.0' m22='0.0' m32='-1.0' m33='0.0'/>
+			<vertex index='0' x='-5.0' z='2.89'/>
+			<vertex index='1' z='-5.77'/>
+			<vertex index='2' x='5.0' z='2.89'/>
+			<vertex index='3' y='8.66'/>
+		<face vertex0='3' vertex1='0' vertex2='1'/>
+		<face vertex0='3' vertex1='1' vertex2='2'/>
+		<face vertex0='3' vertex1='2' vertex2='0'/>
+		<face vertex0='0' vertex1='2' vertex2='1'/>
+	</trianglemesh>
+	<bottom altitude='10' target='=document.getElementByID(tetrahedron)'/>
+</fabmetheus>

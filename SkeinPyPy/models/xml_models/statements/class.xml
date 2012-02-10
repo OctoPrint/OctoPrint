@@ -1,0 +1,29 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<class id='BaseClass'>
+		<function id='getDouble' parameters='number'>
+			<statement self.a='=number'/>
+			<return return='=number*7'/>
+		</function>
+	</class>
+	<class id='TestClass' parent='BaseClass'>
+		<function id='_init' parameters='number'>
+			<statement self.a='=number'/>
+		</function>
+		<function id='getDouble' parameters='number'>
+			<statement self.a='=number'/>
+			<return return='=number*2'/>
+		</function>
+		<function id='getTriple' parameters='number'>
+			<return linePrintTest='=print.line(number)' return='=number*3'/>
+		</function>
+	</class>
+	<dictionary testClass='=TestClass(0)'/>
+	<!--
+	<dictionary testClass='=TestClass(euclid.NestedVectorTestExample(1,2,3)).a' linePrintTest='=print.line(document.getSelfElement()[testClass])'/>
+			<statement self.a='=self.getTriple(number.y)+13'/>
+			<statement self.a='=euclid.Vector3()'/>
+			<statement self.a='=number'/>
+	<dictionary classX='=x(5).getDouble(6)'/>
+		-->
+</fabmetheus>

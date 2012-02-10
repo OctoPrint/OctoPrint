@@ -1,0 +1,7 @@
+<?xml version='1.0' ?>
+<fabmetheus overhangAngle='35' overhangSpan='45' >
+	<difference>
+		<extrude pathEnd='[0,0,20]' target='=creation.getSquare(20.0)'/>
+		<drill end='[0, -11, 10]' radius='5' start='[0, 11, 10]'/>
+	</difference>
+</fabmetheus>

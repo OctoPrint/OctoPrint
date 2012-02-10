@@ -1,0 +1,12 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<function id='whileLoop' parameters='number' >
+		<statement count='0'/>
+		<while condition='count<number'>
+			<print count='count'/>
+			<statement count='+=1'/>
+		</while>
+		<return return='number'/>
+	</function>
+	<dictionary sevenLoop='=whileLoop(7)'/>
+</fabmetheus>

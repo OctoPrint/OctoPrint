@@ -1,0 +1,6 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<polygon id='polygon_radius20_sides3' radius='20.0' sides='3'/>
+	<extrude id='extrudePolygon' target='=document.getElementByID(polygon_radius20_sides3)' pathEnd.z='10' visible='false'/>
+	<carve target='=document.getElementByID(extrudePolygon)'/>
+</fabmetheus>

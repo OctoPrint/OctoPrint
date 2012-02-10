@@ -1,0 +1,11 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<svg id='svgTest'>
+		<g>
+			<path
+				 style="opacity:1;fill:#00fbff;fill-opacity:0.51555559;stroke:#2b1515;stroke-opacity:1"
+				 d="M 20.714286,20.505039 L 19.83984,33.576452 L 12.418124,22.780868 L -0.28374677,25.988509 L 7.6900274,15.594019 L 0.71428539,4.5050376 L 13.064064,8.8764737 L 21.45469,-1.1845351 L 21.113498,11.91165 L 33.274932,16.782587 L 20.714286,20.505039 z"/>
+		</g>
+	</svg>
+	<extrude target='=document.getElementByID(svgTest)'/>
+</fabmetheus>

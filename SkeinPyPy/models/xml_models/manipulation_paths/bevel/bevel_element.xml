@@ -1,0 +1,6 @@
+<?xml version='1.0'?>
+<fabmetheus>
+	<polygon id='diamond' radius='20.0'/>
+	<bevel radiusOverSide='0.2' target='=document.getElementByID(diamond)'/>
+	<extrude target='=document.getElementByID(diamond)'/>
+</fabmetheus>

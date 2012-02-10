@@ -1,0 +1,5 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<lineation id='ring' target='=creation.getPolygon(7,20.0)'/>
+	<extrude target='=document.getElementByID(ring)'/>
+</fabmetheus>

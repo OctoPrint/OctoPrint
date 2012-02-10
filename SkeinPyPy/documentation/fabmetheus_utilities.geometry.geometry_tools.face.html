@@ -1,0 +1,121 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.geometry.geometry_tools.face</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.geometry.html"><font color="#ffffff">geometry</font></a>.<a href="fabmetheus_utilities.geometry.geometry_tools.html"><font color="#ffffff">geometry_tools</font></a>.face</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/geometry_tools/face.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/geometry_tools/face.py</a></font></td></tr></table>
+    <p><tt><a href="#Face">Face</a> of a triangle mesh.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="cStringIO.html">cStringIO</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html">fabmetheus_utilities.geometry.geometry_utilities.evaluate</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+</td><td width="25%" valign=top><a href="math.html">math</a><br>
+<a href="fabmetheus_utilities.geometry.geometry_utilities.matrix.html">fabmetheus_utilities.geometry.geometry_utilities.matrix</a><br>
+<a href="fabmetheus_utilities.xml_simple_reader.html">fabmetheus_utilities.xml_simple_reader</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.xml_simple_writer.html">fabmetheus_utilities.xml_simple_writer</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_tools.face.html#Edge">Edge</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_tools.face.html#Face">Face</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Edge">class <strong>Edge</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>An&nbsp;edge&nbsp;of&nbsp;a&nbsp;triangle&nbsp;mesh.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Edge-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;face&nbsp;indexes&nbsp;to&nbsp;None.</tt></dd></dl>
+
+<dl><dt><a name="Edge-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#Edge">Edge</a>.</tt></dd></dl>
+
+<dl><dt><a name="Edge-addFaceIndex"><strong>addFaceIndex</strong></a>(self, faceIndex)</dt><dd><tt>Add&nbsp;first&nbsp;None&nbsp;face&nbsp;index&nbsp;to&nbsp;input&nbsp;face&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="Edge-getFromVertexIndexes"><strong>getFromVertexIndexes</strong></a>(self, edgeIndex, vertexIndexes)</dt><dd><tt>Initialize&nbsp;from&nbsp;two&nbsp;vertex&nbsp;indices.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Face">class <strong>Face</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;face&nbsp;of&nbsp;a&nbsp;triangle&nbsp;mesh.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Face-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Face-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;object&nbsp;info.</tt></dd></dl>
+
+<dl><dt><a name="Face-addToAttributes"><strong>addToAttributes</strong></a>(self, attributes)</dt><dd><tt>Add&nbsp;to&nbsp;the&nbsp;attribute&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="Face-addXML"><strong>addXML</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;the&nbsp;xml&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="Face-copy"><strong>copy</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;copy&nbsp;of&nbsp;this&nbsp;face.</tt></dd></dl>
+
+<dl><dt><a name="Face-getFromEdgeIndexes"><strong>getFromEdgeIndexes</strong></a>(self, edgeIndexes, edges, faceIndex)</dt><dd><tt>Initialize&nbsp;from&nbsp;edge&nbsp;indices.</tt></dd></dl>
+
+<dl><dt><a name="Face-setEdgeIndexesToVertexIndexes"><strong>setEdgeIndexesToVertexIndexes</strong></a>(self, edges, edgeTable)</dt><dd><tt>Set&nbsp;the&nbsp;edge&nbsp;indexes&nbsp;to&nbsp;the&nbsp;vertex&nbsp;indexes.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addFaces"><strong>addFaces</strong></a>(geometryOutput, faces)</dt><dd><tt>Add&nbsp;the&nbsp;faces.</tt></dd></dl>
+ <dl><dt><a name="-addGeometryList"><strong>addGeometryList</strong></a>(elementNode, faces)</dt><dd><tt>Add&nbsp;vertex&nbsp;elements&nbsp;to&nbsp;an&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getCommonVertexIndex"><strong>getCommonVertexIndex</strong></a>(edgeFirst, edgeSecond)</dt><dd><tt>Get&nbsp;the&nbsp;vertex&nbsp;index&nbsp;that&nbsp;both&nbsp;edges&nbsp;have&nbsp;in&nbsp;common.</tt></dd></dl>
+ <dl><dt><a name="-getFaces"><strong>getFaces</strong></a>(geometryOutput)</dt><dd><tt>Get&nbsp;the&nbsp;faces.</tt></dd></dl>
+ <dl><dt><a name="-processElementNode"><strong>processElementNode</strong></a>(elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;xml&nbsp;element.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

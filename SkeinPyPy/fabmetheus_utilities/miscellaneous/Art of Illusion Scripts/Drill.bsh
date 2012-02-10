@@ -1,0 +1,203 @@
+/*
+<?xml version='1.0' standalone='yes' ?>
+
+<script>
+	<name>Drill</name>
+	<author>Thomee Wright</author>
+	<version>0.1</version>
+	<date>12-Sept-2007</date>
+	<description>
+This script generates "drill bits" for use in boolean
+modelling.  It can create round and hexagonal drill
+bits whose maximum slope does not exceed a given
+threshold (defaults to 45 deg).  These can then be
+subtracted from another solid to create an object which
+is suitable for manufacture by an FDM machine, such as
+RepRap.
+
+Slope is the maximum allowed slope, in degrees, of an
+overhang.  Angles are measured off of vertical, so a max
+slope of 0 doesn't allow any overhang, and a max slope
+of 90 allows a completely horizontal overhang.
+
+For round drills, the size parameter is the diameter
+of the circular portion, and for hexagonal drills,
+the size parameter is the distance from the center of
+one flat to the center of the opposite flat.  It
+is done this way rather than the distance from one
+point to the opposite point (which would make it the
+diameter of the circle which circumscribes the hexagon),
+because this is how standard sockets and wrenches are
+sized.  Thus a 10mm hexagonal drill bit will produce
+a hole which will fit a 10mm nut or hex bolt head.
+
+Portions of this script are based on Teardrop-Shaper
+by Remy de Winter and Adrian Bowyer, as well as on
+Autosmooth Mesh by Peter Eastman.
+	</description>
+</script>
+*/
+scene = window.getScene();
+
+shapeChoice = new BComboBox (new String [] {
+    "Round", "Hex (point down)", "Hex (flat down)" });
+slopeField = new ValueField (45, ValueField.POSITIVE);
+sizeField = new ValueField (10, ValueField.POSITIVE);
+lengthField = new ValueField (20, ValueField.POSITIVE);
+errorField = new ValueField (0.05, ValueField.POSITIVE);
+
+dlg = new ComponentsDialog (window, "Drill Tool",
+    new Widget [] {shapeChoice, slopeField, sizeField, lengthField, errorField},
+    new String [] {"Shape:", "Max slope:", "Size:", "Length:", "Max error:"});
+if (!dlg.clickedOk()) { return; }
+
+shape = shapeChoice.getSelectedIndex();
+double theta, size, length, maxError;
+theta = slopeField.getValue() * Math.PI / 180.0;
+size = sizeField.getValue();
+length = lengthField.getValue();
+maxError = errorField.getValue();
+name = "";
+
+double phi, angle;
+switch (shape)
+{
+  case 0: // round
+    {
+      radius = size / 2;
+      errorAngle = Math.acos((radius - maxError) / radius);
+      numberSides = Math.ceil((Math.PI + 2 * theta) / errorAngle);
+      phi = (Math.PI + 2 * theta) / (numberSides - 2);
+      angle = ((Math.PI / 2.0) - theta);
+      y0 = radius / Math.sin(theta);
+
+      name = "Teardrop";
+      break;
+    }
+  case 1: // hex, point down
+    {
+      if (theta > (Math.PI / 3.0)) { theta = Math.PI / 3.0; }
+      radius = size / Math.sqrt(3);
+      numberSides = 6;
+      phi = Math.PI / 3.0;
+      angle = Math.PI / 3.0;
+      y0 = (radius / 2.0) + (size / (2.0 * Math.tan(theta)));
+      smooth = Mesh.NO_SMOOTHING;
+
+      name = "Hexdrop(pointy)";
+      break;
+    }
+  case 2: // hex, flat down
+    {
+      radius = size / Math.sqrt(3);
+      phi = Math.PI / 3.0;
+      y0 = radius / Math.tan(theta);
+      if (theta <= (Math.PI / 6.0))
+      {
+        numberSides = 5;
+        angle = Math.PI / 2.0;
+      }
+      else
+      {
+        numberSides = 7;
+        angle = Math.PI / 6.0;
+        y0 += size;
+        y0 /= 2;
+      }
+      smooth = Mesh.NO_SMOOTHING;
+
+      name = "Hexdrop(flat)";
+      break;
+    }
+}
+name += " size " + size;
+
+// number of faces:
+// for each edge in our perimeter, two triangles to connect
+// the front and back, so 2*numberSides
+// for each end cap, we connect each vertex to the point.  The
+// first and last vertices are connected by a perimeter edge,
+// leaving numberSides-2 edges to connect across the middle,
+// creating a face, for numberSides-2 triangles per end cap,
+// or (numberSides-2)*2 triangles for both end caps
+// Thus:
+// 2*numberSides + 2*(numberSides-2)
+// 2*numberSides + 2*numberSides - 4
+// 4*numberSides - 4
+Vec3[] v = new Vec3[numberSides * 2];
+int[][] faces = new int[4*numberSides-4][3];
+v[0] = new Vec3(0, y0, 0);
+v[1] = new Vec3(0, y0, -length);
+for (i = 0; i < (numberSides - 1); i++)
+{
+  j = i * 2;
+  x = Math.sin(angle + phi * i);
+  y = Math.cos(angle + phi * i);
+  v[j+2] = new Vec3(x, y, 0);
+  v[j+2].scale (radius);
+  v[j+3] = new Vec3(x, y, -length/radius);
+  v[j+3].scale (radius);
+
+  faces[j][0] = j;
+  faces[j][1] = j+2;
+  faces[j][2] = j+1;
+  faces[j+1][0] = j+1;
+  faces[j+1][1] = j+2;
+  faces[j+1][2] = j+3;
+}
+//j = (numberSides-1)*2;
+j = i*2;
+faces[j][0] = 0;
+faces[j][1] = j+1;
+faces[j][2] = j;
+faces[j+1][0] = 0;
+faces[j+1][1] = 1;
+faces[j+1][2] = j+1;
+
+k = j;
+
+for (i = 1; i < (numberSides - 1); i++)
+{
+  j = i * 2;
+  faces[j+k][0] = 0;
+  faces[j+k][1] = j+2;
+  faces[j+k][2] = j;
+  faces[j+k+1][0] = 1;
+  faces[j+k+1][1] = j+1;
+  faces[j+k+1][2] = j+3;
+}
+
+mesh = new TriangleMesh (v, faces);
+mesh.setSmoothingMethod(Mesh.NO_SMOOTHING);
+
+/*
+// At this point, we've finished constructing the mesh.  Now we need
+// to set its smoothing properly.
+if (shape != 0) // hex
+{
+  mesh.setSmoothingMethod(Mesh.NO_SMOOTHING);
+}
+else // round
+{
+  mesh.setSmoothingMethod(Mesh.APPROXIMATING);
+  edge = mesh.getEdges();
+  face = mesh.getFaces();
+  vert = mesh.getVertices();
+  cutoffAngle = (theta < (Math.PI/4.0))?(theta*2.0):(Math.PI/2.0);
+  cutoff = Math.cos (cutoffAngle);
+  for (int i = 0; i < edge.length; i++)
+  {
+    ed = edge[i];
+    f1 = face[ed.f1];
+    f2 = face[ed.f2];
+    norm1 = vert[f1.v1].r.minus(vert[f1.v2].r).cross(vert[f1.v1].r.minus(vert[f1.v3].r));
+    norm2 = vert[f2.v1].r.minus(vert[f2.v2].r).cross(vert[f2.v1].r.minus(vert[f2.v3].r));
+    norm1.normalize();
+    norm2.normalize();
+    ed.smoothness =  (norm1.dot(norm2) < cutoff)?0.0f:1.0f;
+  }
+}
+*/
+window.addObject (mesh, new CoordinateSystem(), name, null);
+undo = new UndoRecord (window, false, UndoRecord.DELETE_OBJECT, new Object[] { new Integer(window.getScene().getNumObjects()-1) });
+window.setUndoRecord (undo);

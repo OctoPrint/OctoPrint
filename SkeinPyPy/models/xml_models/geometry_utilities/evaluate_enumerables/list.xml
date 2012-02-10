@@ -1,0 +1,19 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<dictionary add='[0,1].add(3)'/>
+	<dictionary concatenate='[0,1]||[0,1,5]'/>
+	<dictionary concatenatethree='[0,1]||3'/>
+	<dictionary copy='[0,1,2,3,4][None, None]'/>
+	<dictionary copy='[0,1,2,3,4][]'/>
+	<dictionary expansion='[0,1,2,3,4].getExpansion(3)'/>
+	<dictionary index='[0,1,2,3,4].index(3)'/>
+	<dictionary minList='[0,1,2,3,4].getMin()'/>
+	<dictionary range5one='[0,1,2,3,4][-1]'/>
+	<dictionary range5onecomma3='[0,1,2,3,4][1, 3]'/>
+	<dictionary range5onethrough3='[0,1,2,3,4][3 , -1, -1]'/>
+	<dictionary range5onethrough3='[0,1,2,3,4][2 , -1, -1]'/>
+	<dictionary reverse5CommaComma='[0,1,2,3,4][,, -1]'/>
+	<dictionary reverse5CommaNone='[0,1,2,3,4][, None, -1]'/>
+	<dictionary reverse5NoneComma='[0,1,2,3,4][None,, -1]'/>
+	<dictionary reverse5NoneNone='[0,1,2,3,4][None, None, -1]'/>
+</fabmetheus>

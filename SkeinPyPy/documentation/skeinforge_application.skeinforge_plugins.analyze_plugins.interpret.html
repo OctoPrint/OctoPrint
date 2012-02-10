@@ -1,0 +1,104 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.analyze_plugins.interpret</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.html"><font color="#ffffff">analyze_plugins</font></a>.interpret</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/interpret.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/interpret.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.export_canvas_plugins.scalable_vector_graphics.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.analyze_plugins.skeiniso.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Interpret is an analyze plugin to interpret a file, turning a 2D file into svg and a 3D file into constructive solid geometry xml.<br>
+ <br>
+The comment manual page is at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Interpret">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Interpret</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Print Interpretion">Print Interpretion</a><br />
+&nbsp;&nbsp;<a href="#Text Program">Text Program</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Interpret' checkbox is off.  When it is on, the functions described below will work when called from the skeinforge toolchain, when it is off, the functions will not be called from the tool chain.  The functions will still be called, whether or not the 'Activate Interpret' checkbox is on, when interpret is run directly.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Print Interpretion" id="Print Interpretion"></a><h3>Print Interpretion</h3>
+
+Default is off.<br>
+ <br>
+When selected, the xml text will be printed to the console.<br>
+ <br>
+<a name="Text Program" id="Text Program"></a><h3>Text Program</h3>
+
+Default is webbrowser.<br>
+ <br>
+If the 'Text Program' is set the default 'webbrowser', the XML file will be sent to the default browser to be opened.  If the 'Text Program' is set to a program name, the XML file will be sent to that program to be opened.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+Below are examples of interpret being used.  These examples are run in a terminal in the folder which contains Screw_Holder.stl and interpret.py.<br>
+ <br>
+&gt; python interpret.py<br>
+This brings up the interpret dialog.<br>
+ <br>
+&gt; python interpret.py Screw_Holder.stl<br>
+The comment file is saved as Screw_Holder_interpret.xml</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.export_canvas_plugins.scalable_vector_graphics.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.analyze_plugins.skeiniso.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;interpret&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, fileNamePenultimate, fileNameSuffix, filePenultimateWritten, gcodeText<font color="#909090">=''</font>)</dt><dd><tt>Write&nbsp;file&nbsp;interpretation,&nbsp;if&nbsp;activate&nbsp;interpret&nbsp;is&nbsp;selected.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

@@ -1,0 +1,7 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<intersection id='cube_cylinder_intersection'>
+		<cube id='Cube 5' size='12'/>
+		<cylinder id='Cylinder 5' height='10' radius.x='5' radius.y='5' translate.='[5,-5]'/>
+	</intersection>
+</fabmetheus>

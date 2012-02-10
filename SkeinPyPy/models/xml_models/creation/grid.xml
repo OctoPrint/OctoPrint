@@ -1,0 +1,10 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<grid id='grid' outline.strokeWidth='0.6'/>
+	<extrude target='=document.getElementByID(grid)'/>
+	<!--
+	<grid id='grid' outline.strokeWidth='2.0' radius='2' seed='0' target='=creation.getPolygon(5, 20)' type='he'/>
+	<outline target='=document.getElementByID($grid)' strokeWidth='1.0'/>
+	<extrude target='=document.getElementByID($grid)'/>
+	-->
+</fabmetheus>

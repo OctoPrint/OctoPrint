@@ -1,0 +1,14 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='triangle' test='3' >
+		<vertex x='2' y='3'/>
+		<vertex x='5' y='6' z='7'/>
+		<vertex x='8' y='9' z='1'/>
+	</path>
+	<dictionary boundingBoxByPaths='=measure.getBoundingBoxByPaths(document.getElementByID(triangle))'/>
+	<dictionary centerByPaths='=measure.getCenterByPaths(document.getElementByID(triangle))'/>
+	<dictionary extentByPaths='=measure.getExtentByPaths(document.getElementByID(triangle))'/>
+	<dictionary inradiusByPaths='=measure.getInradiusByPaths(document.getElementByID(triangle))'/>
+	<dictionary minimumByPaths='=measure.getMinimumByPaths(document.getElementByID(triangle))'/>
+	<dictionary maximumByPaths='=measure.getMaximumByPaths(document.getElementByID(triangle))'/>
+</fabmetheus>

@@ -1,0 +1,1969 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.geometry.geometry_utilities.evaluate</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.geometry.html"><font color="#ffffff">geometry</font></a>.<a href="fabmetheus_utilities.geometry.geometry_utilities.html"><font color="#ffffff">geometry_utilities</font></a>.evaluate</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/geometry_utilities/evaluate.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/geometry_utilities/evaluate.py</a></font></td></tr></table>
+    <p><tt>Evaluate expressions.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate_elements.setting.html">fabmetheus_utilities.geometry.geometry_utilities.evaluate_elements.setting</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="traceback.html">traceback</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#BaseFunction">BaseFunction</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#ClassFunction">ClassFunction</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Function">Function</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#ClassObject">ClassObject</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EmptyObject">EmptyObject</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAnd">EvaluatorAnd</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorOr">EvaluatorOr</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorModulo">EvaluatorModulo</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorMultiplication">EvaluatorMultiplication</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorGreater">EvaluatorGreater</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorGreaterEqual">EvaluatorGreaterEqual</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorLess">EvaluatorLess</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorLessEqual">EvaluatorLessEqual</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorNotEqual">EvaluatorNotEqual</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorPower">EvaluatorPower</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorSubtraction">EvaluatorSubtraction</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorNot">EvaluatorNot</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAttribute">EvaluatorAttribute</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorBracketCurly">EvaluatorBracketCurly</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorBracketRound">EvaluatorBracketRound</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorBracketSquare">EvaluatorBracketSquare</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorClass">EvaluatorClass</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorComma">EvaluatorComma</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorConcatenate">EvaluatorConcatenate</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDictionary">EvaluatorDictionary</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorElement">EvaluatorElement</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorLocal">EvaluatorLocal</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorSelf">EvaluatorSelf</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorFalse">EvaluatorFalse</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorFunction">EvaluatorFunction</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorFundamental">EvaluatorFundamental</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorNone">EvaluatorNone</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorNumeric">EvaluatorNumeric</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorTrue">EvaluatorTrue</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorValue">EvaluatorValue</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#FunctionVariable">FunctionVariable</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#KeyValue">KeyValue</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#ModuleElementNode">ModuleElementNode</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="BaseFunction">class <strong>BaseFunction</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;get&nbsp;equation&nbsp;results.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="BaseFunction-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="BaseFunction-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="BaseFunction-getReturnValue"><strong>getReturnValue</strong></a>(self)</dt><dd><tt>Get&nbsp;return&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="BaseFunction-processChildNodes"><strong>processChildNodes</strong></a>(self, elementNode)</dt><dd><tt>Process&nbsp;childNodes&nbsp;if&nbsp;shouldReturn&nbsp;is&nbsp;false.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ClassFunction">class <strong>ClassFunction</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#BaseFunction">BaseFunction</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;get&nbsp;class&nbsp;results.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ClassFunction-getReturnValueByArguments"><strong>getReturnValueByArguments</strong></a>(self, *arguments)</dt><dd><tt>Get&nbsp;return&nbsp;value&nbsp;by&nbsp;arguments.</tt></dd></dl>
+
+<dl><dt><a name="ClassFunction-getReturnValueWithoutDeletion"><strong>getReturnValueWithoutDeletion</strong></a>(self)</dt><dd><tt>Get&nbsp;return&nbsp;value&nbsp;without&nbsp;deleting&nbsp;last&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#BaseFunction">BaseFunction</a>:<br>
+<dl><dt><a name="ClassFunction-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="ClassFunction-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="ClassFunction-getReturnValue"><strong>getReturnValue</strong></a>(self)</dt><dd><tt>Get&nbsp;return&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="ClassFunction-processChildNodes"><strong>processChildNodes</strong></a>(self, elementNode)</dt><dd><tt>Process&nbsp;childNodes&nbsp;if&nbsp;shouldReturn&nbsp;is&nbsp;false.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ClassObject">class <strong>ClassObject</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;hold&nbsp;class&nbsp;attributes&nbsp;and&nbsp;functions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ClassObject-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="ClassObject-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EmptyObject">class <strong>EmptyObject</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>An&nbsp;empty&nbsp;object.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EmptyObject-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Do&nbsp;nothing.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Evaluator">class <strong>Evaluator</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Base&nbsp;evaluator&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Evaluator-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="Evaluator-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorAddition">class <strong>EvaluatorAddition</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;add&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorAddition-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Add&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorAddition-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAddition-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorAnd">class <strong>EvaluatorAnd</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAnd">EvaluatorAnd</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorAnd-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>And&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorAnd-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorAnd-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAnd-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorAttribute">class <strong>EvaluatorAttribute</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;handle&nbsp;an&nbsp;attribute.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorAttribute-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorAttribute-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorAttribute-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorBracketCurly">class <strong>EvaluatorBracketCurly</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorBracketCurly-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorBracketCurly-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketCurly-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorBracketRound">class <strong>EvaluatorBracketRound</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorBracketRound-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Evaluate&nbsp;the&nbsp;statement&nbsp;and&nbsp;delete&nbsp;the&nbsp;evaluators.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorBracketRound-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketRound-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorBracketSquare">class <strong>EvaluatorBracketSquare</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorBracketSquare-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Evaluate&nbsp;the&nbsp;statement&nbsp;and&nbsp;delete&nbsp;the&nbsp;evaluators.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorBracketSquare-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorBracketSquare-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorClass">class <strong>EvaluatorClass</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;evaluator&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorClass-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorClass-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorClass-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorComma">class <strong>EvaluatorComma</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;join&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorComma-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorComma-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorComma-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorConcatenate">class <strong>EvaluatorConcatenate</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;join&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorConcatenate-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorConcatenate-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorConcatenate-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorDictionary">class <strong>EvaluatorDictionary</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;join&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorDictionary-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorDictionary-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDictionary-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorDivision">class <strong>EvaluatorDivision</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;divide&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorDivision-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Divide&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorDivision-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorDivision-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorDivision-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorElement">class <strong>EvaluatorElement</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Element&nbsp;evaluator&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorElement-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorElement-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorElement-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorEqual">class <strong>EvaluatorEqual</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorEqual-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Compare&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorEqual-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorEqual-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorEqual-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorFalse">class <strong>EvaluatorFalse</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorFalse-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;zero.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorFalse-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFalse-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorFunction">class <strong>EvaluatorFunction</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#Function">Function</a>&nbsp;evaluator&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorFunction-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorFunction-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFunction-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorFundamental">class <strong>EvaluatorFundamental</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Fundamental&nbsp;evaluator&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorFundamental-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorFundamental-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorFundamental-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorGreater">class <strong>EvaluatorGreater</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorGreater">EvaluatorGreater</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorGreater-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Compare&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>:<br>
+<dl><dt><a name="EvaluatorGreater-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorGreater-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorGreater-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreater-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorGreaterEqual">class <strong>EvaluatorGreaterEqual</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorGreaterEqual">EvaluatorGreaterEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorGreaterEqual-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Compare&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>:<br>
+<dl><dt><a name="EvaluatorGreaterEqual-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorGreaterEqual-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorGreaterEqual-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorGreaterEqual-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorLess">class <strong>EvaluatorLess</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorLess">EvaluatorLess</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorLess-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Compare&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>:<br>
+<dl><dt><a name="EvaluatorLess-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorLess-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorLess-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLess-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorLessEqual">class <strong>EvaluatorLessEqual</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorLessEqual">EvaluatorLessEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorLessEqual-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Compare&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>:<br>
+<dl><dt><a name="EvaluatorLessEqual-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorLessEqual-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorLessEqual-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLessEqual-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorLocal">class <strong>EvaluatorLocal</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorElement">EvaluatorElement</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;get&nbsp;a&nbsp;local&nbsp;variable.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorLocal">EvaluatorLocal</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorElement">EvaluatorElement</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorLocal-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorElement">EvaluatorElement</a>:<br>
+<dl><dt><a name="EvaluatorLocal-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorLocal-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorLocal-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorModulo">class <strong>EvaluatorModulo</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;modulo&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorModulo">EvaluatorModulo</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorModulo-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Modulo&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a>:<br>
+<dl><dt><a name="EvaluatorModulo-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorModulo-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorModulo-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorModulo-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorMultiplication">class <strong>EvaluatorMultiplication</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;multiply&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorMultiplication">EvaluatorMultiplication</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorMultiplication-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Multiply&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorDivision">EvaluatorDivision</a>:<br>
+<dl><dt><a name="EvaluatorMultiplication-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorMultiplication-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorMultiplication-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorMultiplication-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorNone">class <strong>EvaluatorNone</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;None.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorNone-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorNone-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNone-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorNot">class <strong>EvaluatorNot</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorSubtraction">EvaluatorSubtraction</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorNot">EvaluatorNot</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorSubtraction">EvaluatorSubtraction</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorNot-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Minus&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-getValueFromSingleValue"><strong>getValueFromSingleValue</strong></a>(self, value)</dt><dd><tt>Minus&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorSubtraction">EvaluatorSubtraction</a>:<br>
+<dl><dt><a name="EvaluatorNot-executeLeft"><strong>executeLeft</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Minus&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-getNegativeValue"><strong>getNegativeValue</strong></a>(self, value)</dt><dd><tt>Get&nbsp;the&nbsp;negative&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Subtract&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorNot-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorNot-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNot-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorNotEqual">class <strong>EvaluatorNotEqual</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorNotEqual">EvaluatorNotEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorNotEqual-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Compare&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorEqual">EvaluatorEqual</a>:<br>
+<dl><dt><a name="EvaluatorNotEqual-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorNotEqual-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorNotEqual-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNotEqual-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorNumeric">class <strong>EvaluatorNumeric</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorNumeric-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorNumeric-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorNumeric-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorOr">class <strong>EvaluatorOr</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAnd">EvaluatorAnd</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;compare&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorOr">EvaluatorOr</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAnd">EvaluatorAnd</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorOr-getBooleanFromValuePair"><strong>getBooleanFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Or&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAnd">EvaluatorAnd</a>:<br>
+<dl><dt><a name="EvaluatorOr-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;value&nbsp;from&nbsp;comparison.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorOr-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorOr-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorOr-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorPower">class <strong>EvaluatorPower</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;power&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorPower">EvaluatorPower</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorPower-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Power&nbsp;of&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorPower-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorPower-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorPower-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorSelf">class <strong>EvaluatorSelf</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorElement">EvaluatorElement</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;handle&nbsp;self.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorSelf">EvaluatorSelf</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorElement">EvaluatorElement</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorSelf-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorElement">EvaluatorElement</a>:<br>
+<dl><dt><a name="EvaluatorSelf-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorSelf-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSelf-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorSubtraction">class <strong>EvaluatorSubtraction</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;subtract&nbsp;two&nbsp;evaluators.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorSubtraction">EvaluatorSubtraction</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="EvaluatorSubtraction-executeLeft"><strong>executeLeft</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Minus&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Minus&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-getNegativeValue"><strong>getNegativeValue</strong></a>(self, value)</dt><dd><tt>Get&nbsp;the&nbsp;negative&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-getValueFromSingleValue"><strong>getValueFromSingleValue</strong></a>(self, value)</dt><dd><tt>Minus&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-getValueFromValuePair"><strong>getValueFromValuePair</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Subtract&nbsp;two&nbsp;values.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#EvaluatorAddition">EvaluatorAddition</a>:<br>
+<dl><dt><a name="EvaluatorSubtraction-executePair"><strong>executePair</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Add&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-getEvaluatedValues"><strong>getEvaluatedValues</strong></a>(self, enumerable, keys, value)</dt><dd><tt>Get&nbsp;evaluatedValues.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-getOperationValue"><strong>getOperationValue</strong></a>(self, leftValue, rightValue)</dt><dd><tt>Get&nbsp;operation&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorSubtraction-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorSubtraction-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorTrue">class <strong>EvaluatorTrue</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorTrue-__init__"><strong>__init__</strong></a>(self, elementNode, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;true.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorTrue-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorTrue-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EvaluatorValue">class <strong>EvaluatorValue</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;evaluate&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EvaluatorValue-__init__"><strong>__init__</strong></a>(self, word)</dt><dd><tt>Set&nbsp;value&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#Evaluator">Evaluator</a>:<br>
+<dl><dt><a name="EvaluatorValue-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeBracket"><strong>executeBracket</strong></a>(self, bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Execute&nbsp;the&nbsp;bracket.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeCenterOperation"><strong>executeCenterOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;on&nbsp;the&nbsp;center.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeDictionary"><strong>executeDictionary</strong></a>(self, dictionary, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeFunction"><strong>executeFunction</strong></a>(self, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeKey"><strong>executeKey</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeLeftOperation"><strong>executeLeftOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeList"><strong>executeList</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;key&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executePairOperation"><strong>executePairOperation</strong></a>(self, evaluators, evaluatorIndex, operationLevel)</dt><dd><tt>Operate&nbsp;on&nbsp;two&nbsp;evaluators.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeRightOperation"><strong>executeRightOperation</strong></a>(self, evaluators, evaluatorIndex)</dt><dd><tt>Execute&nbsp;operator&nbsp;which&nbsp;acts&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-executeString"><strong>executeString</strong></a>(self, evaluators, keys, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="EvaluatorValue-getIsInRange"><strong>getIsInRange</strong></a>(self, keyIndex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;keyIndex&nbsp;is&nbsp;in&nbsp;range.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Function">class <strong>Function</strong></a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#BaseFunction">BaseFunction</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;get&nbsp;equation&nbsp;results.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Function-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Function-getReturnValueWithoutDeletion"><strong>getReturnValueWithoutDeletion</strong></a>(self)</dt><dd><tt>Get&nbsp;return&nbsp;value&nbsp;without&nbsp;deleting&nbsp;last&nbsp;function.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html#BaseFunction">BaseFunction</a>:<br>
+<dl><dt><a name="Function-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;Class.</tt></dd></dl>
+
+<dl><dt><a name="Function-getReturnValue"><strong>getReturnValue</strong></a>(self)</dt><dd><tt>Get&nbsp;return&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="Function-processChildNodes"><strong>processChildNodes</strong></a>(self, elementNode)</dt><dd><tt>Process&nbsp;childNodes&nbsp;if&nbsp;shouldReturn&nbsp;is&nbsp;false.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FunctionVariable">class <strong>FunctionVariable</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;hold&nbsp;class&nbsp;functions&nbsp;and&nbsp;variable&nbsp;set.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FunctionVariable-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FunctionVariable-addToVariableSet"><strong>addToVariableSet</strong></a>(self, elementNode)</dt><dd><tt>Add&nbsp;to&nbsp;variables.</tt></dd></dl>
+
+<dl><dt><a name="FunctionVariable-processClass"><strong>processClass</strong></a>(self, elementNode)</dt><dd><tt>Add&nbsp;class&nbsp;to&nbsp;<a href="#FunctionVariable">FunctionVariable</a>.</tt></dd></dl>
+
+<dl><dt><a name="FunctionVariable-processFunction"><strong>processFunction</strong></a>(self, elementNode)</dt><dd><tt>Add&nbsp;function&nbsp;to&nbsp;function&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="FunctionVariable-processStatement"><strong>processStatement</strong></a>(self, elementNode)</dt><dd><tt>Add&nbsp;self&nbsp;statement&nbsp;to&nbsp;variables.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="KeyValue">class <strong>KeyValue</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;hold&nbsp;a&nbsp;key&nbsp;value.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="KeyValue-__init__"><strong>__init__</strong></a>(self, key<font color="#909090">=None</font>, value<font color="#909090">=None</font>)</dt><dd><tt>Get&nbsp;key&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="KeyValue-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#KeyValue">KeyValue</a>.</tt></dd></dl>
+
+<dl><dt><a name="KeyValue-getByCharacter"><strong>getByCharacter</strong></a>(self, character, line)</dt><dd><tt>Get&nbsp;by&nbsp;character.</tt></dd></dl>
+
+<dl><dt><a name="KeyValue-getByDot"><strong>getByDot</strong></a>(self, line)</dt><dd><tt>Get&nbsp;by&nbsp;dot.</tt></dd></dl>
+
+<dl><dt><a name="KeyValue-getByEqual"><strong>getByEqual</strong></a>(self, line)</dt><dd><tt>Get&nbsp;by&nbsp;dot.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ModuleElementNode">class <strong>ModuleElementNode</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;get&nbsp;the&nbsp;in&nbsp;attribute,&nbsp;the&nbsp;index&nbsp;name&nbsp;and&nbsp;the&nbsp;value&nbsp;name.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ModuleElementNode-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="ModuleElementNode-processElse"><strong>processElse</strong></a>(self, elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;else&nbsp;statement.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addPrefixDictionary"><strong>addPrefixDictionary</strong></a>(dictionary, keys, value)</dt><dd><tt>Add&nbsp;prefixed&nbsp;key&nbsp;values&nbsp;to&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-addQuoteWord"><strong>addQuoteWord</strong></a>(evaluatorWords, word)</dt><dd><tt>Add&nbsp;quote&nbsp;word&nbsp;and&nbsp;remainder&nbsp;if&nbsp;the&nbsp;word&nbsp;starts&nbsp;with&nbsp;a&nbsp;quote&nbsp;character&nbsp;or&nbsp;dollar&nbsp;sign,&nbsp;otherwise&nbsp;add&nbsp;the&nbsp;word.</tt></dd></dl>
+ <dl><dt><a name="-addToPathsRecursively"><strong>addToPathsRecursively</strong></a>(paths, vector3Lists)</dt><dd><tt>Add&nbsp;to&nbsp;vector3&nbsp;paths&nbsp;recursively.</tt></dd></dl>
+ <dl><dt><a name="-addValueToEvaluatedDictionary"><strong>addValueToEvaluatedDictionary</strong></a>(elementNode, evaluatedDictionary, key)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-addVector3ToElementNode"><strong>addVector3ToElementNode</strong></a>(elementNode, key, vector3)</dt><dd><tt>Add&nbsp;vector3&nbsp;to&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-compareExecutionOrderAscending"><strong>compareExecutionOrderAscending</strong></a>(module, otherModule)</dt><dd><tt>Get&nbsp;comparison&nbsp;in&nbsp;order&nbsp;to&nbsp;sort&nbsp;modules&nbsp;in&nbsp;ascending&nbsp;execution&nbsp;order.</tt></dd></dl>
+ <dl><dt><a name="-convertToPaths"><strong>convertToPaths</strong></a>(dictionary)</dt><dd><tt>Recursively&nbsp;convert&nbsp;any&nbsp;ElementNodes&nbsp;to&nbsp;paths.</tt></dd></dl>
+ <dl><dt><a name="-convertToTransformedPaths"><strong>convertToTransformedPaths</strong></a>(dictionary)</dt><dd><tt>Recursively&nbsp;convert&nbsp;any&nbsp;ElementNodes&nbsp;to&nbsp;paths.</tt></dd></dl>
+ <dl><dt><a name="-executeLeftOperations"><strong>executeLeftOperations</strong></a>(evaluators, operationLevel)</dt><dd><tt>Evaluate&nbsp;the&nbsp;expression&nbsp;value&nbsp;from&nbsp;the&nbsp;numeric&nbsp;and&nbsp;operation&nbsp;evaluators.</tt></dd></dl>
+ <dl><dt><a name="-executeNextEvaluatorArguments"><strong>executeNextEvaluatorArguments</strong></a>(evaluator, evaluators, evaluatorIndex, nextEvaluator)</dt><dd><tt>Execute&nbsp;the&nbsp;nextEvaluator&nbsp;arguments.</tt></dd></dl>
+ <dl><dt><a name="-executePairOperations"><strong>executePairOperations</strong></a>(evaluators, operationLevel)</dt><dd><tt>Evaluate&nbsp;the&nbsp;expression&nbsp;value&nbsp;from&nbsp;the&nbsp;numeric&nbsp;and&nbsp;operation&nbsp;evaluators.</tt></dd></dl>
+ <dl><dt><a name="-getBracketEvaluators"><strong>getBracketEvaluators</strong></a>(bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Get&nbsp;the&nbsp;bracket&nbsp;evaluators.</tt></dd></dl>
+ <dl><dt><a name="-getBracketValuesDeleteEvaluator"><strong>getBracketValuesDeleteEvaluator</strong></a>(bracketBeginIndex, bracketEndIndex, evaluators)</dt><dd><tt>Get&nbsp;the&nbsp;bracket&nbsp;values&nbsp;and&nbsp;delete&nbsp;the&nbsp;evaluator.</tt></dd></dl>
+ <dl><dt><a name="-getBracketsExist"><strong>getBracketsExist</strong></a>(evaluators)</dt><dd><tt>Evaluate&nbsp;the&nbsp;expression&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getCapitalizedSuffixKey"><strong>getCapitalizedSuffixKey</strong></a>(prefix, suffix)</dt><dd><tt>Get&nbsp;key&nbsp;with&nbsp;capitalized&nbsp;suffix.</tt></dd></dl>
+ <dl><dt><a name="-getDictionarySplitWords"><strong>getDictionarySplitWords</strong></a>(dictionary, value)</dt><dd><tt>Get&nbsp;split&nbsp;line&nbsp;for&nbsp;evaluators.</tt></dd></dl>
+ <dl><dt><a name="-getElementNodeByKey"><strong>getElementNodeByKey</strong></a>(elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;xml&nbsp;element&nbsp;by&nbsp;key.</tt></dd></dl>
+ <dl><dt><a name="-getElementNodeObject"><strong>getElementNodeObject</strong></a>(evaluatedLinkValue)</dt><dd><tt>Get&nbsp;ElementNodeObject.</tt></dd></dl>
+ <dl><dt><a name="-getElementNodesByKey"><strong>getElementNodesByKey</strong></a>(elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;xml&nbsp;elements&nbsp;by&nbsp;key.</tt></dd></dl>
+ <dl><dt><a name="-getEndIndexConvertEquationValue"><strong>getEndIndexConvertEquationValue</strong></a>(bracketEndIndex, evaluatorIndex, evaluators)</dt><dd><tt>Get&nbsp;the&nbsp;bracket&nbsp;end&nbsp;index&nbsp;and&nbsp;convert&nbsp;the&nbsp;equation&nbsp;value&nbsp;evaluators&nbsp;into&nbsp;a&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedBoolean"><strong>getEvaluatedBoolean</strong></a>(defaultValue, elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;boolean.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedDictionaryByCopyKeys"><strong>getEvaluatedDictionaryByCopyKeys</strong></a>(copyKeys, elementNode)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;dictionary&nbsp;by&nbsp;copyKeys.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedDictionaryByEvaluationKeys"><strong>getEvaluatedDictionaryByEvaluationKeys</strong></a>(elementNode, evaluationKeys)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedExpressionValue"><strong>getEvaluatedExpressionValue</strong></a>(elementNode, value)</dt><dd><tt>Evaluate&nbsp;the&nbsp;expression&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedExpressionValueBySplitLine"><strong>getEvaluatedExpressionValueBySplitLine</strong></a>(elementNode, words)</dt><dd><tt>Evaluate&nbsp;the&nbsp;expression&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedExpressionValueEvaluators"><strong>getEvaluatedExpressionValueEvaluators</strong></a>(evaluators)</dt><dd><tt>Evaluate&nbsp;the&nbsp;expression&nbsp;value&nbsp;from&nbsp;the&nbsp;numeric&nbsp;and&nbsp;operation&nbsp;evaluators.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedFloat"><strong>getEvaluatedFloat</strong></a>(defaultValue, elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;float.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedInt"><strong>getEvaluatedInt</strong></a>(defaultValue, elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;int.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedIntByKeys"><strong>getEvaluatedIntByKeys</strong></a>(defaultValue, elementNode, keys)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;int&nbsp;by&nbsp;keys.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedLinkValue"><strong>getEvaluatedLinkValue</strong></a>(elementNode, word)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;link&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedString"><strong>getEvaluatedString</strong></a>(defaultValue, elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedValue"><strong>getEvaluatedValue</strong></a>(defaultValue, elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatedValueObliviously"><strong>getEvaluatedValueObliviously</strong></a>(elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;evaluated&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluator"><strong>getEvaluator</strong></a>(elementNode, evaluators, nextWord, word)</dt><dd><tt>Get&nbsp;the&nbsp;evaluator.</tt></dd></dl>
+ <dl><dt><a name="-getEvaluatorSplitWords"><strong>getEvaluatorSplitWords</strong></a>(value)</dt><dd><tt>Get&nbsp;split&nbsp;words&nbsp;for&nbsp;evaluators.</tt></dd></dl>
+ <dl><dt><a name="-getFloatListFromBracketedString"><strong>getFloatListFromBracketedString</strong></a>(bracketedString)</dt><dd><tt>Get&nbsp;list&nbsp;from&nbsp;a&nbsp;bracketed&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-getFloatListListsByPaths"><strong>getFloatListListsByPaths</strong></a>(paths)</dt><dd><tt>Get&nbsp;float&nbsp;lists&nbsp;by&nbsp;paths.</tt></dd></dl>
+ <dl><dt><a name="-getIntFromFloatString"><strong>getIntFromFloatString</strong></a>(value)</dt><dd><tt>Get&nbsp;the&nbsp;int&nbsp;from&nbsp;the&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-getIsBracketed"><strong>getIsBracketed</strong></a>(word)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;word&nbsp;is&nbsp;bracketed.</tt></dd></dl>
+ <dl><dt><a name="-getIsQuoted"><strong>getIsQuoted</strong></a>(word)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;word&nbsp;is&nbsp;quoted.</tt></dd></dl>
+ <dl><dt><a name="-getKeys"><strong>getKeys</strong></a>(repository)</dt><dd><tt>Get&nbsp;keys&nbsp;for&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-getLocalAttributeValueString"><strong>getLocalAttributeValueString</strong></a>(key, valueString)</dt><dd><tt>Get&nbsp;the&nbsp;local&nbsp;attribute&nbsp;value&nbsp;string&nbsp;with&nbsp;augmented&nbsp;assignment.</tt></dd></dl>
+ <dl><dt><a name="-getMatchingPlugins"><strong>getMatchingPlugins</strong></a>(elementNode, namePathDictionary)</dt><dd><tt>Get&nbsp;the&nbsp;plugins&nbsp;whose&nbsp;names&nbsp;are&nbsp;in&nbsp;the&nbsp;attribute&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getNextChildIndex"><strong>getNextChildIndex</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;the&nbsp;next&nbsp;childNode&nbsp;index.</tt></dd></dl>
+ <dl><dt><a name="-getPathByKey"><strong>getPathByKey</strong></a>(defaultPath, elementNode, key)</dt><dd><tt>Get&nbsp;path&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getPathByList"><strong>getPathByList</strong></a>(vertexList)</dt><dd><tt>Get&nbsp;the&nbsp;paths&nbsp;by&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-getPathByPrefix"><strong>getPathByPrefix</strong></a>(elementNode, path, prefix)</dt><dd><tt>Get&nbsp;path&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getPathsByKey"><strong>getPathsByKey</strong></a>(defaultPaths, elementNode, key)</dt><dd><tt>Get&nbsp;paths&nbsp;by&nbsp;key.</tt></dd></dl>
+ <dl><dt><a name="-getPathsByLists"><strong>getPathsByLists</strong></a>(vertexLists)</dt><dd><tt>Get&nbsp;paths&nbsp;by&nbsp;lists.</tt></dd></dl>
+ <dl><dt><a name="-getRadiusArealizedBasedOnAreaRadius"><strong>getRadiusArealizedBasedOnAreaRadius</strong></a>(elementNode, radius, sides)</dt><dd><tt>Get&nbsp;the&nbsp;areal&nbsp;radius&nbsp;from&nbsp;the&nbsp;radius,&nbsp;number&nbsp;of&nbsp;sides&nbsp;and&nbsp;cascade&nbsp;radiusAreal.</tt></dd></dl>
+ <dl><dt><a name="-getSidesBasedOnPrecision"><strong>getSidesBasedOnPrecision</strong></a>(elementNode, radius)</dt><dd><tt>Get&nbsp;the&nbsp;number&nbsp;of&nbsp;polygon&nbsp;sides.</tt></dd></dl>
+ <dl><dt><a name="-getSidesMinimumThreeBasedOnPrecision"><strong>getSidesMinimumThreeBasedOnPrecision</strong></a>(elementNode, radius)</dt><dd><tt>Get&nbsp;the&nbsp;number&nbsp;of&nbsp;polygon&nbsp;sides,&nbsp;with&nbsp;a&nbsp;minimum&nbsp;of&nbsp;three.</tt></dd></dl>
+ <dl><dt><a name="-getSidesMinimumThreeBasedOnPrecisionSides"><strong>getSidesMinimumThreeBasedOnPrecisionSides</strong></a>(elementNode, radius)</dt><dd><tt>Get&nbsp;the&nbsp;number&nbsp;of&nbsp;polygon&nbsp;sides,&nbsp;with&nbsp;a&nbsp;minimum&nbsp;of&nbsp;three.</tt></dd></dl>
+ <dl><dt><a name="-getSplitDictionary"><strong>getSplitDictionary</strong></a>()</dt><dd><tt>Get&nbsp;split&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getStartsWithCurlyEqualRoundSquare"><strong>getStartsWithCurlyEqualRoundSquare</strong></a>(word)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;word&nbsp;starts&nbsp;with&nbsp;round&nbsp;or&nbsp;square&nbsp;brackets.</tt></dd></dl>
+ <dl><dt><a name="-getTokenByNumber"><strong>getTokenByNumber</strong></a>(number)</dt><dd><tt>Get&nbsp;token&nbsp;by&nbsp;number.</tt></dd></dl>
+ <dl><dt><a name="-getTransformedPathByKey"><strong>getTransformedPathByKey</strong></a>(defaultTransformedPath, elementNode, key)</dt><dd><tt>Get&nbsp;transformed&nbsp;path&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getTransformedPathByPrefix"><strong>getTransformedPathByPrefix</strong></a>(elementNode, path, prefix)</dt><dd><tt>Get&nbsp;path&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getTransformedPathsByKey"><strong>getTransformedPathsByKey</strong></a>(defaultTransformedPaths, elementNode, key)</dt><dd><tt>Get&nbsp;transformed&nbsp;paths&nbsp;by&nbsp;key.</tt></dd></dl>
+ <dl><dt><a name="-getUniqueQuoteIndex"><strong>getUniqueQuoteIndex</strong></a>(uniqueQuoteIndex, word)</dt><dd><tt>Get&nbsp;uniqueQuoteIndex.</tt></dd></dl>
+ <dl><dt><a name="-getUniqueToken"><strong>getUniqueToken</strong></a>(word)</dt><dd><tt>Get&nbsp;unique&nbsp;token.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ByDictionary"><strong>getVector3ByDictionary</strong></a>(dictionary, vector3)</dt><dd><tt>Get&nbsp;vector3&nbsp;by&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ByDictionaryListValue"><strong>getVector3ByDictionaryListValue</strong></a>(value, vector3)</dt><dd><tt>Get&nbsp;vector3&nbsp;by&nbsp;dictionary,&nbsp;list&nbsp;or&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ByFloatList"><strong>getVector3ByFloatList</strong></a>(floatList, vector3)</dt><dd><tt>Get&nbsp;vector3&nbsp;by&nbsp;float&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ByMultiplierPrefix"><strong>getVector3ByMultiplierPrefix</strong></a>(elementNode, multiplier, prefix, vector3)</dt><dd><tt>Get&nbsp;vector3&nbsp;from&nbsp;multiplier,&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ByMultiplierPrefixes"><strong>getVector3ByMultiplierPrefixes</strong></a>(elementNode, multiplier, prefixes, vector3)</dt><dd><tt>Get&nbsp;vector3&nbsp;from&nbsp;multiplier,&nbsp;prefixes&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ByPrefix"><strong>getVector3ByPrefix</strong></a>(defaultVector3, elementNode, prefix)</dt><dd><tt>Get&nbsp;vector3&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ByPrefixes"><strong>getVector3ByPrefixes</strong></a>(elementNode, prefixes, vector3)</dt><dd><tt>Get&nbsp;vector3&nbsp;from&nbsp;prefixes&nbsp;and&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getVector3FromElementNode"><strong>getVector3FromElementNode</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;vector3&nbsp;from&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getVector3IfNone"><strong>getVector3IfNone</strong></a>(vector3)</dt><dd><tt>Get&nbsp;new&nbsp;vector3&nbsp;if&nbsp;the&nbsp;original&nbsp;vector3&nbsp;is&nbsp;none.</tt></dd></dl>
+ <dl><dt><a name="-getVector3ListsRecursively"><strong>getVector3ListsRecursively</strong></a>(floatLists)</dt><dd><tt>Get&nbsp;vector3&nbsp;lists&nbsp;recursively.</tt></dd></dl>
+ <dl><dt><a name="-getVisibleObjects"><strong>getVisibleObjects</strong></a>(archivableObjects)</dt><dd><tt>Get&nbsp;the&nbsp;visible&nbsp;objects.</tt></dd></dl>
+ <dl><dt><a name="-processArchivable"><strong>processArchivable</strong></a>(archivableClass, elementNode)</dt><dd><tt>Get&nbsp;any&nbsp;new&nbsp;elements&nbsp;and&nbsp;process&nbsp;the&nbsp;archivable.</tt></dd></dl>
+ <dl><dt><a name="-processCondition"><strong>processCondition</strong></a>(elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;xml&nbsp;element&nbsp;condition.</tt></dd></dl>
+ <dl><dt><a name="-removeIdentifiersFromDictionary"><strong>removeIdentifiersFromDictionary</strong></a>(dictionary)</dt><dd><tt>Remove&nbsp;the&nbsp;identifier&nbsp;elements&nbsp;from&nbsp;a&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-setAttributesByArguments"><strong>setAttributesByArguments</strong></a>(argumentNames, arguments, elementNode)</dt><dd><tt>Set&nbsp;the&nbsp;attribute&nbsp;dictionary&nbsp;to&nbsp;the&nbsp;arguments.</tt></dd></dl>
+ <dl><dt><a name="-setFunctionLocalDictionary"><strong>setFunctionLocalDictionary</strong></a>(arguments, function)</dt><dd><tt>Evaluate&nbsp;the&nbsp;function&nbsp;statement&nbsp;and&nbsp;delete&nbsp;the&nbsp;evaluators.</tt></dd></dl>
+ <dl><dt><a name="-setLocalAttribute"><strong>setLocalAttribute</strong></a>(elementNode)</dt><dd><tt>Set&nbsp;the&nbsp;local&nbsp;attribute&nbsp;if&nbsp;any.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)<br>
+<strong>globalCreationDictionary</strong> = {'circle': '/home/enrique/Desktop/backup/babbleold/script/re...eus/fabmetheus_utilities/geometry/creation/circle', 'concatenate': '/home/enrique/Desktop/backup/babbleold/script/re...abmetheus_utilities/geometry/creation/concatenate', 'drill': '/home/enrique/Desktop/backup/babbleold/script/re...eus/fabmetheus_utilities/geometry/creation/_drill', 'extrude': '/home/enrique/Desktop/backup/babbleold/script/re...us/fabmetheus_utilities/geometry/creation/extrude', 'gear': '/home/enrique/Desktop/backup/babbleold/script/re...theus/fabmetheus_utilities/geometry/creation/gear', 'grid': '/home/enrique/Desktop/backup/babbleold/script/re...theus/fabmetheus_utilities/geometry/creation/grid', 'heightmap': '/home/enrique/Desktop/backup/babbleold/script/re.../fabmetheus_utilities/geometry/creation/heightmap', 'lathe': '/home/enrique/Desktop/backup/babbleold/script/re...heus/fabmetheus_utilities/geometry/creation/lathe', 'line': '/home/enrique/Desktop/backup/babbleold/script/re...theus/fabmetheus_utilities/geometry/creation/line', 'linearbearingcage': '/home/enrique/Desktop/backup/babbleold/script/re...s_utilities/geometry/creation/linear_bearing_cage', ...}<br>
+<strong>globalDictionaryOperatorBegin</strong> = {'!=': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorNotEqual&gt;, '**': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorPower&gt;, '&lt;=': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorLessEqual&gt;, '==': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorEqual&gt;, '&gt;=': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorGreaterEqual&gt;, '||': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorConcatenate&gt;}<br>
+<strong>globalElementNameSet</strong> = set(['creation', 'document', 'setting'])<br>
+<strong>globalFundamentalNameSet</strong> = set(['_math', 'euclid', 'measure', 'print'])<br>
+<strong>globalModuleEvaluatorDictionary</strong> = {'creation': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorElement&gt;, 'document': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorElement&gt;, 'euclid': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorFundamental&gt;, 'math': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorFundamental&gt;, 'measure': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorFundamental&gt;, 'print': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorFundamental&gt;, 'self': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorSelf&gt;, 'setting': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorElement&gt;}<br>
+<strong>globalModuleFunctionsDictionary</strong> = {}<br>
+<strong>globalSplitDictionary</strong> = {'!=': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorNotEqual&gt;, '%': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorModulo&gt;, '(': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorBracketRound&gt;, ')': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.Evaluator&gt;, '*': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorMultiplication&gt;, '**': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorPower&gt;, '+': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorAddition&gt;, ',': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorComma&gt;, '-': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorSubtraction&gt;, '/': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorDivision&gt;, ...}<br>
+<strong>globalSplitDictionaryOperator</strong> = {'%': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorModulo&gt;, '(': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorBracketRound&gt;, ')': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.Evaluator&gt;, '*': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorMultiplication&gt;, '+': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorAddition&gt;, ',': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorComma&gt;, '-': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorSubtraction&gt;, '/': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorDivision&gt;, ':': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorDictionary&gt;, '&lt;': &lt;class fabmetheus_utilities.geometry.geometry_utilities.evaluate.EvaluatorLess&gt;, ...}</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

@@ -1,0 +1,57 @@
+<?xml version='1.0' ?>
+<fabmetheus precision='0.3'>
+	<difference id='cube_cylinder_difference'>
+		<matrix translate.='[-10,20,5]'/>
+		<cube id='Cube 5' inradius.x='5' inradius.y='5' inradius.z='5'>
+		</cube>
+		<cylinder id='Cylinder 5' height='10' radius.x='5' radius.y='5'>
+			<matrix translate.='[5,-5]'/>
+		</cylinder>
+	</difference>
+	<intersection id='cube_cylinder_intersection'>
+		<matrix translate.='[-10,0,5]'/>
+		<cube id='Cube 5' size='12'>
+		</cube>
+		<cylinder id='Cylinder 5' height='10' radius.x='5' radius.y='5'>
+			<matrix translate.='[5,-5]'/>
+		</cylinder>
+	</intersection>
+	<union id='cube_cylinder_union'>
+		<matrix translate.='[-10,-20,5]'/>
+		<cube id='Cube 5' inradius='[5,6,5]'>
+		</cube>
+		<cylinder id='Cylinder 5' diameter='10'>
+			<matrix translate.='[5,-5]'/>
+		</cylinder>
+	</union>
+	<group id='sphere_tetrahedron_group'>
+		<matrix translate.='[10,-20,5]'/>
+			<sphere id='Group Sphere 5' diameter='10' scale.x='2'>
+			</sphere>
+			<trianglemesh id='Group Tetrahedron 5'>
+				<matrix translate.='[15]'/>
+				<vertex x='-5' y='-5' z='-5'/>
+				<vertex x='5' y='-5' z='-5'/>
+				<vertex y='5' z='-5'/>
+				<vertex z='5'/>
+				<face vertex0='0' vertex1='2' vertex2='1'/>
+				<face vertex0='3' vertex1='1' vertex2='2'/>
+				<face vertex0='3' vertex1='2' vertex2='0'/>
+				<face vertex0='3' vertex1='0' vertex2='1'/>
+			</trianglemesh>
+	</group>
+	<sphere id='Sphere 5' radius='[5,7,5]'>
+		<matrix translate.='[10,0,5]'/>
+	</sphere>
+	<trianglemesh id='Tetrahedron 5'>
+		<matrix translate.='[10,20,5]'/>
+		<vertex x='-5' y='-5' z='-5'/>
+		<vertex x='5' y='-5' z='-5'/>
+		<vertex y='5' z='-5'/>
+		<vertex z='5'/>
+		<face vertex0='0' vertex1='2' vertex2='1'/>
+		<face vertex0='3' vertex1='1' vertex2='2'/>
+		<face vertex0='3' vertex1='2' vertex2='0'/>
+		<face vertex0='3' vertex1='0' vertex2='1'/>
+	</trianglemesh>
+</fabmetheus>

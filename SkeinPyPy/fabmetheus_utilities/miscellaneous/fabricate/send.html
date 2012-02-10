@@ -1,0 +1,78 @@
+<p>
+send.py is "glue" for sending a skeinforge-generated gcode file to your arduino-based reprap.
+</p>
+<p>
+It is a command-line only utility, starting it from your GUI of choice will not be useful.
+</p>
+<p>
+
+Syntax is simple:
+<pre>
+send.py [options] &lt;gcode or file&gt; [&lt;gcode or file&gt;...]
+</pre>
+</p>
+<p>
+
+To send your extruder.gcode file to your reprap, type:
+<pre>
+send.py extruder.gcode
+</pre>
+</p>
+<p>
+This will print the extruder.gcode shape, and print comments to the console.
+Typically, comments are such things as
+(&gt;layerStart&lt; 0.402 )
+which can be very useful to track the progress of your build, so these are "on" by default.
+</p>
+<p>
+There are a simple options that may be useful for special circumstances. 
+These are --quiet, --noreset, --port, and --verbose.
+These can also be writted -q, -n, -p, and -v for short.
+If you are writing a script (for instance, the M100 scripts for use with EMC) then I'd recommend that you use the long options, so future maintainers don't have to look things up.
+</p>
+<p>
+Quiet will suppress all but the most basic messages. It won't supress everything, however. Error messages will still be printed. But it will supress almost everything.
+Since options are processed in order on the command line, so if you want to supress messages about processing options, you'll have to make Quiet the first option.
+</p>
+<p>
+Normally, the arduino is reset by dropping the DTR line for 1 second.
+Since the Arduino takes several seconds to reboot, you will want to disable this behavior when including send.py in scripts.
+</p>
+<p>
+The verbose option will cause not just comments, but every command sent to and every response recieved from the arduino to be printed out. Useful for debugging, but it prints a great deal of text in ordinary usage.
+</p>
+<p>
+The port option uses reasonable defaults for most operating systems - /dev/ttyUSB0 for posix systems, and COM3 for windows systems. 
+If you have some other port you'll have to set in manually as "send.py -p COM5 extruder.gcode" or 
+"send.py --port /dev/ttyUSB5 extruder.gcode" or something.
+</p>
+<p>
+Future improvements:
+</p>
+<p>
+</p>
+I would like to add support for more g-code contructs on the python side of things.
+Stuff like variables, subroutines, etc.
+Stuff that the g-code firmware is unlikely to ever implement because of size restrictions.
+The current version works, and skeinforge doesn't use these features.
+It might be nice for a future "print several objects at once, automatically filling the bed area" interface.
+And if I get my extruder built, I might even take the time to do that!
+<p>
+RepRapArduinoSerialSender.py
+</p>
+<p>
+
+This, like send.py, was cribbed from Brenden Erwin's code for using EMC. It's been modified somewhat for more general use.
+There are only five methods:
+</p>
+<pre>
+__init__
+reset
+write
+read
+close
+</pre>
+<p>
+Of these, you should not directly use read(). It's used internally by write and reset to verify that the operation was completed successfully.
+</p>
+

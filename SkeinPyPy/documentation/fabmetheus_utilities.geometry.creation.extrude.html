@@ -1,0 +1,157 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.geometry.creation.extrude</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.geometry.html"><font color="#ffffff">geometry</font></a>.<a href="fabmetheus_utilities.geometry.creation.html"><font color="#ffffff">creation</font></a>.extrude</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/creation/extrude.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/creation/extrude.py</a></font></td></tr></table>
+    <p><tt>Boolean geometry extrusion.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html">fabmetheus_utilities.geometry.geometry_utilities.evaluate</a><br>
+<a href="fabmetheus_utilities.geometry.creation.lineation.html">fabmetheus_utilities.geometry.creation.lineation</a><br>
+</td><td width="25%" valign=top><a href="math.html">math</a><br>
+<a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate_elements.setting.html">fabmetheus_utilities.geometry.geometry_utilities.evaluate_elements.setting</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.creation.solid.html">fabmetheus_utilities.geometry.creation.solid</a><br>
+<a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html">fabmetheus_utilities.geometry.solids.triangle_mesh</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.creation.extrude.html#ExtrudeDerivation">ExtrudeDerivation</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.creation.extrude.html#Interpolation">Interpolation</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.creation.extrude.html#PortionDirection">PortionDirection</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ExtrudeDerivation">class <strong>ExtrudeDerivation</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;hold&nbsp;extrude&nbsp;variables.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ExtrudeDerivation-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Interpolation">class <strong>Interpolation</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;interpolate&nbsp;a&nbsp;path.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Interpolation-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#Interpolation">Interpolation</a>.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getByDistances"><strong>getByDistances</strong></a>(self)</dt><dd><tt>Get&nbsp;by&nbsp;distances.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getByPrefixAlong"><strong>getByPrefixAlong</strong></a>(self, elementNode, path, prefix)</dt><dd><tt>Get&nbsp;interpolation&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element&nbsp;along&nbsp;the&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getByPrefixX"><strong>getByPrefixX</strong></a>(self, elementNode, path, prefix)</dt><dd><tt>Get&nbsp;interpolation&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element&nbsp;in&nbsp;the&nbsp;z&nbsp;direction.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getByPrefixZ"><strong>getByPrefixZ</strong></a>(self, elementNode, path, prefix)</dt><dd><tt>Get&nbsp;interpolation&nbsp;from&nbsp;prefix&nbsp;and&nbsp;xml&nbsp;element&nbsp;in&nbsp;the&nbsp;z&nbsp;direction.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getComparison"><strong>getComparison</strong></a>(self, first, second)</dt><dd><tt>Compare&nbsp;the&nbsp;first&nbsp;with&nbsp;the&nbsp;second.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getComplexByPortion"><strong>getComplexByPortion</strong></a>(self, portionDirection)</dt><dd><tt>Get&nbsp;complex&nbsp;from&nbsp;z&nbsp;portion.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getInnerPortion"><strong>getInnerPortion</strong></a>(self)</dt><dd><tt>Get&nbsp;inner&nbsp;x&nbsp;portion.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getVector3ByPortion"><strong>getVector3ByPortion</strong></a>(self, portionDirection)</dt><dd><tt>Get&nbsp;vector3&nbsp;from&nbsp;z&nbsp;portion.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-getYByPortion"><strong>getYByPortion</strong></a>(self, portionDirection)</dt><dd><tt>Get&nbsp;y&nbsp;from&nbsp;x&nbsp;portion.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-setInterpolationIndex"><strong>setInterpolationIndex</strong></a>(self, portionDirection)</dt><dd><tt>Set&nbsp;the&nbsp;interpolation&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="Interpolation-setInterpolationIndexFromTo"><strong>setInterpolationIndexFromTo</strong></a>(self, portionDirection)</dt><dd><tt>Set&nbsp;the&nbsp;interpolation&nbsp;index,&nbsp;the&nbsp;start&nbsp;vertex&nbsp;and&nbsp;the&nbsp;end&nbsp;vertex.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="PortionDirection">class <strong>PortionDirection</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;hold&nbsp;a&nbsp;portion&nbsp;and&nbsp;direction.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="PortionDirection-__init__"><strong>__init__</strong></a>(self, portion)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="PortionDirection-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#PortionDirection">PortionDirection</a>.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addLoop"><strong>addLoop</strong></a>(derivation, endMultiplier, loopLists, path, portionDirectionIndex, portionDirections, vertexes)</dt><dd><tt>Add&nbsp;an&nbsp;indexed&nbsp;loop&nbsp;to&nbsp;the&nbsp;vertexes.</tt></dd></dl>
+ <dl><dt><a name="-addNegatives"><strong>addNegatives</strong></a>(derivation, negatives, paths)</dt><dd><tt>Add&nbsp;pillars&nbsp;output&nbsp;to&nbsp;negatives.</tt></dd></dl>
+ <dl><dt><a name="-addNegativesPositives"><strong>addNegativesPositives</strong></a>(derivation, negatives, paths, positives)</dt><dd><tt>Add&nbsp;pillars&nbsp;output&nbsp;to&nbsp;negatives&nbsp;and&nbsp;positives.</tt></dd></dl>
+ <dl><dt><a name="-addOffsetAddToLists"><strong>addOffsetAddToLists</strong></a>(loop, offset, vector3Index, vertexes)</dt><dd><tt>Add&nbsp;an&nbsp;indexed&nbsp;loop&nbsp;to&nbsp;the&nbsp;vertexes.</tt></dd></dl>
+ <dl><dt><a name="-addPositives"><strong>addPositives</strong></a>(derivation, paths, positives)</dt><dd><tt>Add&nbsp;pillars&nbsp;output&nbsp;to&nbsp;positives.</tt></dd></dl>
+ <dl><dt><a name="-addSpacedPortionDirection"><strong>addSpacedPortionDirection</strong></a>(portionDirection, spacedPortionDirections)</dt><dd><tt>Add&nbsp;spaced&nbsp;portion&nbsp;directions.</tt></dd></dl>
+ <dl><dt><a name="-addTwistPortions"><strong>addTwistPortions</strong></a>(interpolationTwist, remainderPortionDirection, twistPrecision)</dt><dd><tt>Add&nbsp;twist&nbsp;portions.</tt></dd></dl>
+ <dl><dt><a name="-comparePortionDirection"><strong>comparePortionDirection</strong></a>(portionDirection, otherPortionDirection)</dt><dd><tt>Comparison&nbsp;in&nbsp;order&nbsp;to&nbsp;sort&nbsp;portion&nbsp;directions&nbsp;in&nbsp;ascending&nbsp;order&nbsp;of&nbsp;portion&nbsp;then&nbsp;direction.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutput"><strong>getGeometryOutput</strong></a>(derivation, elementNode)</dt><dd><tt>Get&nbsp;triangle&nbsp;mesh&nbsp;from&nbsp;attribute&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutputByArguments"><strong>getGeometryOutputByArguments</strong></a>(arguments, elementNode)</dt><dd><tt>Get&nbsp;triangle&nbsp;mesh&nbsp;from&nbsp;attribute&nbsp;dictionary&nbsp;by&nbsp;arguments.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutputByLoops"><strong>getGeometryOutputByLoops</strong></a>(derivation, loops)</dt><dd><tt>Get&nbsp;geometry&nbsp;output&nbsp;by&nbsp;sorted,&nbsp;nested&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutputByNegativesPositives"><strong>getGeometryOutputByNegativesPositives</strong></a>(elementNode, negatives, positives)</dt><dd><tt>Get&nbsp;triangle&nbsp;mesh&nbsp;from&nbsp;elementNode,&nbsp;negatives&nbsp;and&nbsp;positives.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutputByNestedRing"><strong>getGeometryOutputByNestedRing</strong></a>(derivation, nestedRing, portionDirections)</dt><dd><tt>Get&nbsp;geometry&nbsp;output&nbsp;by&nbsp;sorted,&nbsp;nested&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-getLoopListsByPath"><strong>getLoopListsByPath</strong></a>(derivation, endMultiplier, path, portionDirections)</dt><dd><tt>Get&nbsp;loop&nbsp;lists&nbsp;from&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getNewDerivation"><strong>getNewDerivation</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;new&nbsp;derivation.</tt></dd></dl>
+ <dl><dt><a name="-getNormalAverage"><strong>getNormalAverage</strong></a>(normals)</dt><dd><tt>Get&nbsp;normal.</tt></dd></dl>
+ <dl><dt><a name="-getNormals"><strong>getNormals</strong></a>(interpolationOffset, offset, portionDirection)</dt><dd><tt>Get&nbsp;normals.</tt></dd></dl>
+ <dl><dt><a name="-getSpacedPortionDirections"><strong>getSpacedPortionDirections</strong></a>(interpolationDictionary)</dt><dd><tt>Get&nbsp;sorted&nbsp;portion&nbsp;directions.</tt></dd></dl>
+ <dl><dt><a name="-insertTwistPortions"><strong>insertTwistPortions</strong></a>(derivation, elementNode)</dt><dd><tt>Insert&nbsp;twist&nbsp;portions&nbsp;and&nbsp;radian&nbsp;the&nbsp;twist.</tt></dd></dl>
+ <dl><dt><a name="-processElementNode"><strong>processElementNode</strong></a>(elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-setElementNodeToEndStart"><strong>setElementNodeToEndStart</strong></a>(elementNode, end, start)</dt><dd><tt>Set&nbsp;elementNode&nbsp;attribute&nbsp;dictionary&nbsp;to&nbsp;a&nbsp;tilt&nbsp;following&nbsp;path&nbsp;from&nbsp;the&nbsp;start&nbsp;to&nbsp;end.</tt></dd></dl>
+ <dl><dt><a name="-setOffsetByMultiplier"><strong>setOffsetByMultiplier</strong></a>(begin, end, multiplier, offset)</dt><dd><tt>Set&nbsp;the&nbsp;offset&nbsp;by&nbsp;the&nbsp;multiplier.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

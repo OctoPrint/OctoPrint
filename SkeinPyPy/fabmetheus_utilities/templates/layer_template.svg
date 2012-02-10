@@ -1,0 +1,519 @@
+<?xml version='1.0' standalone='no'?>
+<!--Written in KDevelop (http://www.kdevelop.org/)-->
+<svg contentScriptType='text/ecmascript'
+	baseProfile='full' zoomAndPan='magnify' contentStyleType='text/css'
+	height='999px'
+	preserveAspectRatio='xMidYMid meet'
+	onload='init()'
+	width='999px'
+	xmlns='http://www.w3.org/2000/svg' version='1.0'
+	xmlns:inkscape='http://www.inkscape.org/namespaces/inkscape'
+	xmlns:slice='http://www.reprap.org/slice'
+	xmlns:xlink='http://www.w3.org/1999/xlink'>
+	<metadata>
+		<slice:layers id='sliceData' controlBoxWidth='240' layerHeight='0.2' minX='0' maxX='61' minY='-5' maxY='50' minZ='0' maxZ='1' margin='20' marginTop='60' controlBoxHeight='720' svgMinWidth='516' template='svg_layer' textHeight='22.5' unitScale='3.7' version='0.1'/>
+	</metadata>
+	<script type='text/ecmascript'><![CDATA[
+globalMetadata = document.getElementsByTagNameNS('http://www.reprap.org/slice', 'layers')[0];
+globalSliceMinX = globalMetadata.getAttribute('minX') * 1;
+globalSliceMaxX = globalMetadata.getAttribute('maxX') * 1;
+globalSliceMinY = globalMetadata.getAttribute('minY') * 1;
+globalSliceMaxY = globalMetadata.getAttribute('maxY') * 1;
+globalSliceMinZ = globalMetadata.getAttribute('minZ') * 1;
+globalSliceMaxZ = globalMetadata.getAttribute('maxZ') * 1;
+
+//Control var's
+globalLayerIndex = 0; //Number of currently viewed layer (zero index)
+globalLatitude = 60.0;
+globalLongitude = 45.0;
+globalControlBoxHeight = globalMetadata.getAttribute('controlBoxHeight') * 1;
+globalControlBoxWidth = globalMetadata.getAttribute('controlBoxWidth') * 1;
+globalSliding = false;
+globalObserving = false
+
+//Display var's
+globalMargin = globalMetadata.getAttribute('margin') * 1;
+globalMarginTop = globalMetadata.getAttribute('marginTop') * 1;
+globalDimensionX = globalSliceMaxX - globalSliceMinX;
+globalDimensionY = globalSliceMaxY - globalSliceMinY;
+globalDimensionZ = globalSliceMaxZ - globalSliceMinZ;
+magnitudeXYSquared = globalDimensionX * globalDimensionX + globalDimensionY * globalDimensionY;
+globalDimensionMagnitude = Math.sqrt(magnitudeXYSquared + globalDimensionZ * globalDimensionZ);
+globalGlobeTravelRadian = 0.0;
+globalGlobeInnerObserverRadius = 0.0;
+globalTextHeight = globalMetadata.getAttribute('textHeight') * 1.0;
+globalUnitScale = globalMetadata.getAttribute('unitScale') * 1.0;
+globalXOffset = globalControlBoxWidth + globalMargin + globalMargin;
+globalYOffset = globalMargin + globalMarginTop;
+globalZoomScale = 1.0; //Default 1:1 may need smaller scale for large objects
+globalScale = globalUnitScale * globalZoomScale;
+
+//Globals to be set in init
+globalLayers = [];
+globalSlider = 0;
+globalThumb = 0;
+globalThumbRadius = 0.0;
+globalSliderWidthMinusDiameter = 0.0;
+
+
+function changeScale(newScale) {
+	globalZoomScale = newScale;
+	globalScale = globalUnitScale * globalZoomScale;
+	if (globalZoomScale >=1) { //dont scale line thickness for large display scale
+		document.getElementById('layerData').setAttributeNS(null, 'stroke-width', 2.0 / (globalScale));
+	}
+}
+
+function changeScaleIso(newScale) {
+	changeScale(newScale);
+	viewIso();
+}
+
+function changeScaleLayer(newScale) {
+	changeScale(newScale);
+	viewLayer();
+}
+
+function changeScaleScroll(newScale) {
+	changeScale(newScale);
+	viewScroll();
+}
+
+function displayIso(latitude, longitude) {
+	latitude = Math.max(0.0, latitude);
+	latitude = Math.min(89.0, latitude);
+	globalLatitude = Math.round(latitude);
+	globalLongitude = Math.round((longitude + 540.0) % 360.0) - 180.0;
+	latitudeRadians = getRadians(globalLatitude);
+	longitudeWiddershinsRadians = getRadians(90.0 - globalLongitude);
+	unitX = Math.cos(longitudeWiddershinsRadians);
+	unitY = Math.sin(longitudeWiddershinsRadians);
+	latitudeOverLayers = globalDimensionZ / globalLayers.length;
+	globalOneOverUnitScaleString = (1.0 / globalUnitScale).toString();
+	yScale = -1.0 * globalScale * Math.cos(latitudeRadians);
+	scaleRotateCenterString = ' scale(' + globalScale + ', ' + yScale + ')';
+	scaleRotateCenterString += ' rotate(' + (-1.0 * globalLongitude).toString() + ')';
+	centerX = (-0.5 * globalDimensionX - globalSliceMinX).toString();
+	centerY = (-0.5 * globalDimensionY - globalSliceMinY).toString();
+	scaleRotateCenterString += ' translate(' + centerX + ', ' + centerY + ')';
+	x = 0.5 * globalDimensionMagnitude * globalScale + globalXOffset;
+	halfLengthMinusOne = 0.5 * (globalLayers.length - 1);
+	for (var i in globalLayers) {
+		latitudeZSin = Math.sin(latitudeRadians) * (i - halfLengthMinusOne) * latitudeOverLayers
+		y = globalScale * (0.5 * globalDimensionMagnitude - latitudeZSin) + globalYOffset;
+//		y = globalDimensionY * globalScale + globalYOffset - i * unitY * latitudeOverLayers;
+		transformString = ' translate(' + x + ', ' + y + ')';
+		globalLayers[i].setAttributeNS(null, 'transform', transformString + scaleRotateCenterString);
+	}
+	setText('latitudeIso', 'Latitude: ' + globalLatitude.toString() + '°');
+	setText('longitudeIso', 'Longitude: ' + globalLongitude.toString() + '°');
+	globeMoveableRadius = globalGlobeTravelRadian * latitudeRadians + globalGlobeInnerObserverRadius;
+	globalObserver.setAttribute('cx', globalGlobeCenterX + unitX * globeMoveableRadius);
+	globalObserver.setAttribute('cy', globalGlobeCenterY - unitY * globeMoveableRadius);
+}
+
+function displayIsoByLatitude(latitude) {
+	displayIso(latitude, globalLongitude);
+}
+
+function displayIsoByLongitude(longitude) {
+	displayIso(globalLatitude, longitude);
+}
+
+function displayLayer(layerNum) {
+	if (globalLayers.length <= 1) {
+		document.getElementById('maxIndexLayer').setAttributeNS(null, 'visibility', 'hidden');
+		document.getElementById('minIndexLayer').setAttributeNS(null, 'visibility', 'hidden');
+		globalSlider.setAttributeNS(null, 'visibility', 'hidden');
+		globalThumb.setAttributeNS(null, 'visibility', 'hidden');
+	}
+	if (layerNum <= 0) {
+		document.getElementById('decreaseLayerIndex').setAttributeNS(null, 'visibility', 'hidden');
+	}
+	else {
+		document.getElementById('decreaseLayerIndex').setAttributeNS(null, 'visibility', 'visible');
+	}
+	if (layerNum >= globalLayers.length - 1) {
+		document.getElementById('increaseLayerIndex').setAttributeNS(null, 'visibility', 'hidden');
+	}
+	else {
+		document.getElementById('increaseLayerIndex').setAttributeNS(null, 'visibility', 'visible');
+	}
+	if (layerNum < 0 || layerNum >= globalLayers.length) {
+		return
+	}
+	globalLayers[globalLayerIndex].setAttributeNS(null, 'visibility', 'hidden');
+	currentLayerElement = globalLayers[layerNum]
+	currentLayerElement.setAttributeNS(null, 'visibility', 'visible');
+	globalLayerIndex = layerNum;
+	setText('currentIndexLayer', 'Layer: ' + globalLayerIndex.toString() + ', ' + currentLayerElement.getAttribute('id'));
+	//Slider
+	if (!globalSliding) {
+		placeThumb(globalSliderWidthMinusDiameter / (globalLayers.length - 1) * globalLayerIndex + globalThumbRadius);
+	}
+}
+
+function getDegrees(radians) {
+	return radians / Math.PI * 180.0;
+}
+
+function getRadians(degrees) {
+	return degrees / 180.0 * Math.PI;
+}
+
+function getScaleTransformString(scale) {
+	scaleTransformString = 'scale(' + scale + ' ' + (scale * - 1)
+	return scaleTransformString + ') translate(' + (globalSliceMinX * - 1) + ' ' + (globalSliceMinY * - 1) + ')';
+}
+
+function getWidth() {
+	return (globalDimensionX * globalScale) + globalXOffset
+}
+
+function hideElements(elementNames) {
+	for (var elementNameIndex in elementNames) {
+		document.getElementById(elementNames[elementNameIndex]).setAttributeNS(null, 'visibility', 'hidden');
+	}
+}
+
+function init() {
+	//Find only layer groups
+	globe = document.getElementById('globe');
+	globalGlobeCenterX = globe.getAttribute('cx') * 1;
+	globalGlobeCenterXWindow = globalGlobeCenterX + globalMargin;
+	globalGlobeCenterY = globe.getAttribute('cy') * 1;
+	globalGlobeCenterYWindow = globalGlobeCenterX + globalMarginTop;
+	globalObserver = document.getElementById('observer');
+	globeRadius = globe.getAttribute('r') * 1.0;
+	observerRadius = globalObserver.getAttribute('r') * 1.0;
+	globalGlobeInnerObserverRadius = document.getElementById('cover').getAttribute('r') * 1.0 + observerRadius;
+	globalGlobeTravelRadian = getDegrees(globeRadius - globalGlobeInnerObserverRadius - observerRadius) / 89.0;
+	globalSlider = document.getElementById('slider');
+	globalSliderX = globalSlider.getAttribute('x') * 1;
+	globalSliderXWindow = globalSliderX + globalMargin
+	globalThumb = document.getElementById('thumb');
+	globalThumbRadius = globalThumb.getAttribute('r') * 1;
+	globalSliderWidthMinusRadius = globalSlider.getAttribute('width') * 1 - globalThumbRadius;
+	globalSliderWidthMinusDiameter = globalSliderWidthMinusRadius - globalThumbRadius;
+	var allGroups = document.getElementsByTagName('g');
+	for (var i = 0; i < allGroups.length; i++) {
+		if (allGroups[i].id.indexOf('z:') == 0) {
+			globalLayers.push(allGroups[i]);
+		}
+	}
+
+	//Slider
+	layerControlBox = document.getElementById('layerControlBox');
+	layerControlBox.addEventListener('mouseup', sliderUp, false);
+	layerControlBox.addEventListener('mousemove', sliderMove, false);
+	globalSlider.addEventListener('mousedown', sliderDownMove, false);
+	globalThumb.addEventListener('mousedown', sliderDownMove, false);
+	//Observer
+	isoControlBox = document.getElementById('isoControlBox');
+	isoControlBox.addEventListener('mouseup', observerUp, false);
+	isoControlBox.addEventListener('mousemove', observerMove, false);
+	globe.addEventListener('mousedown', observerDownMove, false);
+	globalObserver.addEventListener('mousedown', observerDownMove, false);
+	
+	//Control box data
+	setText('maxIndexLayer', globalLayers.length - 1);
+	changeScaleLayer(globalZoomScale);
+}
+
+function observerDown(event) {
+	globalObserving = true;
+}
+
+function observerDownMove(event) {
+	globalObserving = true;
+	observerMove(event);
+}
+
+function observerMove(event) {
+	if (!globalObserving) {
+		return;
+	}
+	observerX = event.clientX - globalGlobeCenterXWindow + window.pageXOffset;
+	observerY = event.clientY - globalGlobeCenterYWindow + window.pageYOffset;
+	distanceFromCenter = Math.sqrt(observerX * observerX + observerY * observerY);
+	latitudeRadians = (distanceFromCenter - globalGlobeInnerObserverRadius) / globalGlobeTravelRadian;
+	longitudeRadians = Math.atan2(observerX, -observerY);
+	displayIso(getDegrees(latitudeRadians), getDegrees(longitudeRadians));
+}
+
+function observerUp(event) {
+	globalObserving = false;
+}
+
+function placeThumb(value) {
+	if (globalLayers.length > 1) {
+		globalThumb.setAttribute('cx', globalSliderX + value);
+	}
+}
+
+function setScaleText(scaleID) {
+	setText(scaleID, ': ' + globalZoomScale);
+}
+
+function setSVG(width, height) {
+	rootSVG = document.getElementsByTagName('svg')[0];
+	svgMinWidth = globalMetadata.getAttribute('svgMinWidth') * 1;
+	height = Math.max(globalControlBoxHeight + globalMargin + globalMarginTop, height);
+	width = Math.max(svgMinWidth, width);
+	rootSVG.setAttributeNS(null, 'width', width + 'px')
+	rootSVG.setAttributeNS(null, 'height', height + 'px')
+}
+
+function setText(id, str) {
+	e = document.getElementById(id)
+	if (e != null)
+		e.firstChild.nodeValue = str;
+}
+
+function showElements(elementNames) {
+	for (var elementNameIndex in elementNames) {
+		document.getElementById(elementNames[elementNameIndex]).setAttributeNS(null, 'visibility', 'visible');
+	}
+}
+
+function sliderDown(event) {
+	globalSliding = true;
+}
+
+function sliderDownMove(event) {
+	globalSliding = true;
+	sliderMove(event);
+}
+
+function sliderMove(event) {
+	if (!globalSliding) {
+		return;
+	}
+	value = event.clientX - globalSliderXWindow + window.pageXOffset;
+	if (value >= globalThumbRadius && value <= globalSliderWidthMinusRadius) {
+		placeThumb(value);
+		zoneWidth = globalSliderWidthMinusDiameter / (globalLayers.length);
+		newLayer = Math.round((value - globalThumbRadius - 0.5 * zoneWidth) / zoneWidth)
+		if (newLayer != globalLayerIndex) {
+			displayLayer(newLayer)
+		}
+	}
+}
+
+function sliderUp(event) {
+	globalSliding = false;
+}
+
+function viewIso() {
+	height = (globalDimensionMagnitude * globalScale) + globalYOffset;
+	setSVG((globalDimensionMagnitude * globalScale) + globalXOffset, height);
+	for (var i in globalLayers) {
+//		globalLayers[i].setAttributeNS(null, 'transform', 'translate(' + globalMargin + ' ' + height + ')');
+		globalLayers[i].setAttributeNS(null, 'visibility', 'visible');
+		globalLayers[i].getElementsByTagName('text')[0].setAttributeNS(null, 'visibility', 'hidden');
+		pathElements = globalLayers[i].getElementsByTagName('path');
+		for (var pathElementIndex = 0; pathElementIndex < pathElements.length; pathElementIndex++) {
+			  pathElements[pathElementIndex].setAttributeNS(null, 'transform', '');
+		  }
+	  }
+	  //show control box
+	hideElements(['decreaseLayerIndex', 'increaseLayerIndex', 'isoViewButton', 'layerControlBox', 'layerViewLabel', 'scrollControlBox', 'scrollViewLabel']);
+	showElements(['isoControlBox', 'isoViewLabel', 'layerViewButton', 'scrollViewButton']);
+	displayIso(globalLatitude, globalLongitude);
+	setScaleText('scaleIso');
+}
+
+function viewLayer() {
+	//Set svg size and view port
+	height = (globalDimensionY * globalScale) + globalYOffset;
+	setSVG(getWidth(), height);
+	//move and hide all layers 
+	for (var i in globalLayers) {
+		globalLayers[i].setAttributeNS(null, 'transform', 'translate(' + globalXOffset + ' ' + height + ')');
+		globalLayers[i].setAttributeNS(null, 'visibility', 'hidden');
+		globalLayers[i].getElementsByTagName('text')[0].setAttributeNS(null, 'visibility', 'hidden');
+		transform = getScaleTransformString(globalScale);
+		pathElements = globalLayers[i].getElementsByTagName('path');
+		for (var pathElementIndex = 0; pathElementIndex < pathElements.length; pathElementIndex++) {
+			pathElements[pathElementIndex].setAttributeNS(null, 'transform', transform);
+		}
+	}
+
+	//show control box
+	hideElements(['isoControlBox', 'isoViewLabel', 'layerViewButton', 'scrollControlBox', 'scrollViewLabel'])
+	showElements(['isoViewButton', 'layerControlBox', 'layerViewLabel', 'scrollViewButton'])
+	
+	//show current layer
+	displayLayer(globalLayerIndex);
+	setScaleText('scaleLayer');
+}
+
+function viewScroll() {
+	//Set svg size and view port
+	yDimensionScale = globalDimensionY * globalScale
+	singleHeight = (globalMargin + yDimensionScale + globalTextHeight)
+	height = globalLayers.length * singleHeight + globalMargin + globalMargin + globalYOffset;
+	setSVG(getWidth(), height);
+
+	//move and show all layers 
+	for (var i in globalLayers) {
+		x = globalXOffset;
+		y = i * singleHeight + yDimensionScale + globalYOffset;
+		transform = getScaleTransformString(globalScale);
+		globalLayers[i].setAttributeNS(null, 'transform', 'translate(' + x + ', ' + y + ')');
+		pathElements = globalLayers[i].getElementsByTagName('path');
+		for (var pathElementIndex = 0; pathElementIndex < pathElements.length; pathElementIndex++) {
+			pathElements[pathElementIndex].setAttributeNS(null, 'transform', transform);
+		}
+		globalLayers[i].setAttributeNS(null, 'visibility', 'visible');
+		globalLayers[i].getElementsByTagName('text')[0].setAttributeNS(null, 'visibility', 'visible');
+	}
+
+	//show control box
+	hideElements(['isoControlBox', 'isoViewLabel', 'layerControlBox', 'layerViewLabel', 'scrollViewButton'])
+	showElements(['isoViewButton', 'layerViewButton', 'scrollControlBox', 'scrollViewLabel'])
+	setScaleText('scaleScroll');
+}
+	]]></script>
+
+	<title>replaceWith_Title</title>
+
+	<!--Begin Layer Data   -->
+	<g id='layerData' fill='#556B2F' fill-rule='evenodd' font-weight='bold' font-family='Arial' font-size='15px' inkscape:groupmode='layer' inkscape:label='Slice Layers' stroke='#00F' stroke-width='0.54px'>
+		<!--id='sliceElementTemplate' must be there or else the slice template will not be found-->
+		<g id='sliceElementTemplate' transform='translate(20, 242)'>
+			<!--id='layerTextTemplate' must be there so that the text could be removed if necessary-->
+			<text id='layerTextTemplate' y='15' fill='#000' stroke='none'>Layer 1, z:0.1</text>
+ 			<path transform='scale(3.7, -3.7) translate(0, 5)' d='M 0 -5 L 50 0 L60 50 L 5 50 z M 5 3 L5 15 L15 15 L15 5 z'/>
+		</g>
+	</g>
+	<!--End Layer Data-->
+	<!--beginningOfControlSection='true' must be there or else the control boxes will be carved-->
+	<g id='controls' beginningOfControlSection='true' inkscape:groupmode='layer' inkscape:label='Controls'>
+	<!--id='isoControlBox' must be there so that the controls could be removed if necessary-->
+		<g id='isoControlBox' fill='#000' font-family='Arial' font-size='15px' font-weight='bold' transform='translate(20, 60)' visibility='hidden'>
+			<rect width='240' height='720' stroke='gray' stroke-width='4px' fill='silver'/>
+			<circle id='globe' cx='120' cy='120' r='100' fill='gray'/>
+			<circle id='cover' cx='120' cy='120' r='33' fill='silver'/>
+			<circle id='observer' r='12' fill='darkslateblue'/>
+			<text x='20' y='260' id='latitudeIso'>Latitude</text>
+			<text x='198' y='260' onclick='displayIsoByLatitude(globalLatitude-1.0)' fill='darkslateblue'>&lt;</text>
+			<text x='213' y='260' onclick='displayIsoByLatitude(globalLatitude+1.0)' fill='darkslateblue'>&gt;</text>
+			<text x='20' y='280' id='longitudeIso'>Longitude</text>
+			<text x='198' y='280' onclick='displayIsoByLongitude(globalLongitude-1.0)' fill='darkslateblue'>&lt;</text>
+			<text x='213' y='280' onclick='displayIsoByLongitude(globalLongitude+1.0)' fill='darkslateblue'>&gt;</text>
+			<text x='20' y='300'>Scale</text>
+			<text x='65' y='300' id='scaleIso'>1</text>
+			<text x='198' y='300' onclick='changeScaleIso(globalZoomScale/2)' fill='darkslateblue'>&lt;</text>
+			<text x='213' y='300' onclick='changeScaleIso(globalZoomScale*2)' fill='darkslateblue'>&gt;</text>
+			<g transform='translate(20, 340)'>
+				<text>Min</text>
+				<text id='minXIso' y='20'></text>
+				<text id='minYIso' y='40'></text>
+				<text id='minZIso' y='60'></text>
+			</g>
+			<g transform='translate(20, 440)'>
+				<text>Max</text>
+				<text id='maxXIso' y='20'></text>
+				<text id='maxYIso' y='40'></text>
+				<text id='maxZIso' y='60'></text>
+			</g>
+			<g transform='translate(20, 540)'>
+				<text>Dimension</text>
+				<text id='dimXIso' y='20'></text>
+				<text id='dimYIso' y='40'></text>
+				<text id='dimZIso' y='60'></text>
+			</g>
+			<g transform='translate(20, 640)'>
+				<text>Statistics</text>
+				<text y='20' id='layerHeightIso' ></text>
+				<text y='40' id='numberOfLayersIso' ></text>
+				<text y='60' id='volumeIso' ></text>
+			</g>
+		</g>
+		<!--id='layerControlBox' must be there so that the controls could be removed if necessary-->
+		<g id='layerControlBox' fill='#000' font-family='Arial' font-size='15px' font-weight='bold' transform='translate(20, 60)' visibility='hidden'>
+			<rect width='240' height='720' stroke='gray' stroke-width='4px' fill='silver'/>	
+			<path stroke-width='0' d='M 66 164 h76 v6 l18 -9 l-18 -9 v6 h-70 v-70 h6 l-9 -18 l-9 18 h6 z'/>
+			<!--<path stroke='#000' stroke-width='3' d='M 20 20 h5 l-5 -10 l-5 10 h5 v35 h35 v-5 l10 5 l-10 5 v-5 h-35 z'/>-->
+			<text x='68' y='64' text-anchor='middle'>Y</text>
+			<text x='165' y='166'>X</text>
+			<text x='20' y='245' id='minIndexLayer'>0</text>
+			<rect id='slider' x='32' y='230' width='170' height='24' fill='gray'/>
+			<circle id='thumb' cx='42' cy='242' r='12' fill='darkslateblue'/>
+			<text x='203' y='245' id='maxIndexLayer'>1</text>
+			<text x='20' y='280' id='currentIndexLayer'>Layer</text>
+			<text x='198' y='280' id='decreaseLayerIndex' onclick='displayLayer(globalLayerIndex-1)' fill='darkslateblue'>&lt;</text>
+			<text x='213' y='280' id='increaseLayerIndex' onclick='displayLayer(globalLayerIndex+1)' fill='darkslateblue'>&gt;</text>
+			<text x='20' y='300'>Scale</text>
+			<text x='65' y='300' id='scaleLayer'>1</text>
+			<text x='198' y='300' onclick='changeScaleLayer(globalZoomScale/2)' fill='darkslateblue'>&lt;</text>
+			<text x='213' y='300' onclick='changeScaleLayer(globalZoomScale*2)' fill='darkslateblue'>&gt;</text>
+			<g transform='translate(20, 340)'>
+				<text>Min</text>
+				<text id='minXLayer' y='20'></text>
+				<text id='minYLayer' y='40'></text>
+				<text id='minZLayer' y='60'></text>
+			</g>
+			<g transform='translate(20, 440)'>
+				<text>Max</text>
+				<text id='maxXLayer' y='20'></text>
+				<text id='maxYLayer' y='40'></text>
+				<text id='maxZLayer' y='60'></text>
+			</g>
+			<g transform='translate(20, 540)'>
+				<text>Dimension</text>
+				<text id='dimXLayer' y='20'></text>
+				<text id='dimYLayer' y='40'></text>
+				<text id='dimZLayer' y='60'></text>
+			</g>
+			<g transform='translate(20, 640)'>
+				<text>Statistics</text>
+				<text y='20' id='layerHeightLayer' ></text>
+				<text y='40' id='numberOfLayersLayer' ></text>
+				<text y='60' id='volumeLayer' ></text>
+			</g>
+		</g>
+		<!--id='scrollControlBox' must be there so that the controls could be removed if necessary-->
+		<g id='scrollControlBox' fill='#000' font-family='Arial' font-size='15px' font-weight='bold' transform='translate(20, 60)' visibility='visible'>
+			<rect width='240' height='720' stroke='gray' stroke-width='4px' fill='silver'/>	
+			<path stroke-width='0' d='M 66 164 h76 v6 l18 -9 l-18 -9 v6 h-70 v-70 h6 l-9 -18 l-9 18 h6 z'/>
+			<text x='68' y='64' text-anchor='middle'>Y</text>
+			<text x='165' y='166'>X</text>
+			<text x='20' y='300'>Scale</text>
+			<text x='65' y='300' id='scaleScroll'>: 1</text>
+			<text x='198' y='300' onclick='changeScaleScroll(globalZoomScale/2)' fill='darkslateblue'>&lt;</text>
+			<text x='213' y='300' onclick='changeScaleScroll(globalZoomScale*2)' fill='darkslateblue'>&gt;</text>
+			<g transform='translate(20, 340)'>
+				<text>Min</text>
+				<text id='minXScroll' y='20'></text>
+				<text id='minYScroll' y='40'></text>
+				<text id='minZScroll' y='60'></text>
+			</g>
+			<g transform='translate(20, 440)'>
+				<text>Max</text>
+				<text id='maxXScroll' y='20'></text>
+				<text id='maxYScroll' y='40'></text>
+				<text id='maxZScroll' y='60'></text>
+			</g>
+			<g transform='translate(20, 540)'>
+				<text>Dimension</text>
+				<text id='dimXScroll' y='20'></text>
+				<text id='dimYScroll' y='40'></text>
+				<text id='dimZScroll' y='60'></text>
+			</g>
+			<g transform='translate(20, 640)'>
+				<text>Statistics</text>
+				<text y='20' id='layerHeightScroll' ></text>
+				<text y='40' id='numberOfLayersScroll' ></text>
+				<text y='60' id='volumeScroll' ></text>
+			</g>
+		</g>
+		<text id='isoViewButton' x='80' y='30' fill='darkslateblue' font-size='18px' font-weight='normal' onclick='viewIso()' 	text-anchor='middle' visibility='visible'>[Iso View]</text>
+		<text id='isoViewLabel' x='76' y='30' fill='darkslateblue' font-size='24px' font-weight='bold' text-anchor='middle' visibility='hidden'>Iso View</text>
+		<text id='layerViewButton' x='240' y='30' fill='darkslateblue' font-size='18px' font-weight='normal' onclick='viewLayer()' text-anchor='middle' visibility='visible'>[Layer View]</text>
+		<text id='layerViewLabel' x='236' y='30' fill='darkslateblue' font-size='24px' font-weight='bold' text-anchor='middle' visibility='hidden'>Layer View</text>
+		<text id='scrollViewButton' x='400' y='30' fill='darkslateblue' font-size='18px' font-weight='normal' onclick='viewScroll()' text-anchor='middle' visibility='hidden'>[Scroll View]</text>
+		<text id='scrollViewLabel' x='396' y='30' fill='darkslateblue' font-size='24px' font-weight='bold' text-anchor='middle' visibility='visible'>Scroll View</text>
+	</g>
+</svg>

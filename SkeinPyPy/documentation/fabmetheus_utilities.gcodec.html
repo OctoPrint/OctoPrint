@@ -1,0 +1,192 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.gcodec</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.gcodec</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/gcodec.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/gcodec.py</a></font></td></tr></table>
+    <p><tt>Gcodec is a collection of utilities to decode and encode gcode.<br>
+ <br>
+To run gcodec, install python 2.x on your machine, which is avaliable from <a href="http://www.python.org/download/">http://www.python.org/download/</a><br>
+ <br>
+Then in the folder which gcodec is in, type 'python' in a shell to run the python interpreter.  Finally type 'from gcodec import *' to import this program.<br>
+ <br>
+Below is an example of gcodec use.  This example is run in a terminal in the folder which contains gcodec and Screw Holder Bottom_export.gcode.<br>
+ <br>
+&gt;&gt;&gt; from gcodec import *<br>
+&gt;&gt;&gt; getFileText('Screw Holder Bottom_export.gcode')<br>
+'G90<br>
+G21<br>
+M103<br>
+M105<br>
+M106<br>
+M110 S60.0<br>
+M111 S30.0<br>
+M108 S210.0<br>
+M104 S235.0<br>
+G1 X0.37 Y-4.07 Z1.9 F60.0<br>
+M101<br>
+ <br>
+..<br>
+many lines of text<br>
+..</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+</td><td width="25%" valign=top><a href="cStringIO.html">cStringIO</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="traceback.html">traceback</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.gcodec.html#BoundingRectangle">BoundingRectangle</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.gcodec.html#DistanceFeedRate">DistanceFeedRate</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="BoundingRectangle">class <strong>BoundingRectangle</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;get&nbsp;the&nbsp;corners&nbsp;of&nbsp;a&nbsp;gcode&nbsp;text.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="BoundingRectangle-getFromGcodeLines"><strong>getFromGcodeLines</strong></a>(self, lines, radius)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;get&nbsp;the&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;corners.</tt></dd></dl>
+
+<dl><dt><a name="BoundingRectangle-isPointInside"><strong>isPointInside</strong></a>(self, point)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;point&nbsp;is&nbsp;inside&nbsp;the&nbsp;bounding&nbsp;rectangle.</tt></dd></dl>
+
+<dl><dt><a name="BoundingRectangle-parseCorner"><strong>parseCorner</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;use&nbsp;the&nbsp;location&nbsp;to&nbsp;update&nbsp;the&nbsp;bounding&nbsp;corners.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DistanceFeedRate">class <strong>DistanceFeedRate</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;limit&nbsp;the&nbsp;z&nbsp;feed&nbsp;rate&nbsp;and&nbsp;round&nbsp;values.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DistanceFeedRate-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addGcodeFromFeedRateThreadZ"><strong>addGcodeFromFeedRateThreadZ</strong></a>(self, feedRateMinute, thread, travelFeedRateMinute, z)</dt><dd><tt>Add&nbsp;a&nbsp;thread&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addGcodeFromLoop"><strong>addGcodeFromLoop</strong></a>(self, loop, z)</dt><dd><tt>Add&nbsp;the&nbsp;gcode&nbsp;loop.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addGcodeFromThreadZ"><strong>addGcodeFromThreadZ</strong></a>(self, thread, z)</dt><dd><tt>Add&nbsp;a&nbsp;thread&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addGcodeMovementZ"><strong>addGcodeMovementZ</strong></a>(self, point, z)</dt><dd><tt>Add&nbsp;a&nbsp;movement&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addGcodeMovementZWithFeedRate"><strong>addGcodeMovementZWithFeedRate</strong></a>(self, feedRateMinute, point, z)</dt><dd><tt>Add&nbsp;a&nbsp;movement&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addLine"><strong>addLine</strong></a>(self, line)</dt><dd><tt>Add&nbsp;a&nbsp;line&nbsp;of&nbsp;text&nbsp;and&nbsp;a&nbsp;newline&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addLineCheckAlteration"><strong>addLineCheckAlteration</strong></a>(self, line)</dt><dd><tt>Add&nbsp;a&nbsp;line&nbsp;of&nbsp;text&nbsp;and&nbsp;a&nbsp;newline&nbsp;to&nbsp;the&nbsp;output&nbsp;and&nbsp;check&nbsp;to&nbsp;see&nbsp;if&nbsp;it&nbsp;is&nbsp;an&nbsp;alteration&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addLines"><strong>addLines</strong></a>(self, lines)</dt><dd><tt>Add&nbsp;lines&nbsp;of&nbsp;text&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addLinesSetAbsoluteDistanceMode"><strong>addLinesSetAbsoluteDistanceMode</strong></a>(self, lines)</dt><dd><tt>Add&nbsp;lines&nbsp;of&nbsp;text&nbsp;to&nbsp;the&nbsp;output&nbsp;and&nbsp;ensure&nbsp;the&nbsp;absolute&nbsp;mode&nbsp;is&nbsp;set.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addParameter"><strong>addParameter</strong></a>(self, firstWord, parameter)</dt><dd><tt>Add&nbsp;the&nbsp;parameter.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addPerimeterBlock"><strong>addPerimeterBlock</strong></a>(self, loop, z)</dt><dd><tt>Add&nbsp;the&nbsp;edge&nbsp;gcode&nbsp;block&nbsp;for&nbsp;the&nbsp;loop.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addTagBracketedLine"><strong>addTagBracketedLine</strong></a>(self, tagName, value)</dt><dd><tt>Add&nbsp;a&nbsp;begin&nbsp;tag,&nbsp;value&nbsp;and&nbsp;end&nbsp;tag.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addTagBracketedProcedure"><strong>addTagBracketedProcedure</strong></a>(self, procedure)</dt><dd><tt>Add&nbsp;a&nbsp;begin&nbsp;procedure&nbsp;tag,&nbsp;procedure&nbsp;and&nbsp;end&nbsp;procedure&nbsp;tag.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-addTagRoundedLine"><strong>addTagRoundedLine</strong></a>(self, tagName, value)</dt><dd><tt>Add&nbsp;a&nbsp;begin&nbsp;tag,&nbsp;rounded&nbsp;value&nbsp;and&nbsp;end&nbsp;tag.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getBoundaryLine"><strong>getBoundaryLine</strong></a>(self, location)</dt><dd><tt>Get&nbsp;boundary&nbsp;gcode&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getFirstWordMovement"><strong>getFirstWordMovement</strong></a>(self, firstWord, location)</dt><dd><tt>Get&nbsp;the&nbsp;start&nbsp;of&nbsp;the&nbsp;arc&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getInfillBoundaryLine"><strong>getInfillBoundaryLine</strong></a>(self, location)</dt><dd><tt>Get&nbsp;infill&nbsp;boundary&nbsp;gcode&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getIsAlteration"><strong>getIsAlteration</strong></a>(self, line)</dt><dd><tt>Determine&nbsp;if&nbsp;it&nbsp;is&nbsp;an&nbsp;alteration.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getLineWithFeedRate"><strong>getLineWithFeedRate</strong></a>(self, feedRateMinute, line, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;line&nbsp;with&nbsp;a&nbsp;feed&nbsp;rate.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getLineWithX"><strong>getLineWithX</strong></a>(self, line, splitLine, x)</dt><dd><tt>Get&nbsp;the&nbsp;line&nbsp;with&nbsp;an&nbsp;x.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getLineWithY"><strong>getLineWithY</strong></a>(self, line, splitLine, y)</dt><dd><tt>Get&nbsp;the&nbsp;line&nbsp;with&nbsp;a&nbsp;y.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getLineWithZ"><strong>getLineWithZ</strong></a>(self, line, splitLine, z)</dt><dd><tt>Get&nbsp;the&nbsp;line&nbsp;with&nbsp;a&nbsp;z.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getLinearGcodeMovement"><strong>getLinearGcodeMovement</strong></a>(self, point, z)</dt><dd><tt>Get&nbsp;a&nbsp;linear&nbsp;gcode&nbsp;movement.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getLinearGcodeMovementWithFeedRate"><strong>getLinearGcodeMovementWithFeedRate</strong></a>(self, feedRateMinute, point, z)</dt><dd><tt>Get&nbsp;a&nbsp;z&nbsp;limited&nbsp;gcode&nbsp;movement.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-getRounded"><strong>getRounded</strong></a>(self, number)</dt><dd><tt>Get&nbsp;number&nbsp;rounded&nbsp;to&nbsp;the&nbsp;number&nbsp;of&nbsp;carried&nbsp;decimal&nbsp;places&nbsp;as&nbsp;a&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="DistanceFeedRate-parseSplitLine"><strong>parseSplitLine</strong></a>(self, firstWord, splitLine)</dt><dd><tt>Parse&nbsp;gcode&nbsp;split&nbsp;line&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addLineAndNewlineIfNecessary"><strong>addLineAndNewlineIfNecessary</strong></a>(line, output)</dt><dd><tt>Add&nbsp;the&nbsp;line&nbsp;and&nbsp;if&nbsp;the&nbsp;line&nbsp;does&nbsp;not&nbsp;end&nbsp;with&nbsp;a&nbsp;newline&nbsp;add&nbsp;a&nbsp;newline.</tt></dd></dl>
+ <dl><dt><a name="-addLinesToCString"><strong>addLinesToCString</strong></a>(cString, lines)</dt><dd><tt>Add&nbsp;lines&nbsp;which&nbsp;have&nbsp;something&nbsp;to&nbsp;cStringIO.</tt></dd></dl>
+ <dl><dt><a name="-getArcDistance"><strong>getArcDistance</strong></a>(relativeLocation, splitLine)</dt><dd><tt>Get&nbsp;arc&nbsp;distance.</tt></dd></dl>
+ <dl><dt><a name="-getDoubleAfterFirstLetter"><strong>getDoubleAfterFirstLetter</strong></a>(word)</dt><dd><tt>Get&nbsp;the&nbsp;double&nbsp;value&nbsp;of&nbsp;the&nbsp;word&nbsp;after&nbsp;the&nbsp;first&nbsp;letter.</tt></dd></dl>
+ <dl><dt><a name="-getDoubleForLetter"><strong>getDoubleForLetter</strong></a>(letter, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;double&nbsp;value&nbsp;of&nbsp;the&nbsp;word&nbsp;after&nbsp;the&nbsp;first&nbsp;occurence&nbsp;of&nbsp;the&nbsp;letter&nbsp;in&nbsp;the&nbsp;split&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getDoubleFromCharacterSplitLine"><strong>getDoubleFromCharacterSplitLine</strong></a>(character, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;double&nbsp;value&nbsp;of&nbsp;the&nbsp;string&nbsp;after&nbsp;the&nbsp;first&nbsp;occurence&nbsp;of&nbsp;the&nbsp;character&nbsp;in&nbsp;the&nbsp;split&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getDoubleFromCharacterSplitLineValue"><strong>getDoubleFromCharacterSplitLineValue</strong></a>(character, splitLine, value)</dt><dd><tt>Get&nbsp;the&nbsp;double&nbsp;value&nbsp;of&nbsp;the&nbsp;string&nbsp;after&nbsp;the&nbsp;first&nbsp;occurence&nbsp;of&nbsp;the&nbsp;character&nbsp;in&nbsp;the&nbsp;split&nbsp;line,&nbsp;if&nbsp;it&nbsp;does&nbsp;not&nbsp;exist&nbsp;return&nbsp;the&nbsp;value.</tt></dd></dl>
+ <dl><dt><a name="-getFeedRateMinute"><strong>getFeedRateMinute</strong></a>(feedRateMinute, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;feed&nbsp;rate&nbsp;per&nbsp;minute&nbsp;if&nbsp;the&nbsp;split&nbsp;line&nbsp;has&nbsp;a&nbsp;feed&nbsp;rate.</tt></dd></dl>
+ <dl><dt><a name="-getFirstWord"><strong>getFirstWord</strong></a>(splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;first&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getFirstWordFromLine"><strong>getFirstWordFromLine</strong></a>(line)</dt><dd><tt>Get&nbsp;the&nbsp;first&nbsp;word&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getFirstWordIndexReverse"><strong>getFirstWordIndexReverse</strong></a>(firstWord, lines, startIndex)</dt><dd><tt>Parse&nbsp;gcode&nbsp;in&nbsp;reverse&nbsp;order&nbsp;until&nbsp;the&nbsp;first&nbsp;word&nbsp;if&nbsp;there&nbsp;is&nbsp;one,&nbsp;otherwise&nbsp;return&nbsp;-1.</tt></dd></dl>
+ <dl><dt><a name="-getGcodeFileText"><strong>getGcodeFileText</strong></a>(fileName, gcodeText)</dt><dd><tt>Get&nbsp;the&nbsp;gcode&nbsp;text&nbsp;from&nbsp;a&nbsp;file&nbsp;if&nbsp;it&nbsp;the&nbsp;gcode&nbsp;text&nbsp;is&nbsp;empty&nbsp;and&nbsp;if&nbsp;the&nbsp;file&nbsp;is&nbsp;a&nbsp;gcode&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getGcodeWithoutDuplication"><strong>getGcodeWithoutDuplication</strong></a>(duplicateWord, gcodeText)</dt><dd><tt>Get&nbsp;gcode&nbsp;text&nbsp;without&nbsp;duplicate&nbsp;first&nbsp;words.</tt></dd></dl>
+ <dl><dt><a name="-getIndexOfStartingWithSecond"><strong>getIndexOfStartingWithSecond</strong></a>(letter, splitLine)</dt><dd><tt>Get&nbsp;index&nbsp;of&nbsp;the&nbsp;first&nbsp;occurence&nbsp;of&nbsp;the&nbsp;given&nbsp;letter&nbsp;in&nbsp;the&nbsp;split&nbsp;line,&nbsp;starting&nbsp;with&nbsp;the&nbsp;second&nbsp;word.&nbsp;&nbsp;Return&nbsp;-&nbsp;1&nbsp;if&nbsp;letter&nbsp;is&nbsp;not&nbsp;found</tt></dd></dl>
+ <dl><dt><a name="-getLineWithValueString"><strong>getLineWithValueString</strong></a>(character, line, splitLine, valueString)</dt><dd><tt>Get&nbsp;the&nbsp;line&nbsp;with&nbsp;a&nbsp;valueString.</tt></dd></dl>
+ <dl><dt><a name="-getLocationFromSplitLine"><strong>getLocationFromSplitLine</strong></a>(oldLocation, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;location&nbsp;from&nbsp;the&nbsp;split&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getRotationBySplitLine"><strong>getRotationBySplitLine</strong></a>(splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;complex&nbsp;rotation&nbsp;from&nbsp;the&nbsp;split&nbsp;gcode&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getSplitLineBeforeBracketSemicolon"><strong>getSplitLineBeforeBracketSemicolon</strong></a>(line)</dt><dd><tt>Get&nbsp;the&nbsp;split&nbsp;line&nbsp;before&nbsp;a&nbsp;bracket&nbsp;or&nbsp;semicolon.</tt></dd></dl>
+ <dl><dt><a name="-getStringFromCharacterSplitLine"><strong>getStringFromCharacterSplitLine</strong></a>(character, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;after&nbsp;the&nbsp;first&nbsp;occurence&nbsp;of&nbsp;the&nbsp;character&nbsp;in&nbsp;the&nbsp;split&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getTagBracketedLine"><strong>getTagBracketedLine</strong></a>(tagName, value)</dt><dd><tt>Get&nbsp;line&nbsp;with&nbsp;a&nbsp;begin&nbsp;tag,&nbsp;value&nbsp;and&nbsp;end&nbsp;tag.</tt></dd></dl>
+ <dl><dt><a name="-getTagBracketedProcedure"><strong>getTagBracketedProcedure</strong></a>(procedure)</dt><dd><tt>Get&nbsp;line&nbsp;with&nbsp;a&nbsp;begin&nbsp;procedure&nbsp;tag,&nbsp;procedure&nbsp;and&nbsp;end&nbsp;procedure&nbsp;tag.</tt></dd></dl>
+ <dl><dt><a name="-isProcedureDone"><strong>isProcedureDone</strong></a>(gcodeText, procedure)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;procedure&nbsp;has&nbsp;been&nbsp;done&nbsp;on&nbsp;the&nbsp;gcode&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-isProcedureDoneOrFileIsEmpty"><strong>isProcedureDoneOrFileIsEmpty</strong></a>(gcodeText, procedure)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;procedure&nbsp;has&nbsp;been&nbsp;done&nbsp;on&nbsp;the&nbsp;gcode&nbsp;text&nbsp;or&nbsp;the&nbsp;file&nbsp;is&nbsp;empty.</tt></dd></dl>
+ <dl><dt><a name="-isThereAFirstWord"><strong>isThereAFirstWord</strong></a>(firstWord, lines, startIndex)</dt><dd><tt>Parse&nbsp;gcode&nbsp;until&nbsp;the&nbsp;first&nbsp;word&nbsp;if&nbsp;there&nbsp;is&nbsp;one.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

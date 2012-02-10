@@ -1,0 +1,6 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<lathe axisEnd='[-1, 0, 1]' axisStart='[-1, 0, 0]' end='270' target='=[[[0, 0, 3], [8,0,5], [0, 0, 7]], [[2, 0, 6.1], [5,0,5], [2, 0, 4]]]'/>
+	<!--
+	-->
+</fabmetheus>

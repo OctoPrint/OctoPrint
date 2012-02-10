@@ -1,0 +1,100 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.analyze_plugins.export_canvas_plugins.postscript</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.html"><font color="#ffffff">analyze_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.export_canvas_plugins.html"><font color="#ffffff">export_canvas_plugins</font></a>.postscript</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/export_canvas_plugins/postscript.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/export_canvas_plugins/postscript.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.comment.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.analyze_plugins.export_canvas_plugins.scalable_vector_graphics.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Postscript is an export canvas plugin to export the canvas to a postscript file.<br>
+ <br>
+When the export menu item in the file menu in an analyze viewer tool, like skeinlayer or skeiniso is clicked, the postscript dialog will be displayed.  When the 'Export to Postscript' button on that dialog is clicked, the canvas will be exported as a postscript file.  If the 'Postscript Program' is set to a program name, the postscript file will be sent to that program to be opened.  The default is gimp, the Gnu Image Manipulation Program (Gimp), which is open source, can open postscript and save in a variety of formats.  It is available at:<br>
+<a href="http://www.gimp.org/">http://www.gimp.org/</a><br>
+ <br>
+If furthermore the 'File Extension' is set to a file extension, the postscript file will be sent to the program, along with the file extension for the converted output.  The default is blank because some systems do not have an image conversion program; if you have or will install an image conversion program, a common 'File Extension' is png.  A good open source conversion program is Image Magick, which is available at:<br>
+<a href="http://www.imagemagick.org/script/index.php">http://www.imagemagick.org/script/index.php</a><br>
+ <br>
+An export canvas plugin is a script in the export_canvas_plugins folder which has the function getNewRepository, and which has a repository class with the functions setCanvasFileNameSuffix to set variables and execute to save the file.  It is meant to be run from an analyze viewer tool, like skeinlayer or skeiniso.  To ensure that the plugin works on platforms which do not handle file capitalization properly, give the plugin a lower case name.</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.comment.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.analyze_plugins.export_canvas_plugins.scalable_vector_graphics.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+</td><td width="25%" valign=top><a href="cStringIO.html">cStringIO</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+<a href="sys.html">sys</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.export_canvas_plugins.postscript.html#PostscriptRepository">PostscriptRepository</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="PostscriptRepository">class <strong>PostscriptRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;export&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="PostscriptRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="PostscriptRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Convert&nbsp;to&nbsp;postscript&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.&nbsp;Export&nbsp;the&nbsp;canvas&nbsp;as&nbsp;a&nbsp;postscript&nbsp;file.</tt></dd></dl>
+
+<dl><dt><a name="PostscriptRepository-setCanvasFileNameSuffix"><strong>setCanvasFileNameSuffix</strong></a>(self, canvas, fileName, suffix)</dt><dd><tt>Set&nbsp;the&nbsp;canvas&nbsp;and&nbsp;initialize&nbsp;the&nbsp;execute&nbsp;title.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;file&nbsp;or&nbsp;directory&nbsp;dialog.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

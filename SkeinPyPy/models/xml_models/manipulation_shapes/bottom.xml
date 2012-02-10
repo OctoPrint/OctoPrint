@@ -1,0 +1,15 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='pathTest' name='bottomTest'>
+		<circle radius='9'/>
+		<lineation target='=[[-5, 0, 5], [5, 0, 5], [0, 15, 5]]'/>
+	</path>
+	<bottom altitude='17' target='=document.getElementsByName(bottomTest)'/>
+	<extrude qqqname='bottomTest' target='=document.getElementByID(pathTest)'>
+		<matrix translate.z='4'/>
+	</extrude>
+	<!--
+	<write target='=document.getElementByID(bottomTest)' writeMatrix='false'/>
+	<write folder='../test' target='=document.getElementByID(bottomTest)' writeMatrix='false'/>
+	-->
+</fabmetheus>

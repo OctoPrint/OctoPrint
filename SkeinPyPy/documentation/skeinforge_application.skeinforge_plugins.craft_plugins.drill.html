@@ -1,0 +1,188 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.drill</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.drill</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/drill.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/drill.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.dimension.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.export.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Drill is a script to drill down small holes.<br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Drilling Margin">Drilling Margin</a><br />
+&nbsp;&nbsp;<a href="#Drilling Margin on Top">Drilling Margin on Top</a><br />
+&nbsp;&nbsp;<a href="#Drilling Margin on Bottom">Drilling Margin on Bottom</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Drill' checkbox is on.  When it is on, the functions described below will work, when it is off, the functions will not be called.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Drilling Margin" id="Drilling Margin"></a><h3>Drilling Margin</h3>
+
+The drill script will move the tool from the top of the hole plus the 'Drilling Margin on Top', to the bottom of the hole minus the 'Drilling Margin on Bottom'.<br>
+ <br>
+<a name="Drilling Margin on Top" id="Drilling Margin on Top"></a><h3>Drilling Margin on Top</h3>
+
+Default is three millimeters.<br>
+ <br>
+<a name="Drilling Margin on Bottom" id="Drilling Margin on Bottom"></a><h3>Drilling Margin on Bottom</h3>
+
+Default is one millimeter.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples drill the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and drill.py.<br>
+ <br>
+&gt; python drill.py<br>
+This brings up the drill dialog.<br>
+ <br>
+&gt; python drill.py Screw Holder Bottom.stl<br>
+The drill tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The drill tool has created the file:<br>
+.. Screw Holder Bottom_drill.gcode</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.dimension.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.export.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+<a href="sys.html">sys</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.drill.html#DrillRepository">DrillRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.drill.html#DrillSkein">DrillSkein</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.drill.html#ThreadLayer">ThreadLayer</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DrillRepository">class <strong>DrillRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;drill&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DrillRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="DrillRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Drill&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DrillSkein">class <strong>DrillSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;drill&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DrillSkein-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="DrillSkein-addDrillHoles"><strong>addDrillHoles</strong></a>(self)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-addGcodeFromVerticalThread"><strong>addGcodeFromVerticalThread</strong></a>(self, point, zBegin, zEnd)</dt><dd><tt>Add&nbsp;a&nbsp;thread&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-addThreadLayerIfNone"><strong>addThreadLayerIfNone</strong></a>(self)</dt><dd><tt>Add&nbsp;a&nbsp;thread&nbsp;layer&nbsp;if&nbsp;it&nbsp;is&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;drill&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-getDrillingCenterDepth"><strong>getDrillingCenterDepth</strong></a>(self, drillingCenterDepth, drillPoint)</dt><dd><tt>Get&nbsp;the&nbsp;drilling&nbsp;center&nbsp;depth.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-isPointClose"><strong>isPointClose</strong></a>(self, drillPoint, points)</dt><dd><tt>Determine&nbsp;if&nbsp;a&nbsp;point&nbsp;on&nbsp;the&nbsp;thread&nbsp;layer&nbsp;is&nbsp;close.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-linearMove"><strong>linearMove</strong></a>(self, splitLine)</dt><dd><tt>Add&nbsp;a&nbsp;linear&nbsp;move&nbsp;to&nbsp;the&nbsp;loop.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="DrillSkein-parseNestedRing"><strong>parseNestedRing</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;nested&nbsp;ring.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ThreadLayer">class <strong>ThreadLayer</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;layer&nbsp;of&nbsp;loops&nbsp;and&nbsp;paths.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ThreadLayer-__init__"><strong>__init__</strong></a>(self, z)</dt><dd><tt>Thread&nbsp;layer&nbsp;constructor.</tt></dd></dl>
+
+<dl><dt><a name="ThreadLayer-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;thread&nbsp;layer.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, text, repository<font color="#909090">=None</font>)</dt><dd><tt>Drill&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file&nbsp;or&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Drill&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-getPolygonCenter"><strong>getPolygonCenter</strong></a>(polygon)</dt><dd><tt>Get&nbsp;the&nbsp;centroid&nbsp;of&nbsp;a&nbsp;polygon.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;drill&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Drill&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

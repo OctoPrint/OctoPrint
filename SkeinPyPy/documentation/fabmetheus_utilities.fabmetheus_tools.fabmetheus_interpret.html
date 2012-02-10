@@ -1,0 +1,87 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.fabmetheus_tools.html"><font color="#ffffff">fabmetheus_tools</font></a>.fabmetheus_interpret</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/fabmetheus_interpret.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/fabmetheus_interpret.py</a></font></td></tr></table>
+    <p><tt>Fabmetheus interpret is a fabmetheus utility to interpret a file, turning it into fabmetheus constructive solid geometry xml.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="os.html">os</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+<a href="time.html">time</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html#InterpretRepository">InterpretRepository</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="InterpretRepository">class <strong>InterpretRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;interpret&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="InterpretRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="InterpretRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Write&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCarving"><strong>getCarving</strong></a>(fileName)</dt><dd><tt>Get&nbsp;carving.</tt></dd></dl>
+ <dl><dt><a name="-getGNUTranslatorFilesUnmodified"><strong>getGNUTranslatorFilesUnmodified</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;types&nbsp;from&nbsp;the&nbsp;translators&nbsp;in&nbsp;the&nbsp;import&nbsp;plugins&nbsp;folder.</tt></dd></dl>
+ <dl><dt><a name="-getGNUTranslatorGcodeFileTypeTuples"><strong>getGNUTranslatorGcodeFileTypeTuples</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;type&nbsp;tuples&nbsp;from&nbsp;the&nbsp;translators&nbsp;in&nbsp;the&nbsp;import&nbsp;plugins&nbsp;folder&nbsp;plus&nbsp;gcode.</tt></dd></dl>
+ <dl><dt><a name="-getImportPluginFileNames"><strong>getImportPluginFileNames</strong></a>()</dt><dd><tt>Get&nbsp;interpret&nbsp;plugin&nbsp;fileNames.</tt></dd></dl>
+ <dl><dt><a name="-getInterpretPlugin"><strong>getInterpretPlugin</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;interpret&nbsp;plugin&nbsp;for&nbsp;the&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-getPluginsDirectoryPath"><strong>getPluginsDirectoryPath</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;plugins&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getTranslatorFileTypeTuples"><strong>getTranslatorFileTypeTuples</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;types&nbsp;from&nbsp;the&nbsp;translators&nbsp;in&nbsp;the&nbsp;import&nbsp;plugins&nbsp;folder.</tt></dd></dl>
+ <dl><dt><a name="-getWindowAnalyzeFile"><strong>getWindowAnalyzeFile</strong></a>(fileName)</dt><dd><tt>Get&nbsp;file&nbsp;interpretion.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

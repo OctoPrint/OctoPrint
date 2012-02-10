@@ -1,0 +1,9 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<function id='getPlus' parameters='number'>
+		<statement a='12'/>
+		<statement a='+=number'/>
+		<return return='=a'/>
+	</function>
+	<dictionary plus='=getPlus(7.0)'/>
+</fabmetheus>

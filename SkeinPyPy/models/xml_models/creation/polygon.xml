@@ -1,0 +1,11 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<dictionary polygonFivePointTwo='=creation.getPolygon(5.2)'/>
+	<dictionary polygonFive='=creation.getPolygon()*5'/>
+	<polygon id='polygon_apothem20' apothem='20.0'/>
+	<polygon id='polygon_apothem20_sides3' apothem='20.0' sides='3'/>
+	<polygon id='polygon_inradius20_sides5' inradius='20.0' sides='5'/>
+	<polygon id='polygon_inradius20_sides5_spiral' inradius='20.0' sides='5' spiral='[15,0,0]'/>
+	<polygon id='polygon_radius20_sides3' radius='20.0' sides='3'/>
+	<extrude target='=document.getElementByID(polygon_inradius20_sides5)'/>
+</fabmetheus>

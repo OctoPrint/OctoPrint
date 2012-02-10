@@ -1,0 +1,279 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.svg_reader</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.svg_reader</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/svg_reader.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/svg_reader.py</a></font></td></tr></table>
+    <p><tt>Svg reader.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+<a href="math.html">math</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="fabmetheus_utilities.svg_writer.html">fabmetheus_utilities.svg_writer</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="traceback.html">traceback</a><br>
+<a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html">fabmetheus_utilities.geometry.solids.triangle_mesh</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.svg_reader.html#FontReader">FontReader</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.svg_reader.html#Glyph">Glyph</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.svg_reader.html#MatrixSVG">MatrixSVG</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.svg_reader.html#PathReader">PathReader</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.svg_reader.html#SVGReader">SVGReader</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FontReader">class <strong>FontReader</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;read&nbsp;a&nbsp;font&nbsp;in&nbsp;the&nbsp;fonts&nbsp;folder.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FontReader-__init__"><strong>__init__</strong></a>(self, fontFamily)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FontReader-getGlyph"><strong>getGlyph</strong></a>(self, character, yAxisPointingUpward)</dt><dd><tt>Get&nbsp;the&nbsp;glyph&nbsp;for&nbsp;the&nbsp;character.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Glyph">class <strong>Glyph</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;handle&nbsp;a&nbsp;glyph.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Glyph-__init__"><strong>__init__</strong></a>(self, elementNode, unitsPerEM, yAxisPointingUpward)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Glyph-getSizedAdvancedLoops"><strong>getSizedAdvancedLoops</strong></a>(self, fontSize, horizontalAdvanceX, yAxisPointingUpward<font color="#909090">=True</font>)</dt><dd><tt>Get&nbsp;loops&nbsp;for&nbsp;font&nbsp;size,&nbsp;advanced&nbsp;horizontally.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="MatrixSVG">class <strong>MatrixSVG</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Two&nbsp;by&nbsp;three&nbsp;svg&nbsp;matrix.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="MatrixSVG-__init__"><strong>__init__</strong></a>(self, tricomplex<font color="#909090">=None</font>)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="MatrixSVG-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;two&nbsp;by&nbsp;three&nbsp;svg&nbsp;matrix.</tt></dd></dl>
+
+<dl><dt><a name="MatrixSVG-getOtherTimesSelf"><strong>getOtherTimesSelf</strong></a>(self, otherTricomplex)</dt><dd><tt>Get&nbsp;the&nbsp;other&nbsp;matrix&nbsp;multiplied&nbsp;by&nbsp;this&nbsp;matrix.</tt></dd></dl>
+
+<dl><dt><a name="MatrixSVG-getSelfTimesOther"><strong>getSelfTimesOther</strong></a>(self, otherTricomplex)</dt><dd><tt>Get&nbsp;this&nbsp;matrix&nbsp;multiplied&nbsp;by&nbsp;the&nbsp;other&nbsp;matrix.</tt></dd></dl>
+
+<dl><dt><a name="MatrixSVG-getTransformedPath"><strong>getTransformedPath</strong></a>(self, path)</dt><dd><tt>Get&nbsp;transformed&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="MatrixSVG-getTransformedPaths"><strong>getTransformedPaths</strong></a>(self, paths)</dt><dd><tt>Get&nbsp;transformed&nbsp;paths.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="PathReader">class <strong>PathReader</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;read&nbsp;svg&nbsp;path.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="PathReader-__init__"><strong>__init__</strong></a>(self, elementNode, loops, yAxisPointingUpward)</dt><dd><tt>Add&nbsp;to&nbsp;path&nbsp;string&nbsp;to&nbsp;loops.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathArc"><strong>addPathArc</strong></a>(self, end)</dt><dd><tt>Add&nbsp;an&nbsp;arc&nbsp;to&nbsp;the&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathCubic"><strong>addPathCubic</strong></a>(self, controlPoints, end)</dt><dd><tt>Add&nbsp;a&nbsp;cubic&nbsp;curve&nbsp;to&nbsp;the&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathCubicReflected"><strong>addPathCubicReflected</strong></a>(self, controlPoint, end)</dt><dd><tt>Add&nbsp;a&nbsp;cubic&nbsp;curve&nbsp;to&nbsp;the&nbsp;path&nbsp;from&nbsp;a&nbsp;reflected&nbsp;control&nbsp;point.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathLine"><strong>addPathLine</strong></a>(self, lineFunction, point)</dt><dd><tt>Add&nbsp;a&nbsp;line&nbsp;to&nbsp;the&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathLineAxis"><strong>addPathLineAxis</strong></a>(self, point)</dt><dd><tt>Add&nbsp;an&nbsp;axis&nbsp;line&nbsp;to&nbsp;the&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathLineByFunction"><strong>addPathLineByFunction</strong></a>(self, lineFunction)</dt><dd><tt>Add&nbsp;a&nbsp;line&nbsp;to&nbsp;the&nbsp;path&nbsp;by&nbsp;line&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathMove"><strong>addPathMove</strong></a>(self, lineFunction, point)</dt><dd><tt>Add&nbsp;an&nbsp;axis&nbsp;line&nbsp;to&nbsp;the&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathQuadratic"><strong>addPathQuadratic</strong></a>(self, controlPoint, end)</dt><dd><tt>Add&nbsp;a&nbsp;quadratic&nbsp;curve&nbsp;to&nbsp;the&nbsp;path.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-addPathQuadraticReflected"><strong>addPathQuadraticReflected</strong></a>(self, end)</dt><dd><tt>Add&nbsp;a&nbsp;quadratic&nbsp;curve&nbsp;to&nbsp;the&nbsp;path&nbsp;from&nbsp;a&nbsp;reflected&nbsp;control&nbsp;point.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-getComplexByExtraIndex"><strong>getComplexByExtraIndex</strong></a>(self, extraIndex<font color="#909090">=0</font>)</dt><dd><tt>Get&nbsp;complex&nbsp;from&nbsp;the&nbsp;extraIndex.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-getComplexRelative"><strong>getComplexRelative</strong></a>(self)</dt><dd><tt>Get&nbsp;relative&nbsp;complex.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-getFloatByExtraIndex"><strong>getFloatByExtraIndex</strong></a>(self, extraIndex<font color="#909090">=0</font>)</dt><dd><tt>Get&nbsp;float&nbsp;from&nbsp;the&nbsp;extraIndex.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-getOldPoint"><strong>getOldPoint</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;old&nbsp;point.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordA"><strong>processPathWordA</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;A.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordC"><strong>processPathWordC</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;C.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordH"><strong>processPathWordH</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;H.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordL"><strong>processPathWordL</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;L.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordM"><strong>processPathWordM</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;M.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordQ"><strong>processPathWordQ</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;Q.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordS"><strong>processPathWordS</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;S.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordT"><strong>processPathWordT</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;T.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordV"><strong>processPathWordV</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;V.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordZ"><strong>processPathWordZ</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;Z.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWorda"><strong>processPathWorda</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;a.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordc"><strong>processPathWordc</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;C.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordh"><strong>processPathWordh</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;h.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordl"><strong>processPathWordl</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;l.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordm"><strong>processPathWordm</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;m.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordq"><strong>processPathWordq</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;q.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWords"><strong>processPathWords</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;s.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordt"><strong>processPathWordt</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;t.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordv"><strong>processPathWordv</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;v.</tt></dd></dl>
+
+<dl><dt><a name="PathReader-processPathWordz"><strong>processPathWordz</strong></a>(self)</dt><dd><tt>Process&nbsp;path&nbsp;word&nbsp;z.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SVGReader">class <strong>SVGReader</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>An&nbsp;svg&nbsp;carving.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SVGReader-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Add&nbsp;empty&nbsp;lists.</tt></dd></dl>
+
+<dl><dt><a name="SVGReader-flipDirectLayer"><strong>flipDirectLayer</strong></a>(self, loopLayer)</dt><dd><tt>Flip&nbsp;the&nbsp;y&nbsp;coordinate&nbsp;of&nbsp;the&nbsp;layer&nbsp;and&nbsp;direct&nbsp;the&nbsp;loops.</tt></dd></dl>
+
+<dl><dt><a name="SVGReader-getLoopLayer"><strong>getLoopLayer</strong></a>(self)</dt><dd><tt>Return&nbsp;the&nbsp;rotated&nbsp;loop&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="SVGReader-parseSVG"><strong>parseSVG</strong></a>(self, fileName, svgText)</dt><dd><tt>Parse&nbsp;SVG&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="SVGReader-parseSVGByElementNode"><strong>parseSVGByElementNode</strong></a>(self, elementNode)</dt><dd><tt>Parse&nbsp;SVG&nbsp;by&nbsp;elementNode.</tt></dd></dl>
+
+<dl><dt><a name="SVGReader-processElementNode"><strong>processElementNode</strong></a>(self, elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;xml&nbsp;element.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addFunctionsToDictionary"><strong>addFunctionsToDictionary</strong></a>(dictionary, functions, prefix)</dt><dd><tt>Add&nbsp;functions&nbsp;to&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getArcComplexes"><strong>getArcComplexes</strong></a>(begin, end, largeArcFlag, radius, sweepFlag, xAxisRotation)</dt><dd><tt>Get&nbsp;the&nbsp;arc&nbsp;complexes,&nbsp;procedure&nbsp;at&nbsp;<a href="http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes">http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes</a></tt></dd></dl>
+ <dl><dt><a name="-getChainMatrixSVG"><strong>getChainMatrixSVG</strong></a>(elementNode, matrixSVG)</dt><dd><tt>Get&nbsp;chain&nbsp;matrixSVG&nbsp;by&nbsp;svgElement.</tt></dd></dl>
+ <dl><dt><a name="-getChainMatrixSVGIfNecessary"><strong>getChainMatrixSVGIfNecessary</strong></a>(elementNode, yAxisPointingUpward)</dt><dd><tt>Get&nbsp;chain&nbsp;matrixSVG&nbsp;by&nbsp;svgElement&nbsp;and&nbsp;yAxisPointingUpward.</tt></dd></dl>
+ <dl><dt><a name="-getCubicPoint"><strong>getCubicPoint</strong></a>(along, begin, controlPoints, end)</dt><dd><tt>Get&nbsp;the&nbsp;cubic&nbsp;point.</tt></dd></dl>
+ <dl><dt><a name="-getCubicPoints"><strong>getCubicPoints</strong></a>(begin, controlPoints, end, numberOfBezierPoints<font color="#909090">=22</font>)</dt><dd><tt>Get&nbsp;the&nbsp;cubic&nbsp;points.</tt></dd></dl>
+ <dl><dt><a name="-getFontReader"><strong>getFontReader</strong></a>(fontFamily)</dt><dd><tt>Get&nbsp;the&nbsp;font&nbsp;reader&nbsp;for&nbsp;the&nbsp;fontFamily.</tt></dd></dl>
+ <dl><dt><a name="-getFontsDirectoryPath"><strong>getFontsDirectoryPath</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;fonts&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getLabelString"><strong>getLabelString</strong></a>(dictionary)</dt><dd><tt>Get&nbsp;the&nbsp;label&nbsp;string&nbsp;for&nbsp;the&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getMatrixSVG"><strong>getMatrixSVG</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;matrixSVG&nbsp;by&nbsp;svgElement.</tt></dd></dl>
+ <dl><dt><a name="-getQuadraticPoint"><strong>getQuadraticPoint</strong></a>(along, begin, controlPoint, end)</dt><dd><tt>Get&nbsp;the&nbsp;quadratic&nbsp;point.</tt></dd></dl>
+ <dl><dt><a name="-getQuadraticPoints"><strong>getQuadraticPoints</strong></a>(begin, controlPoint, end, numberOfBezierPoints<font color="#909090">=22</font>)</dt><dd><tt>Get&nbsp;the&nbsp;quadratic&nbsp;points.</tt></dd></dl>
+ <dl><dt><a name="-getRightStripAlphabetPercent"><strong>getRightStripAlphabetPercent</strong></a>(word)</dt><dd><tt>Get&nbsp;word&nbsp;with&nbsp;alphabet&nbsp;characters&nbsp;and&nbsp;the&nbsp;percent&nbsp;sign&nbsp;stripped&nbsp;from&nbsp;the&nbsp;right.</tt></dd></dl>
+ <dl><dt><a name="-getRightStripMinusSplit"><strong>getRightStripMinusSplit</strong></a>(lineString)</dt><dd><tt>Get&nbsp;string&nbsp;with&nbsp;spaces&nbsp;after&nbsp;the&nbsp;minus&nbsp;sign&nbsp;stripped.</tt></dd></dl>
+ <dl><dt><a name="-getStrokeRadius"><strong>getStrokeRadius</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;the&nbsp;stroke&nbsp;radius.</tt></dd></dl>
+ <dl><dt><a name="-getStyleValue"><strong>getStyleValue</strong></a>(defaultValue, elementNode, key)</dt><dd><tt>Get&nbsp;the&nbsp;stroke&nbsp;value&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-getTextComplexLoops"><strong>getTextComplexLoops</strong></a>(fontFamily, fontSize, text, yAxisPointingUpward<font color="#909090">=True</font>)</dt><dd><tt>Get&nbsp;text&nbsp;as&nbsp;complex&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-getTransformedFillOutline"><strong>getTransformedFillOutline</strong></a>(elementNode, loop, yAxisPointingUpward)</dt><dd><tt>Get&nbsp;the&nbsp;loops&nbsp;if&nbsp;fill&nbsp;is&nbsp;on,&nbsp;otherwise&nbsp;get&nbsp;the&nbsp;outlines.</tt></dd></dl>
+ <dl><dt><a name="-getTransformedOutlineByPath"><strong>getTransformedOutlineByPath</strong></a>(elementNode, path, yAxisPointingUpward)</dt><dd><tt>Get&nbsp;the&nbsp;outline&nbsp;from&nbsp;the&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getTransformedOutlineByPaths"><strong>getTransformedOutlineByPaths</strong></a>(elementNode, paths, yAxisPointingUpward)</dt><dd><tt>Get&nbsp;the&nbsp;outline&nbsp;from&nbsp;the&nbsp;paths.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplexTimesColumn"><strong>getTricomplexTimesColumn</strong></a>(firstTricomplex, otherColumn)</dt><dd><tt>Get&nbsp;this&nbsp;matrix&nbsp;multiplied&nbsp;by&nbsp;the&nbsp;otherColumn.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplexTimesOther"><strong>getTricomplexTimesOther</strong></a>(firstTricomplex, otherTricomplex)</dt><dd><tt>Get&nbsp;the&nbsp;first&nbsp;tricomplex&nbsp;multiplied&nbsp;by&nbsp;the&nbsp;other&nbsp;tricomplex.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplexmatrix"><strong>getTricomplexmatrix</strong></a>(transformWords)</dt><dd><tt>Get&nbsp;matrixSVG&nbsp;by&nbsp;transformWords.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplexrotate"><strong>getTricomplexrotate</strong></a>(transformWords)</dt><dd><tt>Get&nbsp;matrixSVG&nbsp;by&nbsp;transformWords.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplexscale"><strong>getTricomplexscale</strong></a>(transformWords)</dt><dd><tt>Get&nbsp;matrixSVG&nbsp;by&nbsp;transformWords.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplexskewX"><strong>getTricomplexskewX</strong></a>(transformWords)</dt><dd><tt>Get&nbsp;matrixSVG&nbsp;by&nbsp;transformWords.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplexskewY"><strong>getTricomplexskewY</strong></a>(transformWords)</dt><dd><tt>Get&nbsp;matrixSVG&nbsp;by&nbsp;transformWords.</tt></dd></dl>
+ <dl><dt><a name="-getTricomplextranslate"><strong>getTricomplextranslate</strong></a>(transformWords)</dt><dd><tt>Get&nbsp;matrixSVG&nbsp;by&nbsp;transformWords.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementcircle"><strong>processSVGElementcircle</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementellipse"><strong>processSVGElementellipse</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementg"><strong>processSVGElementg</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementline"><strong>processSVGElementline</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementpath"><strong>processSVGElementpath</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementpolygon"><strong>processSVGElementpolygon</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementpolyline"><strong>processSVGElementpolyline</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementrect"><strong>processSVGElementrect</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+ <dl><dt><a name="-processSVGElementtext"><strong>processSVGElementtext</strong></a>(elementNode, svgReader)</dt><dd><tt>Process&nbsp;elementNode&nbsp;by&nbsp;svgReader.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Nophead &lt;http://hydraraptor.blogspot.com/&gt;<font color="#c040c0">\n</font>Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)<br>
+<strong>globalFontFileNames</strong> = None<br>
+<strong>globalFontReaderDictionary</strong> = {}<br>
+<strong>globalGetTricomplexDictionary</strong> = {'matrix': &lt;function getTricomplexmatrix&gt;, 'rotate': &lt;function getTricomplexrotate&gt;, 'scale': &lt;function getTricomplexscale&gt;, 'skewX': &lt;function getTricomplexskewX&gt;, 'skewY': &lt;function getTricomplexskewY&gt;, 'translate': &lt;function getTricomplextranslate&gt;}<br>
+<strong>globalGetTricomplexFunctions</strong> = [&lt;function getTricomplexmatrix&gt;, &lt;function getTricomplexrotate&gt;, &lt;function getTricomplexscale&gt;, &lt;function getTricomplexskewX&gt;, &lt;function getTricomplexskewY&gt;, &lt;function getTricomplextranslate&gt;]<br>
+<strong>globalNumberOfBezierPoints</strong> = 22<br>
+<strong>globalNumberOfCirclePoints</strong> = 44<br>
+<strong>globalNumberOfCornerPoints</strong> = 11<br>
+<strong>globalProcessPathWordDictionary</strong> = {'A': &lt;unbound method PathReader.processPathWordA&gt;, 'C': &lt;unbound method PathReader.processPathWordC&gt;, 'H': &lt;unbound method PathReader.processPathWordH&gt;, 'L': &lt;unbound method PathReader.processPathWordL&gt;, 'M': &lt;unbound method PathReader.processPathWordM&gt;, 'Q': &lt;unbound method PathReader.processPathWordQ&gt;, 'S': &lt;unbound method PathReader.processPathWordS&gt;, 'T': &lt;unbound method PathReader.processPathWordT&gt;, 'V': &lt;unbound method PathReader.processPathWordV&gt;, 'Z': &lt;unbound method PathReader.processPathWordZ&gt;, ...}<br>
+<strong>globalProcessPathWordFunctions</strong> = [&lt;unbound method PathReader.processPathWordA&gt;, &lt;unbound method PathReader.processPathWorda&gt;, &lt;unbound method PathReader.processPathWordC&gt;, &lt;unbound method PathReader.processPathWordc&gt;, &lt;unbound method PathReader.processPathWordH&gt;, &lt;unbound method PathReader.processPathWordh&gt;, &lt;unbound method PathReader.processPathWordL&gt;, &lt;unbound method PathReader.processPathWordl&gt;, &lt;unbound method PathReader.processPathWordM&gt;, &lt;unbound method PathReader.processPathWordm&gt;, &lt;unbound method PathReader.processPathWordQ&gt;, &lt;unbound method PathReader.processPathWordq&gt;, &lt;unbound method PathReader.processPathWordS&gt;, &lt;unbound method PathReader.processPathWords&gt;, &lt;unbound method PathReader.processPathWordT&gt;, &lt;unbound method PathReader.processPathWordt&gt;, &lt;unbound method PathReader.processPathWordV&gt;, &lt;unbound method PathReader.processPathWordv&gt;, &lt;unbound method PathReader.processPathWordZ&gt;, &lt;unbound method PathReader.processPathWordz&gt;]<br>
+<strong>globalProcessSVGElementDictionary</strong> = {'circle': &lt;function processSVGElementcircle&gt;, 'ellipse': &lt;function processSVGElementellipse&gt;, 'g': &lt;function processSVGElementg&gt;, 'line': &lt;function processSVGElementline&gt;, 'path': &lt;function processSVGElementpath&gt;, 'polygon': &lt;function processSVGElementpolygon&gt;, 'polyline': &lt;function processSVGElementpolyline&gt;, 'rect': &lt;function processSVGElementrect&gt;, 'text': &lt;function processSVGElementtext&gt;}<br>
+<strong>globalProcessSVGElementFunctions</strong> = [&lt;function processSVGElementcircle&gt;, &lt;function processSVGElementellipse&gt;, &lt;function processSVGElementg&gt;, &lt;function processSVGElementline&gt;, &lt;function processSVGElementpath&gt;, &lt;function processSVGElementpolygon&gt;, &lt;function processSVGElementpolyline&gt;, &lt;function processSVGElementrect&gt;, &lt;function processSVGElementtext&gt;]<br>
+<strong>globalSideAngle</strong> = 0.14279966607226333</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Nophead&nbsp;&lt;<a href="http://hydraraptor.blogspot.com/">http://hydraraptor.blogspot.com/</a>&gt;<br>
+Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

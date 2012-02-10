@@ -1,67 +1,103 @@
 #!/bin/sh
 
+#############################
+# CONFIGURATION
+#############################
+
+PYPY_VERSION=1.8
+WIN_PORTABLE_PY_VERSION=2.7.2.1
+WIN_PYSERIAL_VERSION=2.5
+
+#############################
+# Actual build script
+#############################
+
+#Check if we have 7zip, needed to extract and packup a bunch of packages.
 7z > /dev/null 2>&1
 if [ $? != 0 ]; then
 	echo $0 requires 7zip to run.
 	exit 1
 fi
 
-#Get portable python and extract it.
-if [ ! -f "PortablePython_2.7.2.1.exe" ]; then
-	wget http://ftp.nluug.nl/languages/python/portablepython/v2.7/PortablePython_2.7.2.1.exe
-fi
-if [ ! -f pyserial.exe ]; then
-	wget http://sourceforge.net/projects/pyserial/files/pyserial/2.5/pyserial-2.5.win32.exe/download
-	mv download pyserial.exe
-fi
-if [ ! -d target/python ]; then
-	7z x PortablePython_2.7.2.1.exe \$_OUTDIR/App
-	7z x PortablePython_2.7.2.1.exe \$_OUTDIR/Lib/site-packages
-	7z x pyserial.exe PURELIB
-	mkdir -p target/python
-	mv \$_OUTDIR/App/* target/python
-	mv \$_OUTDIR/Lib/site-packages/wx* target/python/Lib/site-packages/
-	mv PURELIB/serial target/python/Lib
-	rm -rf \$_OUTDIR
-	rm -rf PURELIB
-fi
+#############################
+# Download all needed files.
+#############################
 
-#Get pypy and extract it
-if [ ! -f "pypy-1.7-win32.zip" ]; then
-	wget https://bitbucket.org/pypy/pypy/downloads/pypy-1.7-win32.zip
+#Get portable python for windows and extract it. (Linux and Mac need to install python themselfs)
+if [ ! -f "PortablePython_${WIN_PORTABLE_PY_VERSION}.exe" ]; then
+	wget http://ftp.nluug.nl/languages/python/portablepython/v2.7/PortablePython_${WIN_PORTABLE_PY_VERSION}.exe
 fi
-if [ ! -d target/pypy-1.7 ]; then
-	mkdir -p target/pypy-1.7
-	cd target
-	7z x ../pypy-1.7-win32.zip
-	cd ..
+if [ ! -f pyserial-${WIN_PYSERIAL_VERSION}.exe ]; then
+	wget http://sourceforge.net/projects/pyserial/files/pyserial/${WIN_PYSERIAL_VERSION}/pyserial-${WIN_PYSERIAL_VERSION}.win32.exe/download
+	mv download pyserial-${WIN_PYSERIAL_VERSION}.exe
 fi
-
-for NR in `ls patches`; do
-	if [ ! -f "${NR}_reprap_python_beanshell.zip" ]; then
-		wget http://fabmetheus.crsndoo.com/files/${NR}_reprap_python_beanshell.zip
-	fi
-	if [ ! -d "ori/${NR}" ]; then
-		mkdir -p ori/${NR}
-		cd ori/${NR}
-		7z x ../../${NR}_reprap_python_beanshell.zip
-		cd ../..
-	fi
-	rm -rf target/SF${NR}
-	cp -a ori/${NR} target/SF${NR}
-	cd target/SF${NR}
-	patch -p 2 < ../../patches/${NR}
-	cd ../..
-	echo "python\\python.exe SF${NR}\\skeinforge_application\\skeinforge.py" > target/SF${NR}.bat
-	echo $NR
-done
-
+#Get pypy
+if [ ! -f "pypy-${PYPY_VERSION}-win32.zip" ]; then
+	wget https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
+fi
+if [ ! -f "pypy-${PYPY_VERSION}-linux.tar.bz2" ]; then
+	wget https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-linux.tar.bz2
+fi
+if [ ! -f "pypy-${PYPY_VERSION}-osx64.tar.bz2" ]; then
+	wget https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-osx64.tar.bz2
+fi
+#Get our own version of Printrun
 rm -rf Printrun
 git clone git://github.com/daid/Printrun.git
 rm -rf Printrun/.git
-echo "python\\python.exe printrun\\pronterface.py" > printrun.bat
 
-cd target
-7z a ../Skeinforge_PyPy.zip *
+#############################
+# Build the packages
+#############################
+rm -rf target_win32 target_linux target_osx64
+mkdir -p target_win32 target_linux target_osx64
+
+7z x PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/App
+7z x PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/Lib/site-packages
+7z x pyserial-${WIN_PYSERIAL_VERSION}.exe PURELIB
+
+mkdir -p target_win32/python
+mv \$_OUTDIR/App/* target_win32/python
+mv \$_OUTDIR/Lib/site-packages/wx* target_win32/python/Lib/site-packages/
+mv PURELIB/serial target_win32/python/Lib
+rm -rf \$_OUTDIR
+rm -rf PURELIB
+
+#Extract pypy
+7z x pypy-${PYPY_VERSION}-win32.zip -otarget_win32
+mv target_win32/pypy-${PYPY_VERSION} target_win32/pypy
+7z x pypy-${PYPY_VERSION}-linux.bz2 -otarget_linux
+mv target_linux/pypy-${PYPY_VERSION} target_linux/pypy
+7z x pypy-${PYPY_VERSION}-osx64.bz2 -otarget_osx64
+mv target_linux/pypy-${PYPY_VERSION} target_osx64/pypy
+
+#add Skeinforge
+cp -a SkeinPyPy target_win32/SkeinPyPy
+cp -a SkeinPyPy target_linux/SkeinPyPy
+cp -a SkeinPyPy target_osx64/SkeinPyPy
+
+#add printrun
+cp -a Printrun target_win32/Printrun
+cp -a Printrun target_linux/Printrun
+cp -a Printrun target_osx64/Printrun
+
+#add windows batch files
+echo "python\\python.exe SkeinPyPy\\skeinforge_application\\skeinforge.py" > target_win32/skeinforge.bat
+echo "python\\python.exe printrun\\pronterface.py" > target_win32/printrun.bat
+
+#add readme file
+cp README target_win32/README.txt
+cp README target_linux/README.txt
+cp README target_osx64/README.txt
+
+#package the result
+cd target_win32
+7z a ../SkeinPyPy_Win32.zip *
+cd ..
+cd target_linux
+7z a ../SkeinPyPy_Linux.zip *
+cd ..
+cd target_osx64
+7z a ../SkeinPyPy_MacOSX.zip *
 cd ..
 

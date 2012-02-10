@@ -1,0 +1,4 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<sphere id='Sphere 5' bottom.altitude='10' radius='[5,7,5]'/>
+</fabmetheus>

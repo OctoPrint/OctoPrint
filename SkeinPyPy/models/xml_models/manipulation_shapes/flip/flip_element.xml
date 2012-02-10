@@ -1,0 +1,6 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<text id='hi' >hi</text>
+	<extrude id='extrudeHi' target="=document.getElementByID(hi)" />
+	<flip target="=document.getElementByID(extrudeHi)" />
+</fabmetheus>

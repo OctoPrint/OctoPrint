@@ -1,0 +1,86 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.fabmetheus_tools.interpret_plugins.gts</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.fabmetheus_tools.html"><font color="#ffffff">fabmetheus_tools</font></a>.<a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.html"><font color="#ffffff">interpret_plugins</font></a>.gts</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/interpret_plugins/gts.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/interpret_plugins/gts.py</a></font></td></tr></table>
+    <p>
+<a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.html">Previous</a> / <a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.obj.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+The gts.py script is an import translator plugin to get a carving from an gts file.<br>
+ <br>
+An import plugin is a script in the interpret_plugins folder which has the function getCarving.  It is meant to be run from the interpret tool.  To ensure that the plugin works on platforms which do not handle file capitalization properly, give the plugin a lower case name.<br>
+ <br>
+The getCarving function takes the file name of an gts file and returns the carving.<br>
+ <br>
+The GNU Triangulated Surface (.gts) format is described at:<br>
+<a href="http://gts.sourceforge.net/reference/gts-surfaces.html#GTS-SURFACE-WRITE">http://gts.sourceforge.net/reference/gts-surfaces.html#GTS-SURFACE-WRITE</a><br>
+ <br>
+Quoted from <a href="http://gts.sourceforge.net/reference/gts-surfaces.html#GTS-SURFACE-WRITE">http://gts.sourceforge.net/reference/gts-surfaces.html#GTS-SURFACE-WRITE</a><br>
+"All the lines beginning with GTS_COMMENTS (#!) are ignored. The first line contains three unsigned integers separated by spaces. The first integer is the number of vertexes, nv, the second is the number of edges, ne and the third is the number of faces, nf.<br>
+ <br>
+Follows nv lines containing the x, y and z coordinates of the vertexes. Follows ne lines containing the two indices (starting from one) of the vertexes of each edge. Follows nf lines containing the three ordered indices (also starting from one) of the edges of each face.<br>
+ <br>
+The format described above is the least common denominator to all GTS files. Consistent with an object-oriented approach, the GTS file format is extensible. Each of the lines of the file can be extended with user-specific attributes accessible through the read() and write() virtual methods of each of the objects written (surface, vertexes, edges or faces). When read with different object classes, these extra attributes are just ignored."</tt>
+<br />
+<br />
+<p>
+<a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.html">Previous</a> / <a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.obj.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.geometry_tools.face.html">fabmetheus_utilities.geometry.geometry_tools.face</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html">fabmetheus_utilities.geometry.solids.triangle_mesh</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCarving"><strong>getCarving</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;carving&nbsp;for&nbsp;the&nbsp;gts&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getFromGNUTriangulatedSurfaceText"><strong>getFromGNUTriangulatedSurfaceText</strong></a>(gnuTriangulatedSurfaceText, triangleMesh)</dt><dd><tt>Initialize&nbsp;from&nbsp;a&nbsp;GNU&nbsp;Triangulated&nbsp;Surface&nbsp;Text.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Nophead &lt;http://hydraraptor.blogspot.com/&gt;<font color="#c040c0">\n</font>Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Nophead&nbsp;&lt;<a href="http://hydraraptor.blogspot.com/">http://hydraraptor.blogspot.com/</a>&gt;<br>
+Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

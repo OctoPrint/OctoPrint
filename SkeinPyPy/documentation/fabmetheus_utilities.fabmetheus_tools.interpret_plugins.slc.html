@@ -1,0 +1,150 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.fabmetheus_tools.interpret_plugins.slc</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.fabmetheus_tools.html"><font color="#ffffff">fabmetheus_tools</font></a>.<a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.html"><font color="#ffffff">interpret_plugins</font></a>.slc</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/interpret_plugins/slc.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/interpret_plugins/slc.py</a></font></td></tr></table>
+    <p>
+<a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.obj.html">Previous</a> / <a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.stl.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+The slc.py script is an import translator plugin to get a carving from an <a href="http://rapid.lpt.fi/archives/rp-ml-1999/0713.html">slc file</a>.<br>
+ <br>
+An import plugin is a script in the interpret_plugins folder which has the function getCarving.  It is meant to be run from the interpret tool.  To ensure that the plugin works on platforms which do not handle file capitalization properly, give the plugin a lower case name.<br>
+ <br>
+The getCarving function takes the file name of an slc file and returns the carving.</tt>
+<br />
+<br />
+<p>
+<a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.obj.html">Previous</a> / <a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.stl.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="math.html">math</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.svg_writer.html">fabmetheus_utilities.svg_writer</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.slc.html#SLCCarving">SLCCarving</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.fabmetheus_tools.interpret_plugins.slc.html#SampleTableEntry">SampleTableEntry</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SLCCarving">class <strong>SLCCarving</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>An&nbsp;slc&nbsp;carving.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SLCCarving-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Add&nbsp;empty&nbsp;lists.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;carving.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-addXML"><strong>addXML</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;xml&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-getCarveBoundaryLayers"><strong>getCarveBoundaryLayers</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;&nbsp;boundary&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-getCarveCornerMaximum"><strong>getCarveCornerMaximum</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;corner&nbsp;maximum&nbsp;of&nbsp;the&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-getCarveCornerMinimum"><strong>getCarveCornerMinimum</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;corner&nbsp;minimum&nbsp;of&nbsp;the&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-getCarveLayerHeight"><strong>getCarveLayerHeight</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;layer&nbsp;height.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-getCarvedSVG"><strong>getCarvedSVG</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;carved&nbsp;svg&nbsp;text.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-getFabmetheusXML"><strong>getFabmetheusXML</strong></a>(self)</dt><dd><tt>Return&nbsp;the&nbsp;fabmetheus&nbsp;XML.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-getInterpretationSuffix"><strong>getInterpretationSuffix</strong></a>(self)</dt><dd><tt>Return&nbsp;the&nbsp;suffix&nbsp;for&nbsp;a&nbsp;carving.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-processContourLayers"><strong>processContourLayers</strong></a>(self, file)</dt><dd><tt>Process&nbsp;a&nbsp;contour&nbsp;layer&nbsp;at&nbsp;a&nbsp;time&nbsp;until&nbsp;the&nbsp;top&nbsp;of&nbsp;the&nbsp;part.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-readFile"><strong>readFile</strong></a>(self, fileName)</dt><dd><tt>Read&nbsp;SLC&nbsp;and&nbsp;store&nbsp;the&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-readTableEntry"><strong>readTableEntry</strong></a>(self, file)</dt><dd><tt>Read&nbsp;in&nbsp;the&nbsp;sampling&nbsp;table&nbsp;section.&nbsp;It&nbsp;contains&nbsp;a&nbsp;table&nbsp;length&nbsp;(byte)&nbsp;and&nbsp;the&nbsp;table&nbsp;entries.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-setCarveImportRadius"><strong>setCarveImportRadius</strong></a>(self, importRadius)</dt><dd><tt>Set&nbsp;the&nbsp;import&nbsp;radius.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-setCarveIsCorrectMesh"><strong>setCarveIsCorrectMesh</strong></a>(self, isCorrectMesh)</dt><dd><tt>Set&nbsp;the&nbsp;is&nbsp;correct&nbsp;mesh&nbsp;flag.</tt></dd></dl>
+
+<dl><dt><a name="SLCCarving-setCarveLayerHeight"><strong>setCarveLayerHeight</strong></a>(self, layerHeight)</dt><dd><tt>Set&nbsp;the&nbsp;layer&nbsp;height.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SampleTableEntry">class <strong>SampleTableEntry</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Sample&nbsp;table&nbsp;entry.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SampleTableEntry-__init__"><strong>__init__</strong></a>(self, file)</dt><dd><tt>Read&nbsp;in&nbsp;the&nbsp;sampling&nbsp;table&nbsp;section.&nbsp;It&nbsp;contains&nbsp;a&nbsp;table&nbsp;length&nbsp;(byte)&nbsp;and&nbsp;the&nbsp;table&nbsp;entries.</tt></dd></dl>
+
+<dl><dt><a name="SampleTableEntry-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;sample&nbsp;table&nbsp;entry.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCarving"><strong>getCarving</strong></a>(fileName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;triangle&nbsp;mesh&nbsp;for&nbsp;the&nbsp;slc&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getLittleEndianFloatGivenFile"><strong>getLittleEndianFloatGivenFile</strong></a>(file)</dt><dd><tt>Get&nbsp;little&nbsp;endian&nbsp;float&nbsp;given&nbsp;a&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getLittleEndianUnsignedLongGivenFile"><strong>getLittleEndianUnsignedLongGivenFile</strong></a>(file)</dt><dd><tt>Get&nbsp;little&nbsp;endian&nbsp;float&nbsp;given&nbsp;a&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getPointsFromFile"><strong>getPointsFromFile</strong></a>(numPoints, file)</dt><dd><tt>Process&nbsp;the&nbsp;vertice&nbsp;points&nbsp;for&nbsp;a&nbsp;given&nbsp;boundary.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;inset&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-readHeader"><strong>readHeader</strong></a>(file)</dt><dd><tt>Read&nbsp;the&nbsp;slc&nbsp;header.</tt></dd></dl>
+ <dl><dt><a name="-unpack"><strong>unpack</strong></a>(...)</dt><dd><tt>Unpack&nbsp;the&nbsp;string&nbsp;containing&nbsp;packed&nbsp;C&nbsp;structure&nbsp;data,&nbsp;according&nbsp;to&nbsp;fmt.<br>
+Requires&nbsp;len(string)&nbsp;==&nbsp;calcsize(fmt).</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Nophead &lt;http://hydraraptor.blogspot.com/&gt;<font color="#c040c0">\n</font>Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Nophead&nbsp;&lt;<a href="http://hydraraptor.blogspot.com/">http://hydraraptor.blogspot.com/</a>&gt;<br>
+Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

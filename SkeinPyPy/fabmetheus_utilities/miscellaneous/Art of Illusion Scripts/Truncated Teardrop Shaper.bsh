@@ -1,0 +1,119 @@
+/*
+<?xml version='1.0' standalone='yes' ?>
+<script>
+	<name>Teardrop-Shaper</name>
+	<author>Enrique Perez from Teardrop Shaper of Remy de Winter with assistance from Adrian Bowyer</author>
+	<version>1.0</version>
+	<date>29-January-2008</date>
+	<description>
+	This script allows the user to create custom truncated teardrop curves.
+  </description>
+</script>
+*/
+
+do
+{	
+	scene = window.getScene();
+
+	directionType = new RadioButtonGroup();
+	up = new BRadioButton("Up", false, directionType);
+	down = new BRadioButton("Down", false, directionType);
+	left = new BRadioButton("Left", false, directionType);
+	right = new BRadioButton("Right", false, directionType);
+
+	directional = new GridContainer(2, 2);
+	directional.setDefaultLayout(new LayoutInfo(LayoutInfo.WEST, LayoutInfo.NONE, new Insets(2, 2, 2, 2), null));
+	directional.add(up, 0, 0);
+	directional.add(down, 0, 1);
+	directional.add(left, 1, 0);
+	directional.add(right, 1, 1);
+
+	vertexValueField = new ValueField(45, ValueField.NONNEGATIVE);
+	radiusValueField = new ValueField(1.0, ValueField.NONNEGATIVE);
+	maxErrorValueField = new ValueField(0.05, ValueField.NONNEGATIVE);
+	directionValueField = new ValueField(0.0, ValueField.NONNEGATIVE);
+	truncationValueField = new ValueField(0.0, ValueField.NONNEGATIVE);
+
+	dlg = new ComponentsDialog(window, "TearDrop Tool" ,
+	new Widget [] { directional, directionValueField, vertexValueField, truncationValueField, radiusValueField, maxErrorValueField },
+	new String [] { "Orientation about z-axis: ", "or specific rotation about z-axis (degrees): ", "Vertex angle (degrees): ", "Truncation: ", "Radius: ", "Max error: " } );
+
+	if (!dlg.clickedOk()) return;
+
+	theta = vertexValueField.getValue() / 180 * Math.PI;
+	radius = radiusValueField.getValue();
+	maxError = maxErrorValueField.getValue();
+	directionAngle = directionValueField.getValue() / 180 * Math.PI;
+
+	errorAngle = Math.acos((radius - maxError) / radius); // inverse cosine
+
+//	numberSides = Math.ceil(((2 * Math.PI) - 2 * (Math.PI / 2 - theta)) / errorAngle); // rounded up
+	numberSides = Math.ceil(((2 * Math.PI) - 2 * (Math.PI / 2 - theta)) / errorAngle) + 1; // rounded up
+
+	if (numberSides <= 10)
+	new MessageDialog(window, "Please decrease the value of the maximum error");
+} 
+while (numberSides < 10);
+
+
+// Setting the orientation of the teardrop shape depending on the outcome of Radio Buttons
+if (up.getState())
+	directionAngle = Math.PI / 2;
+
+if (down.getState())
+	directionAngle = (3 * Math.PI) / 2;
+
+if (left.getState())
+	directionAngle = Math.PI;
+
+if (right.getState())
+	directionAngle = 0;
+
+
+Vec3[] v = new Vec3[numberSides];
+float[] smoothness = new float[numberSides];
+
+//double phi = ((2.0 * Math.PI) - (2.0 * ((Math.PI / 2) - theta))) / (numberSides - 2);
+double phi = ((2.0 * Math.PI) - (2.0 * ((Math.PI / 2) - theta))) / (numberSides - 3);
+
+double angle = ((Math.PI / 2.0) - theta);
+
+//for (int i = 0 ; i < (numberSides - 1) ; i++) 
+for (int i = 0 ; i < (numberSides - 2) ; i++) 
+{
+	x1 = Math.cos(angle + phi * i);
+	y1 = Math.sin(angle + phi * i);
+	x2 = x1 * Math.cos(directionAngle) - y1 * Math.sin(directionAngle);  // rotational vectors - x
+	y2 = y1 * Math.cos(directionAngle) + x1 * Math.sin(directionAngle);	 // rotational vectors - y
+	v[i] = new Vec3(x2, y2, 0);
+	v[i].scale(radius);
+	smoothness[i] = 0;
+}
+
+// final vertex point at the sharp tip
+//x3 = Math.cos(directionAngle) * (radius / Math.sin(theta));
+//y3 = Math.sin(directionAngle) * (radius / Math.sin(theta));
+//v[numberSides - 2.0] = new Vec3(x3, y3, 0);
+truncationToVertex = truncationValueField.getValue() * (2 - Math.sqrt(2));
+xTip = Math.cos(directionAngle) * (radius / Math.sin(theta));
+yTip = Math.sin(directionAngle) * (radius / Math.sin(theta));
+vTip = new Vec3(xTip, yTip, 0);
+vLast = v[numberSides - 3.0];
+vFromTipToLast = vLast.minus( vTip );
+vFromTipToLast.scale( truncationToVertex );
+v[numberSides - 2.0] = vTip.plus( vFromTipToLast );
+vStart = v[0];
+vFromTipToStart = vStart.minus( vTip );
+vFromTipToStart.scale( truncationToVertex );
+x4 = xTip + 0.2;
+y4 = yTip + 0.3;
+v[numberSides - 1.0] = vTip.plus( vFromTipToStart );
+
+name = "Truncated Teardrop (" + numberSides + " sides)";
+
+tolerance = 0.02; //surface accuracy
+
+curve = new Curve(v, smoothness, Mesh.APPROXIMATING, true);
+window.addObject(curve, new CoordinateSystem(), name, null);
+
+// Finished

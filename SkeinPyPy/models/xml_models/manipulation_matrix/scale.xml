@@ -1,0 +1,5 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<sphere id='Sphere5' radius='5.0'/>
+	<scale id='scaleSphere' target='=document.getElementByID(Sphere5)' cartesian='[3,2]'/>
+</fabmetheus>

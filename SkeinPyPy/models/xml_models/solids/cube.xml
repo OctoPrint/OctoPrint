@@ -1,0 +1,4 @@
+<?xml version='1.0'?>
+<fabmetheus>
+	<cube id='cube5' bottom.altitude='0' inradius.x='5' inradius.y='5' inradius.z='5'/>
+</fabmetheus>

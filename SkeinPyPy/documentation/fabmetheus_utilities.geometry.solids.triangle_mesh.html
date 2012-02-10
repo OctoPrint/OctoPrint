@@ -1,0 +1,285 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.geometry.solids.triangle_mesh</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.geometry.html"><font color="#ffffff">geometry</font></a>.<a href="fabmetheus_utilities.geometry.solids.html"><font color="#ffffff">solids</font></a>.triangle_mesh</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/solids/triangle_mesh.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/solids/triangle_mesh.py</a></font></td></tr></table>
+    <p><tt>Triangle Mesh holds the faces and edges of a triangular mesh.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.geometry.geometry_tools.dictionary.html">fabmetheus_utilities.geometry.geometry_tools.dictionary</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html">fabmetheus_utilities.geometry.geometry_utilities.evaluate</a><br>
+<a href="fabmetheus_utilities.geometry.geometry_tools.face.html">fabmetheus_utilities.geometry.geometry_tools.face</a><br>
+<a href="fabmetheus_utilities.geometry.solids.group.html">fabmetheus_utilities.geometry.solids.group</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+<a href="math.html">math</a><br>
+<a href="fabmetheus_utilities.geometry.geometry_utilities.matrix.html">fabmetheus_utilities.geometry.geometry_utilities.matrix</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="fabmetheus_utilities.geometry.geometry_tools.vertex.html">fabmetheus_utilities.geometry.geometry_tools.vertex</a><br>
+<a href="fabmetheus_utilities.xml_simple_writer.html">fabmetheus_utilities.xml_simple_writer</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.solids.group.html#Group">fabmetheus_utilities.geometry.solids.group.Group</a>(<a href="fabmetheus_utilities.geometry.geometry_tools.dictionary.html#Dictionary">fabmetheus_utilities.geometry.geometry_tools.dictionary.Dictionary</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html#TriangleMesh">TriangleMesh</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html#EdgePair">EdgePair</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html#FaceGenerator">FaceGenerator</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html#ZoneArrangement">ZoneArrangement</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EdgePair">class <strong>EdgePair</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EdgePair-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Pair&nbsp;of&nbsp;edges&nbsp;on&nbsp;a&nbsp;face.</tt></dd></dl>
+
+<dl><dt><a name="EdgePair-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#EdgePair">EdgePair</a>.</tt></dd></dl>
+
+<dl><dt><a name="EdgePair-getFromIndexesEdges"><strong>getFromIndexesEdges</strong></a>(self, edgeIndexes, edges)</dt><dd><tt>Initialize&nbsp;from&nbsp;edge&nbsp;indices.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FaceGenerator">class <strong>FaceGenerator</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;face&nbsp;generator.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FaceGenerator-__init__"><strong>__init__</strong></a>(self, faces, indexedLoopBottom, indexedLoopTop)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FaceGenerator-addFacesByBottomIndex"><strong>addFacesByBottomIndex</strong></a>(self, bottomIndex, faces)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;the&nbsp;&nbsp;bottom&nbsp;index&nbsp;to&nbsp;the&nbsp;next&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="FaceGenerator-getBetweenIndex"><strong>getBetweenIndex</strong></a>(self, bottomPoint, bottomPointNext, topIndexPlusOne)</dt><dd><tt>Get&nbsp;the&nbsp;index&nbsp;of&nbsp;the&nbsp;last&nbsp;point&nbsp;along&nbsp;the&nbsp;loop&nbsp;which&nbsp;is&nbsp;closer&nbsp;to&nbsp;the&nbsp;bottomPoint.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TriangleMesh">class <strong>TriangleMesh</strong></a>(<a href="fabmetheus_utilities.geometry.solids.group.html#Group">fabmetheus_utilities.geometry.solids.group.Group</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;triangle&nbsp;mesh.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html#TriangleMesh">TriangleMesh</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.solids.group.html#Group">fabmetheus_utilities.geometry.solids.group.Group</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_tools.dictionary.html#Dictionary">fabmetheus_utilities.geometry.geometry_tools.dictionary.Dictionary</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="TriangleMesh-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Add&nbsp;empty&nbsp;lists.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-addXMLSection"><strong>addXMLSection</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;the&nbsp;xml&nbsp;section&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getCarveBoundaryLayers"><strong>getCarveBoundaryLayers</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;boundary&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getCarveCornerMaximum"><strong>getCarveCornerMaximum</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;corner&nbsp;maximum&nbsp;of&nbsp;the&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getCarveCornerMinimum"><strong>getCarveCornerMinimum</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;corner&nbsp;minimum&nbsp;of&nbsp;the&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getCarveLayerHeight"><strong>getCarveLayerHeight</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;layer&nbsp;height.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getFabmetheusXML"><strong>getFabmetheusXML</strong></a>(self)</dt><dd><tt>Return&nbsp;the&nbsp;fabmetheus&nbsp;XML.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getGeometryOutput"><strong>getGeometryOutput</strong></a>(self)</dt><dd><tt>Get&nbsp;geometry&nbsp;output&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getInterpretationSuffix"><strong>getInterpretationSuffix</strong></a>(self)</dt><dd><tt>Return&nbsp;the&nbsp;suffix&nbsp;for&nbsp;a&nbsp;triangle&nbsp;mesh.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getLoops"><strong>getLoops</strong></a>(self, importRadius, z)</dt><dd><tt>Get&nbsp;loops&nbsp;sliced&nbsp;through&nbsp;shape.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getLoopsFromMesh"><strong>getLoopsFromMesh</strong></a>(self, z)</dt><dd><tt>Get&nbsp;loops&nbsp;from&nbsp;a&nbsp;carve&nbsp;of&nbsp;a&nbsp;mesh.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getMinimumZ"><strong>getMinimumZ</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;minimum&nbsp;z.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getTransformedVertexes"><strong>getTransformedVertexes</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;transformed&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getTriangleMeshes"><strong>getTriangleMeshes</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;triangleMeshes.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getVertexes"><strong>getVertexes</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-setCarveImportRadius"><strong>setCarveImportRadius</strong></a>(self, importRadius)</dt><dd><tt>Set&nbsp;the&nbsp;import&nbsp;radius.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-setCarveIsCorrectMesh"><strong>setCarveIsCorrectMesh</strong></a>(self, isCorrectMesh)</dt><dd><tt>Set&nbsp;the&nbsp;is&nbsp;correct&nbsp;mesh&nbsp;flag.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-setCarveLayerHeight"><strong>setCarveLayerHeight</strong></a>(self, layerHeight)</dt><dd><tt>Set&nbsp;the&nbsp;layer&nbsp;height.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-setEdgesForAllFaces"><strong>setEdgesForAllFaces</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;face&nbsp;edges&nbsp;of&nbsp;all&nbsp;the&nbsp;faces.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.solids.group.html#Group">fabmetheus_utilities.geometry.solids.group.Group</a>:<br>
+<dl><dt><a name="TriangleMesh-addXMLInnerSection"><strong>addXMLInnerSection</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;xml&nbsp;inner&nbsp;section&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getMatrix4X4"><strong>getMatrix4X4</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;matrix4X4.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getMatrixChainTetragrid"><strong>getMatrixChainTetragrid</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;matrix&nbsp;chain&nbsp;tetragrid.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getVisible"><strong>getVisible</strong></a>(self)</dt><dd><tt>Get&nbsp;visible.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-setToElementNode"><strong>setToElementNode</strong></a>(self, elementNode)</dt><dd><tt>Set&nbsp;to&nbsp;elementNode.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_tools.dictionary.html#Dictionary">fabmetheus_utilities.geometry.geometry_tools.dictionary.Dictionary</a>:<br>
+<dl><dt><a name="TriangleMesh-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;object&nbsp;info.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-addXML"><strong>addXML</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;xml&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-addXMLArchivableObjects"><strong>addXMLArchivableObjects</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;xml&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-createShape"><strong>createShape</strong></a>(self)</dt><dd><tt>Create&nbsp;the&nbsp;shape.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getAttributes"><strong>getAttributes</strong></a>(self)</dt><dd><tt>Get&nbsp;attribute&nbsp;table.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getComplexTransformedPathLists"><strong>getComplexTransformedPathLists</strong></a>(self)</dt><dd><tt>Get&nbsp;complex&nbsp;transformed&nbsp;path&nbsp;lists.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getFabricationExtension"><strong>getFabricationExtension</strong></a>(self)</dt><dd><tt>Get&nbsp;fabrication&nbsp;extension.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getFabricationText"><strong>getFabricationText</strong></a>(self, addLayerTemplate)</dt><dd><tt>Get&nbsp;fabrication&nbsp;text.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getPaths"><strong>getPaths</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;paths.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getTransformedPaths"><strong>getTransformedPaths</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;transformed&nbsp;paths.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getType"><strong>getType</strong></a>(self)</dt><dd><tt>Get&nbsp;type.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-getXMLLocalName"><strong>getXMLLocalName</strong></a>(self)</dt><dd><tt>Get&nbsp;xml&nbsp;local&nbsp;name.</tt></dd></dl>
+
+<dl><dt><a name="TriangleMesh-transformGeometryOutput"><strong>transformGeometryOutput</strong></a>(self, geometryOutput)</dt><dd><tt>Transform&nbsp;the&nbsp;geometry&nbsp;output&nbsp;by&nbsp;the&nbsp;local&nbsp;matrix4x4.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ZoneArrangement">class <strong>ZoneArrangement</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;zone&nbsp;arrangement.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ZoneArrangement-__init__"><strong>__init__</strong></a>(self, layerHeight, vertexes)</dt><dd><tt>Initialize&nbsp;the&nbsp;zone&nbsp;interval&nbsp;and&nbsp;the&nbsp;zZone&nbsp;table.</tt></dd></dl>
+
+<dl><dt><a name="ZoneArrangement-getEmptyZ"><strong>getEmptyZ</strong></a>(self, z)</dt><dd><tt>Get&nbsp;the&nbsp;first&nbsp;z&nbsp;which&nbsp;is&nbsp;not&nbsp;in&nbsp;the&nbsp;zone&nbsp;table.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addEdgePair"><strong>addEdgePair</strong></a>(edgePairTable, edges, faceEdgeIndex, remainingEdgeIndex, remainingEdgeTable)</dt><dd><tt>Add&nbsp;edge&nbsp;pair&nbsp;to&nbsp;the&nbsp;edge&nbsp;pair&nbsp;table.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByConcaveLoop"><strong>addFacesByConcaveLoop</strong></a>(faces, indexedLoop)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;a&nbsp;polygon&nbsp;which&nbsp;is&nbsp;concave.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByConvex"><strong>addFacesByConvex</strong></a>(faces, indexedLoop)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;a&nbsp;convex&nbsp;polygon.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByConvexBottomTopLoop"><strong>addFacesByConvexBottomTopLoop</strong></a>(faces, indexedLoopBottom, indexedLoopTop)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByConvexLoops"><strong>addFacesByConvexLoops</strong></a>(faces, indexedLoops)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByConvexReversed"><strong>addFacesByConvexReversed</strong></a>(faces, indexedLoop)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;a&nbsp;reversed&nbsp;convex&nbsp;polygon.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByGrid"><strong>addFacesByGrid</strong></a>(faces, grid)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;grid.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByLoop"><strong>addFacesByLoop</strong></a>(faces, indexedLoop)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;a&nbsp;polygon&nbsp;which&nbsp;may&nbsp;be&nbsp;concave.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByLoopReversed"><strong>addFacesByLoopReversed</strong></a>(faces, indexedLoop)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;a&nbsp;reversed&nbsp;convex&nbsp;polygon.</tt></dd></dl>
+ <dl><dt><a name="-addFacesByMeldedConvexLoops"><strong>addFacesByMeldedConvexLoops</strong></a>(faces, indexedLoops)</dt><dd><tt>Add&nbsp;faces&nbsp;from&nbsp;melded&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-addLoopToPointTable"><strong>addLoopToPointTable</strong></a>(loop, pointTable)</dt><dd><tt>Add&nbsp;the&nbsp;points&nbsp;in&nbsp;the&nbsp;loop&nbsp;to&nbsp;the&nbsp;point&nbsp;table.</tt></dd></dl>
+ <dl><dt><a name="-addMeldedPillarByLoops"><strong>addMeldedPillarByLoops</strong></a>(faces, indexedLoops)</dt><dd><tt>Add&nbsp;melded&nbsp;pillar&nbsp;by&nbsp;loops&nbsp;which&nbsp;may&nbsp;be&nbsp;concave.</tt></dd></dl>
+ <dl><dt><a name="-addPillarByLoops"><strong>addPillarByLoops</strong></a>(faces, indexedLoops)</dt><dd><tt>Add&nbsp;pillar&nbsp;by&nbsp;loops&nbsp;which&nbsp;may&nbsp;be&nbsp;concave.</tt></dd></dl>
+ <dl><dt><a name="-addPillarFromConvexLoopsGridTop"><strong>addPillarFromConvexLoopsGridTop</strong></a>(faces, indexedGridTop, indexedLoops)</dt><dd><tt>Add&nbsp;pillar&nbsp;from&nbsp;convex&nbsp;loops&nbsp;and&nbsp;grid&nbsp;top.</tt></dd></dl>
+ <dl><dt><a name="-addPillarFromConvexLoopsGrids"><strong>addPillarFromConvexLoopsGrids</strong></a>(faces, indexedGrids, indexedLoops)</dt><dd><tt>Add&nbsp;pillar&nbsp;from&nbsp;convex&nbsp;loops&nbsp;and&nbsp;grids.</tt></dd></dl>
+ <dl><dt><a name="-addPointsAtZ"><strong>addPointsAtZ</strong></a>(edgePair, points, radius, vertexes, z)</dt><dd><tt>Add&nbsp;point&nbsp;complexes&nbsp;on&nbsp;the&nbsp;segment&nbsp;between&nbsp;the&nbsp;edge&nbsp;intersections&nbsp;with&nbsp;z.</tt></dd></dl>
+ <dl><dt><a name="-addSymmetricXPath"><strong>addSymmetricXPath</strong></a>(outputs, path, x)</dt><dd><tt>Add&nbsp;x&nbsp;path&nbsp;output&nbsp;to&nbsp;outputs.</tt></dd></dl>
+ <dl><dt><a name="-addSymmetricXPaths"><strong>addSymmetricXPaths</strong></a>(outputs, paths, x)</dt><dd><tt>Add&nbsp;x&nbsp;paths&nbsp;outputs&nbsp;to&nbsp;outputs.</tt></dd></dl>
+ <dl><dt><a name="-addSymmetricYPath"><strong>addSymmetricYPath</strong></a>(outputs, path, y)</dt><dd><tt>Add&nbsp;y&nbsp;path&nbsp;output&nbsp;to&nbsp;outputs.</tt></dd></dl>
+ <dl><dt><a name="-addSymmetricYPaths"><strong>addSymmetricYPaths</strong></a>(outputs, paths, y)</dt><dd><tt>Add&nbsp;y&nbsp;paths&nbsp;outputs&nbsp;to&nbsp;outputs.</tt></dd></dl>
+ <dl><dt><a name="-addVector3Loop"><strong>addVector3Loop</strong></a>(loop, loops, vertexes, z)</dt><dd><tt>Add&nbsp;vector3Loop&nbsp;to&nbsp;loops&nbsp;if&nbsp;there&nbsp;is&nbsp;something&nbsp;in&nbsp;it,&nbsp;for&nbsp;inset&nbsp;and&nbsp;outset.</tt></dd></dl>
+ <dl><dt><a name="-addWithLeastLength"><strong>addWithLeastLength</strong></a>(importRadius, loops, point)</dt><dd><tt>Insert&nbsp;a&nbsp;point&nbsp;into&nbsp;a&nbsp;loop,&nbsp;at&nbsp;the&nbsp;index&nbsp;at&nbsp;which&nbsp;the&nbsp;loop&nbsp;would&nbsp;be&nbsp;shortest.</tt></dd></dl>
+ <dl><dt><a name="-convertElementNode"><strong>convertElementNode</strong></a>(elementNode, geometryOutput)</dt><dd><tt>Convert&nbsp;the&nbsp;xml&nbsp;element&nbsp;to&nbsp;a&nbsp;<a href="#TriangleMesh">TriangleMesh</a>&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getAddIndexedGrid"><strong>getAddIndexedGrid</strong></a>(grid, vertexes, z)</dt><dd><tt>Get&nbsp;and&nbsp;add&nbsp;an&nbsp;indexed&nbsp;grid.</tt></dd></dl>
+ <dl><dt><a name="-getAddIndexedLoop"><strong>getAddIndexedLoop</strong></a>(loop, vertexes, z)</dt><dd><tt>Get&nbsp;and&nbsp;add&nbsp;an&nbsp;indexed&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-getAddIndexedLoops"><strong>getAddIndexedLoops</strong></a>(loop, vertexes, zList)</dt><dd><tt>Get&nbsp;and&nbsp;add&nbsp;indexed&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-getAdditionalLoopLength"><strong>getAdditionalLoopLength</strong></a>(loop, point, pointIndex)</dt><dd><tt>Get&nbsp;the&nbsp;additional&nbsp;length&nbsp;added&nbsp;by&nbsp;inserting&nbsp;a&nbsp;point&nbsp;into&nbsp;a&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-getCarveIntersectionFromEdge"><strong>getCarveIntersectionFromEdge</strong></a>(edge, vertexes, z)</dt><dd><tt>Get&nbsp;the&nbsp;complex&nbsp;where&nbsp;the&nbsp;carve&nbsp;intersects&nbsp;the&nbsp;edge.</tt></dd></dl>
+ <dl><dt><a name="-getClosestDistanceIndexToPoint"><strong>getClosestDistanceIndexToPoint</strong></a>(point, loop)</dt><dd><tt>Get&nbsp;the&nbsp;distance&nbsp;squared&nbsp;to&nbsp;the&nbsp;closest&nbsp;point&nbsp;of&nbsp;the&nbsp;loop&nbsp;and&nbsp;index&nbsp;of&nbsp;that&nbsp;point.</tt></dd></dl>
+ <dl><dt><a name="-getDescendingAreaLoops"><strong>getDescendingAreaLoops</strong></a>(allPoints, corners, importRadius)</dt><dd><tt>Get&nbsp;descending&nbsp;area&nbsp;loops&nbsp;which&nbsp;include&nbsp;most&nbsp;of&nbsp;the&nbsp;points.</tt></dd></dl>
+ <dl><dt><a name="-getDescendingAreaOrientedLoops"><strong>getDescendingAreaOrientedLoops</strong></a>(allPoints, corners, importRadius)</dt><dd><tt>Get&nbsp;descending&nbsp;area&nbsp;oriented&nbsp;loops&nbsp;which&nbsp;include&nbsp;most&nbsp;of&nbsp;the&nbsp;points.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutputByFacesVertexes"><strong>getGeometryOutputByFacesVertexes</strong></a>(faces, vertexes)</dt><dd><tt>Get&nbsp;geometry&nbsp;output&nbsp;dictionary&nbsp;by&nbsp;faces&nbsp;and&nbsp;vertexes.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutputCopy"><strong>getGeometryOutputCopy</strong></a>(object)</dt><dd><tt>Get&nbsp;the&nbsp;geometry&nbsp;output&nbsp;copy.</tt></dd></dl>
+ <dl><dt><a name="-getIndexedCellLoopsFromIndexedGrid"><strong>getIndexedCellLoopsFromIndexedGrid</strong></a>(grid)</dt><dd><tt>Get&nbsp;indexed&nbsp;cell&nbsp;loops&nbsp;from&nbsp;an&nbsp;indexed&nbsp;grid.</tt></dd></dl>
+ <dl><dt><a name="-getIndexedLoopFromIndexedGrid"><strong>getIndexedLoopFromIndexedGrid</strong></a>(indexedGrid)</dt><dd><tt>Get&nbsp;indexed&nbsp;loop&nbsp;from&nbsp;around&nbsp;the&nbsp;indexed&nbsp;grid.</tt></dd></dl>
+ <dl><dt><a name="-getInfillDictionary"><strong>getInfillDictionary</strong></a>(arounds, aroundWidth, infillInset, infillWidth, pixelTable, rotatedLoops, testLoops<font color="#909090">=None</font>)</dt><dd><tt>Get&nbsp;combined&nbsp;fill&nbsp;loops&nbsp;which&nbsp;include&nbsp;most&nbsp;of&nbsp;the&nbsp;points.</tt></dd></dl>
+ <dl><dt><a name="-getInsetPoint"><strong>getInsetPoint</strong></a>(loop, tinyRadius)</dt><dd><tt>Get&nbsp;the&nbsp;inset&nbsp;vertex.</tt></dd></dl>
+ <dl><dt><a name="-getIsPathEntirelyOutsideTriangle"><strong>getIsPathEntirelyOutsideTriangle</strong></a>(begin, center, end, vector3Path)</dt><dd><tt>Determine&nbsp;if&nbsp;a&nbsp;path&nbsp;is&nbsp;entirely&nbsp;outside&nbsp;another&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-getIsPointCloseInline"><strong>getIsPointCloseInline</strong></a>(close, loop, point, pointIndex)</dt><dd><tt>Insert&nbsp;a&nbsp;point&nbsp;into&nbsp;a&nbsp;loop,&nbsp;at&nbsp;the&nbsp;index&nbsp;at&nbsp;which&nbsp;the&nbsp;loop&nbsp;would&nbsp;be&nbsp;shortest.</tt></dd></dl>
+ <dl><dt><a name="-getLoopLayerAppend"><strong>getLoopLayerAppend</strong></a>(loopLayers, z)</dt><dd><tt>Get&nbsp;next&nbsp;z&nbsp;and&nbsp;add&nbsp;extruder&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-getLoopsFromCorrectMesh"><strong>getLoopsFromCorrectMesh</strong></a>(edges, faces, vertexes, z)</dt><dd><tt>Get&nbsp;loops&nbsp;from&nbsp;a&nbsp;carve&nbsp;of&nbsp;a&nbsp;correct&nbsp;mesh.</tt></dd></dl>
+ <dl><dt><a name="-getLoopsFromUnprovenMesh"><strong>getLoopsFromUnprovenMesh</strong></a>(edges, faces, importRadius, vertexes, z)</dt><dd><tt>Get&nbsp;loops&nbsp;from&nbsp;a&nbsp;carve&nbsp;of&nbsp;an&nbsp;unproven&nbsp;mesh.</tt></dd></dl>
+ <dl><dt><a name="-getLoopsWithCorners"><strong>getLoopsWithCorners</strong></a>(corners, importRadius, loops, pointTable)</dt><dd><tt>Add&nbsp;corners&nbsp;to&nbsp;the&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-getMeldedPillarOutput"><strong>getMeldedPillarOutput</strong></a>(loops)</dt><dd><tt>Get&nbsp;melded&nbsp;pillar&nbsp;output.</tt></dd></dl>
+ <dl><dt><a name="-getNewDerivation"><strong>getNewDerivation</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;new&nbsp;derivation.</tt></dd></dl>
+ <dl><dt><a name="-getNextEdgeIndexAroundZ"><strong>getNextEdgeIndexAroundZ</strong></a>(edge, faces, remainingEdgeTable)</dt><dd><tt>Get&nbsp;the&nbsp;next&nbsp;edge&nbsp;index&nbsp;in&nbsp;the&nbsp;mesh&nbsp;carve.</tt></dd></dl>
+ <dl><dt><a name="-getOrientedLoops"><strong>getOrientedLoops</strong></a>(loops)</dt><dd><tt>Orient&nbsp;the&nbsp;loops&nbsp;which&nbsp;must&nbsp;be&nbsp;in&nbsp;descending&nbsp;order.</tt></dd></dl>
+ <dl><dt><a name="-getOverlapRatio"><strong>getOverlapRatio</strong></a>(loop, pointTable)</dt><dd><tt>Get&nbsp;the&nbsp;overlap&nbsp;ratio&nbsp;between&nbsp;the&nbsp;loop&nbsp;and&nbsp;the&nbsp;point&nbsp;table.</tt></dd></dl>
+ <dl><dt><a name="-getPath"><strong>getPath</strong></a>(edges, pathIndexes, loop, z)</dt><dd><tt>Get&nbsp;the&nbsp;path&nbsp;from&nbsp;the&nbsp;edge&nbsp;intersections.</tt></dd></dl>
+ <dl><dt><a name="-getPillarOutput"><strong>getPillarOutput</strong></a>(loops)</dt><dd><tt>Get&nbsp;pillar&nbsp;output.</tt></dd></dl>
+ <dl><dt><a name="-getPillarsOutput"><strong>getPillarsOutput</strong></a>(loopLists)</dt><dd><tt>Get&nbsp;pillars&nbsp;output.</tt></dd></dl>
+ <dl><dt><a name="-getRemainingEdgeTable"><strong>getRemainingEdgeTable</strong></a>(edges, vertexes, z)</dt><dd><tt>Get&nbsp;the&nbsp;remaining&nbsp;edge&nbsp;hashtable.</tt></dd></dl>
+ <dl><dt><a name="-getRemainingLoopAddFace"><strong>getRemainingLoopAddFace</strong></a>(faces, remainingLoop)</dt><dd><tt>Get&nbsp;the&nbsp;remaining&nbsp;loop&nbsp;and&nbsp;add&nbsp;face.</tt></dd></dl>
+ <dl><dt><a name="-getSharedFace"><strong>getSharedFace</strong></a>(firstEdge, faces, secondEdge)</dt><dd><tt>Get&nbsp;the&nbsp;face&nbsp;which&nbsp;is&nbsp;shared&nbsp;by&nbsp;two&nbsp;edges.</tt></dd></dl>
+ <dl><dt><a name="-getSymmetricXLoop"><strong>getSymmetricXLoop</strong></a>(path, vertexes, x)</dt><dd><tt>Get&nbsp;symmetrix&nbsp;x&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-getSymmetricYLoop"><strong>getSymmetricYLoop</strong></a>(path, vertexes, y)</dt><dd><tt>Get&nbsp;symmetrix&nbsp;y&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-getUnifiedOutput"><strong>getUnifiedOutput</strong></a>(outputs)</dt><dd><tt>Get&nbsp;unified&nbsp;output.</tt></dd></dl>
+ <dl><dt><a name="-getUniqueVertexes"><strong>getUniqueVertexes</strong></a>(loops)</dt><dd><tt>Get&nbsp;unique&nbsp;vertexes.</tt></dd></dl>
+ <dl><dt><a name="-getWideAnglePointIndex"><strong>getWideAnglePointIndex</strong></a>(loop)</dt><dd><tt>Get&nbsp;a&nbsp;point&nbsp;index&nbsp;which&nbsp;has&nbsp;a&nbsp;wide&nbsp;enough&nbsp;angle,&nbsp;most&nbsp;point&nbsp;indexes&nbsp;have&nbsp;a&nbsp;wide&nbsp;enough&nbsp;angle,&nbsp;this&nbsp;is&nbsp;just&nbsp;to&nbsp;make&nbsp;sure.</tt></dd></dl>
+ <dl><dt><a name="-isInline"><strong>isInline</strong></a>(beginComplex, centerComplex, endComplex)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;three&nbsp;complex&nbsp;points&nbsp;form&nbsp;a&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-isPathAdded"><strong>isPathAdded</strong></a>(edges, faces, loops, remainingEdgeTable, vertexes, z)</dt><dd><tt>Get&nbsp;the&nbsp;path&nbsp;indexes&nbsp;around&nbsp;a&nbsp;triangle&nbsp;mesh&nbsp;carve&nbsp;and&nbsp;add&nbsp;the&nbsp;path&nbsp;to&nbsp;the&nbsp;flat&nbsp;loops.</tt></dd></dl>
+ <dl><dt><a name="-processElementNode"><strong>processElementNode</strong></a>(elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-setEdgeMaximumMinimum"><strong>setEdgeMaximumMinimum</strong></a>(edge, vertexes)</dt><dd><tt>Set&nbsp;the&nbsp;edge&nbsp;maximum&nbsp;and&nbsp;minimum.</tt></dd></dl>
+ <dl><dt><a name="-sortLoopsInOrderOfArea"><strong>sortLoopsInOrderOfArea</strong></a>(isDescending, loops)</dt><dd><tt>Sort&nbsp;the&nbsp;loops&nbsp;in&nbsp;the&nbsp;order&nbsp;of&nbsp;area&nbsp;according&nbsp;isDescending.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

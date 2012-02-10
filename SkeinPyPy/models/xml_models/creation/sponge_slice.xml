@@ -1,0 +1,5 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<spongeSlice id='spongeTest' density='.2' inradius='[10,10]' searchAttempts='10' seed='0'/>
+	<extrude target='=document.getElementByID(spongeTest)'/>
+</fabmetheus>

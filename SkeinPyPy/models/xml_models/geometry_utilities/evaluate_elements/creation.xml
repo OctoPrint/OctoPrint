@@ -1,0 +1,4 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<dictionary polygonFivePointTwo='=creation.getPolygon(5.2)'/>
+</fabmetheus>

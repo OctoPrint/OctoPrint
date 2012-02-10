@@ -1,0 +1,12 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<group id='Array of Cylinder 1'>
+		<matrix m11='0.0' m13='-1.0' m14='65.6' m24='-0.3' m31='1.0' m33='0.0' m34='-2.85' />
+		<cylinder id='Cylinder 1' height='14.6' radius.x='5.8' radius.y='5.8' topOverBottom='1.0'>
+			<matrix m11='-1.0' m14='5.75' m24='16.3' m33='-1.0' m34='14.7' />
+		</cylinder>
+		<cylinder id='Cylinder 2' height='14.6' radius.x='5.8' radius.y='5.8' topOverBottom='1.0'>
+			<matrix m11='-1.0' m14='5.65' m24='-0.1' m33='-1.0' m34='0.6' />
+		</cylinder>
+	</group>
+</fabmetheus>

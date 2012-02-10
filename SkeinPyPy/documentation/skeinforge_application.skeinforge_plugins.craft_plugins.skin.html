@@ -1,0 +1,212 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.skin</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.skin</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/skin.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/skin.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.scale.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.skirt.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Skin is a plugin to smooth the surface skin of an object by replacing the edge surface with a surface printed at a fraction of the carve<br>
+height.  This gives the impression that the object was carved at a much thinner height giving a high-quality finish, but still prints <br>
+in a relatively short time.  The latest process has some similarities with a description at:<br>
+ <br>
+<a href="http://adventuresin3-dprinting.blogspot.com/2011/05/skinning.html">http://adventuresin3-dprinting.blogspot.com/2011/05/skinning.html</a><br>
+ <br>
+The skin manual page is at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Skin">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Skin</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Division">Division</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Horizontal Infill Divisions">Horizontal Infill Divisions</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Horizontal Perimeter Divisions">Horizontal Perimeter Divisions</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Vertical Divisions">Vertical Divisions</a><br />
+&nbsp;&nbsp;<a href="#Hop When Extruding Infill">Hop When Extruding Infill</a><br />
+&nbsp;&nbsp;<a href="#Layers From">Layers From</a><br />
+<a href="#Tips">Tips</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Skin' checkbox is off.  When it is on, the functions described below will work, when it is off, nothing will be done.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Division" id="Division"></a><h3>Division</h3>
+
+<a name="Horizontal Infill Divisions" id="Horizontal Infill Divisions"></a><h4>Horizontal Infill Divisions</h4>
+
+Default: 2<br>
+ <br>
+Defines the number of times the skinned infill is divided horizontally.<br>
+ <br>
+<a name="Horizontal Perimeter Divisions" id="Horizontal Perimeter Divisions"></a><h4>Horizontal Perimeter Divisions</h4>
+
+Default: 1<br>
+ <br>
+Defines the number of times the skinned edges are divided horizontally.<br>
+ <br>
+<a name="Vertical Divisions" id="Vertical Divisions"></a><h4>Vertical Divisions</h4>
+
+Default: 2<br>
+ <br>
+Defines the number of times the skinned infill and edges are divided vertically.<br>
+ <br>
+<a name="Hop When Extruding Infill" id="Hop When Extruding Infill"></a><h3>Hop When Extruding Infill</h3>
+
+Default is off.<br>
+ <br>
+When selected, the extruder will hop before and after extruding the lower infill in order to avoid the regular thickness threads.<br>
+ <br>
+<a name="Layers From" id="Layers From"></a><h3>Layers From</h3>
+
+Default: 1<br>
+ <br>
+Defines which layer of the print the skinning process starts from. It is not wise to set this to zero, skinning the bottom layer is likely to cause the bottom edge not to adhere well to the print surface.<br>
+ <br>
+<a name="Tips" id="Tips"></a><h2>Tips</h2>
+<hr>
+
+Due to the very small Z-axis moves skinning can generate as it prints the edge, it can cause the Z-axis speed to be limited by the Limit plug-in, if you have it enabled. This can cause some printers to pause excessively during each layer change. To overcome this, ensure that the Z-axis max speed in the Limit tool is set to an appropriate value for your printer, e.g. 10mm/s<br>
+ <br>
+Since Skin prints a number of fractional-height edge layers for each layer, printing the edge last causes the print head to travel down from the current print height. Depending on the shape of your extruder nozzle, you may get higher quality prints if you print the edges first, so the print head always travels up.  This is set via the Thread Sequence Choice setting in the Fill tool.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples skin the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and skin.py.<br>
+ <br>
+&gt; python skin.py<br>
+This brings up the skin dialog.<br>
+ <br>
+&gt; python skin.py Screw Holder Bottom.stl<br>
+The skin tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The skin tool has created the file:<br>
+.. Screw Holder Bottom_skin.gcode</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.scale.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.skirt.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+<a href="sys.html">sys</a><br>
+<a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html">fabmetheus_utilities.geometry.solids.triangle_mesh</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.skin.html#SkinRepository">SkinRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.skin.html#SkinSkein">SkinSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SkinRepository">class <strong>SkinRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;skin&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SkinRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="SkinRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Skin&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SkinSkein">class <strong>SkinSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;skin&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SkinSkein-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-addFlowRateLine"><strong>addFlowRateLine</strong></a>(self, flowRate)</dt><dd><tt>Add&nbsp;a&nbsp;flow&nbsp;rate&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-addPerimeterLoop"><strong>addPerimeterLoop</strong></a>(self, thread, z)</dt><dd><tt>Add&nbsp;the&nbsp;edge&nbsp;loop&nbsp;to&nbsp;the&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-addSkinnedInfill"><strong>addSkinnedInfill</strong></a>(self)</dt><dd><tt>Add&nbsp;skinned&nbsp;infill.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-addSkinnedInfillBoundary"><strong>addSkinnedInfillBoundary</strong></a>(self, infillBoundaries, offsetY, upperZ, z)</dt><dd><tt>Add&nbsp;skinned&nbsp;infill&nbsp;boundary.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-addSkinnedPerimeter"><strong>addSkinnedPerimeter</strong></a>(self)</dt><dd><tt>Add&nbsp;skinned&nbsp;edge.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-getClippedSimplifiedLoopPathByLoop"><strong>getClippedSimplifiedLoopPathByLoop</strong></a>(self, loop)</dt><dd><tt>Get&nbsp;clipped&nbsp;and&nbsp;simplified&nbsp;loop&nbsp;path&nbsp;from&nbsp;a&nbsp;loop.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;skin&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-parseBoundaries"><strong>parseBoundaries</strong></a>(self)</dt><dd><tt>Parse&nbsp;the&nbsp;boundaries&nbsp;and&nbsp;add&nbsp;them&nbsp;to&nbsp;the&nbsp;boundary&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="SkinSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;add&nbsp;it&nbsp;to&nbsp;the&nbsp;skin&nbsp;skein.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Skin&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Skin&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getIsMinimumSides"><strong>getIsMinimumSides</strong></a>(loops, sides<font color="#909090">=3</font>)</dt><dd><tt>Determine&nbsp;if&nbsp;all&nbsp;the&nbsp;loops&nbsp;have&nbsp;at&nbsp;least&nbsp;the&nbsp;given&nbsp;number&nbsp;of&nbsp;sides.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;skin&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Skin&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file.&nbsp;&nbsp;Chain&nbsp;skin&nbsp;the&nbsp;gcode&nbsp;if&nbsp;it&nbsp;is&nbsp;not&nbsp;already&nbsp;skinned.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique aht yahoo.com) &amp; James Blackwell (jim_blag ahht hotmail.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique&nbsp;aht&nbsp;yahoo.com)&nbsp;&amp;&nbsp;James&nbsp;Blackwell&nbsp;(jim_blag&nbsp;ahht&nbsp;hotmail.com)</td></tr></table>
+</body></html>

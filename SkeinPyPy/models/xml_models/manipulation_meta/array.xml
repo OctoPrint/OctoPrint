@@ -1,0 +1,9 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<polygon id='polygontest' radius='30.0' sides='5'/>
+	<lineation id='triangle' target='=[[-5], [5], [0,15]]'/>
+	<extrude id='extrudeTriangle' target='=document.getElementByID(triangle)' scale.x='2'/>
+	<array id='array test' closed='f' target='=document.getElementByID(extrudeTriangle)' paths='=document.getElementByID(polygontest)'/>
+	<!--
+	-->
+</fabmetheus>

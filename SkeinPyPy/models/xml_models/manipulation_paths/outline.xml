@@ -1,0 +1,5 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<lineation id='line' outline.radius='1' target='[[0], [20]]'/>
+	<extrude target='=document.getElementByID(line)'/>
+</fabmetheus>

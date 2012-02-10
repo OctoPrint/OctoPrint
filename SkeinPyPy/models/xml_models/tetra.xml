@@ -1,0 +1,1330 @@
+<?xml version='1.0' ?>
+
+<ArtOfIllusion xmlns:bf="//babelfiche/codec" version="2.0" fileversion="3">
+
+	<Scene bf:id="theScene">
+		<materials bf:id="1" bf:type="java.util.Vector"  bf:list="collection" bf:elem-type="java.lang.Object">
+		</materials>
+		<textures bf:id="2" bf:type="java.util.Vector"  bf:list="collection" bf:elem-type="java.lang.Object">
+			<bf:Elem bf:id="3" bf:type="artofillusion.texture.UniformTexture" roughness="0.2" cloudiness="0.0" transparency="0.0" specularity="0.0" shininess="0.0" id="4">
+				<diffuseColor bf:id="4" bf:type="RGBColor" red="1.0" green="1.0" blue="1.0">
+				</diffuseColor>
+			   <specularColor bf:ref="4" />
+			   <transparentColor bf:ref="4" />
+				<emissiveColor bf:id="5" bf:type="RGBColor" red="0.0" green="0.0" blue="0.0">
+				</emissiveColor>
+			   <name>Default Texture</name>
+			</bf:Elem>
+		</textures>
+		<objects bf:id="6" bf:type="java.util.Vector"  bf:list="collection" bf:elem-type="java.lang.Object">
+			<bf:Elem bf:id="7" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="1">
+				<object bf:id="8" bf:type="artofillusion.object.SceneCamera" fov="30.0" depthOfField="10.0" focalDist="20.0">
+					<filter bf:id="9" bf:list="array" bf:elem-type="artofillusion.image.filter.ImageFilter">
+					</filter>
+				   <theTexture></theTexture>
+				   <theMaterial></theMaterial>
+				   <texMapping></texMapping>
+				   <matMapping></matMapping>
+				   <texParam></texParam>
+				   <paramValue></paramValue>
+				</object>
+				<coords bf:id="10" bf:type="artofillusion.math.CoordinateSystem" xrot="0.0" yrot="3.141592653589793" zrot="0.0">
+					<orig bf:type="Vec3" x="0.0" y="0.0" z="20.0">
+					</orig>
+					<zdir bf:type="Vec3" x="0.0" y="0.0" z="-1.0">
+					</zdir>
+					<updir bf:type="Vec3" x="0.0" y="1.0" z="0.0">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="11" bf:type="artofillusion.math.Mat4" m11="-1.0" m12="0.0" m13="0.0" m14="0.0" m21="0.0" m22="1.0" m23="0.0" m24="0.0" m31="0.0" m32="0.0" m33="-1.0" m34="20.0" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>Camera 1</name>
+			   <parent></parent>
+				<children bf:id="12" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="13" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="14" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="7" />
+						<tc bf:id="15" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="16" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="17" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="18" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="19" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="20" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="14" />
+							<tc bf:id="21" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="22" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="23" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="24" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="25" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="7" />
+						<tc bf:id="26" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="27" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="28" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="29" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="30" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="31" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="25" />
+							<tc bf:id="32" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="33" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="34" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="35" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="36" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="2">
+				<object bf:id="37" bf:type="artofillusion.object.DirectionalLight" intensity="0.8" decayRate="0.5" type="0">
+				   <color bf:ref="4" />
+				   <theTexture></theTexture>
+				   <theMaterial></theMaterial>
+				   <texMapping></texMapping>
+				   <matMapping></matMapping>
+				   <texParam></texParam>
+				   <paramValue></paramValue>
+				</object>
+				<coords bf:id="38" bf:type="artofillusion.math.CoordinateSystem" xrot="0.0" yrot="3.141592653589793" zrot="0.0">
+					<orig bf:type="Vec3" x="0.0" y="0.0" z="20.0">
+					</orig>
+					<zdir bf:type="Vec3" x="0.0" y="0.0" z="-1.0">
+					</zdir>
+					<updir bf:type="Vec3" x="0.0" y="1.0" z="0.0">
+					</updir>
+				   <transformTo></transformTo>
+				   <transformFrom bf:ref="11" />
+				</coords>
+			   <name>Light 1</name>
+			   <parent></parent>
+				<children bf:id="39" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="40" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="41" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="36" />
+						<tc bf:id="42" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="43" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="44" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="45" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="46" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="47" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="41" />
+							<tc bf:id="48" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="49" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="50" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="51" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="52" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="36" />
+						<tc bf:id="53" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="54" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="55" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="56" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="57" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="58" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="52" />
+							<tc bf:id="59" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="60" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="61" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="62" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="63" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="3">
+				<object bf:id="64" bf:type="TriangleMesh" closed="true" smoothingMethod="1">
+					<vertex bf:id="65" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Vertex">
+						<bf:Elem bf:id="66" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="64" />
+							<r bf:type="Vec3" x="-5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="67" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="1" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="64" />
+							<r bf:type="Vec3" x="0.0" y="0.0" z="-5.77">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="68" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="2" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="64" />
+							<r bf:type="Vec3" x="5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="69" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="64" />
+							<r bf:type="Vec3" x="0.0" y="8.66" z="0.0">
+							</r>
+						</bf:Elem>
+					</vertex>
+					<edge bf:id="70" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Edge">
+						<bf:Elem bf:id="71" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="0" f1="0" f2="2" smoothness="1.0">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="72" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="1" f1="1" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="73" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="0" f1="2" f2="3" smoothness="1.0">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="74" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="2" f1="2" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="75" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="1" f1="3" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="76" bf:type="artofillusion.object.TriangleMesh$Edge" v1="1" v2="0" f1="3" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+					</edge>
+					<face bf:id="77" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Face">
+						<bf:Elem bf:id="78" bf:type="artofillusion.object.TriangleMesh$Face" v1="0" v2="3" v3="1" e1="0" e2="1" e3="5">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="79" bf:type="artofillusion.object.TriangleMesh$Face" v1="1" v2="3" v3="2" e1="1" e2="3" e3="4">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="80" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="3" v3="0" e1="3" e2="0" e3="2">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+						<bf:Elem bf:id="81" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="0" v3="1" e1="2" e2="5" e3="4">
+						   <this$0 bf:ref="64" />
+						</bf:Elem>
+					</face>
+					<skeleton bf:id="82" bf:type="artofillusion.animation.Skeleton" nextID="1">
+						<joint bf:id="83" bf:list="array" bf:elem-type="artofillusion.animation.Joint">
+						</joint>
+					</skeleton>
+					<bounds bf:id="84" bf:type="artofillusion.math.BoundingBox" minx="-5.0" maxx="5.0" miny="0.0" maxy="8.66" minz="-5.77" maxz="2.8899999999999997">
+					</bounds>
+				   <theTexture bf:ref="3" />
+				   <theMaterial></theMaterial>
+					<texMapping bf:id="85" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+					   <object bf:ref="64" />
+					   <texture bf:ref="3" />
+					</texMapping>
+				   <matMapping></matMapping>
+					<texParam bf:id="86" bf:list="array" bf:elem-type="artofillusion.TextureParameter">
+					</texParam>
+					<paramValue bf:id="87" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+					</paramValue>
+				</object>
+				<coords bf:id="88" bf:type="artofillusion.math.CoordinateSystem" xrot="0.3490658503988659" yrot="0.0" zrot="0.0">
+					<orig bf:type="Vec3" x="-0.1" y="-3.897" z="5.596">
+					</orig>
+					<zdir bf:type="Vec3" x="0.0" y="0.3420201433256687" z="0.9396926207859084">
+					</zdir>
+					<updir bf:type="Vec3" x="0.0" y="0.9396926207859084" z="-0.3420201433256687">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="89" bf:type="artofillusion.math.Mat4" m11="1.0" m12="0.0" m13="0.0" m14="-0.1" m21="-0.0" m22="0.9396926207859084" m23="0.3420201433256687" m24="-3.897" m31="0.0" m32="-0.3420201433256687" m33="0.9396926207859084" m34="5.596" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>tetrax20</name>
+			   <parent></parent>
+				<children bf:id="90" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="91" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="92" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="63" />
+						<tc bf:id="93" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="94" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="95" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="96" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="97" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="98" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="92" />
+							<tc bf:id="99" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="100" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="101" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="102" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="103" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="63" />
+						<tc bf:id="104" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="105" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="106" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="107" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="108" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="109" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="103" />
+							<tc bf:id="110" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="111" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="112" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="113" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="114" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="4">
+				<object bf:id="115" bf:type="TriangleMesh" closed="true" smoothingMethod="1">
+					<vertex bf:id="116" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Vertex">
+						<bf:Elem bf:id="117" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="115" />
+							<r bf:type="Vec3" x="-5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="118" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="1" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="115" />
+							<r bf:type="Vec3" x="0.0" y="0.0" z="-5.77">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="119" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="2" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="115" />
+							<r bf:type="Vec3" x="5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="120" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="115" />
+							<r bf:type="Vec3" x="0.0" y="8.66" z="0.0">
+							</r>
+						</bf:Elem>
+					</vertex>
+					<edge bf:id="121" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Edge">
+						<bf:Elem bf:id="122" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="0" f1="0" f2="2" smoothness="1.0">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="123" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="1" f1="1" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="124" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="0" f1="2" f2="3" smoothness="1.0">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="125" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="2" f1="2" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="126" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="1" f1="3" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="127" bf:type="artofillusion.object.TriangleMesh$Edge" v1="1" v2="0" f1="3" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+					</edge>
+					<face bf:id="128" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Face">
+						<bf:Elem bf:id="129" bf:type="artofillusion.object.TriangleMesh$Face" v1="0" v2="3" v3="1" e1="0" e2="1" e3="5">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="130" bf:type="artofillusion.object.TriangleMesh$Face" v1="1" v2="3" v3="2" e1="1" e2="3" e3="4">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="131" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="3" v3="0" e1="3" e2="0" e3="2">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+						<bf:Elem bf:id="132" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="0" v3="1" e1="2" e2="5" e3="4">
+						   <this$0 bf:ref="115" />
+						</bf:Elem>
+					</face>
+					<skeleton bf:id="133" bf:type="artofillusion.animation.Skeleton" nextID="1">
+						<joint bf:id="134" bf:list="array" bf:elem-type="artofillusion.animation.Joint">
+						</joint>
+					</skeleton>
+					<bounds bf:id="135" bf:type="artofillusion.math.BoundingBox" minx="-5.0" maxx="5.0" miny="0.0" maxy="8.66" minz="-5.77" maxz="2.8899999999999997">
+					</bounds>
+				   <theTexture bf:ref="3" />
+				   <theMaterial></theMaterial>
+					<texMapping bf:id="136" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+					   <object bf:ref="115" />
+					   <texture bf:ref="3" />
+					</texMapping>
+				   <matMapping></matMapping>
+					<texParam bf:id="137" bf:list="array" bf:elem-type="artofillusion.TextureParameter">
+					</texParam>
+					<paramValue bf:id="138" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+					</paramValue>
+				</object>
+				<coords bf:id="139" bf:type="artofillusion.math.CoordinateSystem" xrot="0.0" yrot="0.6981317007977318" zrot="0.0">
+					<orig bf:type="Vec3" x="8.7" y="6.603" z="5.596">
+					</orig>
+					<zdir bf:type="Vec3" x="-0.6427876096865393" y="0.0" z="0.766044443118978">
+					</zdir>
+					<updir bf:type="Vec3" x="0.0" y="1.0" z="0.0">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="140" bf:type="artofillusion.math.Mat4" m11="0.7660444431189781" m12="0.0" m13="-0.6427876096865394" m14="8.7" m21="-0.0" m22="1.0000000000000002" m23="0.0" m24="6.603" m31="0.6427876096865394" m32="0.0" m33="0.7660444431189782" m34="5.596" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>tetray40</name>
+			   <parent></parent>
+				<children bf:id="141" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="142" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="143" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="114" />
+						<tc bf:id="144" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="145" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="146" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="147" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="148" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="149" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="143" />
+							<tc bf:id="150" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="151" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="152" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="153" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="154" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="114" />
+						<tc bf:id="155" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="156" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="157" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="158" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="159" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="160" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="154" />
+							<tc bf:id="161" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="162" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="163" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="164" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="165" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="5">
+				<object bf:id="166" bf:type="TriangleMesh" closed="true" smoothingMethod="1">
+					<vertex bf:id="167" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Vertex">
+						<bf:Elem bf:id="168" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="166" />
+							<r bf:type="Vec3" x="-5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="169" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="1" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="166" />
+							<r bf:type="Vec3" x="0.0" y="0.0" z="-5.77">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="170" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="2" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="166" />
+							<r bf:type="Vec3" x="5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="171" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="166" />
+							<r bf:type="Vec3" x="0.0" y="8.66" z="0.0">
+							</r>
+						</bf:Elem>
+					</vertex>
+					<edge bf:id="172" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Edge">
+						<bf:Elem bf:id="173" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="0" f1="0" f2="2" smoothness="1.0">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="174" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="1" f1="1" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="175" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="0" f1="2" f2="3" smoothness="1.0">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="176" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="2" f1="2" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="177" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="1" f1="3" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="178" bf:type="artofillusion.object.TriangleMesh$Edge" v1="1" v2="0" f1="3" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+					</edge>
+					<face bf:id="179" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Face">
+						<bf:Elem bf:id="180" bf:type="artofillusion.object.TriangleMesh$Face" v1="0" v2="3" v3="1" e1="0" e2="1" e3="5">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="181" bf:type="artofillusion.object.TriangleMesh$Face" v1="1" v2="3" v3="2" e1="1" e2="3" e3="4">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="182" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="3" v3="0" e1="3" e2="0" e3="2">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+						<bf:Elem bf:id="183" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="0" v3="1" e1="2" e2="5" e3="4">
+						   <this$0 bf:ref="166" />
+						</bf:Elem>
+					</face>
+					<skeleton bf:id="184" bf:type="artofillusion.animation.Skeleton" nextID="1">
+						<joint bf:id="185" bf:list="array" bf:elem-type="artofillusion.animation.Joint">
+						</joint>
+					</skeleton>
+					<bounds bf:id="186" bf:type="artofillusion.math.BoundingBox" minx="-5.0" maxx="5.0" miny="0.0" maxy="8.66" minz="-5.77" maxz="2.8899999999999997">
+					</bounds>
+				   <theTexture bf:ref="3" />
+				   <theMaterial></theMaterial>
+					<texMapping bf:id="187" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+					   <object bf:ref="166" />
+					   <texture bf:ref="3" />
+					</texMapping>
+				   <matMapping></matMapping>
+					<texParam bf:id="188" bf:list="array" bf:elem-type="artofillusion.TextureParameter">
+					</texParam>
+					<paramValue bf:id="189" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+					</paramValue>
+				</object>
+				<coords bf:id="190" bf:type="artofillusion.math.CoordinateSystem" xrot="0.0" yrot="0.0" zrot="0.5235987755982988">
+					<orig bf:type="Vec3" x="28.0" y="6.903" z="5.596">
+					</orig>
+					<zdir bf:type="Vec3" x="0.0" y="0.0" z="1.0">
+					</zdir>
+					<updir bf:type="Vec3" x="0.49999999999999994" y="0.8660254037844387" z="0.0">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="191" bf:type="artofillusion.math.Mat4" m11="0.8660254037844387" m12="0.49999999999999994" m13="0.0" m14="28.0" m21="-0.49999999999999994" m22="0.8660254037844387" m23="0.0" m24="6.903" m31="0.0" m32="-0.0" m33="1.0" m34="5.596" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>tetraz30</name>
+			   <parent></parent>
+				<children bf:id="192" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="193" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="194" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="165" />
+						<tc bf:id="195" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="196" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="197" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="198" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="199" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="200" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="194" />
+							<tc bf:id="201" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="202" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="203" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="204" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="205" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="165" />
+						<tc bf:id="206" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="207" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="208" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="209" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="210" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="211" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="205" />
+							<tc bf:id="212" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="213" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="214" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="215" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="216" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="6">
+				<object bf:id="217" bf:type="TriangleMesh" closed="true" smoothingMethod="1">
+					<vertex bf:id="218" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Vertex">
+						<bf:Elem bf:id="219" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="217" />
+							<r bf:type="Vec3" x="-5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="220" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="1" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="217" />
+							<r bf:type="Vec3" x="0.0" y="0.0" z="-5.77">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="221" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="2" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="217" />
+							<r bf:type="Vec3" x="5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="222" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="217" />
+							<r bf:type="Vec3" x="0.0" y="8.66" z="0.0">
+							</r>
+						</bf:Elem>
+					</vertex>
+					<edge bf:id="223" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Edge">
+						<bf:Elem bf:id="224" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="0" f1="0" f2="2" smoothness="1.0">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="225" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="1" f1="1" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="226" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="0" f1="2" f2="3" smoothness="1.0">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="227" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="2" f1="2" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="228" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="1" f1="3" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="229" bf:type="artofillusion.object.TriangleMesh$Edge" v1="1" v2="0" f1="3" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+					</edge>
+					<face bf:id="230" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Face">
+						<bf:Elem bf:id="231" bf:type="artofillusion.object.TriangleMesh$Face" v1="0" v2="3" v3="1" e1="0" e2="1" e3="5">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="232" bf:type="artofillusion.object.TriangleMesh$Face" v1="1" v2="3" v3="2" e1="1" e2="3" e3="4">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="233" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="3" v3="0" e1="3" e2="0" e3="2">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+						<bf:Elem bf:id="234" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="0" v3="1" e1="2" e2="5" e3="4">
+						   <this$0 bf:ref="217" />
+						</bf:Elem>
+					</face>
+					<skeleton bf:id="235" bf:type="artofillusion.animation.Skeleton" nextID="1">
+						<joint bf:id="236" bf:list="array" bf:elem-type="artofillusion.animation.Joint">
+						</joint>
+					</skeleton>
+					<bounds bf:id="237" bf:type="artofillusion.math.BoundingBox" minx="-5.0" maxx="5.0" miny="0.0" maxy="8.66" minz="-5.77" maxz="2.8899999999999997">
+					</bounds>
+				   <theTexture bf:ref="3" />
+				   <theMaterial></theMaterial>
+					<texMapping bf:id="238" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+					   <object bf:ref="217" />
+					   <texture bf:ref="3" />
+					</texMapping>
+				   <matMapping></matMapping>
+					<texParam bf:id="239" bf:list="array" bf:elem-type="artofillusion.TextureParameter">
+					</texParam>
+					<paramValue bf:id="240" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+					</paramValue>
+				</object>
+				<coords bf:id="241" bf:type="artofillusion.math.CoordinateSystem" xrot="0.3490658503988659" yrot="0.6981317007977318" zrot="0.0">
+					<orig bf:type="Vec3" x="3.4" y="-14.997" z="5.596">
+					</orig>
+					<zdir bf:type="Vec3" x="-0.6040227735550536" y="0.3420201433256687" z="0.7198463103929542">
+					</zdir>
+					<updir bf:type="Vec3" x="0.21984631039295416" y="0.9396926207859084" z="-0.2620026302293849">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="242" bf:type="artofillusion.math.Mat4" m11="0.7660444431189781" m12="0.21984631039295421" m13="-0.6040227735550537" m14="3.4" m21="-2.7755575615628914E-17" m22="0.9396926207859086" m23="0.34202014332566877" m24="-14.997" m31="0.6427876096865393" m32="-0.262002630229385" m33="0.7198463103929543" m34="5.596" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>tetrax20y40</name>
+			   <parent></parent>
+				<children bf:id="243" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="244" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="245" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="216" />
+						<tc bf:id="246" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="247" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="248" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="249" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="250" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="251" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="245" />
+							<tc bf:id="252" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="253" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="254" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="255" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="256" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="216" />
+						<tc bf:id="257" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="258" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="259" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="260" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="261" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="262" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="256" />
+							<tc bf:id="263" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="264" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="265" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="266" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="267" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="7">
+				<object bf:id="268" bf:type="TriangleMesh" closed="true" smoothingMethod="1">
+					<vertex bf:id="269" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Vertex">
+						<bf:Elem bf:id="270" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="268" />
+							<r bf:type="Vec3" x="-5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="271" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="1" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="268" />
+							<r bf:type="Vec3" x="0.0" y="0.0" z="-5.77">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="272" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="2" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="268" />
+							<r bf:type="Vec3" x="5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="273" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="268" />
+							<r bf:type="Vec3" x="0.0" y="8.66" z="0.0">
+							</r>
+						</bf:Elem>
+					</vertex>
+					<edge bf:id="274" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Edge">
+						<bf:Elem bf:id="275" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="0" f1="0" f2="2" smoothness="1.0">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="276" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="1" f1="1" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="277" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="0" f1="2" f2="3" smoothness="1.0">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="278" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="2" f1="2" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="279" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="1" f1="3" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="280" bf:type="artofillusion.object.TriangleMesh$Edge" v1="1" v2="0" f1="3" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+					</edge>
+					<face bf:id="281" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Face">
+						<bf:Elem bf:id="282" bf:type="artofillusion.object.TriangleMesh$Face" v1="0" v2="3" v3="1" e1="0" e2="1" e3="5">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="283" bf:type="artofillusion.object.TriangleMesh$Face" v1="1" v2="3" v3="2" e1="1" e2="3" e3="4">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="284" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="3" v3="0" e1="3" e2="0" e3="2">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+						<bf:Elem bf:id="285" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="0" v3="1" e1="2" e2="5" e3="4">
+						   <this$0 bf:ref="268" />
+						</bf:Elem>
+					</face>
+					<skeleton bf:id="286" bf:type="artofillusion.animation.Skeleton" nextID="1">
+						<joint bf:id="287" bf:list="array" bf:elem-type="artofillusion.animation.Joint">
+						</joint>
+					</skeleton>
+					<bounds bf:id="288" bf:type="artofillusion.math.BoundingBox" minx="-5.0" maxx="5.0" miny="0.0" maxy="8.66" minz="-5.77" maxz="2.8899999999999997">
+					</bounds>
+				   <theTexture bf:ref="3" />
+				   <theMaterial></theMaterial>
+					<texMapping bf:id="289" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+					   <object bf:ref="268" />
+					   <texture bf:ref="3" />
+					</texMapping>
+				   <matMapping></matMapping>
+					<texParam bf:id="290" bf:list="array" bf:elem-type="artofillusion.TextureParameter">
+					</texParam>
+					<paramValue bf:id="291" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+					</paramValue>
+				</object>
+				<coords bf:id="292" bf:type="artofillusion.math.CoordinateSystem" xrot="0.3490658503988659" yrot="0.0" zrot="0.5235987755982988">
+					<orig bf:type="Vec3" x="12.0" y="-21.397" z="5.596">
+					</orig>
+					<zdir bf:type="Vec3" x="0.0" y="0.3420201433256687" z="0.9396926207859084">
+					</zdir>
+					<updir bf:type="Vec3" x="0.49999999999999994" y="0.8137976813493738" z="-0.29619813272602386">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="293" bf:type="artofillusion.math.Mat4" m11="0.8660254037844388" m12="0.49999999999999994" m13="0.0" m14="12.0" m21="-0.46984631039295416" m22="0.8137976813493739" m23="0.3420201433256687" m24="-21.397" m31="0.17101007166283433" m32="-0.2961981327260239" m33="0.9396926207859084" m34="5.596" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>tetrax20z30</name>
+			   <parent></parent>
+				<children bf:id="294" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="295" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="296" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="267" />
+						<tc bf:id="297" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="298" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="299" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="300" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="301" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="302" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="296" />
+							<tc bf:id="303" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="304" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="305" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="306" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="307" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="267" />
+						<tc bf:id="308" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="309" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="310" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="311" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="312" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="313" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="307" />
+							<tc bf:id="314" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="315" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="316" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="317" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="318" bf:type="ObjectInfo" visible="true" selected="false" parentSelected="false" id="8">
+				<object bf:id="319" bf:type="TriangleMesh" closed="true" smoothingMethod="1">
+					<vertex bf:id="320" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Vertex">
+						<bf:Elem bf:id="321" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="319" />
+							<r bf:type="Vec3" x="-5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="322" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="1" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="319" />
+							<r bf:type="Vec3" x="0.0" y="0.0" z="-5.77">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="323" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="2" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="319" />
+							<r bf:type="Vec3" x="5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="324" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="319" />
+							<r bf:type="Vec3" x="0.0" y="8.66" z="0.0">
+							</r>
+						</bf:Elem>
+					</vertex>
+					<edge bf:id="325" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Edge">
+						<bf:Elem bf:id="326" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="0" f1="0" f2="2" smoothness="1.0">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="327" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="1" f1="1" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="328" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="0" f1="2" f2="3" smoothness="1.0">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="329" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="2" f1="2" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="330" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="1" f1="3" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="331" bf:type="artofillusion.object.TriangleMesh$Edge" v1="1" v2="0" f1="3" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+					</edge>
+					<face bf:id="332" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Face">
+						<bf:Elem bf:id="333" bf:type="artofillusion.object.TriangleMesh$Face" v1="0" v2="3" v3="1" e1="0" e2="1" e3="5">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="334" bf:type="artofillusion.object.TriangleMesh$Face" v1="1" v2="3" v3="2" e1="1" e2="3" e3="4">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="335" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="3" v3="0" e1="3" e2="0" e3="2">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+						<bf:Elem bf:id="336" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="0" v3="1" e1="2" e2="5" e3="4">
+						   <this$0 bf:ref="319" />
+						</bf:Elem>
+					</face>
+					<skeleton bf:id="337" bf:type="artofillusion.animation.Skeleton" nextID="1">
+						<joint bf:id="338" bf:list="array" bf:elem-type="artofillusion.animation.Joint">
+						</joint>
+					</skeleton>
+					<bounds bf:id="339" bf:type="artofillusion.math.BoundingBox" minx="-5.0" maxx="5.0" miny="0.0" maxy="8.66" minz="-5.77" maxz="2.8899999999999997">
+					</bounds>
+				   <theTexture bf:ref="3" />
+				   <theMaterial></theMaterial>
+					<texMapping bf:id="340" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+					   <object bf:ref="319" />
+					   <texture bf:ref="3" />
+					</texMapping>
+				   <matMapping></matMapping>
+					<texParam bf:id="341" bf:list="array" bf:elem-type="artofillusion.TextureParameter">
+					</texParam>
+					<paramValue bf:id="342" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+					</paramValue>
+				</object>
+				<coords bf:id="343" bf:type="artofillusion.math.CoordinateSystem" xrot="0.0" yrot="0.6981317007977318" zrot="0.5235987755982988">
+					<orig bf:type="Vec3" x="27.7" y="-21.197" z="5.596">
+					</orig>
+					<zdir bf:type="Vec3" x="-0.6427876096865393" y="0.0" z="0.766044443118978">
+					</zdir>
+					<updir bf:type="Vec3" x="0.38302222155948895" y="0.8660254037844387" z="0.32139380484326957">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="344" bf:type="artofillusion.math.Mat4" m11="0.6634139481689385" m12="0.38302222155948906" m13="-0.6427876096865394" m14="27.7" m21="-0.49999999999999994" m22="0.866025403784439" m23="0.0" m24="-21.197" m31="0.5566703992264195" m32="0.3213938048432696" m33="0.7660444431189782" m34="5.596" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>tetray40z30</name>
+			   <parent></parent>
+				<children bf:id="345" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="346" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="347" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="318" />
+						<tc bf:id="348" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="349" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="350" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="351" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="352" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="353" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="347" />
+							<tc bf:id="354" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="355" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="356" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="357" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="358" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="318" />
+						<tc bf:id="359" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="360" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="361" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="362" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="363" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="364" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="358" />
+							<tc bf:id="365" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="366" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="367" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="368" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+			<bf:Elem bf:id="369" bf:type="ObjectInfo" visible="true" selected="true" parentSelected="false" id="9">
+				<object bf:id="370" bf:type="TriangleMesh" closed="true" smoothingMethod="1">
+					<vertex bf:id="371" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Vertex">
+						<bf:Elem bf:id="372" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="370" />
+							<r bf:type="Vec3" x="-5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="373" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="1" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="370" />
+							<r bf:type="Vec3" x="0.0" y="0.0" z="-5.77">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="374" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="2" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="370" />
+							<r bf:type="Vec3" x="5.0" y="0.0" z="2.8899999999999997">
+							</r>
+						</bf:Elem>
+						<bf:Elem bf:id="375" bf:type="artofillusion.object.TriangleMesh$Vertex" edges="3" firstEdge="0" smoothness="1.0" ikJoint="-1" ikWeight="1.0">
+						   <this$0 bf:ref="370" />
+							<r bf:type="Vec3" x="0.0" y="8.66" z="0.0">
+							</r>
+						</bf:Elem>
+					</vertex>
+					<edge bf:id="376" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Edge">
+						<bf:Elem bf:id="377" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="0" f1="0" f2="2" smoothness="1.0">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="378" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="1" f1="1" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="379" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="0" f1="2" f2="3" smoothness="1.0">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="380" bf:type="artofillusion.object.TriangleMesh$Edge" v1="3" v2="2" f1="2" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="381" bf:type="artofillusion.object.TriangleMesh$Edge" v1="2" v2="1" f1="3" f2="1" smoothness="1.0">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="382" bf:type="artofillusion.object.TriangleMesh$Edge" v1="1" v2="0" f1="3" f2="0" smoothness="1.0">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+					</edge>
+					<face bf:id="383" bf:list="array" bf:elem-type="artofillusion.object.TriangleMesh$Face">
+						<bf:Elem bf:id="384" bf:type="artofillusion.object.TriangleMesh$Face" v1="0" v2="3" v3="1" e1="0" e2="1" e3="5">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="385" bf:type="artofillusion.object.TriangleMesh$Face" v1="1" v2="3" v3="2" e1="1" e2="3" e3="4">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="386" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="3" v3="0" e1="3" e2="0" e3="2">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+						<bf:Elem bf:id="387" bf:type="artofillusion.object.TriangleMesh$Face" v1="2" v2="0" v3="1" e1="2" e2="5" e3="4">
+						   <this$0 bf:ref="370" />
+						</bf:Elem>
+					</face>
+					<skeleton bf:id="388" bf:type="artofillusion.animation.Skeleton" nextID="1">
+						<joint bf:id="389" bf:list="array" bf:elem-type="artofillusion.animation.Joint">
+						</joint>
+					</skeleton>
+					<bounds bf:id="390" bf:type="artofillusion.math.BoundingBox" minx="-5.0" maxx="5.0" miny="0.0" maxy="8.66" minz="-5.77" maxz="2.8899999999999997">
+					</bounds>
+				   <theTexture bf:ref="3" />
+				   <theMaterial></theMaterial>
+					<texMapping bf:id="391" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+					   <object bf:ref="370" />
+					   <texture bf:ref="3" />
+					</texMapping>
+				   <matMapping></matMapping>
+					<texParam bf:id="392" bf:list="array" bf:elem-type="artofillusion.TextureParameter">
+					</texParam>
+					<paramValue bf:id="393" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+					</paramValue>
+				</object>
+				<coords bf:id="394" bf:type="artofillusion.math.CoordinateSystem" xrot="0.3490658503988659" yrot="0.6981317007977318" zrot="0.5235987755982988">
+					<orig bf:type="Vec3" x="18.9" y="-7.897" z="5.596">
+					</orig>
+					<zdir bf:type="Vec3" x="-0.6040227735550536" y="0.3420201433256687" z="0.7198463103929542">
+					</zdir>
+					<updir bf:type="Vec3" x="0.5734147112880661" y="0.8137976813493738" z="0.09449287120628153">
+					</updir>
+				   <transformTo></transformTo>
+					<transformFrom bf:id="395" bf:type="artofillusion.math.Mat4" m11="0.5534907929724615" m12="0.5734147112880663" m13="-0.6040227735550537" m14="18.9" m21="-0.46984631039295416" m22="0.8137976813493739" m23="0.34202014332566877" m24="-7.897" m31="0.6876717143411119" m32="0.09449287120628147" m33="0.7198463103929543" m34="5.596" m41="0.0" m42="0.0" m43="0.0" m44="1.0">
+					</transformFrom>
+				</coords>
+			   <name>tetrax20y40z30</name>
+			   <parent></parent>
+				<children bf:id="396" bf:list="array" bf:elem-type="artofillusion.object.ObjectInfo">
+				</children>
+				<tracks bf:id="397" bf:list="array" bf:elem-type="artofillusion.animation.Track">
+					<bf:Elem bf:id="398" bf:type="artofillusion.animation.PositionTrack" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="369" />
+						<tc bf:id="399" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+							<time bf:id="400" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="401" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="402" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="403" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="404" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="398" />
+							<tc bf:id="405" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="406" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="407" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="408" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Position</name>
+					</bf:Elem>
+					<bf:Elem bf:id="409" bf:type="artofillusion.animation.RotationTrack" quaternion="true" smoothingMethod="2" mode="0" relCoords="1" joint="-1" enablex="true" enabley="true" enablez="true" enabled="true" quantized="true">
+					   <info bf:ref="369" />
+						<tc bf:id="410" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="false">
+							<time bf:id="411" bf:list="array" bf:elem-type="double">
+							   
+							</time>
+							<smoothness bf:id="412" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+							</smoothness>
+							<value bf:id="413" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+							</value>
+						</tc>
+						<relObject bf:id="414" bf:type="artofillusion.animation.ObjectRef" objectID="-1" jointID="-1">
+						   <object></object>
+						   <theScene></theScene>
+						</relObject>
+						<theWeight bf:id="415" bf:type="artofillusion.animation.WeightTrack" smoothingMethod="1" enabled="true" quantized="true">
+						   <parent bf:ref="409" />
+							<tc bf:id="416" bf:type="artofillusion.animation.Timecourse" subdivideAdaptively="true">
+								<time bf:id="417" bf:list="array" bf:elem-type="double">
+								   
+								</time>
+								<smoothness bf:id="418" bf:list="array" bf:elem-type="artofillusion.animation.Smoothness">
+								</smoothness>
+								<value bf:id="419" bf:list="array" bf:elem-type="artofillusion.animation.Keyframe">
+								</value>
+							</tc>
+						   <name>Weight</name>
+						</theWeight>
+					   <name>Rotation</name>
+					</bf:Elem>
+				</tracks>
+			   <pose></pose>
+			   <distortion></distortion>
+			   <prevDistortion></prevDistortion>
+			</bf:Elem>
+		</objects>
+		<Environment environmentMode="0" framesPerSecond="30">
+			<ambientColor bf:id="420" bf:type="RGBColor" red="0.3" green="0.3" blue="0.3">
+			</ambientColor>
+		   <environmentColor bf:ref="5" />
+		   <environmentTexture bf:ref="3" />
+			<environmentMapping bf:id="421" bf:type="artofillusion.texture.UniformMapping" twoSided="true" applyToFront="true">
+				<object bf:id="422" bf:type="Sphere" rx="1.0" ry="1.0" rz="1.0">
+					<bounds bf:id="423" bf:type="artofillusion.math.BoundingBox" minx="-1.0" maxx="1.0" miny="-1.0" maxy="1.0" minz="-1.0" maxz="1.0">
+					</bounds>
+				   <theTexture></theTexture>
+				   <theMaterial></theMaterial>
+				   <texMapping></texMapping>
+				   <matMapping></matMapping>
+				   <texParam></texParam>
+				   <paramValue></paramValue>
+				</object>
+			   <texture bf:ref="3" />
+			</environmentMapping>
+			<environmentParameterValues bf:id="424" bf:list="array" bf:elem-type="artofillusion.texture.ParameterValue">
+			</environmentParameterValues>
+		</Environment>
+		<Fog fogState="false" fogDistance="20.0">
+		   <fogColor bf:ref="420" />
+		</Fog>
+		<Grid showGrid="false" snapToGrid="false" gridSpacing="1.0" gridSubdivisions="10">
+		</Grid>
+	</Scene>
+
+</ArtOfIllusion>

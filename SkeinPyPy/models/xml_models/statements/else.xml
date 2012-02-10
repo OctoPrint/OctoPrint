@@ -1,0 +1,15 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<function id='doubleTriple' parameters='case, number' >
+		<if condition='case==0'>
+			<statement number='number*2'/>
+		</if>
+		<else>
+			<statement number='number*3'/>
+		</elif>
+		<return return='number'/>
+	</function>
+	<dictionary case0='=doubleTriple(0, 7)'/>
+	<dictionary case1='=doubleTriple(1, 7)'/>
+	<dictionary case2='=doubleTriple(2, 7)'/>
+</fabmetheus>

@@ -1,0 +1,259 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.dimension</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.dimension</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/dimension.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.cool.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.drill.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Dimension adds Adrian's extruder distance E value so firmware does not have to calculate it on it's own and can set the extruder speed in relation to the distance that needs to be extruded.  Some printers don't support this.  Extruder distance is described at:<br>
+ <br>
+<a href="http://blog.reprap.org/2009/05/4d-printing.html">http://blog.reprap.org/2009/05/4d-printing.html</a><br>
+ <br>
+and in Erik de Bruijn's conversion script page at:<br>
+ <br>
+<a href="http://objects.reprap.org/wiki/3D-to-5D-Gcode.php">http://objects.reprap.org/wiki/3D-to-5D-Gcode.php</a><br>
+ <br>
+The dimension manual page is at:<br>
+ <br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Dimension">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Dimension</a><br>
+ <br>
+Nophead wrote an excellent article on how to set the filament parameters:<br>
+ <br>
+<a href="http://hydraraptor.blogspot.com/2011/03/spot-on-flow-rate.html">http://hydraraptor.blogspot.com/2011/03/spot-on-flow-rate.html</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Extrusion Distance Format Choice">Extrusion Distance Format Choice</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Absolute Extrusion Distance">Absolute Extrusion Distance</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Relative Extrusion Distance">Relative Extrusion Distance</a><br />
+&nbsp;&nbsp;<a href="#Extruder Retraction Speed">Extruder Retraction Speed</a><br />
+&nbsp;&nbsp;<a href="#Filament">Filament</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Filament Diameter">Filament Diameter</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Filament Packing Density">Filament Packing Density</a><br />
+&nbsp;&nbsp;<a href="#Maximum E Value before Reset">Maximum E Value before Reset</a><br />
+&nbsp;&nbsp;<a href="#Minimum Travel for Retraction">Minimum Travel for Retraction</a><br />
+&nbsp;&nbsp;<a href="#Retract Within Island">Retract Within Island</a><br />
+&nbsp;&nbsp;<a href="#Retraction Distance">Retraction Distance</a><br />
+&nbsp;&nbsp;<a href="#Restart Extra Distance">Restart Extra Distance</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Dimension' checkbox is off.  When it is on, the functions described below will work, when it is off, the functions will not be called.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Extrusion Distance Format Choice" id="Extrusion Distance Format Choice"></a><h3>Extrusion Distance Format Choice</h3>
+
+Default is 'Absolute Extrusion Distance' because in Adrian's description the distance is absolute.  In future, because the relative distances are smaller than the cumulative absolute distances, hopefully the firmware will be able to use relative distance.<br>
+ <br>
+<a name="Absolute Extrusion Distance" id="Absolute Extrusion Distance"></a><h4>Absolute Extrusion Distance</h4>
+
+When selected, the extrusion distance output will be the total extrusion distance to that gcode line.<br>
+ <br>
+<a name="Relative Extrusion Distance" id="Relative Extrusion Distance"></a><h4>Relative Extrusion Distance</h4>
+
+When selected, the extrusion distance output will be the extrusion distance from the last gcode line.<br>
+ <br>
+<a name="Extruder Retraction Speed" id="Extruder Retraction Speed"></a><h3>Extruder Retraction Speed</h3>
+
+Default is 13.3 mm/s.<br>
+ <br>
+Defines the extruder retraction feed rate.  A high value will allow the retraction operation to complete before much material oozes out.  If your extruder can handle it, this value should be much larger than your feed rate.<br>
+ <br>
+As an example, I have a feed rate of 48 mm/s and a 'Extruder Retraction Speed' of 150 mm/s.<br>
+ <br>
+<a name="Filament" id="Filament"></a><h3>Filament</h3>
+
+<a name="Filament Diameter" id="Filament Diameter"></a><h4>Filament Diameter</h4>
+
+Default is 2.8 millimeters.<br>
+ <br>
+Defines the filament diameter.<br>
+ <br>
+<a name="Filament Packing Density" id="Filament Packing Density"></a><h4>Filament Packing Density</h4>
+
+Default is 0.85.  This is for ABS.<br>
+ <br>
+Defines the effective filament packing density.<br>
+ <br>
+The default value is so low for ABS because ABS is relatively soft and with a pinch wheel extruder the teeth of the pinch dig in farther, so it sees a smaller effective diameter.  With a hard plastic like PLA the teeth of the pinch wheel don't dig in as far, so it sees a larger effective diameter, so feeds faster, so for PLA the value should be around 0.97.  This is with Wade's hobbed bolt.  The effect is less significant with larger pinch wheels.<br>
+ <br>
+Overall, you'll have to find the optimal filament packing density by experiment.<br>
+ <br>
+<a name="Maximum E Value before Reset" id="Maximum E Value before Reset"></a><h3>Maximum E Value before Reset</h3>
+
+Default: 91234.0<br>
+ <br>
+Defines the maximum E value before it is reset with the 'G92 E0' command line.  The reason it is reset only after the maximum E value is reached is because at least one firmware takes time to reset.  The problem with waiting until the E value is high before resetting is that more characters are sent.  So if your firmware takes a lot of time to reset, set this parameter to a high value, if it doesn't set this parameter to a low value or even zero.<br>
+ <br>
+<a name="Minimum Travel for Retraction" id="Minimum Travel for Retraction"></a><h3>Minimum Travel for Retraction</h3>
+
+Default: 1.0 millimeter<br>
+ <br>
+Defines the minimum distance that the extruder head has to travel from the end of one thread to the beginning of another, in order to trigger the extruder retraction.  Setting this to a high value means the extruder will retract only occasionally, setting it to a low value means the extruder will retract most of the time.<br>
+ <br>
+<a name="Retract Within Island" id="Retract Within Island"></a><h3>Retract Within Island</h3>
+
+Default is off.<br>
+ <br>
+When selected, retraction will work even when the next thread is within the same island.  If it is not selected, retraction will only work when crossing a boundary.<br>
+ <br>
+<a name="Retraction Distance" id="Retraction Distance"></a><h3>Retraction Distance</h3>
+
+Default is zero.<br>
+ <br>
+Defines the amount the extruder retracts (sucks back) the extruded filament whenever an extruder stop is commanded.  Using this seems to help prevent stringing.  e.g. If set to 10 the extruder reverses the distance required to pull back 10mm of filament.  In fact this does not actually happen but if you set this distance by trial and error you can get to a point where there is very little ooze from the extruder when it stops which is not normally the case. <br>
+ <br>
+<a name="Restart Extra Distance" id="Restart Extra Distance"></a><h3>Restart Extra Distance</h3>
+
+Default is zero.<br>
+ <br>
+Defines the restart extra distance when the thread restarts.  The restart distance will be the retraction distance plus the restart extra distance.<br>
+ <br>
+If this is greater than zero when the extruder starts this distance is added to the retract value giving extra filament.  It can be a negative value in which case it is subtracted from the retraction distance.  On some Repstrap machines a negative value can stop the build up of plastic that can occur at the start of edges.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples dimension the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and dimension.py.<br>
+ <br>
+&gt; python dimension.py<br>
+This brings up the dimension dialog.<br>
+ <br>
+&gt; python dimension.py Screw Holder Bottom.stl<br>
+The dimension tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The dimension tool has created the file:<br>
+.. Screw Holder Bottom_dimension.gcode</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.cool.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.drill.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="skeinforge_application.skeinforge_plugins.craft_plugins.__init__.html">skeinforge_application.skeinforge_plugins.craft_plugins.__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+<a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+<a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html">fabmetheus_utilities.geometry.solids.triangle_mesh</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.dimension.html#DimensionRepository">DimensionRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.dimension.html#DimensionSkein">DimensionSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DimensionRepository">class <strong>DimensionRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;dimension&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DimensionRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="DimensionRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Dimension&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DimensionSkein">class <strong>DimensionSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;dimension&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DimensionSkein-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-addLinearMoveExtrusionDistanceLine"><strong>addLinearMoveExtrusionDistanceLine</strong></a>(self, extrusionDistance)</dt><dd><tt>Get&nbsp;the&nbsp;extrusion&nbsp;distance&nbsp;string&nbsp;from&nbsp;the&nbsp;extrusion&nbsp;distance.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;dimension&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getDimensionedArcMovement"><strong>getDimensionedArcMovement</strong></a>(self, line, splitLine)</dt><dd><tt>Get&nbsp;a&nbsp;dimensioned&nbsp;arc&nbsp;movement.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getDimensionedLinearMovement"><strong>getDimensionedLinearMovement</strong></a>(self, line, splitLine)</dt><dd><tt>Get&nbsp;a&nbsp;dimensioned&nbsp;linear&nbsp;movement.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getDistanceToNextThread"><strong>getDistanceToNextThread</strong></a>(self, lineIndex)</dt><dd><tt>Get&nbsp;the&nbsp;travel&nbsp;distance&nbsp;to&nbsp;the&nbsp;next&nbsp;thread.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getExtrusionDistanceString"><strong>getExtrusionDistanceString</strong></a>(self, distance, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;extrusion&nbsp;distance&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getExtrusionDistanceStringFromExtrusionDistance"><strong>getExtrusionDistanceStringFromExtrusionDistance</strong></a>(self, extrusionDistance)</dt><dd><tt>Get&nbsp;the&nbsp;extrusion&nbsp;distance&nbsp;string&nbsp;from&nbsp;the&nbsp;extrusion&nbsp;distance.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getRetractionRatio"><strong>getRetractionRatio</strong></a>(self, lineIndex)</dt><dd><tt>Get&nbsp;the&nbsp;retraction&nbsp;ratio.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-getSmallestEnclosureIndex"><strong>getSmallestEnclosureIndex</strong></a>(self, point)</dt><dd><tt>Get&nbsp;the&nbsp;index&nbsp;of&nbsp;the&nbsp;smallest&nbsp;boundary&nbsp;loop&nbsp;which&nbsp;encloses&nbsp;the&nbsp;point.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-parseBoundaries"><strong>parseBoundaries</strong></a>(self)</dt><dd><tt>Parse&nbsp;the&nbsp;boundaries&nbsp;and&nbsp;add&nbsp;them&nbsp;to&nbsp;the&nbsp;boundary&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="DimensionSkein-parseLine"><strong>parseLine</strong></a>(self, lineIndex)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;add&nbsp;it&nbsp;to&nbsp;the&nbsp;dimension&nbsp;skein.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, gcodeText<font color="#909090">=''</font>, repository<font color="#909090">=None</font>)</dt><dd><tt>Dimension&nbsp;a&nbsp;gcode&nbsp;file&nbsp;or&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Dimension&nbsp;a&nbsp;gcode&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;dimension&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Dimension&nbsp;a&nbsp;gcode&nbsp;file.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

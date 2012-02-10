@@ -1,0 +1,14 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='cubic'>
+		<vertex />
+		<qqqcubic controlPoint0='[0, -10]' controlPoint1='[15, -10]' x='15'/>
+		<cubic controlPoints='[[0, -10], [15, -10]]' x='15'/>
+		<cubic controlPoint1='[30, 10]' x='30'/>
+	</path>
+	<outline target='=document.getElementByID(cubic)'/>
+	<extrude target='=document.getElementByID(cubic)'/>
+	<!--
+	http://www.w3.org/TR/SVG/paths.html#PathDataCubicBezierCommands
+	-->
+</fabmetheus>

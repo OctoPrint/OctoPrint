@@ -1,0 +1,15 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='pathTest' name='writeTest'>
+		<circle radius='9'/>
+		<lineation target='=[[-5, 0, 5], [5, 0, 5], [0, 15, 5]]'/>
+	</path>
+	<extrude name='writeTest' quantity='2' target='=document.getElementByID(pathTest)'>
+		<matrix scale.x='2'/>
+	</extrude>
+	<write addLayerTemplate='t' target='=document.getElementsByName(writeTest)'/>
+	<!--
+	<write target='=document.getElementByID(writeTest)' writeMatrix='false'/>
+	<write folder='../test' target='=document.getElementByID(writeTest)' writeMatrix='false'/>
+	-->
+</fabmetheus>

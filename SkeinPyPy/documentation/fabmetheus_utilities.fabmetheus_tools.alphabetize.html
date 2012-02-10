@@ -1,0 +1,121 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.fabmetheus_tools.alphabetize</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.fabmetheus_tools.html"><font color="#ffffff">fabmetheus_tools</font></a>.alphabetize</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/alphabetize.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/alphabetize.py</a></font></td></tr></table>
+    <p><tt>Alphabetize is a script to alphabetize functions and signatures.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+</td><td width="25%" valign=top><a href="cStringIO.html">cStringIO</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.fabmetheus_tools.alphabetize.html#EndCharacterMonad">EndCharacterMonad</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.fabmetheus_tools.alphabetize.html#ParameterMonad">ParameterMonad</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.fabmetheus_tools.alphabetize.html#Snippet">Snippet</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="EndCharacterMonad">class <strong>EndCharacterMonad</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;monad&nbsp;to&nbsp;return&nbsp;the&nbsp;parent&nbsp;monad&nbsp;when&nbsp;it&nbsp;encounters&nbsp;the&nbsp;end&nbsp;character.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="EndCharacterMonad-__init__"><strong>__init__</strong></a>(self, endCharacter, parentMonad)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="EndCharacterMonad-getNextMonad"><strong>getNextMonad</strong></a>(self, character)</dt><dd><tt>Get&nbsp;the&nbsp;next&nbsp;monad.</tt></dd></dl>
+
+<dl><dt><a name="EndCharacterMonad-getSnippet"><strong>getSnippet</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;snippet.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ParameterMonad">class <strong>ParameterMonad</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;monad&nbsp;to&nbsp;handle&nbsp;parameters.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ParameterMonad-__init__"><strong>__init__</strong></a>(self, snippet)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="ParameterMonad-addParameter"><strong>addParameter</strong></a>(self)</dt><dd><tt>Add&nbsp;parameter&nbsp;to&nbsp;the&nbsp;snippet.</tt></dd></dl>
+
+<dl><dt><a name="ParameterMonad-getNextMonad"><strong>getNextMonad</strong></a>(self, character)</dt><dd><tt>Get&nbsp;the&nbsp;next&nbsp;monad.</tt></dd></dl>
+
+<dl><dt><a name="ParameterMonad-getSnippet"><strong>getSnippet</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;snippet.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Snippet">class <strong>Snippet</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;get&nbsp;the&nbsp;variables&nbsp;for&nbsp;a&nbsp;function.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Snippet-__init__"><strong>__init__</strong></a>(self, characterIndex, fileText)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Snippet-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#Snippet">Snippet</a>.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addTogetherList"><strong>addTogetherList</strong></a>(functionList, togetherLists)</dt><dd><tt>Add&nbsp;the&nbsp;togetherList&nbsp;to&nbsp;the&nbsp;togetherLists&nbsp;is&nbsp;the&nbsp;sorted&nbsp;is&nbsp;different.</tt></dd></dl>
+ <dl><dt><a name="-compareFunctionName"><strong>compareFunctionName</strong></a>(first, second)</dt><dd><tt>Compare&nbsp;the&nbsp;function&nbsp;names.</tt></dd></dl>
+ <dl><dt><a name="-getConvertedName"><strong>getConvertedName</strong></a>(name)</dt><dd><tt>Get&nbsp;converted&nbsp;name&nbsp;with&nbsp;init&nbsp;at&nbsp;the&nbsp;beginning&nbsp;and&nbsp;main&nbsp;at&nbsp;the&nbsp;endCompare&nbsp;the&nbsp;function&nbsp;names.</tt></dd></dl>
+ <dl><dt><a name="-getFunctionLists"><strong>getFunctionLists</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;function&nbsp;lists&nbsp;in&nbsp;the&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getFunctionsWithStringByFileName"><strong>getFunctionsWithStringByFileName</strong></a>(fileName, searchString)</dt><dd><tt>Get&nbsp;the&nbsp;functions&nbsp;with&nbsp;the&nbsp;search&nbsp;string&nbsp;in&nbsp;the&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getFunctionsWithStringByFileNames"><strong>getFunctionsWithStringByFileNames</strong></a>(fileNames, searchString)</dt><dd><tt>Get&nbsp;the&nbsp;functions&nbsp;with&nbsp;the&nbsp;search&nbsp;string&nbsp;in&nbsp;the&nbsp;files.</tt></dd></dl>
+ <dl><dt><a name="-getParameterSequence"><strong>getParameterSequence</strong></a>(functionName)</dt><dd><tt>Get&nbsp;the&nbsp;parameter&nbsp;sequence.</tt></dd></dl>
+ <dl><dt><a name="-getSnippetsByFileName"><strong>getSnippetsByFileName</strong></a>(fileName, functionName)</dt><dd><tt>Get&nbsp;the&nbsp;function&nbsp;signature&nbsp;snippets&nbsp;by&nbsp;the&nbsp;file&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getTogetherLists"><strong>getTogetherLists</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;lists&nbsp;of&nbsp;the&nbsp;unsorted&nbsp;and&nbsp;sorted&nbsp;functions&nbsp;in&nbsp;the&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getTokenEnd"><strong>getTokenEnd</strong></a>(characterIndex, fileText, token)</dt><dd><tt>Get&nbsp;the&nbsp;token&nbsp;end&nbsp;index&nbsp;for&nbsp;the&nbsp;file&nbsp;text&nbsp;and&nbsp;token.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Run&nbsp;main&nbsp;function.</tt></dd></dl>
+ <dl><dt><a name="-printTogetherListsByFileNames"><strong>printTogetherListsByFileNames</strong></a>(fileNames)</dt><dd><tt>Print&nbsp;the&nbsp;together&nbsp;lists&nbsp;of&nbsp;the&nbsp;file&nbsp;names,&nbsp;if&nbsp;the&nbsp;file&nbsp;name&nbsp;has&nbsp;a&nbsp;together&nbsp;list.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

@@ -1,0 +1,91 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.geometry.creation.grid</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.geometry.html"><font color="#ffffff">geometry</font></a>.<a href="fabmetheus_utilities.geometry.creation.html"><font color="#ffffff">creation</font></a>.grid</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/creation/grid.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/creation/grid.py</a></font></td></tr></table>
+    <p><tt>Grid path points.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html">fabmetheus_utilities.geometry.geometry_utilities.evaluate</a><br>
+<a href="fabmetheus_utilities.geometry.creation.lineation.html">fabmetheus_utilities.geometry.creation.lineation</a><br>
+</td><td width="25%" valign=top><a href="math.html">math</a><br>
+<a href="fabmetheus_utilities.geometry.geometry_tools.path.html">fabmetheus_utilities.geometry.geometry_tools.path</a><br>
+</td><td width="25%" valign=top><a href="random.html">random</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.creation.grid.html#GridDerivation">GridDerivation</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="GridDerivation">class <strong>GridDerivation</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;to&nbsp;hold&nbsp;grid&nbsp;variables.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="GridDerivation-__init__"><strong>__init__</strong></a>(self, elementNode)</dt><dd><tt>Set&nbsp;defaults.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addGridRow"><strong>addGridRow</strong></a>(diameter, gridPath, loopsComplex, maximumComplex, rowIndex, x, y, zigzag)</dt><dd><tt>Add&nbsp;grid&nbsp;row.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutput"><strong>getGeometryOutput</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;vector3&nbsp;vertexes&nbsp;from&nbsp;attribute&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryOutputByArguments"><strong>getGeometryOutputByArguments</strong></a>(arguments, elementNode)</dt><dd><tt>Get&nbsp;vector3&nbsp;vertexes&nbsp;from&nbsp;attribute&nbsp;dictionary&nbsp;by&nbsp;arguments.</tt></dd></dl>
+ <dl><dt><a name="-getHexagonalGrid"><strong>getHexagonalGrid</strong></a>(diameter, loopsComplex, maximumComplex, minimumComplex, zigzag)</dt><dd><tt>Get&nbsp;hexagonal&nbsp;grid.</tt></dd></dl>
+ <dl><dt><a name="-getIsPointInsideZoneAwayOthers"><strong>getIsPointInsideZoneAwayOthers</strong></a>(diameterReciprocal, loopsComplex, point, pixelDictionary)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;point&nbsp;is&nbsp;inside&nbsp;the&nbsp;loops&nbsp;zone&nbsp;and&nbsp;and&nbsp;away&nbsp;from&nbsp;the&nbsp;other&nbsp;points.</tt></dd></dl>
+ <dl><dt><a name="-getNewDerivation"><strong>getNewDerivation</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;new&nbsp;derivation.</tt></dd></dl>
+ <dl><dt><a name="-getRandomGrid"><strong>getRandomGrid</strong></a>(derivation, diameter, elementNode, loopsComplex, maximumComplex, minimumComplex)</dt><dd><tt>Get&nbsp;rectangular&nbsp;grid.</tt></dd></dl>
+ <dl><dt><a name="-getRectangularGrid"><strong>getRectangularGrid</strong></a>(diameter, loopsComplex, maximumComplex, minimumComplex, zigzag)</dt><dd><tt>Get&nbsp;rectangular&nbsp;grid.</tt></dd></dl>
+ <dl><dt><a name="-processElementNode"><strong>processElementNode</strong></a>(elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;xml&nbsp;element.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

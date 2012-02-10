@@ -1,0 +1,10 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<dictionary continuousPrintTest='=print.continuous(6)'/>
+	<dictionary linePrintTest='=print.line("8,9")'/>
+	<print>hello</print>
+	<path id='vectorTest'>
+		<vertex x='1' y='2' z='3'/>
+	</path>
+	<dictionary number='=print.line(document.getElementByID(vectorTest).getPaths()[0][0].x)'/>
+</fabmetheus>

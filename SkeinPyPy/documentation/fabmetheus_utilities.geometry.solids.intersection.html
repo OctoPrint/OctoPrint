@@ -1,0 +1,162 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.geometry.solids.intersection</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.geometry.html"><font color="#ffffff">geometry</font></a>.<a href="fabmetheus_utilities.geometry.solids.html"><font color="#ffffff">solids</font></a>.intersection</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/solids/intersection.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/geometry/solids/intersection.py</a></font></td></tr></table>
+    <p><tt>Boolean geometry intersection of solids.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.solids.difference.html">fabmetheus_utilities.geometry.solids.difference</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.geometry_utilities.evaluate.html">fabmetheus_utilities.geometry.geometry_utilities.evaluate</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.geometry.solids.group.html">fabmetheus_utilities.geometry.solids.group</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.solids.difference.html#Difference">fabmetheus_utilities.geometry.solids.difference.Difference</a>(<a href="fabmetheus_utilities.geometry.geometry_utilities.boolean_solid.html#BooleanSolid">fabmetheus_utilities.geometry.geometry_utilities.boolean_solid.BooleanSolid</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.geometry.solids.intersection.html#Intersection">Intersection</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Intersection">class <strong>Intersection</strong></a>(<a href="fabmetheus_utilities.geometry.solids.difference.html#Difference">fabmetheus_utilities.geometry.solids.difference.Difference</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>An&nbsp;intersection&nbsp;object.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.geometry.solids.intersection.html#Intersection">Intersection</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.solids.difference.html#Difference">fabmetheus_utilities.geometry.solids.difference.Difference</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_utilities.boolean_solid.html#BooleanSolid">fabmetheus_utilities.geometry.geometry_utilities.boolean_solid.BooleanSolid</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.solids.group.html#Group">fabmetheus_utilities.geometry.solids.group.Group</a></dd>
+<dd><a href="fabmetheus_utilities.geometry.geometry_tools.dictionary.html#Dictionary">fabmetheus_utilities.geometry.geometry_tools.dictionary.Dictionary</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="Intersection-getLoopsFromObjectLoopsList"><strong>getLoopsFromObjectLoopsList</strong></a>(self, importRadius, visibleObjectLoopsList)</dt><dd><tt>Get&nbsp;loops&nbsp;from&nbsp;visible&nbsp;object&nbsp;loops&nbsp;list.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.solids.difference.html#Difference">fabmetheus_utilities.geometry.solids.difference.Difference</a>:<br>
+<dl><dt><a name="Intersection-getXMLLocalName"><strong>getXMLLocalName</strong></a>(self)</dt><dd><tt>Get&nbsp;xml&nbsp;class&nbsp;name.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_utilities.boolean_solid.html#BooleanSolid">fabmetheus_utilities.geometry.geometry_utilities.boolean_solid.BooleanSolid</a>:<br>
+<dl><dt><a name="Intersection-getDifference"><strong>getDifference</strong></a>(self, importRadius, visibleObjectLoopsList)</dt><dd><tt>Get&nbsp;subtracted&nbsp;loops&nbsp;sliced&nbsp;through&nbsp;shape.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getIntersection"><strong>getIntersection</strong></a>(self, importRadius, visibleObjectLoopsList)</dt><dd><tt>Get&nbsp;intersected&nbsp;loops&nbsp;sliced&nbsp;through&nbsp;shape.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getLoops"><strong>getLoops</strong></a>(self, importRadius, z)</dt><dd><tt>Get&nbsp;loops&nbsp;sliced&nbsp;through&nbsp;shape.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getTransformedPaths"><strong>getTransformedPaths</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;transformed&nbsp;paths.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getUnion"><strong>getUnion</strong></a>(self, importRadius, visibleObjectLoopsList)</dt><dd><tt>Get&nbsp;joined&nbsp;loops&nbsp;sliced&nbsp;through&nbsp;shape.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.solids.group.html#Group">fabmetheus_utilities.geometry.solids.group.Group</a>:<br>
+<dl><dt><a name="Intersection-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Add&nbsp;empty&nbsp;lists.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-addXMLInnerSection"><strong>addXMLInnerSection</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;xml&nbsp;inner&nbsp;section&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-addXMLSection"><strong>addXMLSection</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;the&nbsp;xml&nbsp;section&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getMatrix4X4"><strong>getMatrix4X4</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;matrix4X4.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getMatrixChainTetragrid"><strong>getMatrixChainTetragrid</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;matrix&nbsp;chain&nbsp;tetragrid.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getVisible"><strong>getVisible</strong></a>(self)</dt><dd><tt>Get&nbsp;visible.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-setToElementNode"><strong>setToElementNode</strong></a>(self, elementNode)</dt><dd><tt>Set&nbsp;to&nbsp;elementNode.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.geometry.geometry_tools.dictionary.html#Dictionary">fabmetheus_utilities.geometry.geometry_tools.dictionary.Dictionary</a>:<br>
+<dl><dt><a name="Intersection-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;object&nbsp;info.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-addXML"><strong>addXML</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;xml&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-addXMLArchivableObjects"><strong>addXMLArchivableObjects</strong></a>(self, depth, output)</dt><dd><tt>Add&nbsp;xml&nbsp;for&nbsp;this&nbsp;object.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-createShape"><strong>createShape</strong></a>(self)</dt><dd><tt>Create&nbsp;the&nbsp;shape.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getAttributes"><strong>getAttributes</strong></a>(self)</dt><dd><tt>Get&nbsp;attribute&nbsp;table.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getComplexTransformedPathLists"><strong>getComplexTransformedPathLists</strong></a>(self)</dt><dd><tt>Get&nbsp;complex&nbsp;transformed&nbsp;path&nbsp;lists.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getFabricationExtension"><strong>getFabricationExtension</strong></a>(self)</dt><dd><tt>Get&nbsp;fabrication&nbsp;extension.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getFabricationText"><strong>getFabricationText</strong></a>(self, addLayerTemplate)</dt><dd><tt>Get&nbsp;fabrication&nbsp;text.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getGeometryOutput"><strong>getGeometryOutput</strong></a>(self)</dt><dd><tt>Get&nbsp;geometry&nbsp;output&nbsp;dictionary.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getMinimumZ"><strong>getMinimumZ</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;minimum&nbsp;z.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getPaths"><strong>getPaths</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;paths.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getTransformedVertexes"><strong>getTransformedVertexes</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;transformed&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getTriangleMeshes"><strong>getTriangleMeshes</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;triangleMeshes.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getType"><strong>getType</strong></a>(self)</dt><dd><tt>Get&nbsp;type.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-getVertexes"><strong>getVertexes</strong></a>(self)</dt><dd><tt>Get&nbsp;all&nbsp;vertexes.</tt></dd></dl>
+
+<dl><dt><a name="Intersection-transformGeometryOutput"><strong>transformGeometryOutput</strong></a>(self, geometryOutput)</dt><dd><tt>Transform&nbsp;the&nbsp;geometry&nbsp;output&nbsp;by&nbsp;the&nbsp;local&nbsp;matrix4x4.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-convertElementNode"><strong>convertElementNode</strong></a>(elementNode, geometryOutput)</dt><dd><tt>Convert&nbsp;the&nbsp;xml&nbsp;element&nbsp;to&nbsp;an&nbsp;intersection&nbsp;xml&nbsp;element.</tt></dd></dl>
+ <dl><dt><a name="-getNewDerivation"><strong>getNewDerivation</strong></a>(elementNode)</dt><dd><tt>Get&nbsp;new&nbsp;derivation.</tt></dd></dl>
+ <dl><dt><a name="-processElementNode"><strong>processElementNode</strong></a>(elementNode)</dt><dd><tt>Process&nbsp;the&nbsp;xml&nbsp;element.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Nophead &lt;http://hydraraptor.blogspot.com/&gt;<font color="#c040c0">\n</font>Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Nophead&nbsp;&lt;<a href="http://hydraraptor.blogspot.com/">http://hydraraptor.blogspot.com/</a>&gt;<br>
+Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

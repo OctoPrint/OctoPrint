@@ -1,0 +1,31 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='arc'>
+		<vertex />
+		<vertex x='50' y='25'/>
+		<arc radius='[25, 25]' x='100' y='50' xAxisRotation='30' largeArcFlag='false' sweepFlag='false'/>
+		<vertex x='150' y='75'/>
+		<arc radius='[25, 50]' x='200' y='100' xAxisRotation='30' largeArcFlag='false' sweepFlag='false'/>
+		<vertex x='250' y='125'/>
+		<arc radius='[25, 75]' x='300' y='150' xAxisRotation='30' largeArcFlag='false' sweepFlag='false'/>
+		<vertex x='350' y='175'/>
+		<arc radius='[25, 100]' x='400' y='200' xAxisRotation='30' largeArcFlag='false' sweepFlag='false'/>
+		<vertex x='450' y='225'/>
+	</path>
+	<outline target='=document.getElementByID(arc)'/>
+	<extrude target='=document.getElementByID(arc)'/>
+	<!--
+	http://www.w3.org/TR/SVG/paths.html#PathDataEllipticalArcCommands
+	d="M600,350 l 50,-25 
+	a25,25 -30 0,1 50,-25 l 50,-25 
+	a25,50 -30 0,1 50,-25 l 50,-25 
+	a25,75 -30 0,1 50,-25 l 50,-25 
+	a25,100 -30 0,1 50,-25 l 50,-25"
+
+	<path id='arc'>
+		<arc x='40' y='40' radius='60' xAxisRotation='20' largeArcFlag='f' sweepFlag='f'/>
+	</path>
+	<outline target='=document.getElementByID(arc)'/>
+	<extrude target='=document.getElementByID(arc)'/>
+	-->
+</fabmetheus>

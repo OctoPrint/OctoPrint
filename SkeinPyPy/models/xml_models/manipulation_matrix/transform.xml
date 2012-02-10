@@ -1,0 +1,7 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<sphere id='Sphere5' radius='5.0' transform.a00='3'/>
+	<!--
+	<transform id='transformSphere' target='=document.getElementByID(Sphere5)' a00='3'/>
+	-->
+</fabmetheus>

@@ -1,0 +1,28 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='rings'>
+		<path id='ring_outer'>
+			<circle radius='10'/>
+			<circle radius='8'/>
+		</path>
+		<path id='ring_inner'>
+			<circle radius='6'/>
+			<circle radius='4'/>
+		</path>
+	</path>
+	<extrude target='=document.getElementByID(rings)'/>
+	<!--
+	<difference id='ring_outer'>
+		<circle radius='10'/>
+		<circle radius='8'/>
+	</difference>
+	<difference id='ring_inner'>
+		<circle radius='6'/>
+		<circle radius='4'/>
+	</difference>
+	<union>
+		<extrude target='=document.getElementByID(ring_outer)'/>
+		<extrude target='=document.getElementByID(ring_inner)'/>
+	</union>
+	-->
+</fabmetheus>

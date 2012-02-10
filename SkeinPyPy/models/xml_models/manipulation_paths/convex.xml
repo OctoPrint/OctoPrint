@@ -1,0 +1,5 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<lineation id='L_Shape' convex.='true' target='[[0, 0], [20, 0], [5, 5], [0, 20]]'/>
+	<extrude target='=document.getElementByID(L_Shape)'/>
+</fabmetheus>

@@ -1,0 +1,285 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.speed</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.speed</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/speed.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/speed.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.smooth.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.splodge.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Speed is a plugin to set the feed rate and flow rate.<br>
+ <br>
+The speed manual page is at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Speed">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Speed</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Add Flow Rate">Add Flow Rate</a><br />
+&nbsp;&nbsp;<a href="#Bridge">Bridge</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Bridge Feed Rate Multiplier">Bridge Feed Rate Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Bridge Flow Rate Multiplier">Bridge Flow Rate Multiplier</a><br />
+&nbsp;&nbsp;<a href="#Duty Cyle">Duty Cyle</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Duty Cyle at Beginning">Duty Cyle at Beginning</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Duty Cyle at Ending">Duty Cyle at Ending</a><br />
+&nbsp;&nbsp;<a href="#Feed Rate">Feed Rate</a><br />
+&nbsp;&nbsp;<a href="#Flow Rate Setting">Flow Rate Setting</a><br />
+&nbsp;&nbsp;<a href="#Maximum Z Feed Rate">Maximum Z Feed Rate</a><br />
+&nbsp;&nbsp;<a href="#Object First Layer">Object First Layer</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Object First Layer Feed Rate Infill Multiplier">Object First Layer Feed Rate Infill Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Object First Layer Feed Rate Perimeter Multiplier">Object First Layer Feed Rate Perimeter Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Object First Layer Flow Rate Infill Multiplier">Object First Layer Flow Rate Infill Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Object First Layer Flow Rate Perimeter Multiplier">Object First Layer Flow Rate Perimeter Multiplier</a><br />
+&nbsp;&nbsp;<a href="#Orbital Feed Rate over Operating Feed Rate">Orbital Feed Rate over Operating Feed Rate</a><br />
+&nbsp;&nbsp;<a href="#Perimeter">Perimeter</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Perimeter Feed Rate Multiplier">Perimeter Feed Rate Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Perimeter Flow Rate Multiplier">Perimeter Flow Rate Multiplier</a><br />
+&nbsp;&nbsp;<a href="#Travel Feed Rate">Travel Feed Rate</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Speed' checkbox is on.  When it is on, the functions described below will work, when it is off, nothing will be done.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Add Flow Rate" id="Add Flow Rate"></a><h3>Add Flow Rate</h3>
+
+Default is on.<br>
+ <br>
+When selected, the flow rate will be added to the gcode.<br>
+ <br>
+<a name="Bridge" id="Bridge"></a><h3>Bridge</h3>
+
+<a name="Bridge Feed Rate Multiplier" id="Bridge Feed Rate Multiplier"></a><h4>Bridge Feed Rate Multiplier</h4>
+
+Default is one.<br>
+ <br>
+Defines the ratio of the feed rate (head speed) on the bridge layers over the feed rate of the typical non bridge layers.<br>
+ <br>
+<a name="Bridge Flow Rate Multiplier" id="Bridge Flow Rate Multiplier"></a><h4>Bridge Flow Rate Multiplier</h4>
+
+Default is one.<br>
+ <br>
+Defines the ratio of the flow rate (extruder speed) on the bridge layers over the flow rate of the typical non bridge layers.<br>
+ <br>
+<a name="Duty Cyle" id="Duty Cyle"></a><h3>Duty Cyle</h3>
+
+<a name="Duty Cyle at Beginning" id="Duty Cyle at Beginning"></a><h4>Duty Cyle at Beginning</h4>
+
+Default is one, which will set the extruder motor to full current.<br>
+ <br>
+Defines the duty cycle of the stepper motor pulse width modulation by adding an M113 command toward the beginning of the gcode text.  If the hardware has the option of using a potentiometer to set the duty cycle, to select the potentiometer option set 'Duty Cyle at Beginning' to an empty string.  To turn off the extruder, set the 'Duty Cyle at Beginning' to zero.<br>
+ <br>
+<a name="Duty Cyle at Ending" id="Duty Cyle at Ending"></a><h4>Duty Cyle at Ending</h4>
+
+Default is zero, which will turn off the extruder motor.<br>
+ <br>
+Defines the duty cycle of the stepper motor pulse width modulation by adding an M113 command toward the ending of the gcode text.  If the hardware has the option of using a potentiometer to set the duty cycle, to select the potentiometer option set 'Duty Cyle at Beginning' to an empty string.  To turn off the extruder, set the 'Duty Cyle at Ending' to zero.<br>
+ <br>
+<a name="Feed Rate" id="Feed Rate"></a><h3>Feed Rate</h3>
+
+Default is sixteen millimeters per second.<br>
+ <br>
+Defines the operating feed rate, the speed your printing head moves in XY plane, before any modifiers.<br>
+ <br>
+<a name="Flow Rate Setting" id="Flow Rate Setting"></a><h3>Flow Rate Setting</h3>
+
+Default is 210.<br>
+ <br>
+Defines the operating flow rate.<br>
+ <br>
+RapMan uses this parameter to define the RPM of the extruder motor.  The extruder motor RPM is flow rate / 10 so if your flow rate is 150.0 that will set the extruder stepper to run at 15 RPM, different printers might read this value differently.<br>
+ <br>
+<a name="Maximum Z Feed Rate" id="Maximum Z Feed Rate"></a><h3>Maximum Z Feed Rate</h3>
+
+Default is one millimeter per second.<br>
+ <br>
+Defines the speed of a vertical hop, like the infill hop in skin.  Also, if the Limit plugin is activated, it will limit the maximum speed of the tool head in the z direction to this value.<br>
+ <br>
+<a name="Object First Layer" id="Object First Layer"></a><h3>Object First Layer</h3>
+
+ <br>
+<a name="Object First Layer Feed Rate Infill Multiplier" id="Object First Layer Feed Rate Infill Multiplier"></a><h4>Object First Layer Feed Rate Infill Multiplier</h4>
+
+Default is 0.4.<br>
+ <br>
+Defines the object first layer infill feed rate multiplier.  The greater the 'Object First Layer Feed Rate Infill Multiplier, the thinner the infill, the lower the 'Object First Layer Feed Rate Infill Multiplier', the thicker the infill.<br>
+ <br>
+<a name="Object First Layer Feed Rate Perimeter Multiplier" id="Object First Layer Feed Rate Perimeter Multiplier"></a><h4>Object First Layer Feed Rate Perimeter Multiplier</h4>
+
+Default is 0.4.<br>
+ <br>
+Defines the object first layer edge feed rate multiplier.  The greater the 'Object First Layer Feed Rate Perimeter Multiplier, the thinner the edge, the lower the 'Object First Layer Feed Rate Perimeter Multiplier', the thicker the edge.<br>
+ <br>
+<a name="Object First Layer Flow Rate Infill Multiplier" id="Object First Layer Flow Rate Infill Multiplier"></a><h4>Object First Layer Flow Rate Infill Multiplier</h4>
+
+Default is 0.4.<br>
+ <br>
+Defines the object first layer infill flow rate multiplier.  The greater the 'Object First Layer Flow Rate Infill Multiplier', the thicker the infill, the lower the 'Object First Layer Flow Rate Infill Multiplier, the thinner the infill.<br>
+ <br>
+<a name="Object First Layer Flow Rate Perimeter Multiplier" id="Object First Layer Flow Rate Perimeter Multiplier"></a><h4>Object First Layer Flow Rate Perimeter Multiplier</h4>
+
+Default is 0.4.<br>
+ <br>
+Defines the object first layer edge flow rate multiplier.  The greater the 'Object First Layer Flow Rate Perimeter Multiplier', the thicker the edge, the lower the 'Object First Layer Flow Rate Perimeter Multiplier, the thinner the edge.<br>
+ <br>
+<a name="Orbital Feed Rate over Operating Feed Rate" id="Orbital Feed Rate over Operating Feed Rate"></a><h3>Orbital Feed Rate over Operating Feed Rate</h3>
+
+Default is 0.5.<br>
+ <br>
+Defines the speed when the head is orbiting compared to the operating extruder speed.  If you want the orbit to be very short, set the "Orbital Feed Rate over Operating Feed Rate" setting to a low value like 0.1.<br>
+ <br>
+<a name="Perimeter" id="Perimeter"></a><h3>Perimeter</h3>
+
+To have higher build quality on the outside at the expense of slower build speed, a typical setting for the 'Perimeter Feed Rate over Operating Feed Rate' would be 0.5.  To go along with that, if you are using a speed controlled extruder like a stepper extruder, the 'Perimeter Flow Rate over Operating Flow Rate' should also be 0.5.<br>
+ <br>
+A stepper motor is the best way of driving the extruder; however, if you are stuck with a DC motor extruder using Pulse Width Modulation to control the speed, then you'll probably need a slightly higher ratio because there is a minimum voltage 'Flow Rate PWM Setting' required for the extruder motor to turn.  The flow rate PWM ratio would be determined by trial and error, with the first trial being:<br>
+Perimeter Flow Rate over Operating Flow Rate ~ Perimeter Feed Rate over Operating Feed Rate * (Flow Rate PWM Setting - Minimum Flow Rate PWM Setting) + Minimum Flow Rate PWM Setting<br>
+ <br>
+<a name="Perimeter Feed Rate Multiplier" id="Perimeter Feed Rate Multiplier"></a><h4>Perimeter Feed Rate Multiplier</h4>
+
+Default: 1.0<br>
+ <br>
+Defines the ratio of the feed rate of the edge (outside shell) over the feed rate of the infill.  If you for example set this to 0.8 you will have a "stronger" outside edge than inside extrusion as the outside edge will be printed slower hence better lamination will occur and more filament will be placed there.<br>
+ <br>
+<a name="Perimeter Flow Rate Multiplier" id="Perimeter Flow Rate Multiplier"></a><h4>Perimeter Flow Rate Multiplier</h4>
+
+Default: 1.0<br>
+ <br>
+Defines the ratio of the flow rate of the edge (outside shell) over the flow rate of the infill.  If you want the same thickness of the edge but better lamination you need to compensate for the slower feed rate by slowing down the flow rate, but all combinations are possible for different results.<br>
+ <br>
+<a name="Travel Feed Rate" id="Travel Feed Rate"></a><h3>Travel Feed Rate</h3>
+
+Default is sixteen millimeters per second.<br>
+ <br>
+Defines the feed rate when the extruder is off (not printing).  The 'Travel Feed Rate' could be set as high as the extruder can be moved, it is not limited by the maximum extrusion rate.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples speed the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and speed.py.<br>
+ <br>
+&gt; python speed.py<br>
+This brings up the speed dialog.<br>
+ <br>
+&gt; python speed.py Screw Holder Bottom.stl<br>
+The speed tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The speed tool has created the file:<br>
+.. Screw Holder Bottom_speed.gcode</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.smooth.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.splodge.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+</td><td width="25%" valign=top><a href="math.html">math</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+<a href="sys.html">sys</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.speed.html#SpeedRepository">SpeedRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.speed.html#SpeedSkein">SpeedSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SpeedRepository">class <strong>SpeedRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;speed&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SpeedRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="SpeedRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Speed&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SpeedSkein">class <strong>SpeedSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;speed&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SpeedSkein-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="SpeedSkein-addFlowRateLine"><strong>addFlowRateLine</strong></a>(self)</dt><dd><tt>Add&nbsp;flow&nbsp;rate&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="SpeedSkein-addParameterString"><strong>addParameterString</strong></a>(self, firstWord, parameterWord)</dt><dd><tt>Add&nbsp;parameter&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="SpeedSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;speed&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="SpeedSkein-getSpeededLine"><strong>getSpeededLine</strong></a>(self, line, splitLine)</dt><dd><tt>Get&nbsp;gcode&nbsp;line&nbsp;with&nbsp;feed&nbsp;rate.</tt></dd></dl>
+
+<dl><dt><a name="SpeedSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="SpeedSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;add&nbsp;it&nbsp;to&nbsp;the&nbsp;speed&nbsp;skein.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, text<font color="#909090">=''</font>, repository<font color="#909090">=None</font>)</dt><dd><tt>Speed&nbsp;the&nbsp;file&nbsp;or&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Speed&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;speed&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Speed&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

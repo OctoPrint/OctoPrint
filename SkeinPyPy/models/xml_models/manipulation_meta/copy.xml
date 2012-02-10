@@ -1,0 +1,16 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<polygon id='polygon_radius20_sides3' radius='20.0' sides='3'/>
+	<group id='groupTest'>
+		<extrude id='extrudePolygon' target='=document.getElementByID(polygon_radius20_sides3)' scale.x='0.5'/>
+		<extrude id='extrudePolygon' target='=document.getElementByID(polygon_radius20_sides3)'>
+			<matrix translate.y='70'/>
+		</extrude>
+		<matrix translate.y='-100'/>
+	</group>
+	<copy bottom.altitude='2' target='=document.getElementByID(groupTest)' translate.x='40'/>
+	<!--
+	<dictionary id='copyTest' eight='8'/>
+	<copy target='=document.getElementByID(copyTest)'/>
+	-->
+</fabmetheus>

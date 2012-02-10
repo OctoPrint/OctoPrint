@@ -1,0 +1,109 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.archive</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.archive</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/archive.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/archive.py</a></font></td></tr></table>
+    <p><tt>Boolean geometry utilities.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="traceback.html">traceback</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addToNamePathDictionary"><strong>addToNamePathDictionary</strong></a>(directoryPath, namePathDictionary)</dt><dd><tt>Add&nbsp;to&nbsp;the&nbsp;name&nbsp;path&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getAbsoluteFolderPath"><strong>getAbsoluteFolderPath</strong></a>(filePath, folderName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;absolute&nbsp;folder&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getAbsoluteFrozenFolderPath"><strong>getAbsoluteFrozenFolderPath</strong></a>(filePath, folderName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;absolute&nbsp;frozen&nbsp;folder&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getAnalyzePluginsDirectoryPath"><strong>getAnalyzePluginsDirectoryPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;analyze&nbsp;plugins&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getCraftPluginsDirectoryPath"><strong>getCraftPluginsDirectoryPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;craft&nbsp;plugins&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getDocumentationPath"><strong>getDocumentationPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;documentation&nbsp;file&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getElementsPath"><strong>getElementsPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;evaluate_elements&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getEndsWithList"><strong>getEndsWithList</strong></a>(word, wordEndings)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;word&nbsp;ends&nbsp;with&nbsp;a&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-getFabmetheusPath"><strong>getFabmetheusPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;fabmetheus&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getFabmetheusToolsPath"><strong>getFabmetheusToolsPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;fabmetheus&nbsp;tools&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getFabmetheusUtilitiesPath"><strong>getFabmetheusUtilitiesPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;fabmetheus&nbsp;utilities&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getFileNamesByFilePaths"><strong>getFileNamesByFilePaths</strong></a>(pluginFilePaths)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;names&nbsp;of&nbsp;the&nbsp;plugins&nbsp;by&nbsp;the&nbsp;file&nbsp;paths.</tt></dd></dl>
+ <dl><dt><a name="-getFilePathWithUnderscoredBasename"><strong>getFilePathWithUnderscoredBasename</strong></a>(fileName, suffix)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;path&nbsp;with&nbsp;all&nbsp;spaces&nbsp;in&nbsp;the&nbsp;basename&nbsp;replaced&nbsp;with&nbsp;underscores.</tt></dd></dl>
+ <dl><dt><a name="-getFilePaths"><strong>getFilePaths</strong></a>(fileInDirectory<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;paths&nbsp;in&nbsp;the&nbsp;directory&nbsp;of&nbsp;the&nbsp;file&nbsp;in&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getFilePathsByDirectory"><strong>getFilePathsByDirectory</strong></a>(directoryName)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;paths&nbsp;in&nbsp;the&nbsp;directory&nbsp;of&nbsp;the&nbsp;file&nbsp;in&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getFilePathsRecursively"><strong>getFilePathsRecursively</strong></a>(fileInDirectory<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;paths&nbsp;in&nbsp;the&nbsp;directory&nbsp;of&nbsp;the&nbsp;file&nbsp;in&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getFileText"><strong>getFileText</strong></a>(fileName, printWarning<font color="#909090">=True</font>, readMode<font color="#909090">='r'</font>)</dt><dd><tt>Get&nbsp;the&nbsp;entire&nbsp;text&nbsp;of&nbsp;a&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getFileTextInFileDirectory"><strong>getFileTextInFileDirectory</strong></a>(fileInDirectory, fileName, readMode<font color="#909090">='r'</font>)</dt><dd><tt>Get&nbsp;the&nbsp;entire&nbsp;text&nbsp;of&nbsp;a&nbsp;file&nbsp;in&nbsp;the&nbsp;directory&nbsp;of&nbsp;the&nbsp;file&nbsp;in&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getFilesWithFileTypeWithoutWords"><strong>getFilesWithFileTypeWithoutWords</strong></a>(fileType, words<font color="#909090">=[]</font>, fileInDirectory<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;files&nbsp;which&nbsp;have&nbsp;a&nbsp;given&nbsp;file&nbsp;type,&nbsp;but&nbsp;with&nbsp;do&nbsp;not&nbsp;contain&nbsp;a&nbsp;word&nbsp;in&nbsp;a&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-getFilesWithFileTypesWithoutWords"><strong>getFilesWithFileTypesWithoutWords</strong></a>(fileTypes, words<font color="#909090">=[]</font>, fileInDirectory<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;files&nbsp;which&nbsp;have&nbsp;a&nbsp;given&nbsp;file&nbsp;type,&nbsp;but&nbsp;with&nbsp;do&nbsp;not&nbsp;contain&nbsp;a&nbsp;word&nbsp;in&nbsp;a&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-getFilesWithFileTypesWithoutWordsRecursively"><strong>getFilesWithFileTypesWithoutWordsRecursively</strong></a>(fileTypes, words<font color="#909090">=[]</font>, fileInDirectory<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;files&nbsp;recursively&nbsp;which&nbsp;have&nbsp;a&nbsp;given&nbsp;file&nbsp;type,&nbsp;but&nbsp;with&nbsp;do&nbsp;not&nbsp;contain&nbsp;a&nbsp;word&nbsp;in&nbsp;a&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-getFundamentalsPath"><strong>getFundamentalsPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;evaluate_fundamentals&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryDictionary"><strong>getGeometryDictionary</strong></a>(folderName)</dt><dd><tt>Get&nbsp;to&nbsp;the&nbsp;geometry&nbsp;name&nbsp;path&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryPath"><strong>getGeometryPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;geometry&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryToolsPath"><strong>getGeometryToolsPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;geometry&nbsp;tools&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getGeometryUtilitiesPath"><strong>getGeometryUtilitiesPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;geometry_utilities&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getInterpretPluginsPath"><strong>getInterpretPluginsPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;interpret&nbsp;plugins&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getJoinedPath"><strong>getJoinedPath</strong></a>(path, subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;joined&nbsp;file&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getModuleWithDirectoryPath"><strong>getModuleWithDirectoryPath</strong></a>(directoryPath, fileName)</dt><dd><tt>Get&nbsp;the&nbsp;module&nbsp;from&nbsp;the&nbsp;fileName&nbsp;and&nbsp;folder&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getModuleWithPath"><strong>getModuleWithPath</strong></a>(path)</dt><dd><tt>Get&nbsp;the&nbsp;module&nbsp;from&nbsp;the&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getPluginFileNamesFromDirectoryPath"><strong>getPluginFileNamesFromDirectoryPath</strong></a>(directoryPath)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;names&nbsp;of&nbsp;the&nbsp;python&nbsp;plugins&nbsp;in&nbsp;the&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getProfilesPath"><strong>getProfilesPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;profiles&nbsp;directory&nbsp;path,&nbsp;which&nbsp;is&nbsp;the&nbsp;settings&nbsp;directory&nbsp;joined&nbsp;with&nbsp;profiles.</tt></dd></dl>
+ <dl><dt><a name="-getPythonDirectoryNames"><strong>getPythonDirectoryNames</strong></a>(directoryName)</dt><dd><tt>Get&nbsp;the&nbsp;python&nbsp;directories.</tt></dd></dl>
+ <dl><dt><a name="-getPythonDirectoryNamesRecursively"><strong>getPythonDirectoryNamesRecursively</strong></a>(directoryName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;python&nbsp;directories&nbsp;recursively.</tt></dd></dl>
+ <dl><dt><a name="-getPythonFileNamesExceptInit"><strong>getPythonFileNamesExceptInit</strong></a>(fileInDirectory<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;python&nbsp;fileNames&nbsp;of&nbsp;the&nbsp;directory&nbsp;which&nbsp;the&nbsp;fileInDirectory&nbsp;is&nbsp;in,&nbsp;except&nbsp;for&nbsp;the&nbsp;__init__.py&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getPythonFileNamesExceptInitRecursively"><strong>getPythonFileNamesExceptInitRecursively</strong></a>(directoryName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;python&nbsp;fileNames&nbsp;of&nbsp;the&nbsp;directory&nbsp;recursively,&nbsp;except&nbsp;for&nbsp;the&nbsp;__init__.py&nbsp;files.</tt></dd></dl>
+ <dl><dt><a name="-getSettingsPath"><strong>getSettingsPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;settings&nbsp;directory&nbsp;path,&nbsp;which&nbsp;is&nbsp;the&nbsp;home&nbsp;directory&nbsp;joined&nbsp;with&nbsp;.skeinforge.</tt></dd></dl>
+ <dl><dt><a name="-getSkeinforgePath"><strong>getSkeinforgePath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;skeinforge&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getSkeinforgePluginsPath"><strong>getSkeinforgePluginsPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;skeinforge&nbsp;plugins&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getSummarizedFileName"><strong>getSummarizedFileName</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;fileName&nbsp;basename&nbsp;if&nbsp;the&nbsp;file&nbsp;is&nbsp;in&nbsp;the&nbsp;current&nbsp;working&nbsp;directory,&nbsp;otherwise&nbsp;return&nbsp;the&nbsp;original&nbsp;full&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getTemplatesPath"><strong>getTemplatesPath</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;templates&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getTextIfEmpty"><strong>getTextIfEmpty</strong></a>(fileName, text)</dt><dd><tt>Get&nbsp;the&nbsp;text&nbsp;from&nbsp;a&nbsp;file&nbsp;if&nbsp;it&nbsp;the&nbsp;text&nbsp;is&nbsp;empty.</tt></dd></dl>
+ <dl><dt><a name="-getTextLines"><strong>getTextLines</strong></a>(text)</dt><dd><tt>Get&nbsp;the&nbsp;all&nbsp;the&nbsp;lines&nbsp;of&nbsp;text&nbsp;of&nbsp;a&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getUntilDot"><strong>getUntilDot</strong></a>(text)</dt><dd><tt>Get&nbsp;the&nbsp;text&nbsp;until&nbsp;the&nbsp;last&nbsp;dot,&nbsp;if&nbsp;any.</tt></dd></dl>
+ <dl><dt><a name="-getVersionFileName"><strong>getVersionFileName</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;name&nbsp;of&nbsp;the&nbsp;version&nbsp;date.<a href="#-getFabmetheusUtilitiesPath">getFabmetheusUtilitiesPath</a>(subName=)</tt></dd></dl>
+ <dl><dt><a name="-isFileWithFileTypeWithoutWords"><strong>isFileWithFileTypeWithoutWords</strong></a>(fileType, fileName, words)</dt><dd><tt>Determine&nbsp;if&nbsp;file&nbsp;has&nbsp;a&nbsp;given&nbsp;file&nbsp;type,&nbsp;but&nbsp;with&nbsp;does&nbsp;not&nbsp;contain&nbsp;a&nbsp;word&nbsp;in&nbsp;a&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-makeDirectory"><strong>makeDirectory</strong></a>(directoryPath)</dt><dd><tt>Make&nbsp;a&nbsp;directory&nbsp;if&nbsp;it&nbsp;does&nbsp;not&nbsp;already&nbsp;exist.</tt></dd></dl>
+ <dl><dt><a name="-removeBackupFilesByType"><strong>removeBackupFilesByType</strong></a>(fileType)</dt><dd><tt>Remove&nbsp;backup&nbsp;files&nbsp;by&nbsp;type.</tt></dd></dl>
+ <dl><dt><a name="-removeBackupFilesByTypes"><strong>removeBackupFilesByTypes</strong></a>(fileTypes)</dt><dd><tt>Remove&nbsp;backup&nbsp;files&nbsp;by&nbsp;types.</tt></dd></dl>
+ <dl><dt><a name="-writeFileMessageEnd"><strong>writeFileMessageEnd</strong></a>(end, fileName, fileText, message)</dt><dd><tt>Write&nbsp;to&nbsp;a&nbsp;fileName&nbsp;with&nbsp;a&nbsp;suffix&nbsp;and&nbsp;print&nbsp;a&nbsp;message.</tt></dd></dl>
+ <dl><dt><a name="-writeFileText"><strong>writeFileText</strong></a>(fileName, fileText, writeMode<font color="#909090">='w+'</font>)</dt><dd><tt>Write&nbsp;a&nbsp;text&nbsp;to&nbsp;a&nbsp;file.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)<br>
+<strong>globalTemporarySettingsPath</strong> = '/home/enrique/.skeinforge'</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

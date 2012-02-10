@@ -1,0 +1,7 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<function id="triple" parameters='vector3'>
+		<return return='vector3.x*3'/>
+	</function>
+	<dictionary tripleOne='=triple(euclid.Vector3(1,2,3))'/>
+</fabmetheus>

@@ -1,0 +1,17 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<import file='../statements/function.xml' id='overwriteTest'/>
+	<dictionary tripleOne='=function.triple(euclid.Vector3(1,2,3))'/>
+	<!--
+	<import file='../creation/circle.xml'/>
+
+	<import file='../geometry_utilities/evaluate.xml' id='overwriteTest' appendOwnerDocument='true'>
+	<import file='combined_interpret.xml' id='Import Test combined'>
+		<matrix m14='0.6' m24='-1.3'/>
+	</import>
+	<import file='extrude.xml' id='Import Test extrude' _importName='ee'/>
+	<import file='../../box.obj'/>
+	<import file='Screw_Holder_Bottom_carve.svg' id='Import Test svg'/>
+	<dictionary testImport='id.ee.mesa.toz'/>
+	-->
+</fabmetheus>

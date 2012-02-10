@@ -1,0 +1,11 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<function id='progression' parameters='number' >
+		<for index='integer' in='{1:"one",2:"two",3:"three"}' value='numericWord'>
+			<statement number='number + integer'/>
+			<print _localdictionary=''/>
+		</for>
+		<return return='number'/>
+	</function>
+	<dictionary case0='=progression(0)'/>
+</fabmetheus>

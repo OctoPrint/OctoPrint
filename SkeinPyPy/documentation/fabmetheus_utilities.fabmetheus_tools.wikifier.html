@@ -1,0 +1,91 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.fabmetheus_tools.wikifier</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.<a href="fabmetheus_utilities.fabmetheus_tools.html"><font color="#ffffff">fabmetheus_tools</font></a>.wikifier</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/wikifier.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/fabmetheus_tools/wikifier.py</a></font></td></tr></table>
+    <p><tt>Wikifier is a script to add spaces to the pydoc files and move them to the documentation folder.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+</td><td width="25%" valign=top><a href="cStringIO.html">cStringIO</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.fabmetheus_tools.wikifier.html#Heading">Heading</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Heading">class <strong>Heading</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;hold&nbsp;the&nbsp;heading&nbsp;and&nbsp;subheadings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Heading-__init__"><strong>__init__</strong></a>(self, depth<font color="#909090">=0</font>)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Heading-addToOutput"><strong>addToOutput</strong></a>(self, output)</dt><dd><tt>Add&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="Heading-getFromLine"><strong>getFromLine</strong></a>(self, headingLineTable, line)</dt><dd><tt>Get&nbsp;the&nbsp;heading&nbsp;from&nbsp;a&nbsp;line.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addToHeadings"><strong>addToHeadings</strong></a>(headingLineTable, headings, line)</dt><dd><tt>Add&nbsp;the&nbsp;line&nbsp;to&nbsp;the&nbsp;headings.</tt></dd></dl>
+ <dl><dt><a name="-getLinkLine"><strong>getLinkLine</strong></a>(line)</dt><dd><tt>Get&nbsp;the&nbsp;link&nbsp;line&nbsp;with&nbsp;the&nbsp;wiki&nbsp;style&nbsp;link&nbsp;converted&nbsp;into&nbsp;a&nbsp;hypertext&nbsp;link.</tt></dd></dl>
+ <dl><dt><a name="-getNavigationHypertext"><strong>getNavigationHypertext</strong></a>(fileText, transferredFileNameIndex, transferredFileNames)</dt><dd><tt>Get&nbsp;the&nbsp;hypertext&nbsp;help&nbsp;with&nbsp;navigation&nbsp;lines.</tt></dd></dl>
+ <dl><dt><a name="-getNavigationLine"><strong>getNavigationLine</strong></a>(contentsLinkText, previousLinkText, nextLinkText)</dt><dd><tt>Get&nbsp;the&nbsp;wrapped&nbsp;pydoc&nbsp;hypertext&nbsp;help.</tt></dd></dl>
+ <dl><dt><a name="-getNextLinkText"><strong>getNextLinkText</strong></a>(hypertextFiles, nextIndex)</dt><dd><tt>Get&nbsp;the&nbsp;next&nbsp;link&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getWrappedHypertext"><strong>getWrappedHypertext</strong></a>(fileText, hypertextFileIndex, hypertextFiles)</dt><dd><tt>Get&nbsp;the&nbsp;wrapped&nbsp;pydoc&nbsp;hypertext&nbsp;help.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;craft&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-readWriteDeleteHypertextHelp"><strong>readWriteDeleteHypertextHelp</strong></a>(documentDirectoryPath, hypertextFileIndex, hypertextFiles, transferredFileNames)</dt><dd><tt>Read&nbsp;the&nbsp;pydoc&nbsp;hypertext&nbsp;help&nbsp;documents,&nbsp;write&nbsp;them&nbsp;in&nbsp;the&nbsp;documentation&nbsp;folder&nbsp;then&nbsp;delete&nbsp;the&nbsp;originals.</tt></dd></dl>
+ <dl><dt><a name="-readWriteNavigationHelp"><strong>readWriteNavigationHelp</strong></a>(documentDirectoryPath, transferredFileNameIndex, transferredFileNames)</dt><dd><tt>Read&nbsp;the&nbsp;hypertext&nbsp;help&nbsp;documents,&nbsp;and&nbsp;add&nbsp;the&nbsp;navigation&nbsp;lines&nbsp;to&nbsp;them.</tt></dd></dl>
+ <dl><dt><a name="-removeFilesInDirectory"><strong>removeFilesInDirectory</strong></a>(directoryPath)</dt><dd><tt>Remove&nbsp;all&nbsp;the&nbsp;files&nbsp;in&nbsp;a&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-writeContentsFile"><strong>writeContentsFile</strong></a>(documentDirectoryPath, hypertextFiles)</dt><dd><tt>Write&nbsp;the&nbsp;contents&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-writeContentsLine"><strong>writeContentsLine</strong></a>(hypertextFile, output)</dt><dd><tt>Write&nbsp;a&nbsp;line&nbsp;of&nbsp;the&nbsp;contents&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-writeHypertext"><strong>writeHypertext</strong></a>()</dt><dd><tt>Run&nbsp;pydoc,&nbsp;then&nbsp;read,&nbsp;write&nbsp;and&nbsp;delete&nbsp;each&nbsp;of&nbsp;the&nbsp;files.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)<br>
+<strong>globalWikiLinkStart</strong> = '[&lt;a href='</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

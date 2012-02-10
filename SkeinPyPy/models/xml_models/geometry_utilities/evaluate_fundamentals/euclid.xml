@@ -1,0 +1,16 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<dictionary complexDefault='=euclid.complex()'/>
+	<dictionary complexOneTwo='=euclid.complex(1,2)'/>
+	<dictionary getCylindricalThirtyTen='=euclid.getCylindrical(30, 10)'/>
+	<dictionary getCylindricalByRadiansPiOverSixSevenTen='=euclid.getCylindricalByRadians(math.pi/6, 10, 7)'/>
+	<dictionary getPolarThirtyTen='=euclid.getPolar(30, 10)'/>
+	<dictionary getPolarByRadiansPiOverSixTen='=euclid.getPolarByRadians(math.pi/6, 10)'/>
+	<dictionary getPolarUnitThirty='=euclid.getPolar(30)'/>
+	<dictionary getPolarUnitByRadiansPiOverSix='=euclid.getPolarByRadians(math.pi/6)'/>
+	<dictionary getSphericalThirtySixtyTen='=euclid.getSpherical(30, 60, 10)'/>
+	<dictionary getSphericalByRadiansPiOverSixPiOverThreeTen='=euclid.getSphericalByRadians(math.pi/6, math.pi/3, 10)'/>
+	<dictionary getSphericalUnitByRadiansPiOverSixPiOverThree='=euclid.getSphericalByRadians(math.pi/6, math.pi/3)'/>
+	<dictionary Vector3='=euclid.Vector3(1,2,3)'/>
+	<dictionary Vector3Index='=euclid.Vector3Index(1,2,3,4)'/>
+</fabmetheus>

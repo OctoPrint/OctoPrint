@@ -1,0 +1,8 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<polygon id='diamond' radius='20.0' sides='23'/>
+	<extrude id='diamondPillar' pathEnd.z='4' target='=document.getElementByID(diamond)'/>
+	<copy id='insetPillar' target='=document.getElementByID(diamondPillar)' translate.x='50'/>
+	<outset radius='1' target='=document.getElementByID(insetPillar)'/>
+</fabmetheus>
+	

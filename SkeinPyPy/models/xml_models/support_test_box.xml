@@ -1,0 +1,7 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<difference>
+		<extrude target='=creation.getSquare(60)' pathEnd.z='2'/>
+		<extrude target='=creation.getSquare(54)'/>
+	</difference>
+</fabmetheus>

@@ -1,0 +1,7 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<function id='double' parameters='number' >
+		<return return='number * 2'/>
+	</function>
+	<dictionary doubleSeven='=double(7)'/>
+</fabmetheus>

@@ -1,0 +1,225 @@
+/*
+<?xml version='1.0' standalone='yes' ?>
+
+<script>
+	<name>Import Topology</name>
+	<author>Enrique Perez</author>
+	<version>1.0</version>
+	<date>25-Feb-2008</date>
+	<description>
+This script imports the topology of curves and meshes.
+    </description>
+	<licenseType>gpl</licenseType>
+</script>
+*/
+
+String addShape( BufferedReader bufferedReader, String line )
+{
+  importShape = ImportShape();
+  importShape.setBufferedReaderLine( bufferedReader, line );
+
+  while ( importShape.splitLine.length > 1 ) {
+    importShape.shouldRead = true;
+
+    switch( importShape.firstLower ) {
+
+      case "class":
+        importShape.setClass();
+        break;
+
+      case "faces":
+        importShape.setFaces();
+        break;
+
+      case "name":
+        importShape.setName();
+        break;
+
+      case "orientation":
+        importShape.setOrientation();
+        break;
+
+      case "origin":
+        importShape.setOrigin();
+        break;
+
+      case "vertexpositions":
+        importShape.setVertexPositions();
+        break;
+    }
+
+    if ( importShape.shouldRead ) {
+      importShape.readLine();
+    }
+  }
+
+  importShape.addShapeIfParametersSet();
+
+  return importShape.bufferedReader.readLine();
+}
+
+/**
+Add curves and/or meshes from the file through the buffered reader.
+*/
+
+void addShapes( BufferedReader bufferedReader )
+{
+  line = bufferedReader.readLine();
+
+  while ( line != null ) {
+    line = addShape( bufferedReader, line );
+  }
+}
+
+/**
+Get a Vec3 from a string array.
+*/
+
+Vec3 getFromStringArray( String[] stringArray )
+{
+  return new Vec3( Double.valueOf( stringArray[ 2 ] ), Double.valueOf( stringArray[ 3 ] ), Double.valueOf( stringArray[ 4 ] ) );
+}
+
+/**
+Import the topology of a shape from the file through the buffered reader.
+*/
+
+ImportShape() {
+  BufferedReader bufferedReader = null;
+  String className = null;
+  Vector facesVector = null;
+  String firstLower = null;
+  String line = null;
+  String name = null;
+  Vec3 orientation = null;
+  Vec3 origin = null;
+  boolean shouldRead = true;
+  String[] splitLine = null;
+  Vector vertexPositionsVector = null;
+
+/**
+Add the topology of a shape from the file through the buffered reader if all the parameters have been set.
+*/
+
+  addShapeIfParametersSet() {
+    if ( className == null || name == null || orientation == null || origin == null || vertexPositionsVector == null ) {
+      print( "Shape has a null parameter and was not imported." );
+      print( className );
+      print( name );
+      print( orientation );
+      print( origin );
+      print( vertexPositionsVector );
+      return;
+    }
+
+    vertexPositionsArray = vertexPositionsVector.toArray( new Vec3[ vertexPositionsVector.size() ] );
+    CoordinateSystem coordinateSystem = new CoordinateSystem();
+    coordinateSystem.setOrientation( orientation.x, orientation.y, orientation.z );
+    coordinateSystem.setOrigin( origin );
+
+    while ( window.getScene().getObject( name ) != null ) {
+      name += "a";
+    }
+
+    if ( className.equals( "curve" ) ) {
+      float[] smoothness = new float[ vertexPositionsArray.length ];
+      curve = new Curve( vertexPositionsArray, smoothness, Mesh.APPROXIMATING, true );
+      window.addObject( curve, coordinateSystem, name, null );
+      addUndoRecord();
+      return;
+    }
+
+    if ( facesVector == null ) {
+      return;
+    }
+
+    if ( className.equals( "trianglemesh" ) ) {
+      facesArray = facesVector.toArray( new int[ facesVector.size() ][ 3 ] );
+      mesh = new TriangleMesh ( vertexPositionsArray, facesArray );
+      mesh.setSmoothingMethod( Mesh.NO_SMOOTHING );
+      window.addObject( mesh, coordinateSystem, name, null );
+      addUndoRecord();
+    }
+  }
+
+  addUndoRecord() {
+    scene = window.getScene();
+    undoAdd = new UndoRecord ( window, false, UndoRecord.DELETE_OBJECT, new Object[] { new Integer( scene.getNumObjects() - 1 ) } );
+    window.setUndoRecord( undoAdd );
+  }
+
+  readLine() {
+    line = bufferedReader.readLine();
+    setSplitLine();
+  }
+
+  setBufferedReaderLine( BufferedReader argumentBufferedReader, String argumentLine ) {
+    bufferedReader = argumentBufferedReader;
+    line = argumentLine;
+    setSplitLine();
+  }
+
+  setClass() {
+    className = splitLine[ 1 ].toLowerCase();
+  }
+
+  setFaces() {
+    readLine();
+    shouldRead = false;
+    facesVector = new Vector();
+
+    while ( splitLine[ 0 ].toLowerCase().equals( "face" ) ) {
+      int[] face = { Integer.valueOf( splitLine[ 2 ] ), Integer.valueOf( splitLine[ 3 ] ), Integer.valueOf( splitLine[ 4 ] ) };
+      facesVector.add( face );
+      readLine();
+    }
+  }
+
+  setName() {
+    name = splitLine[ 1 ];
+  }
+
+  setOrientation() {
+    orientation = getFromStringArray( splitLine );
+  }
+
+  setOrigin() {
+    origin = getFromStringArray( splitLine );
+  }
+
+  setSplitLine() {
+    if ( line == null ) {
+      splitLine = new String[] { "" };
+      return;
+    }
+
+    splitLine = line.split( "," );
+    firstLower = splitLine[ 0 ].toLowerCase();
+  }
+
+  setVertexPositions() {
+    readLine();
+    shouldRead = false;
+    vertexPositionsVector = new Vector();
+
+    while ( splitLine[ 0 ].toLowerCase().equals( "vertex position" ) ) {
+      vertexPositionsVector.add( getFromStringArray( splitLine ) );
+      readLine();
+    }
+  }
+
+  return this;
+}
+
+// Get parameters.
+
+fileChooser = new BFileChooser( BFileChooser.OPEN_FILE, "Import Comma Separated Values Topology");
+fileChooser.showDialog( window );
+filename = fileChooser.getSelectedFile();
+
+if ( filename == null ) {
+  return;
+}
+
+bufferedReader = new BufferedReader( new FileReader( filename ) );
+addShapes( bufferedReader );

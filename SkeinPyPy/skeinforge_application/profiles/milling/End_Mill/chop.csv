@@ -1,0 +1,13 @@
+Format is tab separated chop preferences.
+Name                          	Value
+Add Extra Top Layer if Necessary	True
+Open File to be Chopped	
+Import Coarseness (ratio):	1.0
+Correct Mesh	True
+Unproven Mesh	False
+Layer Thickness (mm):	0.4
+Layer Thickness over Precision (ratio):	10.0
+Layers From (index):	0
+Layers To (index):	999999999
+Perimeter Width (mm):	2.0
+windowPositionChop Preferences	600+0

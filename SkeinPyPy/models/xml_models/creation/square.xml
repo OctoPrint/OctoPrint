@@ -1,0 +1,5 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<square id='square' bottomwidth='60' height='60'/>
+	<extrude target='=document.getElementByID(square)'/>
+</fabmetheus>

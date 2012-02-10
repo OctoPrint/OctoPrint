@@ -1,0 +1,13 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='quadratic'>
+		<vertex />
+		<quadratic controlPoint='[20, -25]' x='=document.getPreviousVertex().x+40'/>
+		<quadratic x='=document.getPreviousVertex().x+40'/>
+	</path>
+	<outline target='=document.getElementByID(quadratic)'/>
+	<extrude target='=document.getElementByID(quadratic)'/>
+	<!--
+	http://www.w3.org/TR/SVG/paths.html#PathDataQuadraticBezierCommands
+	-->
+</fabmetheus>

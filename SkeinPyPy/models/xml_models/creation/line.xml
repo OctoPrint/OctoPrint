@@ -1,0 +1,5 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<line id='horizontal' outline.strokeWidth='1.0' step='=.2' start='[]' end='[10]'/>
+	<extrude target='=document.getElementByID(horizontal)'/>
+</fabmetheus>

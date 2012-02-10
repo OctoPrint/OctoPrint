@@ -1,0 +1,70 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.xml_simple_writer</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.xml_simple_writer</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/xml_simple_writer.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/xml_simple_writer.py</a></font></td></tr></table>
+    <p><tt>XML tag writer utilities.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+</td><td width="25%" valign=top><a href="cStringIO.html">cStringIO</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addBeginEndInnerXMLTag"><strong>addBeginEndInnerXMLTag</strong></a>(attributes, depth, innerText, localName, output, text<font color="#909090">=''</font>)</dt><dd><tt>Add&nbsp;the&nbsp;begin&nbsp;and&nbsp;end&nbsp;xml&nbsp;tag&nbsp;and&nbsp;the&nbsp;inner&nbsp;text&nbsp;if&nbsp;any.</tt></dd></dl>
+ <dl><dt><a name="-addBeginXMLTag"><strong>addBeginXMLTag</strong></a>(attributes, depth, localName, output, text<font color="#909090">=''</font>)</dt><dd><tt>Add&nbsp;the&nbsp;begin&nbsp;xml&nbsp;tag.</tt></dd></dl>
+ <dl><dt><a name="-addClosedXMLTag"><strong>addClosedXMLTag</strong></a>(attributes, depth, localName, output, text<font color="#909090">=''</font>)</dt><dd><tt>Add&nbsp;the&nbsp;closed&nbsp;xml&nbsp;tag.</tt></dd></dl>
+ <dl><dt><a name="-addEndXMLTag"><strong>addEndXMLTag</strong></a>(depth, localName, output)</dt><dd><tt>Add&nbsp;the&nbsp;end&nbsp;xml&nbsp;tag.</tt></dd></dl>
+ <dl><dt><a name="-addXMLFromLoopComplexZ"><strong>addXMLFromLoopComplexZ</strong></a>(attributes, depth, loop, output, z)</dt><dd><tt>Add&nbsp;xml&nbsp;from&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-addXMLFromObjects"><strong>addXMLFromObjects</strong></a>(depth, objects, output)</dt><dd><tt>Add&nbsp;xml&nbsp;from&nbsp;objects.</tt></dd></dl>
+ <dl><dt><a name="-addXMLFromVertexes"><strong>addXMLFromVertexes</strong></a>(depth, output, vertexes)</dt><dd><tt>Add&nbsp;xml&nbsp;from&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-addXMLFromXYZ"><strong>addXMLFromXYZ</strong></a>(depth, index, output, x, y, z)</dt><dd><tt>Add&nbsp;xml&nbsp;from&nbsp;x,&nbsp;y&nbsp;&amp;&nbsp;z.</tt></dd></dl>
+ <dl><dt><a name="-compareAttributeKeyAscending"><strong>compareAttributeKeyAscending</strong></a>(key, otherKey)</dt><dd><tt>Get&nbsp;comparison&nbsp;in&nbsp;order&nbsp;to&nbsp;sort&nbsp;attribute&nbsp;keys&nbsp;in&nbsp;ascending&nbsp;order,&nbsp;with&nbsp;the&nbsp;id&nbsp;key&nbsp;first&nbsp;and&nbsp;name&nbsp;second.</tt></dd></dl>
+ <dl><dt><a name="-getAttributesString"><strong>getAttributesString</strong></a>(attributes)</dt><dd><tt>Add&nbsp;the&nbsp;closed&nbsp;xml&nbsp;tag.</tt></dd></dl>
+ <dl><dt><a name="-getBeginGeometryXMLOutput"><strong>getBeginGeometryXMLOutput</strong></a>(elementNode<font color="#909090">=None</font>)</dt><dd><tt>Get&nbsp;the&nbsp;beginning&nbsp;of&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;boolean&nbsp;geometry&nbsp;object&nbsp;info.</tt></dd></dl>
+ <dl><dt><a name="-getBeginXMLOutput"><strong>getBeginXMLOutput</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;beginning&nbsp;of&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;object&nbsp;info.</tt></dd></dl>
+ <dl><dt><a name="-getDictionaryWithoutList"><strong>getDictionaryWithoutList</strong></a>(dictionary, withoutList)</dt><dd><tt>Get&nbsp;the&nbsp;dictionary&nbsp;without&nbsp;the&nbsp;keys&nbsp;in&nbsp;the&nbsp;list.</tt></dd></dl>
+ <dl><dt><a name="-getEndGeometryXMLString"><strong>getEndGeometryXMLString</strong></a>(output)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;object&nbsp;info.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Nophead &lt;http://hydraraptor.blogspot.com/&gt;<font color="#c040c0">\n</font>Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Nophead&nbsp;&lt;<a href="http://hydraraptor.blogspot.com/">http://hydraraptor.blogspot.com/</a>&gt;<br>
+Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

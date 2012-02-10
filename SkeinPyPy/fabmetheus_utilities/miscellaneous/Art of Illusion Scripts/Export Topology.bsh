@@ -1,0 +1,170 @@
+/*
+<?xml version='1.0' standalone='yes' ?>
+
+<script>
+	<name>Export Topology</name>
+	<author>Enrique Perez</author>
+	<version>1.0</version>
+	<date>25-Feb-2008</date>
+	<description>
+This script exports the topology of curves and meshes.
+    </description>
+	<licenseType>gpl</licenseType>
+</script>
+*/
+
+/**
+Get the info for all the selected curves and meshes.
+*/
+
+ObjectInfo[] getCurvesMeshesInfo()
+{
+  scene = window.getScene();
+  selection = scene.getSelection();
+  Vector objectInfoVector = new Vector();
+
+  for ( int objectIndex = 0; objectIndex < selection.length; objectIndex++ ) {
+    objectInfo = scene.getObject( selection[ objectIndex ] );
+
+    if ( objectInfo.object instanceof Curve || objectInfo.object instanceof TriangleMesh ) {
+      objectInfoVector.add( objectInfo );
+    }
+  }
+
+  if ( objectInfoVector.size() > 0 ) {
+    return objectInfoVector.toArray( new ObjectInfo[ objectInfoVector.size() ] );
+  }
+
+  for ( int objectIndex = 0; objectIndex < scene.getNumObjects(); objectIndex++ ) {
+    objectInfo = scene.getObject( objectIndex );
+
+    if ( objectInfo.object instanceof Curve || objectInfo.object instanceof TriangleMesh ) {
+      return new ObjectInfo[] { objectInfo };
+    }
+  }
+
+  return new ObjectInfo[ 0 ];
+}
+
+/**
+Output the curves and/or meshes.
+*/
+
+void outputCurvesMeshes( ObjectInfo[] objectInfoArray )
+{
+  if ( objectInfoArray.length < 1 ) {
+    return;
+  }
+
+  outputCurveMesh( objectInfoArray[ 0 ] );
+
+  for ( int objectIndex = 1; objectIndex < objectInfoArray.length; objectIndex++ ) {
+    outputString( "" );
+    outputCurveMesh( objectInfoArray[ objectIndex ] );
+  }
+
+  if ( bufferedWriter != null ) {
+    //Close the output stream
+    bufferedWriter.close();
+  }
+}
+
+/**
+Output the curve and/or mesh.
+*/
+
+void outputCurveMesh( ObjectInfo objectInfo )
+{
+  className = objectInfo.object.getClass().getName();
+  classNameEnd = className.substring( className.lastIndexOf( "." ) + 1 );
+  outputString( "Class, " + classNameEnd );
+  outputString( "Name, " + objectInfo.name );
+  origin = objectInfo.coords.getOrigin();
+  outputString( "Origin, Vector (xyz), " + origin.x + ", " + origin.y + ", " + origin.z );
+  orientation = objectInfo.coords.getRotationAngles();
+  outputString( "Orientation, Vector (xyz), " + orientation[ 0 ] + ", " + orientation[ 1 ] + ", " + orientation[ 2 ] );
+  outputVertexPositions( objectInfo );
+
+  if ( objectInfo.object instanceof Curve ) {
+    return;
+  }
+
+  outputString( "Faces, Face Index, Vertex 1, Vertex 2, Vertex 3" );
+  faces = objectInfo.object.getFaces();
+
+  for ( int faceIndex = 0; faceIndex < faces.length; faceIndex++ ) {
+    face = faces[ faceIndex ];
+    outputString( "Face, " + faceIndex.toString() + ", " + face.v1 + ", " + face.v2 + ", " + face.v3 );
+  }
+
+  outputString( "Edges, Edge Index, Face 1, Face 2, Smoothness, Vertex 1, Vertex 2" );
+  edges = objectInfo.object.getEdges();
+
+  for ( int edgeIndex = 0; edgeIndex < edges.length; edgeIndex++ ) {
+    edge = edges[ edgeIndex ];
+    outputString( "Edge, " + edgeIndex.toString() + ", " + edge.f1 + ", " + edge.f2 + ", " + edge.smoothness + ", " + edge.v1 + ", " + edge.v2 );
+  }
+}
+
+/**
+Output comma separated strings followed by a linefeed.
+*/
+
+void outputString( string )
+{
+  if ( printSelection.getState() || exportPrintSelection.getState() ) {
+    print( string );
+  }
+
+  if ( bufferedWriter != null ) {
+    bufferedWriter.write( string.replace( ", ", "," ) + "\n" );
+  }
+}
+
+/**
+Output the vertex positions.
+*/
+
+void outputVertexPositions( ObjectInfo objectInfo )
+{
+  outputString( "VertexPositions, Vertex Index, x, y, z" );
+  vertexPositions = objectInfo.object.getVertexPositions();
+
+  for ( int vertexIndex = 0; vertexIndex < vertexPositions.length; vertexIndex++ ) {
+    vertexPosition = vertexPositions[ vertexIndex ];
+    outputString( "Vertex Position, " + vertexIndex.toString() + ", " + vertexPosition.x + ", " + vertexPosition.y + ", " + vertexPosition.z );
+  }
+}
+
+// Get parameters.
+
+actionRadioButtonGroup = new RadioButtonGroup();
+exportSelection = new BRadioButton( "Export Selection", false, actionRadioButtonGroup );
+exportPrintSelection = new BRadioButton( "Export and Print Selection", true, actionRadioButtonGroup );
+printSelection = new BRadioButton( "Print Selection", false, actionRadioButtonGroup );
+actionGridContainer = new GridContainer( 1, 3 );
+actionGridContainer.setDefaultLayout( new LayoutInfo( LayoutInfo.WEST, LayoutInfo.NONE, new Insets( 2, 2, 2, 2 ), null ) );
+actionGridContainer.add( exportSelection, 0, 0 );
+actionGridContainer.add( exportPrintSelection, 0, 1 );
+actionGridContainer.add( printSelection, 0, 2 );
+
+bufferedWriter = null;
+dlg = new ComponentsDialog( window, "Export and/or Print Selection",
+new Widget [] { actionGridContainer },
+new String [] { "Action:" } );
+
+if ( !dlg.clickedOk() ) return;
+
+if ( exportSelection.getState() || exportPrintSelection.getState() ) {
+  fileDescriptor = new BFileChooser( BFileChooser.SAVE_FILE, "Select name for the topology file.");
+  fileDescriptor.setSelectedFile( new File( "polygon.csv" ) );
+  fileDescriptor.showDialog( window );
+  filename = fileDescriptor.getSelectedFile();
+
+  if ( filename != null ) {
+    bufferedWriter = new BufferedWriter( new FileWriter( filename ) );
+  }
+}
+
+curvesMeshesInfo = getCurvesMeshesInfo();
+outputCurvesMeshes( curvesMeshesInfo );

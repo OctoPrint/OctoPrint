@@ -1,0 +1,364 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.skeinforge</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge.py</a></font></td></tr></table>
+    <p>
+<a href="fabmetheus_utilities.geometry.solids.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.analyze.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+<br />
+<a href="#Overview">Overview</a><br />
+&nbsp;&nbsp;<a href="#Introduction">Introduction</a><br />
+&nbsp;&nbsp;<a href="#Command Line Interface">Command Line Interface</a><br />
+&nbsp;&nbsp;<a href="#Contribute">Contribute</a><br />
+&nbsp;&nbsp;<a href="#Documentation">Documentation</a><br />
+&nbsp;&nbsp;<a href="#Fabrication">Fabrication</a><br />
+&nbsp;&nbsp;<a href="#File Formats">File Formats</a><br />
+&nbsp;&nbsp;<a href="#Getting Skeinforge">Getting Skeinforge</a><br />
+&nbsp;&nbsp;<a href="#Getting Started">Getting Started</a><br />
+&nbsp;&nbsp;<a href="#License">License</a><br />
+&nbsp;&nbsp;<a href="#Motto">Motto</a><br />
+&nbsp;&nbsp;<a href="#Troubleshooting">Troubleshooting</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Overview" id="Overview"></a><h2>Overview</h2>
+<hr>
+
+<a name="Introduction" id="Introduction"></a><h3>Introduction</h3>
+
+Skeinforge is a GPL tool chain to forge a gcode skein for a model.<br>
+ <br>
+The tool chain starts with carve, which carves the model into layers, then the layers are modified by other tools in turn like fill, comb, tower, raft, stretch, hop, wipe, fillet &amp; export.  Each tool automatically gets the gcode from the previous tool.  So if you want a carved &amp; filled gcode, call the fill tool and it will call carve, then it will fill and output the gcode.  If you want to use all the tools, call export and it will call in turn all the other tools down the chain to produce the gcode file.<br>
+ <br>
+If you do not want a tool after preface to modify the output, deselect the Activate checkbox for that tool.  When the Activate checkbox is off, the tool will just hand off the gcode to the next tool without modifying it.<br>
+ <br>
+The skeinforge module provides a single place to call up all the setting dialogs.  When the 'Skeinforge' button is clicked, skeinforge calls export, since that is the end of the chain.<br>
+ <br>
+The plugin buttons which are commonly used are bolded and the ones which are rarely used have normal font weight.<br>
+ <br>
+There are also tools which handle settings for the chain, like polyfile.<br>
+ <br>
+The analyze tool calls plugins in the analyze_plugins folder, which will analyze the gcode in some way when it is generated if their Activate checkbox is selected.<br>
+ <br>
+The interpret tool accesses and displays the import plugins.<br>
+ <br>
+The default settings are similar to those on Nophead's machine.  A setting which is often different is the 'Layer Height' in carve.<br>
+ <br>
+<a name="Command Line Interface" id="Command Line Interface"></a><h3>Command Line Interface</h3>
+
+To bring up the skeinforge dialog without a file name, type:<br>
+python skeinforge_application/skeinforge.py<br>
+ <br>
+Slicing a file from skeinforge_utilities/skeinforge_craft.py, for example:<br>
+python skeinforge_application/skeinforge_utilities/skeinforge_craft.py test.stl<br>
+ <br>
+will slice the file and exit. This is the correct option for programs which use skeinforge to only generate a gcode file.<br>
+ <br>
+Slicing a file from skeinforge.py, for example:<br>
+python skeinforge_application/skeinforge.py test.stl<br>
+ <br>
+will slice the file and bring up the skeinforge window and the analyze windows and then skeinforge will wait for user input.<br>
+ <br>
+Slicing a file from skeinforge_plugins/craft.py, for example:<br>
+python skeinforge_application/skeinforge_plugins/craft.py test.stl<br>
+ <br>
+will slice the file and bring up the analyze windows only and then skeinforge will wait for user input.<br>
+ <br>
+<a name="Contribute" id="Contribute"></a><h3>Contribute</h3>
+
+You can contribute by helping develop the manual at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge</a><br>
+ <br>
+There is also a forum thread about how to contribute to skeinforge development at:<br>
+<a href="http://dev.forums.reprap.org/read.php?12,27562">http://dev.forums.reprap.org/read.php?12,27562</a><br>
+ <br>
+I will only reply to emails from contributors or to complete bug reports.<br>
+ <br>
+<a name="Documentation" id="Documentation"></a><h3>Documentation</h3>
+
+There is a manual at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge</a><br>
+ <br>
+There is also documentation is in the documentation folder, in the doc strings for each module and it can be called from the '?' button or the menu or by clicking F1 in each setting dialog.<br>
+ <br>
+A list of other tutorials is at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge#Tutorials">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge#Tutorials</a><br>
+ <br>
+Skeinforge tagged pages on thingiverse can be searched for at:<br>
+<a href="http://www.thingiverse.com/search?cx=015525747728168968820%3Arqnsgx1xxcw&amp;cof=FORID%3A9&amp;ie=UTF-8&amp;q=skeinforge&amp;sa=Search&amp;siteurl=www.thingiverse.com%2F#944">http://www.thingiverse.com/search?cx=015525747728168968820%3Arqnsgx1xxcw&amp;cof=FORID%3A9&amp;ie=UTF-8&amp;q=skeinforge&amp;sa=Search&amp;siteurl=www.thingiverse.com%2F#944</a><br>
+ <br>
+<a name="Fabrication" id="Fabrication"></a><h3>Fabrication</h3>
+
+To fabricate a model with gcode and the Arduino you can use the send.py in the fabricate folder.  The documentation for it is in the folder as send.html and at:<br>
+<a href="http://reprap.org/bin/view/Main/ArduinoSend">http://reprap.org/bin/view/Main/ArduinoSend</a><br>
+ <br>
+Another way is to use an EMC2 or similar computer controlled milling machine, as described in the "ECM2 based repstrap" forum thread at:<br>
+<a href="http://forums.reprap.org/read.php?1,12143">http://forums.reprap.org/read.php?1,12143</a><br>
+ <br>
+using the M-Apps package, which is at:<br>
+<a href="http://forums.reprap.org/file.php?1,file=772">http://forums.reprap.org/file.php?1,file=772</a><br>
+ <br>
+Another way is to use Zach's ReplicatorG at:<br>
+<a href="http://replicat.org/">http://replicat.org/</a><br>
+ <br>
+There is also an older Processing script at:<br>
+<a href="http://reprap.svn.sourceforge.net/viewvc/reprap/trunk/users/hoeken/arduino/GCode_Host/">http://reprap.svn.sourceforge.net/viewvc/reprap/trunk/users/hoeken/arduino/GCode_Host/</a><br>
+ <br>
+Yet another way is to use the reprap host, written in Java, to load and print gcode:<br>
+<a href="http://dev.www.reprap.org/bin/view/Main/DriverSoftware#Load_GCode">http://dev.www.reprap.org/bin/view/Main/DriverSoftware#Load_GCode</a><br>
+ <br>
+For jogging, the Metalab group wrote their own exerciser, also in Processing:<br>
+<a href="http://reprap.svn.sourceforge.net/viewvc/reprap/trunk/users/metalab/processing/GCode_Exerciser/">http://reprap.svn.sourceforge.net/viewvc/reprap/trunk/users/metalab/processing/GCode_Exerciser/</a><br>
+ <br>
+The Metalab group has descriptions of skeinforge in action and their adventures are described at:<br>
+<a href="http://reprap.soup.io/">http://reprap.soup.io/</a><br>
+ <br>
+There is a board about printing issues at:<br>
+<a href="http://www.bitsfrombytes.com/fora/user/index.php?board=5.0">http://www.bitsfrombytes.com/fora/user/index.php?board=5.0</a><br>
+ <br>
+You can buy the Rapman (an improved Darwin) from Bits from Bytes at:<br>
+<a href="http://www.bitsfrombytes.com/">http://www.bitsfrombytes.com/</a><br>
+ <br>
+You can buy the Makerbot from Makerbot Industries at:<br>
+<a href="http://www.makerbot.com/">http://www.makerbot.com/</a><br>
+ <br>
+<a name="File Formats" id="File Formats"></a><h3>File Formats</h3>
+
+An explanation of the gcodes is at:<br>
+<a href="http://reprap.org/bin/view/Main/Arduino_GCode_Interpreter">http://reprap.org/bin/view/Main/Arduino_GCode_Interpreter</a><br>
+ <br>
+and at:<br>
+<a href="http://reprap.org/bin/view/Main/MCodeReference">http://reprap.org/bin/view/Main/MCodeReference</a><br>
+ <br>
+A gode example is at:<br>
+<a href="http://forums.reprap.org/file.php?12,file=565">http://forums.reprap.org/file.php?12,file=565</a><br>
+ <br>
+The settings are saved as tab separated .csv files in the .skeinforge folder in your home directory.  The settings can be set in the tool dialogs.  The .csv files can also be edited with a text editor or a spreadsheet program set to separate tabs.<br>
+ <br>
+The Scalable Vector Graphics file produced by vectorwrite can be opened by an SVG viewer or an SVG capable browser like Mozilla:<br>
+<a href="http://www.mozilla.com/firefox/">http://www.mozilla.com/firefox/</a><br>
+ <br>
+A good triangle surface format is the GNU Triangulated Surface format, which is supported by Mesh Viewer and described at:<br>
+<a href="http://gts.sourceforge.net/reference/gts-surfaces.html#GTS-SURFACE-WRITE">http://gts.sourceforge.net/reference/gts-surfaces.html#GTS-SURFACE-WRITE</a><br>
+ <br>
+You can export GTS files from Art of Illusion with the Export GNU Triangulated Surface.bsh script in the Art of Illusion Scripts folder.<br>
+ <br>
+STL is an inferior triangle surface format, described at:<br>
+<a href="http://en.wikipedia.org/wiki/STL_(file_format">http://en.wikipedia.org/wiki/STL_(file_format</a>)<br>
+ <br>
+If you're using an STL file and you can't even carve it, try converting it to a GNU Triangulated Surface file in Art of Illusion.  If it still doesn't carve, then follow the advice in the troubleshooting section.<br>
+ <br>
+<a name="Getting Skeinforge" id="Getting Skeinforge"></a><h3>Getting Skeinforge</h3>
+
+The latest version is at:<br>
+<a href="http://members.axion.net/~enrique/reprap_python_beanshell.zip">http://members.axion.net/~enrique/reprap_python_beanshell.zip</a><br>
+ <br>
+a sometimes out of date version is in the last reprap_python_beanshell.zip attachment in the last post of the Fabmetheus blog at:<br>
+<a href="http://fabmetheus.blogspot.com/">http://fabmetheus.blogspot.com/</a><br>
+ <br>
+another sometimes out of date version is at:<br>
+https://reprap.svn.sourceforge.net/svnroot/reprap/trunk/reprap/miscellaneous/python-beanshell-scripts/<br>
+ <br>
+<a name="Getting Started" id="Getting Started"></a><h3>Getting Started</h3>
+
+For skeinforge to run, install python 2.x on your machine, which is available from:<br>
+<a href="http://www.python.org/download/">http://www.python.org/download/</a><br>
+ <br>
+To use the settings dialog you'll also need Tkinter, which probably came with the python installation.  If it did not, look for it at:<br>
+<a href="http://www.tcl.tk/software/tcltk/">http://www.tcl.tk/software/tcltk/</a><br>
+ <br>
+If you want python and Tkinter together on MacOS, you can try:<br>
+<a href="http://www.astro.washington.edu/users/rowen/ROPackage/Overview.html">http://www.astro.washington.edu/users/rowen/ROPackage/Overview.html</a><br>
+ <br>
+If you want python and Tkinter together on all platforms and don't mind filling out forms, you can try the ActivePython package from Active State at:<br>
+<a href="http://www.activestate.com/Products/activepython/feature_list.mhtml">http://www.activestate.com/Products/activepython/feature_list.mhtml</a><br>
+ <br>
+The computation intensive python modules will use psyco if it is available and run about twice as fast.  Psyco is described at:<br>
+<a href="http://psyco.sourceforge.net/index.html">http://psyco.sourceforge.net/index.html</a><br>
+ <br>
+The psyco download page is:<br>
+<a href="http://psyco.sourceforge.net/download.html">http://psyco.sourceforge.net/download.html</a><br>
+ <br>
+Skeinforge imports Stereolithography (.stl) files or GNU Triangulated Surface (.gts) files.  If importing an STL file directly doesn't work, an indirect way to import an STL file is by turning it into a GTS file is by using the Export GNU Triangulated Surface script at:<br>
+<a href="http://members.axion.net/~enrique/Export%20GNU%20Triangulated%20Surface.bsh">http://members.axion.net/~enrique/Export%20GNU%20Triangulated%20Surface.bsh</a><br>
+ <br>
+The Export GNU Triangulated Surface script is also in the Art of Illusion folder, which is in the same folder as skeinforge.py.  To bring the script into Art of Illusion, drop it into the folder ArtOfIllusion/Scripts/Tools/.  Then import the STL file using the STL import plugin in the import submenu of the Art of Illusion file menu.  Then from the Scripts submenu in the Tools menu, choose 'Export GNU Triangulated Surface' and select the imported STL shape.  Click the 'Export Selected' checkbox and click OK. Once you've created the GTS file, you can turn it into gcode by typing in a shell in the same folder as skeinforge:<br>
+&gt; python skeinforge.py<br>
+ <br>
+When the skeinforge dialog pops up, click 'Skeinforge', choose the file which you exported in 'Export GNU Triangulated Surface' and the gcode file will be saved with the suffix '_export.gcode'.<br>
+ <br>
+Or you can turn files into gcode by adding the file name, for example:<br>
+&gt; python skeinforge.py Screw Holder Bottom.stl<br>
+ <br>
+<a name="License" id="License"></a><h3>License</h3>
+
+GNU Affero General Public License<br>
+<a href="http://www.gnu.org/licenses/agpl.html">http://www.gnu.org/licenses/agpl.html</a><br>
+ <br>
+<a name="Motto" id="Motto"></a><h3>Motto</h3>
+
+I may be slow, but I get there in the end.<br>
+ <br>
+<a name="Troubleshooting" id="Troubleshooting"></a><h3>Troubleshooting</h3>
+
+If there's a bug, try downloading the very latest version because skeinforge is often updated without an announcement.  The very latest version is at:<br>
+<a href="http://members.axion.net/~enrique/reprap_python_beanshell.zip">http://members.axion.net/~enrique/reprap_python_beanshell.zip</a><br>
+ <br>
+If there is still a bug, then first prepare the following files:<br>
+ <br>
+1. stl file<br>
+2. pictures explaining the problem<br>
+3. your settings (pack the whole .skeinforge directory with all your settings) <br>
+4. alterations folder, if you have any active alterations files<br>
+ <br>
+Then zip all the files.<br>
+ <br>
+Second, write a description of the error, send the description and the archive to the developer, enrique ( perez_enrique AT yahoo.com.removethispart ). After a bug fix is released, test the new version and report the results to enrique, whether the fix was successful or not.<br>
+ <br>
+If the dialog window is too big for the screen, on most Linux window managers you can move a window by holding down the Alt key and then drag the window with the left mouse button to get to the off screen widgets.<br>
+ <br>
+If you can't use the graphical interface, you can change the settings for skeinforge by using a text editor or spreadsheet to change the settings in the profiles folder in the .skeinforge folder in your home directory.<br>
+ <br>
+Comments and suggestions are welcome, however, I won't reply unless you are a contributor.  Likewise, I will only answer your questions if you contribute to skeinforge in some way.  Some ways of contributing to skeinforge are in the contributions thread at:<br>
+<a href="http://dev.forums.reprap.org/read.php?12,27562">http://dev.forums.reprap.org/read.php?12,27562</a><br>
+ <br>
+You could also contribute articles to demozendium on any topic:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Main_Page">http://fabmetheus.crsndoo.com/wiki/index.php/Main_Page</a><br>
+ <br>
+If you contribute in a significant way to another open source project, I will consider that also.<br>
+ <br>
+When I answered everyone's questions, eventually I received more questions than I had time to answer, so now I only answer questions from contributors.<br>
+ <br>
+I reserve the right to make any correspondence public.  Do not send me any correspondence marked confidential.  If you do I will delete it.<br>
+ <br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples forge the STL file Screw Holder.stl.  The examples are run in a terminal in the folder which contains Screw Holder.gts and skeinforge.py.<br>
+ <br>
+&gt; python skeinforge.py<br>
+This brings up the dialog, after clicking 'Skeinforge', the following is printed:<br>
+The exported file is saved as Screw Holder_export.gcode<br>
+ <br>
+&gt; python skeinforge.py Screw Holder.stl<br>
+The exported file is saved as Screw Holder_export.gcode<br>
+ <br>
+To run only fill for example, type in the craft_plugins folder which fill is in:<br>
+&gt; python fill.py</tt>
+<br />
+<br />
+<p>
+<a href="fabmetheus_utilities.geometry.solids.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.analyze.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+<a href="sys.html">sys</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge.html#SkeinforgeRepository">SkeinforgeRepository</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SkeinforgeRepository">class <strong>SkeinforgeRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;skeinforge&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SkeinforgeRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="SkeinforgeRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Skeinforge&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+<dl><dt><a name="SkeinforgeRepository-save"><strong>save</strong></a>(self)</dt><dd><tt>Profile&nbsp;has&nbsp;been&nbsp;saved&nbsp;and&nbsp;profile&nbsp;menu&nbsp;should&nbsp;be&nbsp;updated.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addToProfileMenu"><strong>addToProfileMenu</strong></a>(profileSelection, profileType, repository)</dt><dd><tt>Add&nbsp;a&nbsp;profile&nbsp;menu.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-getPluginFileNames"><strong>getPluginFileNames</strong></a>()</dt><dd><tt>Get&nbsp;skeinforge&nbsp;plugin&nbsp;fileNames.</tt></dd></dl>
+ <dl><dt><a name="-getRadioPluginsAddPluginGroupFrame"><strong>getRadioPluginsAddPluginGroupFrame</strong></a>(directoryPath, importantFileNames, names, repository)</dt><dd><tt>Get&nbsp;the&nbsp;radio&nbsp;plugins&nbsp;and&nbsp;add&nbsp;the&nbsp;plugin&nbsp;frame.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;skeinforge&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName)</dt><dd><tt>Craft&nbsp;a&nbsp;file,&nbsp;display&nbsp;dialog.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = '<font color="#c040c0">\n</font>Adrian Bowyer &lt;http://forums.reprap.org/profile...:<font color="#c040c0">\n</font>Art of Illusion &lt;http://www.artofillusion.org/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><br>
+Adrian&nbsp;Bowyer&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,13">http://forums.reprap.org/profile.php?12,13</a>&gt;<br>
+Brendan&nbsp;Erwin&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,217">http://forums.reprap.org/profile.php?12,217</a>&gt;<br>
+Greenarrow&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,81">http://forums.reprap.org/profile.php?12,81</a>&gt;<br>
+Ian&nbsp;England&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,192">http://forums.reprap.org/profile.php?12,192</a>&gt;<br>
+John&nbsp;Gilmore&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,364">http://forums.reprap.org/profile.php?12,364</a>&gt;<br>
+Jonwise&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,716">http://forums.reprap.org/profile.php?12,716</a>&gt;<br>
+Kyle&nbsp;Corbitt&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,90">http://forums.reprap.org/profile.php?12,90</a>&gt;<br>
+Michael&nbsp;Duffin&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,930">http://forums.reprap.org/profile.php?12,930</a>&gt;<br>
+Marius&nbsp;Kintel&nbsp;&lt;<a href="http://reprap.soup.io/">http://reprap.soup.io/</a>&gt;<br>
+Nophead&nbsp;&lt;<a href="http://www.blogger.com/profile/12801535866788103677">http://www.blogger.com/profile/12801535866788103677</a>&gt;<br>
+PJR&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,757">http://forums.reprap.org/profile.php?12,757</a>&gt;<br>
+Reece.Arnott&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,152">http://forums.reprap.org/profile.php?12,152</a>&gt;<br>
+Wade&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,489">http://forums.reprap.org/profile.php?12,489</a>&gt;<br>
+Xsainnz&nbsp;&lt;<a href="http://forums.reprap.org/profile.php?12,563">http://forums.reprap.org/profile.php?12,563</a>&gt;<br>
+Zach&nbsp;Hoeken&nbsp;&lt;<a href="http://blog.zachhoeken.com/">http://blog.zachhoeken.com/</a>&gt;<br>
+&nbsp;<br>
+Organizations:<br>
+Art&nbsp;of&nbsp;Illusion&nbsp;&lt;<a href="http://www.artofillusion.org/">http://www.artofillusion.org/</a>&gt;</td></tr></table>
+</body></html>

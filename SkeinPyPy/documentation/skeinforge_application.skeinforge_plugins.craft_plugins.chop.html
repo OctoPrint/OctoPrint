@@ -1,0 +1,219 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.chop</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.chop</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/chop.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/chop.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.chamber.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.cleave.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Chop is a script to chop a shape into svg slice layers.<br>
+ <br>
+<br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Add Layer Template to SVG">Add Layer Template to SVG</a><br />
+&nbsp;&nbsp;<a href="#Add Extra Top Layer if Necessary">Add Extra Top Layer if Necessary</a><br />
+&nbsp;&nbsp;<a href="#Extra Decimal Places">Extra Decimal Places</a><br />
+&nbsp;&nbsp;<a href="#Import Coarseness">Import Coarseness</a><br />
+&nbsp;&nbsp;<a href="#Layer Height">Layer Height</a><br />
+&nbsp;&nbsp;<a href="#Layers">Layers</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Layers From">Layers From</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Layers To">Layers To</a><br />
+&nbsp;&nbsp;<a href="#Mesh Type">Mesh Type</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Correct Mesh">Correct Mesh</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Unproven Mesh">Unproven Mesh</a><br />
+&nbsp;&nbsp;<a href="#Perimeter Width">Perimeter Width</a><br />
+&nbsp;&nbsp;<a href="#SVG Viewer">SVG Viewer</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Add Layer Template to SVG" id="Add Layer Template to SVG"></a><h3>Add Layer Template to SVG</h3>
+
+Default is on.<br>
+ <br>
+When selected, the layer template will be added to the svg output, which adds javascript control boxes.  So 'Add Layer Template to SVG' should be selected when the svg will be viewed in a browser.<br>
+ <br>
+When off, no controls will be added, the svg output will only include the fabrication paths.  So 'Add Layer Template to SVG' should be deselected when the svg will be used by other software, like Inkscape.<br>
+ <br>
+<a name="Add Extra Top Layer if Necessary" id="Add Extra Top Layer if Necessary"></a><h3>Add Extra Top Layer if Necessary</h3>
+
+Default is on.<br>
+ <br>
+When selected, chop will add an extra layer at the very top of the object if the top of the object is more than half the layer height above the first slice.  This is so the cutting tool doesn't cut too deeply through the top of the object on its first pass.<br>
+ <br>
+<a name="Extra Decimal Places" id="Extra Decimal Places"></a><h3>Extra Decimal Places</h3>
+
+Default is two.<br>
+ <br>
+Defines the number of extra decimal places export will output compared to the number of decimal places in the layer height.  The higher the 'Extra Decimal Places', the more significant figures the output numbers will have.<br>
+ <br>
+<a name="Import Coarseness" id="Import Coarseness"></a><h3>Import Coarseness</h3>
+
+Default is one.<br>
+ <br>
+When a triangle mesh has holes in it, the triangle mesh slicer switches over to a slow algorithm that spans gaps in the mesh.  The higher the 'Import Coarseness' setting, the wider the gaps in the mesh it will span.  An import coarseness of one means it will span gaps of the edge width.<br>
+ <br>
+<a name="Layer Height" id="Layer Height"></a><h3>Layer Height</h3>
+
+Default is 0.4 mm.<br>
+ <br>
+Defines the height of the layer, this is the most important chop setting.<br>
+ <br>
+<a name="Layers" id="Layers"></a><h3>Layers</h3>
+
+Chop slices from top to bottom.  To get only the bottom layer, set the "Layers From" to minus one.  The 'Layers From' until 'Layers To' range is a python slice.<br>
+ <br>
+<a name="Layers From" id="Layers From"></a><h4>Layers From</h4>
+
+Default is zero.<br>
+ <br>
+Defines the index of the top layer that will be chopped.  If the 'Layers From' is the default zero, the carving will start from the top layer.  If the 'Layers From' index is negative, then the carving will start from the 'Layers From' index above the bottom layer.<br>
+ <br>
+<a name="Layers To" id="Layers To"></a><h4>Layers To</h4>
+
+Default is a huge number, which will be limited to the highest index number.<br>
+ <br>
+Defines the index of the bottom layer that will be chopped.  If the 'Layers To' index is a huge number like the default, the carving will go to the bottom of the model.  If the 'Layers To' index is negative, then the carving will go to the 'Layers To' index above the bottom layer.<br>
+ <br>
+<a name="Mesh Type" id="Mesh Type"></a><h3>Mesh Type</h3>
+
+Default is 'Correct Mesh'.<br>
+ <br>
+<a name="Correct Mesh" id="Correct Mesh"></a><h4>Correct Mesh</h4>
+
+When selected, the mesh will be accurately chopped, and if a hole is found, chop will switch over to the algorithm that spans gaps.<br>
+ <br>
+<a name="Unproven Mesh" id="Unproven Mesh"></a><h4>Unproven Mesh</h4>
+
+When selected, chop will use the gap spanning algorithm from the start.  The problem with the gap spanning algothm is that it will span gaps, even if there is not actually a gap in the model.<br>
+ <br>
+<a name="Perimeter Width" id="Perimeter Width"></a><h3>Perimeter Width</h3>
+
+Default is 2 mm.<br>
+ <br>
+Defines the width of the edge.<br>
+ <br>
+<a name="SVG Viewer" id="SVG Viewer"></a><h3>SVG Viewer</h3>
+
+Default is webbrowser.<br>
+ <br>
+If the 'SVG Viewer' is set to the default 'webbrowser', the scalable vector graphics file will be sent to the default browser to be opened.  If the 'SVG Viewer' is set to a program name, the scalable vector graphics file will be sent to that program to be opened.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples chop the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and chop.py.<br>
+ <br>
+&gt; python chop.py<br>
+This brings up the chop dialog.<br>
+ <br>
+&gt; python chop.py Screw Holder Bottom.stl<br>
+The chop tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The chop tool has created the file:<br>
+.. Screw Holder Bottom_chop.svg</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.chamber.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.cleave.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+<a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+<a href="fabmetheus_utilities.svg_writer.html">fabmetheus_utilities.svg_writer</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.chop.html#ChopRepository">ChopRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.chop.html#ChopSkein">ChopSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ChopRepository">class <strong>ChopRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;chop&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ChopRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="ChopRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Chop&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ChopSkein">class <strong>ChopSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;chop&nbsp;a&nbsp;carving.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ChopSkein-addExtraTopLayerIfNecessary"><strong>addExtraTopLayerIfNecessary</strong></a>(self, carving, layerHeight, loopLayers)</dt><dd><tt>Add&nbsp;extra&nbsp;top&nbsp;layer&nbsp;if&nbsp;necessary.</tt></dd></dl>
+
+<dl><dt><a name="ChopSkein-getCarvedSVG"><strong>getCarvedSVG</strong></a>(self, carving, fileName, repository)</dt><dd><tt>Parse&nbsp;gnu&nbsp;triangulated&nbsp;surface&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;chopped&nbsp;gcode.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, gcodeText<font color="#909090">=''</font>, repository<font color="#909090">=None</font>)</dt><dd><tt>Get&nbsp;chopped&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;chop&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Chop&nbsp;a&nbsp;GNU&nbsp;Triangulated&nbsp;Surface&nbsp;file.&nbsp;&nbsp;If&nbsp;no&nbsp;fileName&nbsp;is&nbsp;specified,&nbsp;chop&nbsp;the&nbsp;first&nbsp;GNU&nbsp;Triangulated&nbsp;Surface&nbsp;file&nbsp;in&nbsp;this&nbsp;folder.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

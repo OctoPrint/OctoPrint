@@ -1,0 +1,21 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<polygon id='polygon_radius20_sides3' radius='20.0' sides='3'/>
+		<extrude id='extrudePolygon' target='=document.getElementByID(polygon_radius20_sides3)' pathEnd.z='10' visible='false'/>
+	<disjoin target='=document.getElementByID(extrudePolygon)'/>
+	<!--
+	<path id='rings'>
+		<path id='ring_outer'>
+			<circle radius='10'/>
+			<circle radius='8'/>
+		</path>
+		<path id='ring_inner'>
+			<circle radius='6'/>
+			<circle radius='4'/>
+		</path>
+	</path>
+	<extrude id='extrudeRings' target='=document.getElementByID(rings)' pathEnd.z='5'/>
+	<dictionary id='copyTest' eight='8'/>
+	<copy target='=document.getElementByID(copyTest)'/>
+	-->
+</fabmetheus>

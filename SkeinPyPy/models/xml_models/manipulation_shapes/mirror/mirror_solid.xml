@@ -1,0 +1,4 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<extrude mirror.='' target='[[20], [20, 10], [10, 30]]'/>
+</fabmetheus>

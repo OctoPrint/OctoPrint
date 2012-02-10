@@ -1,0 +1,9 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<function id='printTest' parameters='number' >
+		<print number='number'/>
+		<print _localdictionary=''/>
+		<return return='number'/>
+	</function>
+	<dictionary printSeven='=printTest(7)'/>
+</fabmetheus>

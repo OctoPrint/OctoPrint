@@ -1,0 +1,308 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.chamber</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.chamber</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/chamber.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/chamber.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.carve.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.chop.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Some filaments contract too much and warp the extruded object.  To prevent this you have to print the object in a temperature regulated chamber and/or on a temperature regulated bed. The chamber tool allows you to control the bed and chamber temperature and the holding pressure.<br>
+ <br>
+The chamber gcodes are also described at:<br>
+ <br>
+<a href="http://reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes">http://reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes</a><br>
+ <br>
+The chamber manual page is at:<br>
+ <br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Chamber">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Chamber</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Bed">Bed</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Bed Temperature">Bed Temperature</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Bed Temperature Begin Change Height">Bed Temperature Begin Change Height</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Bed Temperature End Change Height">Bed Temperature End Change Height</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Bed Temperature End">Bed Temperature End</a><br />
+&nbsp;&nbsp;<a href="#Chamber Temperature">Chamber Temperature</a><br />
+&nbsp;&nbsp;<a href="#Holding Force">Holding Force</a><br />
+<a href="#Heated Beds">Heated Beds</a><br />
+&nbsp;&nbsp;<a href="#Bothacker">Bothacker</a><br />
+&nbsp;&nbsp;<a href="#Domingo">Domingo</a><br />
+&nbsp;&nbsp;<a href="#Jmil">Jmil</a><br />
+&nbsp;&nbsp;<a href="#Metalab">Metalab</a><br />
+&nbsp;&nbsp;<a href="#Nophead">Nophead</a><br />
+&nbsp;&nbsp;<a href="#Prusajr">Prusajr</a><br />
+&nbsp;&nbsp;<a href="#Zaggo">Zaggo</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Chamber' checkbox is on.  When it is on, the functions described below will work, when it is off, nothing will be done.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Bed" id="Bed"></a><h3>Bed</h3>
+
+The initial bed temperature is defined by 'Bed Temperature'.  If the 'Bed Temperature End Change Height' is greater or equal to the 'Bed Temperature Begin Change Height' and the 'Bed Temperature Begin Change Height' is greater or equal to zero, then the temperature will be ramped toward the 'Bed Temperature End'.  The ramp will start once the extruder reaches the 'Bed Temperature Begin Change Height', then the bed temperature will approach the 'Bed Temperature End' as the extruder reaches the 'Bed Temperature End Change Height', finally the bed temperature will stay at the 'Bed Temperature End' for the remainder of the build.<br>
+ <br>
+<a name="Bed Temperature" id="Bed Temperature"></a><h4>Bed Temperature</h4>
+
+Default: 60C<br>
+ <br>
+Defines the initial print bed temperature in Celcius by adding an M140 command.<br>
+ <br>
+<a name="Bed Temperature Begin Change Height" id="Bed Temperature Begin Change Height"></a><h4>Bed Temperature Begin Change Height</h4>
+
+Default: -1 mm<br>
+ <br>
+Defines the height of the beginning of the temperature ramp.  If the 'Bed Temperature End Change Height' is less than zero, the bed temperature will remain at the initial 'Bed Temperature'.<br>
+ <br>
+<a name="Bed Temperature End Change Height" id="Bed Temperature End Change Height"></a><h4>Bed Temperature End Change Height</h4>
+
+Default: -1 mm<br>
+ <br>
+Defines the height of the end of the temperature ramp.  If the 'Bed Temperature End Change Height' is less than zero or less than the 'Bed Temperature Begin Change Height', the bed temperature will remain at the initial 'Bed Temperature'.<br>
+ <br>
+<a name="Bed Temperature End" id="Bed Temperature End"></a><h4>Bed Temperature End</h4>
+
+Default: 20C<br>
+ <br>
+Defines the end bed temperature if there is a temperature ramp.<br>
+ <br>
+<a name="Chamber Temperature" id="Chamber Temperature"></a><h3>Chamber Temperature</h3>
+
+Default: 30C<br>
+ <br>
+Defines the chamber temperature in Celcius by adding an M141 command.<br>
+ <br>
+<a name="Holding Force" id="Holding Force"></a><h3>Holding Force</h3>
+
+Default: 0<br>
+ <br>
+Defines the holding pressure of a mechanism, like a vacuum table or electromagnet, to hold the bed surface or object, by adding an M142 command.  The holding pressure is in bars. For hardware which only has on/off holding, when the holding pressure is zero, turn off holding, when the holding pressure is greater than zero, turn on holding. <br>
+ <br>
+<a name="Heated Beds" id="Heated Beds"></a><h2>Heated Beds</h2>
+<hr>
+
+<a name="Bothacker" id="Bothacker"></a><h3>Bothacker</h3>
+
+A resistor heated aluminum plate by Bothacker:<br>
+ <br>
+<a href="http://bothacker.com">http://bothacker.com</a><br>
+ <br>
+with an article at:<br>
+ <br>
+<a href="http://bothacker.com/2009/12/18/heated-build-platform/">http://bothacker.com/2009/12/18/heated-build-platform/</a><br>
+ <br>
+<a name="Domingo" id="Domingo"></a><h3>Domingo</h3>
+
+A heated copper build plate by Domingo:<br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/">http://casainho-emcrepstrap.blogspot.com/</a><br>
+ <br>
+with articles at:<br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2010/01/first-time-with-pla-testing-it-also-on.html">http://casainho-emcrepstrap.blogspot.com/2010/01/first-time-with-pla-testing-it-also-on.html</a><br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2010/01/call-for-helpideas-to-develop-heated.html">http://casainho-emcrepstrap.blogspot.com/2010/01/call-for-helpideas-to-develop-heated.html</a><br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2010/01/new-heated-build-platform.html">http://casainho-emcrepstrap.blogspot.com/2010/01/new-heated-build-platform.html</a><br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2010/01/no-acrylic-and-instead-kapton-tape-on.html">http://casainho-emcrepstrap.blogspot.com/2010/01/no-acrylic-and-instead-kapton-tape-on.html</a><br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2010/01/problems-with-heated-build-platform-and.html">http://casainho-emcrepstrap.blogspot.com/2010/01/problems-with-heated-build-platform-and.html</a><br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2010/01/perfect-build-platform.html">http://casainho-emcrepstrap.blogspot.com/2010/01/perfect-build-platform.html</a><br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2009/12/almost-no-warp.html">http://casainho-emcrepstrap.blogspot.com/2009/12/almost-no-warp.html</a><br>
+ <br>
+<a href="http://casainho-emcrepstrap.blogspot.com/2009/12/heated-base-plate.html">http://casainho-emcrepstrap.blogspot.com/2009/12/heated-base-plate.html</a><br>
+ <br>
+<a name="Jmil" id="Jmil"></a><h3>Jmil</h3>
+
+A heated build stage by jmil, over at:<br>
+ <br>
+<a href="http://www.hive76.org">http://www.hive76.org</a><br>
+ <br>
+with articles at:<br>
+ <br>
+<a href="http://www.hive76.org/handling-hot-build-surfaces">http://www.hive76.org/handling-hot-build-surfaces</a><br>
+ <br>
+<a href="http://www.hive76.org/heated-build-stage-success">http://www.hive76.org/heated-build-stage-success</a><br>
+ <br>
+<a name="Metalab" id="Metalab"></a><h3>Metalab</h3>
+
+A heated base by the Metalab folks:<br>
+ <br>
+<a href="http://reprap.soup.io">http://reprap.soup.io</a><br>
+ <br>
+with information at:<br>
+ <br>
+<a href="http://reprap.soup.io/?search=heated%20base">http://reprap.soup.io/?search=heated%20base</a><br>
+ <br>
+<a name="Nophead" id="Nophead"></a><h3>Nophead</h3>
+
+A resistor heated aluminum bed by Nophead:<br>
+ <br>
+<a href="http://hydraraptor.blogspot.com">http://hydraraptor.blogspot.com</a><br>
+ <br>
+with articles at:<br>
+ <br>
+<a href="http://hydraraptor.blogspot.com/2010/01/will-it-stick.html">http://hydraraptor.blogspot.com/2010/01/will-it-stick.html</a><br>
+ <br>
+<a href="http://hydraraptor.blogspot.com/2010/01/hot-metal-and-serendipity.html">http://hydraraptor.blogspot.com/2010/01/hot-metal-and-serendipity.html</a><br>
+ <br>
+<a href="http://hydraraptor.blogspot.com/2010/01/new-year-new-plastic.html">http://hydraraptor.blogspot.com/2010/01/new-year-new-plastic.html</a><br>
+ <br>
+<a href="http://hydraraptor.blogspot.com/2010/01/hot-bed.html">http://hydraraptor.blogspot.com/2010/01/hot-bed.html</a><br>
+ <br>
+<a name="Prusajr" id="Prusajr"></a><h3>Prusajr</h3>
+
+A resistive wire heated plexiglass plate by prusajr:<br>
+ <br>
+<a href="http://prusadjs.cz/">http://prusadjs.cz/</a><br>
+ <br>
+with articles at:<br>
+ <br>
+<a href="http://prusadjs.cz/2010/01/heated-reprap-print-bed-mk2/">http://prusadjs.cz/2010/01/heated-reprap-print-bed-mk2/</a><br>
+ <br>
+<a href="http://prusadjs.cz/2009/11/look-ma-no-warping-heated-reprap-print-bed/">http://prusadjs.cz/2009/11/look-ma-no-warping-heated-reprap-print-bed/</a><br>
+ <br>
+<a name="Zaggo" id="Zaggo"></a><h3>Zaggo</h3>
+
+A resistor heated aluminum plate by Zaggo at Pleasant Software:<br>
+ <br>
+<a href="http://pleasantsoftware.com/developer/3d/">http://pleasantsoftware.com/developer/3d/</a><br>
+ <br>
+with articles at:<br>
+ <br>
+<a href="http://pleasantsoftware.com/developer/3d/2009/12/05/raftless/">http://pleasantsoftware.com/developer/3d/2009/12/05/raftless/</a><br>
+ <br>
+<a href="http://pleasantsoftware.com/developer/3d/2009/11/15/living-in-times-of-warp-free-printing/">http://pleasantsoftware.com/developer/3d/2009/11/15/living-in-times-of-warp-free-printing/</a><br>
+ <br>
+<a href="http://pleasantsoftware.com/developer/3d/2009/11/12/canned-heat/">http://pleasantsoftware.com/developer/3d/2009/11/12/canned-heat/</a><br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples chamber the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and chamber.py.<br>
+ <br>
+&gt; python chamber.py<br>
+This brings up the chamber dialog.<br>
+ <br>
+&gt; python chamber.py Screw Holder Bottom.stl<br>
+The chamber tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The chamber tool has created the file:<br>
+Screw Holder Bottom_chamber.gcode</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.carve.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.chop.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.chamber.html#ChamberRepository">ChamberRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.chamber.html#ChamberSkein">ChamberSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ChamberRepository">class <strong>ChamberRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;chamber&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ChamberRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="ChamberRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Chamber&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ChamberSkein">class <strong>ChamberSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;chamber&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ChamberSkein-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="ChamberSkein-addBedTemperature"><strong>addBedTemperature</strong></a>(self, bedTemperature)</dt><dd><tt>Add&nbsp;bed&nbsp;temperature&nbsp;if&nbsp;it&nbsp;is&nbsp;different&nbsp;from&nbsp;the&nbsp;old.</tt></dd></dl>
+
+<dl><dt><a name="ChamberSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;chamber&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="ChamberSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="ChamberSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;add&nbsp;it&nbsp;to&nbsp;the&nbsp;chamber&nbsp;skein.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, text<font color="#909090">=''</font>, repository<font color="#909090">=None</font>)</dt><dd><tt>Chamber&nbsp;the&nbsp;file&nbsp;or&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Chamber&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;chamber&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Chamber&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

@@ -1,0 +1,282 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.analyze_plugins.vectorwrite</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.html"><font color="#ffffff">analyze_plugins</font></a>.vectorwrite</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/vectorwrite.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/vectorwrite.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.synopsis.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Vectorwrite is a very interesting analyze plugin that will create an SVG vector image for each layer that you can then use in some other printing system. <br>
+ <br>
+The Scalable Vector Graphics file can be opened by an SVG viewer or an SVG capable browser like Mozilla:<br>
+<a href="http://www.mozilla.com/firefox/">http://www.mozilla.com/firefox/</a><br>
+ <br>
+The vectorwrite manual page is at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Vectorwrite">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Vectorwrite</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Add Loops">Add Loops</a><br />
+&nbsp;&nbsp;<a href="#Add Paths">Add Paths</a><br />
+&nbsp;&nbsp;<a href="#Add Perimeters">Add Perimeters</a><br />
+&nbsp;&nbsp;<a href="#Layers">Layers</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Layers From">Layers From</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Layers To">Layers To</a><br />
+&nbsp;&nbsp;<a href="#SVG Viewer">SVG Viewer</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Vectorwrite' checkbox is off.  When it is on, the functions described below will work when called from the skeinforge toolchain, when it is off, the functions will not be called from the toolchain.  The functions will still be called, whether or not the 'Activate Vectorwrite' checkbox is on, when vectorwrite is run directly.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Add Loops" id="Add Loops"></a><h3>Add Loops</h3>
+
+Default is on.<br>
+ <br>
+If 'Add Loops' is selected, the loops will be added in yellow to the the scalable vector graphics output.<br>
+ <br>
+<a name="Add Paths" id="Add Paths"></a><h3>Add Paths</h3>
+
+Default is on.<br>
+ <br>
+If 'Add Paths' is selected, the paths will be added in pink to the the scalable vector graphics output.<br>
+ <br>
+<a name="Add Perimeters" id="Add Perimeters"></a><h3>Add Perimeters</h3>
+
+Default is on.<br>
+ <br>
+If 'Add Perimeters' is selected, the edges will be added to the the scalable vector graphics output.  The outer edges will be red and the inner edges will be orange.<br>
+ <br>
+<a name="Layers" id="Layers"></a><h3>Layers</h3>
+
+<a name="Layers From" id="Layers From"></a><h4>Layers From</h4>
+
+Default is zero.<br>
+ <br>
+The "Layers From" is the index of the bottom layer that will be displayed.  If the layer from is the default zero, the display will start from the lowest layer.  If the the layer from index is negative, then the display will start from the layer from index below the top layer.<br>
+ <br>
+<a name="Layers To" id="Layers To"></a><h4>Layers To</h4>
+
+Default is a huge number, which will be limited to the highest index layer.<br>
+ <br>
+The "Layers To" is the index of the top layer that will be displayed.  If the layer to index is a huge number like the default, the display will go to the top of the model, at least until we model habitats:)  If the layer to index is negative, then the display will go to the layer to index below the top layer.  The layer from until layer to index is a python slice.<br>
+ <br>
+<a name="SVG Viewer" id="SVG Viewer"></a><h3>SVG Viewer</h3>
+
+Default is webbrowser.<br>
+ <br>
+If the 'SVG Viewer' is set to the default 'webbrowser', the scalable vector graphics file will be sent to the default browser to be opened.  If the 'SVG Viewer' is set to a program name, the scalable vector graphics file will be sent to that program to be opened.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+Below are examples of vectorwrite being used.  These examples are run in a terminal in the folder which contains Screw Holder_penultimate.gcode and vectorwrite.py.<br>
+ <br>
+&gt; python vectorwrite.py<br>
+This brings up the vectorwrite dialog.<br>
+ <br>
+&gt; python vectorwrite.py Screw Holder_penultimate.gcode<br>
+The vectorwrite file is saved as Screw_Holder_penultimate_vectorwrite.svg</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.synopsis.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="cStringIO.html">cStringIO</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.svg_writer.html">fabmetheus_utilities.svg_writer</a><br>
+<a href="sys.html">sys</a><br>
+<a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.svg_writer.html#SVGWriter">fabmetheus_utilities.svg_writer.SVGWriter</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.vectorwrite.html#SVGWriterVectorwrite">SVGWriterVectorwrite</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.vectorwrite.html#ThreadLayer">ThreadLayer</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.vectorwrite.html#VectorwriteRepository">VectorwriteRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.vectorwrite.html#VectorwriteSkein">VectorwriteSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SVGWriterVectorwrite">class <strong>SVGWriterVectorwrite</strong></a>(<a href="fabmetheus_utilities.svg_writer.html#SVGWriter">fabmetheus_utilities.svg_writer.SVGWriter</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;vectorwrite&nbsp;a&nbsp;carving.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SVGWriterVectorwrite-addLoopLayerToOutput"><strong>addLoopLayerToOutput</strong></a>(self, layerIndex, threadLayer)</dt><dd><tt>Add&nbsp;rotated&nbsp;boundary&nbsp;layer&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-addPaths"><strong>addPaths</strong></a>(self, colorName, paths, transformString)</dt><dd><tt>Add&nbsp;paths&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.svg_writer.html#SVGWriter">fabmetheus_utilities.svg_writer.SVGWriter</a>:<br>
+<dl><dt><a name="SVGWriterVectorwrite-__init__"><strong>__init__</strong></a>(self, addLayerTemplateToSVG, cornerMaximum, cornerMinimum, decimalPlacesCarried, layerHeight, edgeWidth<font color="#909090">=None</font>)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-addLayerBegin"><strong>addLayerBegin</strong></a>(self, layerIndex, loopLayer)</dt><dd><tt>Add&nbsp;the&nbsp;start&nbsp;lines&nbsp;for&nbsp;the&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-addLoopLayersToOutput"><strong>addLoopLayersToOutput</strong></a>(self, loopLayers)</dt><dd><tt>Add&nbsp;rotated&nbsp;boundary&nbsp;layers&nbsp;to&nbsp;the&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-addOriginalAsComment"><strong>addOriginalAsComment</strong></a>(self, elementNode)</dt><dd><tt>Add&nbsp;original&nbsp;elementNode&nbsp;as&nbsp;a&nbsp;comment.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-getReplacedSVGTemplate"><strong>getReplacedSVGTemplate</strong></a>(self, fileName, loopLayers, procedureName, elementNode<font color="#909090">=None</font>)</dt><dd><tt>Get&nbsp;the&nbsp;lines&nbsp;of&nbsp;text&nbsp;from&nbsp;the&nbsp;layer_template.svg&nbsp;file.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-getRounded"><strong>getRounded</strong></a>(self, number)</dt><dd><tt>Get&nbsp;number&nbsp;rounded&nbsp;to&nbsp;the&nbsp;number&nbsp;of&nbsp;carried&nbsp;decimal&nbsp;places&nbsp;as&nbsp;a&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-getRoundedComplexString"><strong>getRoundedComplexString</strong></a>(self, point)</dt><dd><tt>Get&nbsp;the&nbsp;rounded&nbsp;complex&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-getSVGStringForLoop"><strong>getSVGStringForLoop</strong></a>(self, loop)</dt><dd><tt>Get&nbsp;the&nbsp;svg&nbsp;loop&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-getSVGStringForLoops"><strong>getSVGStringForLoops</strong></a>(self, loops)</dt><dd><tt>Get&nbsp;the&nbsp;svg&nbsp;loops&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-getSVGStringForPath"><strong>getSVGStringForPath</strong></a>(self, path)</dt><dd><tt>Get&nbsp;the&nbsp;svg&nbsp;path&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-getTransformString"><strong>getTransformString</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;svg&nbsp;transform&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-setDimensionTexts"><strong>setDimensionTexts</strong></a>(self, key, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;texts&nbsp;to&nbsp;the&nbsp;valueString&nbsp;followed&nbsp;by&nbsp;mm.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-setMetadataNoscriptElement"><strong>setMetadataNoscriptElement</strong></a>(self, key, prefix, value)</dt><dd><tt>Set&nbsp;the&nbsp;metadata&nbsp;value&nbsp;and&nbsp;the&nbsp;text.</tt></dd></dl>
+
+<dl><dt><a name="SVGWriterVectorwrite-setTexts"><strong>setTexts</strong></a>(self, key, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;texts&nbsp;to&nbsp;the&nbsp;valueString.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ThreadLayer">class <strong>ThreadLayer</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Threads&nbsp;with&nbsp;a&nbsp;z.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ThreadLayer-__init__"><strong>__init__</strong></a>(self, z)</dt></dl>
+
+<dl><dt><a name="ThreadLayer-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;loop&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="ThreadLayer-getTotalNumberOfThreads"><strong>getTotalNumberOfThreads</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;total&nbsp;number&nbsp;of&nbsp;loops,&nbsp;paths&nbsp;and&nbsp;edges.</tt></dd></dl>
+
+<dl><dt><a name="ThreadLayer-maximize"><strong>maximize</strong></a>(self, vector3)</dt><dd><tt>Maximize&nbsp;the&nbsp;vector3&nbsp;over&nbsp;the&nbsp;loops,&nbsp;paths&nbsp;and&nbsp;edges.</tt></dd></dl>
+
+<dl><dt><a name="ThreadLayer-minimize"><strong>minimize</strong></a>(self, vector3)</dt><dd><tt>Minimize&nbsp;the&nbsp;vector3&nbsp;over&nbsp;the&nbsp;loops,&nbsp;paths&nbsp;and&nbsp;edges.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="VectorwriteRepository">class <strong>VectorwriteRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;vectorwrite&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="VectorwriteRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Write&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="VectorwriteSkein">class <strong>VectorwriteSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;vectorwrite&nbsp;a&nbsp;carving.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="VectorwriteSkein-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-addLoopLayer"><strong>addLoopLayer</strong></a>(self, z)</dt><dd><tt>Add&nbsp;loop&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-addToLoops"><strong>addToLoops</strong></a>(self)</dt><dd><tt>Add&nbsp;the&nbsp;thread&nbsp;to&nbsp;the&nbsp;loops.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-addToPerimeters"><strong>addToPerimeters</strong></a>(self)</dt><dd><tt>Add&nbsp;the&nbsp;thread&nbsp;to&nbsp;the&nbsp;edges.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-getCarveLayerHeight"><strong>getCarveLayerHeight</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;layer&nbsp;height.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-getCarvedSVG"><strong>getCarvedSVG</strong></a>(self, fileName, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gnu&nbsp;triangulated&nbsp;surface&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;vectorwrite&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-linearMove"><strong>linearMove</strong></a>(self, splitLine)</dt><dd><tt>Get&nbsp;statistics&nbsp;for&nbsp;a&nbsp;linear&nbsp;move.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;add&nbsp;it&nbsp;to&nbsp;the&nbsp;outset&nbsp;skein.</tt></dd></dl>
+
+<dl><dt><a name="VectorwriteSkein-removeEmptyLayers"><strong>removeEmptyLayers</strong></a>(self)</dt><dd><tt>Remove&nbsp;empty&nbsp;layers.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-getWindowAnalyzeFile"><strong>getWindowAnalyzeFile</strong></a>(fileName)</dt><dd><tt>Write&nbsp;scalable&nbsp;vector&nbsp;graphics&nbsp;for&nbsp;a&nbsp;gcode&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getWindowAnalyzeFileGivenText"><strong>getWindowAnalyzeFileGivenText</strong></a>(fileName, gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Write&nbsp;scalable&nbsp;vector&nbsp;graphics&nbsp;for&nbsp;a&nbsp;gcode&nbsp;file&nbsp;given&nbsp;the&nbsp;settings.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;vectorwrite&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, fileNamePenultimate, fileNameSuffix, filePenultimateWritten, gcodeText<font color="#909090">=''</font>)</dt><dd><tt>Write&nbsp;scalable&nbsp;vector&nbsp;graphics&nbsp;for&nbsp;a&nbsp;skeinforge&nbsp;gcode&nbsp;file,&nbsp;if&nbsp;activate&nbsp;vectorwrite&nbsp;is&nbsp;selected.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__credits__</strong> = 'Nophead &lt;http://hydraraptor.blogspot.com/&gt;'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Nophead&nbsp;&lt;<a href="http://hydraraptor.blogspot.com/">http://hydraraptor.blogspot.com/</a>&gt;</td></tr></table>
+</body></html>

@@ -1,0 +1,262 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.tableau</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.html"><font color="#ffffff">analyze_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.html"><font color="#ffffff">analyze_utilities</font></a>.tableau</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/analyze_utilities/tableau.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/analyze_plugins/analyze_utilities/tableau.py</a></font></td></tr></table>
+    <p><tt>Tableau has a couple of base classes for analyze viewers.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.zoom_in.html">skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.zoom_in</a><br>
+<a href="skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.zoom_out.html">skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.zoom_out</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.tableau.html#ColoredLine">ColoredLine</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.tableau.html#ExportCanvasDialog">ExportCanvasDialog</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.tableau.html#TableauRepository">TableauRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.analyze_plugins.analyze_utilities.tableau.html#TableauWindow">TableauWindow</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ColoredLine">class <strong>ColoredLine</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;colored&nbsp;index&nbsp;line.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ColoredLine-__init__"><strong>__init__</strong></a>(self, begin, colorName, displayString, end, tagString)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;name&nbsp;and&nbsp;corners.</tt></dd></dl>
+
+<dl><dt><a name="ColoredLine-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;colored&nbsp;index&nbsp;line.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ExportCanvasDialog">class <strong>ExportCanvasDialog</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display&nbsp;the&nbsp;export&nbsp;canvas&nbsp;repository&nbsp;dialog.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ExportCanvasDialog-addPluginToMenu"><strong>addPluginToMenu</strong></a>(self, canvas, fileName, menu, name, suffix)</dt><dd><tt>Add&nbsp;the&nbsp;display&nbsp;command&nbsp;to&nbsp;the&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="ExportCanvasDialog-display"><strong>display</strong></a>(self)</dt><dd><tt>Display&nbsp;the&nbsp;export&nbsp;canvas&nbsp;repository&nbsp;dialog.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TableauRepository">class <strong>TableauRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>The&nbsp;viewer&nbsp;base&nbsp;repository&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="TableauRepository-addAnimation"><strong>addAnimation</strong></a>(self)</dt><dd><tt>Add&nbsp;the&nbsp;animation&nbsp;settings.</tt></dd></dl>
+
+<dl><dt><a name="TableauRepository-addScaleScreenSlide"><strong>addScaleScreenSlide</strong></a>(self)</dt><dd><tt>Add&nbsp;the&nbsp;scale,&nbsp;screen&nbsp;and&nbsp;slide&nbsp;show&nbsp;settings.</tt></dd></dl>
+
+<dl><dt><a name="TableauRepository-setToDisplaySave"><strong>setToDisplaySave</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;setting&nbsp;values&nbsp;to&nbsp;the&nbsp;display,&nbsp;save&nbsp;the&nbsp;new&nbsp;values.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TableauWindow">class <strong>TableauWindow</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="TableauWindow-activateMouseModeTool"><strong>activateMouseModeTool</strong></a>(self)</dt><dd><tt>Activate&nbsp;the&nbsp;mouse&nbsp;mode&nbsp;tool.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addCanvasMenuRootScrollSkein"><strong>addCanvasMenuRootScrollSkein</strong></a>(self, repository, skein, suffix, title)</dt><dd><tt>Add&nbsp;the&nbsp;canvas,&nbsp;menu&nbsp;bar,&nbsp;scroll&nbsp;bar,&nbsp;skein&nbsp;panes,&nbsp;tableau&nbsp;repository,&nbsp;root&nbsp;and&nbsp;skein.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addLayer"><strong>addLayer</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;the&nbsp;layer&nbsp;frame&nbsp;items.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addLine"><strong>addLine</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;the&nbsp;line&nbsp;frame&nbsp;items.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addMouseInstantTool"><strong>addMouseInstantTool</strong></a>(self, fileName, gridPosition, mouseInstantTool)</dt><dd><tt>Add&nbsp;the&nbsp;mouse&nbsp;instant&nbsp;tool&nbsp;and&nbsp;derived&nbsp;photo&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addMouseToolsBind"><strong>addMouseToolsBind</strong></a>(self)</dt><dd><tt>Add&nbsp;the&nbsp;mouse&nbsp;tool&nbsp;and&nbsp;bind&nbsp;button&nbsp;one&nbsp;clicked,&nbsp;button&nbsp;one&nbsp;released&nbsp;and&nbsp;motion.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addPhotoImage"><strong>addPhotoImage</strong></a>(self, fileName, gridPosition)</dt><dd><tt>Get&nbsp;a&nbsp;PhotoImage&nbsp;button,&nbsp;grid&nbsp;the&nbsp;button&nbsp;and&nbsp;increment&nbsp;the&nbsp;grid&nbsp;position.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addScale"><strong>addScale</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;the&nbsp;line&nbsp;frame&nbsp;items.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-addSettingsMenuSetWindowGeometry"><strong>addSettingsMenuSetWindowGeometry</strong></a>(self, center)</dt><dd><tt>Add&nbsp;the&nbsp;settings&nbsp;menu,&nbsp;center&nbsp;the&nbsp;scroll&nbsp;region,&nbsp;update,&nbsp;and&nbsp;set&nbsp;the&nbsp;window&nbsp;geometry.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-button1"><strong>button1</strong></a>(self, event)</dt><dd><tt>The&nbsp;button&nbsp;was&nbsp;clicked.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-buttonRelease1"><strong>buttonRelease1</strong></a>(self, event)</dt><dd><tt>The&nbsp;button&nbsp;was&nbsp;released.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-cancel"><strong>cancel</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;all&nbsp;entities&nbsp;to&nbsp;their&nbsp;saved&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-cancelTimer"><strong>cancelTimer</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Cancel&nbsp;the&nbsp;timer&nbsp;and&nbsp;set&nbsp;it&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-cancelTimerResetButtons"><strong>cancelTimerResetButtons</strong></a>(self)</dt><dd><tt>Cancel&nbsp;the&nbsp;timer&nbsp;and&nbsp;set&nbsp;it&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-close"><strong>close</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>The&nbsp;dialog&nbsp;was&nbsp;closed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-createMouseModeTool"><strong>createMouseModeTool</strong></a>(self)</dt><dd><tt>Create&nbsp;the&nbsp;mouse&nbsp;mode&nbsp;tool.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-destroyAllDialogWindows"><strong>destroyAllDialogWindows</strong></a>(self)</dt><dd><tt>Destroy&nbsp;all&nbsp;the&nbsp;dialog&nbsp;windows.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-destroyMouseToolRaiseMouseButtons"><strong>destroyMouseToolRaiseMouseButtons</strong></a>(self)</dt><dd><tt>Destroy&nbsp;the&nbsp;mouse&nbsp;tool&nbsp;and&nbsp;raise&nbsp;the&nbsp;mouse&nbsp;buttons.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-dive"><strong>dive</strong></a>(self)</dt><dd><tt>Dive,&nbsp;go&nbsp;down&nbsp;periodically.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-diveCycle"><strong>diveCycle</strong></a>(self)</dt><dd><tt>Start&nbsp;the&nbsp;dive&nbsp;cycle.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getAnimationLineDelay"><strong>getAnimationLineDelay</strong></a>(self, coloredLine)</dt><dd><tt>Get&nbsp;the&nbsp;animation&nbsp;line&nbsp;delay&nbsp;in&nbsp;milliseconds.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getDrawnLineText"><strong>getDrawnLineText</strong></a>(self, location, tags, text)</dt><dd><tt>Get&nbsp;the&nbsp;line&nbsp;text&nbsp;drawn&nbsp;on&nbsp;the&nbsp;canvas.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getEntityFromName"><strong>getEntityFromName</strong></a>(self, name)</dt><dd><tt>Get&nbsp;the&nbsp;entity&nbsp;of&nbsp;the&nbsp;given&nbsp;name.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getPhotoButtonGridIncrement"><strong>getPhotoButtonGridIncrement</strong></a>(self, commandFunction, fileName, gridPosition)</dt><dd><tt>Get&nbsp;a&nbsp;PhotoImage&nbsp;button,&nbsp;grid&nbsp;the&nbsp;button&nbsp;and&nbsp;increment&nbsp;the&nbsp;grid&nbsp;position.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getRoundedRulingText"><strong>getRoundedRulingText</strong></a>(self, extraDecimalPlaces, number)</dt><dd><tt>Get&nbsp;the&nbsp;rounded&nbsp;ruling&nbsp;text.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getRulingSeparationWidthPixels"><strong>getRulingSeparationWidthPixels</strong></a>(self, rank)</dt><dd><tt>Get&nbsp;the&nbsp;separation&nbsp;width&nbsp;in&nbsp;pixels.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getScrollPaneCenter"><strong>getScrollPaneCenter</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;center&nbsp;of&nbsp;the&nbsp;scroll&nbsp;pane.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getScrollPaneFraction"><strong>getScrollPaneFraction</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;scroll&nbsp;pane&nbsp;top&nbsp;left.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getSlideShowDelay"><strong>getSlideShowDelay</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;slide&nbsp;show&nbsp;delay&nbsp;in&nbsp;milliseconds.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-getUpdateSkeinPanes"><strong>getUpdateSkeinPanes</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;update&nbsp;skein&nbsp;panes.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-isLineBelowZeroSetLayer"><strong>isLineBelowZeroSetLayer</strong></a>(self)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;line&nbsp;index&nbsp;is&nbsp;below&nbsp;zero,&nbsp;and&nbsp;if&nbsp;so&nbsp;set&nbsp;the&nbsp;layer&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-isLineBeyondListSetLayer"><strong>isLineBeyondListSetLayer</strong></a>(self)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;line&nbsp;index&nbsp;is&nbsp;beyond&nbsp;the&nbsp;end&nbsp;of&nbsp;the&nbsp;list,&nbsp;and&nbsp;if&nbsp;so&nbsp;set&nbsp;the&nbsp;layer&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-keyPressDown"><strong>keyPressDown</strong></a>(self, event)</dt><dd><tt>The&nbsp;down&nbsp;arrow&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-keyPressLeft"><strong>keyPressLeft</strong></a>(self, event)</dt><dd><tt>The&nbsp;left&nbsp;arrow&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-keyPressReturn"><strong>keyPressReturn</strong></a>(self, event)</dt><dd><tt>The&nbsp;return&nbsp;key&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-keyPressRight"><strong>keyPressRight</strong></a>(self, event)</dt><dd><tt>The&nbsp;right&nbsp;arrow&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-keyPressUp"><strong>keyPressUp</strong></a>(self, event)</dt><dd><tt>The&nbsp;up&nbsp;arrow&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-layerEntryReturnPressed"><strong>layerEntryReturnPressed</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>The&nbsp;layer&nbsp;index&nbsp;entry&nbsp;return&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-limitIndex"><strong>limitIndex</strong></a>(self)</dt><dd><tt>Limit&nbsp;the&nbsp;index&nbsp;so&nbsp;it&nbsp;is&nbsp;not&nbsp;below&nbsp;zero&nbsp;or&nbsp;above&nbsp;the&nbsp;top.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-limitIndexSetArrowMouseDeleteCanvas"><strong>limitIndexSetArrowMouseDeleteCanvas</strong></a>(self)</dt><dd><tt>Limit&nbsp;the&nbsp;index,&nbsp;set&nbsp;the&nbsp;arrow&nbsp;type,&nbsp;and&nbsp;delete&nbsp;all&nbsp;the&nbsp;canvas&nbsp;items.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-lineDive"><strong>lineDive</strong></a>(self)</dt><dd><tt>Line&nbsp;dive,&nbsp;go&nbsp;down&nbsp;periodically.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-lineDiveCycle"><strong>lineDiveCycle</strong></a>(self)</dt><dd><tt>Start&nbsp;the&nbsp;line&nbsp;dive&nbsp;cycle.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-lineEntryReturnPressed"><strong>lineEntryReturnPressed</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>The&nbsp;line&nbsp;index&nbsp;entry&nbsp;return&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-lineSoar"><strong>lineSoar</strong></a>(self)</dt><dd><tt>Line&nbsp;soar,&nbsp;go&nbsp;up&nbsp;periodically.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-lineSoarCycle"><strong>lineSoarCycle</strong></a>(self)</dt><dd><tt>Start&nbsp;the&nbsp;line&nbsp;soar&nbsp;cycle.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-motion"><strong>motion</strong></a>(self, event)</dt><dd><tt>The&nbsp;mouse&nbsp;moved.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-phoenixUpdate"><strong>phoenixUpdate</strong></a>(self)</dt><dd><tt>Update&nbsp;the&nbsp;skein,&nbsp;and&nbsp;deiconify&nbsp;a&nbsp;new&nbsp;window&nbsp;and&nbsp;destroy&nbsp;the&nbsp;old.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-redisplayWindowUpdate"><strong>redisplayWindowUpdate</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Deiconify&nbsp;a&nbsp;new&nbsp;window&nbsp;and&nbsp;destroy&nbsp;the&nbsp;old.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-relayXview"><strong>relayXview</strong></a>(self, *args)</dt><dd><tt>Relay&nbsp;xview&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-relayYview"><strong>relayYview</strong></a>(self, *args)</dt><dd><tt>Relay&nbsp;yview&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-resetPeriodicButtonsText"><strong>resetPeriodicButtonsText</strong></a>(self)</dt><dd><tt>Reset&nbsp;the&nbsp;text&nbsp;of&nbsp;the&nbsp;periodic&nbsp;buttons.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-save"><strong>save</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;setting&nbsp;values&nbsp;to&nbsp;the&nbsp;display,&nbsp;save&nbsp;the&nbsp;new&nbsp;values.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-scaleEntryReturnPressed"><strong>scaleEntryReturnPressed</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>The&nbsp;scale&nbsp;entry&nbsp;return&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setButtonImageText"><strong>setButtonImageText</strong></a>(self, button, text)</dt><dd><tt>Set&nbsp;the&nbsp;text&nbsp;of&nbsp;the&nbsp;e&nbsp;periodic&nbsp;buttons.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setDisplayLayerIndex"><strong>setDisplayLayerIndex</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;display&nbsp;of&nbsp;the&nbsp;layer&nbsp;index&nbsp;entry&nbsp;field&nbsp;and&nbsp;buttons.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setInsetToCanvas"><strong>setInsetToCanvas</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;repository&nbsp;insets&nbsp;to&nbsp;the&nbsp;canvas.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setLayerIndex"><strong>setLayerIndex</strong></a>(self, layerIndex)</dt><dd><tt>Set&nbsp;the&nbsp;layer&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setLineButtonsState"><strong>setLineButtonsState</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;of&nbsp;the&nbsp;line&nbsp;buttons.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setWindowNewMouseTool"><strong>setWindowNewMouseTool</strong></a>(self, getNewMouseToolFunction, mouseTool)</dt><dd><tt>Set&nbsp;the&nbsp;getNewMouseTool&nbsp;function&nbsp;and&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setWindowToDisplaySavePhoenixUpdate"><strong>setWindowToDisplaySavePhoenixUpdate</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;setting&nbsp;values&nbsp;to&nbsp;the&nbsp;display,&nbsp;save&nbsp;the&nbsp;new&nbsp;values,&nbsp;then&nbsp;call&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-setWindowToDisplaySaveUpdate"><strong>setWindowToDisplaySaveUpdate</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;setting&nbsp;values&nbsp;to&nbsp;the&nbsp;display,&nbsp;save&nbsp;the&nbsp;new&nbsp;values,&nbsp;then&nbsp;call&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-shiftButtonRelease1"><strong>shiftButtonRelease1</strong></a>(self, event)</dt><dd><tt>The&nbsp;button&nbsp;was&nbsp;released&nbsp;while&nbsp;the&nbsp;shift&nbsp;key&nbsp;was&nbsp;pressed.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-shiftMotion"><strong>shiftMotion</strong></a>(self, event)</dt><dd><tt>The&nbsp;mouse&nbsp;moved.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-soar"><strong>soar</strong></a>(self)</dt><dd><tt>Soar,&nbsp;go&nbsp;up&nbsp;periodically.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-soarCycle"><strong>soarCycle</strong></a>(self)</dt><dd><tt>Start&nbsp;the&nbsp;soar&nbsp;cycle.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-updateDeiconify"><strong>updateDeiconify</strong></a>(self, center<font color="#909090">=(0.5+0.5j)</font>)</dt><dd><tt>Update&nbsp;and&nbsp;deiconify&nbsp;the&nbsp;window.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-updateMouseToolIfSelection"><strong>updateMouseToolIfSelection</strong></a>(self)</dt><dd><tt>Update&nbsp;the&nbsp;mouse&nbsp;tool&nbsp;if&nbsp;it&nbsp;is&nbsp;a&nbsp;selection&nbsp;tool.</tt></dd></dl>
+
+<dl><dt><a name="TableauWindow-updateNewDestroyOld"><strong>updateNewDestroyOld</strong></a>(self, scrollPaneCenter)</dt><dd><tt>Update&nbsp;and&nbsp;deiconify&nbsp;a&nbsp;window&nbsp;and&nbsp;destroy&nbsp;the&nbsp;old.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getGeometricDifference"><strong>getGeometricDifference</strong></a>(first, second)</dt><dd><tt>Get&nbsp;the&nbsp;geometric&nbsp;difference&nbsp;of&nbsp;the&nbsp;two&nbsp;numbers.</tt></dd></dl>
+ <dl><dt><a name="-getGridHorizontalFrame"><strong>getGridHorizontalFrame</strong></a>(gridPosition)</dt><dd><tt>Get&nbsp;the&nbsp;grid&nbsp;horizontal&nbsp;object&nbsp;with&nbsp;a&nbsp;frame&nbsp;from&nbsp;the&nbsp;grid&nbsp;position.</tt></dd></dl>
+ <dl><dt><a name="-getIsLayerStart"><strong>getIsLayerStart</strong></a>(firstWord, skein, splitLine)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;line&nbsp;is&nbsp;the&nbsp;start&nbsp;of&nbsp;a&nbsp;layer.</tt></dd></dl>
+ <dl><dt><a name="-getLengthMinusOneMinimumOne"><strong>getLengthMinusOneMinimumOne</strong></a>(elementList)</dt><dd><tt>Get&nbsp;the&nbsp;length&nbsp;of&nbsp;the&nbsp;length&nbsp;minus&nbsp;one,&nbsp;minimum&nbsp;one.</tt></dd></dl>
+ <dl><dt><a name="-getPluginsDirectoryPath"><strong>getPluginsDirectoryPath</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;plugins&nbsp;directory&nbsp;path.</tt></dd></dl>
+ <dl><dt><a name="-getScrollbarCanvasPortion"><strong>getScrollbarCanvasPortion</strong></a>(scrollbar)</dt><dd><tt>Get&nbsp;the&nbsp;canvas&nbsp;portion&nbsp;of&nbsp;the&nbsp;scrollbar.</tt></dd></dl>
+ <dl><dt><a name="-setStateNormalDisabled"><strong>setStateNormalDisabled</strong></a>(active, widget)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;of&nbsp;the&nbsp;widget&nbsp;to&nbsp;normal&nbsp;if&nbsp;active&nbsp;and&nbsp;disabled&nbsp;if&nbsp;inactive.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

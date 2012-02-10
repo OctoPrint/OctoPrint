@@ -1,0 +1,8 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<polygon id='pentagon' segment.center='[]' segment.path='[[], [0.5, 2], [1.0, 0.0]]' radius='20' sides='5'/>
+	<extrude target='=document.getElementByID(pentagon)'/>
+	<!--
+	<polygon id='pentagon' segment.center='[]' segment.path='[[], [0.5, 0.2], [1.0, 0.0]]' segment.start='2' radius='20' sides='5'/>
+	-->
+</fabmetheus>

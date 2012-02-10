@@ -1,0 +1,8 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<circle id='circle' equation.='=euclid.getCylindrical(azimuth, 10 * math.sin(3 * math.radians(azimuth)) + radius)' radius='40'/>
+	<extrude target='=document.getElementByID(circle)'/>
+	<!--
+	<circle id='circle' equation.x='x*2+math.abs(y)' radius='9'/>
+	-->
+</fabmetheus>

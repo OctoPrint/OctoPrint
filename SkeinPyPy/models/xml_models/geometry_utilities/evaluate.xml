@@ -1,0 +1,77 @@
+<?xml version='1.0' ?>
+<fabmetheus id='fab' eight='8' version='2010-04-06'>
+	<!--
+		Arithmetic
+		-->
+	<dictionary additionfloat='=2.0+3.0' additionint='=2+3'/>
+	<dictionary divisionfloat='=2.0/3.0' divisionint='=2/3'/>
+	<dictionary minus='=-3'/>
+	<dictionary moduloNineFive='=9%5'/>
+	<dictionary id='s ix' multiplicationTwoThree='=2*3'/>
+	<dictionary powerfloat='=2.0**3.0' powerint='=2**3'/>
+	<dictionary subtractionfloat='=2.0-3.0' subtractionint='=2-3'/>
+	<!--
+		Boolean
+		-->
+	<dictionary andfalsefalse='=false and false' andfalsetrue='=false and true' andtruetrue='=true and true'/>
+	<dictionary orfalsefalse='=false or false' orfalsetrue='=false or true' ortruetrue='=true or true'/>
+	<dictionary notfalse='=not false' nottrue='=not true'/>
+	<!--
+		Comparison
+	-->
+	<dictionary equalTo1and0='=1==0' equalTo1and1='=1==1' equalTo1and2='=1==2'/>
+	<dictionary greaterThan1and0='=1>0' greaterThan1and1='=1>1' greaterThan1and2='=1>2'/>
+	<dictionary greaterThanOrEqualTo1and0='=1>=0' greaterThanOrEqualTo1and1='=1>=1' greaterThanOrEqualTo1and2='=1>=2'/>
+	<dictionary lessThan1and0='=1<0' lessThan1and1='=1<1' lessThan1and2='=1<2'/>
+	<dictionary lessThanOrEqualTo1and0='=1<=0' lessThanOrEqualTo1and1='=1<=1' lessThanOrEqualTo1and2='=1<=2'/>
+	<dictionary notEqualTo1and0='=1!=0' notEqualTo1and1='=1!=1' notEqualTo1and2='=1!=2'/>
+	<!--
+		Enumerable Arithmetic
+		-->
+	<dictionary arrayMinusTuple='[1,2,7]-(2,3,5)'/>
+	<dictionary dictionaryPower='=4**{1:2,2:3}'/>
+	<dictionary dictionaryTimesDictionaryList='{"f":5, "v":3}*{"v":[2,2],"f":[4,5]}'/>
+	<dictionary listAddition='[1,2]+[2,3]'/>
+	<dictionary listTimesNestedList='[2,4]*[[1,2],[7,6]]'/>
+	<dictionary negativeDictionary='=-{1:2}'/>
+	<dictionary negativeList='=-[1,2,7]'/>
+	<dictionary negativeMultipliedDictionaryList='=-{1:2,3:[4,5]}*2'/>
+	<dictionary negativeNestedList='=-[[1,2],[7,6]]'/>
+	<dictionary nestedList='[[1,2],[7,6]]'/>
+	<dictionary nestedListMultiplication='[[2,4],[3,5]]*[[1,2],[7,6]]'/>
+	<dictionary threeTimesNestedList='=3*[[1,2],[7,6]]'/>
+	<dictionary twoPlusMultipliedDictionaries='=2+{3:5,6:4}*{6:2,3:3}'/>
+	<dictionary twoTimesList='=2*[1,2,7]'/>
+	<!--
+		Set
+		-->
+	<path id='setVector'>
+		<vertex x='1' y='2' z='3'/>
+	</path>
+	<function id='doubleX' parameters='vector3' >
+		<statement vector3.x='7'/>
+		<return return='=vector3'/>
+	</function>
+	<dictionary number='=doubleX(document.getElementByID(setVector).getPaths()[0][0])'/>
+	<!--
+		Value
+		-->
+	<dictionary bracket='=2*(3+1)' compoundBracket='=2*(8/(1+1))' withoutBracket='=2*3+1'/>
+	<path id='zeropath' y='1' >
+		<vertex x='4' y='6'/>
+		<vertex x='4' y='5'/>
+		<dictionary mathPowVertex='=math.pow(document.getParentNode().getPaths()[0][0].x, document.getParentNode().getPaths()[0][0].y)'/>
+		<dictionary parentParent='=document.getSelfElement().parentNode.parentNode[eight]'/>
+		<dictionary parentPaths='=document.getParentNode().getPaths()'/>
+		<dictionary parentVertex='=document.getParentNode().getVertexes()'/>
+		<dictionary parentVertexZero='=document.getParentNode().getPaths()[0][0]'/>
+		<dictionary zog='=["zog"]'/>
+	</path>
+	<!--
+		Vector3
+		-->
+	<path id='vectorTest'>
+		<vertex x='1' y='2' z='3'/>
+	</path>
+	<dictionary vector3='[0,1,2]' number='=document.getElementByID(vectorTest).getPaths()[0][0].x'/>
+</fabmetheus>

@@ -1,0 +1,11 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<path id='semicircles'>
+		<circle end='270' radius='10' start='90' translate.x='-20'/>
+		<circle end='450' radius='10' start='270' translate.x='20'/>
+	</path>
+	<concatenate id='racetrack' target='=document.getElementByID(semicircles)'/>
+	<extrude target='=document.getElementByID(racetrack)'/>
+	<!--
+	-->
+</fabmetheus>

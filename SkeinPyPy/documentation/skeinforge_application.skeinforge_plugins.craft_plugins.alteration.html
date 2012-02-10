@@ -1,0 +1,207 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.alteration</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.alteration</strong></big></big> ($Date: 2008/02/05 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/alteration.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/alteration.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.bottom.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+The alteration plugin adds the start and end files to the gcode.<br>
+ <br>
+This plugin also removes the alteration prefix tokens from the alteration lines.  Alteration lines have a prefix token so they can go through the craft plugins without being modified.  However, the tokens are not recognized by the firmware so they have to be removed before export. The alteration token is:<br>
+(&lt;alterationDeleteThisPrefix/&gt;)<br>
+ <br>
+The alteration manual page is at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Alteration">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Alteration</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Name of End File">Name of End File</a><br />
+&nbsp;&nbsp;<a href="#Name of Start File">Name of Start File</a><br />
+&nbsp;&nbsp;<a href="#Remove Redundant Mcode">Remove Redundant Mcode</a><br />
+&nbsp;&nbsp;<a href="#Replace Variable with Setting">Replace Variable with Setting</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+The default 'Activate Alteration' checkbox is on.  When it is on, the functions described below will work, when it is off, nothing will be done.<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+Alteration looks for alteration files in the alterations folder in the .skeinforge folder in the home directory.  Alteration does not care if the text file names are capitalized, but some file systems do not handle file name cases properly, so to be on the safe side you should give them lower case names.  If it doesn't find the file it then looks in the alterations folder in the skeinforge_plugins folder.<br>
+ <br>
+<a name="Name of End File" id="Name of End File"></a><h3>Name of End File</h3>
+
+Default is 'end.gcode'.<br>
+ <br>
+If there is a file with the name of the "Name of End File" setting, it will be added to the very end of the gcode.<br>
+ <br>
+<a name="Name of Start File" id="Name of Start File"></a><h3>Name of Start File</h3>
+
+Default is 'start.gcode'.<br>
+ <br>
+If there is a file with the name of the "Name of Start File" setting, it will be added to the very beginning of the gcode.<br>
+ <br>
+<a name="Remove Redundant Mcode" id="Remove Redundant Mcode"></a><h3>Remove Redundant Mcode</h3>
+
+Default: True<br>
+ <br>
+If 'Remove Redundant Mcode' is selected then M104 and M108 lines which are followed by a different value before there is a movement will be removed.  For example, if there is something like:<br>
+M113 S1.0<br>
+M104 S60.0<br>
+(&lt;layer&gt; 0.72 )<br>
+M104 S200.0<br>
+(&lt;skirt&gt;)<br>
+ <br>
+with Remove Redundant Mcode selected, that snippet would become:<br>
+M113 S1.0<br>
+M104 S200.0<br>
+(&lt;layer&gt; 0.72 )<br>
+(&lt;skirt&gt;)<br>
+ <br>
+This is a relatively safe procedure, the only reason it is optional is because someone might make an alteration file which, for some unknown reason, requires the redundant mcode.<br>
+ <br>
+<a name="Replace Variable with Setting" id="Replace Variable with Setting"></a><h3>Replace Variable with Setting</h3>
+
+Default: True<br>
+ <br>
+If 'Replace Variable with Setting' is selected and there is an alteration line with a setting token, the token will be replaced by the value.<br>
+ <br>
+For example, if there is an alteration line like:<br>
+ <br>
+M140 S&lt;setting.chamber.BedTemperature&gt;<br>
+ <br>
+the token would be replaced with the value and assuming the bed chamber was 60.0, the output would be:<br>
+ <br>
+M140 S60.0<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples add the alteration information to the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and alteration.py.<br>
+ <br>
+&gt; python alteration.py<br>
+This brings up the alteration dialog.<br>
+ <br>
+&gt; python alteration.py Screw Holder Bottom.stl<br>
+The alteration tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The alteration tool has created the file:<br>
+.. Screw Holder Bottom_alteration.gcode</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.bottom.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="cStringIO.html">cStringIO</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+</td><td width="25%" valign=top><a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.alteration.html#AlterationRepository">AlterationRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.alteration.html#AlterationSkein">AlterationSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AlterationRepository">class <strong>AlterationRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;alteration&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="AlterationRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="AlterationRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Alteration&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AlterationSkein">class <strong>AlterationSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;alteration&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="AlterationSkein-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="AlterationSkein-addFromUpperLowerFile"><strong>addFromUpperLowerFile</strong></a>(self, fileName)</dt><dd><tt>Add&nbsp;lines&nbsp;of&nbsp;text&nbsp;from&nbsp;the&nbsp;fileName&nbsp;or&nbsp;the&nbsp;lowercase&nbsp;fileName,&nbsp;if&nbsp;there&nbsp;is&nbsp;no&nbsp;file&nbsp;by&nbsp;the&nbsp;original&nbsp;fileName&nbsp;in&nbsp;the&nbsp;directory.</tt></dd></dl>
+
+<dl><dt><a name="AlterationSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;bevel&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="AlterationSkein-getReplacedAlterationLine"><strong>getReplacedAlterationLine</strong></a>(self, alterationFileLine, searchIndex<font color="#909090">=0</font>)</dt><dd><tt>Get&nbsp;the&nbsp;alteration&nbsp;file&nbsp;line&nbsp;with&nbsp;variables&nbsp;replaced&nbsp;with&nbsp;the&nbsp;settings.</tt></dd></dl>
+
+<dl><dt><a name="AlterationSkein-getReplacedAlterationText"><strong>getReplacedAlterationText</strong></a>(self)</dt><dd><tt>Replace&nbsp;the&nbsp;alteration&nbsp;lines&nbsp;if&nbsp;there&nbsp;are&nbsp;settings.</tt></dd></dl>
+
+<dl><dt><a name="AlterationSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="AlterationSkein-setSettingDictionary"><strong>setSettingDictionary</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;setting&nbsp;dictionary&nbsp;from&nbsp;the&nbsp;gcode&nbsp;text.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, text<font color="#909090">=''</font>, repository<font color="#909090">=None</font>)</dt><dd><tt>Alteration&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Alteration&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getGcodeTextWithoutRedundantMcode"><strong>getGcodeTextWithoutRedundantMcode</strong></a>(gcodeText)</dt><dd><tt>Get&nbsp;gcode&nbsp;text&nbsp;without&nbsp;redundant&nbsp;M104&nbsp;and&nbsp;M108.</tt></dd></dl>
+ <dl><dt><a name="-getLinesWithoutRedundancy"><strong>getLinesWithoutRedundancy</strong></a>(duplicateWord, lines)</dt><dd><tt>Get&nbsp;gcode&nbsp;lines&nbsp;without&nbsp;redundant&nbsp;first&nbsp;words.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;alteration&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Alteration&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file.&nbsp;&nbsp;Chain&nbsp;alteration&nbsp;the&nbsp;gcode&nbsp;if&nbsp;the&nbsp;alteration&nbsp;procedure&nbsp;has&nbsp;not&nbsp;been&nbsp;done.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/02/05 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

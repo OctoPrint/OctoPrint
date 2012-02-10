@@ -1,0 +1,27 @@
+<?xml version='1.0' ?>
+<fabmetheus boo='true' eight='8' seven='7'>
+	<dictionary cascadeBoo='=document.getCascadeBoolean($false, $boo)'/>
+	<dictionary cascadeeight='=document.getCascadeFloat(7, $eight)'/>
+	<dictionary documentElementseven='=document.getDocumentElement()[$seven]'/>
+	<dictionary element='=document.getSelfElement()[$elementTestValue]' elementTestValue='4'/>
+	<dictionary idSixMultiplicationTwoThree='=document.getElementByID("s ix")[$multiplicationTwoThree]'/>
+	<dictionary namefivenumber='=document.getElementsByName($five)[0][$number]'/>
+	<dictionary parentseven='=document.getParentNode()[$seven]'/>
+	<dictionary tagNineNumber='=document.getElementsByTag(nine)[0][number]'/>
+	<dictionary vertexthreezero='=document.getElementByID($triangle).getPaths()[0][0]'/>
+	<path>
+		<vertex cartesian='[10, 20]'/>
+		<dictionary vertexPrevious='=document.getPreviousVertex()'/>
+	</path>
+	<!--
+		Values for examples
+	-->
+	<dictionary id='s ix' multiplicationTwoThree='=2*3'/>
+	<dictionary name='five' number='5'/>
+	<dictionary tags='nine, noon' number='9'/>
+	<path id='triangle' test='3' >
+		<vertex x='2' y='3'/>
+		<vertex x='5' y='6' z='7'/>
+		<vertex x='8' y='9' z='1'/>
+	</path>
+</fabmetheus>

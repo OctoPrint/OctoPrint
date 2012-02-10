@@ -1,0 +1,391 @@
+/*
+<?xml version='1.0' standalone='yes' ?>
+
+<script>
+	<name>Platonic Solid</name>
+	<author>Fran�ois Guillet</author>
+	<version>1.81</version>
+	<date>06/25/2004</date>
+	<description>
+This script creates one of the five platonic solids:
+tetrahedron, hexahedron, octahedron, dodecahedron, icosahedron.
+The polyhedron created consists of a triangular mesh
+with an optional vertex at the center of each face
+after "Geometric Tools for Computer Graphics", Philip J. Schneider and David H. Eberly, pp 346-351
+Morgan and Kaufmann 2003
+    </description>
+</script>
+*/
+
+/* Copyright (C) 2004 by Fran�ois Guillet
+
+   This program is free software; you can redistribute it and/or modify it under the
+   terms of the GNU General Public License as published by the Free Software
+   Foundation; either version 2 of the License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but WITHOUT ANY 
+   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+   PARTICULAR PURPOSE.  See the GNU General Public License for more details. */
+   
+//Script localization test
+
+HashMap translations = new HashMap();
+if (Translate.getLocale().equals(Locale.FRENCH))
+{
+         translations.put("Hexahedron", "Hexah\u00E8dre (6)");
+         translations.put("Tetrahedron", "Tetrah\u00E8dre (4)");
+         translations.put("Octahedron", "Octah\u00E8dre (8)");
+         translations.put("Dodecahedron", "Dodecah\u00E8dre (12)");
+         translations.put("Icosahedron", "Icosah\u00E8dre (20)");
+         translations.put("centeredFaces", "sommets aux centres des faces");
+         translations.put("selectPolyhedron", "S\u00E9lectionnez un polyh\u00E8dre :");
+         translations.put("noSmoothing", "Pas de lissage" );
+         translations.put("smoothShading", "Ombrage doux" );
+         translations.put("interpolating", "Interpolation" );
+         translations.put("approximating", "Approximation" );
+         translations.put("polyhedron", "Polyh\u00E8dre:" );
+         translations.put("faceCenteredMesh", "Maillage face centr\u00E9e" );
+         translations.put("radius", "Rayon :" );
+         translations.put("smoothingMethod", "M\u00E9thode de lissage:");
+         translations.put("verticesSmoothness", "Lissage des sommets :");
+         translations.put("edgesSmoothness", "Lissages des ar\u00EAtes :");
+         translations.put("texture", "Texture :");
+         translations.put("material", "Mat\u00E9riau :");
+         translations.put("hexahedron", "Hexah\u00E8dre");
+         translations.put("tetrahedron", "Tetrah\u00E8dre");
+         translations.put("octahedron", "Octah\u00E8dre");
+         translations.put("dodecahedron", "Dodecah\u00E8dre");
+         translations.put("icosahedron", "Icosah\u00E8dre");
+}
+else
+{
+         translations.put("Hexahedron", "Hexahedron (6)");
+         translations.put("Tetrahedron", "Tetrahedron (4)");
+         translations.put("Octahedron", "Octahedron (8)");
+         translations.put("Dodecahedron", "Dodecahedron (12)");
+         translations.put("Icosahedron", "Icosahedron (20)");
+         translations.put("centeredFaces", "vertices at faces centers");
+         translations.put("selectPolyhedron", "Select a polyhedron:");
+         translations.put("noSmoothing", "No Smoothing" );
+         translations.put("smoothShading", "Smooth Shading" );
+         translations.put("interpolating", "Interpolating" );
+         translations.put("approximating", "Approximating" );
+         translations.put("polyhedron", "Polyhedron:" );
+         translations.put("faceCenteredMesh", "Face centered mesh" );
+         translations.put("radius", "Radius:" );
+         translations.put("smoothingMethod", "Smoothing Method:");
+         translations.put("verticesSmoothness", "Vertices Smoothness:");
+         translations.put("edgesSmoothness", "Edges smoothness:");
+         translations.put("texture", "Texture:");
+         translations.put("material", "Material:");
+         translations.put("hexahedron", "Hexahedron");
+         translations.put("tetrahedron", "Tetrahedron");
+         translations.put("octahedron", "Octahedron");
+         translations.put("dodecahedron", "Dodecahedron");
+         translations.put("icosahedron", "Icosahedron");
+}
+//end of script localization test
+   
+   
+//given a set of faces, this function computes the centers of the faces and adds them to the list of vertices
+Vec3[] completeVertices(Vec3[] vert, int[][] polyFaces, int vertNum)
+{	vertices = new Vec3[vert.length + polyFaces.length];
+    
+    for (i = 0 ; i < vert.length ; ++i)
+        vertices[i] = vert[i];
+    
+    for (i = vertNum; i < vertNum + polyFaces.length; ++i)
+	{	v = new Vec3();
+		for (j = 0 ; j < polyFaces[i - vertNum].length; ++j)
+			v.add(vertices[polyFaces[i - vertNum][j]]);
+		v.scale(1.0/polyFaces[i - vertNum].length);
+		vertices[i] = v;
+	}
+    
+    return vertices;
+}
+
+//given a set of faces and a set of vertices,
+//this function computes centered faces to form a triangular mesh
+//presumably equivalent to subdivide face command in the mesh editor
+TriangleMesh triangulateFaces(Vec3[] vertices, int[][] polyFaces, int vertNum)
+{	vertices = completeVertices(vertices, polyFaces, vertNum);
+    
+    faces = new int[polyFaces.length * polyFaces[0].length][3];
+	
+	f = 0;
+	for (i = 0 ; i < polyFaces.length ; ++i)
+	{	for (j = 0; j < polyFaces[i].length ; ++j)
+		{	if (j < polyFaces[i].length-1)
+			{	faces[f][0] = polyFaces[i][j];
+				faces[f][1] = polyFaces[i][j+1];
+				faces[f][2] = vertNum + i;
+			}
+			else
+			{	faces[f][0] = polyFaces[i][j];
+				faces[f][1] = polyFaces[i][0];
+				faces[f][2] = vertNum + i;
+			}
+			++f;
+		}
+	}
+    mesh = new TriangleMesh(vertices, faces);
+	return mesh;
+}
+
+
+scene = window.getScene();
+
+//setup the list of polyhedra
+polyList = new BList(new String [] {
+	translations.get("Tetrahedron"),
+	translations.get("Hexahedron"),
+	translations.get("Octahedron"),
+	translations.get("Dodecahedron"),
+	translations.get("Icosahedron")
+});
+polyList.setPreferredVisibleRows(5);
+polyList.setSelected(0, true);
+
+//face centered checkbox
+centeredCheckbox = new BCheckBox(translations.get("centeredFaces"), false);
+
+//radius value field
+radiusValueField = new ValueField(1.0, ValueField.NONNEGATIVE);
+
+//smoothing method
+smoothList = new BList(new String [] {
+	translations.get("noSmoothing"),
+	translations.get("smoothShading"),
+	translations.get("interpolating"),
+	translations.get("approximating")
+});
+smoothList.setPreferredVisibleRows(4);
+smoothList.setSelected(0, true);
+
+//vertices smoothness value field
+vertSmoothnessValueField = new ValueField(1.0, ValueField.NONNEGATIVE);
+
+//edges smoothness value field
+edgesSmoothnessValueField = new ValueField(1.0, ValueField.NONNEGATIVE);
+
+// get list of scene textures
+numTex=scene.getNumTextures();
+textureList=new BList();
+textureList.setPreferredVisibleRows(3 < numTex ? 3 : numTex);
+for (i = 0 ; i < numTex ; i++)
+{
+   iTex=scene.getTexture(i);
+   name=iTex.getName();
+   textureList.add(name);
+}
+textureList.setSelected(0, true);
+
+// get list of materials
+numMat=scene.getNumMaterials();
+materialList=new BList();
+materialList.setPreferredVisibleRows(3 < numMat + 1 ? 3 : numMat + 1);
+materialList.add("none");
+for (i = 0 ; i < numMat ; i++)
+{
+   iMat=scene.getMaterial(i);
+   name=iMat.getName();
+   materialList.add(name);
+}
+materialList.setSelected(0, true);
+
+
+dlg = new ComponentsDialog(window, translations.get("selectPolyhedron"),
+new Widget [] { UIUtilities.createScrollingList(polyList), centeredCheckbox, radiusValueField, UIUtilities.createScrollingList(smoothList), vertSmoothnessValueField, edgesSmoothnessValueField, UIUtilities.createScrollingList(textureList), UIUtilities.createScrollingList(materialList)},
+new String [] { translations.get("polyhedron"), translations.get("faceCenteredMesh"), translations.get("radius"), translations.get("smoothingMethod"), translations.get("verticesSmoothness"), translations.get("edgesSmoothness"), translations.get("texture"), translations.get("material") } );
+
+if (!dlg.clickedOk()) return;
+
+centered = centeredCheckbox.getState();
+
+switch (polyList.getSelectedIndex())
+{	case 0 : //tetrahedra
+		vertices = new Vec3[4]; // 4 vertices + 4 faces
+		vertices[0] = new Vec3(0, 0, 1);
+		vertices[1] = new Vec3(2*Math.sqrt(2)/3, 0, -1.0/3.0);
+		vertices[2] = new Vec3(-Math.sqrt(2)/3, Math.sqrt(6)/3, -1.0/3.0);
+		vertices[3] = new Vec3(-Math.sqrt(2)/3, -Math.sqrt(6)/3, -1.0/3.0);
+		int[][] faces = {{ 0, 1, 2 },  { 0, 2, 3 }, { 0, 3, 1 }, { 1, 3, 2 }};
+        if (centered)
+            mesh = triangulateFaces(vertices, faces, 4);
+		else
+            mesh = new TriangleMesh(vertices, faces);
+		name = translations.get("tetrahedron") + (centered ? " FC" : "");
+		break;
+        
+	case 1 : //hexahedron
+		vertices = new Vec3[8]; // 8 vertices + 6 faces
+		vertices[0] = new Vec3(-1, -1, -1);
+		vertices[1] = new Vec3(1, -1, -1);
+		vertices[2] = new Vec3(1, 1, -1);
+		vertices[3] = new Vec3(-1, 1, -1);
+		vertices[4] = new Vec3(-1, -1, 1);
+		vertices[5] = new Vec3(1, -1, 1);
+		vertices[6] = new Vec3(1, 1, 1);
+		vertices[7] = new Vec3(-1, 1, 1);
+		for (i = 0 ; i < 8 ; ++i)
+			vertices[i].scale(1.0/Math.sqrt(3));
+		
+        //polygon faces when different from triangular faces
+		int[][] hexaFaces = {{ 0, 3, 2, 1 },  { 0, 1, 5, 4 }, { 0, 4, 7, 3 },
+            { 6, 5, 1, 2 }, { 6, 2, 3, 7 }, { 6, 7, 4, 5 } };
+        
+        //triangular faces
+        int[][] faces = {{ 0, 3, 2}, { 0, 2, 1}, { 0, 1, 5}, { 0, 5, 4}, { 0, 4, 7}, {0, 7, 3},
+            { 6, 5, 1}, { 6, 1, 2}, { 6, 2, 3}, { 6, 3, 7}, { 6, 7, 4}, {6, 4, 5}};
+		if (centered)
+            mesh = triangulateFaces(vertices, hexaFaces, 8);
+		else 
+            mesh = new TriangleMesh(vertices, faces);
+		name = translations.get("hexahedron") + (centered ? " FC" : "");
+		break;
+        
+    case 2 : //octahedron
+		vertices = new Vec3[6]; // 6 vertices + 8 faces
+		vertices[0] = new Vec3(1, 0, 0);
+		vertices[1] = new Vec3(-1, 0, 0);
+		vertices[2] = new Vec3(0, 1, 0);
+		vertices[3] = new Vec3(0, -1, 0);
+		vertices[4] = new Vec3(0, 0, 1);
+		vertices[5] = new Vec3(0, 0, -1);
+		
+		int[][] faces = {
+			{ 4, 0, 2 }, { 4, 2, 1 }, { 4, 1, 3 }, { 4, 3, 0 }, 
+            { 5, 2, 0 }, { 5, 1, 2 }, { 5, 3, 1 }, { 5, 0, 3 }
+        };
+		
+		 if (centered)
+            mesh = triangulateFaces(vertices, faces, 6);
+		else
+            mesh = new TriangleMesh(vertices, faces);
+		
+		name = translations.get("octahedron") + (centered ? " FC" : "");
+		break;
+	
+    case 3 : //dodecahedron
+		vertices = new Vec3[20]; // 20 vertices + 12 faces
+        a = 1/Math.sqrt(3);
+        b = Math.sqrt( (3.0 - Math.sqrt(5)) /6.0);
+        c = Math.sqrt( (3.0 + Math.sqrt(5)) /6.0);
+		vertices[0] = new Vec3(a, a, a);
+		vertices[1] = new Vec3(a, a, -a);
+		vertices[2] = new Vec3(a, -a, a);
+		vertices[3] = new Vec3(a, -a, -a);
+		vertices[4] = new Vec3(-a, a, a);
+		vertices[5] = new Vec3(-a, a, -a);
+		vertices[6] = new Vec3(-a, -a, a);
+		vertices[7] = new Vec3(-a, -a, -a);
+		vertices[8] = new Vec3(b, c, 0);
+		vertices[9] = new Vec3(-b, c, 0);
+		vertices[10] = new Vec3(b, -c, 0);
+		vertices[11] = new Vec3(-b, -c, 0);
+		vertices[12] = new Vec3(c, 0, b);
+		vertices[13] = new Vec3(c, 0, -b);
+		vertices[14] = new Vec3(-c, 0, b);
+		vertices[15] = new Vec3(-c, 0, -b);
+		vertices[16] = new Vec3(0, b, c);
+		vertices[17] = new Vec3(0, -b, c);
+		vertices[18] = new Vec3(0, b, -c);
+		vertices[19] = new Vec3(0, -b, -c);
+		
+        int[][] faces = { //*quite* dull
+			{ 0, 8, 9 }, { 0, 12, 13 }, { 0, 16, 17 }, { 8, 1, 18 }, 
+            { 12, 2, 10 }, { 16, 4, 14 }, { 9, 5, 15 }, { 6, 11, 10 },
+            { 3, 19, 18 }, { 7, 15, 5 }, { 7, 11, 6 }, { 7, 19, 3 },
+            { 0, 9, 4 }, { 0, 13, 1 }, { 0, 17, 2 }, { 8, 18, 5 }, 
+            { 12, 10, 3 }, { 16, 14, 6 }, { 9, 15, 14 }, { 6, 10, 2 },
+            { 3, 18, 1 }, { 7, 5, 18 }, { 7, 6, 14 }, { 7, 3, 10 },
+            { 0, 4, 16 }, { 0, 1, 8 }, { 0, 2, 12 }, { 8, 5, 9 }, 
+            { 12, 3, 13 }, { 16, 6, 17 }, { 9, 14, 4 }, { 6, 2, 17 },
+            { 3, 1, 13 }, { 7, 18, 19 }, { 7, 14, 15 }, { 7, 10, 11 }
+        };
+		
+        int[][] dodeFaces = {
+            { 0, 8, 9, 4, 16}, { 0, 16, 17, 2, 12}, { 12, 2, 10, 3, 13},
+            { 9, 5, 15, 14, 4}, { 3, 19, 18, 1, 13}, { 7, 11, 6, 14, 15},
+            { 0, 12, 13, 1, 8}, { 8, 1, 18, 5, 9}, { 16, 4, 14, 6, 17},
+            { 6, 11, 10, 2, 17}, { 7, 15, 5, 18, 19}, { 7, 19, 3, 10, 11}
+        };
+        
+		 if (centered)
+            mesh = triangulateFaces(vertices, dodeFaces, 20);
+		else
+            mesh = new TriangleMesh(vertices, faces);
+		
+		name = translations.get("dodecahedron") + (centered ? " FC" : "");
+		break;
+        
+   case 4 : //icosahedron
+		vertices = new Vec3[12]; // 12 vertices + 20 faces
+        t = ( 1.0 + Math.sqrt(5) )/2.0;
+        vertices[0] = new Vec3(t, 1, 0);
+		vertices[1] = new Vec3(-t, 1, -0);
+		vertices[2] = new Vec3(t, -1, 0);
+		vertices[3] = new Vec3(-t, -1, 0);
+		vertices[4] = new Vec3(1, 0, t);
+		vertices[5] = new Vec3(1, 0, -t);
+		vertices[6] = new Vec3(-1, 0, t);
+		vertices[7] = new Vec3(-1, 0, -t);
+		vertices[8] = new Vec3(0, t, 1);
+		vertices[9] = new Vec3(0, -t, 1);
+		vertices[10] = new Vec3(0, t, -1);
+		vertices[11] = new Vec3(0, -t, -1);
+		for (i = 0 ; i < 12 ; ++i)
+			vertices[i].scale( 1.0 / Math.sqrt( 1.0 + t*t) );
+        
+        int[][] faces = {
+			{ 0, 8, 4 }, { 0, 5, 10 }, { 2, 4, 9 }, { 2, 11, 5 }, 
+            { 1, 6, 8 }, { 1, 10, 7 }, { 3, 9, 6 }, { 3, 7, 11 },
+            { 0, 10, 8 }, { 1, 8, 10 }, { 2, 9, 11 }, { 3, 11, 9 },
+            { 4, 2, 0 }, { 5, 0, 2 }, { 6, 1, 3 }, { 7, 3, 1 }, 
+            { 8, 6, 4 }, { 9, 4, 6 }, { 10, 5, 7 }, { 11, 7, 5 }
+        };
+		
+        
+		if (centered)
+            mesh = triangulateFaces(vertices, faces, 12);
+		else
+            mesh = new TriangleMesh(vertices, faces);
+		
+		name = translations.get("icosahedron") + (centered ? " FC" : "");
+		break;
+    default :
+        return;
+}
+
+//set vertices smoothness and scale mesh in the process
+meshVertices = mesh.getVertices();
+radius = radiusValueField.getValue();
+for ( i = 0 ; i < meshVertices.length ; ++i)
+{	meshVertices[i].smoothness = (float) vertSmoothnessValueField.getValue();
+	meshVertices[i].r.scale(radius);
+}
+
+//set edges smoothness
+meshEdges = mesh.getEdges();
+for ( i = 0 ; i < meshEdges.length ; ++i)
+	meshEdges[i].smoothness = (float) edgesSmoothnessValueField.getValue();
+
+//set mesh smoothing method
+mesh.setSmoothingMethod(smoothList.getSelectedIndex());
+
+//set texture
+//tex = scene.getTexture(textureList.getSelectedIndex());
+//mesh.setTexture(tex, tex.getDefaultMapping());
+
+//set material
+matIndex = materialList.getSelectedIndex();
+if ( matIndex > 0 )
+{	mat = scene.getMaterial(matIndex-1);
+	mesh.setMaterial(mat, mat.getDefaultMapping());
+}
+
+//we're done
+window.addObject(mesh, new CoordinateSystem(), name, null);
+
+ 

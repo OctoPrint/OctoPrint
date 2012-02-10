@@ -1,0 +1,97 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.export_plugins.static_plugins.gcode_small</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.export_plugins.html"><font color="#ffffff">export_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.export_plugins.static_plugins.html"><font color="#ffffff">static_plugins</font></a>.gcode_small</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/export_plugins/static_plugins/gcode_small.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/export_plugins/static_plugins/gcode_small.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.export_plugins.gcode_time_segment.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.feed.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Gcode_small is an export plugin to remove the comments and the redundant z and feed rate parameters from a gcode file.<br>
+ <br>
+An export plugin is a script in the export_plugins folder which has the getOutput function, the globalIsReplaceable variable and if it's output is not replaceable, the writeOutput function.  It is meant to be run from the export tool.  To ensure that the plugin works on platforms which do not handle file capitalization properly, give the plugin a lower case name.<br>
+ <br>
+The getOutput function of this script takes a gcode text and returns that text without comments and redundant z and feed rate parameters.  The writeOutput function of this script takes a gcode text and writes that text without comments and redundant z and feed rate parameters to a file.<br>
+ <br>
+Many of the functions in this script are copied from gcodec in skeinforge_utilities.  They are copied rather than imported so developers making new plugins do not have to learn about gcodec, the code here is all they need to learn.</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.export_plugins.gcode_time_segment.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.feed.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="cStringIO.html">cStringIO</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.export_plugins.static_plugins.gcode_small.html#GcodeSmallSkein">GcodeSmallSkein</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="GcodeSmallSkein">class <strong>GcodeSmallSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;remove&nbsp;redundant&nbsp;z&nbsp;and&nbsp;feed&nbsp;rate&nbsp;parameters&nbsp;from&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="GcodeSmallSkein-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="GcodeSmallSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="GcodeSmallSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getIndexOfStartingWithSecond"><strong>getIndexOfStartingWithSecond</strong></a>(letter, splitLine)</dt><dd><tt>Get&nbsp;index&nbsp;of&nbsp;the&nbsp;first&nbsp;occurence&nbsp;of&nbsp;the&nbsp;given&nbsp;letter&nbsp;in&nbsp;the&nbsp;split&nbsp;line,&nbsp;starting&nbsp;with&nbsp;the&nbsp;second&nbsp;word.&nbsp;&nbsp;Return&nbsp;-&nbsp;1&nbsp;if&nbsp;letter&nbsp;is&nbsp;not&nbsp;found</tt></dd></dl>
+ <dl><dt><a name="-getOutput"><strong>getOutput</strong></a>(gcodeText)</dt><dd><tt>Get&nbsp;the&nbsp;exported&nbsp;version&nbsp;of&nbsp;a&nbsp;gcode&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getSplitLineBeforeBracketSemicolon"><strong>getSplitLineBeforeBracketSemicolon</strong></a>(line)</dt><dd><tt>Get&nbsp;the&nbsp;split&nbsp;line&nbsp;before&nbsp;a&nbsp;bracket&nbsp;or&nbsp;semicolon.</tt></dd></dl>
+ <dl><dt><a name="-getStringFromCharacterSplitLine"><strong>getStringFromCharacterSplitLine</strong></a>(character, splitLine)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;after&nbsp;the&nbsp;first&nbsp;occurence&nbsp;of&nbsp;the&nbsp;character&nbsp;in&nbsp;the&nbsp;split&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getSummarizedFileName"><strong>getSummarizedFileName</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;fileName&nbsp;basename&nbsp;if&nbsp;the&nbsp;file&nbsp;is&nbsp;in&nbsp;the&nbsp;current&nbsp;working&nbsp;directory,&nbsp;otherwise&nbsp;return&nbsp;the&nbsp;original&nbsp;full&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getTextLines"><strong>getTextLines</strong></a>(text)</dt><dd><tt>Get&nbsp;the&nbsp;all&nbsp;the&nbsp;lines&nbsp;of&nbsp;text&nbsp;of&nbsp;a&nbsp;text.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)<br>
+<strong>globalIsReplaceable</strong> = True</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

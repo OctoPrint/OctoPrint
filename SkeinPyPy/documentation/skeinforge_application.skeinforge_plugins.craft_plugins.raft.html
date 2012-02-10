@@ -1,0 +1,470 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module skeinforge_application.skeinforge_plugins.craft_plugins.raft</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="skeinforge_application.html"><font color="#ffffff">skeinforge_application</font></a>.<a href="skeinforge_application.skeinforge_plugins.html"><font color="#ffffff">skeinforge_plugins</font></a>.<a href="skeinforge_application.skeinforge_plugins.craft_plugins.html"><font color="#ffffff">craft_plugins</font></a>.raft</strong></big></big> ($Date: 2008/21/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/skeinforge_application/skeinforge_plugins/craft_plugins/raft.py</a></font></td></tr></table>
+    <p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.preface.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.scale.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<p><tt><br>
+Raft is a plugin to create a raft, elevate the nozzle and set the temperature.  A raft is a flat base structure on top of which your object is being build and has a few different purposes. It fills irregularities like scratches and pits in your printbed and gives you a nice base parallel to the printheads movement. It also glues your object to the bed so to prevent warping in bigger object.  The rafts base layer performs these tricks while the sparser interface layer(s) help you removing the object from the raft after printing.  It is based on the Nophead's reusable raft, which has a base layer running one way, and a couple of perpendicular layers above.  Each set of layers can be set to a different temperature.  There is the option of having the extruder orbit the raft for a while, so the heater barrel has time to reach a different temperature, without ooze accumulating around the nozzle.<br>
+ <br>
+The raft manual page is at:<br>
+<a href="http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Raft">http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Raft</a><br>
+ <br>
+The important values for the raft settings are the temperatures of the raft, the first layer and the next layers.  These will be different for each material.  The default settings for ABS, HDPE, PCL &amp; PLA are extrapolated from Nophead's experiments.<br>
+ <br>
+You don't necessarily need a raft and especially small object will print fine on a flat bed without one, sometimes its even better when you need a water tight base to print directly on the bed.  If you want to only set the temperature or only create support material or only elevate the nozzle without creating a raft, set the Base Layers and Interface Layers to zero.<br>
+ <br>
+&lt;gallery perRow="1"&gt;<br>
+Image:Raft.jpg|Raft<br>
+&lt;/gallery&gt;<br>
+ <br>
+Example of a raft on the left with the interface layers partially removed exposing the base layer. Notice that the first line of the base is rarely printed well because of the startup time of the extruder. On the right you see an object with its raft still attached.<br>
+ <br>
+The Raft panel has some extra settings, it probably made sense to have them there but they have not that much to do with the actual Raft. First are the Support material settings. Since close to all RepRap style printers have no second extruder for support material Skeinforge offers the option to print support structures with the same material set at a different speed and temperature. The idea is that the support sticks less to the actual object when it is extruded around the minimum possible working temperature. This results in a temperature change EVERY layer so build time will increase seriously.<br>
+ <br>
+Allan Ecker aka The Masked Retriever's has written two quicktips for raft which follow below.<br>
+"Skeinforge Quicktip: The Raft, Part 1" at:<br>
+<a href="http://blog.thingiverse.com/2009/07/14/skeinforge-quicktip-the-raft-part-1/">http://blog.thingiverse.com/2009/07/14/skeinforge-quicktip-the-raft-part-1/</a><br>
+"Skeinforge Quicktip: The Raft, Part II" at:<br>
+<a href="http://blog.thingiverse.com/2009/08/04/skeinforge-quicktip-the-raft-part-ii/">http://blog.thingiverse.com/2009/08/04/skeinforge-quicktip-the-raft-part-ii/</a><br>
+ <br>
+Nophead has written about rafts on his blog:<br>
+<a href="http://hydraraptor.blogspot.com/2009/07/thoughts-on-rafts.html">http://hydraraptor.blogspot.com/2009/07/thoughts-on-rafts.html</a><br>
+ <br>
+More pictures of rafting in action are available from the Metalab blog at:<br>
+<a href="http://reprap.soup.io/?search=rafting">http://reprap.soup.io/?search=rafting</a><br>
+ <br>
+<br />
+<a href="#Operation">Operation</a><br />
+<a href="#Settings">Settings</a><br />
+&nbsp;&nbsp;<a href="#Add Raft, Elevate Nozzle, Orbit">Add Raft, Elevate Nozzle, Orbit</a><br />
+&nbsp;&nbsp;<a href="#Base">Base</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Base Feed Rate Multiplier">Base Feed Rate Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Base Flow Rate Multiplier">Base Flow Rate Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Base Infill Density">Base Infill Density</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Base Layer Height over Layer Thickness">Base Layer Height over Layer Thickness</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Base Layers">Base Layers</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Base Nozzle Lift over Base Layer Thickness">Base Nozzle Lift over Base Layer Thickness</a><br />
+&nbsp;&nbsp;<a href="#Initial Circling">Initial Circling</a><br />
+&nbsp;&nbsp;<a href="#Infill Overhang over Extrusion Width">Infill Overhang over Extrusion Width</a><br />
+&nbsp;&nbsp;<a href="#Interface">Interface</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Interface Feed Rate Multiplier">Interface Feed Rate Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Interface Flow Rate Multiplier">Interface Flow Rate Multiplier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Interface Infill Density">Interface Infill Density</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Interface Layer Thickness over Extrusion Height">Interface Layer Thickness over Extrusion Height</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Interface Layers">Interface Layers</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Interface Nozzle Lift over Interface Layer Thickness">Interface Nozzle Lift over Interface Layer Thickness</a><br />
+&nbsp;&nbsp;<a href="#Name of Alteration Files">Name of Alteration Files</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Name of Support End File">Name of Support End File</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Name of Support Start File">Name of Support Start File</a><br />
+&nbsp;&nbsp;<a href="#Operating Nozzle Lift over Layer Thickness">Operating Nozzle Lift over Layer Thickness</a><br />
+&nbsp;&nbsp;<a href="#Raft Size">Raft Size</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Raft Additional Margin over Length">Raft Additional Margin over Length</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Raft Margin">Raft Margin</a><br />
+&nbsp;&nbsp;<a href="#Support">Support</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Support Cross Hatch">Support Cross Hatch</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Support Flow Rate over Operating Flow Rate">Support Flow Rate over Operating Flow Rate</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Support Gap over Perimeter Extrusion Width">Support Gap over Perimeter Extrusion Width</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Support Material Choice">Support Material Choice</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Empty Layers Only">Empty Layers Only</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Everywhere">Everywhere</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Exterior Only">Exterior Only</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#None">None</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Support Minimum Angle">Support Minimum Angle</a><br />
+<a href="#Examples">Examples</a><br />
+<br />
+<a name="Operation" id="Operation"></a><h2>Operation</h2>
+<hr>
+
+Default: On<br>
+ <br>
+When it is on, the functions described below will work, when it is off, nothing will be done, so no temperatures will be set, nozzle will not be lifted..<br>
+ <br>
+<a name="Settings" id="Settings"></a><h2>Settings</h2>
+<hr>
+
+<a name="Add Raft, Elevate Nozzle, Orbit" id="Add Raft, Elevate Nozzle, Orbit"></a><h3>Add Raft, Elevate Nozzle, Orbit</h3>
+
+Default: On<br>
+ <br>
+When selected, the script will also create a raft, elevate the nozzle, orbit and set the altitude of the bottom of the raft.  It also turns on support generation.<br>
+ <br>
+<a name="Base" id="Base"></a><h3>Base</h3>
+
+Base layer is the part of the raft that touches the bed.<br>
+ <br>
+<a name="Base Feed Rate Multiplier" id="Base Feed Rate Multiplier"></a><h4>Base Feed Rate Multiplier</h4>
+
+Default is one.<br>
+ <br>
+Defines the base feed rate multiplier.  The greater the 'Base Feed Rate Multiplier', the thinner the base, the lower the 'Base Feed Rate Multiplier', the thicker the base.<br>
+ <br>
+<a name="Base Flow Rate Multiplier" id="Base Flow Rate Multiplier"></a><h4>Base Flow Rate Multiplier</h4>
+
+Default is one.<br>
+ <br>
+Defines the base flow rate multiplier.  The greater the 'Base Flow Rate Multiplier', the thicker the base, the lower the 'Base Flow Rate Multiplier', the thinner the base.<br>
+ <br>
+<a name="Base Infill Density" id="Base Infill Density"></a><h4>Base Infill Density</h4>
+
+Default is 0.5.<br>
+ <br>
+Defines the infill density ratio of the base of the raft.<br>
+ <br>
+<a name="Base Layer Height over Layer Thickness" id="Base Layer Height over Layer Thickness"></a><h4>Base Layer Height over Layer Thickness</h4>
+
+Default is two.<br>
+ <br>
+Defines the ratio of the height &amp; width of the base layer compared to the height and width of the object infill.  The feed rate will be slower for raft layers which have thicker extrusions than the object infill.<br>
+ <br>
+<a name="Base Layers" id="Base Layers"></a><h4>Base Layers</h4>
+
+Default is one.<br>
+ <br>
+Defines the number of base layers.<br>
+ <br>
+<a name="Base Nozzle Lift over Base Layer Thickness" id="Base Nozzle Lift over Base Layer Thickness"></a><h4>Base Nozzle Lift over Base Layer Thickness</h4>
+
+Default is 0.4.<br>
+ <br>
+Defines the amount the nozzle is above the center of the base extrusion divided by the base layer thickness.<br>
+ <br>
+<a name="Initial Circling" id="Initial Circling"></a><h3>Initial Circling</h3>
+
+Default is off.<br>
+ <br>
+When selected, the extruder will initially circle around until it reaches operating temperature.<br>
+ <br>
+<a name="Infill Overhang over Extrusion Width" id="Infill Overhang over Extrusion Width"></a><h3>Infill Overhang over Extrusion Width</h3>
+
+Default is 0.05.<br>
+ <br>
+Defines the ratio of the infill overhang over the the extrusion width of the raft.<br>
+ <br>
+<a name="Interface" id="Interface"></a><h3>Interface</h3>
+
+<a name="Interface Feed Rate Multiplier" id="Interface Feed Rate Multiplier"></a><h4>Interface Feed Rate Multiplier</h4>
+
+Default is one.<br>
+ <br>
+Defines the interface feed rate multiplier.  The greater the 'Interface Feed Rate Multiplier', the thinner the interface, the lower the 'Interface Feed Rate Multiplier', the thicker the interface.<br>
+ <br>
+<a name="Interface Flow Rate Multiplier" id="Interface Flow Rate Multiplier"></a><h4>Interface Flow Rate Multiplier</h4>
+
+Default is one.<br>
+ <br>
+Defines the interface flow rate multiplier.  The greater the 'Interface Flow Rate Multiplier', the thicker the interface, the lower the 'Interface Flow Rate Multiplier', the thinner the interface.<br>
+ <br>
+<a name="Interface Infill Density" id="Interface Infill Density"></a><h4>Interface Infill Density</h4>
+
+Default is 0.5.<br>
+ <br>
+Defines the infill density ratio of the interface of the raft.<br>
+ <br>
+<a name="Interface Layer Thickness over Extrusion Height" id="Interface Layer Thickness over Extrusion Height"></a><h4>Interface Layer Thickness over Extrusion Height</h4>
+
+Default is one.<br>
+ <br>
+Defines the ratio of the height &amp; width of the interface layer compared to the height and width of the object infill.  The feed rate will be slower for raft layers which have thicker extrusions than the object infill.<br>
+ <br>
+<a name="Interface Layers" id="Interface Layers"></a><h4>Interface Layers</h4>
+
+Default is two.<br>
+ <br>
+Defines the number of interface layers to print.<br>
+ <br>
+<a name="Interface Nozzle Lift over Interface Layer Thickness" id="Interface Nozzle Lift over Interface Layer Thickness"></a><h4>Interface Nozzle Lift over Interface Layer Thickness</h4>
+
+Default is 0.45.<br>
+ <br>
+Defines the amount the nozzle is above the center of the interface extrusion divided by the interface layer thickness.<br>
+ <br>
+<a name="Name of Alteration Files" id="Name of Alteration Files"></a><h3>Name of Alteration Files</h3>
+
+If support material is generated, raft looks for alteration files in the alterations folder in the .skeinforge folder in the home directory.  Raft does not care if the text file names are capitalized, but some file systems do not handle file name cases properly, so to be on the safe side you should give them lower case names.  If it doesn't find the file it then looks in the alterations folder in the skeinforge_plugins folder.<br>
+ <br>
+<a name="Name of Support End File" id="Name of Support End File"></a><h4>Name of Support End File</h4>
+
+Default is support_end.gcode.<br>
+ <br>
+If support material is generated and if there is a file with the name of the "Name of Support End File" setting, it will be added to the end of the support gcode.<br>
+ <br>
+<a name="Name of Support Start File" id="Name of Support Start File"></a><h4>Name of Support Start File</h4>
+
+If support material is generated and if there is a file with the name of the "Name of Support Start File" setting, it will be added to the start of the support gcode.<br>
+ <br>
+<a name="Operating Nozzle Lift over Layer Thickness" id="Operating Nozzle Lift over Layer Thickness"></a><h3>Operating Nozzle Lift over Layer Thickness</h3>
+
+Default is 0.5.<br>
+ <br>
+Defines the amount the nozzle is above the center of the operating extrusion divided by the layer height.<br>
+ <br>
+<a name="Raft Size" id="Raft Size"></a><h3>Raft Size</h3>
+
+The raft fills a rectangle whose base size is the rectangle around the bottom layer of the object expanded on each side by the 'Raft Margin' plus the 'Raft Additional Margin over Length (%)' percentage times the length of the side.<br>
+ <br>
+<a name="Raft Additional Margin over Length" id="Raft Additional Margin over Length"></a><h4>Raft Additional Margin over Length</h4>
+
+Default is 1 percent.<br>
+ <br>
+<a name="Raft Margin" id="Raft Margin"></a><h4>Raft Margin</h4>
+
+Default is three millimeters.<br>
+ <br>
+<a name="Support" id="Support"></a><h3>Support</h3>
+
+Good articles on support material are at:<br>
+<a href="http://davedurant.wordpress.com/2010/07/31/skeinforge-support-part-1/">http://davedurant.wordpress.com/2010/07/31/skeinforge-support-part-1/</a><br>
+<a href="http://davedurant.wordpress.com/2010/07/31/skeinforge-support-part-2/">http://davedurant.wordpress.com/2010/07/31/skeinforge-support-part-2/</a><br>
+ <br>
+<a name="Support Cross Hatch" id="Support Cross Hatch"></a><h4>Support Cross Hatch</h4>
+
+Default is off.<br>
+ <br>
+When selected, the support material will cross hatched.  Cross hatching the support makes it stronger and harder to remove, which is why the default is off.<br>
+ <br>
+<a name="Support Flow Rate over Operating Flow Rate" id="Support Flow Rate over Operating Flow Rate"></a><h4>Support Flow Rate over Operating Flow Rate</h4>
+
+Default: 0.9.<br>
+ <br>
+Defines the ratio of the flow rate when the support is extruded over the operating flow rate.  With a number less than one, the support flow rate will be smaller so the support will be thinner and easier to remove.<br>
+ <br>
+<a name="Support Gap over Perimeter Extrusion Width" id="Support Gap over Perimeter Extrusion Width"></a><h4>Support Gap over Perimeter Extrusion Width</h4>
+
+Default: 0.5.<br>
+ <br>
+Defines the gap between the support material and the object over the edge extrusion width.<br>
+ <br>
+<a name="Support Material Choice" id="Support Material Choice"></a><h4>Support Material Choice</h4>
+
+Default is 'None' because the raft takes time to generate.<br>
+ <br>
+<a name="Empty Layers Only" id="Empty Layers Only"></a><h5>Empty Layers Only</h5>
+
+When selected, support material will be only on the empty layers.  This is useful when making identical objects in a stack.<br>
+ <br>
+<a name="Everywhere" id="Everywhere"></a><h5>Everywhere</h5>
+
+When selected, support material will be added wherever there are overhangs, even inside the object.  Because support material inside objects is hard or impossible to remove, this option should only be chosen if the object has a cavity that needs support and there is some way to extract the support material.<br>
+ <br>
+<a name="Exterior Only" id="Exterior Only"></a><h5>Exterior Only</h5>
+
+When selected, support material will be added only the exterior of the object.  This is the best option for most objects which require support material.<br>
+ <br>
+<a name="None" id="None"></a><h5>None</h5>
+
+When selected, raft will not add support material.<br>
+ <br>
+<a name="Support Minimum Angle" id="Support Minimum Angle"></a><h4>Support Minimum Angle</h4>
+
+Default is sixty degrees.<br>
+ <br>
+Defines the minimum angle that a surface overhangs before support material is added.  If angle is lower then this value the support will be generated.  This angle is defined from the vertical, so zero is a vertical wall, ten is a wall with a bit of overhang, thirty is the typical safe angle for filament extrusion, sixty is a really high angle for extrusion and ninety is an unsupported horizontal ceiling.<br>
+ <br>
+<a name="Examples" id="Examples"></a><h2>Examples</h2>
+<hr>
+
+The following examples raft the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and raft.py.<br>
+ <br>
+&gt; python raft.py<br>
+This brings up the raft dialog.<br>
+ <br>
+&gt; python raft.py Screw Holder Bottom.stl<br>
+The raft tool is parsing the file:<br>
+Screw Holder Bottom.stl<br>
+..<br>
+The raft tool has created the file:<br>
+Screw Holder Bottom_raft.gcode</tt>
+<br />
+<br />
+<p>
+<a href="skeinforge_application.skeinforge_plugins.craft_plugins.preface.html">Previous</a> / <a href="skeinforge_application.skeinforge_plugins.craft_plugins.scale.html">Next</a> / <a href="contents.html">Contents</a>
+</p>
+<hr>
+</p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+<a href="fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret.html">fabmetheus_utilities.fabmetheus_tools.fabmetheus_interpret</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="fabmetheus_utilities.intercircle.html">fabmetheus_utilities.intercircle</a><br>
+<a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.settings.html">fabmetheus_utilities.settings</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_craft.html">skeinforge_application.skeinforge_utilities.skeinforge_craft</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_polyfile.html">skeinforge_application.skeinforge_utilities.skeinforge_polyfile</a><br>
+<a href="skeinforge_application.skeinforge_utilities.skeinforge_profile.html">skeinforge_application.skeinforge_utilities.skeinforge_profile</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="fabmetheus_utilities.geometry.solids.triangle_mesh.html">fabmetheus_utilities.geometry.solids.triangle_mesh</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.raft.html#RaftRepository">RaftRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.raft.html#RaftSkein">RaftSkein</a>
+</font></dt><dt><font face="helvetica, arial"><a href="skeinforge_application.skeinforge_plugins.craft_plugins.raft.html#SupportLayer">SupportLayer</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RaftRepository">class <strong>RaftRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;raft&nbsp;settings.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="RaftRepository-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;default&nbsp;settings,&nbsp;execute&nbsp;title&nbsp;&amp;&nbsp;settings&nbsp;fileName.</tt></dd></dl>
+
+<dl><dt><a name="RaftRepository-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Raft&nbsp;button&nbsp;has&nbsp;been&nbsp;clicked.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RaftSkein">class <strong>RaftSkein</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;raft&nbsp;a&nbsp;skein&nbsp;of&nbsp;extrusions.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="RaftSkein-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="RaftSkein-addBaseLayer"><strong>addBaseLayer</strong></a>(self)</dt><dd><tt>Add&nbsp;a&nbsp;base&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addBaseSegments"><strong>addBaseSegments</strong></a>(self, baseExtrusionWidth)</dt><dd><tt>Add&nbsp;the&nbsp;base&nbsp;segments.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addEmptyLayerSupport"><strong>addEmptyLayerSupport</strong></a>(self, boundaryLayerIndex)</dt><dd><tt>Add&nbsp;support&nbsp;material&nbsp;to&nbsp;a&nbsp;layer&nbsp;if&nbsp;it&nbsp;is&nbsp;empty.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addFlowRate"><strong>addFlowRate</strong></a>(self, flowRate)</dt><dd><tt>Add&nbsp;a&nbsp;flow&nbsp;rate&nbsp;value&nbsp;if&nbsp;different.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addInterfaceLayer"><strong>addInterfaceLayer</strong></a>(self)</dt><dd><tt>Add&nbsp;an&nbsp;interface&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addInterfaceTables"><strong>addInterfaceTables</strong></a>(self, interfaceExtrusionWidth)</dt><dd><tt>Add&nbsp;interface&nbsp;tables.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addLayerFromEndpoints"><strong>addLayerFromEndpoints</strong></a>(self, endpoints, feedRateMultiplier, flowRateMultiplier, layerLayerThickness, layerThicknessRatio, step, z)</dt><dd><tt>Add&nbsp;a&nbsp;layer&nbsp;from&nbsp;endpoints&nbsp;and&nbsp;raise&nbsp;the&nbsp;extrusion&nbsp;top.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addLayerLine"><strong>addLayerLine</strong></a>(self, z)</dt><dd><tt>Add&nbsp;the&nbsp;layer&nbsp;gcode&nbsp;line&nbsp;and&nbsp;close&nbsp;the&nbsp;last&nbsp;layer&nbsp;gcode&nbsp;block.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addOperatingOrbits"><strong>addOperatingOrbits</strong></a>(self, boundaryLoops, pointComplex, temperatureChangeTime, z)</dt><dd><tt>Add&nbsp;the&nbsp;orbits&nbsp;before&nbsp;the&nbsp;operating&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addRaft"><strong>addRaft</strong></a>(self)</dt><dd><tt>Add&nbsp;the&nbsp;raft.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addRaftPerimeters"><strong>addRaftPerimeters</strong></a>(self)</dt><dd><tt>Add&nbsp;raft&nbsp;edges&nbsp;if&nbsp;there&nbsp;is&nbsp;a&nbsp;raft.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addRaftPerimetersByLoops"><strong>addRaftPerimetersByLoops</strong></a>(self, loops, outset)</dt><dd><tt>Add&nbsp;raft&nbsp;edges&nbsp;to&nbsp;the&nbsp;gcode&nbsp;for&nbsp;loops.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addRaftedLine"><strong>addRaftedLine</strong></a>(self, splitLine)</dt><dd><tt>Add&nbsp;elevated&nbsp;gcode&nbsp;line&nbsp;with&nbsp;operating&nbsp;feed&nbsp;rate.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addSegmentTablesToSupportLayers"><strong>addSegmentTablesToSupportLayers</strong></a>(self)</dt><dd><tt>Add&nbsp;segment&nbsp;tables&nbsp;to&nbsp;the&nbsp;support&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addSupportLayerTemperature"><strong>addSupportLayerTemperature</strong></a>(self, endpoints, z)</dt><dd><tt>Add&nbsp;support&nbsp;layer&nbsp;and&nbsp;temperature&nbsp;before&nbsp;the&nbsp;object&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addSupportSegmentTable"><strong>addSupportSegmentTable</strong></a>(self, layerIndex)</dt><dd><tt>Add&nbsp;support&nbsp;segments&nbsp;from&nbsp;the&nbsp;boundary&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addTemperatureLineIfDifferent"><strong>addTemperatureLineIfDifferent</strong></a>(self, temperature)</dt><dd><tt>Add&nbsp;a&nbsp;line&nbsp;of&nbsp;temperature&nbsp;if&nbsp;different.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addTemperatureOrbits"><strong>addTemperatureOrbits</strong></a>(self, endpoints, temperature, z)</dt><dd><tt>Add&nbsp;the&nbsp;temperature&nbsp;and&nbsp;orbits&nbsp;around&nbsp;the&nbsp;support&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-addToFillXIntersectionIndexTables"><strong>addToFillXIntersectionIndexTables</strong></a>(self, supportLayer)</dt><dd><tt>Add&nbsp;fill&nbsp;segments&nbsp;from&nbsp;the&nbsp;boundary&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-extendXIntersections"><strong>extendXIntersections</strong></a>(self, loops, radius, xIntersectionsTable)</dt><dd><tt>Extend&nbsp;the&nbsp;support&nbsp;segments.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;raft&nbsp;gcode.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getElevatedBoundaryLine"><strong>getElevatedBoundaryLine</strong></a>(self, splitLine)</dt><dd><tt>Get&nbsp;elevated&nbsp;boundary&nbsp;gcode&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getInsetLoops"><strong>getInsetLoops</strong></a>(self, boundaryLayerIndex)</dt><dd><tt>Inset&nbsp;the&nbsp;support&nbsp;loops&nbsp;if&nbsp;they&nbsp;are&nbsp;not&nbsp;already&nbsp;inset.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getInsetLoopsAbove"><strong>getInsetLoopsAbove</strong></a>(self, boundaryLayerIndex)</dt><dd><tt>Get&nbsp;the&nbsp;inset&nbsp;loops&nbsp;above&nbsp;the&nbsp;boundary&nbsp;layer&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getInsetLoopsBelow"><strong>getInsetLoopsBelow</strong></a>(self, boundaryLayerIndex)</dt><dd><tt>Get&nbsp;the&nbsp;inset&nbsp;loops&nbsp;below&nbsp;the&nbsp;boundary&nbsp;layer&nbsp;index.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getStepsUntilEnd"><strong>getStepsUntilEnd</strong></a>(self, begin, end, stepSize)</dt><dd><tt>Get&nbsp;steps&nbsp;from&nbsp;the&nbsp;beginning&nbsp;until&nbsp;the&nbsp;end.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getSupportEndpoints"><strong>getSupportEndpoints</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;support&nbsp;layer&nbsp;segments.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-getTemperatureChangeTime"><strong>getTemperatureChangeTime</strong></a>(self, temperature)</dt><dd><tt>Get&nbsp;the&nbsp;temperature&nbsp;change&nbsp;time.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;add&nbsp;it&nbsp;to&nbsp;the&nbsp;raft&nbsp;skein.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-setBoundaryLayers"><strong>setBoundaryLayers</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;boundary&nbsp;layers.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-setCornersZ"><strong>setCornersZ</strong></a>(self)</dt><dd><tt>Set&nbsp;maximum&nbsp;and&nbsp;minimum&nbsp;corners&nbsp;and&nbsp;z.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-subtractJoinedFill"><strong>subtractJoinedFill</strong></a>(self, supportLayerIndex)</dt><dd><tt>Join&nbsp;the&nbsp;fill&nbsp;then&nbsp;subtract&nbsp;it&nbsp;from&nbsp;the&nbsp;support&nbsp;layer&nbsp;table.</tt></dd></dl>
+
+<dl><dt><a name="RaftSkein-truncateSupportSegmentTables"><strong>truncateSupportSegmentTables</strong></a>(self)</dt><dd><tt>Truncate&nbsp;the&nbsp;support&nbsp;segments&nbsp;after&nbsp;the&nbsp;last&nbsp;support&nbsp;segment&nbsp;which&nbsp;contains&nbsp;elements.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="SupportLayer">class <strong>SupportLayer</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Support&nbsp;loops&nbsp;with&nbsp;segment&nbsp;tables.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="SupportLayer-__init__"><strong>__init__</strong></a>(self, supportLoops)</dt></dl>
+
+<dl><dt><a name="SupportLayer-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;loop&nbsp;layer.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, text<font color="#909090">=''</font>, repository<font color="#909090">=None</font>)</dt><dd><tt>Raft&nbsp;the&nbsp;file&nbsp;or&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Raft&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCrossHatchPointLine"><strong>getCrossHatchPointLine</strong></a>(crossHatchPointLineTable, y)</dt><dd><tt>Get&nbsp;the&nbsp;cross&nbsp;hatch&nbsp;point&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-getEndpointsFromYIntersections"><strong>getEndpointsFromYIntersections</strong></a>(x, yIntersections)</dt><dd><tt>Get&nbsp;endpoints&nbsp;from&nbsp;the&nbsp;y&nbsp;intersections.</tt></dd></dl>
+ <dl><dt><a name="-getExtendedLineSegment"><strong>getExtendedLineSegment</strong></a>(extensionDistance, lineSegment, loopXIntersections)</dt><dd><tt>Get&nbsp;extended&nbsp;line&nbsp;segment.</tt></dd></dl>
+ <dl><dt><a name="-getLoopsBySegmentsDictionary"><strong>getLoopsBySegmentsDictionary</strong></a>(segmentsDictionary, width)</dt><dd><tt>Get&nbsp;loops&nbsp;from&nbsp;a&nbsp;horizontal&nbsp;segments&nbsp;dictionary.</tt></dd></dl>
+ <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-getVerticalEndpoints"><strong>getVerticalEndpoints</strong></a>(horizontalSegmentsTable, horizontalStep, verticalOverhang, verticalStep)</dt><dd><tt>Get&nbsp;vertical&nbsp;endpoints.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;raft&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-setExtendedPoint"><strong>setExtendedPoint</strong></a>(lineSegmentEnd, pointOriginal, x)</dt><dd><tt>Set&nbsp;the&nbsp;point&nbsp;in&nbsp;the&nbsp;extended&nbsp;line&nbsp;segment.</tt></dd></dl>
+ <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Raft&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/21/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

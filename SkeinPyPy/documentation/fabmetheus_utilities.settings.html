@@ -1,0 +1,1766 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module fabmetheus_utilities.settings</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="fabmetheus_utilities.html"><font color="#ffffff">fabmetheus_utilities</font></a>.settings</strong></big></big> ($Date: 2008/23/04 $)</font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/settings.py">/home/enrique/Desktop/backup/babbleold/script/reprap/fabmetheus/fabmetheus_utilities/settings.py</a></font></td></tr></table>
+    <p><tt>Settings is a collection of utilities to display, read &amp; write the settings and position widgets.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="__init__.html">__init__</a><br>
+<a href="fabmetheus_utilities.archive.html">fabmetheus_utilities.archive</a><br>
+<a href="cStringIO.html">cStringIO</a><br>
+</td><td width="25%" valign=top><a href="fabmetheus_utilities.euclidean.html">fabmetheus_utilities.euclidean</a><br>
+<a href="fabmetheus_utilities.gcodec.html">fabmetheus_utilities.gcodec</a><br>
+<a href="math.html">math</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="shutil.html">shutil</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="traceback.html">traceback</a><br>
+<a href="webbrowser.html">webbrowser</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#CloseListener">CloseListener</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#DisplayToolButton">DisplayToolButton</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#FileHelpMenuBar">FileHelpMenuBar</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#FrameList">FrameList</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#GridHorizontal">GridHorizontal</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#GridVertical">GridVertical</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#HelpPage">HelpPage</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#HelpPageRepository">HelpPageRepository</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#LabelDisplay">LabelDisplay</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#LabelHelp">LabelHelp</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#LabelSeparator">LabelSeparator</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#LatentStringVar">LatentStringVar</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#LayerCount">LayerCount</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#MenuButtonDisplay">MenuButtonDisplay</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#PluginFrame">PluginFrame</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#PluginGroupFrame">PluginGroupFrame</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#RepositoryDialog">RepositoryDialog</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#MenuRadio">MenuRadio</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#Radio">Radio</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#RadioCapitalized">RadioCapitalized</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#RadioPlugin">RadioPlugin</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#RadioCapitalizedButton">RadioCapitalizedButton</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#FileNameInput">FileNameInput</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#FloatSpinNotOnMenu">FloatSpinNotOnMenu</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#FloatSpinUpdate">FloatSpinUpdate</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#IntSpinNotOnMenu">IntSpinNotOnMenu</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#IntSpinUpdate">IntSpinUpdate</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#IntSetting">IntSetting</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#TextSetting">TextSetting</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#WindowPosition">WindowPosition</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#TokenConversion">TokenConversion</a>
+</font></dt><dt><font face="helvetica, arial"><a href="fabmetheus_utilities.settings.html#ToolDialog">ToolDialog</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="BooleanSetting">class <strong>BooleanSetting</strong></a>(<a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;boolean.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="BooleanSetting-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;checkbutton&nbsp;to&nbsp;the&nbsp;boolean.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;toggleCheckbutton&nbsp;is&nbsp;handling&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-toggleCheckbutton"><strong>toggleCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-toggleMenuCheckbutton"><strong>toggleMenuCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="BooleanSetting-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="BooleanSetting-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="CloseListener">class <strong>CloseListener</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;listen&nbsp;to&nbsp;link&nbsp;a&nbsp;window&nbsp;to&nbsp;the&nbsp;global&nbsp;repository&nbsp;dialog&nbsp;list&nbsp;table.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="CloseListener-__init__"><strong>__init__</strong></a>(self, window, closeFunction<font color="#909090">=None</font>)</dt><dd><tt>Add&nbsp;the&nbsp;window&nbsp;to&nbsp;the&nbsp;global&nbsp;repository&nbsp;dialog&nbsp;list&nbsp;table.</tt></dd></dl>
+
+<dl><dt><a name="CloseListener-listenToWidget"><strong>listenToWidget</strong></a>(self, widget)</dt><dd><tt>Listen&nbsp;to&nbsp;the&nbsp;destroy&nbsp;message&nbsp;of&nbsp;the&nbsp;widget.</tt></dd></dl>
+
+<dl><dt><a name="CloseListener-wasClosed"><strong>wasClosed</strong></a>(self, event)</dt><dd><tt>The&nbsp;dialog&nbsp;was&nbsp;closed.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DisplayToolButton">class <strong>DisplayToolButton</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display&nbsp;the&nbsp;tool&nbsp;dialog&nbsp;button,&nbsp;in&nbsp;a&nbsp;two&nbsp;column&nbsp;wide&nbsp;table.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DisplayToolButton-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="DisplayToolButton-displayDialog"><strong>displayDialog</strong></a>(self)</dt><dd><tt>Display&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="DisplayToolButton-getFromPath"><strong>getFromPath</strong></a>(self, important, name, path, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FileHelpMenuBar">class <strong>FileHelpMenuBar</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FileHelpMenuBar-__init__"><strong>__init__</strong></a>(self, root)</dt><dd><tt>Create&nbsp;a&nbsp;menu&nbsp;bar&nbsp;with&nbsp;a&nbsp;file&nbsp;and&nbsp;help&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FileHelpMenuBar-addMenuToMenuBar"><strong>addMenuToMenuBar</strong></a>(self, labelText, menu)</dt><dd><tt>Add&nbsp;a&nbsp;menu&nbsp;to&nbsp;the&nbsp;menu&nbsp;bar.</tt></dd></dl>
+
+<dl><dt><a name="FileHelpMenuBar-addPluginToMenuBar"><strong>addPluginToMenuBar</strong></a>(self, modulePath, repository, window)</dt><dd><tt>Add&nbsp;a&nbsp;menu&nbsp;to&nbsp;the&nbsp;menu&nbsp;bar&nbsp;from&nbsp;a&nbsp;tool.</tt></dd></dl>
+
+<dl><dt><a name="FileHelpMenuBar-completeMenu"><strong>completeMenu</strong></a>(self, closeFunction, repository, saveFunction, window)</dt><dd><tt>Complete&nbsp;the&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FileHelpMenuBar-saveClose"><strong>saveClose</strong></a>(self)</dt><dd><tt>Call&nbsp;the&nbsp;save&nbsp;function&nbsp;then&nbsp;the&nbsp;close&nbsp;function.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FileNameInput">class <strong>FileNameInput</strong></a>(<a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;fileName.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FileNameInput-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-execute"><strong>execute</strong></a>(self)</dt><dd><tt>Open&nbsp;the&nbsp;file&nbsp;picker.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-getFileNameFirstTypes"><strong>getFileNameFirstTypes</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;types&nbsp;with&nbsp;the&nbsp;file&nbsp;type&nbsp;of&nbsp;the&nbsp;fileName&nbsp;moved&nbsp;to&nbsp;the&nbsp;front&nbsp;of&nbsp;the&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-getFromFileName"><strong>getFromFileName</strong></a>(self, fileTypes, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-setCancelledValue"><strong>setCancelledValue</strong></a>(self, fileName)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;file&nbsp;name&nbsp;and&nbsp;wasCancelled&nbsp;true&nbsp;if&nbsp;a&nbsp;file&nbsp;was&nbsp;not&nbsp;picked.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;the&nbsp;file&nbsp;dialog&nbsp;is&nbsp;handling&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="FileNameInput-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;value&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="FileNameInput-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FloatSetting">class <strong>FloatSetting</strong></a>(<a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;float.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FloatSetting-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;float&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="FloatSetting-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="FloatSetting-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FloatSpin">class <strong>FloatSpin</strong></a>(<a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;an&nbsp;float&nbsp;in&nbsp;a&nbsp;spin&nbsp;box.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="FloatSpin-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-decrease"><strong>decrease</strong></a>(self)</dt><dd><tt>Decrease&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-entryUpdated"><strong>entryUpdated</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-getFromValue"><strong>getFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-increase"><strong>increase</strong></a>(self)</dt><dd><tt>Increase&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-setColor"><strong>setColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-setColorToDisplay"><strong>setColorToDisplay</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-setStateUpdateColor"><strong>setStateUpdateColor</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;to&nbsp;the&nbsp;value,&nbsp;call&nbsp;the&nbsp;update&nbsp;function,&nbsp;then&nbsp;set&nbsp;the&nbsp;color.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a>:<br>
+<dl><dt><a name="FloatSpin-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;float&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="FloatSpin-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpin-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FloatSpinNotOnMenu">class <strong>FloatSpinNotOnMenu</strong></a>(<a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;an&nbsp;float&nbsp;in&nbsp;a&nbsp;spin&nbsp;box,&nbsp;which&nbsp;is&nbsp;not&nbsp;to&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;menu.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpinNotOnMenu">FloatSpinNotOnMenu</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="FloatSpinNotOnMenu-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>:<br>
+<dl><dt><a name="FloatSpinNotOnMenu-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-decrease"><strong>decrease</strong></a>(self)</dt><dd><tt>Decrease&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-entryUpdated"><strong>entryUpdated</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-getFromValue"><strong>getFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-increase"><strong>increase</strong></a>(self)</dt><dd><tt>Increase&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-setColor"><strong>setColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-setColorToDisplay"><strong>setColorToDisplay</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-setStateUpdateColor"><strong>setStateUpdateColor</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;to&nbsp;the&nbsp;value,&nbsp;call&nbsp;the&nbsp;update&nbsp;function,&nbsp;then&nbsp;set&nbsp;the&nbsp;color.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a>:<br>
+<dl><dt><a name="FloatSpinNotOnMenu-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;float&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="FloatSpinNotOnMenu-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinNotOnMenu-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FloatSpinUpdate">class <strong>FloatSpinUpdate</strong></a>(<a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read,&nbsp;update&nbsp;&amp;&nbsp;write&nbsp;an&nbsp;float&nbsp;in&nbsp;a&nbsp;spin&nbsp;box.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpinUpdate">FloatSpinUpdate</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="FloatSpinUpdate-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>:<br>
+<dl><dt><a name="FloatSpinUpdate-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-decrease"><strong>decrease</strong></a>(self)</dt><dd><tt>Decrease&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-entryUpdated"><strong>entryUpdated</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-getFromValue"><strong>getFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-increase"><strong>increase</strong></a>(self)</dt><dd><tt>Increase&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-setColor"><strong>setColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-setColorToDisplay"><strong>setColorToDisplay</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-setStateUpdateColor"><strong>setStateUpdateColor</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;to&nbsp;the&nbsp;value,&nbsp;call&nbsp;the&nbsp;update&nbsp;function,&nbsp;then&nbsp;set&nbsp;the&nbsp;color.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a>:<br>
+<dl><dt><a name="FloatSpinUpdate-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;float&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="FloatSpinUpdate-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="FloatSpinUpdate-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FrameList">class <strong>FrameList</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;list&nbsp;the&nbsp;frames.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="FrameList-addToList"><strong>addToList</strong></a>(self, word)</dt><dd><tt>Add&nbsp;the&nbsp;word&nbsp;to&nbsp;the&nbsp;sorted&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FrameList-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="FrameList-removeFromList"><strong>removeFromList</strong></a>(self, word)</dt><dd><tt>Remove&nbsp;the&nbsp;word&nbsp;from&nbsp;the&nbsp;sorted&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="FrameList-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;frame&nbsp;list&nbsp;does&nbsp;not&nbsp;have&nbsp;a&nbsp;display.</tt></dd></dl>
+
+<dl><dt><a name="FrameList-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;and&nbsp;later&nbsp;words&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="FrameList-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="FrameList-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;list&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="GridHorizontal">class <strong>GridHorizontal</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;place&nbsp;elements&nbsp;horizontally&nbsp;on&nbsp;a&nbsp;grid.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="GridHorizontal-__init__"><strong>__init__</strong></a>(self, column, row)</dt><dd><tt>Initialize&nbsp;the&nbsp;column&nbsp;and&nbsp;row.</tt></dd></dl>
+
+<dl><dt><a name="GridHorizontal-getCopy"><strong>getCopy</strong></a>(self)</dt><dd><tt>Get&nbsp;a&nbsp;copy.</tt></dd></dl>
+
+<dl><dt><a name="GridHorizontal-increment"><strong>increment</strong></a>(self)</dt><dd><tt>Increment&nbsp;the&nbsp;position&nbsp;horizontally.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="GridVertical">class <strong>GridVertical</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;place&nbsp;elements&nbsp;vertically&nbsp;on&nbsp;a&nbsp;grid.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="GridVertical-__init__"><strong>__init__</strong></a>(self, column, row)</dt><dd><tt>Initialize&nbsp;the&nbsp;column&nbsp;and&nbsp;row.</tt></dd></dl>
+
+<dl><dt><a name="GridVertical-execute"><strong>execute</strong></a>(self)</dt><dd><tt>The&nbsp;execute&nbsp;button&nbsp;was&nbsp;clicked.</tt></dd></dl>
+
+<dl><dt><a name="GridVertical-getCopy"><strong>getCopy</strong></a>(self)</dt><dd><tt>Get&nbsp;a&nbsp;copy.</tt></dd></dl>
+
+<dl><dt><a name="GridVertical-increment"><strong>increment</strong></a>(self)</dt><dd><tt>Increment&nbsp;the&nbsp;position&nbsp;vertically.</tt></dd></dl>
+
+<dl><dt><a name="GridVertical-incrementGivenNumberOfColumns"><strong>incrementGivenNumberOfColumns</strong></a>(self, numberOfColumns)</dt><dd><tt>Increment&nbsp;the&nbsp;position&nbsp;vertically&nbsp;and&nbsp;offset&nbsp;it&nbsp;horizontally&nbsp;by&nbsp;the&nbsp;given&nbsp;number&nbsp;of&nbsp;columns.</tt></dd></dl>
+
+<dl><dt><a name="GridVertical-setExecutablesRepository"><strong>setExecutablesRepository</strong></a>(self, repository)</dt><dd><tt>Set&nbsp;the&nbsp;executables&nbsp;to&nbsp;an&nbsp;empty&nbsp;list&nbsp;and&nbsp;set&nbsp;the&nbsp;repository.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HelpPage">class <strong>HelpPage</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;open&nbsp;a&nbsp;help&nbsp;page.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="HelpPage-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize&nbsp;column.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-getFromNameAfterHTTP"><strong>getFromNameAfterHTTP</strong></a>(self, afterHTTP, name, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-getFromNameAfterWWW"><strong>getFromNameAfterWWW</strong></a>(self, afterWWW, name, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-getFromNameSubName"><strong>getFromNameSubName</strong></a>(self, name, repository, subName<font color="#909090">=''</font>)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-getOpenFromAbsolute"><strong>getOpenFromAbsolute</strong></a>(self, hypertextAddress)</dt><dd><tt>Get&nbsp;the&nbsp;open&nbsp;help&nbsp;page&nbsp;function&nbsp;from&nbsp;the&nbsp;hypertext&nbsp;address.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-getOpenFromAfterHTTP"><strong>getOpenFromAfterHTTP</strong></a>(self, afterHTTP)</dt><dd><tt>Get&nbsp;the&nbsp;open&nbsp;help&nbsp;page&nbsp;function&nbsp;from&nbsp;the&nbsp;part&nbsp;of&nbsp;the&nbsp;address&nbsp;after&nbsp;the&nbsp;HTTP.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-getOpenFromAfterWWW"><strong>getOpenFromAfterWWW</strong></a>(self, afterWWW)</dt><dd><tt>Get&nbsp;the&nbsp;open&nbsp;help&nbsp;page&nbsp;function&nbsp;from&nbsp;the&nbsp;afterWWW&nbsp;of&nbsp;the&nbsp;address&nbsp;after&nbsp;the&nbsp;www.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-getOpenFromDocumentationSubName"><strong>getOpenFromDocumentationSubName</strong></a>(self, subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;open&nbsp;help&nbsp;page&nbsp;function&nbsp;from&nbsp;the&nbsp;afterWWW&nbsp;of&nbsp;the&nbsp;address&nbsp;after&nbsp;the&nbsp;www.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-openPage"><strong>openPage</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Open&nbsp;the&nbsp;browser&nbsp;to&nbsp;the&nbsp;hypertext&nbsp;address.</tt></dd></dl>
+
+<dl><dt><a name="HelpPage-setToNameRepository"><strong>setToNameRepository</strong></a>(self, name, repository)</dt><dd><tt>Set&nbsp;to&nbsp;the&nbsp;name&nbsp;and&nbsp;repository.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HelpPageRepository">class <strong>HelpPageRepository</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;open&nbsp;a&nbsp;repository&nbsp;help&nbsp;page.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="HelpPageRepository-__init__"><strong>__init__</strong></a>(self, repository)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="HelpPageRepository-openPage"><strong>openPage</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Open&nbsp;the&nbsp;browser&nbsp;to&nbsp;the&nbsp;repository&nbsp;help&nbsp;page.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="IntSetting">class <strong>IntSetting</strong></a>(<a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;an&nbsp;int.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#IntSetting">IntSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="IntSetting-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;integer&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="IntSetting-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="IntSetting-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="IntSpin">class <strong>IntSpin</strong></a>(<a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;an&nbsp;int&nbsp;in&nbsp;a&nbsp;spin&nbsp;box.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="IntSpin-getFromValue"><strong>getFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-getSingleIncrementFromValue"><strong>getSingleIncrementFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;integer&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>:<br>
+<dl><dt><a name="IntSpin-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-decrease"><strong>decrease</strong></a>(self)</dt><dd><tt>Decrease&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-entryUpdated"><strong>entryUpdated</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-increase"><strong>increase</strong></a>(self)</dt><dd><tt>Increase&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setColor"><strong>setColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setColorToDisplay"><strong>setColorToDisplay</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setStateUpdateColor"><strong>setStateUpdateColor</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;to&nbsp;the&nbsp;value,&nbsp;call&nbsp;the&nbsp;update&nbsp;function,&nbsp;then&nbsp;set&nbsp;the&nbsp;color.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="IntSpin-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="IntSpin-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="IntSpinNotOnMenu">class <strong>IntSpinNotOnMenu</strong></a>(<a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;an&nbsp;integer&nbsp;in&nbsp;a&nbsp;spin&nbsp;box,&nbsp;which&nbsp;is&nbsp;not&nbsp;to&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;menu.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#IntSpinNotOnMenu">IntSpinNotOnMenu</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="IntSpinNotOnMenu-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a>:<br>
+<dl><dt><a name="IntSpinNotOnMenu-getFromValue"><strong>getFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-getSingleIncrementFromValue"><strong>getSingleIncrementFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;integer&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>:<br>
+<dl><dt><a name="IntSpinNotOnMenu-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-decrease"><strong>decrease</strong></a>(self)</dt><dd><tt>Decrease&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-entryUpdated"><strong>entryUpdated</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-increase"><strong>increase</strong></a>(self)</dt><dd><tt>Increase&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setColor"><strong>setColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setColorToDisplay"><strong>setColorToDisplay</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setStateUpdateColor"><strong>setStateUpdateColor</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;to&nbsp;the&nbsp;value,&nbsp;call&nbsp;the&nbsp;update&nbsp;function,&nbsp;then&nbsp;set&nbsp;the&nbsp;color.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="IntSpinNotOnMenu-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinNotOnMenu-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="IntSpinUpdate">class <strong>IntSpinUpdate</strong></a>(<a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read,&nbsp;update&nbsp;&amp;&nbsp;write&nbsp;an&nbsp;int&nbsp;in&nbsp;a&nbsp;spin&nbsp;box.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#IntSpinUpdate">IntSpinUpdate</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#FloatSetting">FloatSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="IntSpinUpdate-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#IntSpin">IntSpin</a>:<br>
+<dl><dt><a name="IntSpinUpdate-getFromValue"><strong>getFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-getSingleIncrementFromValue"><strong>getSingleIncrementFromValue</strong></a>(self, from_, name, repository, to, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;integer&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#FloatSpin">FloatSpin</a>:<br>
+<dl><dt><a name="IntSpinUpdate-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-decrease"><strong>decrease</strong></a>(self)</dt><dd><tt>Decrease&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-entryUpdated"><strong>entryUpdated</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-increase"><strong>increase</strong></a>(self)</dt><dd><tt>Increase&nbsp;the&nbsp;value&nbsp;then&nbsp;set&nbsp;the&nbsp;state&nbsp;and&nbsp;color&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setColor"><strong>setColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setColorToDisplay"><strong>setColorToDisplay</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setStateUpdateColor"><strong>setStateUpdateColor</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;to&nbsp;the&nbsp;value,&nbsp;call&nbsp;the&nbsp;update&nbsp;function,&nbsp;then&nbsp;set&nbsp;the&nbsp;color.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="IntSpinUpdate-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="IntSpinUpdate-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="LabelDisplay">class <strong>LabelDisplay</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;add&nbsp;a&nbsp;label.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="LabelDisplay-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="LabelDisplay-getFromName"><strong>getFromName</strong></a>(self, name, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="LabelHelp">class <strong>LabelHelp</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;add&nbsp;help&nbsp;to&nbsp;a&nbsp;widget.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="LabelHelp-__init__"><strong>__init__</strong></a>(self, fileNameHelp, master, name, widget)</dt><dd><tt>Add&nbsp;menu&nbsp;to&nbsp;the&nbsp;widget.</tt></dd></dl>
+
+<dl><dt><a name="LabelHelp-displayPopupMenu"><strong>displayPopupMenu</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Display&nbsp;the&nbsp;popup&nbsp;menu&nbsp;when&nbsp;the&nbsp;button&nbsp;is&nbsp;right&nbsp;clicked.</tt></dd></dl>
+
+<dl><dt><a name="LabelHelp-unpostPopupMenu"><strong>unpostPopupMenu</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Unpost&nbsp;the&nbsp;popup&nbsp;menu.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="LabelSeparator">class <strong>LabelSeparator</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;add&nbsp;a&nbsp;label&nbsp;and&nbsp;menu&nbsp;separator.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="LabelSeparator-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="LabelSeparator-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="LabelSeparator-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="LabelSeparator-getFromRepository"><strong>getFromRepository</strong></a>(self, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="LatentStringVar">class <strong>LatentStringVar</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;provide&nbsp;a&nbsp;StringVar&nbsp;when&nbsp;needed.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="LatentStringVar-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;var.</tt></dd></dl>
+
+<dl><dt><a name="LatentStringVar-getString"><strong>getString</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="LatentStringVar-getVar"><strong>getVar</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;var.</tt></dd></dl>
+
+<dl><dt><a name="LatentStringVar-setString"><strong>setString</strong></a>(self, word)</dt><dd><tt>Set&nbsp;the&nbsp;string.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="LayerCount">class <strong>LayerCount</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;handle&nbsp;the&nbsp;layerIndex.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="LayerCount-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="LayerCount-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#LayerCount">LayerCount</a>.</tt></dd></dl>
+
+<dl><dt><a name="LayerCount-printProgressIncrement"><strong>printProgressIncrement</strong></a>(self, procedureName)</dt><dd><tt>Print&nbsp;progress&nbsp;then&nbsp;increment&nbsp;layerIndex.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="MenuButtonDisplay">class <strong>MenuButtonDisplay</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;add&nbsp;a&nbsp;menu&nbsp;button.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="MenuButtonDisplay-addRadiosToDialog"><strong>addRadiosToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;the&nbsp;menu&nbsp;radios&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="MenuButtonDisplay-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="MenuButtonDisplay-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="MenuButtonDisplay-getFromName"><strong>getFromName</strong></a>(self, name, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="MenuButtonDisplay-removeMenus"><strong>removeMenus</strong></a>(self)</dt><dd><tt>Remove&nbsp;all&nbsp;menus.</tt></dd></dl>
+
+<dl><dt><a name="MenuButtonDisplay-setRadioVarToName"><strong>setRadioVarToName</strong></a>(self, name)</dt><dd><tt>Get&nbsp;the&nbsp;menu&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="MenuButtonDisplay-setToNameAddToDialog"><strong>setToNameAddToDialog</strong></a>(self, name, gridPosition)</dt><dd><tt>Get&nbsp;the&nbsp;menu&nbsp;button.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="MenuRadio">class <strong>MenuRadio</strong></a>(<a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;boolean&nbsp;with&nbsp;associated&nbsp;menu&nbsp;radio&nbsp;button.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#MenuRadio">MenuRadio</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="MenuRadio-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;submenu&nbsp;set&nbsp;by&nbsp;<a href="#MenuButtonDisplay">MenuButtonDisplay</a>,&nbsp;the&nbsp;repository&nbsp;menu&nbsp;is&nbsp;ignored</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-addToSubmenu"><strong>addToSubmenu</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;submenu.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-clickRadio"><strong>clickRadio</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;invoke&nbsp;and&nbsp;set&nbsp;the&nbsp;value&nbsp;when&nbsp;clicked.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-getFromMenuButtonDisplay"><strong>getFromMenuButtonDisplay</strong></a>(self, menuButtonDisplay, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-invoke"><strong>invoke</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;invoke&nbsp;to&nbsp;set&nbsp;the&nbsp;value&nbsp;when&nbsp;changed.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;checkbutton&nbsp;to&nbsp;the&nbsp;boolean.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;checkbutton.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>:<br>
+<dl><dt><a name="MenuRadio-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-toggleCheckbutton"><strong>toggleCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-toggleMenuCheckbutton"><strong>toggleMenuCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="MenuRadio-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="MenuRadio-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="PluginFrame">class <strong>PluginFrame</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display&nbsp;the&nbsp;plugins&nbsp;in&nbsp;a&nbsp;frame.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="PluginFrame-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-createFrame"><strong>createFrame</strong></a>(self, gridPosition)</dt><dd><tt>Create&nbsp;the&nbsp;frame.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-focusSetMaster"><strong>focusSetMaster</strong></a>(self, gridPosition)</dt><dd><tt>Set&nbsp;the&nbsp;focus&nbsp;to&nbsp;the&nbsp;plugin&nbsp;master.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-getFromPath"><strong>getFromPath</strong></a>(self, defaultRadioButton, directoryPath, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;of&nbsp;all&nbsp;the&nbsp;plugins&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;plugins&nbsp;to&nbsp;the&nbsp;display.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-update"><strong>update</strong></a>(self)</dt><dd><tt>Update&nbsp;the&nbsp;frame.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="PluginFrame-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="PluginGroupFrame">class <strong>PluginGroupFrame</strong></a>(<a href="fabmetheus_utilities.settings.html#PluginFrame">PluginFrame</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display&nbsp;the&nbsp;plugin&nbsp;groups&nbsp;in&nbsp;a&nbsp;frame.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="PluginGroupFrame-createFrame"><strong>createFrame</strong></a>(self, gridPosition)</dt><dd><tt>Create&nbsp;the&nbsp;frame.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-focusSetMaster"><strong>focusSetMaster</strong></a>(self, gridPosition)</dt><dd><tt>Set&nbsp;the&nbsp;focus&nbsp;to&nbsp;the&nbsp;plugin&nbsp;master.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#PluginFrame">PluginFrame</a>:<br>
+<dl><dt><a name="PluginGroupFrame-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-getFromPath"><strong>getFromPath</strong></a>(self, defaultRadioButton, directoryPath, repository)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;state&nbsp;of&nbsp;all&nbsp;the&nbsp;plugins&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;plugins&nbsp;to&nbsp;the&nbsp;display.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-update"><strong>update</strong></a>(self)</dt><dd><tt>Update&nbsp;the&nbsp;frame.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="PluginGroupFrame-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Radio">class <strong>Radio</strong></a>(<a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;boolean&nbsp;with&nbsp;associated&nbsp;radio&nbsp;button.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#Radio">Radio</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="Radio-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="Radio-clickRadio"><strong>clickRadio</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;set&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="Radio-createRadioButton"><strong>createRadioButton</strong></a>(self, gridPosition)</dt><dd><tt>Create&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="Radio-getFromRadio"><strong>getFromRadio</strong></a>(self, latentStringVar, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Radio-setSelect"><strong>setSelect</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;int&nbsp;var&nbsp;and&nbsp;select&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="Radio-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;checkbutton&nbsp;to&nbsp;the&nbsp;boolean.</tt></dd></dl>
+
+<dl><dt><a name="Radio-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;checkbutton.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>:<br>
+<dl><dt><a name="Radio-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="Radio-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="Radio-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="Radio-toggleCheckbutton"><strong>toggleCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="Radio-toggleMenuCheckbutton"><strong>toggleMenuCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="Radio-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="Radio-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="Radio-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="Radio-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="Radio-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="Radio-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Radio-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Radio-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="Radio-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="Radio-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="Radio-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="Radio-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="Radio-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RadioCapitalized">class <strong>RadioCapitalized</strong></a>(<a href="fabmetheus_utilities.settings.html#Radio">Radio</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;boolean&nbsp;with&nbsp;associated&nbsp;radio&nbsp;button.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#RadioCapitalized">RadioCapitalized</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#Radio">Radio</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="RadioCapitalized-createRadioButton"><strong>createRadioButton</strong></a>(self, gridPosition)</dt><dd><tt>Create&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#Radio">Radio</a>:<br>
+<dl><dt><a name="RadioCapitalized-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-clickRadio"><strong>clickRadio</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;set&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-getFromRadio"><strong>getFromRadio</strong></a>(self, latentStringVar, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-setSelect"><strong>setSelect</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;int&nbsp;var&nbsp;and&nbsp;select&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;checkbutton&nbsp;to&nbsp;the&nbsp;boolean.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;checkbutton.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>:<br>
+<dl><dt><a name="RadioCapitalized-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-toggleCheckbutton"><strong>toggleCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-toggleMenuCheckbutton"><strong>toggleMenuCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="RadioCapitalized-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalized-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RadioCapitalizedButton">class <strong>RadioCapitalizedButton</strong></a>(<a href="fabmetheus_utilities.settings.html#Radio">Radio</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;boolean&nbsp;with&nbsp;associated&nbsp;radio&nbsp;button.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#RadioCapitalizedButton">RadioCapitalizedButton</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#Radio">Radio</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="RadioCapitalizedButton-createRadioButton"><strong>createRadioButton</strong></a>(self, gridPosition)</dt><dd><tt>Create&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-displayDialog"><strong>displayDialog</strong></a>(self)</dt><dd><tt>Display&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-getFromPath"><strong>getFromPath</strong></a>(self, latentStringVar, name, path, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#Radio">Radio</a>:<br>
+<dl><dt><a name="RadioCapitalizedButton-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-clickRadio"><strong>clickRadio</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;set&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-getFromRadio"><strong>getFromRadio</strong></a>(self, latentStringVar, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-setSelect"><strong>setSelect</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;int&nbsp;var&nbsp;and&nbsp;select&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;checkbutton&nbsp;to&nbsp;the&nbsp;boolean.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;checkbutton.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>:<br>
+<dl><dt><a name="RadioCapitalizedButton-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-toggleCheckbutton"><strong>toggleCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-toggleMenuCheckbutton"><strong>toggleMenuCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="RadioCapitalizedButton-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="RadioCapitalizedButton-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RadioPlugin">class <strong>RadioPlugin</strong></a>(<a href="fabmetheus_utilities.settings.html#RadioCapitalized">RadioCapitalized</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;boolean&nbsp;with&nbsp;associated&nbsp;radio&nbsp;button.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="fabmetheus_utilities.settings.html#RadioPlugin">RadioPlugin</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#RadioCapitalized">RadioCapitalized</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#Radio">Radio</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a></dd>
+<dd><a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="RadioPlugin-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-getFromRadio"><strong>getFromRadio</strong></a>(self, important, latentStringVar, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-incrementGridPosition"><strong>incrementGridPosition</strong></a>(self, gridPosition)</dt><dd><tt>Increment&nbsp;the&nbsp;grid&nbsp;position.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#RadioCapitalized">RadioCapitalized</a>:<br>
+<dl><dt><a name="RadioPlugin-createRadioButton"><strong>createRadioButton</strong></a>(self, gridPosition)</dt><dd><tt>Create&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#Radio">Radio</a>:<br>
+<dl><dt><a name="RadioPlugin-clickRadio"><strong>clickRadio</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;set&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-setSelect"><strong>setSelect</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;int&nbsp;var&nbsp;and&nbsp;select&nbsp;the&nbsp;radio&nbsp;button.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;checkbutton&nbsp;to&nbsp;the&nbsp;boolean.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;checkbutton.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#BooleanSetting">BooleanSetting</a>:<br>
+<dl><dt><a name="RadioPlugin-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;boolean&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-toggleCheckbutton"><strong>toggleCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-toggleMenuCheckbutton"><strong>toggleMenuCheckbutton</strong></a>(self)</dt><dd><tt>Workaround&nbsp;for&nbsp;Tkinter&nbsp;bug,&nbsp;toggle&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="RadioPlugin-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="RadioPlugin-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="RepositoryDialog">class <strong>RepositoryDialog</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="RepositoryDialog-__init__"><strong>__init__</strong></a>(self, repository, root)</dt><dd><tt>Add&nbsp;entities&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="RepositoryDialog-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#RepositoryDialog">RepositoryDialog</a>.</tt></dd></dl>
+
+<dl><dt><a name="RepositoryDialog-addButtons"><strong>addButtons</strong></a>(self, repository, root)</dt><dd><tt>Add&nbsp;buttons&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="RepositoryDialog-cancel"><strong>cancel</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;all&nbsp;entities&nbsp;to&nbsp;their&nbsp;saved&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="RepositoryDialog-close"><strong>close</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>The&nbsp;dialog&nbsp;was&nbsp;closed.</tt></dd></dl>
+
+<dl><dt><a name="RepositoryDialog-save"><strong>save</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>Set&nbsp;the&nbsp;entities&nbsp;to&nbsp;the&nbsp;dialog&nbsp;then&nbsp;write&nbsp;them.</tt></dd></dl>
+
+<dl><dt><a name="RepositoryDialog-setWindowPositionDeiconify"><strong>setWindowPositionDeiconify</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;window&nbsp;position&nbsp;if&nbsp;that&nbsp;setting&nbsp;exists.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="StringSetting">class <strong>StringSetting</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="StringSetting-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;value&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="StringSetting-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TextSetting">class <strong>TextSetting</strong></a>(<a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;text.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="TextSetting-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-getFromValue"><strong>getFromValue</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;entry&nbsp;field.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="TextSetting-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;value&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="TextSetting-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TokenConversion">class <strong>TokenConversion</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;convert&nbsp;tokens&nbsp;in&nbsp;a&nbsp;string.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="TokenConversion-__init__"><strong>__init__</strong></a>(self, name<font color="#909090">='replaceToken'</font>, token<font color="#909090">='___replaced___'</font>)</dt><dd><tt>Set&nbsp;the&nbsp;name&nbsp;and&nbsp;token.</tt></dd></dl>
+
+<dl><dt><a name="TokenConversion-getNamedString"><strong>getNamedString</strong></a>(self, text)</dt><dd><tt>Get&nbsp;a&nbsp;string&nbsp;with&nbsp;the&nbsp;tokens&nbsp;changed&nbsp;to&nbsp;names.</tt></dd></dl>
+
+<dl><dt><a name="TokenConversion-getTokenizedString"><strong>getTokenizedString</strong></a>(self, text)</dt><dd><tt>Get&nbsp;a&nbsp;string&nbsp;with&nbsp;the&nbsp;names&nbsp;changed&nbsp;to&nbsp;tokens.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ToolDialog">class <strong>ToolDialog</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display&nbsp;the&nbsp;tool&nbsp;repository&nbsp;dialog.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ToolDialog-addPluginToMenu"><strong>addPluginToMenu</strong></a>(self, menu, path)</dt><dd><tt>Add&nbsp;the&nbsp;display&nbsp;command&nbsp;to&nbsp;the&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="ToolDialog-display"><strong>display</strong></a>(self)</dt><dd><tt>Display&nbsp;the&nbsp;tool&nbsp;repository&nbsp;dialog.</tt></dd></dl>
+
+<dl><dt><a name="ToolDialog-getFromPath"><strong>getFromPath</strong></a>(self, path)</dt><dd><tt>Initialize&nbsp;and&nbsp;return&nbsp;display&nbsp;function.</tt></dd></dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="WindowPosition">class <strong>WindowPosition</strong></a>(<a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>A&nbsp;class&nbsp;to&nbsp;display,&nbsp;read&nbsp;&amp;&nbsp;write&nbsp;a&nbsp;window&nbsp;position.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="WindowPosition-addToDialog"><strong>addToDialog</strong></a>(self, gridPosition)</dt><dd><tt>Set&nbsp;the&nbsp;root&nbsp;to&nbsp;later&nbsp;get&nbsp;the&nbsp;geometry.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-getFromValue"><strong>getFromValue</strong></a>(self, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-setToDisplay"><strong>setToDisplay</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;string&nbsp;to&nbsp;the&nbsp;window&nbsp;position.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-setWindowPosition"><strong>setWindowPosition</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;window&nbsp;position.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="fabmetheus_utilities.settings.html#StringSetting">StringSetting</a>:<br>
+<dl><dt><a name="WindowPosition-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function&nbsp;to&nbsp;none.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Get&nbsp;the&nbsp;string&nbsp;representation&nbsp;of&nbsp;this&nbsp;<a href="#StringSetting">StringSetting</a>.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-addToMenu"><strong>addToMenu</strong></a>(self, repositoryMenu)</dt><dd><tt>Do&nbsp;nothing&nbsp;because&nbsp;this&nbsp;should&nbsp;only&nbsp;be&nbsp;added&nbsp;to&nbsp;a&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-addToMenuFrameable"><strong>addToMenuFrameable</strong></a>(self, repositoryMenu)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;frameable&nbsp;repository&nbsp;menu.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-addToWindow"><strong>addToWindow</strong></a>(self)</dt><dd><tt>Add&nbsp;this&nbsp;to&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-bindEntry"><strong>bindEntry</strong></a>(self)</dt><dd><tt>Bind&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-createEntry"><strong>createEntry</strong></a>(self, root)</dt><dd><tt>Create&nbsp;the&nbsp;entry.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-getFromValueOnly"><strong>getFromValueOnly</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-getFromValueOnlyAddToRepository"><strong>getFromValueOnlyAddToRepository</strong></a>(self, name, repository, value)</dt><dd><tt>Initialize.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-removeFromWindow"><strong>removeFromWindow</strong></a>(self)</dt><dd><tt>Remove&nbsp;this&nbsp;from&nbsp;the&nbsp;repository&nbsp;frame&nbsp;list.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-setStateToValue"><strong>setStateToValue</strong></a>(self)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;to&nbsp;the&nbsp;value.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-setUpdateFunction"><strong>setUpdateFunction</strong></a>(self, updateFunction)</dt><dd><tt>Set&nbsp;the&nbsp;update&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-setValueToSplitLine"><strong>setValueToSplitLine</strong></a>(self, lineIndex, lines, splitLine)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;second&nbsp;word&nbsp;of&nbsp;a&nbsp;split&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-setValueToString"><strong>setValueToString</strong></a>(self, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;value&nbsp;string.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-updateSaveListeners"><strong>updateSaveListeners</strong></a>(self)</dt><dd><tt>Update&nbsp;save&nbsp;listeners&nbsp;if&nbsp;any.</tt></dd></dl>
+
+<dl><dt><a name="WindowPosition-writeToRepositoryWriter"><strong>writeToRepositoryWriter</strong></a>(self, repositoryWriter)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;value&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-addAcceleratorCommand"><strong>addAcceleratorCommand</strong></a>(acceleratorBinding, commandFunction, master, menu, text)</dt><dd><tt>Add&nbsp;accelerator&nbsp;command.</tt></dd></dl>
+ <dl><dt><a name="-addEmptyRow"><strong>addEmptyRow</strong></a>(gridPosition)</dt><dd><tt>Add&nbsp;an&nbsp;empty&nbsp;row.</tt></dd></dl>
+ <dl><dt><a name="-addListsToRepository"><strong>addListsToRepository</strong></a>(fileNameHelp, repository)</dt><dd><tt>Add&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;lists.</tt></dd></dl>
+ <dl><dt><a name="-addListsToRepositoryByFunction"><strong>addListsToRepositoryByFunction</strong></a>(fileNameHelp, getProfileDirectory, repository)</dt><dd><tt>Add&nbsp;the&nbsp;value&nbsp;to&nbsp;the&nbsp;lists.</tt></dd></dl>
+ <dl><dt><a name="-addMenuEntitiesToMenu"><strong>addMenuEntitiesToMenu</strong></a>(menu, menuEntities)</dt><dd><tt>Add&nbsp;the&nbsp;menu&nbsp;entities&nbsp;to&nbsp;the&nbsp;menu.</tt></dd></dl>
+ <dl><dt><a name="-addMenuEntitiesToMenuFrameable"><strong>addMenuEntitiesToMenuFrameable</strong></a>(menu, menuEntities)</dt><dd><tt>Add&nbsp;the&nbsp;menu&nbsp;entities&nbsp;to&nbsp;the&nbsp;menu.</tt></dd></dl>
+ <dl><dt><a name="-addPluginsParentToMenu"><strong>addPluginsParentToMenu</strong></a>(directoryPath, menu, parentPath, pluginFileNames)</dt><dd><tt>Add&nbsp;plugins&nbsp;and&nbsp;the&nbsp;parent&nbsp;to&nbsp;the&nbsp;menu.</tt></dd></dl>
+ <dl><dt><a name="-addPluginsToMenu"><strong>addPluginsToMenu</strong></a>(directoryPath, menu, pluginFileNames)</dt><dd><tt>Add&nbsp;plugins&nbsp;to&nbsp;the&nbsp;menu.</tt></dd></dl>
+ <dl><dt><a name="-cancelRepository"><strong>cancelRepository</strong></a>(repository)</dt><dd><tt>Read&nbsp;the&nbsp;repository&nbsp;then&nbsp;set&nbsp;all&nbsp;the&nbsp;entities&nbsp;to&nbsp;the&nbsp;read&nbsp;repository&nbsp;values.</tt></dd></dl>
+ <dl><dt><a name="-deleteDirectory"><strong>deleteDirectory</strong></a>(directory, subfolderName)</dt><dd><tt>Delete&nbsp;the&nbsp;directory&nbsp;if&nbsp;it&nbsp;exists.</tt></dd></dl>
+ <dl><dt><a name="-deleteMenuItems"><strong>deleteMenuItems</strong></a>(menu)</dt><dd><tt>Delete&nbsp;the&nbsp;menu&nbsp;items.</tt></dd></dl>
+ <dl><dt><a name="-getAlongWayHexadecimalColor"><strong>getAlongWayHexadecimalColor</strong></a>(beginBrightness, colorWidth, difference, endColorTuple, wayLength)</dt><dd><tt>Get&nbsp;a&nbsp;color&nbsp;along&nbsp;the&nbsp;way&nbsp;from&nbsp;begin&nbsp;brightness&nbsp;to&nbsp;the&nbsp;end&nbsp;color.</tt></dd></dl>
+ <dl><dt><a name="-getAlongWayHexadecimalPrimary"><strong>getAlongWayHexadecimalPrimary</strong></a>(beginBrightness, beginRatio, colorWidth, endBrightness, endRatio)</dt><dd><tt>Get&nbsp;a&nbsp;primary&nbsp;color&nbsp;along&nbsp;the&nbsp;way&nbsp;from&nbsp;grey&nbsp;to&nbsp;the&nbsp;end&nbsp;color.</tt></dd></dl>
+ <dl><dt><a name="-getAlterationFile"><strong>getAlterationFile</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;from&nbsp;the&nbsp;fileName&nbsp;or&nbsp;the&nbsp;lowercase&nbsp;fileName&nbsp;in&nbsp;the&nbsp;alterations&nbsp;directories.</tt></dd></dl>
+ <dl><dt><a name="-getAlterationFileLine"><strong>getAlterationFileLine</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;alteration&nbsp;file&nbsp;line&nbsp;from&nbsp;the&nbsp;fileName.</tt></dd></dl>
+ <dl><dt><a name="-getAlterationFileLineBlindly"><strong>getAlterationFileLineBlindly</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;alteration&nbsp;file&nbsp;line&nbsp;from&nbsp;the&nbsp;fileName.</tt></dd></dl>
+ <dl><dt><a name="-getAlterationFileLines"><strong>getAlterationFileLines</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;alteration&nbsp;file&nbsp;line&nbsp;and&nbsp;the&nbsp;text&nbsp;lines&nbsp;from&nbsp;the&nbsp;fileName&nbsp;in&nbsp;the&nbsp;alterations&nbsp;directories.</tt></dd></dl>
+ <dl><dt><a name="-getAlterationLines"><strong>getAlterationLines</strong></a>(fileName)</dt><dd><tt>Get&nbsp;the&nbsp;text&nbsp;lines&nbsp;from&nbsp;the&nbsp;fileName&nbsp;in&nbsp;the&nbsp;alterations&nbsp;directories.</tt></dd></dl>
+ <dl><dt><a name="-getDisplayToolButtonsRepository"><strong>getDisplayToolButtonsRepository</strong></a>(directoryPath, importantFileNames, names, repository)</dt><dd><tt>Get&nbsp;the&nbsp;display&nbsp;tool&nbsp;buttons.</tt></dd></dl>
+ <dl><dt><a name="-getDisplayedDialogFromConstructor"><strong>getDisplayedDialogFromConstructor</strong></a>(repository)</dt><dd><tt>Display&nbsp;the&nbsp;repository&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-getDisplayedDialogFromPath"><strong>getDisplayedDialogFromPath</strong></a>(path)</dt><dd><tt>Display&nbsp;the&nbsp;repository&nbsp;dialog.</tt></dd></dl>
+ <dl><dt><a name="-getEachWordCapitalized"><strong>getEachWordCapitalized</strong></a>(name)</dt><dd><tt>Get&nbsp;the&nbsp;capitalized&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getFileInGivenDirectory"><strong>getFileInGivenDirectory</strong></a>(directory, fileName)</dt><dd><tt>Get&nbsp;the&nbsp;file&nbsp;from&nbsp;the&nbsp;fileName&nbsp;or&nbsp;the&nbsp;lowercase&nbsp;fileName&nbsp;in&nbsp;the&nbsp;given&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getFileTextGivenDirectoryFileName"><strong>getFileTextGivenDirectoryFileName</strong></a>(directory, fileName)</dt><dd><tt>Get&nbsp;the&nbsp;entire&nbsp;text&nbsp;of&nbsp;a&nbsp;file&nbsp;with&nbsp;the&nbsp;given&nbsp;file&nbsp;name&nbsp;in&nbsp;the&nbsp;given&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getFolders"><strong>getFolders</strong></a>(directory)</dt><dd><tt>Get&nbsp;the&nbsp;folder&nbsp;list&nbsp;in&nbsp;a&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getGlobalRepositoryDialogValues"><strong>getGlobalRepositoryDialogValues</strong></a>()</dt><dd><tt>Get&nbsp;the&nbsp;global&nbsp;repository&nbsp;dialog&nbsp;values.</tt></dd></dl>
+ <dl><dt><a name="-getPathInFabmetheusFromFileNameHelp"><strong>getPathInFabmetheusFromFileNameHelp</strong></a>(fileNameHelp)</dt><dd><tt>Get&nbsp;the&nbsp;directory&nbsp;path&nbsp;from&nbsp;file&nbsp;name&nbsp;help.</tt></dd></dl>
+ <dl><dt><a name="-getProfileBaseName"><strong>getProfileBaseName</strong></a>(repository)</dt><dd><tt>Get&nbsp;the&nbsp;profile&nbsp;base&nbsp;file&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getProfileName"><strong>getProfileName</strong></a>(name, repository)</dt><dd><tt>Get&nbsp;the&nbsp;name,&nbsp;joined&nbsp;with&nbsp;the&nbsp;profile&nbsp;directory&nbsp;if&nbsp;there&nbsp;is&nbsp;one.</tt></dd></dl>
+ <dl><dt><a name="-getProfilesDirectoryInAboveDirectory"><strong>getProfilesDirectoryInAboveDirectory</strong></a>(subName<font color="#909090">=''</font>)</dt><dd><tt>Get&nbsp;the&nbsp;profiles&nbsp;directory&nbsp;path&nbsp;in&nbsp;the&nbsp;above&nbsp;directory.</tt></dd></dl>
+ <dl><dt><a name="-getRadioPluginsAddPluginFrame"><strong>getRadioPluginsAddPluginFrame</strong></a>(directoryPath, importantFileNames, names, repository)</dt><dd><tt>Get&nbsp;the&nbsp;radio&nbsp;plugins&nbsp;and&nbsp;add&nbsp;the&nbsp;plugin&nbsp;frame.</tt></dd></dl>
+ <dl><dt><a name="-getReadRepository"><strong>getReadRepository</strong></a>(repository)</dt><dd><tt>Read&nbsp;and&nbsp;return&nbsp;settings&nbsp;from&nbsp;a&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-getRepositoryText"><strong>getRepositoryText</strong></a>(repository)</dt><dd><tt>Get&nbsp;the&nbsp;text&nbsp;representation&nbsp;of&nbsp;the&nbsp;repository.</tt></dd></dl>
+ <dl><dt><a name="-getRepositoryWriter"><strong>getRepositoryWriter</strong></a>(title)</dt><dd><tt>Get&nbsp;the&nbsp;repository&nbsp;writer&nbsp;for&nbsp;the&nbsp;title.</tt></dd></dl>
+ <dl><dt><a name="-getSelectedPluginModuleFromPath"><strong>getSelectedPluginModuleFromPath</strong></a>(filePath, plugins)</dt><dd><tt>Get&nbsp;the&nbsp;selected&nbsp;plugin&nbsp;module.</tt></dd></dl>
+ <dl><dt><a name="-getSelectedPluginName"><strong>getSelectedPluginName</strong></a>(plugins)</dt><dd><tt>Get&nbsp;the&nbsp;selected&nbsp;plugin&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getSelectedRadioPlugin"><strong>getSelectedRadioPlugin</strong></a>(names, radioPlugins)</dt><dd><tt>Get&nbsp;the&nbsp;selected&nbsp;radio&nbsp;button&nbsp;if&nbsp;it&nbsp;exists,&nbsp;None&nbsp;otherwise.</tt></dd></dl>
+ <dl><dt><a name="-getShortestUniqueSettingName"><strong>getShortestUniqueSettingName</strong></a>(settingName, settings)</dt><dd><tt>Get&nbsp;the&nbsp;shortest&nbsp;unique&nbsp;name&nbsp;in&nbsp;the&nbsp;settings.</tt></dd></dl>
+ <dl><dt><a name="-getSubfolderWithBasename"><strong>getSubfolderWithBasename</strong></a>(basename, directory)</dt><dd><tt>Get&nbsp;the&nbsp;subfolder&nbsp;in&nbsp;the&nbsp;directory&nbsp;with&nbsp;the&nbsp;basename.</tt></dd></dl>
+ <dl><dt><a name="-getTitleFromName"><strong>getTitleFromName</strong></a>(title)</dt><dd><tt>Get&nbsp;the&nbsp;title&nbsp;of&nbsp;this&nbsp;setting.</tt></dd></dl>
+ <dl><dt><a name="-getUntilFirstBracket"><strong>getUntilFirstBracket</strong></a>(text)</dt><dd><tt>Get&nbsp;the&nbsp;text&nbsp;until&nbsp;the&nbsp;first&nbsp;bracket,&nbsp;if&nbsp;any.</tt></dd></dl>
+ <dl><dt><a name="-getWidthHex"><strong>getWidthHex</strong></a>(number, width)</dt><dd><tt>Get&nbsp;the&nbsp;first&nbsp;width&nbsp;hexadecimal&nbsp;digits.</tt></dd></dl>
+ <dl><dt><a name="-liftRepositoryDialogs"><strong>liftRepositoryDialogs</strong></a>(repositoryDialogs)</dt><dd><tt>Lift&nbsp;the&nbsp;repository&nbsp;dialogs.</tt></dd></dl>
+ <dl><dt><a name="-openSVGPage"><strong>openSVGPage</strong></a>(fileName, svgViewer)</dt><dd><tt>Open&nbsp;svg&nbsp;page&nbsp;with&nbsp;an&nbsp;svg&nbsp;program.</tt></dd></dl>
+ <dl><dt><a name="-openWebPage"><strong>openWebPage</strong></a>(webPagePath)</dt><dd><tt>Open&nbsp;a&nbsp;web&nbsp;page&nbsp;in&nbsp;a&nbsp;browser.</tt></dd></dl>
+ <dl><dt><a name="-printProgress"><strong>printProgress</strong></a>(layerIndex, procedureName)</dt><dd><tt>Print&nbsp;layerIndex&nbsp;followed&nbsp;by&nbsp;a&nbsp;carriage&nbsp;return.</tt></dd></dl>
+ <dl><dt><a name="-printProgressByNumber"><strong>printProgressByNumber</strong></a>(layerIndex, numberOfLayers, procedureName)</dt><dd><tt>Print&nbsp;layerIndex&nbsp;and&nbsp;numberOfLayers&nbsp;followed&nbsp;by&nbsp;a&nbsp;carriage&nbsp;return.</tt></dd></dl>
+ <dl><dt><a name="-printProgressByString"><strong>printProgressByString</strong></a>(progressString)</dt><dd><tt>Print&nbsp;progress&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-quitWindow"><strong>quitWindow</strong></a>(root)</dt><dd><tt>Quit&nbsp;a&nbsp;window.</tt></dd></dl>
+ <dl><dt><a name="-quitWindows"><strong>quitWindows</strong></a>(event<font color="#909090">=None</font>)</dt><dd><tt>Quit&nbsp;all&nbsp;windows.</tt></dd></dl>
+ <dl><dt><a name="-readSettingsFromText"><strong>readSettingsFromText</strong></a>(repository, text)</dt><dd><tt>Read&nbsp;settings&nbsp;from&nbsp;a&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-saveAll"><strong>saveAll</strong></a>()</dt><dd><tt>Save&nbsp;all&nbsp;the&nbsp;dialogs.</tt></dd></dl>
+ <dl><dt><a name="-saveRepository"><strong>saveRepository</strong></a>(repository)</dt><dd><tt>Set&nbsp;the&nbsp;entities&nbsp;to&nbsp;the&nbsp;dialog&nbsp;then&nbsp;write&nbsp;them.</tt></dd></dl>
+ <dl><dt><a name="-setButtonFontWeightString"><strong>setButtonFontWeightString</strong></a>(button, isBold)</dt><dd><tt>Set&nbsp;button&nbsp;font&nbsp;weight&nbsp;given&nbsp;isBold.</tt></dd></dl>
+ <dl><dt><a name="-setEntryText"><strong>setEntryText</strong></a>(entry, value)</dt><dd><tt>Set&nbsp;the&nbsp;entry&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-setIntegerValueToString"><strong>setIntegerValueToString</strong></a>(integerSetting, valueString)</dt><dd><tt>Set&nbsp;the&nbsp;integer&nbsp;to&nbsp;the&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-setRepositoryToLine"><strong>setRepositoryToLine</strong></a>(lineIndex, lines, shortDictionary)</dt><dd><tt>Set&nbsp;setting&nbsp;dictionary&nbsp;to&nbsp;a&nbsp;setting&nbsp;line.globalSettingReplacements</tt></dd></dl>
+ <dl><dt><a name="-setSpinColor"><strong>setSpinColor</strong></a>(setting)</dt><dd><tt>Set&nbsp;the&nbsp;spin&nbsp;box&nbsp;color&nbsp;to&nbsp;the&nbsp;value,&nbsp;yellow&nbsp;if&nbsp;it&nbsp;is&nbsp;lower&nbsp;than&nbsp;the&nbsp;default&nbsp;and&nbsp;blue&nbsp;if&nbsp;it&nbsp;is&nbsp;higher.</tt></dd></dl>
+ <dl><dt><a name="-startMainLoopFromConstructor"><strong>startMainLoopFromConstructor</strong></a>(repository)</dt><dd><tt>Display&nbsp;the&nbsp;repository&nbsp;dialog&nbsp;and&nbsp;start&nbsp;the&nbsp;main&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-startMainLoopFromWindow"><strong>startMainLoopFromWindow</strong></a>(window)</dt><dd><tt>Display&nbsp;the&nbsp;tableau&nbsp;window&nbsp;and&nbsp;start&nbsp;the&nbsp;main&nbsp;loop.</tt></dd></dl>
+ <dl><dt><a name="-temporaryAddPreferenceOverride"><strong>temporaryAddPreferenceOverride</strong></a>(module, name, value)</dt></dl>
+ <dl><dt><a name="-temporaryApplyOverrides"><strong>temporaryApplyOverrides</strong></a>(repository)</dt><dd><tt>Apply&nbsp;any&nbsp;overrides&nbsp;that&nbsp;have&nbsp;been&nbsp;set&nbsp;at&nbsp;the&nbsp;command&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-writeSettings"><strong>writeSettings</strong></a>(repository)</dt><dd><tt>Write&nbsp;the&nbsp;settings&nbsp;to&nbsp;a&nbsp;file.</tt></dd></dl>
+ <dl><dt><a name="-writeSettingsPrintMessage"><strong>writeSettingsPrintMessage</strong></a>(repository)</dt><dd><tt>Set&nbsp;the&nbsp;settings&nbsp;to&nbsp;the&nbsp;dialog&nbsp;then&nbsp;write&nbsp;them.</tt></dd></dl>
+ <dl><dt><a name="-writeValueListToRepositoryWriter"><strong>writeValueListToRepositoryWriter</strong></a>(repositoryWriter, setting)</dt><dd><tt>Write&nbsp;tab&nbsp;separated&nbsp;name&nbsp;and&nbsp;list&nbsp;to&nbsp;the&nbsp;repository&nbsp;writer.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>__author__</strong> = 'Enrique Perez (perez_enrique@yahoo.com)'<br>
+<strong>__date__</strong> = '$Date: 2008/23/04 $'<br>
+<strong>__license__</strong> = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'<br>
+<strong>absolute_import</strong> = _Feature((2, 5, 0, 'alpha', 1), (2, 7, 0, 'alpha', 0), 16384)<br>
+<strong>globalCloseListTables</strong> = [{}, {}]<br>
+<strong>globalProfileSaveListenerListTable</strong> = {}<br>
+<strong>globalRepositoryDialogListTable</strong> = {}<br>
+<strong>globalSettingReplacements</strong> = {'Layer Thickness (mm):': 'Layer Height (mm):', 'Location Arrival X (mm):': 'Arrival X (mm):', 'Location Arrival Y (mm):': 'Arrival Y (mm):', 'Location Arrival Z (mm):': 'Arrival Z (mm):', 'Location Departure X (mm):': 'Departure X (mm):', 'Location Departure Y (mm):': 'Departure Y (mm):', 'Location Departure Z (mm):': 'Departure Z (mm):', 'Location Wipe X (mm):': 'Wipe X (mm):', 'Location Wipe Y (mm):': 'Wipe Y (mm):', 'Location Wipe Z (mm):': 'Wipe Z (mm):', ...}<br>
+<strong>globalSpreadsheetSeparator</strong> = '<font color="#c040c0">\t</font>'<br>
+<strong>globalTemporaryOverrides</strong> = {}</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#7799ee">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Enrique&nbsp;Perez&nbsp;(perez_enrique@yahoo.com)</td></tr></table>
+</body></html>

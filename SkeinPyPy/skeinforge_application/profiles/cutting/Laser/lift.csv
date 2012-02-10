@@ -1,0 +1,7 @@
+Format is tab separated lift preferences.
+Name                          	Value
+Activate Lift:	True
+Cutting Lift over Layer Step (ratio):	0.0
+Open File to be Lifted	/home/enrique/Desktop/backup/babbleold/script/reprap/pyRepRap/skeinforge_tools/craft_plugins/Screw Holder Bottom.stl
+Clearance above Top (mm):	5.0
+windowPositionLift Preferences	440+53

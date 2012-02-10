@@ -1,0 +1,26 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<dictionary add='="aB".add(aBc)'/>
+	<dictionary append='="aB".append(aBc)'/>
+	<dictionary capitalize='="aB".capitalize()'/>
+	<dictionary center='="aB".center(9,$w)'/>
+	<dictionary concatenate='=$aB||$aBc'/>
+	<dictionary concatenatethree='=$aB||$c'/>
+	<dictionary copy='=$aBcde[]'/>
+	<dictionary deleteThree='="aBcde".delete(3)'/>
+	<dictionary dollarSignAppend='=$aB.append(aBc)'/>
+	<dictionary endsWith='="aB".endswith(b)'/>
+	<dictionary expansion='="aB".getExpansion(3)'/>
+	<dictionary index='=$aBcde.index(B)'/>
+	<dictionary insert='="aBcde".insert(3,w)'/>
+	<dictionary isIn='="aBcde".getIsIn(s)'/>
+	<dictionary keys='="aB".keys()'/>
+	<dictionary lower='="aB".lower()'/>
+	<dictionary range5one='=$aBcde[1]'/>
+	<dictionary range5onecomma3='=$aBcde[1, 3]'/>
+	<dictionary range5onethrough3='=$aBcde[3, -1, -1]'/>
+	<dictionary remove='="aBcde".remove(cd)'/>
+	<dictionary reverse5='=$aBcde[None, None, -1]'/>
+	<dictionary reverseFunction='=(aBcde).reverse()'/>
+	<dictionary values='="aBcde".values()'/>
+</fabmetheus>

@@ -1,0 +1,20 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<dictionary abs='=math.abs(-3)'/>
+	<dictionary boolean='=math.boolean(1)'/>
+	<dictionary ceilPointSix='=math.ceil(0.6)'/>
+	<dictionary e='=math.e'/>
+	<dictionary euler='=math.euler'/>
+	<dictionary float='=math.float(True)'/>
+	<dictionary floorPointSix='=math.floor(0.6)'/>
+	<dictionary golden='=math.golden'/>
+	<dictionary hex='=math.hex(-3)'/>
+	<dictionary maxTwoThree='=math.max(2,3)'/>
+	<dictionary minTwoThree='=math.min(2,3)'/>
+	<dictionary pi='=math.pi'/>
+	<dictionary pow4minus3='=math.pow(4, -3)'/>
+	<dictionary roundPointSix='=math.round(0.6)'/>
+	<dictionary sinpoint1='=1+math.sin(0.1)'/>
+	<dictionary stringOne='=math.string($1)'/>
+	<dictionary tau='=math.tau'/>
+</fabmetheus>

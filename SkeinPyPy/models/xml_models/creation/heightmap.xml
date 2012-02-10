@@ -1,0 +1,6 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<heightmap file='heightmap_1.pgm' heightGrid='[[0.0, 0.0], [0.3, 0.4]]'/>
+	<!--
+	-->
+</fabmetheus>

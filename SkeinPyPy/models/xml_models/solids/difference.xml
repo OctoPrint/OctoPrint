@@ -1,0 +1,10 @@
+<?xml version='1.0' ?>
+<fabmetheus>
+	<difference id='ring'>
+		<circle radius='10'/>
+		<circle radius='8'/>
+	</difference>
+	<extrude target='=document.getElementByID(ring)'/>
+	<!--
+	-->
+</fabmetheus>
