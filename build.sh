@@ -7,6 +7,7 @@
 PYPY_VERSION=1.8
 WIN_PORTABLE_PY_VERSION=2.7.2.1
 WIN_PYSERIAL_VERSION=2.5
+BUILD_NAME=Alpha4
 
 #############################
 # Actual build script
@@ -66,9 +67,9 @@ rm -rf PURELIB
 #Extract pypy
 7z x pypy-${PYPY_VERSION}-win32.zip -otarget_win32
 mv target_win32/pypy-${PYPY_VERSION} target_win32/pypy
-7z x pypy-${PYPY_VERSION}-linux.bz2 -otarget_linux
+cd target_linux; tar -xjf ../pypy-${PYPY_VERSION}-linux.tar.bz2; cd ..
 mv target_linux/pypy-${PYPY_VERSION} target_linux/pypy
-7z x pypy-${PYPY_VERSION}-osx64.bz2 -otarget_osx64
+cd target_osx64; tar -xjf ../pypy-${PYPY_VERSION}-osx64.tar.bz2; cd ..
 mv target_linux/pypy-${PYPY_VERSION} target_osx64/pypy
 
 #add Skeinforge
@@ -92,12 +93,12 @@ cp README target_osx64/README.txt
 
 #package the result
 cd target_win32
-7z a ../SkeinPyPy_Win32.zip *
+7z a ../SkeinPyPy_Win32_${BUILD_NAME}.zip *
 cd ..
 cd target_linux
-7z a ../SkeinPyPy_Linux.zip *
+7z a ../SkeinPyPy_Linux_${BUILD_NAME}.zip *
 cd ..
 cd target_osx64
-7z a ../SkeinPyPy_MacOSX.zip *
+7z a ../SkeinPyPy_MacOSX_${BUILD_NAME}.zip *
 cd ..
 
