@@ -913,8 +913,8 @@ class FileHelpMenuBar:
 		addAcceleratorCommand('<Control-KeyPress-q>', quitWindows, self.root, self.fileMenu, 'Quit')
 		skeinforgePluginsPath = archive.getSkeinforgePath('skeinforge_plugins')
 		pluginFileNames = archive.getPluginFileNamesFromDirectoryPath(skeinforgePluginsPath)
-		for pluginFileName in pluginFileNames:
-			self.addPluginToMenuBar(os.path.join(skeinforgePluginsPath, pluginFileName), repository, window)
+		#for pluginFileName in pluginFileNames:
+		#	self.addPluginToMenuBar(os.path.join(skeinforgePluginsPath, pluginFileName), repository, window)
 
 	def saveClose(self):
 		"Call the save function then the close function."
