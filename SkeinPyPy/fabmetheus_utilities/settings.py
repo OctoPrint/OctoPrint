@@ -1605,10 +1605,10 @@ class PluginFrame:
 		gridVertical.frameGridVertical = GridVertical( 0, 0 )
 		gridVertical.frameGridVertical.setExecutablesRepository( gridVertical.repository )
 		executeTitle = gridVertical.repository.executeTitle
-		if executeTitle != None:
-			executeButton = Tkinter.Button( gridVertical.master, activebackground = 'black', activeforeground = 'blue', text = executeTitle, command = gridVertical.frameGridVertical.execute )
-			executeButton.grid( row = gridVertical.row, column = gridVertical.column, sticky = Tkinter.W )
-			gridVertical.column += 1
+		#if executeTitle != None:
+		#	executeButton = Tkinter.Button( gridVertical.master, activebackground = 'black', activeforeground = 'blue', text = executeTitle, command = gridVertical.frameGridVertical.execute )
+		#	executeButton.grid( row = gridVertical.row, column = gridVertical.column, sticky = Tkinter.W )
+		#	gridVertical.column += 1
 		self.helpButton = Tkinter.Button( gridVertical.master, activebackground = 'black', activeforeground = 'white', text = "?", command = HelpPageRepository( gridVertical.repository ).openPage )
 		self.helpButton.grid( row = gridVertical.row, column = gridVertical.column, sticky = Tkinter.W )
 		addEmptyRow( gridVertical )
@@ -1713,12 +1713,12 @@ class PluginGroupFrame( PluginFrame ):
 		gridVertical.repository = getReadRepository( pluginModule.getNewRepository() )
 		gridVertical.setExecutablesRepository( gridVertical.repository )
 		executeTitle = gridVertical.repository.executeTitle
-		if executeTitle != None:
-			executeButton = Tkinter.Button( gridVertical.master, activebackground = 'black', activeforeground = 'blue', text = executeTitle, command = gridVertical.execute )
-			executeButton.grid( row = gridVertical.row, column = gridVertical.column, sticky = Tkinter.W )
-			gridVertical.column += 1
-		self.helpButton = Tkinter.Button( gridVertical.master, activebackground = 'black', activeforeground = 'white', text = "?", command = HelpPageRepository( gridVertical.repository ).openPage )
-		self.helpButton.grid( row = gridVertical.row, column = gridVertical.column, sticky = Tkinter.W )
+		#if executeTitle != None:
+		#	executeButton = Tkinter.Button( gridVertical.master, activebackground = 'black', activeforeground = 'blue', text = executeTitle, command = gridVertical.execute )
+		#	executeButton.grid( row = gridVertical.row, column = gridVertical.column, sticky = Tkinter.W )
+		#	gridVertical.column += 1
+		#self.helpButton = Tkinter.Button( gridVertical.master, activebackground = 'black', activeforeground = 'white', text = "?", command = HelpPageRepository( gridVertical.repository ).openPage )
+		#self.helpButton.grid( row = gridVertical.row, column = gridVertical.column, sticky = Tkinter.W )
 		addEmptyRow( gridVertical )
 		gridVertical.increment()
 		for setting in gridVertical.repository.displayEntities:
