@@ -285,7 +285,7 @@ class DimensionSkein:
 			print(splitLine)
 			return ''
 		if self.operatingFlowRate == None:
-			return self.getExtrusionDistanceStringFromExtrusionDistance(self.flowScaleSixty / 60 * distance)
+			return self.getExtrusionDistanceStringFromExtrusionDistance(self.flowScaleSixty / 60.0 * distance)
 		else:
 			scaledFlowRate = self.flowRate * self.flowScaleSixty
 			return self.getExtrusionDistanceStringFromExtrusionDistance(scaledFlowRate / self.feedRateMinute * distance)
