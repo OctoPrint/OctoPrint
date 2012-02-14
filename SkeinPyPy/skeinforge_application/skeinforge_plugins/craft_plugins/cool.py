@@ -374,7 +374,8 @@ class CoolSkein:
 				self.addOrbitsIfNecessary(remainingOrbitTime)
 			else:
 				self.setMultiplier(remainingOrbitTime)
-				self.addFlowRate(self.multiplier * self.oldFlowRate)
+				if self.oldFlowRate != None:
+					self.addFlowRate(self.multiplier * self.oldFlowRate)
 			z = float(splitLine[1])
 			self.boundaryLayer = euclidean.LoopLayer(z)
 			self.highestZ = max(z, self.highestZ)
@@ -386,7 +387,8 @@ class CoolSkein:
 			if self.coolTemperature != None:
 				self.addTemperature(self.oldTemperature)
 				self.coolTemperature = None
-			self.addFlowRate(self.oldFlowRate)
+			if self.oldFlowRate != None:
+				self.addFlowRate(self.oldFlowRate)
 		elif firstWord == '(<nestedRing>)':
 			self.boundaryLoop = []
 			self.boundaryLayer.loops.append(self.boundaryLoop)

@@ -211,9 +211,6 @@ class DimensionSkein:
 		if not self.repository.retractWithinIsland.value:
 			self.parseBoundaries()
 		self.flowScaleSixty = 60.0 * self.layerHeight * self.edgeWidth / filamentPackingArea
-		if self.operatingFlowRate == None:
-			print('There is no operatingFlowRate so dimension will do nothing.')
-			return gcodeText
 		self.restartDistance = self.repository.retractionDistance.value + self.repository.restartExtraDistance.value
 		self.extruderRetractionSpeedMinuteString = self.distanceFeedRate.getRounded(60.0 * self.repository.extruderRetractionSpeed.value)
 		if self.maximumZFeedRatePerSecond != None and self.travelFeedRatePerSecond != None:
@@ -287,8 +284,11 @@ class DimensionSkein:
 			print(distance)
 			print(splitLine)
 			return ''
-		scaledFlowRate = self.flowRate * self.flowScaleSixty
-		return self.getExtrusionDistanceStringFromExtrusionDistance(scaledFlowRate / self.feedRateMinute * distance)
+		if self.operatingFlowRate == None:
+			return self.getExtrusionDistanceStringFromExtrusionDistance(self.flowScaleSixty / 60 * distance)
+		else:
+			scaledFlowRate = self.flowRate * self.flowScaleSixty
+			return self.getExtrusionDistanceStringFromExtrusionDistance(scaledFlowRate / self.feedRateMinute * distance)
 
 	def getExtrusionDistanceStringFromExtrusionDistance(self, extrusionDistance):
 		'Get the extrusion distance string from the extrusion distance.'
