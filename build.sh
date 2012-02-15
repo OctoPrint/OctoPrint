@@ -123,7 +123,7 @@ cp README ${TARGET_DIR}/README.txt
 if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 	if [ $BUILD_TARGET = "win32" ]; then
 		cd ${TARGET_DIR}
-		7z a ../SkeinPyPy_${BUILD_TARGET}_${BUILD_NAME}.zip *
+		7z a ../${TARGET_DIR}.zip *
 		cd ..
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
