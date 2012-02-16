@@ -201,6 +201,11 @@ def isProcedureDone(gcodeText, procedure):
 		return False
 	extruderInitializationIndex = gcodeText.find('(</extruderInitialization>)')
 	if extruderInitializationIndex == -1:
+		metadataBeginIndex = gcodeText.find('<metadata>')
+		metadataEndIndex = gcodeText.find('</metadata>')
+		if metadataBeginIndex != -1 and metadataEndIndex != -1:
+			attributeString = "procedureName='%s'" % procedure
+			return gcodeText.find(attributeString, metadataBeginIndex, metadataEndIndex) != -1
 		return False
 	return gcodeText.find(getTagBracketedProcedure(procedure), 0, extruderInitializationIndex) != -1
 
@@ -260,6 +265,10 @@ class DistanceFeedRate:
 		self.decimalPlacesCarried = 3
 		self.output = cStringIO.StringIO()
 
+	def addFlowRateLine(self, flowRate):
+		'Add a flow rate line.'
+		self.output.write('M108 S%s\n' % euclidean.getFourSignificantFigures(flowRate))
+
 	def addGcodeFromFeedRateThreadZ(self, feedRateMinute, thread, travelFeedRateMinute, z):
 		'Add a thread to the output.'
 		if len(thread) > 0:
@@ -270,10 +279,10 @@ class DistanceFeedRate:
 			print('thread of only one point in addGcodeFromFeedRateThreadZ in gcodec, this should never happen.')
 			print(thread)
 			return
-		self.addLine('M101') # Turn extruder on.
+		self.output.write('M101\n') # Turn extruder on.
 		for point in thread[1 :]:
 			self.addGcodeMovementZWithFeedRate(feedRateMinute, point, z)
-		self.addLine('M103') # Turn extruder off.
+		self.output.write('M103\n') # Turn extruder off.
 
 	def addGcodeFromLoop(self, loop, z):
 		'Add the gcode loop.'
@@ -292,18 +301,24 @@ class DistanceFeedRate:
 			print('thread of only one point in addGcodeFromThreadZ in gcodec, this should never happen.')
 			print(thread)
 			return
-		self.addLine('M101') # Turn extruder on.
+		self.output.write('M101\n') # Turn extruder on.
 		for point in thread[1 :]:
 			self.addGcodeMovementZ(point, z)
-		self.addLine('M103') # Turn extruder off.
+		self.output.write('M103\n') # Turn extruder off.
 
 	def addGcodeMovementZ(self, point, z):
 		'Add a movement to the output.'
-		self.addLine(self.getLinearGcodeMovement(point, z))
+		self.output.write(self.getLinearGcodeMovement(point, z) + '\n')
 
 	def addGcodeMovementZWithFeedRate(self, feedRateMinute, point, z):
 		'Add a movement to the output.'
-		self.addLine(self.getLinearGcodeMovementWithFeedRate(feedRateMinute, point, z))
+		self.output.write(self.getLinearGcodeMovementWithFeedRate(feedRateMinute, point, z) + '\n')
+
+	def addGcodeMovementZWithFeedRateVector3(self, feedRateMinute, vector3):
+		'Add a movement to the output by Vector3.'
+		xRounded = self.getRounded(vector3.x)
+		yRounded = self.getRounded(vector3.y)
+		self.output.write('G1 X%s Y%s Z%s F%s\n' % (xRounded, yRounded, self.getRounded(vector3.z), self.getRounded(feedRateMinute)))
 
 	def addLine(self, line):
 		'Add a line of text and a newline to the output.'
@@ -392,7 +407,7 @@ class DistanceFeedRate:
 
 	def getLinearGcodeMovement(self, point, z):
 		'Get a linear gcode movement.'
-		return 'G1 X%s Y%s Z%s' % ( self.getRounded( point.real ), self.getRounded( point.imag ), self.getRounded(z) )
+		return 'G1 X%s Y%s Z%s' % (self.getRounded(point.real), self.getRounded(point.imag), self.getRounded(z))
 
 	def getLinearGcodeMovementWithFeedRate(self, feedRateMinute, point, z):
 		'Get a z limited gcode movement.'

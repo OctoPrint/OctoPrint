@@ -117,7 +117,7 @@ class SplodgeRepository:
 		settings.LabelDisplay().getFromName('- Operating -', self )
 		self.operatingLiftOverExtraThickness = settings.FloatSpin().getFromValue( 0.5, 'Operating Lift over Extra Thickness (ratio):', self, 1.5, 1.0 )
 		self.operatingSplodgeFeedRate = settings.FloatSpin().getFromValue( 0.4, 'Operating Splodge Feed Rate (mm/s):', self, 2.4, 1.0 )
-		self.operatingSplodgeQuantityLength = settings.FloatSpin().getFromValue( 0.4, 'Operating Splodge Quantity Length (millimeters):', self, 2.4, 1.0 )
+		self.operatingSplodgeQuantityLength = settings.FloatSpin().getFromValue(0.4, 'Operating Splodge Quantity Length (millimeters):', self, 2.4, 1.0)
 		settings.LabelSeparator().getFromRepository(self)
 		self.executeTitle = 'Splodge'
 

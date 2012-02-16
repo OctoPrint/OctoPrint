@@ -526,8 +526,8 @@ class TableauWindow:
 
 	def limitIndex(self):
 		'Limit the index so it is not below zero or above the top.'
-		self.repository.layer.value = max( 0, self.repository.layer.value )
-		self.repository.layer.value = min( len( self.skeinPanes ) - 1, self.repository.layer.value )
+		self.repository.layer.value = max(0, self.repository.layer.value)
+		self.repository.layer.value = min(len(self.skeinPanes) - 1, self.repository.layer.value)
 
 	def limitIndexSetArrowMouseDeleteCanvas(self):
 		'Limit the index, set the arrow type, and delete all the canvas items.'

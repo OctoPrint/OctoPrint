@@ -232,6 +232,12 @@ import platform
 import subprocess
 
 
+# dwindle check for close, document announce dwindle
+# document chamber: heated bed off at a layer http://blog.makerbot.com/2011/03/17/if-you-cant-stand-the-heat/
+# document announce volumeFraction
+# question, should 'Infill Odd Layer Extra Rotation' be dropped
+# consolidate Object First Layer Flow
+#
 # document raft, stretch, then carve, comb, fill, inset, oozebane, splodge, temperature, speed once they are updated
 # wiki document help, description, polyfile
 # subplugins like export static, maybe later mill cut and coil plugins, maybe later still export plugins & change file extension to output file extension  http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge
@@ -246,14 +252,9 @@ import subprocess
 # analyze doesn't save skeinlayer settings, remember xy in skeiniso
 #
 #
-#
-# question, should 'Infill Odd Layer Extra Rotation' be dropped
-# consolidate Object First Layer Flow
-#
 # retraction step leave
 # melt _extrusion
 # think about http://code.google.com/p/skeinarchiver/ and/or undo
-# add volume fraction to fill
 # getStrokeRadius default to edgeWidth
 # look at loop end removed bug in upper loop of layer 8 of Screw_Holder_alteration
 # fix tower edge line start problem
@@ -261,7 +262,6 @@ import subprocess
 # set temperature in temperature
 # maybe rename geometry_plugins xml
 # maybe add carve preview, opening it up in browser
-# dwindle or dawdle or taper
 # voronoi average location intersection looped inset intercircles
 # skin layers without something over the infill
 # check for last existing then remove unneeded fill code (getLastExistingFillLoops) from euclidean, add fill in penultimate loops, if there is no fill it should not use edge - skin should work
@@ -269,8 +269,8 @@ import subprocess
 # unpause slow flow rate instead of speeding feed rate
 # maybe in svgReader if loop intersection with previous union else add
 # add links download manual svg_writer, add left right arrow keys to layer
-# delete location from wipe, in other words Arrival X instead of Location Arrival X, also convert Location Arrival to Arrival Location
 # command
+# thin support When using support, thin column and then gradually widen: http://img534.imageshack.us/img534/514/overhang.jpg 
 # manipulation derivations
 # cutting ahmet
 #
@@ -279,7 +279,6 @@ import subprocess
 # check inset loop for intersection with loopLayer.loops
 # maybe make vectorwrite prominent, not skeiniso, probably not because it doesn't work on Mac
 # close, getPillarByLoopLists, addConcave, polymorph original graph section, loop, add step object, add continuous object
-# chamber: heated bed off at a layer http://blog.makerbot.com/2011/03/17/if-you-cant-stand-the-heat/
 # profile copy / rename   /   delete, maybe move craft type to profile
 # think about rectangular getVector3RemoveByPre..
 # del previous, add begin & end if far  get actual path
@@ -360,7 +359,6 @@ import subprocess
 # get arounds in inset, the inside become extrude loops and the outside below loops _speed
 #
 #
-# add hook _extrusion
 # integral thin width _extrusion
 # layer color, for multilayer start http://reprap.org/pub/Main/MultipleMaterialsFiles/legend.xml _extrusion
 # maybe raft triple layer base, middle interface with hot loop or ties
@@ -404,7 +402,6 @@ import subprocess
 # maybe split into source code and documentation sections
 # transform plugins, start with sarrus http://www.thingiverse.com/thing:1425
 # maybe make setting backups
-# move skeinforge_utilities to fabmetheus_utilities
 # maybe lathe cutting
 # maybe lathe extrusion
 # maybe lathe milling

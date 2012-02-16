@@ -62,19 +62,19 @@ __date__ = '$Date: 2008/21/04 $'
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 
-def getCraftedText( fileName, text, clipRepository = None ):
+def getCraftedText(fileName, text, repository=None):
 	"Clip a gcode linear move file or text."
-	return getCraftedTextFromText( archive.getTextIfEmpty(fileName, text), clipRepository )
+	return getCraftedTextFromText(archive.getTextIfEmpty(fileName, text), repository)
 
-def getCraftedTextFromText( gcodeText, clipRepository = None ):
+def getCraftedTextFromText(gcodeText, repository=None):
 	"Clip a gcode linear move text."
-	if gcodec.isProcedureDoneOrFileIsEmpty( gcodeText, 'clip'):
+	if gcodec.isProcedureDoneOrFileIsEmpty(gcodeText, 'clip'):
 		return gcodeText
-	if clipRepository == None:
-		clipRepository = settings.getReadRepository( ClipRepository() )
-	if not clipRepository.activateClip.value:
+	if repository == None:
+		repository = settings.getReadRepository(ClipRepository())
+	if not repository.activateClip.value:
 		return gcodeText
-	return ClipSkein().getCraftedGcode( clipRepository, gcodeText )
+	return ClipSkein().getCraftedGcode(gcodeText, repository)
 
 def getNewRepository():
 	'Get new repository.'
@@ -89,12 +89,12 @@ class ClipRepository:
 	"A class to handle the clip settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
-		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.clip.html', self )
-		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Clip', self, '')
+		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.clip.html', self)
+		self.fileNameInput = settings.FileNameInput().getFromFileName(fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Clip', self, '')
 		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute('http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Clip')
-		self.activateClip = settings.BooleanSetting().getFromValue('Activate Clip', self, False )
-		self.clipOverEdgeWidth = settings.FloatSpin().getFromValue( 0.1, 'Clip Over Perimeter Width (ratio):', self, 0.8, 0.5 )
-		self.maximumConnectionDistanceOverEdgeWidth = settings.FloatSpin().getFromValue( 1.0, 'Maximum Connection Distance Over Perimeter Width (ratio):', self, 20.0, 10.0 )
+		self.activateClip = settings.BooleanSetting().getFromValue('Activate Clip', self, False)
+		self.clipOverEdgeWidth = settings.FloatSpin().getFromValue(0.1, 'Clip Over Perimeter Width (ratio):', self, 0.8, 0.5)
+		self.maximumConnectionDistanceOverEdgeWidth = settings.FloatSpin().getFromValue(1.0, 'Maximum Connection Distance Over Perimeter Width (ratio):', self, 20.0, 10.0)
 		self.executeTitle = 'Clip'
 
 	def execute(self):
@@ -180,10 +180,11 @@ class ClipSkein:
 		euclidean.addValueSegmentToPixelTable( path[-1], locationComplex, self.layerPixelTable, None, self.layerPixelWidth )
 		return True
 
-	def getCraftedGcode( self, clipRepository, gcodeText ):
+	def getCraftedGcode(self, gcodeText, repository):
 		"Parse gcode text and store the clip gcode."
 		self.lines = archive.getTextLines(gcodeText)
-		self.parseInitialization( clipRepository )
+		self.repository = repository
+		self.parseInitialization()
 		for self.lineIndex in xrange(self.lineIndex, len(self.lines)):
 			line = self.lines[self.lineIndex]
 			self.parseLine(line)
@@ -243,7 +244,7 @@ class ClipSkein:
 			self.loopPath.path.append(location.dropAxis())
 		self.oldLocation = location
 
-	def parseInitialization(self, clipRepository):
+	def parseInitialization(self):
 		'Parse gcode initialization and store the parameters.'
 		for self.lineIndex in xrange(len(self.lines)):
 			line = self.lines[self.lineIndex]
@@ -254,13 +255,13 @@ class ClipSkein:
 				self.distanceFeedRate.addTagBracketedProcedure('clip')
 				return
 			elif firstWord == '(<edgeWidth>':
-				self.distanceFeedRate.addTagBracketedLine('clipOverEdgeWidth', clipRepository.clipOverEdgeWidth.value)
+				self.distanceFeedRate.addTagBracketedLine('clipOverEdgeWidth', self.repository.clipOverEdgeWidth.value)
 				self.edgeWidth = float(splitLine[1])
 				absoluteEdgeWidth = abs(self.edgeWidth)
-				self.clipLength = clipRepository.clipOverEdgeWidth * self.edgeWidth
+				self.clipLength = self.repository.clipOverEdgeWidth.value * self.edgeWidth
 				self.connectingStepLength = 0.5 * absoluteEdgeWidth
 				self.layerPixelWidth = 0.34321 * absoluteEdgeWidth
-				self.maximumConnectionDistance = clipRepository.maximumConnectionDistanceOverEdgeWidth.value * absoluteEdgeWidth
+				self.maximumConnectionDistance = self.repository.maximumConnectionDistanceOverEdgeWidth.value * absoluteEdgeWidth
 			elif firstWord == '(<travelFeedRatePerSecond>':
 				self.travelFeedRateMinute = 60.0 * float(splitLine[1])
 			self.distanceFeedRate.addLine(line)

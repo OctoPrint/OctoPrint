@@ -302,6 +302,7 @@ class InsetRepository:
 		self.loopOrderDescendingArea = settings.MenuRadio().getFromMenuButtonDisplay(self.loopOrderChoice, 'Descending Area', self, False)
 		self.overlapRemovalWidthOverEdgeWidth = settings.FloatSpin().getFromValue(0.3, 'Overlap Removal Width over Perimeter Width (ratio):', self, 0.9, 0.6)
 		self.turnExtruderHeaterOffAtShutDown = settings.BooleanSetting().getFromValue('Turn Extruder Heater Off at Shut Down', self, True)
+		self.volumeFraction = settings.FloatSpin().getFromValue(0.7, 'Volume Fraction (ratio):', self, 0.9, 0.82)
 		self.executeTitle = 'Inset'
 
 	def execute(self):
@@ -426,6 +427,7 @@ class InsetSkein:
 				layerHeight = float(splitLine[1])
 				self.infillWidth = self.repository.infillWidthOverThickness.value * layerHeight
 				self.distanceFeedRate.addTagRoundedLine('infillWidth', self.infillWidth)
+				self.distanceFeedRate.addTagRoundedLine('volumeFraction', self.repository.volumeFraction.value)
 			elif firstWord == '(<edgeWidth>':
 				self.edgeWidth = float(splitLine[1])
 				self.halfEdgeWidth = 0.5 * self.edgeWidth
