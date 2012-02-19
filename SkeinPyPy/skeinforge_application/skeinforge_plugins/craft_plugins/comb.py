@@ -175,7 +175,7 @@ class CombSkein:
 	"A class to comb a skein of extrusions."
 	def __init__(self):
 		'Initialize'
-		self.betweenTable = {}
+#		self.betweenTable = {}
 		self.boundaryLoop = None
 		self.distanceFeedRate = gcodec.DistanceFeedRate()
 		self.extruderActive = False
@@ -241,7 +241,7 @@ class CombSkein:
 	def getAroundBetweenPath(self, begin, end):
 		'Get the path around the loops in the way of the original line segment.'
 		aroundBetweenPath = []
-		betweens = self.getBetweens()
+#		betweens = self.getBetweens()
 		boundaries = self.getBoundaries()
 		boundarySegments = self.getBoundarySegments(begin, boundaries, end)
 		for boundarySegmentIndex, boundarySegment in enumerate(boundarySegments):
@@ -261,18 +261,18 @@ class CombSkein:
 			afterIndex = pointIndex + 1
 			if afterIndex < len(aroundBetweenPath):
 				pointAfter = aroundBetweenPath[afterIndex]
-			if not euclidean.isLineIntersectingLoops(betweens, pointBefore, pointAfter):
+			if not euclidean.isLineIntersectingLoops(boundaries, pointBefore, pointAfter):
 				del aroundBetweenPath[pointIndex]
 		return aroundBetweenPath
 
-	def getBetweens(self):
-		'Get betweens for the layer.'
-		if not self.layerZ in self.betweenTable:
-			self.betweenTable[self.layerZ] = []
-			for boundary in self.getBoundaries():
-				self.betweenTable[self.layerZ] += intercircle.getInsetLoopsFromLoop(boundary, self.betweenInset)
-		return self.betweenTable[self.layerZ]
-
+#	def getBetweens(self):
+#		'Get betweens for the layer.'
+#		if not self.layerZ in self.betweenTable:
+#			self.betweenTable[self.layerZ] = []
+#			for boundary in self.getBoundaries():
+#				self.betweenTable[self.layerZ] += intercircle.getInsetLoopsFromLoop(boundary, self.betweenInset)
+#		return self.betweenTable[self.layerZ]
+#
 	def getBoundaries(self):
 		"Get boundaries for the layer."
 		if self.layerZ in self.layerTable:
@@ -440,7 +440,7 @@ class CombSkein:
 				return
 			elif firstWord == '(<edgeWidth>':
 				self.edgeWidth = float(splitLine[1])
-				self.betweenInset = 0.7 * self.edgeWidth
+#				self.betweenInset = 0.7 * self.edgeWidth
 				self.doubleEdgeWidth = self.edgeWidth + self.edgeWidth
 				self.halfEdgeWidth = 0.5 * self.edgeWidth
 				self.quadrupleEdgeWidth = self.doubleEdgeWidth + self.doubleEdgeWidth

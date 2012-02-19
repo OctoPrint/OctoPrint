@@ -439,6 +439,7 @@ class RaftSkein:
 		self.oldLocation = None
 		self.oldTemperatureOutputString = None
 		self.operatingFeedRateMinute = None
+		self.operatingFlowRate = None
 		self.operatingLayerEndLine = '(<operatingLayerEnd> </operatingLayerEnd>)'
 		self.operatingJump = None
 		self.orbitalFeedRatePerSecond = 2.01
@@ -548,8 +549,8 @@ class RaftSkein:
 		aroundWidth = 0.34321 * step
 		paths = euclidean.getPathsFromEndpoints(endpoints, 1.5 * step, aroundPixelTable, aroundWidth)
 		self.addLayerLine(z)
-		if self.oldFlowRate != None:
-			self.addFlowRate(flowRateMultiplier * self.oldFlowRate)
+		if self.operatingFlowRate != None:
+			self.addFlowRate(flowRateMultiplier * self.operatingFlowRate)
 		for path in paths:
 			simplifiedPath = euclidean.getSimplifiedPath(path, step)
 			self.distanceFeedRate.addGcodeFromFeedRateThreadZ(feedRateMinute, simplifiedPath, self.travelFeedRateMinute, z)
@@ -903,6 +904,8 @@ class RaftSkein:
 				return
 			elif firstWord == '(<layerHeight>':
 				self.layerHeight = float(splitLine[1])
+			elif firstWord == 'M108':
+				self.oldFlowRate = float(splitLine[1][1 :])
 			elif firstWord == '(<objectFirstLayerFeedRateInfillMultiplier>':
 				self.objectFirstLayerFeedRateInfillMultiplier = float(splitLine[1])
 			elif firstWord == '(<objectFirstLayerFlowRateInfillMultiplier>':
@@ -919,8 +922,9 @@ class RaftSkein:
 				self.operatingFeedRateMinute = 60.0 * float(splitLine[1])
 				self.feedRateMinute = self.operatingFeedRateMinute
 			elif firstWord == '(<operatingFlowRate>':
-				self.oldFlowRate = float(splitLine[1])
-				self.supportFlowRate = self.oldFlowRate * self.repository.supportFlowRateOverOperatingFlowRate.value
+				self.operatingFlowRate = float(splitLine[1])
+				self.oldFlowRate = self.operatingFlowRate
+				self.supportFlowRate = self.operatingFlowRate * self.repository.supportFlowRateOverOperatingFlowRate.value
 			elif firstWord == '(<edgeWidth>':
 				self.edgeWidth = float(splitLine[1])
 				self.halfEdgeWidth = 0.5 * self.edgeWidth

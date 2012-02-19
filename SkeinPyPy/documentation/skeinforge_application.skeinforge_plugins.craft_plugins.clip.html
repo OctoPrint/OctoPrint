@@ -136,7 +136,7 @@ The clip tool has created the file:<br>
 
 <dl><dt><a name="ClipSkein-getConnectionIsCloseWithoutOverlap"><strong>getConnectionIsCloseWithoutOverlap</strong></a>(self, location, path)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;connection&nbsp;is&nbsp;close&nbsp;enough&nbsp;and&nbsp;does&nbsp;not&nbsp;overlap&nbsp;another&nbsp;thread.</tt></dd></dl>
 
-<dl><dt><a name="ClipSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, clipRepository, gcodeText)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;clip&nbsp;gcode.</tt></dd></dl>
+<dl><dt><a name="ClipSkein-getCraftedGcode"><strong>getCraftedGcode</strong></a>(self, gcodeText, repository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;text&nbsp;and&nbsp;store&nbsp;the&nbsp;clip&nbsp;gcode.</tt></dd></dl>
 
 <dl><dt><a name="ClipSkein-getNextThreadIsACloseLoop"><strong>getNextThreadIsACloseLoop</strong></a>(self, path)</dt><dd><tt>Determine&nbsp;if&nbsp;the&nbsp;next&nbsp;thread&nbsp;is&nbsp;a&nbsp;loop.</tt></dd></dl>
 
@@ -144,7 +144,7 @@ The clip tool has created the file:<br>
 
 <dl><dt><a name="ClipSkein-linearMove"><strong>linearMove</strong></a>(self, splitLine)</dt><dd><tt>Add&nbsp;to&nbsp;loop&nbsp;path&nbsp;if&nbsp;this&nbsp;is&nbsp;a&nbsp;loop&nbsp;or&nbsp;path.</tt></dd></dl>
 
-<dl><dt><a name="ClipSkein-parseInitialization"><strong>parseInitialization</strong></a>(self, clipRepository)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
+<dl><dt><a name="ClipSkein-parseInitialization"><strong>parseInitialization</strong></a>(self)</dt><dd><tt>Parse&nbsp;gcode&nbsp;initialization&nbsp;and&nbsp;store&nbsp;the&nbsp;parameters.</tt></dd></dl>
 
 <dl><dt><a name="ClipSkein-parseLine"><strong>parseLine</strong></a>(self, line)</dt><dd><tt>Parse&nbsp;a&nbsp;gcode&nbsp;line&nbsp;and&nbsp;add&nbsp;it&nbsp;to&nbsp;the&nbsp;clip&nbsp;skein.</tt></dd></dl>
 
@@ -157,8 +157,8 @@ The clip tool has created the file:<br>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, text, clipRepository<font color="#909090">=None</font>)</dt><dd><tt>Clip&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file&nbsp;or&nbsp;text.</tt></dd></dl>
- <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, clipRepository<font color="#909090">=None</font>)</dt><dd><tt>Clip&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
+<td width="100%"><dl><dt><a name="-getCraftedText"><strong>getCraftedText</strong></a>(fileName, text, repository<font color="#909090">=None</font>)</dt><dd><tt>Clip&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file&nbsp;or&nbsp;text.</tt></dd></dl>
+ <dl><dt><a name="-getCraftedTextFromText"><strong>getCraftedTextFromText</strong></a>(gcodeText, repository<font color="#909090">=None</font>)</dt><dd><tt>Clip&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;text.</tt></dd></dl>
  <dl><dt><a name="-getNewRepository"><strong>getNewRepository</strong></a>()</dt><dd><tt>Get&nbsp;new&nbsp;repository.</tt></dd></dl>
  <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><tt>Display&nbsp;the&nbsp;clip&nbsp;dialog.</tt></dd></dl>
  <dl><dt><a name="-writeOutput"><strong>writeOutput</strong></a>(fileName, shouldAnalyze<font color="#909090">=True</font>)</dt><dd><tt>Clip&nbsp;a&nbsp;gcode&nbsp;linear&nbsp;move&nbsp;file.&nbsp;&nbsp;Chain&nbsp;clip&nbsp;the&nbsp;gcode&nbsp;if&nbsp;it&nbsp;is&nbsp;not&nbsp;already&nbsp;clipped.</tt></dd></dl>

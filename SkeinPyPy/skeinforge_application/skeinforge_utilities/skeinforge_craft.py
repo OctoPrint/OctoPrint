@@ -90,20 +90,15 @@ def getPluginsDirectoryPath():
 def getProcedures( procedure, text ):
 	"Get the procedures up to and including the given procedure."
 	craftSequence = getReadCraftSequence()
+	sequenceIndexFromProcedure = 0
+	if procedure in craftSequence:
+		sequenceIndexFromProcedure = craftSequence.index(procedure)
 	sequenceIndexPlusOneFromText = getSequenceIndexPlusOneFromText(text)
-	sequenceIndexFromProcedure = getSequenceIndexFromProcedure(procedure)
 	return craftSequence[ sequenceIndexPlusOneFromText : sequenceIndexFromProcedure + 1 ]
 
 def getReadCraftSequence():
 	"Get profile sequence."
 	return skeinforge_profile.getCraftTypePluginModule().getCraftSequence()
-
-def getSequenceIndexFromProcedure(procedure):
-	"Get the profile sequence index of the procedure.  Return None if the procedure is not in the sequence"
-	craftSequence = getReadCraftSequence()
-	if procedure not in craftSequence:
-		return 0
-	return craftSequence.index(procedure)
 
 def getSequenceIndexPlusOneFromText(fileText):
 	"Get the profile sequence index of the file plus one.  Return zero if the procedure is not in the file"

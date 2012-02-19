@@ -463,6 +463,8 @@ class SkeinWindow( tableau.TableauWindow ):
 
 	def getColoredLines(self):
 		"Get the colored lines from the skein pane."
+		if len(self.skeinPanes) == 0:
+			return []
 		return self.skeinPanes[self.repository.layer.value]
 
 	def getCopy(self):
