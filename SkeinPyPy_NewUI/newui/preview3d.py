@@ -32,14 +32,14 @@ class myGLCanvas(GLCanvas):
 	
 	def loadFile(self, filename):
 		self.triangleMesh = fabmetheus_interpret.getCarving(filename)
+		self.moveModel()
+		
+	def moveModel(self):
+		if self.triangleMesh == None:
+			return
 		minZ = self.triangleMesh.getMinimumZ()
 		min = self.triangleMesh.getCarveCornerMinimum()
 		max = self.triangleMesh.getCarveCornerMaximum()
-		self.moveModel()
-		
-	def moveModel():
-		if self.triangleMesh == None:
-			return
 		for v in self.triangleMesh.vertexes:
 			v.z -= minZ
 			v.x -= min.x + (max.x - min.x) / 2
