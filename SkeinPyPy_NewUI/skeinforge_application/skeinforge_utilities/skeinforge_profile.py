@@ -18,7 +18,7 @@ def getProfileName(craftTypeName):
 	return 'SkeinPyPy profile:' + craftTypeName
 
 def addListsToCraftTypeRepository(fileNameHelp, repository):
-    print('addListsToCraftTypeRepository:', fileNameHelp, repository)
+    #print('addListsToCraftTypeRepository:', fileNameHelp, repository)
     repository.name = fileNameHelp.split('.')[-2]
     repository.preferences = []
 

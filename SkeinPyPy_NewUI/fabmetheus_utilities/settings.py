@@ -14,7 +14,7 @@ def loadGlobalConfig(filename):
 	"Read a configuration file as global config"
 	global globalConfigParser
 	globalConfigParser = ConfigParser.ConfigParser()
-	print globalConfigParser.read(filename)
+	globalConfigParser.read(filename)
 
 def getDefaultConfigPath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_config.ini"))
@@ -29,7 +29,7 @@ def getReadRepository(repository):
 	if not globals().has_key('globalConfigParser'):
 		loadGlobalConfig(getDefaultConfigPath())
 	
-	print('getReadRepository:', repository.name)
+	#print('getReadRepository:', repository.name)
 	for p in repository.preferences:
 		try:
 			p.setValueToString(globalConfigParser.get(repository.name, safeConfigName(p.name)))
@@ -102,7 +102,7 @@ class RadioCapitalizedButton( Radio ):
 	"Only used for the extra export options, which we are not using, so ignore the path for now"
 	def getFromPath( self, latentStringVar, name, path, repository, value ):
 		"Initialize."
-		print('RadioCapitalizedButton->getFromPath:', latentStringVar, name, path, repository, value )
+		#print('RadioCapitalizedButton->getFromPath:', latentStringVar, name, path, repository, value )
 		self.name = name
 		self.value = value
 		repository.preferences.append(self)
@@ -112,7 +112,6 @@ class FileNameInput(StringSetting ):
 	"A class to display, read & write a fileName."
 	def getFromFileName( self, fileTypes, name, repository, value ):
 		#print('FileNameInput:getFromFileName:', self, fileTypes, name, repository, value )
-		repository.preferences.append(self)
 		self.name = name
 		self.value = value
 		return self
@@ -151,7 +150,7 @@ class MenuRadio( BooleanSetting ):
 	"A class to display, read & write a boolean with associated combo box selection."
 	def getFromMenuButtonDisplay( self, menuButtonDisplay, name, repository, value ):
 		"Initialize."
-		print('MenuRadio->getFromMenuButtonDisplay:', menuButtonDisplay, name, repository, value )
+		#print('MenuRadio->getFromMenuButtonDisplay:', menuButtonDisplay, name, repository, value )
 		self.name = name
 		self.value = value
 		menuButtonDisplay.addRadio(self, value)

@@ -1,35 +1,45 @@
-from wxPython.glcanvas import wxGLCanvas
-from wxPython.wx import *
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
-from OpenGL.GL import *
+#from wxPython.glcanvas import wxGLCanvas
+import wx
 import sys,math
+
+from wx.glcanvas import GLCanvas
+try:
+	from OpenGL.GLUT import *
+	from OpenGL.GLU import *
+	from OpenGL.GL import *
+	hasOpenGLlibs = True
+except:
+	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
+	hasOpenGLlibs = False
 
 from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from fabmetheus_utilities.vector3 import Vector3
 
-class myGLCanvas(wxGLCanvas):
+class myGLCanvas(GLCanvas):
 	def __init__(self, parent):
-		wxGLCanvas.__init__(self, parent,-1)
-		EVT_PAINT(self, self.OnPaint)
-		EVT_SIZE(self, self.OnSize)
-		EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
-		EVT_MOTION(self, self.OnMouseMotion)
+		GLCanvas.__init__(self, parent,-1)
+		wx.EVT_PAINT(self, self.OnPaint)
+		wx.EVT_SIZE(self, self.OnSize)
+		wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
+		wx.EVT_MOTION(self, self.OnMouseMotion)
 		self.init = 0
 		self.triangleMesh = None
-		self.yaw = 0
-		self.pitch = 80
+		self.yaw = 30
+		self.pitch = 60
 		self.zoom = 150
 		self.machineSize = Vector3(210, 210, 200)
 		self.machineCenter = Vector3(100, 100, 0)
-		return
 	
 	def loadFile(self, filename):
 		self.triangleMesh = fabmetheus_interpret.getCarving(filename)
 		minZ = self.triangleMesh.getMinimumZ()
 		min = self.triangleMesh.getCarveCornerMinimum()
 		max = self.triangleMesh.getCarveCornerMaximum()
+		self.moveModel()
 		
+	def moveModel():
+		if self.triangleMesh == None:
+			return
 		for v in self.triangleMesh.vertexes:
 			v.z -= minZ
 			v.x -= min.x + (max.x - min.x) / 2
@@ -40,7 +50,7 @@ class myGLCanvas(wxGLCanvas):
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
 			self.yaw += e.GetX() - self.oldX
-			self.pitch += e.GetY() - self.oldY
+			self.pitch -= e.GetY() - self.oldY
 			if self.pitch > 170:
 				self.pitch = 170
 			if self.pitch < 10:
@@ -59,7 +69,11 @@ class myGLCanvas(wxGLCanvas):
 		return
 
 	def OnPaint(self,event):
-		dc = wxPaintDC(self)
+		dc = wx.PaintDC(self)
+		if not hasOpenGLlibs:
+			dc.Clear()
+			dc.DrawText("No PyOpenGL installation found.\nNo preview window available.", 10, 10)
+			return
 		self.SetCurrent()
 		self.InitGL()
 		self.OnDraw()
