@@ -14,7 +14,7 @@ def getSkeinPyPyConfigInformation():
 	return {
 		'carve': {
 			'Add_Layer_Template_to_SVG': 'ignore',
-			'Edge_Width_mm': 'ignore',
+			'Edge_Width_mm': 'save',
 			'Extra_Decimal_Places_float': 'ignore',
 			'Import_Coarseness_ratio': 'ignore',
 			'Layer_Height_mm': 'save',
@@ -71,7 +71,7 @@ def getSkeinPyPyConfigInformation():
 			'Line': 'ignore',
 			'Infill_Perimeter_Overlap_ratio': 'save',
 			'Infill_Solidity_ratio': 'save',
-			'Infill_Width': 'save',
+			'Infill_Width': 'use:carve:Edge_Width_mm',
 			'Solid_Surface_Thickness_layers': 'save',
 			'Start_From_Choice': 'ignore',
 			'Surrounding_Angle_degrees': 'ignore',
@@ -92,12 +92,12 @@ def getSkeinPyPyConfigInformation():
 			'Duty_Cyle_at_Beginning_portion': 'ignore',
 			'Duty_Cyle_at_Ending_portion': 'ignore',
 			'Feed_Rate_mm/s': 'save',
-			'Flow_Rate_Setting_float': 'use:Feed_Rate_mm/s',
+			'Flow_Rate_Setting_float': 'use:speed:Feed_Rate_mm/s',
 			'Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio': 'save',
-			'Object_First_Layer_Feed_Rate_Perimeter_Multiplier_ratio': 'use:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
-			'Object_First_Layer_Feed_Rate_Travel_Multiplier_ratio': 'use:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
-			'Object_First_Layer_Flow_Rate_Infill_Multiplier_ratio': 'use:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
-			'Object_First_Layer_Flow_Rate_Perimeter_Multiplier_ratio': 'use:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
+			'Object_First_Layer_Feed_Rate_Perimeter_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
+			'Object_First_Layer_Feed_Rate_Travel_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
+			'Object_First_Layer_Flow_Rate_Infill_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
+			'Object_First_Layer_Flow_Rate_Perimeter_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
 			'Object_First_Layers_Amount_Of_Layers_For_Speed_Change': 'save',
 			'Orbital_Feed_Rate_over_Operating_Feed_Rate_ratio': 'ignore',
 			'Maximum_Z_Feed_Rate_mm/s': 'save',
@@ -345,7 +345,8 @@ def getReadRepository(repository):
 			continue
 		#Load this setting from another value.
 		if info[name][0:4] == "use:":
-			p.setValueToString(globalConfigParser.get(repository.name, info[name][4:]))
+			i = info[name][4:].split(':')
+			p.setValueToString(globalConfigParser.get(i[0], i[1]))
 			continue
 		
 		try:
@@ -357,8 +358,33 @@ def getReadRepository(repository):
 			except:
 				pass
 			globalConfigParser.set(repository.name, name, str(p.value))
-			saveGlobalConfig(getDefaultConfigPath())
+			#saveGlobalConfig(getDefaultConfigPath())
 		#print "============" + str(p) + "|" + p.name + "|" + str(p.value) + "|" + str(type(p.value))
+	return repository
+
+def storeRepository(repository):
+	"Store the configuration for this 'repository'"
+	#Check if we have a configuration file loaded, else load the default.
+	if not globals().has_key('globalConfigParser'):
+		loadGlobalConfig(getDefaultConfigPath())
+	
+	info = getSkeinPyPyConfigInformation()
+	if not info.has_key(repository.name):
+		print "Warning: Plugin: " + repository.name + " missing from SkeinPyPy info"
+		return repository
+	info = info[repository.name]
+	if not type(info) is dict:
+		print "Ignoring plugin configuration: " + repository.name
+		return repository
+	
+	for p in repository.preferences:
+		name = safeConfigName(p.name)
+		if not info.has_key(name):
+			print "Setting: " + repository.name + ":" + name + " missing from SkeinPyPy info"
+			continue
+
+		if info[name] == "save":
+			globalConfigParser.set(repository.name, name, str(p.value))
 	return repository
 
 def printProgress(layerIndex, procedureName):
@@ -491,7 +517,8 @@ class FloatSpin( FloatSetting ):
 		"Initialize."
 		self.name = name
 		self.value = value
-		repository.preferences.append(self)
+		if repository != None:
+			repository.preferences.append(self)
 		return self
 
 class LabelSeparator:

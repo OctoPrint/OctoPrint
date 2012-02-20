@@ -1,6 +1,6 @@
 #from wxPython.glcanvas import wxGLCanvas
 import wx
-import sys,math
+import sys,math,threading
 
 from wx.glcanvas import GLCanvas
 try:
@@ -24,6 +24,7 @@ class myGLCanvas(GLCanvas):
 		wx.EVT_MOTION(self, self.OnMouseMotion)
 		self.init = 0
 		self.triangleMesh = None
+		self.modelDisplayList = None
 		self.yaw = 30
 		self.pitch = 60
 		self.zoom = 150
@@ -31,8 +32,17 @@ class myGLCanvas(GLCanvas):
 		self.machineCenter = Vector3(100, 100, 0)
 	
 	def loadFile(self, filename):
-		self.triangleMesh = fabmetheus_interpret.getCarving(filename)
+		self.filename = filename
+		#Do the STL file loading in a background thread so we don't block the UI.
+		thread = threading.Thread(target=self.DoLoad)
+		thread.setDaemon(True)
+		thread.start()
+	
+	def DoLoad(self):
+		self.modelDirty = False
+		self.triangleMesh = fabmetheus_interpret.getCarving(self.filename)
 		self.moveModel()
+		self.Refresh()
 		
 	def moveModel(self):
 		if self.triangleMesh == None:
@@ -46,6 +56,8 @@ class myGLCanvas(GLCanvas):
 			v.y -= min.y + (max.y - min.y) / 2
 			v.x += self.machineCenter.x
 			v.y += self.machineCenter.y
+		self.triangleMesh.getMinimumZ()
+		self.modelDirty = True
 	
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
@@ -55,11 +67,12 @@ class myGLCanvas(GLCanvas):
 				self.pitch = 170
 			if self.pitch < 10:
 				self.pitch = 10
+			self.Refresh()
 		if e.Dragging() and e.RightIsDown():
 			self.zoom += e.GetY() - self.oldY
+			self.Refresh()
 		self.oldX = e.GetX()
 		self.oldY = e.GetY()
-		self.Refresh()
 	
 	def OnEraseBackground(self,event):
 		pass
@@ -85,18 +98,25 @@ class myGLCanvas(GLCanvas):
 		glTranslate(-self.machineCenter.x, -self.machineCenter.y, 0)
 		
 		if self.triangleMesh != None:
-			glBegin(GL_TRIANGLES)
-			for face in self.triangleMesh.faces:
-				v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
-				v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
-				v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
-				normal = (v2 - v1).cross(v3 - v1)
-				normal.normalize()
-				glNormal3f(normal.x, normal.y, normal.z)
-				glVertex3f(v1.x, v1.y, v1.z)
-				glVertex3f(v2.x, v2.y, v2.z)
-				glVertex3f(v3.x, v3.y, v3.z)
-			glEnd()
+			if self.modelDisplayList == None:
+				self.modelDisplayList = glGenLists(1);
+			if self.modelDirty:
+				self.modelDirty = False
+				glNewList(self.modelDisplayList, GL_COMPILE)
+				glBegin(GL_TRIANGLES)
+				for face in self.triangleMesh.faces:
+					v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
+					v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
+					v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
+					normal = (v2 - v1).cross(v3 - v1)
+					normal.normalize()
+					glNormal3f(normal.x, normal.y, normal.z)
+					glVertex3f(v1.x, v1.y, v1.z)
+					glVertex3f(v2.x, v2.y, v2.z)
+					glVertex3f(v3.x, v3.y, v3.z)
+				glEnd()
+				glEndList()
+			glCallList(self.modelDisplayList)
 		
 		glLineWidth(4)
 		glDisable(GL_LIGHTING)
@@ -160,6 +180,6 @@ class myGLCanvas(GLCanvas):
 		glTranslate(0,0,-self.zoom)
 		glRotate(-self.pitch, 1,0,0)
 		glRotate(self.yaw, 0,0,1)
-		#glRotate(90, 1,0,0)
-		
+		if self.triangleMesh != None:
+			glTranslate(0,0,-self.triangleMesh.getCarveCornerMaximum().z / 2)
 		return

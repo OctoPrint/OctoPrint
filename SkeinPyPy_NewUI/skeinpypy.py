@@ -13,7 +13,11 @@ from __future__ import absolute_import
 
 from optparse import OptionParser
 from skeinforge_application.skeinforge_utilities import skeinforge_craft
-from newui import mainWindow
+#For some reason the newui import fails when we are importing this from newui.mainWindow (circle references not allowed?) in that case we don't need the UI so skip it.
+try:
+	from newui import mainWindow
+except:
+	pass
 import os
 import sys
 import platform
