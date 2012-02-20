@@ -28,8 +28,11 @@ class myGLCanvas(GLCanvas):
 		self.yaw = 30
 		self.pitch = 60
 		self.zoom = 150
+		self.renderTransparent = False
 		self.machineSize = Vector3(210, 210, 200)
 		self.machineCenter = Vector3(100, 100, 0)
+		configButton = wx.Button(self, -1, '', (3,3), (10,10))
+		self.Bind(wx.EVT_BUTTON, self.OnConfigClick, configButton)
 	
 	def loadFile(self, filename):
 		self.filename = filename
@@ -43,7 +46,11 @@ class myGLCanvas(GLCanvas):
 		self.triangleMesh = fabmetheus_interpret.getCarving(self.filename)
 		self.moveModel()
 		self.Refresh()
-		
+	
+	def OnConfigClick(self, e):
+		self.renderTransparent = not self.renderTransparent
+		self.Refresh()
+	
 	def moveModel(self):
 		if self.triangleMesh == None:
 			return
@@ -97,27 +104,6 @@ class myGLCanvas(GLCanvas):
 		
 		glTranslate(-self.machineCenter.x, -self.machineCenter.y, 0)
 		
-		if self.triangleMesh != None:
-			if self.modelDisplayList == None:
-				self.modelDisplayList = glGenLists(1);
-			if self.modelDirty:
-				self.modelDirty = False
-				glNewList(self.modelDisplayList, GL_COMPILE)
-				glBegin(GL_TRIANGLES)
-				for face in self.triangleMesh.faces:
-					v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
-					v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
-					v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
-					normal = (v2 - v1).cross(v3 - v1)
-					normal.normalize()
-					glNormal3f(normal.x, normal.y, normal.z)
-					glVertex3f(v1.x, v1.y, v1.z)
-					glVertex3f(v2.x, v2.y, v2.z)
-					glVertex3f(v3.x, v3.y, v3.z)
-				glEnd()
-				glEndList()
-			glCallList(self.modelDisplayList)
-		
 		glLineWidth(4)
 		glDisable(GL_LIGHTING)
 		glBegin(GL_LINE_LOOP)
@@ -152,6 +138,44 @@ class myGLCanvas(GLCanvas):
 		glVertex3f(0, self.machineSize.y, 0)
 		glVertex3f(0, self.machineSize.y, self.machineSize.z)
 		glEnd()
+		
+		if self.triangleMesh != None:
+			if self.modelDisplayList == None:
+				self.modelDisplayList = glGenLists(1);
+			if self.modelDirty:
+				self.modelDirty = False
+				glNewList(self.modelDisplayList, GL_COMPILE)
+				glBegin(GL_TRIANGLES)
+				for face in self.triangleMesh.faces:
+					v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
+					v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
+					v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
+					normal = (v2 - v1).cross(v3 - v1)
+					normal.normalize()
+					glNormal3f(normal.x, normal.y, normal.z)
+					glVertex3f(v1.x, v1.y, v1.z)
+					glVertex3f(v2.x, v2.y, v2.z)
+					glVertex3f(v3.x, v3.y, v3.z)
+				glEnd()
+				glEndList()
+			if self.renderTransparent:
+				#If we want transparent, then first render a solid black model to remove the printer size lines.
+				glDisable(GL_BLEND)
+				glDisable(GL_LIGHTING)
+				glColor3f(0,0,0)
+				glCallList(self.modelDisplayList)
+				glColor3f(1,1,1)
+				#After the black model is rendered, render the model again but now with lighting and no depth testing.
+				glDisable(GL_DEPTH_TEST)
+				glEnable(GL_LIGHTING)
+				glEnable(GL_BLEND)
+				glBlendFunc(GL_ONE, GL_ONE)
+				glEnable(GL_LIGHTING)
+				glCallList(self.modelDisplayList)
+			else:
+				glEnable(GL_LIGHTING)
+				glCallList(self.modelDisplayList)
+		
 		self.SwapBuffers()
 		return
 
@@ -168,6 +192,8 @@ class myGLCanvas(GLCanvas):
 		glEnable(GL_LIGHTING)
 		glEnable(GL_LIGHT0)
 		glEnable(GL_DEPTH_TEST)
+		glDisable(GL_BLEND)
+
 		glClearColor(0.0, 0.0, 0.0, 1.0)
 		glClearDepth(1.0)
 

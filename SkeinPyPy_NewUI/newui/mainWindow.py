@@ -65,6 +65,7 @@ class mainWindow(wx.Frame):
 		self.AddSetting(configPanel, "Speed (mm/s)", self.plugins['dimension'].preferencesDict['Extruder_Retraction_Speed_mm/s'])
 		self.AddSetting(configPanel, "Distance (mm)", self.plugins['dimension'].preferencesDict['Retraction_Distance_millimeters'])
 		self.AddSetting(configPanel, "Extra length on start (mm)", self.plugins['dimension'].preferencesDict['Restart_Extra_Distance_millimeters'])
+		self.AddSetting(configPanel, "Minimal travel (mm)", self.plugins['dimension'].preferencesDict['Minimum_Travel_for_Retraction_millimeters'])
 
 		configPanel = wx.Panel(nb);
 		nb.AddPage(configPanel, "Machine")
@@ -82,6 +83,8 @@ class mainWindow(wx.Frame):
 		self.AddTitle(configPanel, "Speed")
 		self.AddSetting(configPanel, "Print speed (mm/s)", self.plugins['speed'].preferencesDict['Feed_Rate_mm/s'])
 		self.AddSetting(configPanel, "Travel speed (mm/s)", self.plugins['speed'].preferencesDict['Travel_Feed_Rate_mm/s'])
+		self.AddSetting(configPanel, "Max Z speed (mm/z)", self.plugins['speed'].preferencesDict['Maximum_Z_Feed_Rate_mm/s'])
+		self.AddSetting(configPanel, "Bottom Layer Speed Ratio", self.plugins['speed'].preferencesDict['Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio'])
 
 		self.AddTitle(configPanel, "Filament")
 		self.AddSetting(configPanel, "Diameter (mm)", self.plugins['dimension'].preferencesDict['Filament_Diameter_mm'])
@@ -136,6 +139,7 @@ class mainWindow(wx.Frame):
 			self.controlList.append(ctrl)
 			sizer.Add(ctrl, (sizer.GetRows(),2), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		sizer.SetRows(sizer.GetRows()+1)
+		return ctrl
 	
 	def OnSaveProfile(self, e):
 		dlg=wx.FileDialog(self, "Select profile file to save", style=wx.FD_SAVE)
