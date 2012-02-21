@@ -145,7 +145,7 @@ def getSkeinPyPyConfigInformation():
 		},'skirt': {
 			'Activate_Skirt': 'save',
 			'Convex': 'ignore',
-			'Gap_over_Perimeter_Width_ratio': 'save',
+			'Gap_Width_mm': 'save',
 			'Layers_To_index': 'ignore',
 		},'chamber': {
 			'Activate_Chamber': 'ignore',
@@ -384,6 +384,10 @@ def storeRepository(repository):
 			continue
 
 		if info[name] == "save":
+			try:
+				globalConfigParser.add_section(repository.name)
+			except:
+				pass
 			globalConfigParser.set(repository.name, name, str(p.value))
 	return repository
 
@@ -425,7 +429,7 @@ class StringSetting(GeneralSetting):
 class BooleanSetting( GeneralSetting ):
 	"A class to display, read & write a boolean."
 	def setValueToString(self, value):
-		self.value = value == "True"
+		self.value = str(value) == "True"
 
 class LatentStringVar:
 	"This is actually used as 'group' object for Radio buttons. (Did I mention the code is a mess?)"
