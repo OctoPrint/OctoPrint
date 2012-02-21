@@ -8,7 +8,7 @@ from __future__ import absolute_import
 import __init__
 
 import ConfigParser
-import os
+import os, sys
 
 def getSkeinPyPyConfigInformation():
 	return {
@@ -388,9 +388,12 @@ def storeRepository(repository):
 	return repository
 
 def printProgress(layerIndex, procedureName):
-	print("Progress: ", procedureName, layerIndex)
+	print ("Progress[" + procedureName + ":" + str(layerIndex) + "]")
+	sys.stdout.flush()
+
 def printProgressByNumber(layerIndex, numberOfLayers, procedureName):
-	print("Progress: ", procedureName, layerIndex, numberOfLayers)
+	print ("Progress[" + procedureName + ":" + str(layerIndex) + ":" + str(numberOfLayers) + "]")
+	sys.stdout.flush()
 
 def getAlterationFileLines(fileName):
 	'Get the alteration file line and the text lines from the fileName in the alterations directories.'

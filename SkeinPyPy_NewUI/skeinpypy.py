@@ -12,16 +12,10 @@ The slicing code is the same as Skeinforge. But the UI has been revamped to be..
 from __future__ import absolute_import
 
 from optparse import OptionParser
-from skeinforge_application.skeinforge_utilities import skeinforge_craft
-#For some reason the newui import fails when we are importing this from newui.mainWindow (circle references not allowed?) in that case we don't need the UI so skip it.
-try:
-	from newui import mainWindow
-except:
-	pass
-import os
+from newui import mainWindow
+from newui import skeinRun
+
 import sys
-import platform
-import subprocess
 
 __author__ = 'Daid'
 __credits__ = """
@@ -47,48 +41,12 @@ Art of Illusion <http://www.artofillusion.org/>"""
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-def getPyPyExe():
-	"Return the path to the pypy executable if we can find it. Else return False"
-	if platform.system() == "Windows":
-		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/pypy.exe"));
-	else:
-		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/bin/pypy"));
-	if os.path.exists(pypyExe):
-		return pypyExe
-	pypyExe = "/bin/pypy";
-	if os.path.exists(pypyExe):
-		return pypyExe
-	pypyExe = "/usr/bin/pypy";
-	if os.path.exists(pypyExe):
-		return pypyExe
-	pypyExe = "/usr/local/bin/pypy";
-	if os.path.exists(pypyExe):
-		return pypyExe
-	return False
-
-def runSkein(fileNames):
-	"Run the slicer on the files. If we are running with PyPy then just do the slicing action. If we are running as Python, try to find pypy."
-	pypyExe = getPyPyExe()
-	for fileName in fileNames:
-		if platform.python_implementation() == "PyPy":
-			skeinforge_craft.writeOutput(fileName)
-		elif pypyExe == False:
-			print "************************************************"
-			print "* Failed to find pypy, so slicing with python! *"
-			print "************************************************"
-			skeinforge_craft.writeOutput(fileName)
-			print "************************************************"
-			print "* Failed to find pypy, so sliced with python!  *"
-			print "************************************************"
-		else:
-			subprocess.call([pypyExe, __file__, fileName])
-
 def main():
 	parser = OptionParser()
 	(options, args) = parser.parse_args()
 	sys.argv = [sys.argv[0]] + args
 	if len( args ) > 0:
-		runSkein(args)
+		skeinRun.runSkein(args)
 	else:
 		mainWindow.main()
 

@@ -1,14 +1,14 @@
 from __future__ import absolute_import
 import __init__
 
-import skeinpypy
-
 import wx, os
 
-from newui import preview3d
 from fabmetheus_utilities import archive
 from fabmetheus_utilities import settings
 from skeinforge_application.skeinforge_utilities import skeinforge_profile
+
+from newui import preview3d
+from newui import sliceProgessPanel
 
 def main():
 	app = wx.App(False)
@@ -30,6 +30,7 @@ class mainWindow(wx.Frame):
 		menubar.Append(wx.Menu(), 'Expert')
 		self.SetMenuBar(menubar)
 		
+		self.lastPath = ""
 		self.filename = None
 		self.controlList = []
 		self.plugins = {}
@@ -105,7 +106,11 @@ class mainWindow(wx.Frame):
 		sizer.AddGrowableCol(2)
 		sizer.AddGrowableRow(0)
 		p.SetSizer(sizer)
-		
+
+		self.panel = p
+		self.sizer = sizer
+		self.sizer.SetRows(2)
+
 		self.SetSize((800, 400))
 		self.Centre()
 		self.Show(True)
@@ -138,21 +143,25 @@ class mainWindow(wx.Frame):
 		sizer.SetRows(sizer.GetRows()+1)
 	
 	def OnSaveProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to save", style=wx.FD_SAVE)
+		dlg=wx.FileDialog(self, "Select profile file to save", self.lastPath, style=wx.FD_SAVE)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
+			self.lastPath = os.path.split(profileFile)[0]
 			self.updateConfig()
 			settings.saveGlobalConfig(profileFile)
+		dlg.Destroy()
 	
 	def OnLoadSTL(self, e):
-		dlg=wx.FileDialog(self, "Open file to print", style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("OBJ, STL files (*.stl;*.STL;*.obj;*.OBJ;)")
+		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
 			if not(os.path.exists(self.filename)):
 				return
+			self.lastPath = os.path.split(self.filename)[0]
 			self.preview3d.loadFile(self.filename)
+		dlg.Destroy()
 	
 	def OnSlice(self, e):
 		if self.filename == None:
@@ -160,7 +169,11 @@ class mainWindow(wx.Frame):
 		for pluginName in self.plugins.keys():
 			settings.storeRepository(self.plugins[pluginName])
 		settings.saveGlobalConfig(settings.getDefaultConfigPath())
-		skeinpypy.runSkein([self.filename])
+		#skeinpypy.runSkein([self.filename])
+		spp = sliceProgessPanel.sliceProgessPanel(self.panel, self.filename)
+		self.sizer.Add(spp, (self.sizer.GetRows(),0), span=(1,4), flag=wx.EXPAND)
+		self.sizer.SetRows(self.sizer.GetRows()+1)
+		self.sizer.Layout()
 	
 	def updateConfig(self):
 		for ctrl in self.controlList:
