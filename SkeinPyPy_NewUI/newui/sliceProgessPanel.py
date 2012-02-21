@@ -12,18 +12,18 @@ class sliceProgessPanel(wx.Panel):
 		self.abort = False
 
 		box = wx.StaticBox(self, -1, filename)
-		sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
-		
+		self.sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
+
 		mainSizer = wx.BoxSizer(wx.VERTICAL) 
-		mainSizer.Add(sizer, 0, flag=wx.EXPAND)
+		mainSizer.Add(self.sizer, 0, flag=wx.EXPAND)
 
 		self.statusText = wx.StaticText(self, -1, "Starting...")
 		self.progressGauge = wx.Gauge(self, -1)
 		self.abortButton = wx.Button(self, -1, "X", style=wx.BU_EXACTFIT)
-		sizer.Add(self.statusText, 2, flag=wx.ALIGN_CENTER )
-		sizer.Add(self.progressGauge, 2)
-		sizer.Add(self.abortButton, 0)
-		
+		self.sizer.Add(self.statusText, 2, flag=wx.ALIGN_CENTER )
+		self.sizer.Add(self.progressGauge, 2)
+		self.sizer.Add(self.abortButton, 0)
+
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.abortButton)
 
 		self.SetSizer(mainSizer)
@@ -34,6 +34,20 @@ class sliceProgessPanel(wx.Panel):
 			self.mainWindow.removeSliceProgress(self)
 		else:
 			self.abort = True
+	
+	def OnShowGCode(self, e):
+		self.mainWindow.preview3d.loadGCodeFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
+	
+	def OnSliceDone(self):
+		self.statusText.SetLabel("Ready.")
+		self.progressGauge.Destroy()
+		self.showButton = wx.Button(self, -1, "Show GCode")
+		self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
+		self.sizer.Remove(self.abortButton)
+		self.sizer.Add(self.showButton, 0)
+		self.sizer.Add(self.abortButton, 0)
+		self.sizer.Layout()
+		self.abort = True
 
 class WorkerThread(threading.Thread):
 	def __init__(self, notifyWindow, filename):
@@ -48,6 +62,7 @@ class WorkerThread(threading.Thread):
 		maxValue = 1
 		while(len(line) > 0):
 			line = line.rstrip()
+			print line
 			if line[0:9] == "Progress[" and line[-1:] == "]":
 				progress = line[9:-1].split(":")
 				if len(progress) > 2:
@@ -62,6 +77,4 @@ class WorkerThread(threading.Thread):
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Aborted by user.")
 				return
 			line = p.stdout.readline()
-		wx.CallAfter(self.notifyWindow.progressGauge.SetValue, maxValue)
-		wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Ready.")
-
+		wx.CallAfter(self.notifyWindow.OnSliceDone)

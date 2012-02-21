@@ -10,6 +10,8 @@ import __init__
 import ConfigParser
 import os, sys
 
+from fabmetheus_utilities import archive
+
 def getSkeinPyPyConfigInformation():
 	return {
 		'carve': {
@@ -401,12 +403,19 @@ def printProgressByNumber(layerIndex, numberOfLayers, procedureName):
 
 def getAlterationFileLines(fileName):
 	'Get the alteration file line and the text lines from the fileName in the alterations directories.'
-	print ('getAlterationFileLines:', fileName)
-	return []
+	return getAlterationLines(fileName)
 
 def getAlterationLines(fileName):
-	print ('getAlterationLines:', fileName)
-	return []
+	#print ('getAlterationLines:', fileName)
+	return archive.getTextLines(getAlterationFile(fileName))
+
+def getAlterationFile(fileName):
+	"Get the file from the fileName or the lowercase fileName in the alterations directories."
+	alterationsDirectory = archive.getSkeinforgePath('alterations')
+	fullFilename = os.path.join(alterationsDirectory, fileName)
+	if os.path.isfile(fullFilename):
+		return archive.getFileText( fullFilename )
+	return ''
 
 ####################################
 ## Configuration settings classes ##

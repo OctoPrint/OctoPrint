@@ -9,6 +9,7 @@ from skeinforge_application.skeinforge_utilities import skeinforge_profile
 
 from newui import preview3d
 from newui import sliceProgessPanel
+from newui import alterationPanel
 
 def main():
 	app = wx.App(False)
@@ -30,6 +31,8 @@ class mainWindow(wx.Frame):
 		menubar.Append(fileMenu, '&File')
 		#menubar.Append(wx.Menu(), 'Expert')
 		self.SetMenuBar(menubar)
+		
+		wx.ToolTip.SetDelay(0)
 		
 		self.lastPath = ""
 		self.filename = None
@@ -57,7 +60,7 @@ class mainWindow(wx.Frame):
 		configPanel.SetSizer(sizer)
 		
 		self.AddTitle(configPanel, "Accuracy")
-		self.AddSetting(configPanel, "Layer height (mm)", self.plugins['carve'].preferencesDict['Layer_Height_mm'])
+		self.AddSetting(configPanel, "Layer height (mm)", self.plugins['carve'].preferencesDict['Layer_Height_mm'], 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		self.AddTitle(configPanel, "Skirt")
 		self.AddSetting(configPanel, "Enable skirt", self.plugins['skirt'].preferencesDict['Activate_Skirt'])
 		self.AddSetting(configPanel, "Skirt distance (mm)", self.plugins['skirt'].preferencesDict['Gap_Width_mm'])
@@ -93,7 +96,7 @@ class mainWindow(wx.Frame):
 		self.AddSetting(configPanel, "Diameter (mm)", self.plugins['dimension'].preferencesDict['Filament_Diameter_mm'])
 		self.AddSetting(configPanel, "Packing Density", self.plugins['dimension'].preferencesDict['Filament_Packing_Density_ratio'])
 		
-		nb.AddPage(wx.Panel(nb), "Start/End-GCode")
+		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
 		#Preview window, load and slice buttons.
 		self.preview3d = preview3d.myGLCanvas(p)
@@ -102,7 +105,7 @@ class mainWindow(wx.Frame):
 		sliceButton = wx.Button(p, -1, 'Slice to GCode')
 		self.Bind(wx.EVT_BUTTON, self.OnLoadSTL, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
-		
+
 		sizer = wx.GridBagSizer()
 		sizer.Add(nb, (0,0), span=(2,1), flag=wx.EXPAND)
 		sizer.Add(self.preview3d, (0,1), span=(1,3), flag=wx.EXPAND)
@@ -128,7 +131,7 @@ class mainWindow(wx.Frame):
 		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,1), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(sizer.GetRows() + 2)
 	
-	def AddSetting(self, panel, name, setting, help = False):
+	def AddSetting(self, panel, name, setting, help = 'TODO'):
 		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		sizer.Add(wx.StaticText(panel, -1, name), (sizer.GetRows(),1), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -148,6 +151,7 @@ class mainWindow(wx.Frame):
 			sizer.Add(ctrl, (sizer.GetRows(),2), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
 		sizer.Add(helpButton, (sizer.GetRows(),3))
+		helpButton.SetToolTip(wx.ToolTip(help))
 		sizer.SetRows(sizer.GetRows()+1)
 		return ctrl
 
@@ -179,15 +183,14 @@ class mainWindow(wx.Frame):
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
-			self.preview3d.loadFile(self.filename)
+			self.preview3d.loadModelFile(self.filename)
 		dlg.Destroy()
 	
 	def OnSlice(self, e):
 		if self.filename == None:
 			return
-		for pluginName in self.plugins.keys():
-			settings.storeRepository(self.plugins[pluginName])
-		settings.saveGlobalConfig(settings.getDefaultConfigPath())
+		self.updateConfigFromControls()
+		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self.panel, self.filename)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
@@ -209,6 +212,7 @@ class mainWindow(wx.Frame):
 		for spp in self.progressPanelList:
 			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
 			i += 1
+		self.sizer.Layout()
 	
 	def updateConfigToControls(self):
 		"Update the configuration wx controls to show the new configuration settings"

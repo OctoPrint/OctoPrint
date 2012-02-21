@@ -1,4 +1,3 @@
-#from wxPython.glcanvas import wxGLCanvas
 import wx
 import sys,math,threading
 
@@ -25,26 +24,81 @@ class myGLCanvas(GLCanvas):
 		self.init = 0
 		self.triangleMesh = None
 		self.modelDisplayList = None
+		self.pathList = None
 		self.yaw = 30
 		self.pitch = 60
 		self.zoom = 150
 		self.renderTransparent = False
 		self.machineSize = Vector3(210, 210, 200)
-		self.machineCenter = Vector3(100, 100, 0)
+		self.machineCenter = Vector3(105, 105, 0)
 		configButton = wx.Button(self, -1, '', (3,3), (10,10))
 		self.Bind(wx.EVT_BUTTON, self.OnConfigClick, configButton)
 	
-	def loadFile(self, filename):
-		self.filename = filename
+	def loadModelFile(self, filename):
+		self.modelFilename = filename
 		#Do the STL file loading in a background thread so we don't block the UI.
-		thread = threading.Thread(target=self.DoLoad)
+		thread = threading.Thread(target=self.DoModelLoad)
+		thread.setDaemon(True)
+		thread.start()
+
+	def loadGCodeFile(self, filename):
+		self.gcodeFilename = filename
+		#Do the STL file loading in a background thread so we don't block the UI.
+		thread = threading.Thread(target=self.DoGCodeLoad)
 		thread.setDaemon(True)
 		thread.start()
 	
-	def DoLoad(self):
+	def DoModelLoad(self):
 		self.modelDirty = False
-		self.triangleMesh = fabmetheus_interpret.getCarving(self.filename)
+		self.triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
 		self.moveModel()
+		self.Refresh()
+	
+	def getCode(self, str, id):
+		pos = str.find(id)
+		if pos < 0:
+			return '';
+		posEnd = str.find(' ', pos)
+		if posEnd < 0:
+			return str[pos+1:]
+		return str[pos+1:posEnd]
+	
+	def DoGCodeLoad(self):
+		f = open(self.gcodeFilename, 'r')
+		pos = Vector3()
+		currentE = 0
+		pathList = []
+		currentPath = {'type': 'move', 'list': [pos.copy()]}
+		for line in f:
+			G = self.getCode(line, 'G')
+			if G != '':
+				if G == '0' or G == '1':
+					X = self.getCode(line, 'X')
+					Y = self.getCode(line, 'Y')
+					Z = self.getCode(line, 'Z')
+					E = self.getCode(line, 'E')
+					if X != '':
+						pos.x = float(X)
+					if X != '':
+						pos.y = float(Y)
+					if Z != '':
+						pos.z = float(Z)
+					newPoint = pos.copy()
+					type = 'move'
+					if E != '':
+						newEvalue = float(E)
+						if newEvalue > currentE:
+							type = 'extrude'
+						if newEvalue < currentE:
+							type = 'retract'
+					if currentPath['type'] != type:
+						pathList.append(currentPath)
+						currentPath = {'type': type, 'list': [currentPath['list'][-1]]}
+					currentPath['list'].append(newPoint)
+				else:
+					print "Unknown G code:" + G
+		self.pathList = pathList
+		self.triangleMesh = None
 		self.Refresh()
 	
 	def OnConfigClick(self, e):
@@ -104,6 +158,7 @@ class myGLCanvas(GLCanvas):
 		
 		glTranslate(-self.machineCenter.x, -self.machineCenter.y, 0)
 		
+		glColor3f(1,1,1)
 		glLineWidth(4)
 		glDisable(GL_LIGHTING)
 		glBegin(GL_LINE_LOOP)
@@ -138,6 +193,19 @@ class myGLCanvas(GLCanvas):
 		glVertex3f(0, self.machineSize.y, 0)
 		glVertex3f(0, self.machineSize.y, self.machineSize.z)
 		glEnd()
+
+		if self.pathList != None:
+			for path in self.pathList:
+				if path['type'] == 'move':
+					glColor3f(0,0,1)
+				if path['type'] == 'extrude':
+					glColor3f(1,0,0)
+				if path['type'] == 'retract':
+					glColor3f(0,1,0)
+				glBegin(GL_LINE_STRIP)
+				for v in path['list']:
+					glVertex3f(v.x, v.y, v.z)
+				glEnd()
 		
 		if self.triangleMesh != None:
 			if self.modelDisplayList == None:
@@ -185,9 +253,13 @@ class myGLCanvas(GLCanvas):
 		glLoadIdentity()
 		glViewport(0,0, self.GetSize().GetWidth(), self.GetSize().GetHeight())
 		
-		glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
+		if self.renderTransparent:
+			glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])
+			glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.1, 0.1, 0.1, 0.0])
+		else:
+			glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
+			glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.2, 0.2, 0.0])
 		glLightfv(GL_LIGHT0, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
-		glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.2, 0.2, 0.0])
 
 		glEnable(GL_LIGHTING)
 		glEnable(GL_LIGHT0)

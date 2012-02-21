@@ -44,5 +44,4 @@ def getSkeinCommand(filename):
 	pypyExe = getPyPyExe()
 	if pypyExe == False:
 		pypyExe = sys.executable
-	return [pypyExe, os.path.join(sys.path[0], sys.argv[0]), filename]
-
+	return [pypyExe, os.path.join(sys.path[0], os.path.split(sys.argv[0])[1]), filename]
