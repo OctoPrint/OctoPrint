@@ -194,7 +194,7 @@ class DimensionSkein:
 
 	def addLinearMoveExtrusionDistanceLine(self, extrusionDistance):
 		'Get the extrusion distance string from the extrusion distance.'
-		if self.repository.extruderRetractionSpeed.value != 0.0:
+		if self.repository.extruderRetractionSpeed.value != 0.0 and extrusionDistance != 0.0:
 			self.distanceFeedRate.output.write('G1 F%s\n' % self.extruderRetractionSpeedMinuteString)
 			self.distanceFeedRate.output.write('G1%s\n' % self.getExtrusionDistanceStringFromExtrusionDistance(extrusionDistance))
 			self.distanceFeedRate.output.write('G1 F%s\n' % self.distanceFeedRate.getRounded(self.feedRateMinute))
@@ -206,7 +206,7 @@ class DimensionSkein:
 		filamentPackingArea = math.pi * filamentRadius * filamentRadius * repository.filamentPackingDensity.value
 		self.minimumTravelForRetraction = self.repository.minimumTravelForRetraction.value
 		self.doubleMinimumTravelForRetraction = self.minimumTravelForRetraction + self.minimumTravelForRetraction
- 		self.lines = archive.getTextLines(gcodeText)
+		self.lines = archive.getTextLines(gcodeText)
 		self.parseInitialization()
 		if not self.repository.retractWithinIsland.value:
 			self.parseBoundaries()
