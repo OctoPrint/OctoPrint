@@ -32,6 +32,7 @@ class mainWindow(wx.Frame):
 		
 		self.lastPath = ""
 		self.filename = None
+		self.progressPanelList = []
 		self.controlList = []
 		self.plugins = {}
 		for m in skeinforge_profile.getCraftTypePluginModule().getCraftSequence():
@@ -109,7 +110,6 @@ class mainWindow(wx.Frame):
 
 		self.panel = p
 		self.sizer = sizer
-		self.sizer.SetRows(2)
 
 		self.SetSize((800, 400))
 		self.Centre()
@@ -170,11 +170,27 @@ class mainWindow(wx.Frame):
 			settings.storeRepository(self.plugins[pluginName])
 		settings.saveGlobalConfig(settings.getDefaultConfigPath())
 		#skeinpypy.runSkein([self.filename])
-		spp = sliceProgessPanel.sliceProgessPanel(self.panel, self.filename)
-		self.sizer.Add(spp, (self.sizer.GetRows(),0), span=(1,4), flag=wx.EXPAND)
-		self.sizer.SetRows(self.sizer.GetRows()+1)
+		spp = sliceProgessPanel.sliceProgessPanel(self, self.panel, self.filename)
+		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
 		self.sizer.Layout()
-	
+		newSize = self.GetSize();
+		newSize.IncBy(0, spp.GetSize().GetHeight())
+		self.SetSize(newSize)
+		self.progressPanelList.append(spp)
+
+	def removeSliceProgress(self, spp):
+		self.progressPanelList.remove(spp)
+		newSize = self.GetSize();
+		newSize.IncBy(0, -spp.GetSize().GetHeight())
+		self.SetSize(newSize)
+		spp.Destroy()
+		for spp in self.progressPanelList:
+			self.sizer.Remove(spp)
+		i = 2
+		for spp in self.progressPanelList:
+			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
+			i += 1
+
 	def updateConfig(self):
 		for ctrl in self.controlList:
 			ctrl.setting.setValueToString(ctrl.GetValue())

@@ -5,8 +5,9 @@ import wx,sys,math,threading,subprocess
 from newui import skeinRun
 
 class sliceProgessPanel(wx.Panel):
-	def __init__(self, parent, filename):
+	def __init__(self, mainWindow, parent, filename):
 		wx.Panel.__init__(self, parent, -1)
+		self.mainWindow = mainWindow
 		self.filename = filename
 		self.abort = False
 
@@ -30,7 +31,7 @@ class sliceProgessPanel(wx.Panel):
 	
 	def OnAbort(self, e):
 		if self.abort:
-			self.Destroy()
+			self.mainWindow.removeSliceProgress(self)
 		else:
 			self.abort = True
 
@@ -61,4 +62,6 @@ class WorkerThread(threading.Thread):
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Aborted by user.")
 				return
 			line = p.stdout.readline()
+		wx.CallAfter(self.notifyWindow.progressGauge.SetValue, maxValue)
+		wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Ready.")
 
