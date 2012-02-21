@@ -52,7 +52,7 @@ class mainWindow(wx.Frame):
 		nb = wx.Notebook(p, size=(500,10))
 		
 		configPanel = wx.Panel(nb);
-		nb.AddPage(configPanel, "Print")
+		nb.AddPage(configPanel, "Print config")
 		sizer = wx.GridBagSizer(2, 2)
 		configPanel.SetSizer(sizer)
 		
@@ -70,7 +70,7 @@ class mainWindow(wx.Frame):
 		self.AddSetting(configPanel, "Extra length on start (mm)", self.plugins['dimension'].preferencesDict['Restart_Extra_Distance_millimeters'])
 
 		configPanel = wx.Panel(nb);
-		nb.AddPage(configPanel, "Machine")
+		nb.AddPage(configPanel, "Machine config")
 		sizer = wx.GridBagSizer(2, 2)
 		configPanel.SetSizer(sizer)
 		
@@ -117,6 +117,7 @@ class mainWindow(wx.Frame):
 		self.Show(True)
 	
 	def AddTitle(self, panel, name):
+		"Add a title row to the configuration panel"
 		sizer = panel.GetSizer()
 		title = wx.StaticText(panel, -1, name)
 		title.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
@@ -125,6 +126,7 @@ class mainWindow(wx.Frame):
 		sizer.SetRows(sizer.GetRows() + 2)
 	
 	def AddSetting(self, panel, name, setting, help = False):
+		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		sizer.Add(wx.StaticText(panel, -1, name), (sizer.GetRows(),1), flag=wx.ALIGN_CENTER_VERTICAL)
 		ctrl = None
@@ -182,7 +184,7 @@ class mainWindow(wx.Frame):
 		for pluginName in self.plugins.keys():
 			settings.storeRepository(self.plugins[pluginName])
 		settings.saveGlobalConfig(settings.getDefaultConfigPath())
-		#skeinpypy.runSkein([self.filename])
+		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self.panel, self.filename)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
 		self.sizer.Layout()
@@ -205,6 +207,7 @@ class mainWindow(wx.Frame):
 			i += 1
 	
 	def updateConfigToControls(self):
+		"Update the configuration wx controls to show the new configuration settings"
 		for pluginName in self.plugins.keys():
 			settings.getReadRepository(self.plugins[pluginName])
 		settings.saveGlobalConfig(settings.getDefaultConfigPath())
@@ -215,6 +218,7 @@ class mainWindow(wx.Frame):
 				ctrl.SetValue(str(ctrl.setting.value))
 
 	def updateConfigFromControls(self):
+		"Update the configuration settings with values from the wx controls"
 		for ctrl in self.controlList:
 			ctrl.setting.setValueToString(ctrl.GetValue())
 		for pluginName in self.plugins.keys():
