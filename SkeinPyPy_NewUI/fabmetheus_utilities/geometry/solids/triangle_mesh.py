@@ -480,9 +480,9 @@ def getLoopsFromUnprovenMesh(edges, faces, importRadius, vertexes, z):
 	pointTable = {}
 	return getDescendingAreaLoops(allPoints, corners, importRadius)
 
-def getLoopLayerAppend(loopLayers, z):
+def getLoopLayerAppend(loopLayers, layerCount, z):
 	'Get next z and add extruder loops.'
-	settings.printProgress(len(loopLayers), 'slice')
+	settings.printProgressByNumber(len(loopLayers), layerCount, 'slice')
 	loopLayer = euclidean.LoopLayer(z)
 	loopLayers.append(loopLayer)
 	return loopLayer
@@ -812,8 +812,9 @@ class TriangleMesh( group.Group ):
 		self.zoneArrangement = ZoneArrangement(self.layerHeight, self.getTransformedVertexes())
 		layerTop = self.cornerMaximum.z - halfHeight * 0.5
 		z = self.cornerMinimum.z + halfHeight
+		layerCount = int((layerTop - z) / self.layerHeight)
 		while z < layerTop:
-			getLoopLayerAppend(self.loopLayers, z).loops = self.getLoopsFromMesh(self.zoneArrangement.getEmptyZ(z))
+			getLoopLayerAppend(self.loopLayers, layerCount, z).loops = self.getLoopsFromMesh(self.zoneArrangement.getEmptyZ(z))
 			z += self.layerHeight
 		return self.loopLayers
 

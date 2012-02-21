@@ -1,14 +1,14 @@
 from __future__ import absolute_import
 import __init__
 
-import skeinpypy
-
 import wx, os
 
-from newui import preview3d
 from fabmetheus_utilities import archive
 from fabmetheus_utilities import settings
 from skeinforge_application.skeinforge_utilities import skeinforge_profile
+
+from newui import preview3d
+from newui import sliceProgessPanel
 
 def main():
 	app = wx.App(False)
@@ -22,15 +22,18 @@ class mainWindow(wx.Frame):
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
 		fitem = fileMenu.Append(-1, 'Open Profile...', 'Open Profile...')
+		self.Bind(wx.EVT_MENU, self.OnLoadProfile, fitem)
 		fitem = fileMenu.Append(-1, 'Save Profile...', 'Save Profile...')
 		self.Bind(wx.EVT_MENU, self.OnSaveProfile, fitem)
 		fitem = fileMenu.Append(wx.ID_EXIT, 'Quit', 'Quit application')
 		self.Bind(wx.EVT_MENU, self.OnQuit, fitem)
 		menubar.Append(fileMenu, '&File')
-		menubar.Append(wx.Menu(), 'Expert')
+		#menubar.Append(wx.Menu(), 'Expert')
 		self.SetMenuBar(menubar)
 		
+		self.lastPath = ""
 		self.filename = None
+		self.progressPanelList = []
 		self.controlList = []
 		self.plugins = {}
 		for m in skeinforge_profile.getCraftTypePluginModule().getCraftSequence():
@@ -49,7 +52,7 @@ class mainWindow(wx.Frame):
 		nb = wx.Notebook(p, size=(500,10))
 		
 		configPanel = wx.Panel(nb);
-		nb.AddPage(configPanel, "Print")
+		nb.AddPage(configPanel, "Print config")
 		sizer = wx.GridBagSizer(2, 2)
 		configPanel.SetSizer(sizer)
 		
@@ -57,7 +60,7 @@ class mainWindow(wx.Frame):
 		self.AddSetting(configPanel, "Layer height (mm)", self.plugins['carve'].preferencesDict['Layer_Height_mm'])
 		self.AddTitle(configPanel, "Skirt")
 		self.AddSetting(configPanel, "Enable skirt", self.plugins['skirt'].preferencesDict['Activate_Skirt'])
-		self.AddSetting(configPanel, "Skirt distance (mm)", self.plugins['skirt'].preferencesDict['Gap_over_Perimeter_Width_ratio'])
+		self.AddSetting(configPanel, "Skirt distance (mm)", self.plugins['skirt'].preferencesDict['Gap_Width_mm'])
 		self.AddTitle(configPanel, "Fill")
 		self.AddSetting(configPanel, "Solid layers", self.plugins['fill'].preferencesDict['Solid_Surface_Thickness_layers'])
 		self.AddSetting(configPanel, "Fill Density", self.plugins['fill'].preferencesDict['Infill_Solidity_ratio'])
@@ -68,7 +71,7 @@ class mainWindow(wx.Frame):
 		self.AddSetting(configPanel, "Minimal travel (mm)", self.plugins['dimension'].preferencesDict['Minimum_Travel_for_Retraction_millimeters'])
 
 		configPanel = wx.Panel(nb);
-		nb.AddPage(configPanel, "Machine")
+		nb.AddPage(configPanel, "Machine config")
 		sizer = wx.GridBagSizer(2, 2)
 		configPanel.SetSizer(sizer)
 		
@@ -108,20 +111,25 @@ class mainWindow(wx.Frame):
 		sizer.AddGrowableCol(2)
 		sizer.AddGrowableRow(0)
 		p.SetSizer(sizer)
-		
+
+		self.panel = p
+		self.sizer = sizer
+
 		self.SetSize((800, 400))
 		self.Centre()
 		self.Show(True)
 	
 	def AddTitle(self, panel, name):
+		"Add a title row to the configuration panel"
 		sizer = panel.GetSizer()
 		title = wx.StaticText(panel, -1, name)
 		title.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-		sizer.Add(title, (sizer.GetRows(),1), (1,2), flag=wx.EXPAND)
-		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,1), (1,2), flag=wx.EXPAND)
+		sizer.Add(title, (sizer.GetRows(),1), (1,3), flag=wx.EXPAND)
+		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,1), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(sizer.GetRows() + 2)
 	
-	def AddSetting(self, panel, name, setting):
+	def AddSetting(self, panel, name, setting, help = False):
+		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		sizer.Add(wx.StaticText(panel, -1, name), (sizer.GetRows(),1), flag=wx.ALIGN_CENTER_VERTICAL)
 		ctrl = None
@@ -138,25 +146,41 @@ class mainWindow(wx.Frame):
 			ctrl.setting = setting
 			self.controlList.append(ctrl)
 			sizer.Add(ctrl, (sizer.GetRows(),2), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
+		sizer.Add(helpButton, (sizer.GetRows(),3))
 		sizer.SetRows(sizer.GetRows()+1)
 		return ctrl
-	
-	def OnSaveProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to save", style=wx.FD_SAVE)
+
+	def OnLoadProfile(self, e):
+		dlg=wx.FileDialog(self, "Select profile file to load", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
-			self.updateConfig()
+			self.lastPath = os.path.split(profileFile)[0]
+			settings.loadGlobalConfig(profileFile)
+			self.updateConfigToControls()
+		dlg.Destroy()
+	
+	def OnSaveProfile(self, e):
+		dlg=wx.FileDialog(self, "Select profile file to save", self.lastPath, style=wx.FD_SAVE)
+		dlg.SetWildcard("ini files (*.ini)|*.ini")
+		if dlg.ShowModal() == wx.ID_OK:
+			profileFile = dlg.GetPath()
+			self.lastPath = os.path.split(profileFile)[0]
 			settings.saveGlobalConfig(profileFile)
+			self.updateConfigFromControls()
+		dlg.Destroy()
 	
 	def OnLoadSTL(self, e):
-		dlg=wx.FileDialog(self, "Open file to print", style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("OBJ, STL files (*.stl;*.STL;*.obj;*.OBJ;)")
+		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
 			if not(os.path.exists(self.filename)):
 				return
+			self.lastPath = os.path.split(self.filename)[0]
 			self.preview3d.loadFile(self.filename)
+		dlg.Destroy()
 	
 	def OnSlice(self, e):
 		if self.filename == None:
@@ -164,9 +188,41 @@ class mainWindow(wx.Frame):
 		for pluginName in self.plugins.keys():
 			settings.storeRepository(self.plugins[pluginName])
 		settings.saveGlobalConfig(settings.getDefaultConfigPath())
-		skeinpypy.runSkein([self.filename])
+		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
+		spp = sliceProgessPanel.sliceProgessPanel(self, self.panel, self.filename)
+		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
+		self.sizer.Layout()
+		newSize = self.GetSize();
+		newSize.IncBy(0, spp.GetSize().GetHeight())
+		self.SetSize(newSize)
+		self.progressPanelList.append(spp)
+
+	def removeSliceProgress(self, spp):
+		self.progressPanelList.remove(spp)
+		newSize = self.GetSize();
+		newSize.IncBy(0, -spp.GetSize().GetHeight())
+		self.SetSize(newSize)
+		spp.Destroy()
+		for spp in self.progressPanelList:
+			self.sizer.Remove(spp)
+		i = 2
+		for spp in self.progressPanelList:
+			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
+			i += 1
 	
-	def updateConfig(self):
+	def updateConfigToControls(self):
+		"Update the configuration wx controls to show the new configuration settings"
+		for pluginName in self.plugins.keys():
+			settings.getReadRepository(self.plugins[pluginName])
+		settings.saveGlobalConfig(settings.getDefaultConfigPath())
+		for ctrl in self.controlList:
+			if ctrl.setting.__class__ is settings.BooleanSetting:
+				ctrl.SetValue(ctrl.setting.value)
+			else:
+				ctrl.SetValue(str(ctrl.setting.value))
+
+	def updateConfigFromControls(self):
+		"Update the configuration settings with values from the wx controls"
 		for ctrl in self.controlList:
 			ctrl.setting.setValueToString(ctrl.GetValue())
 		for pluginName in self.plugins.keys():

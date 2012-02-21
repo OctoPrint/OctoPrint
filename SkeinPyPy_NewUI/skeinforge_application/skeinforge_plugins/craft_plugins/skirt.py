@@ -131,9 +131,9 @@ class SkirtRepository:
 		self.fileNameInput = settings.FileNameInput().getFromFileName(
 			fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Skirt', self, '')
 		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute('http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Skirt')
-		self.activateSkirt = settings.BooleanSetting().getFromValue('Activate Skirt', self, False)
+		self.activateSkirt = settings.BooleanSetting().getFromValue('Activate Skirt', self, True)
 		self.convex = settings.BooleanSetting().getFromValue('Convex:', self, True)
-		self.gapOverEdgeWidth = settings.FloatSpin().getFromValue(1.0, 'Gap over Perimeter Width (ratio):', self, 5.0, 3.0)
+		self.gapWidth = settings.FloatSpin().getFromValue(1.0, 'Gap Width (mm):', self, 5.0, 3.0)
 		self.layersTo = settings.IntSpin().getSingleIncrementFromValue(0, 'Layers To (index):', self, 912345678, 1)
 		self.executeTitle = 'Skirt'
 
@@ -270,7 +270,7 @@ class SkirtSkein:
 				self.skirtFlowRate = self.oldFlowRate
 			elif firstWord == '(<edgeWidth>':
 				self.edgeWidth = float(splitLine[1])
-				self.skirtOutset = (self.repository.gapOverEdgeWidth.value + 0.5) * self.edgeWidth
+				self.skirtOutset = self.repository.gapWidth.value + 0.5 * self.edgeWidth
 				self.distanceFeedRate.addTagRoundedLine('skirtOutset', self.skirtOutset)
 			elif firstWord == '(<travelFeedRatePerSecond>':
 				self.travelFeedRateMinute = 60.0 * float(splitLine[1])
