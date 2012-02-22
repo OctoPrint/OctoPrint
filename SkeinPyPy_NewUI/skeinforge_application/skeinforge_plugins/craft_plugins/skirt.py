@@ -90,7 +90,7 @@ def getCraftedTextFromText(gcodeText, repository=None):
 		return gcodeText
 	if repository == None:
 		repository = settings.getReadRepository(SkirtRepository())
-	if not repository.activateSkirt.value:
+	if repository.skirtLineCount.value < 1:
 		return gcodeText
 	return SkirtSkein().getCraftedGcode(gcodeText, repository)
 
@@ -131,7 +131,7 @@ class SkirtRepository:
 		self.fileNameInput = settings.FileNameInput().getFromFileName(
 			fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Skirt', self, '')
 		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute('http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Skirt')
-		self.activateSkirt = settings.BooleanSetting().getFromValue('Activate Skirt', self, True)
+		self.skirtLineCount = settings.IntSpin().getSingleIncrementFromValue(0, 'Skirt line count', self, 20, 1)
 		self.convex = settings.BooleanSetting().getFromValue('Convex:', self, True)
 		self.gapWidth = settings.FloatSpin().getFromValue(1.0, 'Gap Width (mm):', self, 5.0, 3.0)
 		self.layersTo = settings.IntSpin().getSingleIncrementFromValue(0, 'Layers To (index):', self, 912345678, 1)
@@ -202,10 +202,13 @@ class SkirtSkein:
 		points += euclidean.getPointsByVerticalDictionary(self.edgeWidth, self.unifiedLoop.verticalDictionary)
 		loops = triangle_mesh.getDescendingAreaOrientedLoops(points, points, 2.5 * self.edgeWidth)
 		outerLoops = getOuterLoops(loops)
-		outsetLoops = intercircle.getInsetSeparateLoopsFromLoops(outerLoops, -self.skirtOutset)
-		self.outsetLoops = getOuterLoops(outsetLoops)
-		if self.repository.convex.value:
-			self.outsetLoops = [euclidean.getLoopConvex(euclidean.getConcatenatedList(self.outsetLoops))]
+		self.outsetLoops = []
+		for i in xrange(self.repository.skirtLineCount.value, 0, -1):
+			outsetLoops = intercircle.getInsetSeparateLoopsFromLoops(outerLoops, -self.skirtOutset - i * self.edgeWidth)
+			outsetLoops = getOuterLoops(outsetLoops)
+			if self.repository.convex.value:
+				outsetLoops = [euclidean.getLoopConvex(euclidean.getConcatenatedList(outsetLoops))]
+			self.outsetLoops.extend(outsetLoops)
 
 	def getCraftedGcode(self, gcodeText, repository):
 		'Parse gcode text and store the skirt gcode.'
