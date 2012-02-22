@@ -1,5 +1,8 @@
 import wx
-import sys,math,threading
+import sys
+import math
+import threading
+import re
 
 from wx.glcanvas import GLCanvas
 try:
@@ -54,49 +57,104 @@ class myGLCanvas(GLCanvas):
 		self.moveModel()
 		self.Refresh()
 	
-	def getCode(self, str, id):
-		pos = str.find(id)
-		if pos < 0:
-			return '';
-		posEnd = str.find(' ', pos)
-		if posEnd < 0:
-			return str[pos+1:]
-		return str[pos+1:posEnd]
+	def getCodeInt(self, str, id):
+		m = re.search(id + '([^\s]+)', str)
+		if m == None:
+			return None
+		try:
+			return int(m.group(1))
+		except:
+			return None
+
+	def getCodeFloat(self, str, id):
+		m = re.search(id + '([^\s]+)', str)
+		if m == None:
+			return None
+		try:
+			return float(m.group(1))
+		except:
+			return None
 	
 	def DoGCodeLoad(self):
 		f = open(self.gcodeFilename, 'r')
 		pos = Vector3()
+		posOffset = Vector3()
 		currentE = 0
 		pathList = []
 		currentPath = {'type': 'move', 'list': [pos.copy()]}
+		scale = 1.0
+		posAbs = True
 		for line in f:
-			G = self.getCode(line, 'G')
-			if G != '':
-				if G == '0' or G == '1':
-					X = self.getCode(line, 'X')
-					Y = self.getCode(line, 'Y')
-					Z = self.getCode(line, 'Z')
-					E = self.getCode(line, 'E')
-					if X != '':
-						pos.x = float(X)
-					if X != '':
-						pos.y = float(Y)
-					if Z != '':
-						pos.z = float(Z)
+			G = self.getCodeInt(line, 'G')
+			if G is not None:
+				if G == 0 or G == 1:	#Move
+					x = self.getCodeFloat(line, 'X')
+					y = self.getCodeFloat(line, 'Y')
+					z = self.getCodeFloat(line, 'Z')
+					e = self.getCodeFloat(line, 'E')
+					if x is not None:
+						if posAbs:
+							pos.x = x * scale
+						else:
+							pos.x += x * scale
+					if y is not None:
+						if posAbs:
+							pos.y = y * scale
+						else:
+							pos.y += y * scale
+					if z is not None:
+						if posAbs:
+							pos.z = z * scale
+						else:
+							pos.z += z * scale
 					newPoint = pos.copy()
 					type = 'move'
-					if E != '':
-						newEvalue = float(E)
-						if newEvalue > currentE:
+					if e is not None:
+						if e > currentE:
 							type = 'extrude'
-						if newEvalue < currentE:
+						if e < currentE:
 							type = 'retract'
+						currentE = e
 					if currentPath['type'] != type:
 						pathList.append(currentPath)
 						currentPath = {'type': type, 'list': [currentPath['list'][-1]]}
 					currentPath['list'].append(newPoint)
+				elif G == 20:	#Units are inches
+					scale = 25.4
+				elif G == 21:	#Units are mm
+					scale = 1.0
+				elif G == 28:	#Home
+					x = self.getCodeFloat(line, 'X')
+					y = self.getCodeFloat(line, 'Y')
+					z = self.getCodeFloat(line, 'Z')
+					if x is None and y is None and z is None:
+						pos = Vector3()
+					else:
+						if x is not None:
+							pos.x = 0.0
+						if y is not None:
+							pos.y = 0.0
+						if z is not None:
+							pos.z = 0.0
+				elif G == 90:	#Absolute position
+					posAbs = True
+				elif G == 91:	#Relative position
+					posAbs = False
+				elif G == 92:
+					x = self.getCodeFloat(line, 'X')
+					y = self.getCodeFloat(line, 'Y')
+					z = self.getCodeFloat(line, 'Z')
+					e = self.getCodeFloat(line, 'E')
+					if e is not None:
+						currentE = e
+					if x is not None:
+						posOffset.x = pos.x + x
+					if y is not None:
+						posOffset.y = pos.y + y
+					if z is not None:
+						posOffset.z = pos.z + z
 				else:
-					print "Unknown G code:" + G
+					print "Unknown G code:" + str(G)
 		self.pathList = pathList
 		self.triangleMesh = None
 		self.Refresh()

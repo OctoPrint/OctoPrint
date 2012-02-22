@@ -61,12 +61,12 @@ class mainWindow(wx.Frame):
 		
 		self.AddTitle(configPanel, "Accuracy")
 		self.AddSetting(configPanel, "Layer height (mm)", self.plugins['carve'].preferencesDict['Layer_Height_mm'], 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
-		self.AddTitle(configPanel, "Skirt")
-		self.AddSetting(configPanel, "Enable skirt", self.plugins['skirt'].preferencesDict['Activate_Skirt'])
-		self.AddSetting(configPanel, "Skirt distance (mm)", self.plugins['skirt'].preferencesDict['Gap_Width_mm'])
 		self.AddTitle(configPanel, "Fill")
 		self.AddSetting(configPanel, "Solid layers", self.plugins['fill'].preferencesDict['Solid_Surface_Thickness_layers'])
 		self.AddSetting(configPanel, "Fill Density", self.plugins['fill'].preferencesDict['Infill_Solidity_ratio'])
+		self.AddTitle(configPanel, "Skirt")
+		self.AddSetting(configPanel, "Line count", self.plugins['skirt'].preferencesDict['Skirt_line_count'])
+		self.AddSetting(configPanel, "Start distance (mm)", self.plugins['skirt'].preferencesDict['Gap_Width_mm'])
 		self.AddTitle(configPanel, "Retraction")
 		self.AddSetting(configPanel, "Speed (mm/s)", self.plugins['dimension'].preferencesDict['Extruder_Retraction_Speed_mm/s'])
 		self.AddSetting(configPanel, "Distance (mm)", self.plugins['dimension'].preferencesDict['Retraction_Distance_millimeters'])
@@ -74,7 +74,7 @@ class mainWindow(wx.Frame):
 		self.AddSetting(configPanel, "Minimal travel (mm)", self.plugins['dimension'].preferencesDict['Minimum_Travel_for_Retraction_millimeters'])
 
 		configPanel = wx.Panel(nb);
-		nb.AddPage(configPanel, "Machine config")
+		nb.AddPage(configPanel, "Machine && Filament")
 		sizer = wx.GridBagSizer(2, 2)
 		configPanel.SetSizer(sizer)
 		
@@ -131,7 +131,7 @@ class mainWindow(wx.Frame):
 		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,1), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(sizer.GetRows() + 2)
 	
-	def AddSetting(self, panel, name, setting, help = 'TODO'):
+	def AddSetting(self, panel, name, setting, help = 'Help: TODO'):
 		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		sizer.Add(wx.StaticText(panel, -1, name), (sizer.GetRows(),1), flag=wx.ALIGN_CENTER_VERTICAL)

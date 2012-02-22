@@ -145,7 +145,7 @@ def getSkeinPyPyConfigInformation():
 			'Support_Material_Choice_': 'save',
 			'Support_Minimum_Angle_degrees': 'save',
 		},'skirt': {
-			'Activate_Skirt': 'save',
+			'Skirt_line_count': 'save',
 			'Convex': 'ignore',
 			'Gap_Width_mm': 'save',
 			'Layers_To_index': 'ignore',
