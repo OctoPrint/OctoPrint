@@ -580,6 +580,14 @@ class SkeinforgeRepository:
 	
 	def getPyPyExe(self):
 		if platform.system() == "Windows":
+			checkSSE2exe = os.path.dirname(os.path.abspath(__file__)) + "/checkSSE2.exe"
+			if os.path.exists(checkSSE2exe):
+				if subprocess.call(checkSSE2exe) != 0:
+					print "*****************************************************"
+					print "* Your CPU is lacking SSE2 support, cannot use PyPy *"
+					print "*****************************************************"
+					return False
+		if platform.system() == "Windows":
 			pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/pypy.exe"));
 		else:
 			pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/bin/pypy"));
