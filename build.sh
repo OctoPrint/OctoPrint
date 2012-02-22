@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script is to build the SkeinPyPy package for Windows/Linux and OSx
+# This script should run under Linux and OSx, as well as Windows with Cygwin.
+
 #############################
 # CONFIGURATION
 #############################
@@ -96,6 +99,16 @@ if [ $BUILD_TARGET = "win32" ]; then
 	mv PURELIB/serial ${TARGET_DIR}/python/Lib
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
+	
+	#Clean up portable python a bit, to keep the package size down.
+	rm -rf ${TARGET_DIR}/python/PyScripter.*
+	rm -rf ${TARGET_DIR}/python/Doc
+	rm -rf ${TARGET_DIR}/python/locale
+	#rm -rf ${TARGET_DIR}/python/tcl
+	rm -rf ${TARGET_DIR}/python/Lib/test
+	rm -rf ${TARGET_DIR}/python/Lib/distutils
+	rm -rf ${TARGET_DIR}/python/Lib/site-packages/wx-2.8-msw-unicode/wx/tools
+	rm -rf ${TARGET_DIR}/python/Lib/site-packages/wx-2.8-msw-unicode/wx/locale
 fi
 
 #Extract pypy
@@ -106,11 +119,14 @@ else
 	cd ${TARGET_DIR}; $TAR -xjf ../pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2; cd ..
 	mv ${TARGET_DIR}/pypy-${PYPY_VERSION} ${TARGET_DIR}/pypy
 fi
+#Cleanup pypy
+rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
 #add Skeinforge
 cp -a SkeinPyPy ${TARGET_DIR}/SkeinPyPy
 
-#Add the SSE2 check if we can build it
+#Add the SSE2 check if we can build it, else we skip it.
+#  If we don't have it SkeinPyPy will still function. But crash on machines that don't have SSE2
 if [ $BUILD_TARGET = "win32" ]; then
 	WINCC=`whereis i386-mingw32-gcc`
 	if [ "$WINCC" != "" ]; then
@@ -131,6 +147,7 @@ cp README ${TARGET_DIR}/README.txt
 #package the result
 if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 	if [ $BUILD_TARGET = "win32" ]; then
+		rm ${TARGET_DIR}.zip
 		cd ${TARGET_DIR}
 		7z a ../${TARGET_DIR}.zip *
 		cd ..
