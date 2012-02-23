@@ -17,13 +17,17 @@ except:
 from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from fabmetheus_utilities.vector3 import Vector3
 
-class myGLCanvas(GLCanvas):
+class previewPanel(wx.Panel):
 	def __init__(self, parent):
-		GLCanvas.__init__(self, parent,-1)
-		wx.EVT_PAINT(self, self.OnPaint)
-		wx.EVT_SIZE(self, self.OnSize)
-		wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
-		wx.EVT_MOTION(self, self.OnMouseMotion)
+		wx.Panel.__init__(self, parent,-1)
+		
+		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
+
+		self.glCanvas = GLCanvas(self, -1)
+		wx.EVT_PAINT(self.glCanvas, self.OnPaint)
+		wx.EVT_SIZE(self.glCanvas, self.OnSize)
+		wx.EVT_ERASE_BACKGROUND(self.glCanvas, self.OnEraseBackground)
+		wx.EVT_MOTION(self.glCanvas, self.OnMouseMotion)
 		self.init = 0
 		self.triangleMesh = None
 		self.modelDisplayList = None
@@ -34,21 +38,31 @@ class myGLCanvas(GLCanvas):
 		self.renderTransparent = False
 		self.machineSize = Vector3(210, 210, 200)
 		self.machineCenter = Vector3(105, 105, 0)
-		configButton = wx.Button(self, -1, '', (3,3), (10,10))
-		self.Bind(wx.EVT_BUTTON, self.OnConfigClick, configButton)
+		
+		tb = wx.ToolBar( self, -1 )
+		self.ToolBar = tb
+		tb.SetToolBitmapSize( ( 21, 21 ) )
+		transparentButton = wx.Button(tb, -1, "T", size=(21,21))
+		tb.AddControl(transparentButton)
+		self.Bind(wx.EVT_BUTTON, self.OnConfigClick, transparentButton)
+		tb.Realize()
+
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(tb, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
+		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
+		self.SetSizer(sizer)
+
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
 		#Do the STL file loading in a background thread so we don't block the UI.
 		thread = threading.Thread(target=self.DoModelLoad)
-		thread.setDaemon(True)
 		thread.start()
 
 	def loadGCodeFile(self, filename):
 		self.gcodeFilename = filename
 		#Do the STL file loading in a background thread so we don't block the UI.
 		thread = threading.Thread(target=self.DoGCodeLoad)
-		thread.setDaemon(True)
 		thread.start()
 	
 	def DoModelLoad(self):
@@ -206,7 +220,7 @@ class myGLCanvas(GLCanvas):
 			dc.Clear()
 			dc.DrawText("No PyOpenGL installation found.\nNo preview window available.", 10, 10)
 			return
-		self.SetCurrent()
+		self.glCanvas.SetCurrent()
 		self.InitGL()
 		self.OnDraw()
 		return
@@ -302,14 +316,15 @@ class myGLCanvas(GLCanvas):
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
 		
-		self.SwapBuffers()
+		self.glCanvas.SwapBuffers()
 		return
 
 	def InitGL(self):
 		# set viewing projection
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
-		glViewport(0,0, self.GetSize().GetWidth(), self.GetSize().GetHeight())
+		size = self.glCanvas.GetSize()
+		glViewport(0,0, size.GetWidth(), size.GetHeight())
 		
 		if self.renderTransparent:
 			glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])

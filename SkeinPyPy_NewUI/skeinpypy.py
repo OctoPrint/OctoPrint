@@ -11,11 +11,14 @@ The slicing code is the same as Skeinforge. But the UI has been revamped to be..
 
 from __future__ import absolute_import
 
+import sys
+import platform
+
 from optparse import OptionParser
-from newui import mainWindow
 from newui import skeinRun
 
-import sys
+if platform.python_implementation() != "PyPy":
+	from newui import mainWindow
 
 __author__ = 'Daid'
 __credits__ = """

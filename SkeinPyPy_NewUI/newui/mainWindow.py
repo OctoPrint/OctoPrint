@@ -102,7 +102,7 @@ class mainWindow(wx.Frame):
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
 		#Preview window, load and slice buttons.
-		self.preview3d = preview3d.myGLCanvas(p)
+		self.preview3d = preview3d.previewPanel(p)
 		
 		loadButton = wx.Button(p, -1, 'Load STL')
 		sliceButton = wx.Button(p, -1, 'Slice to GCode')

@@ -18,6 +18,7 @@ def getPyPyExe():
 		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/pypy.exe"));
 	else:
 		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/bin/pypy"));
+	print pypyExe
 	if os.path.exists(pypyExe):
 		return pypyExe
 	pypyExe = "/bin/pypy";
