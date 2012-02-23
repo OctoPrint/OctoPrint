@@ -1,10 +1,10 @@
-import wx
 import sys
 import math
 import threading
 import re
 
 from wx.glcanvas import GLCanvas
+import wx
 try:
 	from OpenGL.GLUT import *
 	from OpenGL.GLU import *
@@ -24,19 +24,10 @@ class previewPanel(wx.Panel):
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
 		self.SetMinSize((400,300))
 
-		self.glCanvas = GLCanvas(self, -1)
-		wx.EVT_PAINT(self.glCanvas, self.OnPaint)
-		wx.EVT_SIZE(self.glCanvas, self.OnSize)
-		wx.EVT_ERASE_BACKGROUND(self.glCanvas, self.OnEraseBackground)
-		wx.EVT_MOTION(self.glCanvas, self.OnMouseMotion)
+		self.glCanvas = PreviewGLCanvas(self)
 		self.init = 0
 		self.triangleMesh = None
-		self.modelDisplayList = None
 		self.pathList = None
-		self.yaw = 30
-		self.pitch = 60
-		self.zoom = 150
-		self.renderTransparent = False
 		self.machineSize = Vector3(210, 210, 200)
 		self.machineCenter = Vector3(105, 105, 0)
 		
@@ -70,7 +61,7 @@ class previewPanel(wx.Panel):
 		self.modelDirty = False
 		self.triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
 		self.moveModel()
-		self.Refresh()
+		self.glCanvas.Refresh()
 	
 	def getCodeInt(self, str, id):
 		m = re.search(id + '([^\s]+)', str)
@@ -172,11 +163,11 @@ class previewPanel(wx.Panel):
 					print "Unknown G code:" + str(G)
 		self.pathList = pathList
 		self.triangleMesh = None
-		self.Refresh()
+		self.glCanvas.Refresh()
 	
 	def OnConfigClick(self, e):
-		self.renderTransparent = not self.renderTransparent
-		self.Refresh()
+		self.glCanvas.renderTransparent = not self.glCanvas.renderTransparent
+		self.glCanvas.Refresh()
 	
 	def moveModel(self):
 		if self.triangleMesh == None:
@@ -192,7 +183,21 @@ class previewPanel(wx.Panel):
 			v.y += self.machineCenter.y
 		self.triangleMesh.getMinimumZ()
 		self.modelDirty = True
-	
+
+class PreviewGLCanvas(GLCanvas):
+	def __init__(self, parent):
+		GLCanvas.__init__(self, parent)
+		self.parent = parent
+		wx.EVT_PAINT(self, self.OnPaint)
+		wx.EVT_SIZE(self, self.OnSize)
+		wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
+		wx.EVT_MOTION(self, self.OnMouseMotion)
+		self.yaw = 30
+		self.pitch = 60
+		self.zoom = 150
+		self.renderTransparent = False
+		self.modelDisplayList = None
+
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
 			self.yaw += e.GetX() - self.oldX
@@ -221,53 +226,54 @@ class previewPanel(wx.Panel):
 			dc.Clear()
 			dc.DrawText("No PyOpenGL installation found.\nNo preview window available.", 10, 10)
 			return
-		self.glCanvas.SetCurrent()
+		self.SetCurrent()
 		self.InitGL()
 		self.OnDraw()
 		return
 
 	def OnDraw(self):
+		machineSize = self.parent.machineSize
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
-		glTranslate(-self.machineCenter.x, -self.machineCenter.y, 0)
+		glTranslate(-self.parent.machineCenter.x, -self.parent.machineCenter.y, 0)
 		
 		glColor3f(1,1,1)
 		glLineWidth(4)
 		glDisable(GL_LIGHTING)
 		glBegin(GL_LINE_LOOP)
 		glVertex3f(0, 0, 0)
-		glVertex3f(self.machineSize.x, 0, 0)
-		glVertex3f(self.machineSize.x, self.machineSize.y, 0)
-		glVertex3f(0, self.machineSize.y, 0)
+		glVertex3f(machineSize.x, 0, 0)
+		glVertex3f(machineSize.x, machineSize.y, 0)
+		glVertex3f(0, machineSize.y, 0)
 		glEnd()
 		glLineWidth(2)
 		glBegin(GL_LINES)
-		for i in xrange(0, self.machineSize.x, 10):
+		for i in xrange(0, machineSize.x, 10):
 			glVertex3f(i, 0, 0)
-			glVertex3f(i, self.machineSize.y, 0)
-		for i in xrange(0, self.machineSize.y, 10):
+			glVertex3f(i, machineSize.y, 0)
+		for i in xrange(0, machineSize.y, 10):
 			glVertex3f(0, i, 0)
-			glVertex3f(self.machineSize.x, i, 0)
+			glVertex3f(machineSize.x, i, 0)
 		glEnd()
 		glLineWidth(1)
 		glBegin(GL_LINE_LOOP)
-		glVertex3f(0, 0, self.machineSize.z)
-		glVertex3f(self.machineSize.x, 0, self.machineSize.z)
-		glVertex3f(self.machineSize.x, self.machineSize.y, self.machineSize.z)
-		glVertex3f(0, self.machineSize.y, self.machineSize.z)
+		glVertex3f(0, 0, machineSize.z)
+		glVertex3f(machineSize.x, 0, machineSize.z)
+		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
+		glVertex3f(0, machineSize.y, machineSize.z)
 		glEnd()
 		glBegin(GL_LINES)
 		glVertex3f(0, 0, 0)
-		glVertex3f(0, 0, self.machineSize.z)
-		glVertex3f(self.machineSize.x, 0, 0)
-		glVertex3f(self.machineSize.x, 0, self.machineSize.z)
-		glVertex3f(self.machineSize.x, self.machineSize.y, 0)
-		glVertex3f(self.machineSize.x, self.machineSize.y, self.machineSize.z)
-		glVertex3f(0, self.machineSize.y, 0)
-		glVertex3f(0, self.machineSize.y, self.machineSize.z)
+		glVertex3f(0, 0, machineSize.z)
+		glVertex3f(machineSize.x, 0, 0)
+		glVertex3f(machineSize.x, 0, machineSize.z)
+		glVertex3f(machineSize.x, machineSize.y, 0)
+		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
+		glVertex3f(0, machineSize.y, 0)
+		glVertex3f(0, machineSize.y, machineSize.z)
 		glEnd()
 
-		if self.pathList != None:
+		if self.parent.pathList != None:
 			for path in self.pathList:
 				if path['type'] == 'move':
 					glColor3f(0,0,1)
@@ -280,17 +286,17 @@ class previewPanel(wx.Panel):
 					glVertex3f(v.x, v.y, v.z)
 				glEnd()
 		
-		if self.triangleMesh != None:
+		if self.parent.triangleMesh != None:
 			if self.modelDisplayList == None:
 				self.modelDisplayList = glGenLists(1);
-			if self.modelDirty:
-				self.modelDirty = False
+			if self.parent.modelDirty:
+				self.parent.modelDirty = False
 				glNewList(self.modelDisplayList, GL_COMPILE)
 				glBegin(GL_TRIANGLES)
-				for face in self.triangleMesh.faces:
-					v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
-					v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
-					v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
+				for face in self.parent.triangleMesh.faces:
+					v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
+					v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
+					v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
 					normal = (v2 - v1).cross(v3 - v1)
 					normal.normalize()
 					glNormal3f(normal.x, normal.y, normal.z)
@@ -317,14 +323,14 @@ class previewPanel(wx.Panel):
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
 		
-		self.glCanvas.SwapBuffers()
+		self.SwapBuffers()
 		return
 
 	def InitGL(self):
 		# set viewing projection
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
-		size = self.glCanvas.GetSize()
+		size = self.GetSize()
 		glViewport(0,0, size.GetWidth(), size.GetHeight())
 		
 		if self.renderTransparent:
@@ -352,6 +358,6 @@ class previewPanel(wx.Panel):
 		glTranslate(0,0,-self.zoom)
 		glRotate(-self.pitch, 1,0,0)
 		glRotate(self.yaw, 0,0,1)
-		if self.triangleMesh != None:
-			glTranslate(0,0,-self.triangleMesh.getCarveCornerMaximum().z / 2)
+		if self.parent.triangleMesh != None:
+			glTranslate(0,0,-self.parent.triangleMesh.getCarveCornerMaximum().z / 2)
 		return

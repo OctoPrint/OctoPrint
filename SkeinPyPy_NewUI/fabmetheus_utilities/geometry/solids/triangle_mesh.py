@@ -812,7 +812,7 @@ class TriangleMesh( group.Group ):
 		self.zoneArrangement = ZoneArrangement(self.layerHeight, self.getTransformedVertexes())
 		layerTop = self.cornerMaximum.z - halfHeight * 0.5
 		z = self.cornerMinimum.z + halfHeight
-		layerCount = int((layerTop - z) / self.layerHeight)
+		layerCount = int((layerTop - z) / self.layerHeight) + 1
 		while z < layerTop:
 			getLoopLayerAppend(self.loopLayers, layerCount, z).loops = self.getLoopsFromMesh(self.zoneArrangement.getEmptyZ(z))
 			z += self.layerHeight

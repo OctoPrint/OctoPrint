@@ -20,6 +20,9 @@ class mainWindow(wx.Frame):
 	"Main user interface window"
 	def __init__(self):
 		super(mainWindow, self).__init__(None, title='SkeinPyPy')
+		
+		wx.EVT_CLOSE(self, self.OnClose)
+		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
 		fitem = fileMenu.Append(-1, 'Open Profile...', 'Open Profile...')
@@ -38,21 +41,8 @@ class mainWindow(wx.Frame):
 		self.filename = None
 		self.progressPanelList = []
 		self.controlList = []
-		self.plugins = {}
-		for m in skeinforge_profile.getCraftTypePluginModule().getCraftSequence():
-			self.plugins[m] = archive.getModuleWithDirectoryPath(archive.getCraftPluginsDirectoryPath(), m).getNewRepository()
-			settings.getReadRepository(self.plugins[m])
 		
-		skeinPyPySettingInfo = settings.getSkeinPyPyProfileInformation()
-
-		for pluginName in self.plugins.keys():
-			self.plugins[pluginName].preferencesDict = {}
-			for pref in self.plugins[pluginName].preferences:
-				if skeinPyPySettingInfo[pluginName][settings.safeConfigName(pref.name)] == 'save':
-					self.plugins[pluginName].preferencesDict[settings.safeConfigName(pref.name)] = pref
-
-		p = self#wx.Panel(self)
-		nb = wx.Notebook(p)
+		nb = wx.Notebook(self)
 		
 		configPanel = wx.Panel(nb);
 		nb.AddPage(configPanel, "Print config")
@@ -68,21 +58,21 @@ class mainWindow(wx.Frame):
 		sizer.Add(rightConfigPanel)
 		
 		self.AddTitle(leftConfigPanel, "Accuracy")
-		self.AddSetting(leftConfigPanel, "Layer height (mm)", self.plugins['carve'].preferencesDict['Layer_Height_mm'], 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
+		self.AddSetting(leftConfigPanel, "Layer height (mm)", 'layer_height', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		self.AddTitle(leftConfigPanel, "Fill")
-		self.AddSetting(leftConfigPanel, "Solid layers", self.plugins['fill'].preferencesDict['Solid_Surface_Thickness_layers'])
-		self.AddSetting(leftConfigPanel, "Fill Density", self.plugins['fill'].preferencesDict['Infill_Solidity_ratio'])
+		#self.AddSetting(leftConfigPanel, "Solid layers", self.plugins['fill'].preferencesDict['Solid_Surface_Thickness_layers'])
+		#self.AddSetting(leftConfigPanel, "Fill Density", self.plugins['fill'].preferencesDict['Infill_Solidity_ratio'])
 		self.AddTitle(leftConfigPanel, "Skirt")
-		self.AddSetting(leftConfigPanel, "Line count", self.plugins['skirt'].preferencesDict['Skirt_line_count'])
-		self.AddSetting(leftConfigPanel, "Start distance (mm)", self.plugins['skirt'].preferencesDict['Gap_Width_mm'])
+		self.AddSetting(leftConfigPanel, "Line count", 'skirt_line_count')
+		self.AddSetting(leftConfigPanel, "Start distance (mm)", 'skirt_gap')
 		self.AddTitle(leftConfigPanel, "Cool")
 		#self.AddSetting(configPanel, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
-		self.AddSetting(leftConfigPanel, "Minimal layer time", self.plugins['cool'].preferencesDict['Minimum_Layer_Time_seconds'])
+		#self.AddSetting(leftConfigPanel, "Minimal layer time", self.plugins['cool'].preferencesDict['Minimum_Layer_Time_seconds'])
 		self.AddTitle(rightConfigPanel, "Retraction")
-		self.AddSetting(rightConfigPanel, "Speed (mm/s)", self.plugins['dimension'].preferencesDict['Extruder_Retraction_Speed_mm/s'])
-		self.AddSetting(rightConfigPanel, "Distance (mm)", self.plugins['dimension'].preferencesDict['Retraction_Distance_millimeters'])
-		self.AddSetting(rightConfigPanel, "Extra length on start (mm)", self.plugins['dimension'].preferencesDict['Restart_Extra_Distance_millimeters'])
-		self.AddSetting(rightConfigPanel, "Minimal travel (mm)", self.plugins['dimension'].preferencesDict['Minimum_Travel_for_Retraction_millimeters'])
+		#self.AddSetting(rightConfigPanel, "Speed (mm/s)", self.plugins['dimension'].preferencesDict['Extruder_Retraction_Speed_mm/s'])
+		#self.AddSetting(rightConfigPanel, "Distance (mm)", self.plugins['dimension'].preferencesDict['Retraction_Distance_millimeters'])
+		#self.AddSetting(rightConfigPanel, "Extra length on start (mm)", self.plugins['dimension'].preferencesDict['Restart_Extra_Distance_millimeters'])
+		#self.AddSetting(rightConfigPanel, "Minimal travel (mm)", self.plugins['dimension'].preferencesDict['Minimum_Travel_for_Retraction_millimeters'])
 		
 		configPanel = wx.Panel(nb);
 		nb.AddPage(configPanel, "Machine && Filament")
@@ -98,35 +88,35 @@ class mainWindow(wx.Frame):
 		sizer.Add(rightConfigPanel)
 		
 		self.AddTitle(leftConfigPanel, "Machine size")
-		self.AddSetting(leftConfigPanel, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
-		self.AddSetting(leftConfigPanel, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
-		self.AddSetting(leftConfigPanel, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
+		#self.AddSetting(leftConfigPanel, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
+		#self.AddSetting(leftConfigPanel, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
+		#self.AddSetting(leftConfigPanel, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
 
 		self.AddTitle(leftConfigPanel, "Machine nozzle")
-		self.AddSetting(leftConfigPanel, "Nozzle size (mm)", self.plugins['carve'].preferencesDict['Edge_Width_mm'])
+		#self.AddSetting(leftConfigPanel, "Nozzle size (mm)", self.plugins['carve'].preferencesDict['Edge_Width_mm'])
 
 		self.AddTitle(leftConfigPanel, "Speed")
-		self.AddSetting(leftConfigPanel, "Print speed (mm/s)", self.plugins['speed'].preferencesDict['Feed_Rate_mm/s'])
-		self.AddSetting(leftConfigPanel, "Travel speed (mm/s)", self.plugins['speed'].preferencesDict['Travel_Feed_Rate_mm/s'])
-		self.AddSetting(leftConfigPanel, "Max Z speed (mm/z)", self.plugins['speed'].preferencesDict['Maximum_Z_Feed_Rate_mm/s'])
-		self.AddSetting(leftConfigPanel, "Bottom Layer Speed Ratio", self.plugins['speed'].preferencesDict['Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio'])
+		#self.AddSetting(leftConfigPanel, "Print speed (mm/s)", self.plugins['speed'].preferencesDict['Feed_Rate_mm/s'])
+		#self.AddSetting(leftConfigPanel, "Travel speed (mm/s)", self.plugins['speed'].preferencesDict['Travel_Feed_Rate_mm/s'])
+		#self.AddSetting(leftConfigPanel, "Max Z speed (mm/z)", self.plugins['speed'].preferencesDict['Maximum_Z_Feed_Rate_mm/s'])
+		#self.AddSetting(leftConfigPanel, "Bottom Layer Speed Ratio", self.plugins['speed'].preferencesDict['Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio'])
 
 		self.AddTitle(rightConfigPanel, "Filament")
-		self.AddSetting(rightConfigPanel, "Diameter (mm)", self.plugins['dimension'].preferencesDict['Filament_Diameter_mm'])
-		self.AddSetting(rightConfigPanel, "Packing Density", self.plugins['dimension'].preferencesDict['Filament_Packing_Density_ratio'])
+		#self.AddSetting(rightConfigPanel, "Diameter (mm)", self.plugins['dimension'].preferencesDict['Filament_Diameter_mm'])
+		#self.AddSetting(rightConfigPanel, "Packing Density", self.plugins['dimension'].preferencesDict['Filament_Packing_Density_ratio'])
 		
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
 		#Preview window, load and slice buttons.
-		self.preview3d = preview3d.previewPanel(p)
+		self.preview3d = preview3d.previewPanel(self)
 		
-		loadButton = wx.Button(p, -1, 'Load STL')
-		sliceButton = wx.Button(p, -1, 'Slice to GCode')
+		loadButton = wx.Button(self, -1, 'Load STL')
+		sliceButton = wx.Button(self, -1, 'Slice to GCode')
 		self.Bind(wx.EVT_BUTTON, self.OnLoadSTL, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 
 		sizer = wx.GridBagSizer()
-		p.SetSizer(sizer)
+		self.SetSizer(sizer)
 		sizer.Add(nb, (0,0), span=(1,1), flag=wx.EXPAND)
 		sizer.Add(self.preview3d, (0,1), span=(1,3), flag=wx.EXPAND)
 		sizer.AddGrowableCol(2)
@@ -134,7 +124,6 @@ class mainWindow(wx.Frame):
 		sizer.Add(loadButton, (1,1))
 		sizer.Add(sliceButton, (1,2))
 		
-		self.panel = p
 		self.sizer = sizer
 
 		self.Fit()
@@ -150,24 +139,14 @@ class mainWindow(wx.Frame):
 		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,sizer.GetCols()), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(sizer.GetRows() + 2)
 	
-	def AddSetting(self, panel, name, setting, help = 'Help: TODO'):
+	def AddSetting(self, panel, name, settingName, help = 'Help: TODO'):
 		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		sizer.Add(wx.StaticText(panel, -1, name), (sizer.GetRows(),sizer.GetCols()), flag=wx.ALIGN_CENTER_VERTICAL)
-		ctrl = None
-		if setting.__class__ is settings.FloatSpin:
-			ctrl = wx.TextCtrl(panel, -1, str(setting.value))
-		if setting.__class__ is settings.IntSpin:
-			ctrl = wx.TextCtrl(panel, -1, str(setting.value))
-		if setting.__class__ is settings.BooleanSetting:
-			ctrl = wx.CheckBox(panel, -1, '')
-			ctrl.SetValue(setting.value)
-		if ctrl == None:
-			print "No WX control for: " + str(setting), str(setting.__class__)
-		else:
-			ctrl.setting = setting
-			self.controlList.append(ctrl)
-			sizer.Add(ctrl, (sizer.GetRows(),sizer.GetCols()+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		ctrl = wx.TextCtrl(panel, -1, settings.getSetting(settingName))
+		ctrl.settingName = settingName
+		self.controlList.append(ctrl)
+		sizer.Add(ctrl, (sizer.GetRows(),sizer.GetCols()+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
 		sizer.Add(helpButton, (sizer.GetRows(),sizer.GetCols()+2))
 		helpButton.SetToolTip(wx.ToolTip(help))
@@ -235,23 +214,19 @@ class mainWindow(wx.Frame):
 	
 	def updateProfileToControls(self):
 		"Update the configuration wx controls to show the new configuration settings"
-		for pluginName in self.plugins.keys():
-			settings.getReadRepository(self.plugins[pluginName])
 		settings.saveGlobalProfile(settings.getDefaultProfilePath())
 		for ctrl in self.controlList:
-			if ctrl.setting.__class__ is settings.BooleanSetting:
-				ctrl.SetValue(ctrl.setting.value)
-			else:
-				ctrl.SetValue(str(ctrl.setting.value))
+			ctrl.SetValue(settings.getSetting(ctrl.settingName))
 
 	def updateProfileFromControls(self):
 		"Update the configuration settings with values from the wx controls"
 		for ctrl in self.controlList:
-			ctrl.setting.setValueToString(ctrl.GetValue())
-		for pluginName in self.plugins.keys():
-			settings.storeRepository(self.plugins[pluginName])
+			settings.putSetting(ctrl.settingName, ctrl.GetValue())
 		settings.saveGlobalProfile(settings.getDefaultProfilePath())
 	
 	def OnQuit(self, e):
 		self.Close()
-
+	
+	def OnClose(self, e):
+		self.updateProfileFromControls()
+		self.Destroy()

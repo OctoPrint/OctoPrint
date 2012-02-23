@@ -9,299 +9,306 @@ import __init__
 
 import ConfigParser
 import os, sys
+import types
 
 from fabmetheus_utilities import archive
+
+def defaultSetting(setting):
+	return setting.value
+
+def storedSetting(name):
+	return lambda setting: getSetting(name, setting.value)
 
 def getSkeinPyPyProfileInformation():
 	return {
 		'carve': {
-			'Add_Layer_Template_to_SVG': 'ignore',
-			'Edge_Width_mm': 'save',
-			'Extra_Decimal_Places_float': 'ignore',
-			'Import_Coarseness_ratio': 'ignore',
-			'Layer_Height_mm': 'save',
-			'Layers_From_index': 'ignore',
-			'Layers_To_index': 'ignore',
-			'Correct_Mesh': 'ignore',
-			'Unproven_Mesh': 'ignore',
-			'SVG_Viewer': 'ignore',
+			'Add_Layer_Template_to_SVG': defaultSetting,
+			'Edge_Width_mm': defaultSetting,
+			'Extra_Decimal_Places_float': defaultSetting,
+			'Import_Coarseness_ratio': defaultSetting,
+			'Layer_Height_mm': storedSetting("layer_height"),
+			'Layers_From_index': defaultSetting,
+			'Layers_To_index': defaultSetting,
+			'Correct_Mesh': defaultSetting,
+			'Unproven_Mesh': defaultSetting,
+			'SVG_Viewer': defaultSetting,
 		},'scale': {
-			'Activate_Scale': 'ignore',
-			'XY_Plane_Scale_ratio': 'ignore',
-			'Z_Axis_Scale_ratio': 'ignore',
-			'SVG_Viewer': 'ignore',
+			'Activate_Scale': defaultSetting,
+			'XY_Plane_Scale_ratio': defaultSetting,
+			'Z_Axis_Scale_ratio': defaultSetting,
+			'SVG_Viewer': defaultSetting,
 		},'bottom': {
-			'Activate_Bottom': 'ignore',
-			'Additional_Height_over_Layer_Thickness_ratio': 'ignore',
-			'Altitude_mm': 'ignore',
-			'SVG_Viewer': 'ignore',
+			'Activate_Bottom': defaultSetting,
+			'Additional_Height_over_Layer_Thickness_ratio': defaultSetting,
+			'Altitude_mm': defaultSetting,
+			'SVG_Viewer': defaultSetting,
 		},'preface': {
-			'Meta': 'ignore',
-			'Set_Positioning_to_Absolute': 'ignore',
-			'Set_Units_to_Millimeters': 'ignore',
-			'Start_at_Home': 'ignore',
-			'Turn_Extruder_Off_at_Shut_Down': 'ignore',
-			'Turn_Extruder_Off_at_Start_Up': 'ignore',
+			'Meta': defaultSetting,
+			'Set_Positioning_to_Absolute': defaultSetting,
+			'Set_Units_to_Millimeters': defaultSetting,
+			'Start_at_Home': defaultSetting,
+			'Turn_Extruder_Off_at_Shut_Down': defaultSetting,
+			'Turn_Extruder_Off_at_Start_Up': defaultSetting,
 		},'widen': {
-			'Activate_Widen': 'save',
+			'Activate_Widen': defaultSetting,
 		},'inset': {
-			'Add_Custom_Code_for_Temperature_Reading': 'ignore',
-			'Infill_in_Direction_of_Bridge': 'ignore',
-			'Infill_Width_over_Thickness_ratio': 'ignore',
-			'Loop_Order_Choice': 'ignore',
-			'Overlap_Removal_Width_over_Perimeter_Width_ratio': 'ignore',
-			'Turn_Extruder_Heater_Off_at_Shut_Down': 'ignore',
-			'Volume_Fraction_ratio': 'ignore',
+			'Add_Custom_Code_for_Temperature_Reading': defaultSetting,
+			'Infill_in_Direction_of_Bridge': defaultSetting,
+			'Infill_Width_over_Thickness_ratio': defaultSetting,
+			'Loop_Order_Choice': defaultSetting,
+			'Overlap_Removal_Width_over_Perimeter_Width_ratio': defaultSetting,
+			'Turn_Extruder_Heater_Off_at_Shut_Down': defaultSetting,
+			'Volume_Fraction_ratio': defaultSetting,
 		},'fill': {
-			'Activate_Fill': 'save',
-			'Diaphragm_Period_layers': 'save',
-			'Diaphragm_Thickness_layers': 'save',
-			'Extra_Shells_on_Alternating_Solid_Layer_layers': 'save',
-			'Extra_Shells_on_Base_layers': 'save',
-			'Extra_Shells_on_Sparse_Layer_layers': 'save',
-			'Grid_Circle_Separation_over_Perimeter_Width_ratio': 'ignore',
-			'Grid_Extra_Overlap_ratio': 'ignore',
-			'Grid_Junction_Separation_Band_Height_layers': 'ignore',
-			'Grid_Junction_Separation_over_Octogon_Radius_At_End_ratio': 'ignore',
-			'Grid_Junction_Separation_over_Octogon_Radius_At_Middle_ratio': 'ignore',
-			'Infill_Begin_Rotation_degrees': 'ignore',
-			'Infill_Begin_Rotation_Repeat_layers': 'ignore',
-			'Infill_Odd_Layer_Extra_Rotation_degrees': 'ignore',
-			'Grid_Circular': 'ignore',
-			'Grid_Hexagonal': 'ignore',
-			'Grid_Rectangular': 'ignore',
-			'Line': 'ignore',
-			'Infill_Perimeter_Overlap_ratio': 'save',
-			'Infill_Solidity_ratio': 'save',
-			'Infill_Width': 'use:carve:Edge_Width_mm',
-			'Solid_Surface_Thickness_layers': 'save',
-			'Start_From_Choice': 'ignore',
-			'Surrounding_Angle_degrees': 'ignore',
-			'Thread_Sequence_Choice': 'save',
+			'Activate_Fill': defaultSetting,
+			'Diaphragm_Period_layers': defaultSetting,
+			'Diaphragm_Thickness_layers': defaultSetting,
+			'Extra_Shells_on_Alternating_Solid_Layer_layers': defaultSetting,
+			'Extra_Shells_on_Base_layers': defaultSetting,
+			'Extra_Shells_on_Sparse_Layer_layers': defaultSetting,
+			'Grid_Circle_Separation_over_Perimeter_Width_ratio': defaultSetting,
+			'Grid_Extra_Overlap_ratio': defaultSetting,
+			'Grid_Junction_Separation_Band_Height_layers': defaultSetting,
+			'Grid_Junction_Separation_over_Octogon_Radius_At_End_ratio': defaultSetting,
+			'Grid_Junction_Separation_over_Octogon_Radius_At_Middle_ratio': defaultSetting,
+			'Infill_Begin_Rotation_degrees': defaultSetting,
+			'Infill_Begin_Rotation_Repeat_layers': defaultSetting,
+			'Infill_Odd_Layer_Extra_Rotation_degrees': defaultSetting,
+			'Grid_Circular': defaultSetting,
+			'Grid_Hexagonal': defaultSetting,
+			'Grid_Rectangular': defaultSetting,
+			'Line': defaultSetting,
+			'Infill_Perimeter_Overlap_ratio': defaultSetting,
+			'Infill_Solidity_ratio': defaultSetting,
+			'Infill_Width': defaultSetting,
+			'Solid_Surface_Thickness_layers': defaultSetting,
+			'Start_From_Choice': defaultSetting,
+			'Surrounding_Angle_degrees': defaultSetting,
+			'Thread_Sequence_Choice': defaultSetting,
 		},'multiply': {
-			'Activate_Multiply': 'ignore',
-			'Center_X_mm': 'save',
-			'Center_Y_mm': 'save',
-			'Number_of_Columns_integer': 'save',
-			'Number_of_Rows_integer': 'save',
-			'Reverse_Sequence_every_Odd_Layer': 'ignore',
-			'Separation_over_Perimeter_Width_ratio': 'save',
+			'Activate_Multiply': "True",
+			'Center_X_mm': storedSetting("centerX"),
+			'Center_Y_mm': storedSetting("centerY"),
+			'Number_of_Columns_integer': "1",
+			'Number_of_Rows_integer': "1",
+			'Reverse_Sequence_every_Odd_Layer': defaultSetting,
+			'Separation_over_Perimeter_Width_ratio': defaultSetting,
 		},'speed': {
-			'Activate_Speed': 'ignore',
-			'Add_Flow_Rate': 'ignore',
-			'Bridge_Feed_Rate_Multiplier_ratio': 'ignore',
-			'Bridge_Flow_Rate_Multiplier_ratio': 'ignore',
-			'Duty_Cyle_at_Beginning_portion': 'ignore',
-			'Duty_Cyle_at_Ending_portion': 'ignore',
-			'Feed_Rate_mm/s': 'save',
-			'Flow_Rate_Setting_float': 'use:speed:Feed_Rate_mm/s',
-			'Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio': 'save',
-			'Object_First_Layer_Feed_Rate_Perimeter_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
-			'Object_First_Layer_Feed_Rate_Travel_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
-			'Object_First_Layer_Flow_Rate_Infill_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
-			'Object_First_Layer_Flow_Rate_Perimeter_Multiplier_ratio': 'use:speed:Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio',
-			'Object_First_Layers_Amount_Of_Layers_For_Speed_Change': 'save',
-			'Orbital_Feed_Rate_over_Operating_Feed_Rate_ratio': 'ignore',
-			'Maximum_Z_Feed_Rate_mm/s': 'save',
-			'Perimeter_Feed_Rate_Multiplier_ratio': 'ignore',
-			'Perimeter_Flow_Rate_Multiplier_ratio': 'ignore',
-			'Travel_Feed_Rate_mm/s': 'save',
+			'Activate_Speed': "True",
+			'Add_Flow_Rate': "True",
+			'Bridge_Feed_Rate_Multiplier_ratio': defaultSetting,
+			'Bridge_Flow_Rate_Multiplier_ratio': defaultSetting,
+			'Duty_Cyle_at_Beginning_portion': defaultSetting,
+			'Duty_Cyle_at_Ending_portion': defaultSetting,
+			'Feed_Rate_mm/s': storedSetting("print_speed"),
+			'Flow_Rate_Setting_float': storedSetting("print_speed"),
+			'Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio': defaultSetting,
+			'Object_First_Layer_Feed_Rate_Perimeter_Multiplier_ratio': defaultSetting,
+			'Object_First_Layer_Feed_Rate_Travel_Multiplier_ratio': defaultSetting,
+			'Object_First_Layer_Flow_Rate_Infill_Multiplier_ratio': defaultSetting,
+			'Object_First_Layer_Flow_Rate_Perimeter_Multiplier_ratio': defaultSetting,
+			'Object_First_Layers_Amount_Of_Layers_For_Speed_Change': defaultSetting,
+			'Orbital_Feed_Rate_over_Operating_Feed_Rate_ratio': defaultSetting,
+			'Maximum_Z_Feed_Rate_mm/s': defaultSetting,
+			'Perimeter_Feed_Rate_Multiplier_ratio': defaultSetting,
+			'Perimeter_Flow_Rate_Multiplier_ratio': defaultSetting,
+			'Travel_Feed_Rate_mm/s': storedSetting("travel_speed"),
 		},'temperature': {
-			'Activate_Temperature': 'ignore',
-			'Cooling_Rate_Celcius/second': 'ignore',
-			'Heating_Rate_Celcius/second': 'ignore',
-			'Base_Temperature_Celcius': 'ignore',
-			'Interface_Temperature_Celcius': 'ignore',
-			'Object_First_Layer_Infill_Temperature_Celcius': 'ignore',
-			'Object_First_Layer_Perimeter_Temperature_Celcius': 'ignore',
-			'Object_Next_Layers_Temperature_Celcius': 'ignore',
-			'Support_Layers_Temperature_Celcius': 'ignore',
-			'Supported_Layers_Temperature_Celcius': 'ignore',
+			'Activate_Temperature': defaultSetting,
+			'Cooling_Rate_Celcius/second': defaultSetting,
+			'Heating_Rate_Celcius/second': defaultSetting,
+			'Base_Temperature_Celcius': defaultSetting,
+			'Interface_Temperature_Celcius': defaultSetting,
+			'Object_First_Layer_Infill_Temperature_Celcius': defaultSetting,
+			'Object_First_Layer_Perimeter_Temperature_Celcius': defaultSetting,
+			'Object_Next_Layers_Temperature_Celcius': defaultSetting,
+			'Support_Layers_Temperature_Celcius': defaultSetting,
+			'Supported_Layers_Temperature_Celcius': defaultSetting,
 		},'raft': {
-			'Activate_Raft': 'ignore',
-			'Add_Raft,_Elevate_Nozzle,_Orbit': 'ignore',
-			'Base_Feed_Rate_Multiplier_ratio': 'ignore',
-			'Base_Flow_Rate_Multiplier_ratio': 'ignore',
-			'Base_Infill_Density_ratio': 'ignore',
-			'Base_Layer_Thickness_over_Layer_Thickness': 'ignore',
-			'Base_Layers_integer': 'ignore',
-			'Base_Nozzle_Lift_over_Base_Layer_Thickness_ratio': 'ignore',
-			'Initial_Circling': 'ignore',
-			'Infill_Overhang_over_Extrusion_Width_ratio': 'ignore',
-			'Interface_Feed_Rate_Multiplier_ratio': 'ignore',
-			'Interface_Flow_Rate_Multiplier_ratio': 'ignore',
-			'Interface_Infill_Density_ratio': 'ignore',
-			'Interface_Layer_Thickness_over_Layer_Thickness': 'ignore',
-			'Interface_Layers_integer': 'ignore',
-			'Interface_Nozzle_Lift_over_Interface_Layer_Thickness_ratio': 'ignore',
-			'Name_of_Support_End_File': 'ignore',
-			'Name_of_Support_Start_File': 'ignore',
-			'Operating_Nozzle_Lift_over_Layer_Thickness_ratio': 'ignore',
-			'Raft_Additional_Margin_over_Length_%': 'ignore',
-			'Raft_Margin_mm': 'ignore',
-			'Support_Cross_Hatch': 'save',
-			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': 'save',
-			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': 'save',
-			'Support_Material_Choice_': 'save',
-			'Support_Minimum_Angle_degrees': 'save',
+			'Activate_Raft': defaultSetting,
+			'Add_Raft,_Elevate_Nozzle,_Orbit': defaultSetting,
+			'Base_Feed_Rate_Multiplier_ratio': defaultSetting,
+			'Base_Flow_Rate_Multiplier_ratio': defaultSetting,
+			'Base_Infill_Density_ratio': defaultSetting,
+			'Base_Layer_Thickness_over_Layer_Thickness': defaultSetting,
+			'Base_Layers_integer': defaultSetting,
+			'Base_Nozzle_Lift_over_Base_Layer_Thickness_ratio': defaultSetting,
+			'Initial_Circling': defaultSetting,
+			'Infill_Overhang_over_Extrusion_Width_ratio': defaultSetting,
+			'Interface_Feed_Rate_Multiplier_ratio': defaultSetting,
+			'Interface_Flow_Rate_Multiplier_ratio': defaultSetting,
+			'Interface_Infill_Density_ratio': defaultSetting,
+			'Interface_Layer_Thickness_over_Layer_Thickness': defaultSetting,
+			'Interface_Layers_integer': defaultSetting,
+			'Interface_Nozzle_Lift_over_Interface_Layer_Thickness_ratio': defaultSetting,
+			'Name_of_Support_End_File': defaultSetting,
+			'Name_of_Support_Start_File': defaultSetting,
+			'Operating_Nozzle_Lift_over_Layer_Thickness_ratio': defaultSetting,
+			'Raft_Additional_Margin_over_Length_%': defaultSetting,
+			'Raft_Margin_mm': defaultSetting,
+			'Support_Cross_Hatch': defaultSetting,
+			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': defaultSetting,
+			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': defaultSetting,
+			'Support_Material_Choice_': defaultSetting,
+			'Support_Minimum_Angle_degrees': defaultSetting,
 		},'skirt': {
-			'Skirt_line_count': 'save',
-			'Convex': 'ignore',
-			'Gap_Width_mm': 'save',
-			'Layers_To_index': 'ignore',
+			'Skirt_line_count': storedSetting("skirt_line_count"),
+			'Convex': "True",
+			'Gap_Width_mm': storedSetting("skirt_gap"),
+			'Layers_To_index': "1",
 		},'chamber': {
-			'Activate_Chamber': 'ignore',
-			'Bed_Temperature_Celcius': 'ignore',
-			'Bed_Temperature_Begin_Change_Height_mm': 'ignore',
-			'Bed_Temperature_End_Change_Height_mm': 'ignore',
-			'Bed_Temperature_End_Celcius': 'ignore',
-			'Chamber_Temperature_Celcius': 'ignore',
-			'Holding_Force_bar': 'ignore',
+			'Activate_Chamber': defaultSetting,
+			'Bed_Temperature_Celcius': defaultSetting,
+			'Bed_Temperature_Begin_Change_Height_mm': defaultSetting,
+			'Bed_Temperature_End_Change_Height_mm': defaultSetting,
+			'Bed_Temperature_End_Celcius': defaultSetting,
+			'Chamber_Temperature_Celcius': defaultSetting,
+			'Holding_Force_bar': defaultSetting,
 		},'tower': {
-			'Activate_Tower': 'ignore',
-			'Extruder_Possible_Collision_Cone_Angle_degrees': 'ignore',
-			'Maximum_Tower_Height_layers': 'ignore',
-			'Tower_Start_Layer_integer': 'ignore',
+			'Activate_Tower': defaultSetting,
+			'Extruder_Possible_Collision_Cone_Angle_degrees': defaultSetting,
+			'Maximum_Tower_Height_layers': defaultSetting,
+			'Tower_Start_Layer_integer': defaultSetting,
 		},'jitter': {
-			'Activate_Jitter': 'ignore',
-			'Jitter_Over_Perimeter_Width_ratio': 'ignore',
+			'Activate_Jitter': defaultSetting,
+			'Jitter_Over_Perimeter_Width_ratio': defaultSetting,
 		},'clip': {
-			'Activate_Clip': 'ignore',
-			'Clip_Over_Perimeter_Width_ratio': 'ignore',
-			'Maximum_Connection_Distance_Over_Perimeter_Width_ratio': 'ignore',
+			'Activate_Clip': defaultSetting,
+			'Clip_Over_Perimeter_Width_ratio': defaultSetting,
+			'Maximum_Connection_Distance_Over_Perimeter_Width_ratio': defaultSetting,
 		},'smooth': {
-			'Activate_Smooth': 'ignore',
-			'Layers_From_index': 'ignore',
-			'Maximum_Shortening_over_Width_float': 'ignore',
+			'Activate_Smooth': defaultSetting,
+			'Layers_From_index': defaultSetting,
+			'Maximum_Shortening_over_Width_float': defaultSetting,
 		},'stretch': {
-			'Activate_Stretch': 'ignore',
-			'Cross_Limit_Distance_Over_Perimeter_Width_ratio': 'ignore',
-			'Loop_Stretch_Over_Perimeter_Width_ratio': 'ignore',
-			'Path_Stretch_Over_Perimeter_Width_ratio': 'ignore',
-			'Perimeter_Inside_Stretch_Over_Perimeter_Width_ratio': 'ignore',
-			'Perimeter_Outside_Stretch_Over_Perimeter_Width_ratio': 'ignore',
-			'Stretch_From_Distance_Over_Perimeter_Width_ratio': 'ignore',
+			'Activate_Stretch': defaultSetting,
+			'Cross_Limit_Distance_Over_Perimeter_Width_ratio': defaultSetting,
+			'Loop_Stretch_Over_Perimeter_Width_ratio': defaultSetting,
+			'Path_Stretch_Over_Perimeter_Width_ratio': defaultSetting,
+			'Perimeter_Inside_Stretch_Over_Perimeter_Width_ratio': defaultSetting,
+			'Perimeter_Outside_Stretch_Over_Perimeter_Width_ratio': defaultSetting,
+			'Stretch_From_Distance_Over_Perimeter_Width_ratio': defaultSetting,
 		},'skin': {
-			'Activate_Skin': 'ignore',
-			'Horizontal_Infill_Divisions_integer': 'ignore',
-			'Horizontal_Perimeter_Divisions_integer': 'ignore',
-			'Vertical_Divisions_integer': 'ignore',
-			'Hop_When_Extruding_Infill': 'ignore',
-			'Layers_From_index': 'ignore',
+			'Activate_Skin': defaultSetting,
+			'Horizontal_Infill_Divisions_integer': defaultSetting,
+			'Horizontal_Perimeter_Divisions_integer': defaultSetting,
+			'Vertical_Divisions_integer': defaultSetting,
+			'Hop_When_Extruding_Infill': defaultSetting,
+			'Layers_From_index': defaultSetting,
 		},'comb': {
-			'Activate_Comb': 'ignore',
-			'Running_Jump_Space_mm': 'ignore',
+			'Activate_Comb': defaultSetting,
+			'Running_Jump_Space_mm': defaultSetting,
 		},'cool': {
-			'Activate_Cool': 'save',
-			'Bridge_Cool_Celcius': 'ignore',
-			'Cool_Type': 'save',
-			'Maximum_Cool_Celcius': 'ignore',
-			'Minimum_Layer_Time_seconds': 'save',
-			'Minimum_Orbital_Radius_millimeters': 'ignore',
-			'Name_of_Cool_End_File': 'ignore',
-			'Name_of_Cool_Start_File': 'ignore',
-			'Orbital_Outset_millimeters': 'ignore',
-			'Turn_Fan_On_at_Beginning': 'ignore',
-			'Turn_Fan_Off_at_Ending': 'ignore',
+			'Activate_Cool': defaultSetting,
+			'Bridge_Cool_Celcius': defaultSetting,
+			'Cool_Type': defaultSetting,
+			'Maximum_Cool_Celcius': defaultSetting,
+			'Minimum_Layer_Time_seconds': defaultSetting,
+			'Minimum_Orbital_Radius_millimeters': defaultSetting,
+			'Name_of_Cool_End_File': defaultSetting,
+			'Name_of_Cool_Start_File': defaultSetting,
+			'Orbital_Outset_millimeters': defaultSetting,
+			'Turn_Fan_On_at_Beginning': defaultSetting,
+			'Turn_Fan_Off_at_Ending': defaultSetting,
 		},'hop': {
-			'Activate_Hop': 'ignore',
-			'Hop_Over_Layer_Thickness_ratio': 'ignore',
-			'Minimum_Hop_Angle_degrees': 'ignore',
+			'Activate_Hop': defaultSetting,
+			'Hop_Over_Layer_Thickness_ratio': defaultSetting,
+			'Minimum_Hop_Angle_degrees': defaultSetting,
 		},'wipe': {
-			'Activate_Wipe': 'ignore',
-			'Arrival_X_mm': 'ignore',
-			'Arrival_Y_mm': 'ignore',
-			'Arrival_Z_mm': 'ignore',
-			'Departure_X_mm': 'ignore',
-			'Departure_Y_mm': 'ignore',
-			'Departure_Z_mm': 'ignore',
-			'Wipe_X_mm': 'ignore',
-			'Wipe_Y_mm': 'ignore',
-			'Wipe_Z_mm': 'ignore',
-			'Wipe_Period_layers': 'ignore',
+			'Activate_Wipe': defaultSetting,
+			'Arrival_X_mm': defaultSetting,
+			'Arrival_Y_mm': defaultSetting,
+			'Arrival_Z_mm': defaultSetting,
+			'Departure_X_mm': defaultSetting,
+			'Departure_Y_mm': defaultSetting,
+			'Departure_Z_mm': defaultSetting,
+			'Wipe_X_mm': defaultSetting,
+			'Wipe_Y_mm': defaultSetting,
+			'Wipe_Z_mm': defaultSetting,
+			'Wipe_Period_layers': defaultSetting,
 		},'oozebane': {
-			'Activate_Oozebane': 'ignore',
-			'After_Startup_Distance_millimeters': 'ignore',
-			'Early_Shutdown_Distance_millimeters': 'ignore',
-			'Early_Startup_Distance_Constant_millimeters': 'ignore',
-			'Early_Startup_Maximum_Distance_millimeters': 'ignore',
-			'First_Early_Startup_Distance_millimeters': 'ignore',
-			'Minimum_Distance_for_Early_Startup_millimeters': 'ignore',
-			'Minimum_Distance_for_Early_Shutdown_millimeters': 'ignore',
-			'Slowdown_Startup_Steps_positive_integer': 'ignore',
+			'Activate_Oozebane': defaultSetting,
+			'After_Startup_Distance_millimeters': defaultSetting,
+			'Early_Shutdown_Distance_millimeters': defaultSetting,
+			'Early_Startup_Distance_Constant_millimeters': defaultSetting,
+			'Early_Startup_Maximum_Distance_millimeters': defaultSetting,
+			'First_Early_Startup_Distance_millimeters': defaultSetting,
+			'Minimum_Distance_for_Early_Startup_millimeters': defaultSetting,
+			'Minimum_Distance_for_Early_Shutdown_millimeters': defaultSetting,
+			'Slowdown_Startup_Steps_positive_integer': defaultSetting,
 		},'dwindle': {
-			'Activate_Dwindle': 'ignore',
-			'End_Rate_Multiplier_ratio': 'ignore',
-			'Pent_Up_Volume_cubic_millimeters': 'ignore',
-			'Slowdown_Steps_positive_integer': 'ignore',
-			'Slowdown_Volume_cubic_millimeters': 'ignore',
+			'Activate_Dwindle': defaultSetting,
+			'End_Rate_Multiplier_ratio': defaultSetting,
+			'Pent_Up_Volume_cubic_millimeters': defaultSetting,
+			'Slowdown_Steps_positive_integer': defaultSetting,
+			'Slowdown_Volume_cubic_millimeters': defaultSetting,
 		},'splodge': {
-			'Activate_Splodge': 'ignore',
-			'Initial_Lift_over_Extra_Thickness_ratio': 'ignore',
-			'Initial_Splodge_Feed_Rate_mm/s': 'ignore',
-			'Operating_Splodge_Feed_Rate_mm/s': 'ignore',
-			'Operating_Splodge_Quantity_Length_millimeters': 'ignore',
-			'Initial_Splodge_Quantity_Length_millimeters': 'ignore',
-			'Operating_Lift_over_Extra_Thickness_ratio': 'ignore',
+			'Activate_Splodge': defaultSetting,
+			'Initial_Lift_over_Extra_Thickness_ratio': defaultSetting,
+			'Initial_Splodge_Feed_Rate_mm/s': defaultSetting,
+			'Operating_Splodge_Feed_Rate_mm/s': defaultSetting,
+			'Operating_Splodge_Quantity_Length_millimeters': defaultSetting,
+			'Initial_Splodge_Quantity_Length_millimeters': defaultSetting,
+			'Operating_Lift_over_Extra_Thickness_ratio': defaultSetting,
 		},'home': {
-			'Activate_Home': 'ignore',
-			'Name_of_Home_File': 'ignore',
+			'Activate_Home': defaultSetting,
+			'Name_of_Home_File': defaultSetting,
 		},'lash': {
-			'Activate_Lash': 'ignore',
-			'X_Backlash_mm': 'ignore',
-			'Y_Backlash_mm': 'ignore',
+			'Activate_Lash': defaultSetting,
+			'X_Backlash_mm': defaultSetting,
+			'Y_Backlash_mm': defaultSetting,
 		},'fillet': {
-			'Activate_Fillet': 'ignore',
-			'Arc_Point': 'ignore',
-			'Arc_Radius': 'ignore',
-			'Arc_Segment': 'ignore',
-			'Bevel': 'ignore',
-			'Corner_Feed_Rate_Multiplier_ratio': 'ignore',
-			'Fillet_Radius_over_Perimeter_Width_ratio': 'ignore',
-			'Reversal_Slowdown_Distance_over_Perimeter_Width_ratio': 'ignore',
-			'Use_Intermediate_Feed_Rate_in_Corners': 'ignore',
+			'Activate_Fillet': defaultSetting,
+			'Arc_Point': defaultSetting,
+			'Arc_Radius': defaultSetting,
+			'Arc_Segment': defaultSetting,
+			'Bevel': defaultSetting,
+			'Corner_Feed_Rate_Multiplier_ratio': defaultSetting,
+			'Fillet_Radius_over_Perimeter_Width_ratio': defaultSetting,
+			'Reversal_Slowdown_Distance_over_Perimeter_Width_ratio': defaultSetting,
+			'Use_Intermediate_Feed_Rate_in_Corners': defaultSetting,
 		},'limit': {
-			'Activate_Limit': 'ignore',
-			'Maximum_Initial_Feed_Rate_mm/s': 'ignore',
+			'Activate_Limit': defaultSetting,
+			'Maximum_Initial_Feed_Rate_mm/s': defaultSetting,
 		},'unpause': {
-			'Activate_Unpause': 'ignore',
-			'Delay_milliseconds': 'ignore',
-			'Maximum_Speed_ratio': 'ignore',
+			'Activate_Unpause': defaultSetting,
+			'Delay_milliseconds': defaultSetting,
+			'Maximum_Speed_ratio': defaultSetting,
 		},'dimension': {
-			'Activate_Dimension': 'ignore',
-			'Absolute_Extrusion_Distance': 'ignore',
-			'Relative_Extrusion_Distance': 'ignore',
-			'Extruder_Retraction_Speed_mm/s': 'save',
-			'Filament_Diameter_mm': 'save',
-			'Filament_Packing_Density_ratio': 'save',
-			'Maximum_E_Value_before_Reset_float': 'ignore',
-			'Minimum_Travel_for_Retraction_millimeters': 'save',
-			'Retract_Within_Island': 'save',
-			'Retraction_Distance_millimeters': 'save',
-			'Restart_Extra_Distance_millimeters': 'save',
+			'Activate_Dimension': defaultSetting,
+			'Absolute_Extrusion_Distance': defaultSetting,
+			'Relative_Extrusion_Distance': defaultSetting,
+			'Extruder_Retraction_Speed_mm/s': defaultSetting,
+			'Filament_Diameter_mm': defaultSetting,
+			'Filament_Packing_Density_ratio': defaultSetting,
+			'Maximum_E_Value_before_Reset_float': defaultSetting,
+			'Minimum_Travel_for_Retraction_millimeters': defaultSetting,
+			'Retract_Within_Island': defaultSetting,
+			'Retraction_Distance_millimeters': defaultSetting,
+			'Restart_Extra_Distance_millimeters': defaultSetting,
 		},'alteration': {
-			'Activate_Alteration': 'ignore',
-			'Name_of_End_File': 'ignore',
-			'Name_of_Start_File': 'ignore',
-			'Remove_Redundant_Mcode': 'ignore',
-			'Replace_Variable_with_Setting': 'ignore',
+			'Activate_Alteration': defaultSetting,
+			'Name_of_End_File': defaultSetting,
+			'Name_of_Start_File': defaultSetting,
+			'Remove_Redundant_Mcode': defaultSetting,
+			'Replace_Variable_with_Setting': defaultSetting,
 		},'export': {
-			'Activate_Export': 'ignore',
-			'Add_Descriptive_Extension': 'ignore',
-			'Add_Export_Suffix': 'ignore',
-			'Add_Profile_Extension': 'ignore',
-			'Add_Timestamp_Extension': 'ignore',
-			'Also_Send_Output_To': 'ignore',
-			'Analyze_Gcode': 'ignore',
-			'Comment_Choice': 'ignore',
-			'Do_Not_Change_Output': 'ignore',
-			'binary_16_byte': 'ignore',
-			'gcode_step': 'ignore',
-			'gcode_time_segment': 'ignore',
-			'gcode_small': 'ignore',
-			'File_Extension': 'ignore',
-			'Name_of_Replace_File': 'ignore',
-			'Save_Penultimate_Gcode': 'ignore',
+			'Activate_Export': defaultSetting,
+			'Add_Descriptive_Extension': defaultSetting,
+			'Add_Export_Suffix': defaultSetting,
+			'Add_Profile_Extension': defaultSetting,
+			'Add_Timestamp_Extension': defaultSetting,
+			'Also_Send_Output_To': defaultSetting,
+			'Analyze_Gcode': defaultSetting,
+			'Comment_Choice': defaultSetting,
+			'Do_Not_Change_Output': defaultSetting,
+			'binary_16_byte': defaultSetting,
+			'gcode_step': defaultSetting,
+			'gcode_time_segment': defaultSetting,
+			'gcode_small': defaultSetting,
+			'File_Extension': defaultSetting,
+			'Name_of_Replace_File': defaultSetting,
+			'Save_Penultimate_Gcode': defaultSetting,
 		}
 	}
 
@@ -314,6 +321,25 @@ def loadGlobalProfile(filename):
 def saveGlobalProfile(filename):
 	globalProfileParser.write(open(filename, 'w'))
 
+def getSetting(name, default = ""):
+	#Check if we have a configuration file loaded, else load the default.
+	if not globals().has_key('globalProfileParser'):
+		loadGlobalProfile(getDefaultProfilePath())
+	if not globalProfileParser.has_option("profile", name):
+		if not globalProfileParser.has_section("profile"):
+			globalProfileParser.add_section("profile")
+		globalProfileParser.set("profile", name, str(default))
+		return default
+	return globalProfileParser.get("profile", name)
+
+def putSetting(name, value):
+	#Check if we have a configuration file loaded, else load the default.
+	if not globals().has_key('globalProfileParser'):
+		loadGlobalProfile(getDefaultProfilePath())
+	if not globalProfileParser.has_section("profile"):
+		globalProfileParser.add_section("profile")
+	globalProfileParser.set("profile", name, str(value))
+
 def getDefaultProfilePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
 
@@ -322,10 +348,6 @@ def safeConfigName(name):
 
 def getReadRepository(repository):
 	"Read the configuration for this 'repository'"
-	
-	#Check if we have a configuration file loaded, else load the default.
-	if not globals().has_key('globalProfileParser'):
-		loadGlobalProfile(getDefaultProfilePath())
 	
 	info = getSkeinPyPyProfileInformation()
 	if not info.has_key(repository.name):
@@ -342,63 +364,19 @@ def getReadRepository(repository):
 		if not info.has_key(name):
 			print "Setting: " + repository.name + ":" + name + " missing from SkeinPyPy info"
 			continue
-		#ignore this setting, use the default, always
-		if info[name] == 'ignore':
-			continue
-		#Load this setting from another value.
-		if info[name][0:4] == "use:":
-			i = info[name][4:].split(':')
-			p.setValueToString(globalProfileParser.get(i[0], i[1]))
-			continue
-		
-		try:
-			p.setValueToString(globalProfileParser.get(repository.name, name))
-		except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-			#Value not in configuration, add it.
-			try:
-				globalProfileParser.add_section(repository.name)
-			except:
-				pass
-			globalProfileParser.set(repository.name, name, str(p.value))
-			#saveGlobalProfile(getDefaultProfilePath())
-		#print "============" + str(p) + "|" + p.name + "|" + str(p.value) + "|" + str(type(p.value))
-	return repository
+		if isinstance(info[name], types.FunctionType):
+			p.setValueToString(str(info[name](p)))
+		else:
+			p.setValueToString(str(info[name]))
 
-def storeRepository(repository):
-	"Store the configuration for this 'repository'"
-	#Check if we have a configuration file loaded, else load the default.
-	if not globals().has_key('globalProfileParser'):
-		loadGlobalProfile(getDefaultProfilePath())
-	
-	info = getSkeinPyPyProfileInformation()
-	if not info.has_key(repository.name):
-		print "Warning: Plugin: " + repository.name + " missing from SkeinPyPy info"
-		return repository
-	info = info[repository.name]
-	if not type(info) is dict:
-		print "Ignoring plugin configuration: " + repository.name
-		return repository
-	
-	for p in repository.preferences:
-		name = safeConfigName(p.name)
-		if not info.has_key(name):
-			print "Setting: " + repository.name + ":" + name + " missing from SkeinPyPy info"
-			continue
-
-		if info[name] == "save":
-			try:
-				globalProfileParser.add_section(repository.name)
-			except:
-				pass
-			globalProfileParser.set(repository.name, name, str(p.value))
 	return repository
 
 def printProgress(layerIndex, procedureName):
-	print ("Progress[" + procedureName + ":" + str(layerIndex) + "]")
+	print ("Progress[" + procedureName + ":" + str(layerIndex+1) + "]")
 	sys.stdout.flush()
 
 def printProgressByNumber(layerIndex, numberOfLayers, procedureName):
-	print ("Progress[" + procedureName + ":" + str(layerIndex) + ":" + str(numberOfLayers) + "]")
+	print ("Progress[" + procedureName + ":" + str(layerIndex+1) + ":" + str(numberOfLayers) + "]")
 	sys.stdout.flush()
 
 def getAlterationFileLines(fileName):
