@@ -22,6 +22,7 @@ class previewPanel(wx.Panel):
 		wx.Panel.__init__(self, parent,-1)
 		
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
+		self.SetMinSize((400,300))
 
 		self.glCanvas = GLCanvas(self, -1)
 		wx.EVT_PAINT(self.glCanvas, self.OnPaint)

@@ -1,5 +1,4 @@
 (start of start.txt)
-M92 E926.5 (the number of extruder steps to take in 1mm of filament)
 G21        (metric values)
 G21
 G21        (all the extra G21 commands are comments - skeinforge eats lines without a gcode)
@@ -28,4 +27,3 @@ G21
 G1 X100 Y100 F3500 (go to the middle of the platform)
 G1 Z0.0 F400   (back to Z=0 and start the print!)
 (end of start.txt)
-
