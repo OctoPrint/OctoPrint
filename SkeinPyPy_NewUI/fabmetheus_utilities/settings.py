@@ -12,7 +12,7 @@ import os, sys
 
 from fabmetheus_utilities import archive
 
-def getSkeinPyPyConfigInformation():
+def getSkeinPyPyProfileInformation():
 	return {
 		'carve': {
 			'Add_Layer_Template_to_SVG': 'ignore',
@@ -305,17 +305,17 @@ def getSkeinPyPyConfigInformation():
 		}
 	}
 
-def loadGlobalConfig(filename):
+def loadGlobalProfile(filename):
 	"Read a configuration file as global config"
-	global globalConfigParser
-	globalConfigParser = ConfigParser.ConfigParser()
-	globalConfigParser.read(filename)
+	global globalProfileParser
+	globalProfileParser = ConfigParser.ConfigParser()
+	globalProfileParser.read(filename)
 
-def saveGlobalConfig(filename):
-	globalConfigParser.write(open(filename, 'w'))
+def saveGlobalProfile(filename):
+	globalProfileParser.write(open(filename, 'w'))
 
-def getDefaultConfigPath():
-	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_config.ini"))
+def getDefaultProfilePath():
+	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
 
 def safeConfigName(name):
 	return name.replace("=", "").replace(":", "").replace(" ", "_").replace("(", "").replace(")", "")
@@ -324,10 +324,10 @@ def getReadRepository(repository):
 	"Read the configuration for this 'repository'"
 	
 	#Check if we have a configuration file loaded, else load the default.
-	if not globals().has_key('globalConfigParser'):
-		loadGlobalConfig(getDefaultConfigPath())
+	if not globals().has_key('globalProfileParser'):
+		loadGlobalProfile(getDefaultProfilePath())
 	
-	info = getSkeinPyPyConfigInformation()
+	info = getSkeinPyPyProfileInformation()
 	if not info.has_key(repository.name):
 		print "Warning: Plugin: " + repository.name + " missing from SkeinPyPy info"
 		return repository
@@ -348,29 +348,29 @@ def getReadRepository(repository):
 		#Load this setting from another value.
 		if info[name][0:4] == "use:":
 			i = info[name][4:].split(':')
-			p.setValueToString(globalConfigParser.get(i[0], i[1]))
+			p.setValueToString(globalProfileParser.get(i[0], i[1]))
 			continue
 		
 		try:
-			p.setValueToString(globalConfigParser.get(repository.name, name))
+			p.setValueToString(globalProfileParser.get(repository.name, name))
 		except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
 			#Value not in configuration, add it.
 			try:
-				globalConfigParser.add_section(repository.name)
+				globalProfileParser.add_section(repository.name)
 			except:
 				pass
-			globalConfigParser.set(repository.name, name, str(p.value))
-			#saveGlobalConfig(getDefaultConfigPath())
+			globalProfileParser.set(repository.name, name, str(p.value))
+			#saveGlobalProfile(getDefaultProfilePath())
 		#print "============" + str(p) + "|" + p.name + "|" + str(p.value) + "|" + str(type(p.value))
 	return repository
 
 def storeRepository(repository):
 	"Store the configuration for this 'repository'"
 	#Check if we have a configuration file loaded, else load the default.
-	if not globals().has_key('globalConfigParser'):
-		loadGlobalConfig(getDefaultConfigPath())
+	if not globals().has_key('globalProfileParser'):
+		loadGlobalProfile(getDefaultProfilePath())
 	
-	info = getSkeinPyPyConfigInformation()
+	info = getSkeinPyPyProfileInformation()
 	if not info.has_key(repository.name):
 		print "Warning: Plugin: " + repository.name + " missing from SkeinPyPy info"
 		return repository
@@ -387,10 +387,10 @@ def storeRepository(repository):
 
 		if info[name] == "save":
 			try:
-				globalConfigParser.add_section(repository.name)
+				globalProfileParser.add_section(repository.name)
 			except:
 				pass
-			globalConfigParser.set(repository.name, name, str(p.value))
+			globalProfileParser.set(repository.name, name, str(p.value))
 	return repository
 
 def printProgress(layerIndex, procedureName):

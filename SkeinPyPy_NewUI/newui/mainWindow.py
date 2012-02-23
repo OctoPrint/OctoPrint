@@ -43,7 +43,7 @@ class mainWindow(wx.Frame):
 			self.plugins[m] = archive.getModuleWithDirectoryPath(archive.getCraftPluginsDirectoryPath(), m).getNewRepository()
 			settings.getReadRepository(self.plugins[m])
 		
-		skeinPyPySettingInfo = settings.getSkeinPyPyConfigInformation()
+		skeinPyPySettingInfo = settings.getSkeinPyPyProfileInformation()
 
 		for pluginName in self.plugins.keys():
 			self.plugins[pluginName].preferencesDict = {}
@@ -67,6 +67,9 @@ class mainWindow(wx.Frame):
 		self.AddTitle(configPanel, "Skirt")
 		self.AddSetting(configPanel, "Line count", self.plugins['skirt'].preferencesDict['Skirt_line_count'])
 		self.AddSetting(configPanel, "Start distance (mm)", self.plugins['skirt'].preferencesDict['Gap_Width_mm'])
+		self.AddTitle(configPanel, "Cool")
+		#self.AddSetting(configPanel, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
+		self.AddSetting(configPanel, "Minimal layer time", self.plugins['cool'].preferencesDict['Minimum_Layer_Time_seconds'])
 		self.AddTitle(configPanel, "Retraction")
 		self.AddSetting(configPanel, "Speed (mm/s)", self.plugins['dimension'].preferencesDict['Extruder_Retraction_Speed_mm/s'])
 		self.AddSetting(configPanel, "Distance (mm)", self.plugins['dimension'].preferencesDict['Retraction_Distance_millimeters'])
@@ -161,8 +164,8 @@ class mainWindow(wx.Frame):
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
 			self.lastPath = os.path.split(profileFile)[0]
-			settings.loadGlobalConfig(profileFile)
-			self.updateConfigToControls()
+			settings.loadGlobalProfile(profileFile)
+			self.updateProfileToControls()
 		dlg.Destroy()
 	
 	def OnSaveProfile(self, e):
@@ -171,8 +174,8 @@ class mainWindow(wx.Frame):
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
 			self.lastPath = os.path.split(profileFile)[0]
-			settings.saveGlobalConfig(profileFile)
-			self.updateConfigFromControls()
+			settings.saveGlobalProfile(profileFile)
+			self.updateProfileFromControls()
 		dlg.Destroy()
 	
 	def OnLoadSTL(self, e):
@@ -189,7 +192,7 @@ class mainWindow(wx.Frame):
 	def OnSlice(self, e):
 		if self.filename == None:
 			return
-		self.updateConfigFromControls()
+		self.updateProfileFromControls()
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self.panel, self.filename)
@@ -214,24 +217,24 @@ class mainWindow(wx.Frame):
 			i += 1
 		self.sizer.Layout()
 	
-	def updateConfigToControls(self):
+	def updateProfileToControls(self):
 		"Update the configuration wx controls to show the new configuration settings"
 		for pluginName in self.plugins.keys():
 			settings.getReadRepository(self.plugins[pluginName])
-		settings.saveGlobalConfig(settings.getDefaultConfigPath())
+		settings.saveGlobalProfile(settings.getDefaultProfilePath())
 		for ctrl in self.controlList:
 			if ctrl.setting.__class__ is settings.BooleanSetting:
 				ctrl.SetValue(ctrl.setting.value)
 			else:
 				ctrl.SetValue(str(ctrl.setting.value))
 
-	def updateConfigFromControls(self):
+	def updateProfileFromControls(self):
 		"Update the configuration settings with values from the wx controls"
 		for ctrl in self.controlList:
 			ctrl.setting.setValueToString(ctrl.GetValue())
 		for pluginName in self.plugins.keys():
 			settings.storeRepository(self.plugins[pluginName])
-		settings.saveGlobalConfig(settings.getDefaultConfigPath())
+		settings.saveGlobalProfile(settings.getDefaultProfilePath())
 	
 	def OnQuit(self, e):
 		self.Close()
