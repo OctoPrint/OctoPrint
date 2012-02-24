@@ -79,7 +79,7 @@ class wallThicknessValidator():
 			lineCount = int(wallThickness / nozzleSize)
 			lineWidth = wallThickness / lineCount
 			lineWidthAlt = wallThickness / (lineCount + 1)
-			if lineWidth > nozzleSize * 1.5 and lineWidthAlt < nozzleSize * 0.85:
+			if lineWidth >= nozzleSize * 1.5 and lineWidthAlt <= nozzleSize * 0.85:
 				return WARNING, 'Current selected wall thickness results in a line thickness of ' + str(lineWidthAlt) + 'mm which is not recommended with your nozzle of ' + str(nozzleSize) + 'mm'
 			return SUCCESS, ''
 		except ValueError:
