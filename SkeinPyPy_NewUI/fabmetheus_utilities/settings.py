@@ -19,6 +19,9 @@ def defaultSetting(setting):
 def storedSetting(name):
 	return lambda setting: getSetting(name, setting.value)
 
+def storedPercentSetting(name):
+	return lambda setting: float(getSetting(name, setting.value)) / 100
+
 def getSkeinPyPyProfileInformation():
 	return {
 		'carve': {
@@ -79,7 +82,7 @@ def getSkeinPyPyProfileInformation():
 			'Grid_Rectangular': defaultSetting,
 			'Line': defaultSetting,
 			'Infill_Perimeter_Overlap_ratio': defaultSetting,
-			'Infill_Solidity_ratio': defaultSetting,
+			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
 			'Infill_Width': defaultSetting,
 			'Solid_Surface_Thickness_layers': defaultSetting,
 			'Start_From_Choice': defaultSetting,
@@ -157,7 +160,7 @@ def getSkeinPyPyProfileInformation():
 			'Gap_Width_mm': storedSetting("skirt_gap"),
 			'Layers_To_index': "1",
 		},'chamber': {
-			'Activate_Chamber': defaultSetting,
+			'Activate_Chamber': "False",
 			'Bed_Temperature_Celcius': defaultSetting,
 			'Bed_Temperature_Begin_Change_Height_mm': defaultSetting,
 			'Bed_Temperature_End_Change_Height_mm': defaultSetting,
@@ -165,7 +168,7 @@ def getSkeinPyPyProfileInformation():
 			'Chamber_Temperature_Celcius': defaultSetting,
 			'Holding_Force_bar': defaultSetting,
 		},'tower': {
-			'Activate_Tower': defaultSetting,
+			'Activate_Tower': "False",
 			'Extruder_Possible_Collision_Cone_Angle_degrees': defaultSetting,
 			'Maximum_Tower_Height_layers': defaultSetting,
 			'Tower_Start_Layer_integer': defaultSetting,
@@ -321,24 +324,24 @@ def loadGlobalProfile(filename):
 def saveGlobalProfile(filename):
 	globalProfileParser.write(open(filename, 'w'))
 
-def getSetting(name, default = ""):
+def getSetting(name, default = "", section = 'profile'):
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
-	if not globalProfileParser.has_option("profile", name):
-		if not globalProfileParser.has_section("profile"):
-			globalProfileParser.add_section("profile")
-		globalProfileParser.set("profile", name, str(default))
+	if not globalProfileParser.has_option(section, name):
+		if not globalProfileParser.has_section(section):
+			globalProfileParser.add_section(section)
+		globalProfileParser.set(section, name, str(default))
 		return default
-	return globalProfileParser.get("profile", name)
+	return globalProfileParser.get(section, name)
 
-def putSetting(name, value):
+def putSetting(name, value, section = 'profile'):
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
-	if not globalProfileParser.has_section("profile"):
-		globalProfileParser.add_section("profile")
-	globalProfileParser.set("profile", name, str(value))
+	if not globalProfileParser.has_section(section):
+		globalProfileParser.add_section(section)
+	globalProfileParser.set(section, name, str(value))
 
 def getDefaultProfilePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))

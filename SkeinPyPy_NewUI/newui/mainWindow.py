@@ -10,6 +10,7 @@ from skeinforge_application.skeinforge_utilities import skeinforge_profile
 from newui import preview3d
 from newui import sliceProgessPanel
 from newui import alterationPanel
+from newui import validators
 
 def main():
 	app = wx.App(False)
@@ -41,6 +42,7 @@ class mainWindow(wx.Frame):
 		self.filename = None
 		self.progressPanelList = []
 		self.controlList = []
+		self.validators = []
 		
 		nb = wx.Notebook(self)
 		
@@ -58,13 +60,19 @@ class mainWindow(wx.Frame):
 		sizer.Add(rightConfigPanel)
 		
 		self.AddTitle(leftConfigPanel, "Accuracy")
-		self.AddSetting(leftConfigPanel, "Layer height (mm)", 'layer_height', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
+		c = self.AddSetting(leftConfigPanel, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
+		validators.validFloat(c, 0.0)
+		c = self.AddSetting(leftConfigPanel, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
+		validators.validFloat(c, 0.0)
 		self.AddTitle(leftConfigPanel, "Fill")
 		#self.AddSetting(leftConfigPanel, "Solid layers", self.plugins['fill'].preferencesDict['Solid_Surface_Thickness_layers'])
-		#self.AddSetting(leftConfigPanel, "Fill Density", self.plugins['fill'].preferencesDict['Infill_Solidity_ratio'])
+		c = self.AddSetting(leftConfigPanel, "Fill Density (%)", 'fill_density', '20')
+		validators.validFloat(c, 0.0, 100.0)
 		self.AddTitle(leftConfigPanel, "Skirt")
-		self.AddSetting(leftConfigPanel, "Line count", 'skirt_line_count')
-		self.AddSetting(leftConfigPanel, "Start distance (mm)", 'skirt_gap')
+		c = self.AddSetting(leftConfigPanel, "Line count", 'skirt_line_count', '1')
+		validators.validInt(c, 0, 10)
+		c = self.AddSetting(leftConfigPanel, "Start distance (mm)", 'skirt_gap', '6.0')
+		validators.validFloat(c, 0.0)
 		self.AddTitle(leftConfigPanel, "Cool")
 		#self.AddSetting(configPanel, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
 		#self.AddSetting(leftConfigPanel, "Minimal layer time", self.plugins['cool'].preferencesDict['Minimum_Layer_Time_seconds'])
@@ -126,6 +134,14 @@ class mainWindow(wx.Frame):
 		
 		self.sizer = sizer
 
+		#Create the popup window
+		self.popup = wx.PopupWindow(self, wx.BORDER_SIMPLE)
+		self.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
+		self.popup.text = wx.StaticText(self.popup, -1, '');
+		self.popup.sizer = wx.BoxSizer()
+		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND)
+		self.popup.SetSizer(self.popup.sizer)
+
 		self.Fit()
 		self.Centre()
 		self.Show(True)
@@ -139,19 +155,46 @@ class mainWindow(wx.Frame):
 		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,sizer.GetCols()), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(sizer.GetRows() + 2)
 	
-	def AddSetting(self, panel, name, settingName, help = 'Help: TODO'):
+	def AddSetting(self, panel, name, settingName, default = '', help = 'Help: TODO'):
 		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		sizer.Add(wx.StaticText(panel, -1, name), (sizer.GetRows(),sizer.GetCols()), flag=wx.ALIGN_CENTER_VERTICAL)
-		ctrl = wx.TextCtrl(panel, -1, settings.getSetting(settingName))
+		ctrl = wx.TextCtrl(panel, -1, settings.getSetting(settingName, default))
 		ctrl.settingName = settingName
+		ctrl.main = self
+		self.Bind(wx.EVT_TEXT, self.OnSettingTextChange, ctrl)
 		self.controlList.append(ctrl)
 		sizer.Add(ctrl, (sizer.GetRows(),sizer.GetCols()+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
 		sizer.Add(helpButton, (sizer.GetRows(),sizer.GetCols()+2))
 		helpButton.SetToolTip(wx.ToolTip(help))
 		sizer.SetRows(sizer.GetRows()+1)
+
+		ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: self.OnPopupDisplay(ctrl, help))
+		ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
+
 		return ctrl
+	
+	def OnPopupDisplay(self, e, helpText):
+		x, y = e.ClientToScreenXY(0, 0)
+		sx, sy = e.GetSizeTuple()
+		self.popup.text.SetLabel(helpText)
+		self.popup.SetPosition((x, y+sy))
+		self.popup.Fit()
+		self.popup.Show(True)
+		
+	def OnPopupHide(self, e):
+		self.popup.Show(False)
+	
+	def OnSettingTextChange(self, e):
+		for validator in self.validators:
+			res, err = validator.validate()
+			if res == validators.ERROR:
+				validator.ctrl.SetBackgroundColour('Red')
+			elif res == validators.WARNING:
+				validator.ctrl.SetBackgroundColour('Yellow')
+			else:
+				validator.ctrl.SetBackgroundColour(wx.NullColor)
 
 	def OnLoadProfile(self, e):
 		dlg=wx.FileDialog(self, "Select profile file to load", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
