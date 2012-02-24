@@ -9,7 +9,7 @@ import __init__
 
 import ConfigParser
 import os, sys
-import types
+import types, math
 
 from fabmetheus_utilities import archive
 
@@ -43,7 +43,7 @@ def calculateShells(setting):
 	if wallThickness < nozzleSize:
 		return wallThickness
 
-	lineCount = int(wallThickness / nozzleSize)
+	lineCount = int(wallThickness / nozzleSize + 0.0001)
 	lineWidth = wallThickness / lineCount
 	lineWidthAlt = wallThickness / (lineCount + 1)
 	if lineWidth > nozzleSize * 1.5:
@@ -53,7 +53,9 @@ def calculateShells(setting):
 def calculateSolidLayerCount(setting):
 	layerHeight = float(getSetting('layer_height'))
 	solidThickness = float(getSetting('solid_layer_thickness'))
-	return int(solidThickness / layerHeight)
+	ret = int(math.ceil(solidThickness / layerHeight))
+	print "calculateSolidLayerCount: " + str(ret) + " " + str(solidThickness / layerHeight)
+	return ret
 
 def getSkeinPyPyProfileInformation():
 	return {
