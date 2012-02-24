@@ -22,11 +22,44 @@ def storedSetting(name):
 def storedPercentSetting(name):
 	return lambda setting: float(getSetting(name, setting.value)) / 100
 
+def calculateEdgeWidth(setting):
+	wallThickness = float(getSetting('wall_thickness'))
+	nozzleSize = float(getSetting('nozzle_size'))
+	
+	if wallThickness < nozzleSize:
+		return wallThickness
+
+	lineCount = int(wallThickness / nozzleSize)
+	lineWidth = wallThickness / lineCount
+	lineWidthAlt = wallThickness / (lineCount + 1)
+	if lineWidth > nozzleSize * 1.5:
+		return lineWidthAlt
+	return lineWidth
+
+def calculateShells(setting):
+	wallThickness = float(getSetting('wall_thickness'))
+	nozzleSize = float(getSetting('nozzle_size'))
+	
+	if wallThickness < nozzleSize:
+		return wallThickness
+
+	lineCount = int(wallThickness / nozzleSize)
+	lineWidth = wallThickness / lineCount
+	lineWidthAlt = wallThickness / (lineCount + 1)
+	if lineWidth > nozzleSize * 1.5:
+		return lineCount
+	return lineCount - 1
+
+def calculateSolidLayerCount(setting):
+	layerHeight = float(getSetting('layer_height'))
+	solidThickness = float(getSetting('solid_layer_thickness'))
+	return int(solidThickness / layerHeight)
+
 def getSkeinPyPyProfileInformation():
 	return {
 		'carve': {
 			'Add_Layer_Template_to_SVG': defaultSetting,
-			'Edge_Width_mm': defaultSetting,
+			'Edge_Width_mm': calculateEdgeWidth,
 			'Extra_Decimal_Places_float': defaultSetting,
 			'Import_Coarseness_ratio': defaultSetting,
 			'Layer_Height_mm': storedSetting("layer_height"),
@@ -36,7 +69,7 @@ def getSkeinPyPyProfileInformation():
 			'Unproven_Mesh': defaultSetting,
 			'SVG_Viewer': defaultSetting,
 		},'scale': {
-			'Activate_Scale': defaultSetting,
+			'Activate_Scale': "False",
 			'XY_Plane_Scale_ratio': defaultSetting,
 			'Z_Axis_Scale_ratio': defaultSetting,
 			'SVG_Viewer': defaultSetting,
@@ -56,7 +89,7 @@ def getSkeinPyPyProfileInformation():
 			'Activate_Widen': defaultSetting,
 		},'inset': {
 			'Add_Custom_Code_for_Temperature_Reading': defaultSetting,
-			'Infill_in_Direction_of_Bridge': defaultSetting,
+			'Infill_in_Direction_of_Bridge': "True",
 			'Infill_Width_over_Thickness_ratio': defaultSetting,
 			'Loop_Order_Choice': defaultSetting,
 			'Overlap_Removal_Width_over_Perimeter_Width_ratio': defaultSetting,
@@ -66,9 +99,9 @@ def getSkeinPyPyProfileInformation():
 			'Activate_Fill': defaultSetting,
 			'Diaphragm_Period_layers': defaultSetting,
 			'Diaphragm_Thickness_layers': defaultSetting,
-			'Extra_Shells_on_Alternating_Solid_Layer_layers': defaultSetting,
-			'Extra_Shells_on_Base_layers': defaultSetting,
-			'Extra_Shells_on_Sparse_Layer_layers': defaultSetting,
+			'Extra_Shells_on_Alternating_Solid_Layer_layers': calculateShells,
+			'Extra_Shells_on_Base_layers': calculateShells,
+			'Extra_Shells_on_Sparse_Layer_layers': calculateShells,
 			'Grid_Circle_Separation_over_Perimeter_Width_ratio': defaultSetting,
 			'Grid_Extra_Overlap_ratio': defaultSetting,
 			'Grid_Junction_Separation_Band_Height_layers': defaultSetting,
@@ -83,15 +116,15 @@ def getSkeinPyPyProfileInformation():
 			'Line': defaultSetting,
 			'Infill_Perimeter_Overlap_ratio': defaultSetting,
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
-			'Infill_Width': defaultSetting,
-			'Solid_Surface_Thickness_layers': defaultSetting,
+			'Infill_Width': storedSetting("nozzle_size"),
+			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
 			'Start_From_Choice': defaultSetting,
 			'Surrounding_Angle_degrees': defaultSetting,
 			'Thread_Sequence_Choice': defaultSetting,
 		},'multiply': {
 			'Activate_Multiply': "True",
-			'Center_X_mm': storedSetting("centerX"),
-			'Center_Y_mm': storedSetting("centerY"),
+			'Center_X_mm': storedSetting("machine_center_x"),
+			'Center_Y_mm': storedSetting("machine_center_y"),
 			'Number_of_Columns_integer': "1",
 			'Number_of_Rows_integer': "1",
 			'Reverse_Sequence_every_Odd_Layer': defaultSetting,
@@ -206,7 +239,7 @@ def getSkeinPyPyProfileInformation():
 			'Bridge_Cool_Celcius': defaultSetting,
 			'Cool_Type': defaultSetting,
 			'Maximum_Cool_Celcius': defaultSetting,
-			'Minimum_Layer_Time_seconds': defaultSetting,
+			'Minimum_Layer_Time_seconds': storedSetting("cool_min_layer_time"),
 			'Minimum_Orbital_Radius_millimeters': defaultSetting,
 			'Name_of_Cool_End_File': defaultSetting,
 			'Name_of_Cool_Start_File': defaultSetting,
@@ -214,11 +247,11 @@ def getSkeinPyPyProfileInformation():
 			'Turn_Fan_On_at_Beginning': defaultSetting,
 			'Turn_Fan_Off_at_Ending': defaultSetting,
 		},'hop': {
-			'Activate_Hop': defaultSetting,
+			'Activate_Hop': "False",
 			'Hop_Over_Layer_Thickness_ratio': defaultSetting,
 			'Minimum_Hop_Angle_degrees': defaultSetting,
 		},'wipe': {
-			'Activate_Wipe': defaultSetting,
+			'Activate_Wipe': "False",
 			'Arrival_X_mm': defaultSetting,
 			'Arrival_Y_mm': defaultSetting,
 			'Arrival_Z_mm': defaultSetting,
@@ -230,7 +263,7 @@ def getSkeinPyPyProfileInformation():
 			'Wipe_Z_mm': defaultSetting,
 			'Wipe_Period_layers': defaultSetting,
 		},'oozebane': {
-			'Activate_Oozebane': defaultSetting,
+			'Activate_Oozebane': "False",
 			'After_Startup_Distance_millimeters': defaultSetting,
 			'Early_Shutdown_Distance_millimeters': defaultSetting,
 			'Early_Startup_Distance_Constant_millimeters': defaultSetting,
@@ -240,13 +273,13 @@ def getSkeinPyPyProfileInformation():
 			'Minimum_Distance_for_Early_Shutdown_millimeters': defaultSetting,
 			'Slowdown_Startup_Steps_positive_integer': defaultSetting,
 		},'dwindle': {
-			'Activate_Dwindle': defaultSetting,
+			'Activate_Dwindle': "False",
 			'End_Rate_Multiplier_ratio': defaultSetting,
 			'Pent_Up_Volume_cubic_millimeters': defaultSetting,
 			'Slowdown_Steps_positive_integer': defaultSetting,
 			'Slowdown_Volume_cubic_millimeters': defaultSetting,
 		},'splodge': {
-			'Activate_Splodge': defaultSetting,
+			'Activate_Splodge': "False",
 			'Initial_Lift_over_Extra_Thickness_ratio': defaultSetting,
 			'Initial_Splodge_Feed_Rate_mm/s': defaultSetting,
 			'Operating_Splodge_Feed_Rate_mm/s': defaultSetting,
@@ -254,10 +287,10 @@ def getSkeinPyPyProfileInformation():
 			'Initial_Splodge_Quantity_Length_millimeters': defaultSetting,
 			'Operating_Lift_over_Extra_Thickness_ratio': defaultSetting,
 		},'home': {
-			'Activate_Home': defaultSetting,
+			'Activate_Home': "False",
 			'Name_of_Home_File': defaultSetting,
 		},'lash': {
-			'Activate_Lash': defaultSetting,
+			'Activate_Lash': "False",
 			'X_Backlash_mm': defaultSetting,
 			'Y_Backlash_mm': defaultSetting,
 		},'fillet': {
@@ -278,9 +311,9 @@ def getSkeinPyPyProfileInformation():
 			'Delay_milliseconds': defaultSetting,
 			'Maximum_Speed_ratio': defaultSetting,
 		},'dimension': {
-			'Activate_Dimension': defaultSetting,
-			'Absolute_Extrusion_Distance': defaultSetting,
-			'Relative_Extrusion_Distance': defaultSetting,
+			'Activate_Dimension': "True",
+			'Absolute_Extrusion_Distance': "True",
+			'Relative_Extrusion_Distance': "False",
 			'Extruder_Retraction_Speed_mm/s': defaultSetting,
 			'Filament_Diameter_mm': defaultSetting,
 			'Filament_Packing_Density_ratio': defaultSetting,
@@ -291,12 +324,12 @@ def getSkeinPyPyProfileInformation():
 			'Restart_Extra_Distance_millimeters': defaultSetting,
 		},'alteration': {
 			'Activate_Alteration': defaultSetting,
-			'Name_of_End_File': defaultSetting,
-			'Name_of_Start_File': defaultSetting,
-			'Remove_Redundant_Mcode': defaultSetting,
+			'Name_of_End_File': "start.gcode",
+			'Name_of_Start_File': "end.gcode",
+			'Remove_Redundant_Mcode': "True",
 			'Replace_Variable_with_Setting': defaultSetting,
 		},'export': {
-			'Activate_Export': defaultSetting,
+			'Activate_Export': "True",
 			'Add_Descriptive_Extension': defaultSetting,
 			'Add_Export_Suffix': defaultSetting,
 			'Add_Profile_Extension': defaultSetting,
@@ -332,6 +365,7 @@ def getSetting(name, default = "", section = 'profile'):
 		if not globalProfileParser.has_section(section):
 			globalProfileParser.add_section(section)
 		globalProfileParser.set(section, name, str(default))
+		print name + " not found in profile, so using default"
 		return default
 	return globalProfileParser.get(section, name)
 

@@ -274,7 +274,7 @@ class PreviewGLCanvas(GLCanvas):
 		glEnd()
 
 		if self.parent.pathList != None:
-			for path in self.pathList:
+			for path in self.parent.pathList:
 				if path['type'] == 'move':
 					glColor3f(0,0,1)
 				if path['type'] == 'extrude':

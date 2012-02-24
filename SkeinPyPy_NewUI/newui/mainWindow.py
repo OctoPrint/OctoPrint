@@ -3,9 +3,7 @@ import __init__
 
 import wx, os
 
-from fabmetheus_utilities import archive
 from fabmetheus_utilities import settings
-from skeinforge_application.skeinforge_utilities import skeinforge_profile
 
 from newui import preview3d
 from newui import sliceProgessPanel
@@ -41,77 +39,79 @@ class mainWindow(wx.Frame):
 		self.lastPath = ""
 		self.filename = None
 		self.progressPanelList = []
-		self.controlList = []
-		self.validators = []
+		self.settingControlList = []
 		
 		nb = wx.Notebook(self)
 		
-		configPanel = wx.Panel(nb);
-		nb.AddPage(configPanel, "Print config")
-		leftConfigPanel = wx.Panel(configPanel)
-		rightConfigPanel = wx.Panel(configPanel)
-		sizer = wx.GridBagSizer(2, 2)
-		leftConfigPanel.SetSizer(sizer)
-		sizer = wx.GridBagSizer(2, 2)
-		rightConfigPanel.SetSizer(sizer)
-		sizer = wx.BoxSizer(wx.HORIZONTAL)
-		configPanel.SetSizer(sizer)
-		sizer.Add(leftConfigPanel)
-		sizer.Add(rightConfigPanel)
+		(left, right) = self.CreateConfigTab(nb, 'Print config')
 		
-		self.AddTitle(leftConfigPanel, "Accuracy")
-		c = self.AddSetting(leftConfigPanel, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
+		TitleRow(left, "Accuracy")
+		c = SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0)
-		c = self.AddSetting(leftConfigPanel, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
+		validators.warningAbove(c, 0.31, "Thicker layers then 0.3mm usually give bad results and are not recommended.")
+		c = SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
 		validators.validFloat(c, 0.0)
-		self.AddTitle(leftConfigPanel, "Fill")
-		#self.AddSetting(leftConfigPanel, "Solid layers", self.plugins['fill'].preferencesDict['Solid_Surface_Thickness_layers'])
-		c = self.AddSetting(leftConfigPanel, "Fill Density (%)", 'fill_density', '20')
+		validators.wallThicknessValidator(c)
+		
+		TitleRow(left, "Fill")
+		c = SettingRow(left, "Bottom/Top thickness (mm)", 'solid_layer_thickness', '0.6', 'This controls the thickness of the bottom and top layers, the amount of solid layers put down is calculated by the layer thickness and this value.')
+		validators.validFloat(c, 0.0)
+		c = SettingRow(left, "Fill Density (%)", 'fill_density', '20', 'This controls how densily filled the insides of your print will be. For a solid part use 100%, for an empty part use 0%. A value around 20% is usually enough')
 		validators.validFloat(c, 0.0, 100.0)
-		self.AddTitle(leftConfigPanel, "Skirt")
-		c = self.AddSetting(leftConfigPanel, "Line count", 'skirt_line_count', '1')
+		
+		TitleRow(left, "Skirt")
+		c = SettingRow(left, "Line count", 'skirt_line_count', '1')
 		validators.validInt(c, 0, 10)
-		c = self.AddSetting(leftConfigPanel, "Start distance (mm)", 'skirt_gap', '6.0')
+		c = SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0')
 		validators.validFloat(c, 0.0)
-		self.AddTitle(leftConfigPanel, "Cool")
-		#self.AddSetting(configPanel, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
-		#self.AddSetting(leftConfigPanel, "Minimal layer time", self.plugins['cool'].preferencesDict['Minimum_Layer_Time_seconds'])
-		self.AddTitle(rightConfigPanel, "Retraction")
-		#self.AddSetting(rightConfigPanel, "Speed (mm/s)", self.plugins['dimension'].preferencesDict['Extruder_Retraction_Speed_mm/s'])
-		#self.AddSetting(rightConfigPanel, "Distance (mm)", self.plugins['dimension'].preferencesDict['Retraction_Distance_millimeters'])
-		#self.AddSetting(rightConfigPanel, "Extra length on start (mm)", self.plugins['dimension'].preferencesDict['Restart_Extra_Distance_millimeters'])
-		#self.AddSetting(rightConfigPanel, "Minimal travel (mm)", self.plugins['dimension'].preferencesDict['Minimum_Travel_for_Retraction_millimeters'])
 		
-		configPanel = wx.Panel(nb);
-		nb.AddPage(configPanel, "Machine && Filament")
-		leftConfigPanel = wx.Panel(configPanel)
-		rightConfigPanel = wx.Panel(configPanel)
-		sizer = wx.GridBagSizer(2, 2)
-		leftConfigPanel.SetSizer(sizer)
-		sizer = wx.GridBagSizer(2, 2)
-		rightConfigPanel.SetSizer(sizer)
-		sizer = wx.BoxSizer(wx.HORIZONTAL)
-		configPanel.SetSizer(sizer)
-		sizer.Add(leftConfigPanel)
-		sizer.Add(rightConfigPanel)
+		TitleRow(right, "Cool")
+		#c = SettingRow(right, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
+		c = SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
+		validators.validFloat(c, 0.0)
 		
-		self.AddTitle(leftConfigPanel, "Machine size")
-		#self.AddSetting(leftConfigPanel, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
-		#self.AddSetting(leftConfigPanel, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
-		#self.AddSetting(leftConfigPanel, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
+		(left, right) = self.CreateConfigTab(nb, 'Machine && Filament')
+		
+		TitleRow(left, "Machine size")
+		c = SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100')
+		validators.validInt(c, 10)
+		c = SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100')
+		validators.validInt(c, 10)
+		#self.AddSetting(left, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
+		#self.AddSetting(left, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
+		#self.AddSetting(left, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
 
-		self.AddTitle(leftConfigPanel, "Machine nozzle")
-		#self.AddSetting(leftConfigPanel, "Nozzle size (mm)", self.plugins['carve'].preferencesDict['Edge_Width_mm'])
+		TitleRow(left, "Machine nozzle")
+		c = SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4')
+		validators.validFloat(c, 0.1, 1.0)
 
-		self.AddTitle(leftConfigPanel, "Speed")
-		#self.AddSetting(leftConfigPanel, "Print speed (mm/s)", self.plugins['speed'].preferencesDict['Feed_Rate_mm/s'])
-		#self.AddSetting(leftConfigPanel, "Travel speed (mm/s)", self.plugins['speed'].preferencesDict['Travel_Feed_Rate_mm/s'])
-		#self.AddSetting(leftConfigPanel, "Max Z speed (mm/z)", self.plugins['speed'].preferencesDict['Maximum_Z_Feed_Rate_mm/s'])
-		#self.AddSetting(leftConfigPanel, "Bottom Layer Speed Ratio", self.plugins['speed'].preferencesDict['Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio'])
+		TitleRow(left, "Retraction")
+		c = SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0')
+		validators.validFloat(c, 0.0)
+		c = SettingRow(left, "Speed (mm/s)", 'retraction_speed', '13.5')
+		validators.validFloat(c, 0.1)
+		c = SettingRow(left, "Distance (mm)", 'retraction_amount', '0.0')
+		validators.validFloat(c, 0.0)
+		c = SettingRow(left, "Extra length on start (mm)", 'retraction_extra', '0.0')
+		validators.validFloat(c, 0.0)
 
-		self.AddTitle(rightConfigPanel, "Filament")
-		#self.AddSetting(rightConfigPanel, "Diameter (mm)", self.plugins['dimension'].preferencesDict['Filament_Diameter_mm'])
-		#self.AddSetting(rightConfigPanel, "Packing Density", self.plugins['dimension'].preferencesDict['Filament_Packing_Density_ratio'])
+		TitleRow(right, "Speed")
+		c = SettingRow(right, "Print speed (mm/s)", 'print_speed', '50')
+		validators.validFloat(c, 1.0)
+		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
+		c = SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150')
+		validators.validFloat(c, 1.0)
+		validators.warningAbove(c, 300.0, "It is highly unlikely that your machine can achieve a travel speed above 150mm/s")
+		c = SettingRow(right, "Max Z speed (mm/s)", 'max_z_speed', '1.0')
+		validators.validFloat(c, 0.5)
+		c = SettingRow(right, "Bottom layer speed", 'bottom_layer_speed', '25')
+		validators.validFloat(c, 0.0)
+
+		TitleRow(right, "Filament")
+		c = SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.98', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
+		validators.validFloat(c, 1.0)
+		c = SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
+		validators.validFloat(c, 0.5, 1.5)
 		
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
@@ -142,43 +142,38 @@ class mainWindow(wx.Frame):
 		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND)
 		self.popup.SetSizer(self.popup.sizer)
 
+
+		self.updateProfileToControls()
+
 		self.Fit()
 		self.Centre()
 		self.Show(True)
 	
-	def AddTitle(self, panel, name):
-		"Add a title row to the configuration panel"
-		sizer = panel.GetSizer()
-		title = wx.StaticText(panel, -1, name)
-		title.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-		sizer.Add(title, (sizer.GetRows(),sizer.GetCols()), (1,3), flag=wx.EXPAND)
-		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,sizer.GetCols()), (1,3), flag=wx.EXPAND)
-		sizer.SetRows(sizer.GetRows() + 2)
+	def CreateConfigTab(self, nb, name):
+		configPanel = wx.Panel(nb);
+		nb.AddPage(configPanel, name)
+		leftConfigPanel = wx.Panel(configPanel)
+		rightConfigPanel = wx.Panel(configPanel)
+		sizer = wx.GridBagSizer(2, 2)
+		leftConfigPanel.SetSizer(sizer)
+		sizer = wx.GridBagSizer(2, 2)
+		rightConfigPanel.SetSizer(sizer)
+		sizer = wx.BoxSizer(wx.HORIZONTAL)
+		configPanel.SetSizer(sizer)
+		sizer.Add(leftConfigPanel)
+		sizer.Add(rightConfigPanel)
+		leftConfigPanel.main = self
+		rightConfigPanel.main = self
+		return leftConfigPanel, rightConfigPanel
 	
-	def AddSetting(self, panel, name, settingName, default = '', help = 'Help: TODO'):
-		"Add a setting to the configuration panel"
-		sizer = panel.GetSizer()
-		sizer.Add(wx.StaticText(panel, -1, name), (sizer.GetRows(),sizer.GetCols()), flag=wx.ALIGN_CENTER_VERTICAL)
-		ctrl = wx.TextCtrl(panel, -1, settings.getSetting(settingName, default))
-		ctrl.settingName = settingName
-		ctrl.main = self
-		self.Bind(wx.EVT_TEXT, self.OnSettingTextChange, ctrl)
-		self.controlList.append(ctrl)
-		sizer.Add(ctrl, (sizer.GetRows(),sizer.GetCols()+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
-		helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
-		sizer.Add(helpButton, (sizer.GetRows(),sizer.GetCols()+2))
-		helpButton.SetToolTip(wx.ToolTip(help))
-		sizer.SetRows(sizer.GetRows()+1)
-
-		ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: self.OnPopupDisplay(ctrl, help))
-		ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
-
-		return ctrl
-	
-	def OnPopupDisplay(self, e, helpText):
-		x, y = e.ClientToScreenXY(0, 0)
-		sx, sy = e.GetSizeTuple()
-		self.popup.text.SetLabel(helpText)
+	def OnPopupDisplay(self, setting):
+		x, y = setting.ctrl.ClientToScreenXY(0, 0)
+		sx, sy = setting.ctrl.GetSizeTuple()
+		if setting.validationMsg != '':
+			self.popup.text.SetLabel(setting.validationMsg + '\n\n' + setting.helpText)
+		else:
+			self.popup.text.SetLabel(setting.helpText)
+		self.popup.text.Wrap(350)
 		self.popup.SetPosition((x, y+sy))
 		self.popup.Fit()
 		self.popup.Show(True)
@@ -192,7 +187,7 @@ class mainWindow(wx.Frame):
 			if res == validators.ERROR:
 				validator.ctrl.SetBackgroundColour('Red')
 			elif res == validators.WARNING:
-				validator.ctrl.SetBackgroundColour('Yellow')
+				validator.ctrl.SetBackgroundColour('Orange')
 			else:
 				validator.ctrl.SetBackgroundColour(wx.NullColor)
 
@@ -213,7 +208,6 @@ class mainWindow(wx.Frame):
 			profileFile = dlg.GetPath()
 			self.lastPath = os.path.split(profileFile)[0]
 			settings.saveGlobalProfile(profileFile)
-			self.updateProfileFromControls()
 		dlg.Destroy()
 	
 	def OnLoadSTL(self, e):
@@ -230,10 +224,10 @@ class mainWindow(wx.Frame):
 	def OnSlice(self, e):
 		if self.filename == None:
 			return
-		self.updateProfileFromControls()
+		settings.saveGlobalProfile(settings.getDefaultProfilePath())
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
-		spp = sliceProgessPanel.sliceProgessPanel(self, self.panel, self.filename)
+		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
 		self.sizer.Layout()
 		newSize = self.GetSize();
@@ -257,19 +251,78 @@ class mainWindow(wx.Frame):
 	
 	def updateProfileToControls(self):
 		"Update the configuration wx controls to show the new configuration settings"
-		settings.saveGlobalProfile(settings.getDefaultProfilePath())
-		for ctrl in self.controlList:
-			ctrl.SetValue(settings.getSetting(ctrl.settingName))
+		for setting in self.settingControlList:
+			setting.SetValue(settings.getSetting(setting.configName))
 
-	def updateProfileFromControls(self):
-		"Update the configuration settings with values from the wx controls"
-		for ctrl in self.controlList:
-			settings.putSetting(ctrl.settingName, ctrl.GetValue())
-		settings.saveGlobalProfile(settings.getDefaultProfilePath())
-	
 	def OnQuit(self, e):
 		self.Close()
 	
 	def OnClose(self, e):
-		self.updateProfileFromControls()
+		settings.saveGlobalProfile(settings.getDefaultProfilePath())
 		self.Destroy()
+
+class TitleRow():
+	def __init__(self, panel, name):
+		"Add a title row to the configuration panel"
+		sizer = panel.GetSizer()
+		self.title = wx.StaticText(panel, -1, name)
+		self.title.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
+		sizer.Add(self.title, (sizer.GetRows(),sizer.GetCols()), (1,3), flag=wx.EXPAND)
+		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,sizer.GetCols()), (1,3), flag=wx.EXPAND)
+		sizer.SetRows(sizer.GetRows() + 2)
+
+class SettingRow():
+	def __init__(self, panel, label, configName, defaultValue = '', helpText = 'Help: TODO'):
+		"Add a setting to the configuration panel"
+		sizer = panel.GetSizer()
+		x = sizer.GetRows()
+		y = sizer.GetCols()
+		
+		self.validators = []
+		self.validationMsg = ''
+		self.helpText = helpText
+		self.configName = configName
+		
+		self.label = wx.StaticText(panel, -1, label)
+		self.ctrl = wx.TextCtrl(panel, -1, settings.getSetting(configName, defaultValue))
+		#self.helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
+		#self.helpButton.SetToolTip(wx.ToolTip(help))
+		
+		self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingTextChange)
+		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: panel.main.OnPopupDisplay(self))
+		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, panel.main.OnPopupHide)
+		
+		panel.main.settingControlList.append(self)
+		
+		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
+		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		#sizer.Add(helpButton, (x,y+2))
+		sizer.SetRows(x+1)
+
+	def OnSettingTextChange(self, e):
+		result = validators.SUCCESS
+		msgs = []
+		for validator in self.validators:
+			res, err = validator.validate()
+			if res == validators.ERROR:
+				result = res
+			elif res == validators.WARNING and result != validators.ERROR:
+				result = res
+			if res != validators.SUCCESS:
+				print err
+				msgs.append(err)
+		if result == validators.ERROR:
+			self.ctrl.SetBackgroundColour('Red')
+		elif result == validators.WARNING:
+			self.ctrl.SetBackgroundColour('Yellow')
+		else:
+			self.ctrl.SetBackgroundColour(wx.NullColour)
+		settings.putSetting(self.configName, self.GetValue())
+		self.validationMsg = '\n'.join(msgs)
+
+	def GetValue(self):
+		return self.ctrl.GetValue()
+
+	def SetValue(self, value):
+		self.ctrl.SetValue(value)
+
