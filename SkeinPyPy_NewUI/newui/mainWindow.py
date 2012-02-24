@@ -40,7 +40,11 @@ class mainWindow(wx.Frame):
 		self.filename = None
 		self.progressPanelList = []
 		self.settingControlList = []
-		
+
+		#Preview window
+		self.preview3d = preview3d.previewPanel(self)
+
+		#Main tabs
 		nb = wx.Notebook(self)
 		
 		(left, right) = self.CreateConfigTab(nb, 'Print config')
@@ -69,14 +73,20 @@ class mainWindow(wx.Frame):
 		#c = SettingRow(right, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
 		c = SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
 		validators.validFloat(c, 0.0)
+
+		TitleRow(right, "Temperature")
+		TitleRow(right, "Support")
+
 		
 		(left, right) = self.CreateConfigTab(nb, 'Machine && Filament')
 		
 		TitleRow(left, "Machine size")
 		c = SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
+		settingNotify(c, self.preview3d.updateCenterX)
 		c = SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
+		settingNotify(c, self.preview3d.updateCenterY)
 		#self.AddSetting(left, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
 		#self.AddSetting(left, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
 		#self.AddSetting(left, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
@@ -115,14 +125,13 @@ class mainWindow(wx.Frame):
 		
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
-		#Preview window, load and slice buttons.
-		self.preview3d = preview3d.previewPanel(self)
-		
+		# load and slice buttons.
 		loadButton = wx.Button(self, -1, 'Load STL')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
 		self.Bind(wx.EVT_BUTTON, self.OnLoadSTL, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 
+		#Main sizer, to position the preview window, buttons and tab control
 		sizer = wx.GridBagSizer()
 		self.SetSizer(sizer)
 		sizer.Add(nb, (0,0), span=(1,1), flag=wx.EXPAND)
@@ -131,7 +140,6 @@ class mainWindow(wx.Frame):
 		sizer.AddGrowableRow(0)
 		sizer.Add(loadButton, (1,1))
 		sizer.Add(sliceButton, (1,2))
-		
 		self.sizer = sizer
 
 		#Create the popup window
@@ -332,3 +340,17 @@ class SettingRow():
 	def SetValue(self, value):
 		self.ctrl.SetValue(value)
 
+#Settings notify works as a validator, but instead of validating anything, it calls another function, which can use the value.
+class settingNotify():
+	def __init__(self, setting, func):
+		self.setting = setting
+		self.setting.validators.append(self)
+		self.func = func
+	
+	def validate(self):
+		try:
+			f = float(self.setting.GetValue())
+			self.func(f)
+			return validators.SUCCESS, ''
+		except ValueError:
+			return validators.SUCCESS, ''

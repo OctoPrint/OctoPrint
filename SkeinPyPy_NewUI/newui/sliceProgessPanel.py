@@ -67,14 +67,17 @@ class sliceProgessPanel(wx.Panel):
 	def OnShowGCode(self, e):
 		self.mainWindow.preview3d.loadGCodeFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
 	
-	def OnSliceDone(self):
-		self.statusText.SetLabel("Ready.")
+	def OnSliceDone(self, ret):
 		self.progressGauge.Destroy()
-		self.showButton = wx.Button(self, -1, "Show GCode")
-		self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
-		self.sizer.Remove(self.abortButton)
-		self.sizer.Add(self.showButton, 0)
-		self.sizer.Add(self.abortButton, 0)
+		if ret == 0:
+			self.statusText.SetLabel("Ready.")
+			self.showButton = wx.Button(self, -1, "Show GCode")
+			self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
+			self.sizer.Remove(self.abortButton)
+			self.sizer.Add(self.showButton, 0)
+			self.sizer.Add(self.abortButton, 0)
+		else:
+			self.statusText.SetLabel("!?! Something went wrong during slicing.")
 		self.sizer.Layout()
 		self.abort = True
 	
@@ -116,5 +119,6 @@ class WorkerThread(threading.Thread):
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Aborted by user.")
 				return
 			line = p.stdout.readline()
-		wx.CallAfter(self.notifyWindow.OnSliceDone)
+		ret = p.wait()
+		wx.CallAfter(self.notifyWindow.OnSliceDone, ret)
 

@@ -29,7 +29,7 @@ class previewPanel(wx.Panel):
 		self.triangleMesh = None
 		self.pathList = None
 		self.machineSize = Vector3(210, 210, 200)
-		self.machineCenter = Vector3(105, 105, 0)
+		self.machineCenter = Vector3(0, 0, 0)
 		
 		tb = wx.ToolBar( self, -1 )
 		self.ToolBar = tb
@@ -44,6 +44,15 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
 		self.SetSizer(sizer)
 
+	def updateCenterX(self, x):
+		self.machineCenter.x = x
+		self.moveModel()
+		self.glCanvas.Refresh()
+
+	def updateCenterY(self, y):
+		self.machineCenter.y = y
+		self.moveModel()
+		self.glCanvas.Refresh()
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
