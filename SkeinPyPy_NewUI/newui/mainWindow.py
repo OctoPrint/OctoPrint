@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os
+import wx, os, platform
 
 from fabmetheus_utilities import settings
 
@@ -54,15 +54,15 @@ class mainWindow(wx.Frame):
 		validators.wallThicknessValidator(c)
 		
 		TitleRow(left, "Fill")
-		c = SettingRow(left, "Bottom/Top thickness (mm)", 'solid_layer_thickness', '0.6', 'This controls the thickness of the bottom and top layers, the amount of solid layers put down is calculated by the layer thickness and this value.')
+		c = SettingRow(left, "Bottom/Top thickness (mm)", 'solid_layer_thickness', '0.6', 'This controls the thickness of the bottom and top layers, the amount of solid layers put down is calculated by the layer thickness and this value.\nHaving this value a multiply of the layer thickness makes sense. And keep it near your wall thickness to make an evenly strong part.')
 		validators.validFloat(c, 0.0)
 		c = SettingRow(left, "Fill Density (%)", 'fill_density', '20', 'This controls how densily filled the insides of your print will be. For a solid part use 100%, for an empty part use 0%. A value around 20% is usually enough')
 		validators.validFloat(c, 0.0, 100.0)
 		
 		TitleRow(left, "Skirt")
-		c = SettingRow(left, "Line count", 'skirt_line_count', '1')
+		c = SettingRow(left, "Line count", 'skirt_line_count', '1', 'The skirt is a line drawn around the object at the first layer. This helps to prime your extruder, and to see if the object fits on your platform.\nSetting this to 0 will disable the skirt.')
 		validators.validInt(c, 0, 10)
-		c = SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0')
+		c = SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0', 'The distance between the skirt and the first layer.\nThis is the minimal distance, multiple skirt lines will be put outwards from this distance.')
 		validators.validFloat(c, 0.0)
 		
 		TitleRow(right, "Cool")
@@ -73,9 +73,9 @@ class mainWindow(wx.Frame):
 		(left, right) = self.CreateConfigTab(nb, 'Machine && Filament')
 		
 		TitleRow(left, "Machine size")
-		c = SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100')
+		c = SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
-		c = SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100')
+		c = SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
 		#self.AddSetting(left, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
 		#self.AddSetting(left, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
@@ -139,7 +139,7 @@ class mainWindow(wx.Frame):
 		self.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
 		self.popup.text = wx.StaticText(self.popup, -1, '');
 		self.popup.sizer = wx.BoxSizer()
-		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND)
+		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
 		self.popup.SetSizer(self.popup.sizer)
 
 
@@ -174,6 +174,11 @@ class mainWindow(wx.Frame):
 		else:
 			self.popup.text.SetLabel(setting.helpText)
 		self.popup.text.Wrap(350)
+		if platform.system() == "Windows":
+			#for some reason, under windows, the popup is relative to the main window...
+			wx, wy = self.ClientToScreenXY(0, 0)
+			x -= wx
+			y -= wy
 		self.popup.SetPosition((x, y+sy))
 		self.popup.Fit()
 		self.popup.Show(True)
@@ -317,6 +322,7 @@ class SettingRow():
 			self.ctrl.SetBackgroundColour('Yellow')
 		else:
 			self.ctrl.SetBackgroundColour(wx.NullColour)
+		self.ctrl.Refresh()
 		settings.putSetting(self.configName, self.GetValue())
 		self.validationMsg = '\n'.join(msgs)
 

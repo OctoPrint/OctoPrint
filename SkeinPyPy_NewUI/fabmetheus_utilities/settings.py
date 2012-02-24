@@ -53,8 +53,7 @@ def calculateShells(setting):
 def calculateSolidLayerCount(setting):
 	layerHeight = float(getSetting('layer_height'))
 	solidThickness = float(getSetting('solid_layer_thickness'))
-	ret = int(math.ceil(solidThickness / layerHeight))
-	print "calculateSolidLayerCount: " + str(ret) + " " + str(solidThickness / layerHeight)
+	ret = int(math.ceil(solidThickness / layerHeight - 0.0001))
 	return ret
 
 def getSkeinPyPyProfileInformation():
@@ -152,7 +151,7 @@ def getSkeinPyPyProfileInformation():
 			'Perimeter_Flow_Rate_Multiplier_ratio': defaultSetting,
 			'Travel_Feed_Rate_mm/s': storedSetting("travel_speed"),
 		},'temperature': {
-			'Activate_Temperature': defaultSetting,
+			'Activate_Temperature': "False",
 			'Cooling_Rate_Celcius/second': defaultSetting,
 			'Heating_Rate_Celcius/second': defaultSetting,
 			'Base_Temperature_Celcius': defaultSetting,
@@ -163,7 +162,7 @@ def getSkeinPyPyProfileInformation():
 			'Support_Layers_Temperature_Celcius': defaultSetting,
 			'Supported_Layers_Temperature_Celcius': defaultSetting,
 		},'raft': {
-			'Activate_Raft': defaultSetting,
+			'Activate_Raft': "False",
 			'Add_Raft,_Elevate_Nozzle,_Orbit': defaultSetting,
 			'Base_Feed_Rate_Multiplier_ratio': defaultSetting,
 			'Base_Flow_Rate_Multiplier_ratio': defaultSetting,
@@ -208,18 +207,18 @@ def getSkeinPyPyProfileInformation():
 			'Maximum_Tower_Height_layers': defaultSetting,
 			'Tower_Start_Layer_integer': defaultSetting,
 		},'jitter': {
-			'Activate_Jitter': defaultSetting,
+			'Activate_Jitter': "False",
 			'Jitter_Over_Perimeter_Width_ratio': defaultSetting,
 		},'clip': {
-			'Activate_Clip': defaultSetting,
+			'Activate_Clip': "False",
 			'Clip_Over_Perimeter_Width_ratio': defaultSetting,
 			'Maximum_Connection_Distance_Over_Perimeter_Width_ratio': defaultSetting,
 		},'smooth': {
-			'Activate_Smooth': defaultSetting,
+			'Activate_Smooth': "False",
 			'Layers_From_index': defaultSetting,
 			'Maximum_Shortening_over_Width_float': defaultSetting,
 		},'stretch': {
-			'Activate_Stretch': defaultSetting,
+			'Activate_Stretch': "False",
 			'Cross_Limit_Distance_Over_Perimeter_Width_ratio': defaultSetting,
 			'Loop_Stretch_Over_Perimeter_Width_ratio': defaultSetting,
 			'Path_Stretch_Over_Perimeter_Width_ratio': defaultSetting,
@@ -227,17 +226,17 @@ def getSkeinPyPyProfileInformation():
 			'Perimeter_Outside_Stretch_Over_Perimeter_Width_ratio': defaultSetting,
 			'Stretch_From_Distance_Over_Perimeter_Width_ratio': defaultSetting,
 		},'skin': {
-			'Activate_Skin': defaultSetting,
+			'Activate_Skin': "False",
 			'Horizontal_Infill_Divisions_integer': defaultSetting,
 			'Horizontal_Perimeter_Divisions_integer': defaultSetting,
 			'Vertical_Divisions_integer': defaultSetting,
 			'Hop_When_Extruding_Infill': defaultSetting,
 			'Layers_From_index': defaultSetting,
 		},'comb': {
-			'Activate_Comb': defaultSetting,
+			'Activate_Comb': "True",
 			'Running_Jump_Space_mm': defaultSetting,
 		},'cool': {
-			'Activate_Cool': defaultSetting,
+			'Activate_Cool': "True",
 			'Bridge_Cool_Celcius': defaultSetting,
 			'Cool_Type': defaultSetting,
 			'Maximum_Cool_Celcius': defaultSetting,
@@ -296,7 +295,7 @@ def getSkeinPyPyProfileInformation():
 			'X_Backlash_mm': defaultSetting,
 			'Y_Backlash_mm': defaultSetting,
 		},'fillet': {
-			'Activate_Fillet': defaultSetting,
+			'Activate_Fillet': "False",
 			'Arc_Point': defaultSetting,
 			'Arc_Radius': defaultSetting,
 			'Arc_Segment': defaultSetting,
@@ -306,28 +305,28 @@ def getSkeinPyPyProfileInformation():
 			'Reversal_Slowdown_Distance_over_Perimeter_Width_ratio': defaultSetting,
 			'Use_Intermediate_Feed_Rate_in_Corners': defaultSetting,
 		},'limit': {
-			'Activate_Limit': defaultSetting,
+			'Activate_Limit': "False",
 			'Maximum_Initial_Feed_Rate_mm/s': defaultSetting,
 		},'unpause': {
-			'Activate_Unpause': defaultSetting,
+			'Activate_Unpause': "False",
 			'Delay_milliseconds': defaultSetting,
 			'Maximum_Speed_ratio': defaultSetting,
 		},'dimension': {
 			'Activate_Dimension': "True",
 			'Absolute_Extrusion_Distance': "True",
 			'Relative_Extrusion_Distance': "False",
-			'Extruder_Retraction_Speed_mm/s': defaultSetting,
-			'Filament_Diameter_mm': defaultSetting,
-			'Filament_Packing_Density_ratio': defaultSetting,
+			'Extruder_Retraction_Speed_mm/s': storedSetting('retraction_speed'),
+			'Filament_Diameter_mm': storedSetting("filament_diameter"),
+			'Filament_Packing_Density_ratio': storedSetting("filament_density"),
 			'Maximum_E_Value_before_Reset_float': defaultSetting,
-			'Minimum_Travel_for_Retraction_millimeters': defaultSetting,
+			'Minimum_Travel_for_Retraction_millimeters': storedSetting("retraction_min_travel"),
 			'Retract_Within_Island': defaultSetting,
-			'Retraction_Distance_millimeters': defaultSetting,
-			'Restart_Extra_Distance_millimeters': defaultSetting,
+			'Retraction_Distance_millimeters': storedSetting('retraction_amount'),
+			'Restart_Extra_Distance_millimeters': storedSetting('retraction_extra'),
 		},'alteration': {
-			'Activate_Alteration': defaultSetting,
-			'Name_of_End_File': "start.gcode",
-			'Name_of_Start_File': "end.gcode",
+			'Activate_Alteration': "True",
+			'Name_of_End_File': "end.gcode",
+			'Name_of_Start_File': "start.gcode",
 			'Remove_Redundant_Mcode': "True",
 			'Replace_Variable_with_Setting': defaultSetting,
 		},'export': {

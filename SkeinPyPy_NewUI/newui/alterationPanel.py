@@ -34,6 +34,6 @@ class alterationPanel(wx.Panel):
 
 	def OnFocusLost(self, e):
 		filename = os.path.join(archive.getSkeinforgePath('alterations'), self.alterationFileList[self.list.GetSelection()])
-		f = open(filename, "w")
+		f = open(filename, "wb")
 		f.write(self.textArea.GetValue())
 		f.close()
