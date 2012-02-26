@@ -19,6 +19,9 @@ def defaultSetting(setting):
 def storedSetting(name):
 	return lambda setting: getSetting(name, setting.value)
 
+def ifSettingAboveZero(name):
+	return lambda setting: float(getSetting(name, '0.0')) > 0
+
 def storedPercentSetting(name):
 	return lambda setting: float(getSetting(name, setting.value)) / 100
 
@@ -97,7 +100,7 @@ def getSkeinPyPyProfileInformation():
 			'Turn_Extruder_Heater_Off_at_Shut_Down': defaultSetting,
 			'Volume_Fraction_ratio': defaultSetting,
 		},'fill': {
-			'Activate_Fill': defaultSetting,
+			'Activate_Fill': "True",
 			'Diaphragm_Period_layers': defaultSetting,
 			'Diaphragm_Thickness_layers': defaultSetting,
 			'Extra_Shells_on_Alternating_Solid_Layer_layers': calculateShells,
@@ -151,24 +154,24 @@ def getSkeinPyPyProfileInformation():
 			'Perimeter_Flow_Rate_Multiplier_ratio': defaultSetting,
 			'Travel_Feed_Rate_mm/s': storedSetting("travel_speed"),
 		},'temperature': {
-			'Activate_Temperature': "False",
+			'Activate_Temperature': defaultSetting,#ifSettingAboveZero('print_temperature'),
 			'Cooling_Rate_Celcius/second': defaultSetting,
 			'Heating_Rate_Celcius/second': defaultSetting,
-			'Base_Temperature_Celcius': defaultSetting,
-			'Interface_Temperature_Celcius': defaultSetting,
-			'Object_First_Layer_Infill_Temperature_Celcius': defaultSetting,
-			'Object_First_Layer_Perimeter_Temperature_Celcius': defaultSetting,
-			'Object_Next_Layers_Temperature_Celcius': defaultSetting,
-			'Support_Layers_Temperature_Celcius': defaultSetting,
-			'Supported_Layers_Temperature_Celcius': defaultSetting,
+			'Base_Temperature_Celcius': defaultSetting,#storedSetting("print_temperature"),
+			'Interface_Temperature_Celcius': defaultSetting,#storedSetting("print_temperature"),
+			'Object_First_Layer_Infill_Temperature_Celcius': defaultSetting,#storedSetting("print_temperature"),
+			'Object_First_Layer_Perimeter_Temperature_Celcius': defaultSetting,#storedSetting("print_temperature"),
+			'Object_Next_Layers_Temperature_Celcius': defaultSetting,#storedSetting("print_temperature"),
+			'Support_Layers_Temperature_Celcius': defaultSetting,#storedSetting("print_temperature"),
+			'Supported_Layers_Temperature_Celcius': defaultSetting,#storedSetting("print_temperature"),
 		},'raft': {
-			'Activate_Raft': "False",
+			'Activate_Raft': "True",
 			'Add_Raft,_Elevate_Nozzle,_Orbit': defaultSetting,
 			'Base_Feed_Rate_Multiplier_ratio': defaultSetting,
 			'Base_Flow_Rate_Multiplier_ratio': defaultSetting,
 			'Base_Infill_Density_ratio': defaultSetting,
 			'Base_Layer_Thickness_over_Layer_Thickness': defaultSetting,
-			'Base_Layers_integer': defaultSetting,
+			'Base_Layers_integer': '0',
 			'Base_Nozzle_Lift_over_Base_Layer_Thickness_ratio': defaultSetting,
 			'Initial_Circling': defaultSetting,
 			'Infill_Overhang_over_Extrusion_Width_ratio': defaultSetting,
@@ -176,17 +179,17 @@ def getSkeinPyPyProfileInformation():
 			'Interface_Flow_Rate_Multiplier_ratio': defaultSetting,
 			'Interface_Infill_Density_ratio': defaultSetting,
 			'Interface_Layer_Thickness_over_Layer_Thickness': defaultSetting,
-			'Interface_Layers_integer': defaultSetting,
+			'Interface_Layers_integer': '0',
 			'Interface_Nozzle_Lift_over_Interface_Layer_Thickness_ratio': defaultSetting,
 			'Name_of_Support_End_File': defaultSetting,
 			'Name_of_Support_Start_File': defaultSetting,
 			'Operating_Nozzle_Lift_over_Layer_Thickness_ratio': defaultSetting,
 			'Raft_Additional_Margin_over_Length_%': defaultSetting,
 			'Raft_Margin_mm': defaultSetting,
-			'Support_Cross_Hatch': defaultSetting,
+			'Support_Cross_Hatch': 'False',
 			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': defaultSetting,
 			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': defaultSetting,
-			'Support_Material_Choice_': defaultSetting,
+			'Support_Material_Choice_': storedSetting("support"),
 			'Support_Minimum_Angle_degrees': defaultSetting,
 		},'skirt': {
 			'Skirt_line_count': storedSetting("skirt_line_count"),
@@ -345,7 +348,7 @@ def getSkeinPyPyProfileInformation():
 			'gcode_small': defaultSetting,
 			'File_Extension': defaultSetting,
 			'Name_of_Replace_File': defaultSetting,
-			'Save_Penultimate_Gcode': defaultSetting,
+			'Save_Penultimate_Gcode': "False",
 		}
 	}
 

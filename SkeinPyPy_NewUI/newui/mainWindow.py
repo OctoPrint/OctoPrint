@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform
+import wx, os, platform, types
+import ConfigParser
 
 from fabmetheus_utilities import settings
 
@@ -37,7 +38,7 @@ class mainWindow(wx.Frame):
 		wx.ToolTip.SetDelay(0)
 		
 		self.lastPath = ""
-		self.filename = None
+		self.filename = getPreference('lastFile', None)
 		self.progressPanelList = []
 		self.settingControlList = []
 
@@ -68,15 +69,20 @@ class mainWindow(wx.Frame):
 		validators.validInt(c, 0, 10)
 		c = SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0', 'The distance between the skirt and the first layer.\nThis is the minimal distance, multiple skirt lines will be put outwards from this distance.')
 		validators.validFloat(c, 0.0)
+
+		TitleRow(right, "Speed")
+		c = SettingRow(right, "Print speed (mm/s)", 'print_speed', '50')
+		validators.validFloat(c, 1.0)
+		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		
-		TitleRow(right, "Cool")
-		#c = SettingRow(right, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
-		c = SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
-		validators.validFloat(c, 0.0)
-
-		TitleRow(right, "Temperature")
+		#Printing temperature is a problem right now, as our start code depends on a heated head.
+		#TitleRow(right, "Temperature")
+		#c = SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
+		#validators.validFloat(c, 0.0, 350.0)
+		#validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine.")
+		
 		TitleRow(right, "Support")
-
+		c = SettingRow(right, "Support type", 'support', ['None', 'Exterior only', 'Everywhere', 'Empty layers only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
 		
 		(left, right) = self.CreateConfigTab(nb, 'Machine && Filament')
 		
@@ -117,6 +123,11 @@ class mainWindow(wx.Frame):
 		c = SettingRow(right, "Bottom layer speed", 'bottom_layer_speed', '25')
 		validators.validFloat(c, 0.0)
 
+		TitleRow(right, "Cool")
+		#c = SettingRow(right, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
+		c = SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
+		validators.validFloat(c, 0.0)
+
 		TitleRow(right, "Filament")
 		c = SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.98', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
 		validators.validFloat(c, 1.0)
@@ -150,7 +161,10 @@ class mainWindow(wx.Frame):
 		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
 		self.popup.SetSizer(self.popup.sizer)
 
-
+		if self.filename != None:
+			self.preview3d.loadModelFile(self.filename)
+			self.lastPath = os.path.split(self.filename)[0]
+		
 		self.updateProfileToControls()
 
 		self.Fit()
@@ -228,6 +242,7 @@ class mainWindow(wx.Frame):
 		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
+			putPreference('lastFile', self.filename)
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
@@ -297,7 +312,10 @@ class SettingRow():
 		self.configName = configName
 		
 		self.label = wx.StaticText(panel, -1, label)
-		self.ctrl = wx.TextCtrl(panel, -1, settings.getSetting(configName, defaultValue))
+		if isinstance(defaultValue, types.StringTypes):
+			self.ctrl = wx.TextCtrl(panel, -1, settings.getSetting(configName, defaultValue))
+		else:
+			self.ctrl = wx.ComboBox(panel, -1, settings.getSetting(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 		#self.helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
 		#self.helpButton.SetToolTip(wx.ToolTip(help))
 		
@@ -354,3 +372,28 @@ class settingNotify():
 			return validators.SUCCESS, ''
 		except ValueError:
 			return validators.SUCCESS, ''
+
+def getPreferencePath():
+	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
+
+def getPreference(name, default):
+	if not globals().has_key('globalPreferenceParser'):
+		globalPreferenceParser = ConfigParser.ConfigParser()
+		globalPreferenceParser.read(getPreferencePath())
+	if not globalPreferenceParser.has_option('preference', name):
+		if not globalPreferenceParser.has_section('preference'):
+			globalPreferenceParser.add_section('preference')
+		globalPreferenceParser.set('preference', name, str(default))
+		print name + " not found in profile, so using default"
+		return default
+	return globalPreferenceParser.get('preference', name)
+
+def putPreference(name, value):
+	#Check if we have a configuration file loaded, else load the default.
+	if not globals().has_key('globalPreferenceParser'):
+		globalPreferenceParser = ConfigParser.ConfigParser()
+		globalPreferenceParser.read(getPreferencePath())
+	if not globalPreferenceParser.has_section('preference'):
+		globalPreferenceParser.add_section('preference')
+	globalPreferenceParser.set('preference', name, str(value))
+	globalPreferenceParser.write(open(getPreferencePath(), 'w'))

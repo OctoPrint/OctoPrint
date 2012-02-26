@@ -78,6 +78,11 @@ class GcodeSmallSkein:
 
 	def parseLine(self, line):
 		"Parse a gcode line."
+		if len(line) < 1:
+			return
+		if line[0] == '(':
+			self.parseComment(line)
+			return
 		splitLine = getSplitLineBeforeBracketSemicolon(line)
 		if len(splitLine) < 1:
 			return
@@ -108,3 +113,15 @@ class GcodeSmallSkein:
 		self.lastFeedRateString = feedRateString
 		self.lastZString = zString
 		self.output.write('\n')
+	
+	def parseComment(self, line):
+		if line.startswith('(<skirt>'):
+			self.output.write(';TYPE:SKIRT\n');
+		elif line.startswith('(<edge>'):
+			self.output.write(';TYPE:WALL-OUTER\n');
+		elif line.startswith('(<loop>'):
+			self.output.write(';TYPE:WALL-INNER\n');
+		elif line.startswith('(<infill>'):
+			self.output.write(';TYPE:FILL\n');
+		elif line.startswith('(<alteration>'):
+			self.output.write(';TYPE:CUSTOM\n');

@@ -69,6 +69,7 @@ class previewPanel(wx.Panel):
 	def DoModelLoad(self):
 		self.modelDirty = False
 		self.triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
+		self.pathList = None
 		self.moveModel()
 		self.glCanvas.Refresh()
 	
@@ -99,7 +100,10 @@ class previewPanel(wx.Panel):
 		currentPath = {'type': 'move', 'list': [pos.copy()]}
 		scale = 1.0
 		posAbs = True
+		pathType = 'CUSTOM';
 		for line in f:
+			if line.startswith(';TYPE:'):
+				pathType = line[6:].strip()
 			G = self.getCodeInt(line, 'G')
 			if G is not None:
 				if G == 0 or G == 1:	#Move
@@ -132,7 +136,7 @@ class previewPanel(wx.Panel):
 						currentE = e
 					if currentPath['type'] != type:
 						pathList.append(currentPath)
-						currentPath = {'type': type, 'list': [currentPath['list'][-1]]}
+						currentPath = {'type': type, 'pathType': pathType, 'list': [currentPath['list'][-1]]}
 					currentPath['list'].append(newPoint)
 				elif G == 20:	#Units are inches
 					scale = 25.4
@@ -170,8 +174,10 @@ class previewPanel(wx.Panel):
 						posOffset.z = pos.z + z
 				else:
 					print "Unknown G code:" + str(G)
+		self.modelDirty = False
 		self.pathList = pathList
 		self.triangleMesh = None
+		self.modelDirty = True
 		self.glCanvas.Refresh()
 	
 	def OnConfigClick(self, e):
@@ -283,17 +289,29 @@ class PreviewGLCanvas(GLCanvas):
 		glEnd()
 
 		if self.parent.pathList != None:
-			for path in self.parent.pathList:
-				if path['type'] == 'move':
-					glColor3f(0,0,1)
-				if path['type'] == 'extrude':
-					glColor3f(1,0,0)
-				if path['type'] == 'retract':
-					glColor3f(0,1,0)
-				glBegin(GL_LINE_STRIP)
-				for v in path['list']:
-					glVertex3f(v.x, v.y, v.z)
-				glEnd()
+			if self.modelDisplayList == None:
+				self.modelDisplayList = glGenLists(1);
+			if self.parent.modelDirty:
+				self.parent.modelDirty = False
+				glNewList(self.modelDisplayList, GL_COMPILE)
+				for path in self.parent.pathList:
+					if path['type'] == 'move':
+						glColor3f(0,0,1)
+					if path['type'] == 'extrude':
+						if path['pathType'] == 'FILL':
+							glColor3f(0.5,0.5,0)
+						elif path['pathType'] == 'WALL-INNER':
+							glColor3f(0,1,0)
+						else:
+							glColor3f(1,0,0)
+					if path['type'] == 'retract':
+						glColor3f(0,1,1)
+					glBegin(GL_LINE_STRIP)
+					for v in path['list']:
+						glVertex3f(v.x, v.y, v.z)
+					glEnd()
+				glEndList()
+			glCallList(self.modelDisplayList)
 		
 		if self.parent.triangleMesh != None:
 			if self.modelDisplayList == None:
