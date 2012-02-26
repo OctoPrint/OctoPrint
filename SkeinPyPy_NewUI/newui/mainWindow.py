@@ -112,9 +112,6 @@ class mainWindow(wx.Frame):
 		validators.validFloat(c, 0.0)
 
 		TitleRow(right, "Speed")
-		c = SettingRow(right, "Print speed (mm/s)", 'print_speed', '50')
-		validators.validFloat(c, 1.0)
-		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		c = SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 300.0, "It is highly unlikely that your machine can achieve a travel speed above 150mm/s")
