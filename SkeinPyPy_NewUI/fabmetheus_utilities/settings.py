@@ -139,7 +139,7 @@ def getSkeinPyPyProfileInformation():
 			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
 			'Start_From_Choice': DEFSET,
 			'Surrounding_Angle_degrees': DEFSET,
-			'Thread_Sequence_Choice': DEFSET,
+			'Thread_Sequence_Choice': storedSetting('sequence'),
 		},'multiply': {
 			'Activate_Multiply': "True",
 			'Center_X_mm': storedSetting("machine_center_x"),
@@ -211,6 +211,9 @@ def getSkeinPyPyProfileInformation():
 			'Convex': "True",
 			'Gap_Width_mm': storedSetting("skirt_gap"),
 			'Layers_To_index': "1",
+		},'joris': {
+			'Activate_Joris': storedSetting("joris"),
+			'Layers_From_index': calculateSolidLayerCount,
 		},'chamber': {
 			'Activate_Chamber': "False",
 			'Bed_Temperature_Celcius': DEFSET,

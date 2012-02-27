@@ -129,11 +129,12 @@ class JorisSkein:
 			self.distanceFeedRate.addLine(line)
 			
 	def parseLine(self, line):
-		'Parse a gcode line and add it to the skin skein.'
+		'Parse a gcode line and add it to the joris skein.'
 		splitLine = gcodec.getSplitLineBeforeBracketSemicolon(line)
 		if len(splitLine) < 1:
 			return
 		firstWord = splitLine[0]
+		print 'joris:' + firstWord
 		if firstWord == 'G1':
 			self.feedRateMinute = gcodec.getFeedRateMinute(self.feedRateMinute, splitLine)
 			location = gcodec.getLocationFromSplitLine(self.oldLocation, splitLine)
@@ -146,15 +147,15 @@ class JorisSkein:
 			settings.printProgress(self.layerIndex, 'joris')
 		elif firstWord == 'M108':
 			self.oldFlowRate = gcodec.getDoubleAfterFirstLetter(splitLine[1])
-		elif firstWord == '(<perimeter>':
+		elif firstWord == '(<edge>':
 			if self.layerIndex >= self.layersFromBottom:
 				self.perimeter = []
-		elif firstWord == '(</perimeter>)':
+		elif firstWord == '(</edge>)':
 			self.addJorisedPerimeter()
 		self.distanceFeedRate.addLine(line)
 		
 	def addJorisedPerimeter(self):
-		'Add skinned perimeter.'
+		'Add jorised perimeter.'
 		if self.perimeter == None:
 			return
 		#Calculate the total length of the perimeter.

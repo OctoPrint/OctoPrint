@@ -74,7 +74,7 @@ class mainWindow(configWindowBase.configWindowBase):
 		validators.validFloat(c, 0.0)
 
 		configWindowBase.TitleRow(right, "Speed")
-		c = configWindowBase.SettingRow(right, "Print speed (mm/s)", 'print_speed', '50')
+		c = configWindowBase.SettingRow(right, "Print speed (mm/s)", 'print_speed', '50', 'Speed at which printing happens. A well adjusted Ultimaker can reach 150mm/s, but for good quality prints you want to print slower. Printing speed depends on a lot of factors. So you will be experimenting with optimal settings for this.')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		
@@ -101,26 +101,26 @@ class mainWindow(configWindowBase.configWindowBase):
 		#self.AddSetting(left, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
 
 		configWindowBase.TitleRow(left, "Machine nozzle")
-		c = configWindowBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4')
+		c = configWindowBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
 		validators.validFloat(c, 0.1, 1.0)
 
 		configWindowBase.TitleRow(left, "Retraction")
-		c = configWindowBase.SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0')
+		c = configWindowBase.SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0', 'Minimal amount of travel needed for a retraction to happen at all. To make sure you do not get a lot of retractions in a small area')
 		validators.validFloat(c, 0.0)
-		c = configWindowBase.SettingRow(left, "Speed (mm/s)", 'retraction_speed', '13.5')
+		c = configWindowBase.SettingRow(left, "Speed (mm/s)", 'retraction_speed', '13.5', 'Speed at which the filament is retracted')
 		validators.validFloat(c, 0.1)
-		c = configWindowBase.SettingRow(left, "Distance (mm)", 'retraction_amount', '0.0')
+		c = configWindowBase.SettingRow(left, "Distance (mm)", 'retraction_amount', '0.0', 'Amount of retraction, set at 0 for no retraction at all.')
 		validators.validFloat(c, 0.0)
-		c = configWindowBase.SettingRow(left, "Extra length on start (mm)", 'retraction_extra', '0.0')
+		c = configWindowBase.SettingRow(left, "Extra length on start (mm)", 'retraction_extra', '0.0', 'Extra extrusion amount when restarting after a retraction, to better "Prime" your extruder')
 		validators.validFloat(c, 0.0)
 
 		configWindowBase.TitleRow(right, "Speed")
-		c = configWindowBase.SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150')
+		c = configWindowBase.SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150', 'Speed at which travel moves are done')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 300.0, "It is highly unlikely that your machine can achieve a travel speed above 150mm/s")
-		c = configWindowBase.SettingRow(right, "Max Z speed (mm/s)", 'max_z_speed', '1.0')
+		c = configWindowBase.SettingRow(right, "Max Z speed (mm/s)", 'max_z_speed', '1.0', 'Speed at which Z moves are done.')
 		validators.validFloat(c, 0.5)
-		c = configWindowBase.SettingRow(right, "Bottom layer speed", 'bottom_layer_speed', '25')
+		c = configWindowBase.SettingRow(right, "Bottom layer speed (mm/s)", 'bottom_layer_speed', '25', 'Print speed for the bottom layer, you want to print the first layer slower so it sticks better to the printer bed.')
 		validators.validFloat(c, 0.0)
 
 		configWindowBase.TitleRow(right, "Cool")
