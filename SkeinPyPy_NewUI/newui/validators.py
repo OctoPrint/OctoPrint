@@ -18,12 +18,12 @@ class validFloat():
 		try:
 			f = float(self.setting.GetValue())
 			if self.minValue != None and f < self.minValue:
-				return ERROR, 'Should not be below ' + str(self.minValue)
+				return ERROR, 'This setting should not be below ' + str(self.minValue)
 			if self.maxValue != None and f > self.maxValue:
-				return ERROR, 'Should not be above ' + str(self.maxValue)
+				return ERROR, 'This setting should not be above ' + str(self.maxValue)
 			return SUCCESS, ''
 		except ValueError:
-			return ERROR, str(self.setting.GetValue()) + ' is not a valid number'
+			return ERROR, '"' + str(self.setting.GetValue()) + '" is not a valid number'
 
 class validInt():
 	def __init__(self, setting, minValue = None, maxValue = None):
@@ -36,12 +36,12 @@ class validInt():
 		try:
 			f = int(self.setting.GetValue())
 			if self.minValue != None and f < self.minValue:
-				return ERROR, 'Should not be below ' + str(self.minValue)
+				return ERROR, 'This setting should not be below ' + str(self.minValue)
 			if self.maxValue != None and f > self.maxValue:
-				return ERROR, 'Should not be above ' + str(self.maxValue)
+				return ERROR, 'This setting should not be above ' + str(self.maxValue)
 			return SUCCESS, ''
 		except ValueError:
-			return ERROR, str(self.setting.GetValue()) + ' is not a valid whole number'
+			return ERROR, '"' + str(self.setting.GetValue()) + '" is not a valid whole number'
 
 class warningAbove():
 	def __init__(self, setting, minValueForWarning, warningMessage):
