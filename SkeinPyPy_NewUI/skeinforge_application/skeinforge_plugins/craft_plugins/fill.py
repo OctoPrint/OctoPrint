@@ -769,6 +769,8 @@ class FillRepository:
 		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Fill', self, '')
 		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute('http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Fill')
 		self.activateFill = settings.BooleanSetting().getFromValue('Activate Fill', self, True)
+		self.solidSurfaceTop = settings.BooleanSetting().getFromValue('Solid Surface Top', self, True)
+		self.overrideFirstLayerSequence = settings.BooleanSetting().getFromValue('Override First Layer Sequence', self, True)
 		settings.LabelSeparator().getFromRepository(self)
 		settings.LabelDisplay().getFromName('- Diaphragm -', self )
 		self.diaphragmPeriod = settings.IntSpin().getFromValue( 20, 'Diaphragm Period (layers):', self, 200, 100 )
@@ -862,8 +864,12 @@ class FillSkein:
 		self.distanceFeedRate.addLine('(<layer> %s )' % rotatedLayer.z)
 		if layerRemainder >= int(round(self.repository.diaphragmThickness.value)):
 			for surroundingIndex in xrange(1, self.solidSurfaceThickness + 1):
-				self.addRotatedCarve(layerIndex, -surroundingIndex, reverseRotation, surroundingCarves)
-				self.addRotatedCarve(layerIndex, surroundingIndex, reverseRotation, surroundingCarves)
+				if self.repository.solidSurfaceTop.value:
+					self.addRotatedCarve(layerIndex, -surroundingIndex, reverseRotation, surroundingCarves)
+					self.addRotatedCarve(layerIndex, surroundingIndex, reverseRotation, surroundingCarves)
+				else:
+					self.addRotatedCarve(layerIndex, -surroundingIndex, reverseRotation, surroundingCarves)
+					self.addRotatedCarve(layerIndex, -surroundingIndex, reverseRotation, surroundingCarves)
 		if len(surroundingCarves) < self.doubleSolidSurfaceThickness:
 			extraShells = self.repository.extraShellsAlternatingSolidLayer.value
 			if self.lastExtraShells != self.repository.extraShellsBase.value:
@@ -1085,7 +1091,7 @@ class FillSkein:
 			self.oldOrderedLocation = getLowerLeftCorner(nestedRings)
 		extrusionHalfWidth = 0.5 * self.infillWidth
 		threadSequence = self.threadSequence
-		if layerIndex < 1:
+		if layerIndex < 1 and self.repository.overrideFirstLayerSequence.value:
 			threadSequence = ['edge', 'loops', 'infill']
 		euclidean.addToThreadsRemove(extrusionHalfWidth, nestedRings, self.oldOrderedLocation, self, threadSequence)
 		if testLoops != None:

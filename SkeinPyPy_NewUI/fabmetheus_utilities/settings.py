@@ -22,6 +22,9 @@ def storedSetting(name):
 def ifSettingAboveZero(name):
 	return lambda setting: float(getSetting(name, '0.0')) > 0
 
+def ifSettingIs(name, value):
+	return lambda setting: getSetting(name) == value
+
 def storedPercentSetting(name):
 	return lambda setting: float(getSetting(name, setting.value)) / 100
 
@@ -40,11 +43,16 @@ def calculateEdgeWidth(setting):
 	return lineWidth
 
 def calculateShells(setting):
-	wallThickness = float(getSetting('wall_thickness'))
+	return calculateShellsImp(float(getSetting('wall_thickness')))
+
+def calculateShellsBase(setting):
+	return calculateShellsImp(float(getSetting('wall_thickness')) + float(getSetting('extra_base_wall_thickness')))
+
+def calculateShellsImp(wallThickness):
 	nozzleSize = float(getSetting('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
-		return wallThickness
+		return 0
 
 	lineCount = int(wallThickness / nozzleSize + 0.0001)
 	lineWidth = wallThickness / lineCount
@@ -106,10 +114,12 @@ def getSkeinPyPyProfileInformation():
 			'Volume_Fraction_ratio': DEFSET,
 		},'fill': {
 			'Activate_Fill': "True",
+			'Solid_Surface_Top': storedSetting("solid_top"),
+			'Override_First_Layer_Sequence': storedSetting("force_first_layer_sequence"),
 			'Diaphragm_Period_layers': DEFSET,
 			'Diaphragm_Thickness_layers': DEFSET,
 			'Extra_Shells_on_Alternating_Solid_Layer_layers': calculateShells,
-			'Extra_Shells_on_Base_layers': calculateShells,
+			'Extra_Shells_on_Base_layers': calculateShellsBase,
 			'Extra_Shells_on_Sparse_Layer_layers': calculateShells,
 			'Grid_Circle_Separation_over_Perimeter_Width_ratio': DEFSET,
 			'Grid_Extra_Overlap_ratio': DEFSET,
@@ -119,10 +129,10 @@ def getSkeinPyPyProfileInformation():
 			'Infill_Begin_Rotation_degrees': DEFSET,
 			'Infill_Begin_Rotation_Repeat_layers': DEFSET,
 			'Infill_Odd_Layer_Extra_Rotation_degrees': DEFSET,
-			'Grid_Circular': DEFSET,
-			'Grid_Hexagonal': DEFSET,
-			'Grid_Rectangular': DEFSET,
-			'Line': DEFSET,
+			'Grid_Circular': ifSettingIs('infill_type', 'Grid Circular'),
+			'Grid_Hexagonal': ifSettingIs('infill_type', 'Grid Hexagonal'),
+			'Grid_Rectangular': ifSettingIs('infill_type', 'Grid Rectangular'),
+			'Line': ifSettingIs('infill_type', 'Line'),
 			'Infill_Perimeter_Overlap_ratio': DEFSET,
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
 			'Infill_Width': storedSetting("nozzle_size"),

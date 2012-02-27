@@ -7,6 +7,7 @@ import ConfigParser
 from fabmetheus_utilities import settings
 
 from newui import configWindowBase
+from newui import advancedConfig
 from newui import preview3d
 from newui import sliceProgessPanel
 from newui import alterationPanel
@@ -155,7 +156,7 @@ class mainWindow(configWindowBase.configWindowBase):
 		if self.filename != None:
 			self.preview3d.loadModelFile(self.filename)
 			self.lastPath = os.path.split(self.filename)[0]
-		
+
 		self.updateProfileToControls()
 
 		self.Fit()
@@ -186,7 +187,7 @@ class mainWindow(configWindowBase.configWindowBase):
 		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
-			putPreference('lastFile', self.filename)
+			configWindowBase.putPreference('lastFile', self.filename)
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
@@ -208,7 +209,9 @@ class mainWindow(configWindowBase.configWindowBase):
 		self.progressPanelList.append(spp)
 
 	def OnExpertOpen(self, e):
-		pass
+		acw = advancedConfig.advancedConfigWindow()
+		acw.Centre()
+		acw.Show(True)
 
 	def removeSliceProgress(self, spp):
 		self.progressPanelList.remove(spp)

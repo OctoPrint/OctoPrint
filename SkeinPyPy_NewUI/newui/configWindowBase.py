@@ -132,7 +132,6 @@ class SettingRow():
 			elif res == validators.WARNING and result != validators.ERROR:
 				result = res
 			if res != validators.SUCCESS:
-				print err
 				msgs.append(err)
 		if result == validators.ERROR:
 			self.ctrl.SetBackgroundColour('Red')
