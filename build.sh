@@ -16,7 +16,7 @@ BUILD_TARGET=win32
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=NewUI-Beta1
+BUILD_NAME=NewUI-Beta2
 TARGET_DIR=${BUILD_TARGET}-SkeinPyPy-${BUILD_NAME}
 
 ##Which versions of external programs to use
