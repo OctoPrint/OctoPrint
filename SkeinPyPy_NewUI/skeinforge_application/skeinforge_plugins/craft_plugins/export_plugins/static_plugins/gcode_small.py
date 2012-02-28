@@ -125,3 +125,4 @@ class GcodeSmallSkein:
 			self.output.write(';TYPE:FILL\n');
 		elif line.startswith('(<alteration>'):
 			self.output.write(';TYPE:CUSTOM\n');
+

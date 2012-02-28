@@ -12,13 +12,18 @@ class gcode():
 		posOffset = Vector3()
 		currentE = 0
 		pathList = []
-		currentPath = {'type': 'move', 'list': [pos.copy()]}
 		scale = 1.0
 		posAbs = True
+		feedRate = 3600
 		pathType = 'CUSTOM';
+		layerNr = 0;	#Note layer 0 will be the start code.
+		startCodeDone = False
+		currentPath = {'type': 'move', 'pathType': pathType, 'list': [pos.copy()], 'layerNr': layerNr}
 		for line in f:
 			if line.startswith(';TYPE:'):
 				pathType = line[6:].strip()
+				if pathType != "CUSTOM":
+					startCodeDone = True
 			G = self.getCodeInt(line, 'G')
 			if G is not None:
 				if G == 0 or G == 1:	#Move
@@ -26,6 +31,7 @@ class gcode():
 					y = self.getCodeFloat(line, 'Y')
 					z = self.getCodeFloat(line, 'Z')
 					e = self.getCodeFloat(line, 'E')
+					f = self.getCodeFloat(line, 'F')
 					if x is not None:
 						if posAbs:
 							pos.x = x * scale
@@ -37,10 +43,15 @@ class gcode():
 						else:
 							pos.y += y * scale
 					if z is not None:
+						oldZ = pos.z
 						if posAbs:
 							pos.z = z * scale
 						else:
 							pos.z += z * scale
+						if oldZ != pos.z and startCodeDone:
+							layerNr += 1
+					if f is not None:
+						feedRate = f
 					newPoint = pos.copy()
 					moveType = 'move'
 					if e is not None:
@@ -49,9 +60,9 @@ class gcode():
 						if e < currentE:
 							moveType = 'retract'
 						currentE = e
-					if currentPath['type'] != moveType:
+					if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
 						pathList.append(currentPath)
-						currentPath = {'type': moveType, 'pathType': pathType, 'list': [currentPath['list'][-1]]}
+						currentPath = {'type': moveType, 'pathType': pathType, 'list': [currentPath['list'][-1]], 'layerNr': layerNr}
 					currentPath['list'].append(newPoint)
 				elif G == 20:	#Units are inches
 					scale = 25.4
@@ -112,6 +123,7 @@ class gcode():
 						pass
 					else:
 						print "Unknown M code:" + str(M)
+		self.layerCount = layerNr
 		self.pathList = pathList
 
 	def getCodeInt(self, str, id):

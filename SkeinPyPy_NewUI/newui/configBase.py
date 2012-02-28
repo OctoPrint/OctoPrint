@@ -123,6 +123,7 @@ class SettingRow():
 		sizer.SetRows(x+1)
 
 	def OnSettingTextChange(self, e):
+		settings.putSetting(self.configName, self.GetValue())
 		result = validators.SUCCESS
 		msgs = []
 		for validator in self.validators:
@@ -140,7 +141,6 @@ class SettingRow():
 		else:
 			self.ctrl.SetBackgroundColour(wx.NullColour)
 		self.ctrl.Refresh()
-		settings.putSetting(self.configName, self.GetValue())
 
 		self.validationMsg = '\n'.join(msgs)
 		self.panel.main.UpdatePopup(self)
