@@ -109,7 +109,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	rm -rf ${TARGET_DIR}/python/PyScripter.*
 	rm -rf ${TARGET_DIR}/python/Doc
 	rm -rf ${TARGET_DIR}/python/locale
-	#rm -rf ${TARGET_DIR}/python/tcl
+	rm -rf ${TARGET_DIR}/python/tcl
 	rm -rf ${TARGET_DIR}/python/Lib/test
 	rm -rf ${TARGET_DIR}/python/Lib/distutils
 	rm -rf ${TARGET_DIR}/python/Lib/site-packages/wx-2.8-msw-unicode/wx/tools

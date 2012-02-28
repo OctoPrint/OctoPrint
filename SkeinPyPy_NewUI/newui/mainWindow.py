@@ -6,7 +6,7 @@ import ConfigParser
 
 from fabmetheus_utilities import settings
 
-from newui import configWindowBase
+from newui import configBase
 from newui import advancedConfig
 from newui import preview3d
 from newui import sliceProgessPanel
@@ -18,7 +18,7 @@ def main():
 	mainWindow()
 	app.MainLoop()
 
-class mainWindow(configWindowBase.configWindowBase):
+class mainWindow(configBase.configWindowBase):
 	"Main user interface window"
 	def __init__(self):
 		super(mainWindow, self).__init__(title='SkeinPyPy')
@@ -42,7 +42,7 @@ class mainWindow(configWindowBase.configWindowBase):
 		self.SetMenuBar(menubar)
 		
 		self.lastPath = ""
-		self.filename = configWindowBase.getPreference('lastFile', None)
+		self.filename = configBase.getPreference('lastFile', None)
 		self.progressPanelList = []
 
 		#Preview window
@@ -53,85 +53,85 @@ class mainWindow(configWindowBase.configWindowBase):
 		
 		(left, right) = self.CreateConfigTab(nb, 'Print config')
 		
-		configWindowBase.TitleRow(left, "Accuracy")
-		c = configWindowBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
+		configBase.TitleRow(left, "Accuracy")
+		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0)
 		validators.warningAbove(c, 0.31, "Thicker layers then 0.3mm usually give bad results and are not recommended.")
-		c = configWindowBase.SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
+		c = configBase.SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
 		validators.validFloat(c, 0.0)
 		validators.wallThicknessValidator(c)
 		
-		configWindowBase.TitleRow(left, "Fill")
-		c = configWindowBase.SettingRow(left, "Bottom/Top thickness (mm)", 'solid_layer_thickness', '0.6', 'This controls the thickness of the bottom and top layers, the amount of solid layers put down is calculated by the layer thickness and this value.\nHaving this value a multiply of the layer thickness makes sense. And keep it near your wall thickness to make an evenly strong part.')
+		configBase.TitleRow(left, "Fill")
+		c = configBase.SettingRow(left, "Bottom/Top thickness (mm)", 'solid_layer_thickness', '0.6', 'This controls the thickness of the bottom and top layers, the amount of solid layers put down is calculated by the layer thickness and this value.\nHaving this value a multiply of the layer thickness makes sense. And keep it near your wall thickness to make an evenly strong part.')
 		validators.validFloat(c, 0.0)
-		c = configWindowBase.SettingRow(left, "Fill Density (%)", 'fill_density', '20', 'This controls how densily filled the insides of your print will be. For a solid part use 100%, for an empty part use 0%. A value around 20% is usually enough')
+		c = configBase.SettingRow(left, "Fill Density (%)", 'fill_density', '20', 'This controls how densily filled the insides of your print will be. For a solid part use 100%, for an empty part use 0%. A value around 20% is usually enough')
 		validators.validFloat(c, 0.0, 100.0)
 		
-		configWindowBase.TitleRow(left, "Skirt")
-		c = configWindowBase.SettingRow(left, "Line count", 'skirt_line_count', '1', 'The skirt is a line drawn around the object at the first layer. This helps to prime your extruder, and to see if the object fits on your platform.\nSetting this to 0 will disable the skirt.')
+		configBase.TitleRow(left, "Skirt")
+		c = configBase.SettingRow(left, "Line count", 'skirt_line_count', '1', 'The skirt is a line drawn around the object at the first layer. This helps to prime your extruder, and to see if the object fits on your platform.\nSetting this to 0 will disable the skirt.')
 		validators.validInt(c, 0, 10)
-		c = configWindowBase.SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0', 'The distance between the skirt and the first layer.\nThis is the minimal distance, multiple skirt lines will be put outwards from this distance.')
+		c = configBase.SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0', 'The distance between the skirt and the first layer.\nThis is the minimal distance, multiple skirt lines will be put outwards from this distance.')
 		validators.validFloat(c, 0.0)
 
-		configWindowBase.TitleRow(right, "Speed")
-		c = configWindowBase.SettingRow(right, "Print speed (mm/s)", 'print_speed', '50', 'Speed at which printing happens. A well adjusted Ultimaker can reach 150mm/s, but for good quality prints you want to print slower. Printing speed depends on a lot of factors. So you will be experimenting with optimal settings for this.')
+		configBase.TitleRow(right, "Speed")
+		c = configBase.SettingRow(right, "Print speed (mm/s)", 'print_speed', '50', 'Speed at which printing happens. A well adjusted Ultimaker can reach 150mm/s, but for good quality prints you want to print slower. Printing speed depends on a lot of factors. So you will be experimenting with optimal settings for this.')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		
 		#Printing temperature is a problem right now, as our start code depends on a heated head.
-		#configWindowBase.TitleRow(right, "Temperature")
-		#c = configWindowBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
+		#configBase.TitleRow(right, "Temperature")
+		#c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
 		#validators.validFloat(c, 0.0, 350.0)
 		#validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine.")
 		
-		configWindowBase.TitleRow(right, "Support")
-		c = configWindowBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior only', 'Everywhere', 'Empty layers only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
+		configBase.TitleRow(right, "Support")
+		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior only', 'Everywhere', 'Empty layers only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
 		
 		(left, right) = self.CreateConfigTab(nb, 'Machine && Filament')
 		
-		configWindowBase.TitleRow(left, "Machine size")
-		c = configWindowBase.SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100', 'The center of your machine, your print will be placed at this location')
+		configBase.TitleRow(left, "Machine size")
+		c = configBase.SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
-		configWindowBase.settingNotify(c, self.preview3d.updateCenterX)
-		c = configWindowBase.SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100', 'The center of your machine, your print will be placed at this location')
+		configBase.settingNotify(c, self.preview3d.updateCenterX)
+		c = configBase.SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
-		configWindowBase.settingNotify(c, self.preview3d.updateCenterY)
+		configBase.settingNotify(c, self.preview3d.updateCenterY)
 		#self.AddSetting(left, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
 		#self.AddSetting(left, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
 		#self.AddSetting(left, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
 
-		configWindowBase.TitleRow(left, "Machine nozzle")
-		c = configWindowBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
+		configBase.TitleRow(left, "Machine nozzle")
+		c = configBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
 		validators.validFloat(c, 0.1, 1.0)
 
-		configWindowBase.TitleRow(left, "Retraction")
-		c = configWindowBase.SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0', 'Minimal amount of travel needed for a retraction to happen at all. To make sure you do not get a lot of retractions in a small area')
+		configBase.TitleRow(left, "Retraction")
+		c = configBase.SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0', 'Minimal amount of travel needed for a retraction to happen at all. To make sure you do not get a lot of retractions in a small area')
 		validators.validFloat(c, 0.0)
-		c = configWindowBase.SettingRow(left, "Speed (mm/s)", 'retraction_speed', '13.5', 'Speed at which the filament is retracted')
+		c = configBase.SettingRow(left, "Speed (mm/s)", 'retraction_speed', '13.5', 'Speed at which the filament is retracted')
 		validators.validFloat(c, 0.1)
-		c = configWindowBase.SettingRow(left, "Distance (mm)", 'retraction_amount', '0.0', 'Amount of retraction, set at 0 for no retraction at all.')
+		c = configBase.SettingRow(left, "Distance (mm)", 'retraction_amount', '0.0', 'Amount of retraction, set at 0 for no retraction at all.')
 		validators.validFloat(c, 0.0)
-		c = configWindowBase.SettingRow(left, "Extra length on start (mm)", 'retraction_extra', '0.0', 'Extra extrusion amount when restarting after a retraction, to better "Prime" your extruder')
+		c = configBase.SettingRow(left, "Extra length on start (mm)", 'retraction_extra', '0.0', 'Extra extrusion amount when restarting after a retraction, to better "Prime" your extruder')
 		validators.validFloat(c, 0.0)
 
-		configWindowBase.TitleRow(right, "Speed")
-		c = configWindowBase.SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150', 'Speed at which travel moves are done')
+		configBase.TitleRow(right, "Speed")
+		c = configBase.SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150', 'Speed at which travel moves are done')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 300.0, "It is highly unlikely that your machine can achieve a travel speed above 150mm/s")
-		c = configWindowBase.SettingRow(right, "Max Z speed (mm/s)", 'max_z_speed', '1.0', 'Speed at which Z moves are done.')
+		c = configBase.SettingRow(right, "Max Z speed (mm/s)", 'max_z_speed', '1.0', 'Speed at which Z moves are done.')
 		validators.validFloat(c, 0.5)
-		c = configWindowBase.SettingRow(right, "Bottom layer speed (mm/s)", 'bottom_layer_speed', '25', 'Print speed for the bottom layer, you want to print the first layer slower so it sticks better to the printer bed.')
+		c = configBase.SettingRow(right, "Bottom layer speed (mm/s)", 'bottom_layer_speed', '25', 'Print speed for the bottom layer, you want to print the first layer slower so it sticks better to the printer bed.')
 		validators.validFloat(c, 0.0)
 
-		configWindowBase.TitleRow(right, "Cool")
+		configBase.TitleRow(right, "Cool")
 		#c = SettingRow(right, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
-		c = configWindowBase.SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
+		c = configBase.SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
 		validators.validFloat(c, 0.0)
 
-		configWindowBase.TitleRow(right, "Filament")
-		c = configWindowBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.98', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
+		configBase.TitleRow(right, "Filament")
+		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.98', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
 		validators.validFloat(c, 1.0)
-		c = configWindowBase.SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
+		c = configBase.SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
 		validators.validFloat(c, 0.5, 1.5)
 		
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
@@ -187,7 +187,7 @@ class mainWindow(configWindowBase.configWindowBase):
 		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
-			configWindowBase.putPreference('lastFile', self.filename)
+			configBase.putPreference('lastFile', self.filename)
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]

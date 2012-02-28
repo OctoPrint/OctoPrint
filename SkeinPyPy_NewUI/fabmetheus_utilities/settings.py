@@ -46,7 +46,7 @@ def calculateShells(setting):
 	return calculateShellsImp(float(getSetting('wall_thickness')))
 
 def calculateShellsBase(setting):
-	return calculateShellsImp(float(getSetting('wall_thickness')) + float(getSetting('extra_base_wall_thickness')))
+	return calculateShellsImp(float(getSetting('wall_thickness')) + float(getSetting('extra_base_wall_thickness', '0')))
 
 def calculateShellsImp(wallThickness):
 	nozzleSize = float(getSetting('nozzle_size'))
