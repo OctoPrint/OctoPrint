@@ -79,15 +79,21 @@ class mainWindow(configBase.configWindowBase):
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		
 		#Printing temperature is a problem right now, as our start code depends on a heated head.
-		#configBase.TitleRow(right, "Temperature")
-		#c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
-		#validators.validFloat(c, 0.0, 350.0)
-		#validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine.")
+		configBase.TitleRow(right, "Temperature")
+		c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
+		validators.validFloat(c, 0.0, 340.0)
+		validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine, be careful!")
 		
 		configBase.TitleRow(right, "Support")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior only', 'Everywhere', 'Empty layers only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
+
+		configBase.TitleRow(right, "Filament")
+		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.98', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
+		validators.validFloat(c, 1.0)
+		c = configBase.SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
+		validators.validFloat(c, 0.5, 1.5)
 		
-		(left, right) = self.CreateConfigTab(nb, 'Machine && Filament')
+		(left, right) = self.CreateConfigTab(nb, 'Machine config')
 		
 		configBase.TitleRow(left, "Machine size")
 		c = configBase.SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100', 'The center of your machine, your print will be placed at this location')
@@ -128,12 +134,6 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
 		validators.validFloat(c, 0.0)
 
-		configBase.TitleRow(right, "Filament")
-		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.98', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
-		validators.validFloat(c, 1.0)
-		c = configBase.SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
-		validators.validFloat(c, 0.5, 1.5)
-		
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
 		# load and slice buttons.
