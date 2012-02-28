@@ -16,7 +16,7 @@ BUILD_TARGET=win32
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=Alpha4
+BUILD_NAME=NewUI-Beta2
 TARGET_DIR=${BUILD_TARGET}-SkeinPyPy-${BUILD_NAME}
 
 ##Which versions of external programs to use
@@ -66,6 +66,9 @@ if [ $BUILD_TARGET = "win32" ]; then
 		curl -L -O http://sourceforge.net/projects/pyserial/files/pyserial/${WIN_PYSERIAL_VERSION}/pyserial-${WIN_PYSERIAL_VERSION}.win32.exe/download
 		mv download pyserial-${WIN_PYSERIAL_VERSION}.exe
 	fi
+	if [ ! -f PyOpenGL-3.0.1.win32.exe ]; then
+		curl -L -O http://sourceforge.net/projects/pyopengl/files/PyOpenGL/3.0.1/PyOpenGL-3.0.1.win32.exe
+	fi
 	#Get pypy
 	if [ ! -f "pypy-${PYPY_VERSION}-win32.zip" ]; then
 		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
@@ -92,11 +95,13 @@ if [ $BUILD_TARGET = "win32" ]; then
 	7z x PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/App
 	7z x PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/Lib/site-packages
 	7z x pyserial-${WIN_PYSERIAL_VERSION}.exe PURELIB
+	7z x PyOpenGL-3.0.1.win32.exe PURELIB
 
 	mkdir -p ${TARGET_DIR}/python
 	mv \$_OUTDIR/App/* ${TARGET_DIR}/python
 	mv \$_OUTDIR/Lib/site-packages/wx* ${TARGET_DIR}/python/Lib/site-packages/
 	mv PURELIB/serial ${TARGET_DIR}/python/Lib
+	mv PURELIB/OpenGL ${TARGET_DIR}/python/Lib
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
 	
@@ -123,7 +128,7 @@ fi
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
 #add Skeinforge
-cp -a SkeinPyPy ${TARGET_DIR}/SkeinPyPy
+cp -a SkeinPyPy_NewUI ${TARGET_DIR}/SkeinPyPy
 
 #Add the SSE2 check if we can build it, else we skip it.
 #  If we don't have it SkeinPyPy will still function. But crash on machines that don't have SSE2
