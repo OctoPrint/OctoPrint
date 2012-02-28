@@ -102,7 +102,7 @@ class JorisSkein:
 		self.oldLocation = None
 	
 	def getCraftedGcode( self, gcodeText, repository ):
-		'Parse gcode text and store the skin gcode.'
+		'Parse gcode text and store the joris gcode.'
 		self.lines = archive.getTextLines(gcodeText)
 		self.repository = repository
 		self.layersFromBottom = repository.layersFrom.value
@@ -122,7 +122,7 @@ class JorisSkein:
 			if firstWord == '(<layerThickness>':
 				self.layerThickness = float(splitLine[1])
 			elif firstWord == '(</extruderInitialization>)':
-				self.distanceFeedRate.addTagBracketedProcedure('skin')
+				self.distanceFeedRate.addTagBracketedProcedure('joris')
 				return
 			elif firstWord == '(<travelFeedRatePerSecond>':
 				self.travelFeedRateMinute = 60.0 * float(splitLine[1])
@@ -176,14 +176,3 @@ class JorisSkein:
 		self.distanceFeedRate.addLine('M103') # Turn extruder off.
 		self.perimeter = None
 
-
-
-def main():
-	'Display the skin dialog.'
-	if len(sys.argv) > 1:
-		writeOutput(' '.join(sys.argv[1 :]))
-	else:
-		settings.startMainLoopFromConstructor(getNewRepository())
-
-if __name__ == '__main__':
-	main()

@@ -16,6 +16,8 @@ except:
 
 from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from fabmetheus_utilities.vector3 import Vector3
+from fabmetheus_utilities import settings
+from newui import gcodeInterpreter
 
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
@@ -27,22 +29,56 @@ class previewPanel(wx.Panel):
 		self.glCanvas = PreviewGLCanvas(self)
 		self.init = 0
 		self.triangleMesh = None
-		self.pathList = None
+		self.gcode = None
 		self.machineSize = Vector3(210, 210, 200)
 		self.machineCenter = Vector3(0, 0, 0)
 		
 		tb = wx.ToolBar( self, -1 )
 		self.ToolBar = tb
 		tb.SetToolBitmapSize( ( 21, 21 ) )
-		transparentButton = wx.Button(tb, -1, "T", size=(21,21))
-		tb.AddControl(transparentButton)
-		self.Bind(wx.EVT_BUTTON, self.OnConfigClick, transparentButton)
+
+		button = wx.Button(tb, -1, "3D", size=(21*2,21))
+		tb.AddControl(button)
+		self.Bind(wx.EVT_BUTTON, self.On3DClick, button)
+		
+		button = wx.Button(tb, -1, "Top", size=(21*2,21))
+		tb.AddControl(button)
+		self.Bind(wx.EVT_BUTTON, self.OnTopClick, button)
+
+		self.transparentButton = wx.Button(tb, -1, "T", size=(21,21))
+		tb.AddControl(self.transparentButton)
+		self.Bind(wx.EVT_BUTTON, self.OnConfigClick, self.transparentButton)
+		
+		self.layerSpin = wx.SpinCtrl(tb, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
+		tb.AddControl(self.layerSpin)
+		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
+		self.transparentButton.Show(False)
+		self.layerSpin.Show(False)
+
 		tb.Realize()
 
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(tb, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
 		self.SetSizer(sizer)
+
+	def On3DClick(self, e):
+		self.glCanvas.yaw = 30
+		self.glCanvas.pitch = 60
+		self.glCanvas.zoom = 150
+		self.glCanvas.view3D = True
+		self.glCanvas.Refresh()
+
+	def OnTopClick(self, e):
+		self.glCanvas.view3D = False
+		self.glCanvas.zoom = 100
+		self.glCanvas.offsetX = 0
+		self.glCanvas.offsetY = 0
+		self.glCanvas.Refresh()
+
+	def OnLayerNrChange(self, e):
+		self.modelDirty = True
+		self.glCanvas.Refresh()
 
 	def updateCenterX(self, x):
 		self.machineCenter.x = x
@@ -53,6 +89,12 @@ class previewPanel(wx.Panel):
 		self.machineCenter.y = y
 		self.moveModel()
 		self.glCanvas.Refresh()
+	
+	def updateWallLineWidth(self, setting):
+		self.glCanvas.lineWidth = settings.calculateEdgeWidth(setting)
+	
+	def updateInfillLineWidth(self, setting):
+		self.glCanvas.infillLineWidth = settings.getSetting('nozzle_size')
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
@@ -69,116 +111,25 @@ class previewPanel(wx.Panel):
 	def DoModelLoad(self):
 		self.modelDirty = False
 		self.triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
-		self.pathList = None
+		self.gcode = None
 		self.moveModel()
-		self.glCanvas.Refresh()
-	
-	def getCodeInt(self, str, id):
-		m = re.search(id + '([^\s]+)', str)
-		if m == None:
-			return None
-		try:
-			return int(m.group(1))
-		except:
-			return None
-
-	def getCodeFloat(self, str, id):
-		m = re.search(id + '([^\s]+)', str)
-		if m == None:
-			return None
-		try:
-			return float(m.group(1))
-		except:
-			return None
+		wx.CallAfter(self.updateToolbar)
+		wx.CallAfter(self.glCanvas.Refresh)
 	
 	def DoGCodeLoad(self):
-		f = open(self.gcodeFilename, 'r')
-		pos = Vector3()
-		posOffset = Vector3()
-		currentE = 0
-		pathList = []
-		currentPath = {'type': 'move', 'list': [pos.copy()]}
-		scale = 1.0
-		posAbs = True
-		pathType = 'CUSTOM';
-		for line in f:
-			if line.startswith(';TYPE:'):
-				pathType = line[6:].strip()
-			G = self.getCodeInt(line, 'G')
-			if G is not None:
-				if G == 0 or G == 1:	#Move
-					x = self.getCodeFloat(line, 'X')
-					y = self.getCodeFloat(line, 'Y')
-					z = self.getCodeFloat(line, 'Z')
-					e = self.getCodeFloat(line, 'E')
-					if x is not None:
-						if posAbs:
-							pos.x = x * scale
-						else:
-							pos.x += x * scale
-					if y is not None:
-						if posAbs:
-							pos.y = y * scale
-						else:
-							pos.y += y * scale
-					if z is not None:
-						if posAbs:
-							pos.z = z * scale
-						else:
-							pos.z += z * scale
-					newPoint = pos.copy()
-					type = 'move'
-					if e is not None:
-						if e > currentE:
-							type = 'extrude'
-						if e < currentE:
-							type = 'retract'
-						currentE = e
-					if currentPath['type'] != type:
-						pathList.append(currentPath)
-						currentPath = {'type': type, 'pathType': pathType, 'list': [currentPath['list'][-1]]}
-					currentPath['list'].append(newPoint)
-				elif G == 20:	#Units are inches
-					scale = 25.4
-				elif G == 21:	#Units are mm
-					scale = 1.0
-				elif G == 28:	#Home
-					x = self.getCodeFloat(line, 'X')
-					y = self.getCodeFloat(line, 'Y')
-					z = self.getCodeFloat(line, 'Z')
-					if x is None and y is None and z is None:
-						pos = Vector3()
-					else:
-						if x is not None:
-							pos.x = 0.0
-						if y is not None:
-							pos.y = 0.0
-						if z is not None:
-							pos.z = 0.0
-				elif G == 90:	#Absolute position
-					posAbs = True
-				elif G == 91:	#Relative position
-					posAbs = False
-				elif G == 92:
-					x = self.getCodeFloat(line, 'X')
-					y = self.getCodeFloat(line, 'Y')
-					z = self.getCodeFloat(line, 'Z')
-					e = self.getCodeFloat(line, 'E')
-					if e is not None:
-						currentE = e
-					if x is not None:
-						posOffset.x = pos.x + x
-					if y is not None:
-						posOffset.y = pos.y + y
-					if z is not None:
-						posOffset.z = pos.z + z
-				else:
-					print "Unknown G code:" + str(G)
+		gcode = gcodeInterpreter.gcode(self.gcodeFilename)
 		self.modelDirty = False
-		self.pathList = pathList
+		self.gcode = gcode
 		self.triangleMesh = None
 		self.modelDirty = True
-		self.glCanvas.Refresh()
+		wx.CallAfter(self.updateToolbar)
+		wx.CallAfter(self.glCanvas.Refresh)
+	
+	def updateToolbar(self):
+		self.transparentButton.Show(self.triangleMesh != None)
+		self.layerSpin.Show(self.gcode != None)
+		if self.gcode != None:
+			self.layerSpin.SetRange(1, self.gcode.layerCount)
 	
 	def OnConfigClick(self, e):
 		self.glCanvas.renderTransparent = not self.glCanvas.renderTransparent
@@ -207,26 +158,44 @@ class PreviewGLCanvas(GLCanvas):
 		wx.EVT_SIZE(self, self.OnSize)
 		wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
 		wx.EVT_MOTION(self, self.OnMouseMotion)
+		wx.EVT_MOUSEWHEEL(self, self.OnMouseWheel)
 		self.yaw = 30
 		self.pitch = 60
 		self.zoom = 150
+		self.offsetX = 0
+		self.offsetY = 0
+		self.lineWidth = 0.4
+		self.fillLineWidth = 0.4
+		self.view3D = True
 		self.renderTransparent = False
 		self.modelDisplayList = None
 
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
-			self.yaw += e.GetX() - self.oldX
-			self.pitch -= e.GetY() - self.oldY
-			if self.pitch > 170:
-				self.pitch = 170
-			if self.pitch < 10:
-				self.pitch = 10
+			if self.view3D:
+				self.yaw += e.GetX() - self.oldX
+				self.pitch -= e.GetY() - self.oldY
+				if self.pitch > 170:
+					self.pitch = 170
+				if self.pitch < 10:
+					self.pitch = 10
+			else:
+				self.offsetX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
+				self.offsetY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
 			self.Refresh()
 		if e.Dragging() and e.RightIsDown():
 			self.zoom += e.GetY() - self.oldY
+			if self.zoom < 1:
+				self.zoom = 1
 			self.Refresh()
 		self.oldX = e.GetX()
 		self.oldY = e.GetY()
+	
+	def OnMouseWheel(self,e):
+		self.zoom *= 1 - float(e.GetWheelRotation() / e.GetWheelDelta()) / 10
+		if self.zoom < 1:
+			self.zoom = 1
+		self.Refresh()
 	
 	def OnEraseBackground(self,event):
 		pass
@@ -288,28 +257,66 @@ class PreviewGLCanvas(GLCanvas):
 		glVertex3f(0, machineSize.y, machineSize.z)
 		glEnd()
 
-		if self.parent.pathList != None:
+		if self.parent.gcode != None:
 			if self.modelDisplayList == None:
 				self.modelDisplayList = glGenLists(1);
 			if self.parent.modelDirty:
 				self.parent.modelDirty = False
 				glNewList(self.modelDisplayList, GL_COMPILE)
-				for path in self.parent.pathList:
+				for path in self.parent.gcode.pathList:
+					c = 1.0
+					if path['layerNr'] != self.parent.layerSpin.GetValue():
+						if path['layerNr'] < self.parent.layerSpin.GetValue():
+							c = 0.5 - (self.parent.layerSpin.GetValue() - path['layerNr']) * 0.1
+							if c < -0.5:
+								continue
+							if c < 0.1:
+								c = 0.1
+						else:
+							break
 					if path['type'] == 'move':
-						glColor3f(0,0,1)
+						glColor3f(0,0,c)
 					if path['type'] == 'extrude':
 						if path['pathType'] == 'FILL':
-							glColor3f(0.5,0.5,0)
+							glColor3f(c/2,c/2,0)
 						elif path['pathType'] == 'WALL-INNER':
-							glColor3f(0,1,0)
+							glColor3f(0,c,0)
 						else:
-							glColor3f(1,0,0)
+							glColor3f(c,0,0)
 					if path['type'] == 'retract':
-						glColor3f(0,1,1)
-					glBegin(GL_LINE_STRIP)
-					for v in path['list']:
-						glVertex3f(v.x, v.y, v.z)
-					glEnd()
+						glColor3f(0,c,c)
+					if path['type'] == 'extrude':
+						if path['pathType'] == 'FILL':
+							lineWidth = self.fillLineWidth / 2
+						else:
+							lineWidth = self.lineWidth / 2
+						for i in xrange(0, len(path['list'])-1):
+							v0 = path['list'][i]
+							v1 = path['list'][i+1]
+							normal = (v0 - v1).cross(Vector3(0,0,1))
+							normal.normalize()
+							v2 = v0 + normal * lineWidth
+							v3 = v1 + normal * lineWidth
+							v0 = v0 - normal * lineWidth
+							v1 = v1 - normal * lineWidth
+
+							glBegin(GL_QUADS)
+							glVertex3f(v0.x, v0.y, v0.z - 0.001)
+							glVertex3f(v1.x, v1.y, v1.z - 0.001)
+							glVertex3f(v3.x, v3.y, v3.z - 0.001)
+							glVertex3f(v2.x, v2.y, v2.z - 0.001)
+							glEnd()
+						for v in path['list']:
+							glBegin(GL_TRIANGLE_FAN)
+							glVertex3f(v.x, v.y, v.z - 0.001)
+							for i in xrange(0, 16+1):
+								glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.001)
+							glEnd()
+					else:
+						glBegin(GL_LINE_STRIP)
+						for v in path['list']:
+							glVertex3f(v.x, v.y, v.z)
+						glEnd()
 				glEndList()
 			glCallList(self.modelDisplayList)
 		
@@ -324,9 +331,10 @@ class PreviewGLCanvas(GLCanvas):
 					v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
 					v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
 					v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
-					normal = (v2 - v1).cross(v3 - v1)
-					normal.normalize()
-					glNormal3f(normal.x, normal.y, normal.z)
+					if not hasattr(face, 'normal'):
+						face.normal = (v2 - v1).cross(v3 - v1)
+						face.normal.normalize()
+					glNormal3f(face.normal.x, face.normal.y, face.normal.z)
 					glVertex3f(v1.x, v1.y, v1.z)
 					glVertex3f(v2.x, v2.y, v2.z)
 					glVertex3f(v3.x, v3.y, v3.z)
@@ -378,13 +386,20 @@ class PreviewGLCanvas(GLCanvas):
 
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		gluPerspective(90.0, float(self.GetSize().GetWidth()) / float(self.GetSize().GetHeight()), 1.0, 1000.0)
+		aspect = float(self.GetSize().GetWidth()) / float(self.GetSize().GetHeight())
+		if self.view3D:
+			gluPerspective(90.0, aspect, 1.0, 1000.0)
+		else:
+			glOrtho(-self.zoom * aspect, self.zoom * aspect, -self.zoom, self.zoom, -1000.0, 1000.0)
 
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
-		glTranslate(0,0,-self.zoom)
-		glRotate(-self.pitch, 1,0,0)
-		glRotate(self.yaw, 0,0,1)
-		if self.parent.triangleMesh != None:
-			glTranslate(0,0,-self.parent.triangleMesh.getCarveCornerMaximum().z / 2)
-		return
+		if self.view3D:
+			glTranslate(0,0,-self.zoom)
+			glRotate(-self.pitch, 1,0,0)
+			glRotate(self.yaw, 0,0,1)
+			if self.parent.triangleMesh != None:
+				glTranslate(0,0,-self.parent.triangleMesh.getCarveCornerMaximum().z / 2)
+		else:
+			glTranslate(self.offsetX, self.offsetY, 0)
+

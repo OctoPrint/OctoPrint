@@ -46,7 +46,7 @@ def calculateShells(setting):
 	return calculateShellsImp(float(getSetting('wall_thickness')))
 
 def calculateShellsBase(setting):
-	return calculateShellsImp(float(getSetting('wall_thickness')) + float(getSetting('extra_base_wall_thickness')))
+	return calculateShellsImp(float(getSetting('wall_thickness')) + float(getSetting('extra_base_wall_thickness', '0')))
 
 def calculateShellsImp(wallThickness):
 	nozzleSize = float(getSetting('nozzle_size'))
@@ -413,9 +413,6 @@ def getReadRepository(repository):
 		print "Warning: Plugin: " + repository.name + " missing from SkeinPyPy info"
 		return repository
 	info = info[repository.name]
-	if not type(info) is dict:
-		print "Ignoring plugin configuration: " + repository.name
-		return repository
 	
 	#print('getReadRepository:', repository.name)
 	for p in repository.preferences:
@@ -443,16 +440,28 @@ def getAlterationFileLines(fileName):
 	return getAlterationLines(fileName)
 
 def getAlterationLines(fileName):
-	#print ('getAlterationLines:', fileName)
 	return archive.getTextLines(getAlterationFile(fileName))
 
 def getAlterationFile(fileName):
 	"Get the file from the fileName or the lowercase fileName in the alterations directories."
+	#print ('getAlterationFile:', fileName)
+	prefix = ''
+	if fileName == 'start.gcode':
+		#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
+		#We also set our steps per E here, if configured.
+		eSteps = float(getSetting('steps_per_e_unit', '0'))
+		if eSteps > 0:
+			prefix += 'M92 E'+str(eSteps)+'\n'
+		temp = float(getSetting('print_temperature', '0'))
+		if temp > 0:
+			prefix += 'M109 S'+str(temp)+'\n'
+	elif fileName == 'replace.csv':
+		prefix = 'M101\nM103\n'
 	alterationsDirectory = archive.getSkeinforgePath('alterations')
 	fullFilename = os.path.join(alterationsDirectory, fileName)
 	if os.path.isfile(fullFilename):
-		return archive.getFileText( fullFilename )
-	return ''
+		return prefix + archive.getFileText( fullFilename )
+	return prefix
 
 ####################################
 ## Configuration settings classes ##
