@@ -30,7 +30,7 @@ class alterationPanel(wx.Panel):
 		self.loadFile(self.alterationFileList[self.list.GetSelection()])
 
 	def loadFile(self, filename):
-		self.textArea.SetValue(settings.getAlterationFile(filename))
+		self.textArea.SetValue(settings.getAlterationFile(filename, False))
 
 	def OnFocusLost(self, e):
 		filename = os.path.join(archive.getSkeinforgePath('alterations'), self.alterationFileList[self.list.GetSelection()])

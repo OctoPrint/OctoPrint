@@ -442,21 +442,22 @@ def getAlterationFileLines(fileName):
 def getAlterationLines(fileName):
 	return archive.getTextLines(getAlterationFile(fileName))
 
-def getAlterationFile(fileName):
+def getAlterationFile(fileName, allowMagicPrefix = True):
 	"Get the file from the fileName or the lowercase fileName in the alterations directories."
 	#print ('getAlterationFile:', fileName)
 	prefix = ''
-	if fileName == 'start.gcode':
-		#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
-		#We also set our steps per E here, if configured.
-		eSteps = float(getSetting('steps_per_e_unit', '0'))
-		if eSteps > 0:
-			prefix += 'M92 E'+str(eSteps)+'\n'
-		temp = float(getSetting('print_temperature', '0'))
-		if temp > 0:
-			prefix += 'M109 S'+str(temp)+'\n'
-	elif fileName == 'replace.csv':
-		prefix = 'M101\nM103\n'
+	if allowMagicPrefix:
+		if fileName == 'start.gcode':
+			#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
+			#We also set our steps per E here, if configured.
+			eSteps = float(getSetting('steps_per_e_unit', '0'))
+			if eSteps > 0:
+				prefix += 'M92 E'+str(eSteps)+'\n'
+			temp = float(getSetting('print_temperature', '0'))
+			if temp > 0:
+				prefix += 'M109 S'+str(temp)+'\n'
+		elif fileName == 'replace.csv':
+			prefix = 'M101\nM103\n'
 	alterationsDirectory = archive.getSkeinforgePath('alterations')
 	fullFilename = os.path.join(alterationsDirectory, fileName)
 	if os.path.isfile(fullFilename):
