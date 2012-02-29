@@ -3,7 +3,7 @@ import math
 import threading
 import re
 
-from wx.glcanvas import GLCanvas
+from wx import glcanvas
 import wx
 try:
 	from OpenGL.GLUT import *
@@ -47,7 +47,10 @@ class previewPanel(wx.Panel):
 
 		self.transparentButton = wx.Button(tb, -1, "T", size=(21,21))
 		tb.AddControl(self.transparentButton)
-		self.Bind(wx.EVT_BUTTON, self.OnConfigClick, self.transparentButton)
+		self.Bind(wx.EVT_BUTTON, self.OnTransparentClick, self.transparentButton)
+		self.depthComplexityButton = wx.Button(tb, -1, "DC", size=(21*2,21))
+		tb.AddControl(self.depthComplexityButton)
+		self.Bind(wx.EVT_BUTTON, self.OnDepthComplexityClick, self.depthComplexityButton)
 		
 		self.layerSpin = wx.SpinCtrl(tb, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		tb.AddControl(self.layerSpin)
@@ -131,8 +134,16 @@ class previewPanel(wx.Panel):
 		if self.gcode != None:
 			self.layerSpin.SetRange(1, self.gcode.layerCount)
 	
-	def OnConfigClick(self, e):
+	def OnTransparentClick(self, e):
 		self.glCanvas.renderTransparent = not self.glCanvas.renderTransparent
+		if self.glCanvas.renderTransparent:
+			self.glCanvas.renderDepthComplexity = False
+		self.glCanvas.Refresh()
+	
+	def OnDepthComplexityClick(self, e):
+		self.glCanvas.renderDepthComplexity = not self.glCanvas.renderDepthComplexity
+		if self.glCanvas.renderDepthComplexity:
+			self.glCanvas.renderTransparent = False
 		self.glCanvas.Refresh()
 	
 	def moveModel(self):
@@ -150,9 +161,10 @@ class previewPanel(wx.Panel):
 		self.triangleMesh.getMinimumZ()
 		self.modelDirty = True
 
-class PreviewGLCanvas(GLCanvas):
+class PreviewGLCanvas(glcanvas.GLCanvas):
 	def __init__(self, parent):
-		GLCanvas.__init__(self, parent)
+		attribList = (glcanvas.WX_GL_RGBA, glcanvas.WX_GL_DOUBLEBUFFER, glcanvas.WX_GL_DEPTH_SIZE, 24, glcanvas.WX_GL_STENCIL_SIZE, 8)
+		glcanvas.GLCanvas.__init__(self, parent, attribList = attribList)
 		self.parent = parent
 		wx.EVT_PAINT(self, self.OnPaint)
 		wx.EVT_SIZE(self, self.OnSize)
@@ -168,6 +180,7 @@ class PreviewGLCanvas(GLCanvas):
 		self.fillLineWidth = 0.4
 		self.view3D = True
 		self.renderTransparent = False
+		self.renderDepthComplexity = False
 		self.modelDisplayList = None
 
 	def OnMouseMotion(self,e):
@@ -217,7 +230,7 @@ class PreviewGLCanvas(GLCanvas):
 
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
 		
 		glTranslate(-self.parent.machineCenter.x, -self.parent.machineCenter.y, 0)
 		
@@ -354,6 +367,47 @@ class PreviewGLCanvas(GLCanvas):
 				glBlendFunc(GL_ONE, GL_ONE)
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
+			elif self.renderDepthComplexity:
+				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
+				glDisable(GL_DEPTH_TEST)
+				glEnable(GL_STENCIL_TEST);
+				glStencilFunc(GL_ALWAYS, 1, 1)
+				glStencilOp(GL_INCR, GL_INCR, GL_INCR)
+				glCallList(self.modelDisplayList)
+				glStencilOp (GL_KEEP, GL_KEEP, GL_KEEP);
+				
+				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
+				glStencilFunc(GL_EQUAL, 0, 1);
+				glColor(0, 1, 0)
+				glCallList(self.modelDisplayList)
+				glStencilFunc(GL_EQUAL, 1, 1);
+				glColor(1, 0, 0)
+				glCallList(self.modelDisplayList)
+
+				glPushMatrix()
+				glLoadIdentity()
+				for i in xrange(2, 20, 2):
+					glStencilFunc(GL_EQUAL, i, 0xFF);
+					glColor(0, float(i)/10, 0)
+					glBegin(GL_QUADS)
+					glVertex3f(-10,-10,-1)
+					glVertex3f( 10,-10,-1)
+					glVertex3f( 10, 10,-1)
+					glVertex3f(-10, 10,-1)
+					glEnd()
+				for i in xrange(1, 20, 2):
+					glStencilFunc(GL_EQUAL, i, 0xFF);
+					glColor(float(i)/10, 0, 0)
+					glBegin(GL_QUADS)
+					glVertex3f(-10,-10,-1)
+					glVertex3f( 10,-10,-1)
+					glVertex3f( 10, 10,-1)
+					glVertex3f(-10, 10,-1)
+					glEnd()
+				glPopMatrix()
+
+				glDisable(GL_STENCIL_TEST);
+				glEnable(GL_DEPTH_TEST)
 			else:
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
@@ -382,6 +436,7 @@ class PreviewGLCanvas(GLCanvas):
 		glDisable(GL_BLEND)
 
 		glClearColor(0.0, 0.0, 0.0, 1.0)
+		glClearStencil(0)
 		glClearDepth(1.0)
 
 		glMatrixMode(GL_PROJECTION)
