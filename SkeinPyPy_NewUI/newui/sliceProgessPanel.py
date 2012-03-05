@@ -68,17 +68,24 @@ class sliceProgessPanel(wx.Panel):
 	def OnShowGCode(self, e):
 		self.mainWindow.preview3d.loadGCodeFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
 	
-	def OnSliceDone(self, ret):
+	def OnShowLog(self, e):
+		LogWindow('\n'.join(self.progressLog))
+	
+	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
-		if ret == 0:
+		self.progressLog = result.progressLog
+		if result.returnCode == 0:
 			self.statusText.SetLabel("Ready.")
+			self.logButton = wx.Button(self, -1, "Show Log")
+			self.Bind(wx.EVT_BUTTON, self.OnShowLog, self.logButton)
 			self.showButton = wx.Button(self, -1, "Show GCode")
 			self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
 			self.sizer.Remove(self.abortButton)
+			self.sizer.Add(self.logButton, 0)
 			self.sizer.Add(self.showButton, 0)
 			self.sizer.Add(self.abortButton, 0)
 		else:
-			self.statusText.SetLabel("!?! Something went wrong during slicing.")
+			self.statusText.SetLabel("Something went wrong during slicing!")
 		self.sizer.Layout()
 		self.abort = True
 	
@@ -105,6 +112,7 @@ class WorkerThread(threading.Thread):
 		p = subprocess.Popen(skeinRun.getSkeinCommand(self.filename), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		line = p.stdout.readline()
 		maxValue = 1
+		self.progressLog = []
 		while(len(line) > 0):
 			line = line.rstrip()
 			if line[0:9] == "Progress[" and line[-1:] == "]":
@@ -114,12 +122,22 @@ class WorkerThread(threading.Thread):
 				wx.CallAfter(self.notifyWindow.SetProgress, progress[0], int(progress[1]), maxValue)
 			else:
 				print line
+				self.progressLog.append(line)
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, line)
 			if self.notifyWindow.abort:
 				p.terminate()
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Aborted by user.")
 				return
 			line = p.stdout.readline()
-		ret = p.wait()
-		wx.CallAfter(self.notifyWindow.OnSliceDone, ret)
+		self.returnCode = p.wait()
+		self.gcodeFilename = self.filename[: self.filename.rfind('.')] + "_export.gcode"
+		wx.CallAfter(self.notifyWindow.OnSliceDone, self)
+
+class LogWindow(wx.Frame):
+	def __init__(self, logText):
+		super(LogWindow, self).__init__(None, title="Slice log")
+		self.textBox = wx.TextCtrl(self, -1, logText, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_READONLY)
+		self.SetSize((400,300))
+		self.Centre()
+		self.Show(True)
 
