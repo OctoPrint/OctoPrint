@@ -17,20 +17,20 @@ def DEFSET(setting):
 	return setting.value
 
 def storedSetting(name):
-	return lambda setting: getSetting(name, setting.value)
+	return lambda setting: getProfileSetting(name, setting.value)
 
 def ifSettingAboveZero(name):
-	return lambda setting: float(getSetting(name, '0.0')) > 0
+	return lambda setting: float(getProfileSetting(name, '0.0')) > 0
 
 def ifSettingIs(name, value):
-	return lambda setting: getSetting(name) == value
+	return lambda setting: getProfileSetting(name) == value
 
 def storedPercentSetting(name):
-	return lambda setting: float(getSetting(name, setting.value)) / 100
+	return lambda setting: float(getProfileSetting(name, setting.value)) / 100
 
 def calculateEdgeWidth(setting):
-	wallThickness = float(getSetting('wall_thickness'))
-	nozzleSize = float(getSetting('nozzle_size'))
+	wallThickness = float(getProfileSetting('wall_thickness'))
+	nozzleSize = float(getProfileSetting('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return wallThickness
@@ -43,13 +43,13 @@ def calculateEdgeWidth(setting):
 	return lineWidth
 
 def calculateShells(setting):
-	return calculateShellsImp(float(getSetting('wall_thickness')))
+	return calculateShellsImp(float(getProfileSetting('wall_thickness')))
 
 def calculateShellsBase(setting):
-	return calculateShellsImp(float(getSetting('wall_thickness')) + float(getSetting('extra_base_wall_thickness', '0')))
+	return calculateShellsImp(float(getProfileSetting('wall_thickness')) + float(getProfileSetting('extra_base_wall_thickness', '0')))
 
 def calculateShellsImp(wallThickness):
-	nozzleSize = float(getSetting('nozzle_size'))
+	nozzleSize = float(getProfileSetting('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return 0
@@ -62,14 +62,14 @@ def calculateShellsImp(wallThickness):
 	return lineCount - 1
 
 def calculateSolidLayerCount(setting):
-	layerHeight = float(getSetting('layer_height'))
-	solidThickness = float(getSetting('solid_layer_thickness'))
+	layerHeight = float(getProfileSetting('layer_height'))
+	solidThickness = float(getProfileSetting('solid_layer_thickness'))
 	ret = int(math.ceil(solidThickness / layerHeight - 0.0001))
 	return ret
 
 def firstLayerSpeedRatio(setting):
-	bottomSpeed = float(getSetting('bottom_layer_speed'))
-	speed = float(getSetting('print_speed'))
+	bottomSpeed = float(getProfileSetting('bottom_layer_speed'))
+	speed = float(getProfileSetting('print_speed'))
 	return bottomSpeed/speed
 
 def getSkeinPyPyProfileInformation():
@@ -379,7 +379,7 @@ def loadGlobalProfile(filename):
 def saveGlobalProfile(filename):
 	globalProfileParser.write(open(filename, 'w'))
 
-def getSetting(name, default = "", section = 'profile'):
+def getProfileSetting(name, default = "ERR", section = 'profile'):
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
@@ -387,17 +387,48 @@ def getSetting(name, default = "", section = 'profile'):
 		if not globalProfileParser.has_section(section):
 			globalProfileParser.add_section(section)
 		globalProfileParser.set(section, name, str(default))
-		print name + " not found in profile, so using default"
+		print name + " not found in profile, so using default: " + str(default)
 		return default
 	return globalProfileParser.get(section, name)
 
-def putSetting(name, value, section = 'profile'):
+def putProfileSetting(name, value, section = 'profile'):
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
 	if not globalProfileParser.has_section(section):
 		globalProfileParser.add_section(section)
 	globalProfileParser.set(section, name, str(value))
+
+global globalPreferenceParser
+globalPreferenceParser = None
+
+def getPreferencePath():
+	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
+
+def getPreference(name, default = "ERR"):
+	global globalPreferenceParser
+	if globalPreferenceParser == None:
+		globalPreferenceParser = ConfigParser.ConfigParser()
+		globalPreferenceParser.read(getPreferencePath())
+	if not globalPreferenceParser.has_option('preference', name):
+		if not globalPreferenceParser.has_section('preference'):
+			globalPreferenceParser.add_section('preference')
+		globalPreferenceParser.set('preference', name, str(default))
+		print name + " not found in preferences, so using default: " + str(default)
+		return default
+	return globalPreferenceParser.get('preference', name)
+
+def putPreference(name, value):
+	#Check if we have a configuration file loaded, else load the default.
+	global globalPreferenceParser
+	if globalPreferenceParser == None:
+		globalPreferenceParser = ConfigParser.ConfigParser()
+		globalPreferenceParser.read(getPreferencePath())
+	if not globalPreferenceParser.has_section('preference'):
+		globalPreferenceParser.add_section('preference')
+	globalPreferenceParser.set('preference', name, str(value))
+	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
+
 
 def getDefaultProfilePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
@@ -450,10 +481,10 @@ def getAlterationFile(fileName, allowMagicPrefix = True):
 		if fileName == 'start.gcode':
 			#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
 			#We also set our steps per E here, if configured.
-			eSteps = float(getSetting('steps_per_e_unit', '0'))
+			eSteps = float(getProfileSetting('steps_per_e_unit', '0'))
 			if eSteps > 0:
 				prefix += 'M92 E'+str(eSteps)+'\n'
-			temp = float(getSetting('print_temperature', '0'))
+			temp = float(getProfileSetting('print_temperature', '0'))
 			if temp > 0:
 				prefix += 'M109 S'+str(temp)+'\n'
 		elif fileName == 'replace.csv':

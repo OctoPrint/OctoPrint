@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import __init__
 
 import wx, os, platform, types
-import ConfigParser
 
 from fabmetheus_utilities import settings
 
@@ -53,11 +52,11 @@ class configWindowBase(wx.Frame):
 	def OnPopupDisplay(self, setting):
 		x, y = setting.ctrl.ClientToScreenXY(0, 0)
 		sx, sy = setting.ctrl.GetSizeTuple()
-		if platform.system() == "Windows":
-			#for some reason, under windows, the popup is relative to the main window...
-			wx, wy = self.ClientToScreenXY(0, 0)
-			x -= wx
-			y -= wy
+		#if platform.system() == "Windows":
+		#	for some reason, under windows, the popup is relative to the main window... in some cases. (Wierd ass bug)
+		#	wx, wy = self.ClientToScreenXY(0, 0)
+		#	x -= wx
+		#	y -= wy
 		self.popup.setting = setting
 		self.UpdatePopup(setting)
 		self.popup.SetPosition((x, y+sy))
@@ -78,7 +77,10 @@ class configWindowBase(wx.Frame):
 	def updateProfileToControls(self):
 		"Update the configuration wx controls to show the new configuration settings"
 		for setting in self.settingControlList:
-			setting.SetValue(settings.getSetting(setting.configName))
+			if setting.type == 'profile':
+				setting.SetValue(settings.getProfileSetting(setting.configName))
+			else:
+				setting.SetValue(settings.getPreference(setting.configName))
 
 class TitleRow():
 	def __init__(self, panel, name):
@@ -91,7 +93,7 @@ class TitleRow():
 		sizer.SetRows(sizer.GetRows() + 2)
 
 class SettingRow():
-	def __init__(self, panel, label, configName, defaultValue = '', helpText = 'Help: TODO'):
+	def __init__(self, panel, label, configName, defaultValue = '', helpText = 'Help: TODO', type = 'profile'):
 		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		x = sizer.GetRows()
@@ -102,12 +104,19 @@ class SettingRow():
 		self.helpText = helpText
 		self.configName = configName
 		self.panel = panel
+		self.type = type
 		
 		self.label = wx.StaticText(panel, -1, label)
-		if isinstance(defaultValue, types.StringTypes):
-			self.ctrl = wx.TextCtrl(panel, -1, settings.getSetting(configName, defaultValue))
+		if self.type == 'profile':
+			if isinstance(defaultValue, types.StringTypes):
+				self.ctrl = wx.TextCtrl(panel, -1, settings.getProfileSetting(configName, defaultValue))
+			else:
+				self.ctrl = wx.ComboBox(panel, -1, settings.getProfileSetting(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 		else:
-			self.ctrl = wx.ComboBox(panel, -1, settings.getSetting(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+			if isinstance(defaultValue, types.StringTypes):
+				self.ctrl = wx.TextCtrl(panel, -1, settings.getPreference(configName, defaultValue))
+			else:
+				self.ctrl = wx.ComboBox(panel, -1, settings.getPreference(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 		#self.helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
 		#self.helpButton.SetToolTip(wx.ToolTip(help))
 		
@@ -123,7 +132,10 @@ class SettingRow():
 		sizer.SetRows(x+1)
 
 	def OnSettingTextChange(self, e):
-		settings.putSetting(self.configName, self.GetValue())
+		if self.type == 'profile':
+			settings.putProfileSetting(self.configName, self.GetValue())
+		else:
+			settings.putPreference(self.configName, self.GetValue())
 		result = validators.SUCCESS
 		msgs = []
 		for validator in self.validators:
@@ -165,29 +177,3 @@ class settingNotify():
 			return validators.SUCCESS, ''
 		except ValueError:
 			return validators.SUCCESS, ''
-
-def getPreferencePath():
-	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
-
-def getPreference(name, default):
-	if not globals().has_key('globalPreferenceParser'):
-		globalPreferenceParser = ConfigParser.ConfigParser()
-		globalPreferenceParser.read(getPreferencePath())
-	if not globalPreferenceParser.has_option('preference', name):
-		if not globalPreferenceParser.has_section('preference'):
-			globalPreferenceParser.add_section('preference')
-		globalPreferenceParser.set('preference', name, str(default))
-		print name + " not found in profile, so using default"
-		return default
-	return globalPreferenceParser.get('preference', name)
-
-def putPreference(name, value):
-	#Check if we have a configuration file loaded, else load the default.
-	if not globals().has_key('globalPreferenceParser'):
-		globalPreferenceParser = ConfigParser.ConfigParser()
-		globalPreferenceParser.read(getPreferencePath())
-	if not globalPreferenceParser.has_section('preference'):
-		globalPreferenceParser.add_section('preference')
-	globalPreferenceParser.set('preference', name, str(value))
-	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
-

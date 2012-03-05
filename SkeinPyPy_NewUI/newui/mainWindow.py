@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import __init__
 
 import wx, os, platform, types
-import ConfigParser
 
 from fabmetheus_utilities import settings
 
@@ -12,6 +11,8 @@ from newui import preview3d
 from newui import sliceProgessPanel
 from newui import alterationPanel
 from newui import validators
+from newui import preferencesDialog
+from newui import configWizard
 
 def main():
 	app = wx.App(False)
@@ -25,12 +26,19 @@ class mainWindow(configBase.configWindowBase):
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		
+		if settings.getPreference('wizardDone', 'False') == 'False':
+			configWizard.configWizard()
+		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
 		i = fileMenu.Append(-1, 'Open Profile...', 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
 		i = fileMenu.Append(-1, 'Save Profile...', 'Save Profile...')
 		self.Bind(wx.EVT_MENU, self.OnSaveProfile, i)
+		fileMenu.AppendSeparator()
+		i = fileMenu.Append(-1, 'Preferences...', 'Preferences...')
+		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
+		fileMenu.AppendSeparator()
 		i = fileMenu.Append(wx.ID_EXIT, 'Quit', 'Quit application')
 		self.Bind(wx.EVT_MENU, self.OnQuit, i)
 		menubar.Append(fileMenu, '&File')
@@ -42,7 +50,7 @@ class mainWindow(configBase.configWindowBase):
 		self.SetMenuBar(menubar)
 		
 		self.lastPath = ""
-		self.filename = configBase.getPreference('lastFile', None)
+		self.filename = settings.getPreference('lastFile', "None")
 		self.progressPanelList = []
 
 		#Preview window
@@ -89,7 +97,7 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior only', 'Everywhere', 'Empty layers only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
 
 		configBase.TitleRow(right, "Filament")
-		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.98', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
+		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.89', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
 		validators.validFloat(c, 1.0)
 		c = configBase.SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
 		validators.validFloat(c, 0.5, 1.5)
@@ -156,7 +164,7 @@ class mainWindow(configBase.configWindowBase):
 		sizer.Add(sliceButton, (1,2))
 		self.sizer = sizer
 
-		if self.filename != None:
+		if self.filename != "None":
 			self.preview3d.loadModelFile(self.filename)
 			self.lastPath = os.path.split(self.filename)[0]
 
@@ -185,12 +193,17 @@ class mainWindow(configBase.configWindowBase):
 			settings.saveGlobalProfile(profileFile)
 		dlg.Destroy()
 	
+	def OnPreferences(self, e):
+		prefDialog = preferencesDialog.preferencesDialog(self)
+		prefDialog.Centre()
+		prefDialog.Show(True)
+
 	def OnLoadSTL(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
-			configBase.putPreference('lastFile', self.filename)
+			settings.putPreference('lastFile', self.filename)
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
@@ -229,11 +242,6 @@ class mainWindow(configBase.configWindowBase):
 			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
 			i += 1
 		self.sizer.Layout()
-	
-	def updateProfileToControls(self):
-		"Update the configuration wx controls to show the new configuration settings"
-		for setting in self.settingControlList:
-			setting.SetValue(settings.getSetting(setting.configName))
 
 	def OnQuit(self, e):
 		self.Close()

@@ -30,38 +30,35 @@ class previewPanel(wx.Panel):
 		self.init = 0
 		self.triangleMesh = None
 		self.gcode = None
-		self.machineSize = Vector3(210, 210, 200)
+		self.machineSize = Vector3(float(settings.getPreference('machine_width', '205')), float(settings.getPreference('machine_depth', '205')), float(settings.getPreference('machine_height', '200')))
 		self.machineCenter = Vector3(0, 0, 0)
 		
-		tb = wx.ToolBar( self, -1 )
-		self.ToolBar = tb
-		tb.SetToolBitmapSize( ( 21, 21 ) )
+		self.toolbar = wx.ToolBar( self, -1 )
+		self.toolbar.SetToolBitmapSize( ( 21, 21 ) )
 
-		button = wx.Button(tb, -1, "3D", size=(21*2,21))
-		tb.AddControl(button)
+		button = wx.Button(self.toolbar, -1, "3D", size=(21*2,21))
+		self.toolbar.AddControl(button)
 		self.Bind(wx.EVT_BUTTON, self.On3DClick, button)
 		
-		button = wx.Button(tb, -1, "Top", size=(21*2,21))
-		tb.AddControl(button)
+		button = wx.Button(self.toolbar, -1, "Top", size=(21*2,21))
+		self.toolbar.AddControl(button)
 		self.Bind(wx.EVT_BUTTON, self.OnTopClick, button)
 
-		self.transparentButton = wx.Button(tb, -1, "T", size=(21,21))
-		tb.AddControl(self.transparentButton)
+		self.transparentButton = wx.Button(self.toolbar, -1, "T", size=(21,21))
+		self.toolbar.AddControl(self.transparentButton)
 		self.Bind(wx.EVT_BUTTON, self.OnTransparentClick, self.transparentButton)
-		self.depthComplexityButton = wx.Button(tb, -1, "DC", size=(21*2,21))
-		tb.AddControl(self.depthComplexityButton)
+		self.depthComplexityButton = wx.Button(self.toolbar, -1, "DC", size=(21*2,21))
+		self.toolbar.AddControl(self.depthComplexityButton)
 		self.Bind(wx.EVT_BUTTON, self.OnDepthComplexityClick, self.depthComplexityButton)
 		
-		self.layerSpin = wx.SpinCtrl(tb, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
-		tb.AddControl(self.layerSpin)
+		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
+		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
-		self.transparentButton.Show(False)
-		self.layerSpin.Show(False)
-
-		tb.Realize()
-
+		
+		self.updateToolbar()
+		
 		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(tb, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
+		sizer.Add(self.toolbar, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
 		self.SetSizer(sizer)
 
@@ -97,7 +94,7 @@ class previewPanel(wx.Panel):
 		self.glCanvas.lineWidth = settings.calculateEdgeWidth(setting)
 	
 	def updateInfillLineWidth(self, setting):
-		self.glCanvas.infillLineWidth = settings.getSetting('nozzle_size')
+		self.glCanvas.infillLineWidth = settings.getProfileSetting('nozzle_size')
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
@@ -130,9 +127,11 @@ class previewPanel(wx.Panel):
 	
 	def updateToolbar(self):
 		self.transparentButton.Show(self.triangleMesh != None)
+		self.depthComplexityButton.Show(self.triangleMesh != None)
 		self.layerSpin.Show(self.gcode != None)
 		if self.gcode != None:
 			self.layerSpin.SetRange(1, self.gcode.layerCount)
+		self.toolbar.Realize()
 	
 	def OnTransparentClick(self, e):
 		self.glCanvas.renderTransparent = not self.glCanvas.renderTransparent
@@ -245,10 +244,10 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glEnd()
 		glLineWidth(2)
 		glBegin(GL_LINES)
-		for i in xrange(0, machineSize.x, 10):
+		for i in xrange(0, int(machineSize.x), 10):
 			glVertex3f(i, 0, 0)
 			glVertex3f(i, machineSize.y, 0)
-		for i in xrange(0, machineSize.y, 10):
+		for i in xrange(0, int(machineSize.y), 10):
 			glVertex3f(0, i, 0)
 			glVertex3f(machineSize.x, i, 0)
 		glEnd()
@@ -390,19 +389,19 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glStencilFunc(GL_EQUAL, i, 0xFF);
 					glColor(0, float(i)/10, 0)
 					glBegin(GL_QUADS)
-					glVertex3f(-10,-10,-1)
-					glVertex3f( 10,-10,-1)
-					glVertex3f( 10, 10,-1)
-					glVertex3f(-10, 10,-1)
+					glVertex3f(-1000,-1000,-1)
+					glVertex3f( 1000,-1000,-1)
+					glVertex3f( 1000, 1000,-1)
+					glVertex3f(-1000, 1000,-1)
 					glEnd()
 				for i in xrange(1, 20, 2):
 					glStencilFunc(GL_EQUAL, i, 0xFF);
 					glColor(float(i)/10, 0, 0)
 					glBegin(GL_QUADS)
-					glVertex3f(-10,-10,-1)
-					glVertex3f( 10,-10,-1)
-					glVertex3f( 10, 10,-1)
-					glVertex3f(-10, 10,-1)
+					glVertex3f(-1000,-1000,-1)
+					glVertex3f( 1000,-1000,-1)
+					glVertex3f( 1000, 1000,-1)
+					glVertex3f(-1000, 1000,-1)
 					glEnd()
 				glPopMatrix()
 
