@@ -5,6 +5,8 @@ import wx, os, platform, types
 import ConfigParser
 
 from newui import configBase
+from newui import validators
+from newui import machineCom
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):
@@ -24,8 +26,8 @@ class preferencesDialog(configBase.configWindowBase):
 		validators.validFloat(c, 10.0)
 
 		configBase.TitleRow(left, 'Communication settings')
-		c = configBase.SettingRow(left, 'Serial port', 'serial_port', 'AUTO', 'Serial port to use for communication with the printer', type = 'preference')
-		c = configBase.SettingRow(left, 'Baudrate', 'serial_baud', '250000', 'Speed of the serial port communication\nNeeds to match your firmware settings', type = 'preference')
+		c = configBase.SettingRow(left, 'Serial port', 'serial_port', ['AUTO'] + machineCom.serialList(), 'Serial port to use for communication with the printer', type = 'preference')
+		c = configBase.SettingRow(left, 'Baudrate', 'serial_baud', '250000', 'Speed of the serial port communication\nNeeds to match your firmware settings\nCommon values are 250000, 115200, 57600', type = 'preference')
 		
 		self.MakeModal(True)
 		main.Fit()

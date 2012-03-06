@@ -12,7 +12,7 @@ class Stk500v2(ispBase.IspBase):
 	
 	def connect(self, port = 'COM3', speed = 115200):
 		if self.serial != None:
-			self.serial.close()
+			self.close()
 		self.serial = Serial(port, speed, timeout=5)
 		self.seq = 1
 		
@@ -23,15 +23,28 @@ class Stk500v2(ispBase.IspBase):
 		
 		self.sendMessage([1])
 		if self.sendMessage([0x10, 0xc8, 0x64, 0x19, 0x20, 0x00, 0x53, 0x03, 0xac, 0x53, 0x00, 0x00]) != [0x10, 0x00]:
+			self.close()
 			raise ispBase.IspError("Failed to enter programming mode")
+
+	def close(self):
+		if self.serial != None:
+			self.serial.close()
+			self.serial = None
+	
+	def isConnected(self):
+		return self.serial != None
 	
 	def sendISP(self, data):
 		recv = self.sendMessage([0x1D, 4, 4, 0, data[0], data[1], data[2], data[3]])
 		return recv[2:6]
 	
 	def writeFlash(self, flashData):
-		#Set load addr to 0 (with more then 64k load)
-		self.sendMessage([0x06, 0x80, 0x00, 0x00, 0x00])
+		#Set load addr to 0, in case we have more then 64k flash we need to enable the address extension
+		flashSize = self.chip['pageSize'] * 2 * self.chip['pageCount']
+		if flashSize > 0xFFFF:
+			self.sendMessage([0x06, 0x80, 0x00, 0x00, 0x00])
+		else:
+			self.sendMessage([0x06, 0x00, 0x00, 0x00, 0x00])
 		
 		loadCount = (len(flashData) + 0xFF) / 0x100
 		for i in xrange(0, loadCount):
@@ -39,8 +52,12 @@ class Stk500v2(ispBase.IspBase):
 			print "#%i#%i#" % (i + 1, loadCount)
 	
 	def verifyFlash(self, flashData):
-		#Set load addr to 0 (with more then 64k load)
-		self.sendMessage([0x06, 0x80, 0x00, 0x00, 0x00])
+		#Set load addr to 0, in case we have more then 64k flash we need to enable the address extension
+		flashSize = self.chip['pageSize'] * 2 * self.chip['pageCount']
+		if flashSize > 0xFFFF:
+			self.sendMessage([0x06, 0x80, 0x00, 0x00, 0x00])
+		else:
+			self.sendMessage([0x06, 0x00, 0x00, 0x00, 0x00])
 		
 		loadCount = (len(flashData) + 0xFF) / 0x100
 		for i in xrange(0, loadCount):

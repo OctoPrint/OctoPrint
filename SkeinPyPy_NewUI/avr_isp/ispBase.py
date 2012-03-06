@@ -9,16 +9,13 @@ class IspBase():
 		self.curExtAddr = -1
 		self.chip = chipDB.getChipFromDB(self.getSignature())
 		if self.chip == False:
-			print "Chip with signature: " + str(self.getSignature()) + "not found"
-			return False
+			raise IspError("Chip with signature: " + str(self.getSignature()) + "not found")
 		self.chipErase()
 		
 		print "Flashing %i bytes" % len(flashData)
 		self.writeFlash(flashData)
 		print "Verifying %i bytes" % len(flashData)
 		self.verifyFlash(flashData)
-		
-		return True
 
 	#low level ISP commands
 	def getSignature(self):

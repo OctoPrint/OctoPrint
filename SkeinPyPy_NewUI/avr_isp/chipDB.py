@@ -12,3 +12,4 @@ def getChipFromDB(sig):
 		if chip['signature'] == sig:
 			return chip
 	return False
+

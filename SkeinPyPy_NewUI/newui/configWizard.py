@@ -1,14 +1,14 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types
+import wx, os, platform, types, webbrowser
 import wx.wizard
 
 from fabmetheus_utilities import settings
+from newui import machineCom
 
 class InfoPage(wx.wizard.WizardPageSimple):
 	def __init__(self, parent, title):
-		"""Constructor"""
 		wx.wizard.WizardPageSimple.__init__(self, parent)
 
 		sizer = wx.BoxSizer(wx.VERTICAL)
@@ -21,7 +21,9 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		sizer.Add(wx.StaticLine(self, -1), 0, wx.EXPAND|wx.ALL, 5)
 	
 	def AddText(self,info):
-		self.GetSizer().Add(wx.StaticText(self, -1, info), 0, wx.LEFT|wx.RIGHT, 5)
+		text = wx.StaticText(self, -1, info)
+		self.GetSizer().Add(text, 0, wx.LEFT|wx.RIGHT, 5)
+		return text
 	
 	def AddSeperator(self):
 		self.GetSizer().Add(wx.StaticLine(self, -1), 0, wx.EXPAND|wx.ALL, 5)
@@ -33,6 +35,16 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		radio = wx.RadioButton(self, -1, label, style=style)
 		self.GetSizer().Add(radio, 0, wx.EXPAND|wx.ALL, 5)
 		return radio
+	
+	def AddDualButton(self, label1, label2):
+		p = wx.Panel(self)
+		p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		button1 = wx.Button(p, -1, label1)
+		p.GetSizer().Add(button1, 0)
+		button2 = wx.Button(p, -1, label2)
+		p.GetSizer().Add(button2, 0)
+		self.GetSizer().Add(p, 0)
+		return button1, button2
 	
 	def AllowNext(self):
 		return True
@@ -51,6 +63,13 @@ class FirstInfoPage(InfoPage):
 		self.AddText('* Calibrate your machine')
 		#self.AddText('* Do your first print')
 
+class RepRapInfoPage(InfoPage):
+	def __init__(self, parent):
+		super(RepRapInfoPage, self).__init__(parent, "RepRap information")
+		self.AddText('Sorry, but this wizard will not help you with\nconfiguring and calibrating your RepRap.')
+		self.AddSeperator()
+		self.AddText('You will have to manually install Marlin firmware\nand configure SkeinPyPy.')
+
 class MachineSelectPage(InfoPage):
 	def __init__(self, parent):
 		super(MachineSelectPage, self).__init__(parent, "Select your machine")
@@ -65,7 +84,7 @@ class MachineSelectPage(InfoPage):
 		wx.wizard.WizardPageSimple.Chain(self, self.GetParent().ultimakerFirmwareUpgradePage)
 		
 	def OnOtherSelect(self, e):
-		wx.wizard.WizardPageSimple.Chain(self, self.GetParent().configureMachineDimensions)
+		wx.wizard.WizardPageSimple.Chain(self, self.GetParent().repRapInfoPage)
 	
 	def StoreData(self):
 		if self.UltimakerRadio.GetValue():
@@ -74,7 +93,14 @@ class MachineSelectPage(InfoPage):
 			settings.putPreference('machine_height', '200')
 			settings.putProfileSetting('nozzle_size', '0.4')
 			settings.putProfileSetting('machine_center_x', '100')
-			settings.putProfileSetting('machine_center_x', '100')
+			settings.putProfileSetting('machine_center_y', '100')
+		else:
+			settings.putPreference('machine_width', '80')
+			settings.putPreference('machine_depth', '80')
+			settings.putPreference('machine_height', '60')
+			settings.putProfileSetting('nozzle_size', '0.4')
+			settings.putProfileSetting('machine_center_x', '40')
+			settings.putProfileSetting('machine_center_y', '40')
 
 class FirmwareUpgradePage(InfoPage):
 	def __init__(self, parent):
@@ -84,18 +110,60 @@ class FirmwareUpgradePage(InfoPage):
 		self.AddText('The firmware shipping with new Ultimakers works, but upgrades\nhave been made to make better prints, and make calibration easier.')
 		self.AddHiddenSeperator()
 		self.AddText('SkeinPyPy requires these new features and thus\nyour firmware will most likely need to be upgraded.\nYou will get the chance to do so now.')
-		self.AddHiddenSeperator()
-		button = wx.Button(self, -1, 'Upgrade firmware')
-		self.Bind(wx.EVT_BUTTON, self.OnUpgradeClick)
-		self.GetSizer().Add(button, 0)
+		b1, b2 = self.AddDualButton('Upgrade firmware', 'Skip upgrade')
+		b1.Bind(wx.EVT_BUTTON, self.OnUpgradeClick)
+		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
 		self.AddHiddenSeperator()
 		self.AddText('Do not upgrade to this firmware if:')
 		self.AddText('* You have an older machine based on ATMega1280')
 		self.AddText('* Using an LCD panel')
 		self.AddText('* Have other changes in the firmware')
+		button = wx.Button(self, -1, 'Goto this page for a custom firmware')
+		button.Bind(wx.EVT_BUTTON, self.OnUrlClick)
+		self.GetSizer().Add(button, 0)
+	
+	def AllowNext(self):
+		return False
 	
 	def OnUpgradeClick(self, e):
-		pass
+		if machineCom.installFirmware("firmware/default.hex"):
+			self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
+		
+	def OnSkipClick(self, e):
+		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
+	
+	def OnUrlClick(self, e):
+		webbrowser.open('http://daid.mine.nu/~daid/marlin_build/')
+
+class UltimakerCheckupPage(InfoPage):
+	def __init__(self, parent):
+		super(UltimakerCheckupPage, self).__init__(parent, "Ultimaker Checkup")
+		self.AddText('It is a good idea to do a few sanity checks\nnow on your Ultimaker. But you can skip these\nif you know your machine is functional.')
+		b1, b2 = self.AddDualButton('Run checks', 'Skip checks')
+		b1.Bind(wx.EVT_BUTTON, self.OnCheckClick)
+		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
+		self.AddSeperator();
+		self.checkPanel = None
+	
+	def AllowNext(self):
+		return False
+	
+	def OnSkipClick(self, e):
+		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
+	
+	def OnCheckClick(self, e):
+		if self.checkPanel != None:
+			self.checkPanel.Destroy()
+		self.checkPanel = wx.Panel(self)
+		self.checkPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.GetSizer().Add(self.checkPanel, 0, wx.LEFT|wx.RIGHT, 5)
+		self.AddProgressText("Starting machine check...")
+		self.Layout()
+
+	def AddProgressText(self, info):
+		text = wx.StaticText(self.checkPanel, -1, info)
+		self.checkPanel.GetSizer().Add(text, 0)
+		self.checkPanel.Layout()
 
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):
@@ -107,10 +175,12 @@ class configWizard(wx.wizard.Wizard):
 		self.firstInfoPage = FirstInfoPage(self)
 		self.machineSelectPage = MachineSelectPage(self)
 		self.ultimakerFirmwareUpgradePage = FirmwareUpgradePage(self)
-		self.configureMachineDimensions = InfoPage(self, 'BLA2')
+		self.ultimakerCheckupPage = UltimakerCheckupPage(self)
+		self.repRapInfoPage = RepRapInfoPage(self)
 		
 		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.machineSelectPage)
 		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerFirmwareUpgradePage)
+		wx.wizard.WizardPageSimple.Chain(self.ultimakerFirmwareUpgradePage, self.ultimakerCheckupPage)
 		
 		self.FitToPage(self.firstInfoPage)
 		self.GetPageAreaSizer().Add(self.firstInfoPage)
