@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser
+import wx, os, platform, types, webbrowser, threading
 import wx.wizard
 
 from fabmetheus_utilities import settings
@@ -40,7 +40,7 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		p = wx.Panel(self)
 		p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
 		button1 = wx.Button(p, -1, label1)
-		p.GetSizer().Add(button1, 0)
+		p.GetSizer().Add(button1, 0, wx.RIGHT, 8)
 		button2 = wx.Button(p, -1, label2)
 		p.GetSizer().Add(button2, 0)
 		self.GetSizer().Add(p, 0)
@@ -126,7 +126,7 @@ class FirmwareUpgradePage(InfoPage):
 		return False
 	
 	def OnUpgradeClick(self, e):
-		if machineCom.installFirmware("firmware/default.hex"):
+		if machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex")):
 			self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
 		
 	def OnSkipClick(self, e):
@@ -150,6 +150,7 @@ class UltimakerCheckupPage(InfoPage):
 	
 	def OnSkipClick(self, e):
 		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
+		self.comm.serial.close()
 	
 	def OnCheckClick(self, e):
 		if self.checkPanel != None:
@@ -157,13 +158,39 @@ class UltimakerCheckupPage(InfoPage):
 		self.checkPanel = wx.Panel(self)
 		self.checkPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.GetSizer().Add(self.checkPanel, 0, wx.LEFT|wx.RIGHT, 5)
-		self.AddProgressText("Starting machine check...")
-		self.Layout()
+		threading.Thread(target=self.OnRun).start()
 
 	def AddProgressText(self, info):
 		text = wx.StaticText(self.checkPanel, -1, info)
 		self.checkPanel.GetSizer().Add(text, 0)
 		self.checkPanel.Layout()
+		self.Layout()
+	
+	def OnRun(self):
+		wx.CallAfter(self.AddProgressText, "Connecting to machine...")
+		comm = machineCom.MachineCom()
+		self.comm = comm
+		wx.CallAfter(self.AddProgressText, "Checking start message...")
+		t = threading.Timer(5, self.OnSerialTimeout)
+		t.start()
+		line = comm.readline()
+		hasStart = False
+		while line != '':
+			if line.startswith('start'):
+				hasStart = True
+				break
+			line = comm.readline()
+		t.cancel()
+		if not hasStart:
+			wx.CallAfter(self.AddProgressText, "Error: Missing start message.")
+			comm.close()
+			return
+		wx.CallAfter(self.AddProgressText, "Done!")
+		wx.CallAfter(self.GetParent().FindWindowById(wx.ID_FORWARD).Enable)
+		comm.close()
+		
+	def OnSerialTimeout(self):
+		self.comm.close()
 
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):

@@ -13,7 +13,7 @@ class Stk500v2(ispBase.IspBase):
 	def connect(self, port = 'COM3', speed = 115200):
 		if self.serial != None:
 			self.close()
-		self.serial = Serial(port, speed, timeout=5)
+		self.serial = Serial(port, speed, timeout=1)
 		self.seq = 1
 		
 		#Reset the controller
@@ -49,7 +49,8 @@ class Stk500v2(ispBase.IspBase):
 		loadCount = (len(flashData) + 0xFF) / 0x100
 		for i in xrange(0, loadCount):
 			recv = self.sendMessage([0x13, 0x01, 0x00, 0xc1, 0x0a, 0x40, 0x4c, 0x20, 0x00, 0x00] + flashData[(i * 0x100):(i * 0x100 + 0x100)])
-			print "#%i#%i#" % (i + 1, loadCount)
+			if self.progressCallback != None:
+				self.progressCallback(i + 1, loadCount*2)
 	
 	def verifyFlash(self, flashData):
 		#Set load addr to 0, in case we have more then 64k flash we need to enable the address extension
@@ -62,7 +63,8 @@ class Stk500v2(ispBase.IspBase):
 		loadCount = (len(flashData) + 0xFF) / 0x100
 		for i in xrange(0, loadCount):
 			recv = self.sendMessage([0x14, 0x01, 0x00, 0x20])[2:0x102]
-			print "#%i#%i#" % (i + 1, loadCount)
+			if self.progressCallback != None:
+				self.progressCallback(loadCount + i + 1, loadCount*2)
 			for j in xrange(0, 0x100):
 				if i * 0x100 + j < len(flashData) and flashData[i * 0x100 + j] != recv[j]:
 					raise ispBase.IspError('Verify error at: 0x%x' % (i * 0x100 + j))
@@ -75,8 +77,11 @@ class Stk500v2(ispBase.IspBase):
 		for c in message:
 			checksum ^= ord(c)
 		message += struct.pack(">B", checksum)
-		self.serial.write(message)
-		self.serial.flush()
+		try:
+			self.serial.write(message)
+			self.serial.flush()
+		except SerialTimeoutException:
+			raise ispBase.IspError('Serial send timeout')
 		self.seq = (self.seq + 1) & 0xFF
 		return self.recvMessage()
 	
