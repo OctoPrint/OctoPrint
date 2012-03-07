@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser, threading
+import wx, os, platform, types, webbrowser, threading, time, re
 import wx.wizard
 
 from fabmetheus_utilities import settings
@@ -180,23 +180,70 @@ class UltimakerCheckupPage(InfoPage):
 			return
 
 		wx.MessageBox('Please move the printer head to the center of the machine\nalso move the platform so it is not at the highest or lowest position,\nand make sure the machine is powered on.', 'Machine check', wx.OK | wx.ICON_INFORMATION)
+		
+		idleTemp = self.readTemp()
+		
+		wx.CallAfter(self.AddProgressText, "Checking heater and temperature sensor...")
+		if self.DoCommCommandWithTimeout("M104 S100") == False:
+			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
+			return
+		
+		time.sleep(20)
+		tempInc = self.readTemp() - idleTemp
+		
+		if self.DoCommCommandWithTimeout("M104 S0") == False:
+			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
+			return
+		
+		if tempInc < 20:
+			wx.CallAfter(self.AddProgressText, "Your temperature sensor or heater is not working!")
+			return
+		wx.CallAfter(self.AddProgressText, "Heater and temperature sensor working\nWarning: head might still be hot!")
+
 		wx.CallAfter(self.AddProgressText, "Checking endstops")
-		if not self.DoCommCommandWithTimeout('M119') != "ok x_min:l x_max:l y_min:l y_max:l z_min:l z_max:l":
+		if self.DoCommCommandWithTimeout('M119', 'x_min') != "x_min:L x_max:L y_min:L y_max:L z_min:L z_max:L":
 			wx.CallAfter(self.AddProgressText, "Error: There is a problem in your endstops!\nOne of them seems to be pressed while it shouldn't\ncheck the cable connections and the switches themselfs.")
 			return
-
 		wx.CallAfter(self.AddProgressText, "Please press the X end switch in the front left corner.")
-		if not self.DoCommCommandAndWaitForReply('M119', "ok x_min:h x_max:l y_min:l y_max:l z_min:l z_max:l"):
+		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:H x_max:L y_min:L y_max:L z_min:L z_max:L"):
 			wx.CallAfter(self.AddProgressText, "Failed to check the x_min endstop!")
 			return
+		wx.CallAfter(self.AddProgressText, "Please press the X end switch in the front right corner.")
+		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:H y_min:L y_max:L z_min:L z_max:L"):
+			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			return
+		wx.CallAfter(self.AddProgressText, "Please press the Y end switch in the front left corner.")
+		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:H y_max:L z_min:L z_max:L"):
+			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			return
+		wx.CallAfter(self.AddProgressText, "Please press the Y end switch in the back left corner.")
+		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:H z_min:L z_max:L"):
+			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			return
+		wx.CallAfter(self.AddProgressText, "Please press the Z end switch in the top.")
+		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:L z_min:H z_max:L"):
+			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			return
+		wx.CallAfter(self.AddProgressText, "Please press the Z end switch in the bottom.")
+		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:L z_min:L z_max:H"):
+			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			return
+		wx.CallAfter(self.AddProgressText, "End stops are working.")
 
 		wx.CallAfter(self.AddProgressText, "Done!")
 		wx.CallAfter(self.GetParent().FindWindowById(wx.ID_FORWARD).Enable)
 		self.comm.close()
+		
+	def readTemp(self):
+		line = self.DoCommCommandWithTimeout("M105", "ok T:")
+		if line == False:
+			return -1
+		return int(re.search('T:([0-9]*)', line).group(1))
+		
 	
-	def DoCommCommandAndWaitForReply(self, cmd, reply):
+	def DoCommCommandAndWaitForReply(self, cmd, replyStart, reply):
 		while True:
-			ret = DoCommCommandWithTimeout(cmd)
+			ret = self.DoCommCommandWithTimeout(cmd, replyStart)
 			if ret == reply:
 				return True
 			if ret == False:
@@ -209,16 +256,29 @@ class UltimakerCheckupPage(InfoPage):
 		t.start()
 		while True:
 			line = self.comm.readline()
-			if line.startswith('start'):
-				break
 			if line == '':
 				self.comm.close()
 				return False
+			if line.startswith(replyStart):
+				break
 		t.cancel()
 		return line.rstrip()
 	
 	def OnSerialTimeout(self):
 		self.comm.close()
+
+class UltimakerCalibrationPage(InfoPage):
+	def __init__(self, parent):
+		super(UltimakerCalibrationPage, self).__init__(parent, "Ultimaker Calibration")
+		
+		self.AddText("Your Ultimaker requires some calibration.");
+		self.AddText("This calibration is needed for a proper extrusion amount.");
+		self.AddSeperator()
+		self.AddText("The following values are needed:");
+		self.AddText("* Number of steps per mm of filament extrusion");
+		self.AddText("* Diameter of filament");
+		self.AddSeperator()
+		self.AddText("The better you have calibrated these values, the better your prints will become.");
 
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):
@@ -231,11 +291,13 @@ class configWizard(wx.wizard.Wizard):
 		self.machineSelectPage = MachineSelectPage(self)
 		self.ultimakerFirmwareUpgradePage = FirmwareUpgradePage(self)
 		self.ultimakerCheckupPage = UltimakerCheckupPage(self)
+		self.ultimakerCalibrationPage = UltimakerCalibrationPage(self)
 		self.repRapInfoPage = RepRapInfoPage(self)
 		
 		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.machineSelectPage)
 		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerFirmwareUpgradePage)
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerFirmwareUpgradePage, self.ultimakerCheckupPage)
+		wx.wizard.WizardPageSimple.Chain(self.ultimakerCheckupPage, self.ultimakerCalibrationPage)
 		
 		self.FitToPage(self.firstInfoPage)
 		self.GetPageAreaSizer().Add(self.firstInfoPage)

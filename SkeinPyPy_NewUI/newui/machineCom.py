@@ -116,7 +116,9 @@ class MachineCom():
 	def readline(self):
 		if self.serial == None:
 			return ''
-		return self.serial.readline()
+		ret = self.serial.readline()
+		print "Recv: " + ret.rstrip()
+		return ret
 	
 	def close(self):
 		if self.serial != None:

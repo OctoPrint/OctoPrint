@@ -241,9 +241,9 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.oldY = e.GetY()
 	
 	def OnMouseWheel(self,e):
-		self.zoom *= 1 - float(e.GetWheelRotation() / e.GetWheelDelta()) / 10
-		if self.zoom < 1:
-			self.zoom = 1
+		self.zoom *= 1.0 - float(e.GetWheelRotation() / e.GetWheelDelta()) / 10.0
+		if self.zoom < 1.0:
+			self.zoom = 1.0
 		self.Refresh()
 	
 	def OnEraseBackground(self,event):
