@@ -85,6 +85,11 @@ def getSkeinPyPyProfileInformation():
 			'Correct_Mesh': DEFSET,
 			'Unproven_Mesh': DEFSET,
 			'SVG_Viewer': DEFSET,
+			'FlipX': storedSetting("flip_x"),
+			'FlipY': storedSetting("flip_y"),
+			'FlipZ': storedSetting("flip_z"),
+			'Scale': storedSetting("model_scale"),
+			'Rotate': storedSetting("model_rotate_base"),
 		},'scale': {
 			'Activate_Scale': "False",
 			'XY_Plane_Scale_ratio': DEFSET,

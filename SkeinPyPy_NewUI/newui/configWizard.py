@@ -181,7 +181,7 @@ class UltimakerCheckupPage(InfoPage):
 
 		wx.MessageBox('Please move the printer head to the center of the machine\nalso move the platform so it is not at the highest or lowest position,\nand make sure the machine is powered on.', 'Machine check', wx.OK | wx.ICON_INFORMATION)
 		wx.CallAfter(self.AddProgressText, "Checking endstops")
-		if self.DoCommCommandWithTimeout('M119') != "ok x_min:l x_max:l y_min:l y_max:l z_min:l z_max:l"
+		if self.DoCommCommandWithTimeout('M119') != "ok x_min:l x_max:l y_min:l y_max:l z_min:l z_max:l":
 			wx.CallAfter(self.AddProgressText, "Error: There is a problem in your endstops!")
 			wx.CallAfter(self.AddProgressText, "Error: One of them seems to be pressed while it shouldn't")
 			return

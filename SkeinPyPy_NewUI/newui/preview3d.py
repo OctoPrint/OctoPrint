@@ -110,9 +110,13 @@ class previewPanel(wx.Panel):
 	
 	def DoModelLoad(self):
 		self.modelDirty = False
-		self.triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
+		triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
+		triangleMesh.origonalVertexes = list(triangleMesh.vertexes)
+		for i in xrange(0, len(triangleMesh.origonalVertexes)):
+			triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
+		self.triangleMesh = triangleMesh
 		self.gcode = None
-		self.moveModel()
+		self.updateModelTransform()
 		wx.CallAfter(self.updateToolbar)
 		wx.CallAfter(self.glCanvas.Refresh)
 	
@@ -145,6 +149,38 @@ class previewPanel(wx.Panel):
 			self.glCanvas.renderTransparent = False
 		self.glCanvas.Refresh()
 	
+	def updateModelTransform(self, f=0):
+		if self.triangleMesh == None:
+			return
+		for face in self.triangleMesh.faces:
+			face.normal = None
+		scale = 1.0
+		rotate = 0.0
+		try:
+			scale = float(settings.getProfileSetting('model_scale', '1.0'))
+			rotate = float(settings.getProfileSetting('model_rotate_base', '0.0')) / 180 * math.pi
+		except:
+			pass
+		scaleX = scale
+		scaleY = scale
+		scaleZ = scale
+		if settings.getProfileSetting('flip_x') == 'True':
+			scaleX = -scaleX
+		if settings.getProfileSetting('flip_y') == 'True':
+			scaleY = -scaleY
+		if settings.getProfileSetting('flip_z') == 'True':
+			scaleZ = -scaleZ
+		mat00 = math.cos(rotate) * scaleX
+		mat01 =-math.sin(rotate) * scaleY
+		mat10 = math.sin(rotate) * scaleX
+		mat11 = math.cos(rotate) * scaleY
+		
+		for i in xrange(0, len(self.triangleMesh.origonalVertexes)):
+			self.triangleMesh.vertexes[i].x = self.triangleMesh.origonalVertexes[i].x * mat00 + self.triangleMesh.origonalVertexes[i].y * mat01
+			self.triangleMesh.vertexes[i].y = self.triangleMesh.origonalVertexes[i].x * mat10 + self.triangleMesh.origonalVertexes[i].y * mat11
+			self.triangleMesh.vertexes[i].z = self.triangleMesh.origonalVertexes[i].z * scaleZ
+		self.moveModel()
+	
 	def moveModel(self):
 		if self.triangleMesh == None:
 			return
@@ -159,6 +195,7 @@ class previewPanel(wx.Panel):
 			v.y += self.machineCenter.y
 		self.triangleMesh.getMinimumZ()
 		self.modelDirty = True
+		self.glCanvas.Refresh()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
 	def __init__(self, parent):
@@ -343,13 +380,17 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
 					v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
 					v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
-					if not hasattr(face, 'normal'):
+					if face.normal == None:
 						face.normal = (v2 - v1).cross(v3 - v1)
 						face.normal.normalize()
 					glNormal3f(face.normal.x, face.normal.y, face.normal.z)
 					glVertex3f(v1.x, v1.y, v1.z)
 					glVertex3f(v2.x, v2.y, v2.z)
 					glVertex3f(v3.x, v3.y, v3.z)
+					glNormal3f(-face.normal.x, -face.normal.y, -face.normal.z)
+					glVertex3f(v1.x, v1.y, v1.z)
+					glVertex3f(v3.x, v3.y, v3.z)
+					glVertex3f(v2.x, v2.y, v2.z)
 				glEnd()
 				glEndList()
 			if self.renderTransparent:
@@ -432,6 +473,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glEnable(GL_LIGHTING)
 		glEnable(GL_LIGHT0)
 		glEnable(GL_DEPTH_TEST)
+		glEnable(GL_CULL_FACE)
 		glDisable(GL_BLEND)
 
 		glClearColor(0.0, 0.0, 0.0, 1.0)

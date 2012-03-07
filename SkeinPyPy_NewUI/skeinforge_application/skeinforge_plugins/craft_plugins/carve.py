@@ -107,10 +107,12 @@ from fabmetheus_utilities import settings
 from fabmetheus_utilities import svg_writer
 from skeinforge_application.skeinforge_utilities import skeinforge_polyfile
 from skeinforge_application.skeinforge_utilities import skeinforge_profile
+from fabmetheus_utilities.vector3 import Vector3
 import math
 import os
 import sys
 import time
+import math
 
 
 __author__ = 'Enrique Perez (perez_enrique@yahoo.com)'
@@ -178,6 +180,13 @@ class CarveRepository:
 		settings.LabelSeparator().getFromRepository(self)
 		self.executeTitle = 'Carve'
 
+		self.flipX = settings.BooleanSetting().getFromValue('FlipX', self, False)
+		self.flipY = settings.BooleanSetting().getFromValue('FlipY', self, False)
+		self.flipZ = settings.BooleanSetting().getFromValue('FlipZ', self, False)
+		self.scale = settings.FloatSpin().getFromValue( 0.1, 'Scale', self, 10.0, 1.0 )
+		self.rotate = settings.FloatSpin().getFromValue( -180.0, 'Rotate', self, 180.0, 0.0 )
+
+
 	def execute(self):
 		"Carve button has been clicked."
 		fileNames = skeinforge_polyfile.getFileOrDirectoryTypes(self.fileNameInput.value, fabmetheus_interpret.getImportPluginFileNames(), self.fileNameInput.wasCancelled)
@@ -189,6 +198,29 @@ class CarveSkein:
 	"A class to carve a carving."
 	def getCarvedSVG(self, carving, fileName, repository):
 		"Parse gnu triangulated surface text and store the carved gcode."
+
+		scale = repository.scale.value
+		rotate = repository.rotate.value / 180 * math.pi
+		scaleX = scale
+		scaleY = scale
+		scaleZ = scale
+		if repository.flipX.value == 'True':
+			scaleX = -scaleX
+		if repository.flipY.value == 'True':
+			scaleY = -scaleY
+		if repository.flipZ.value == 'True':
+			scaleZ = -scaleZ
+		mat00 = math.cos(rotate) * scaleX
+		mat01 =-math.sin(rotate) * scaleY
+		mat10 = math.sin(rotate) * scaleX
+		mat11 = math.cos(rotate) * scaleY
+		
+		for i in xrange(0, len(carving.vertexes)):
+			carving.vertexes[i] = Vector3(
+				carving.vertexes[i].x * mat00 + carving.vertexes[i].y * mat01,
+				carving.vertexes[i].x * mat10 + carving.vertexes[i].y * mat11,
+				carving.vertexes[i].z * scaleZ)
+
 		layerHeight = repository.layerHeight.value
 		edgeWidth = repository.edgeWidth.value
 		carving.setCarveLayerHeight(layerHeight)

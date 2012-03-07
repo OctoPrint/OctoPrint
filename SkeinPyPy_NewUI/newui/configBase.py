@@ -107,20 +107,22 @@ class SettingRow():
 		self.type = type
 		
 		self.label = wx.StaticText(panel, -1, label)
+		getSettingFunc = settings.getPreference
 		if self.type == 'profile':
-			if isinstance(defaultValue, types.StringTypes):
-				self.ctrl = wx.TextCtrl(panel, -1, settings.getProfileSetting(configName, defaultValue))
-			else:
-				self.ctrl = wx.ComboBox(panel, -1, settings.getProfileSetting(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+			getSettingFunc = settings.getProfileSetting
+		if isinstance(defaultValue, types.StringTypes):
+			self.ctrl = wx.TextCtrl(panel, -1, getSettingFunc(configName, defaultValue))
+			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
+		elif isinstance(defaultValue, types.BooleanType):
+			self.ctrl = wx.CheckBox(panel, -1, style=wx.ALIGN_RIGHT)
+			self.ctrl.SetValue(getSettingFunc(configName, defaultValue) == "True")
+			self.ctrl.Bind(wx.EVT_CHECKBOX, self.OnSettingChange)
 		else:
-			if isinstance(defaultValue, types.StringTypes):
-				self.ctrl = wx.TextCtrl(panel, -1, settings.getPreference(configName, defaultValue))
-			else:
-				self.ctrl = wx.ComboBox(panel, -1, settings.getPreference(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
 		#self.helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
 		#self.helpButton.SetToolTip(wx.ToolTip(help))
 		
-		self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingTextChange)
 		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: panel.main.OnPopupDisplay(self))
 		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, panel.main.OnPopupHide)
 		
@@ -131,7 +133,7 @@ class SettingRow():
 		#sizer.Add(helpButton, (x,y+2))
 		sizer.SetRows(x+1)
 
-	def OnSettingTextChange(self, e):
+	def OnSettingChange(self, e):
 		if self.type == 'profile':
 			settings.putProfileSetting(self.configName, self.GetValue())
 		else:
@@ -158,10 +160,13 @@ class SettingRow():
 		self.panel.main.UpdatePopup(self)
 
 	def GetValue(self):
-		return self.ctrl.GetValue()
+		return str(self.ctrl.GetValue())
 
 	def SetValue(self, value):
-		self.ctrl.SetValue(value)
+		if isinstance(self.ctrl, wx.CheckBox):
+			self.ctrl.SetValue(str(value) == "True")
+		else:
+			self.ctrl.SetValue(value)
 
 #Settings notify works as a validator, but instead of validating anything, it calls another function, which can use the value.
 class settingNotify():
@@ -176,4 +181,6 @@ class settingNotify():
 			self.func(f)
 			return validators.SUCCESS, ''
 		except ValueError:
+			self.func()
 			return validators.SUCCESS, ''
+
