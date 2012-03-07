@@ -138,7 +138,7 @@ class FirmwareUpgradePage(InfoPage):
 class UltimakerCheckupPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCheckupPage, self).__init__(parent, "Ultimaker Checkup")
-		self.AddText('It is a good idea to do a few sanity checks\nnow on your Ultimaker. But you can skip these\nif you know your machine is functional.')
+		self.AddText('It is a good idea to do a few sanity checks\nnow on your Ultimaker.\nBut you can skip these if you know your\nmachine is functional.')
 		b1, b2 = self.AddDualButton('Run checks', 'Skip checks')
 		b1.Bind(wx.EVT_BUTTON, self.OnCheckClick)
 		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
@@ -181,14 +181,26 @@ class UltimakerCheckupPage(InfoPage):
 
 		wx.MessageBox('Please move the printer head to the center of the machine\nalso move the platform so it is not at the highest or lowest position,\nand make sure the machine is powered on.', 'Machine check', wx.OK | wx.ICON_INFORMATION)
 		wx.CallAfter(self.AddProgressText, "Checking endstops")
-		if self.DoCommCommandWithTimeout('M119') != "ok x_min:l x_max:l y_min:l y_max:l z_min:l z_max:l":
-			wx.CallAfter(self.AddProgressText, "Error: There is a problem in your endstops!")
-			wx.CallAfter(self.AddProgressText, "Error: One of them seems to be pressed while it shouldn't")
+		if not self.DoCommCommandWithTimeout('M119') != "ok x_min:l x_max:l y_min:l y_max:l z_min:l z_max:l":
+			wx.CallAfter(self.AddProgressText, "Error: There is a problem in your endstops!\nOne of them seems to be pressed while it shouldn't\ncheck the cable connections and the switches themselfs.")
+			return
+
+		wx.CallAfter(self.AddProgressText, "Please press the X end switch in the front left corner.")
+		if not self.DoCommCommandAndWaitForReply('M119', "ok x_min:h x_max:l y_min:l y_max:l z_min:l z_max:l"):
+			wx.CallAfter(self.AddProgressText, "Failed to check the x_min endstop!")
 			return
 
 		wx.CallAfter(self.AddProgressText, "Done!")
 		wx.CallAfter(self.GetParent().FindWindowById(wx.ID_FORWARD).Enable)
 		self.comm.close()
+	
+	def DoCommCommandAndWaitForReply(self, cmd, reply):
+		while True:
+			ret = DoCommCommandWithTimeout(cmd)
+			if ret == reply:
+				return True
+			if ret == False:
+				return False
 	
 	def DoCommCommandWithTimeout(self, cmd = None, replyStart = 'ok'):
 		if cmd != None:
