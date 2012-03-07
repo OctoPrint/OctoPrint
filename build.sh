@@ -130,16 +130,6 @@ rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 #add Skeinforge
 cp -a SkeinPyPy_NewUI ${TARGET_DIR}/SkeinPyPy
 
-#Add the SSE2 check if we can build it, else we skip it.
-#  If we don't have it SkeinPyPy will still function. But crash on machines that don't have SSE2
-if [ $BUILD_TARGET = "win32" ]; then
-	WINCC=`whereis i386-mingw32-gcc`
-	if [ "$WINCC" != "" ]; then
-		make -C checkSSE2 CC=${WINCC} TARGET=checkSSE2.exe
-		cp checkSSE2/checkSSE2.exe ${TARGET_DIR}/SkeinPyPy
-	fi
-fi
-
 #add printrun
 mv Printrun ${TARGET_DIR}/Printrun
 

@@ -122,3 +122,9 @@ class MachineCom():
 		if self.serial != None:
 			self.serial.close()
 		self.serial = None
+	
+	def sendCommand(self, cmd):
+		if self.serial == None:
+			return
+		self.serial.write(cmd + '\n')
+
