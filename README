@@ -1,3 +1,13 @@
+For documentation check: https://github.com/daid/SkeinPyPy/wiki
+For downloads check: https://github.com/daid/SkeinPyPy/downloads
+
+
+
+
+
+
+(Old README, is outdated!)
+
 SkeinPyPy is a patched version of Skeinforge. Made to make use of PyPy in combination with Skeinforge easier.
 It's also packaged with a customized version of PrintRun. To make a compleet software package.
 
