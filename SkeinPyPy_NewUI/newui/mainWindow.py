@@ -13,6 +13,7 @@ from newui import alterationPanel
 from newui import validators
 from newui import preferencesDialog
 from newui import configWizard
+from newui import machineCom
 
 def main():
 	app = wx.App(False)
@@ -31,21 +32,26 @@ class mainWindow(configBase.configWindowBase):
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Open Profile...', 'Open Profile...')
+		i = fileMenu.Append(-1, 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
-		i = fileMenu.Append(-1, 'Save Profile...', 'Save Profile...')
+		i = fileMenu.Append(-1, 'Save Profile...')
 		self.Bind(wx.EVT_MENU, self.OnSaveProfile, i)
 		fileMenu.AppendSeparator()
-		i = fileMenu.Append(-1, 'Preferences...', 'Preferences...')
+		i = fileMenu.Append(-1, 'Preferences...')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
 		fileMenu.AppendSeparator()
-		i = fileMenu.Append(wx.ID_EXIT, 'Quit', 'Quit application')
+		i = fileMenu.Append(wx.ID_EXIT, 'Quit')
 		self.Bind(wx.EVT_MENU, self.OnQuit, i)
 		menubar.Append(fileMenu, '&File')
 		
 		expertMenu = wx.Menu()
-		i = expertMenu.Append(-1, 'Open expert settings...', 'Open expert settings...')
+		i = expertMenu.Append(-1, 'Open expert settings...')
 		self.Bind(wx.EVT_MENU, self.OnExpertOpen, i)
+		expertMenu.AppendSeparator()
+		i = expertMenu.Append(-1, 'Install default Marlin firmware')
+		self.Bind(wx.EVT_MENU, self.OnDefaultMarlinFirmware, i)
+		i = expertMenu.Append(-1, 'Install custom firmware')
+		self.Bind(wx.EVT_MENU, self.OnCustomFirmware, i)
 		menubar.Append(expertMenu, 'Expert')
 		self.SetMenuBar(menubar)
 		
@@ -214,6 +220,19 @@ class mainWindow(configBase.configWindowBase):
 		prefDialog = preferencesDialog.preferencesDialog(self)
 		prefDialog.Centre()
 		prefDialog.Show(True)
+	
+	def OnDefaultMarlinFirmware(self, e):
+		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
+
+	def OnCustomFirmware(self, e):
+		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("HEX file (*.hex)|*.hex")
+		if dlg.ShowModal() == wx.ID_OK:
+			filename = dlg.GetPath()
+			if not(os.path.exists(filename)):
+				return
+			#For some reason my Ubuntu 10.10 crashes here.
+			machineCom.InstallFirmware(filename)
 
 	def OnLoadSTL(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
