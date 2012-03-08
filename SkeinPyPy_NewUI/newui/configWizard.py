@@ -138,7 +138,7 @@ class FirmwareUpgradePage(InfoPage):
 class UltimakerCheckupPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCheckupPage, self).__init__(parent, "Ultimaker Checkup")
-		self.AddText('It is a good idea to do a few sanity checks\nnow on your Ultimaker.\nBut you can skip these if you know your\nmachine is functional.')
+		self.AddText('It is a good idea to do a few sanity checks now on your Ultimaker.\nYou can skip these if you know your machine is functional.')
 		b1, b2 = self.AddDualButton('Run checks', 'Skip checks')
 		b1.Bind(wx.EVT_BUTTON, self.OnCheckClick)
 		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
@@ -239,7 +239,6 @@ class UltimakerCheckupPage(InfoPage):
 		if line == False:
 			return -1
 		return int(re.search('T:([0-9]*)', line).group(1))
-		
 	
 	def DoCommCommandAndWaitForReply(self, cmd, replyStart, reply):
 		while True:
@@ -275,10 +274,19 @@ class UltimakerCalibrationPage(InfoPage):
 		self.AddText("This calibration is needed for a proper extrusion amount.");
 		self.AddSeperator()
 		self.AddText("The following values are needed:");
-		self.AddText("* Number of steps per mm of filament extrusion");
 		self.AddText("* Diameter of filament");
+		self.AddText("* Number of steps per mm of filament extrusion");
 		self.AddSeperator()
-		self.AddText("The better you have calibrated these values, the better your prints will become.");
+		self.AddText("The better you have calibrated these values, the better your prints\nwill become.");
+		self.AddSeperator()
+		self.AddText("First we need the diameter of your filament:");
+		self.filamentDiameter = wx.TextCtrl(self, -1, settings.getProfileSetting('filament_diameter', '2.89'))
+		self.GetSizer().Add(self.filamentDiameter, 0, wx.LEFT, 5)
+		self.AddText("If you do not own digital Calipers that can measure\nat least 2 digits then use 2.89mm.\nWhich is the average diameter of most filament.");
+		self.AddText("Note: This value can be changed later at any time.");
+
+	def StoreData(self):
+		settings.putProfileSetting('filament_diameter', self.filamentDiameter.GetValue())
 
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):
