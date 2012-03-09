@@ -12,7 +12,7 @@ class alterationPanel(wx.Panel):
 		self.currentFile = None
 
 		self.textArea = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
-		self.textArea.SetFont(wx.Font(8, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+		self.textArea.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 		self.list = wx.ListBox(self, choices=self.alterationFileList, style=wx.LB_SINGLE)
 		self.list.SetSelection(0)
 		self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.list)
