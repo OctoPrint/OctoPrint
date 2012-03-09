@@ -47,9 +47,9 @@ class previewPanel(wx.Panel):
 		self.transparentButton = wx.Button(self.toolbar, -1, "T", size=(21,21))
 		self.toolbar.AddControl(self.transparentButton)
 		self.Bind(wx.EVT_BUTTON, self.OnTransparentClick, self.transparentButton)
-		self.depthComplexityButton = wx.Button(self.toolbar, -1, "X-RAY", size=(21*2,21))
-		self.toolbar.AddControl(self.depthComplexityButton)
-		self.Bind(wx.EVT_BUTTON, self.OnDepthComplexityClick, self.depthComplexityButton)
+		self.XRayButton = wx.Button(self.toolbar, -1, "X-RAY", size=(21*2,21))
+		self.toolbar.AddControl(self.XRayButton)
+		self.Bind(wx.EVT_BUTTON, self.OnXRayClick, self.XRayButton)
 		
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
@@ -131,7 +131,7 @@ class previewPanel(wx.Panel):
 	
 	def updateToolbar(self):
 		self.transparentButton.Show(self.triangleMesh != None)
-		self.depthComplexityButton.Show(self.triangleMesh != None)
+		self.XRayButton.Show(self.triangleMesh != None)
 		self.layerSpin.Show(self.gcode != None)
 		if self.gcode != None:
 			self.layerSpin.SetRange(1, self.gcode.layerCount)
@@ -140,12 +140,12 @@ class previewPanel(wx.Panel):
 	def OnTransparentClick(self, e):
 		self.glCanvas.renderTransparent = not self.glCanvas.renderTransparent
 		if self.glCanvas.renderTransparent:
-			self.glCanvas.renderDepthComplexity = False
+			self.glCanvas.renderXRay = False
 		self.glCanvas.Refresh()
 	
-	def OnDepthComplexityClick(self, e):
-		self.glCanvas.renderDepthComplexity = not self.glCanvas.renderDepthComplexity
-		if self.glCanvas.renderDepthComplexity:
+	def OnXRayClick(self, e):
+		self.glCanvas.renderXRay = not self.glCanvas.renderXRay
+		if self.glCanvas.renderXRay:
 			self.glCanvas.renderTransparent = False
 		self.glCanvas.Refresh()
 	
@@ -217,9 +217,9 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.fillLineWidth = 0.4
 		self.view3D = True
 		self.renderTransparent = False
-		self.renderDepthComplexity = False
+		self.renderXRay = False
 		self.modelDisplayList = None
-
+	
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
 			if self.view3D:
@@ -405,7 +405,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glBlendFunc(GL_ONE, GL_ONE)
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
-			elif self.renderDepthComplexity:
+			elif self.renderXRay:
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_STENCIL_TEST);

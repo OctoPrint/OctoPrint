@@ -36,6 +36,11 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		self.GetSizer().Add(radio, 0, wx.EXPAND|wx.ALL, 5)
 		return radio
 	
+	def AddButton(self, label):
+		button = wx.Button(self, -1, label)
+		self.GetSizer().Add(button, 0, wx.LEFT, 5)
+		return button
+	
 	def AddDualButton(self, label1, label2):
 		p = wx.Panel(self)
 		p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
@@ -43,7 +48,7 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		p.GetSizer().Add(button1, 0, wx.RIGHT, 8)
 		button2 = wx.Button(p, -1, label2)
 		p.GetSizer().Add(button2, 0)
-		self.GetSizer().Add(p, 0)
+		self.GetSizer().Add(p, 0, wx.LEFT, 5)
 		return button1, button2
 	
 	def AllowNext(self):
@@ -119,9 +124,8 @@ class FirmwareUpgradePage(InfoPage):
 		self.AddText('* You have an older machine based on ATMega1280')
 		self.AddText('* Using an LCD panel')
 		self.AddText('* Have other changes in the firmware')
-		button = wx.Button(self, -1, 'Goto this page for a custom firmware')
+		button = self.AddButton('Goto this page for a custom firmware')
 		button.Bind(wx.EVT_BUTTON, self.OnUrlClick)
-		self.GetSizer().Add(button, 0)
 	
 	def AllowNext(self):
 		return False
@@ -299,12 +303,51 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.AddText("First remove any filament from your machine.")
 		self.AddText("Next put in your filament so the tip is aligned with the\ntop of the extruder drive.")
 		self.AddText("We'll push the filament 100mm")
-		self.AddText("[BUTTON:PUSH 100mm]")
+		self.extrudeButton = self.AddButton("Extrude 100mm filament")
 		self.AddText("Now measure the amount of extruded filament:\n(this can be more or less then 100mm)")
-		self.AddText("[INPUT:MEASUREMENT][BUTTON:SAVE]")
+		p = wx.Panel(self)
+		p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+		self.lengthInput = wx.TextCtrl(p, -1, '100')
+		p.GetSizer().Add(self.lengthInput, 0, wx.RIGHT, 8)
+		self.saveLengthButton = wx.Button(p, -1, 'Save')
+		p.GetSizer().Add(self.saveLengthButton, 0)
+		self.GetSizer().Add(p, 0, wx.LEFT, 5)
 		self.AddText("This results in the following steps per E:")
-		self.AddText("[INPUT:E_RESULT]")
+		self.stepsPerEInput = wx.TextCtrl(self, -1, settings.getPreference('steps_per_e', '865.888'))
+		self.GetSizer().Add(self.stepsPerEInput, 0, wx.LEFT, 5)
 		self.AddText("You can repeat these steps to get better calibration.")
+		
+		self.saveLengthButton.Bind(wx.EVT_BUTTON, self.OnSaveLengthClick)
+		self.extrudeButton.Bind(wx.EVT_BUTTON, self.OnExtrudeClick)
+	
+	def OnSaveLengthClick(self, e):
+		currentEValue = float(self.stepsPerEInput.GetValue())
+		realExtrudeLength = float(self.lengthInput.GetValue())
+		newEValue = currentEValue * 100 / realExtrudeLength
+		self.stepsPerEInput.SetValue(str(newEValue))
+		self.lengthInput.SetValue("100")
+	
+	def OnExtrudeClick(self, e):
+		threading.Thread(target=self.OnRun).start()
+
+	def OnRun(self):
+		self.comm = machineCom.MachineCom()
+		self.sendGCommand('M302') #Disable cold extrusion protection
+		self.sendGCommand("G92 E0");
+		self.sendGCommand("G1 E100 F300");
+		self.comm.close()
+	
+	def sendGCommand(self, cmd):
+		self.comm.sendCommand(cmd) #Disable cold extrusion protection
+		while True:
+			line = self.comm.readline()
+			if line == '':
+				return
+			if line.startswith('ok'):
+				break
+	
+	def StoreData(self):
+		settings.putPreference('steps_per_e', self.stepsPerEInput.GetValue())
 
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):

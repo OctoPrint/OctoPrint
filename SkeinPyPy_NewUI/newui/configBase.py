@@ -116,13 +116,11 @@ class SettingRow():
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
 		elif isinstance(defaultValue, types.BooleanType):
 			self.ctrl = wx.CheckBox(panel, -1, style=wx.ALIGN_RIGHT)
-			self.ctrl.SetValue(getSettingFunc(configName, defaultValue) == "True")
+			self.SetValue(getSettingFunc(configName, defaultValue))
 			self.ctrl.Bind(wx.EVT_CHECKBOX, self.OnSettingChange)
 		else:
 			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
-		#self.helpButton = wx.Button(panel, -1, "?", style=wx.BU_EXACTFIT)
-		#self.helpButton.SetToolTip(wx.ToolTip(help))
 		
 		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: panel.main.OnPopupDisplay(self))
 		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, panel.main.OnPopupHide)
@@ -131,7 +129,6 @@ class SettingRow():
 		
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
 		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
-		#sizer.Add(helpButton, (x,y+2))
 		sizer.SetRows(x+1)
 
 	def OnSettingChange(self, e):

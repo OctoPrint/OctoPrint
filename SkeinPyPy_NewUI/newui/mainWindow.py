@@ -32,6 +32,9 @@ class mainWindow(configBase.configWindowBase):
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
+		i = fileMenu.Append(-1, 'Load STL file...')
+		self.Bind(wx.EVT_MENU, self.OnLoadSTL, i)
+		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
 		i = fileMenu.Append(-1, 'Save Profile...')
@@ -52,6 +55,9 @@ class mainWindow(configBase.configWindowBase):
 		self.Bind(wx.EVT_MENU, self.OnDefaultMarlinFirmware, i)
 		i = expertMenu.Append(-1, 'Install custom firmware')
 		self.Bind(wx.EVT_MENU, self.OnCustomFirmware, i)
+		expertMenu.AppendSeparator()
+		i = expertMenu.Append(-1, 'ReRun first run wizard...')
+		self.Bind(wx.EVT_MENU, self.OnFirstRunWizard, i)
 		menubar.Append(expertMenu, 'Expert')
 		self.SetMenuBar(menubar)
 		
@@ -93,7 +99,6 @@ class mainWindow(configBase.configWindowBase):
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		
-		#Printing temperature is a problem right now, as our start code depends on a heated head.
 		configBase.TitleRow(right, "Temperature")
 		c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
 		validators.validFloat(c, 0.0, 340.0)
@@ -171,6 +176,8 @@ class mainWindow(configBase.configWindowBase):
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
 		self.Bind(wx.EVT_BUTTON, self.OnLoadSTL, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
+		#Also bind double clicking the 3D preview to load an STL file.
+		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadSTL, self.preview3d.glCanvas)
 
 		#Main sizer, to position the preview window, buttons and tab control
 		sizer = wx.GridBagSizer()
@@ -230,6 +237,9 @@ class mainWindow(configBase.configWindowBase):
 			#For some reason my Ubuntu 10.10 crashes here.
 			machineCom.InstallFirmware(filename, settings.getPreference('serial_port', 'AUTO'))
 
+	def OnFirstRunWizard(self, e):
+		configWizard.configWizard()
+
 	def OnLoadSTL(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
@@ -281,4 +291,3 @@ class mainWindow(configBase.configWindowBase):
 	def OnClose(self, e):
 		settings.saveGlobalProfile(settings.getDefaultProfilePath())
 		self.Destroy()
-
