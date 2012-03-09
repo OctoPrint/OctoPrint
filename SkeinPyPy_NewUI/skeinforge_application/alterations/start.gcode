@@ -19,4 +19,3 @@ G92 E0         ;zero the extruded length again
 
 G1 X100 Y100 F3500 ;go to the middle of the platform
 G1 Z0.0 F400   ;back to Z=0 and start the print!
-
