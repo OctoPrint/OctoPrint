@@ -89,8 +89,8 @@ class TitleRow():
 		x = sizer.GetRows()
 		self.title = wx.StaticText(panel, -1, name)
 		self.title.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-		sizer.Add(self.title, (sizer.GetRows(),0), (1,3), flag=wx.EXPAND)
-		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,0), (1,3), flag=wx.EXPAND)
+		sizer.Add(self.title, (x,0), (1,3), flag=wx.EXPAND)
+		sizer.Add(wx.StaticLine(panel), (x+1,0), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(x + 2)
 
 class SettingRow():
