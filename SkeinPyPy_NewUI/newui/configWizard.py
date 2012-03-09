@@ -176,7 +176,8 @@ class UltimakerCheckupPage(InfoPage):
 			
 		wx.CallAfter(self.AddProgressText, "Disabling step motors...")
 		if self.DoCommCommandWithTimeout('M84') == False:
-			wx.CallAfter(self.AddProgressText, "Error: Missing reply to M84.")
+			wx.CallAfter(self.AddProgressText, "Error: Missing reply to Deactivate steppers (M84).")
+			wx.CallAfter(self.AddProgressText, "Possible cause: Temperature MIN/MAX.\nCheck temperature sensor connections.")
 			return
 
 		wx.MessageBox('Please move the printer head to the center of the machine\nalso move the platform so it is not at the highest or lowest position,\nand make sure the machine is powered on.', 'Machine check', wx.OK | wx.ICON_INFORMATION)
@@ -184,18 +185,19 @@ class UltimakerCheckupPage(InfoPage):
 		idleTemp = self.readTemp()
 		
 		wx.CallAfter(self.AddProgressText, "Checking heater and temperature sensor...")
+		wx.CallAfter(self.AddProgressText, "(This takes about 30 seconds)")
 		if self.DoCommCommandWithTimeout("M104 S100") == False:
 			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
 			return
 		
-		time.sleep(20)
+		time.sleep(25)
 		tempInc = self.readTemp() - idleTemp
 		
 		if self.DoCommCommandWithTimeout("M104 S0") == False:
 			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
 			return
 		
-		if tempInc < 20:
+		if tempInc < 15:
 			wx.CallAfter(self.AddProgressText, "Your temperature sensor or heater is not working!")
 			return
 		wx.CallAfter(self.AddProgressText, "Heater and temperature sensor working\nWarning: head might still be hot!")
@@ -288,24 +290,41 @@ class UltimakerCalibrationPage(InfoPage):
 	def StoreData(self):
 		settings.putProfileSetting('filament_diameter', self.filamentDiameter.GetValue())
 
+class UltimakerCalibrateStepsPerEPage(InfoPage):
+	def __init__(self, parent):
+		super(UltimakerCalibrateStepsPerEPage, self).__init__(parent, "Ultimaker Calibration")
+		
+		self.AddText("Calibrating the Steps Per E requires some manual actions.")
+		self.AddText("First remove any filament from your machine.")
+		self.AddText("Next put in your filament so the tip is aligned with the\ntop of the extruder drive.")
+		self.AddText("We'll push the filament 100mm")
+		self.AddText("[BUTTON:PUSH 100mm]")
+		self.AddText("Now measure the amount of extruded filament:\n(this can be more or less then 100mm)")
+		self.AddText("[INPUT:MEASUREMENT][BUTTON:SAVE]")
+		self.AddText("This results in the following steps per E:")
+		self.AddText("[INPUT:E_RESULT]")
+		self.AddText("You can repeat these steps to get better calibration.")
+
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):
 		super(configWizard, self).__init__(None, -1, "Configuration Wizard")
 		
 		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGED, self.OnPageChanged)
 		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.OnPageChanging)
-		
+
 		self.firstInfoPage = FirstInfoPage(self)
 		self.machineSelectPage = MachineSelectPage(self)
 		self.ultimakerFirmwareUpgradePage = FirmwareUpgradePage(self)
 		self.ultimakerCheckupPage = UltimakerCheckupPage(self)
 		self.ultimakerCalibrationPage = UltimakerCalibrationPage(self)
+		self.ultimakerCalibrateStepsPerEPage = UltimakerCalibrateStepsPerEPage(self)
 		self.repRapInfoPage = RepRapInfoPage(self)
-		
+
 		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.machineSelectPage)
 		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerFirmwareUpgradePage)
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerFirmwareUpgradePage, self.ultimakerCheckupPage)
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerCheckupPage, self.ultimakerCalibrationPage)
+		wx.wizard.WizardPageSimple.Chain(self.ultimakerCalibrationPage, self.ultimakerCalibrateStepsPerEPage)
 		
 		self.FitToPage(self.firstInfoPage)
 		self.GetPageAreaSizer().Add(self.firstInfoPage)

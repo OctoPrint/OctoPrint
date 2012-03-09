@@ -10,6 +10,7 @@ The slicing code is the same as Skeinforge. But the UI has been revamped to be..
 """
 
 from __future__ import absolute_import
+import __init__
 
 import sys
 import platform

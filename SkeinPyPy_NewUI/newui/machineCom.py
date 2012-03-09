@@ -25,7 +25,7 @@ def serialList():
                 i+=1
         except:
             pass
-    return baselist+glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') +glob.glob("/dev/tty.*")+glob.glob("/dev/cu.*")+glob.glob("/dev/rfcomm*")
+    return baselist+glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') +glob.glob("/dev/tty.usb*")+glob.glob("/dev/cu.*")+glob.glob("/dev/rfcomm*")
 
 class InstallFirmware(wx.Dialog):
 	def __init__(self, filename, port = 'AUTO'):
@@ -61,6 +61,7 @@ class InstallFirmware(wx.Dialog):
 			for self.port in serialList():
 				try:
 					programmer.connect(self.port)
+					break
 				except ispBase.IspError:
 					pass
 		else:
@@ -107,6 +108,7 @@ class MachineCom():
 					programmer.connect(port)
 					programmer.close()
 					self.serial = Serial(port, baudrate, timeout=5)
+					break
 				except ispBase.IspError:
 					pass
 			programmer.close()

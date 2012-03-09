@@ -22,8 +22,8 @@ def storedSetting(name):
 def ifSettingAboveZero(name):
 	return lambda setting: float(getProfileSetting(name, '0.0')) > 0
 
-def ifSettingIs(name, value):
-	return lambda setting: getProfileSetting(name) == value
+def ifSettingIs(name, value, default):
+	return lambda setting: getProfileSetting(name, default) == value
 
 def storedPercentSetting(name):
 	return lambda setting: float(getProfileSetting(name, setting.value)) / 100
@@ -134,10 +134,10 @@ def getSkeinPyPyProfileInformation():
 			'Infill_Begin_Rotation_degrees': DEFSET,
 			'Infill_Begin_Rotation_Repeat_layers': DEFSET,
 			'Infill_Odd_Layer_Extra_Rotation_degrees': DEFSET,
-			'Grid_Circular': ifSettingIs('infill_type', 'Grid Circular'),
-			'Grid_Hexagonal': ifSettingIs('infill_type', 'Grid Hexagonal'),
-			'Grid_Rectangular': ifSettingIs('infill_type', 'Grid Rectangular'),
-			'Line': ifSettingIs('infill_type', 'Line'),
+			'Grid_Circular': ifSettingIs('infill_type', 'Grid Circular', 'Line'),
+			'Grid_Hexagonal': ifSettingIs('infill_type', 'Grid Hexagonal', 'Line'),
+			'Grid_Rectangular': ifSettingIs('infill_type', 'Grid Rectangular', 'Line'),
+			'Line': ifSettingIs('infill_type', 'Line', 'Line'),
 			'Infill_Perimeter_Overlap_ratio': DEFSET,
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
 			'Infill_Width': storedSetting("nozzle_size"),

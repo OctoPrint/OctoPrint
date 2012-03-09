@@ -13,7 +13,10 @@ class Stk500v2(ispBase.IspBase):
 	def connect(self, port = 'COM3', speed = 115200):
 		if self.serial != None:
 			self.close()
-		self.serial = Serial(port, speed, timeout=1)
+		try:
+			self.serial = Serial(port, speed, timeout=1)
+		except Serial.SerialException as e:
+			raise ispBase.IspError("Failed to open serial port")
 		self.seq = 1
 		
 		#Reset the controller

@@ -17,6 +17,9 @@ from newui import machineCom
 
 def main():
 	app = wx.App(False)
+	if settings.getPreference('wizardDone', 'False') == 'False':
+		configWizard.configWizard()
+		settings.putPreference("wizardDone", "True")
 	mainWindow()
 	app.MainLoop()
 
@@ -26,9 +29,6 @@ class mainWindow(configBase.configWindowBase):
 		super(mainWindow, self).__init__(title='SkeinPyPy')
 		
 		wx.EVT_CLOSE(self, self.OnClose)
-		
-		if settings.getPreference('wizardDone', 'False') == 'False':
-			configWizard.configWizard()
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
