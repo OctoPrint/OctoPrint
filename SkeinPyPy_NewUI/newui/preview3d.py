@@ -199,7 +199,7 @@ class previewPanel(wx.Panel):
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
 	def __init__(self, parent):
-		attribList = (glcanvas.WX_GL_RGBA, glcanvas.WX_GL_DOUBLEBUFFER, glcanvas.WX_GL_DEPTH_SIZE, 24, glcanvas.WX_GL_STENCIL_SIZE, 8)
+		attribList = None#(glcanvas.WX_GL_RGBA, glcanvas.WX_GL_DOUBLEBUFFER, glcanvas.WX_GL_DEPTH_SIZE, 24, glcanvas.WX_GL_STENCIL_SIZE, 8)
 		glcanvas.GLCanvas.__init__(self, parent, attribList = attribList)
 		self.parent = parent
 		wx.EVT_PAINT(self, self.OnPaint)
@@ -251,7 +251,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 	
 	def OnSize(self,event):
 		self.Refresh()
-		return
 
 	def OnPaint(self,event):
 		dc = wx.PaintDC(self)
@@ -262,7 +261,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.SetCurrent()
 		self.InitGL()
 		self.OnDraw()
-		return
+		self.SwapBuffers()
 
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
@@ -450,8 +449,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
 		glFlush()
-		self.SwapBuffers()
-		return
 
 	def InitGL(self):
 		# set viewing projection
