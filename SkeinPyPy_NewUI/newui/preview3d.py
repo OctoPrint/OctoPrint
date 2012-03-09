@@ -47,7 +47,7 @@ class previewPanel(wx.Panel):
 		self.transparentButton = wx.Button(self.toolbar, -1, "T", size=(21,21))
 		self.toolbar.AddControl(self.transparentButton)
 		self.Bind(wx.EVT_BUTTON, self.OnTransparentClick, self.transparentButton)
-		self.depthComplexityButton = wx.Button(self.toolbar, -1, "DC", size=(21*2,21))
+		self.depthComplexityButton = wx.Button(self.toolbar, -1, "X-RAY", size=(21*2,21))
 		self.toolbar.AddControl(self.depthComplexityButton)
 		self.Bind(wx.EVT_BUTTON, self.OnDepthComplexityClick, self.depthComplexityButton)
 		

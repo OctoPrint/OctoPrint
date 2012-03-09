@@ -9,6 +9,7 @@ class alterationPanel(wx.Panel):
 		wx.Panel.__init__(self, parent,-1)
 
 		self.alterationFileList = ['start.gcode', 'end.gcode', 'cool_start.gcode', 'cool_end.gcode']
+		self.currentFile = None
 
 		self.textArea = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
 		self.textArea.SetFont(wx.Font(8, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
@@ -28,12 +29,14 @@ class alterationPanel(wx.Panel):
 
 	def OnSelect(self, e):
 		self.loadFile(self.alterationFileList[self.list.GetSelection()])
+		self.currentFile = self.list.GetSelection()
 
 	def loadFile(self, filename):
 		self.textArea.SetValue(settings.getAlterationFile(filename, False))
 
 	def OnFocusLost(self, e):
-		filename = os.path.join(archive.getSkeinforgePath('alterations'), self.alterationFileList[self.list.GetSelection()])
-		f = open(filename, "wb")
-		f.write(self.textArea.GetValue())
-		f.close()
+		if self.currentFile == self.list.GetSelection():
+			filename = os.path.join(archive.getSkeinforgePath('alterations'), self.alterationFileList[self.list.GetSelection()])
+			f = open(filename, "wb")
+			f.write(self.textArea.GetValue())
+			f.close()
