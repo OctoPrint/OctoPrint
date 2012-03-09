@@ -86,11 +86,12 @@ class TitleRow():
 	def __init__(self, panel, name):
 		"Add a title row to the configuration panel"
 		sizer = panel.GetSizer()
+		x = sizer.GetRows()
 		self.title = wx.StaticText(panel, -1, name)
 		self.title.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
 		sizer.Add(self.title, (sizer.GetRows(),0), (1,3), flag=wx.EXPAND)
 		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,0), (1,3), flag=wx.EXPAND)
-		sizer.SetRows(sizer.GetRows() + 2)
+		sizer.SetRows(x + 2)
 
 class SettingRow():
 	def __init__(self, panel, label, configName, defaultValue = '', helpText = 'Help: TODO', type = 'profile'):
