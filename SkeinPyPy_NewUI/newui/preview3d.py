@@ -199,9 +199,10 @@ class previewPanel(wx.Panel):
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
 	def __init__(self, parent):
-		attribList = None#(glcanvas.WX_GL_RGBA, glcanvas.WX_GL_DOUBLEBUFFER, glcanvas.WX_GL_DEPTH_SIZE, 24, glcanvas.WX_GL_STENCIL_SIZE, 8)
+		attribList = (glcanvas.WX_GL_RGBA, glcanvas.WX_GL_DOUBLEBUFFER, glcanvas.WX_GL_DEPTH_SIZE, 24, glcanvas.WX_GL_STENCIL_SIZE, 8)
 		glcanvas.GLCanvas.__init__(self, parent, attribList = attribList)
 		self.parent = parent
+		self.context = glcanvas.GLContext(self)
 		wx.EVT_PAINT(self, self.OnPaint)
 		wx.EVT_SIZE(self, self.OnSize)
 		wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
@@ -258,7 +259,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			dc.Clear()
 			dc.DrawText("No PyOpenGL installation found.\nNo preview window available.", 10, 10)
 			return
-		self.SetCurrent()
+		self.SetCurrent(self.context)
 		self.InitGL()
 		self.OnDraw()
 		self.SwapBuffers()
