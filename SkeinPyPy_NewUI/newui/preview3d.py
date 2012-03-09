@@ -449,7 +449,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			else:
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
-		
+		glFlush()
 		self.SwapBuffers()
 		return
 
