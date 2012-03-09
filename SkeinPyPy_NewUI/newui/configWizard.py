@@ -76,6 +76,7 @@ class MachineSelectPage(InfoPage):
 		self.AddText('What kind of machine do you have:')
 
 		self.UltimakerRadio = self.AddRadioButton("Ultimaker", style=wx.RB_GROUP)
+		self.UltimakerRadio.SetValue(True)
 		self.UltimakerRadio.Bind(wx.EVT_RADIOBUTTON, self.OnUltimakerSelect)
 		self.OtherRadio = self.AddRadioButton("Other (Ex: RepRap)")
 		self.OtherRadio.Bind(wx.EVT_RADIOBUTTON, self.OnOtherSelect)
