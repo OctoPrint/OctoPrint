@@ -87,6 +87,7 @@ class sliceProgessPanel(wx.Panel):
 		else:
 			self.statusText.SetLabel("Something went wrong during slicing!")
 		self.sizer.Layout()
+		self.Layout()
 		self.abort = True
 	
 	def SetProgress(self, stepName, layer, maxLayer):
