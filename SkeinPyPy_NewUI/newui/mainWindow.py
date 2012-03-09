@@ -117,9 +117,6 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
 		configBase.settingNotify(c, self.preview3d.updateCenterY)
-		#self.AddSetting(left, "Width (mm)", settings.IntSpin().getFromValue(10, "machine_width", None, 1000, 205))
-		#self.AddSetting(left, "Depth (mm)", settings.IntSpin().getFromValue(10, "machine_depth", None, 1000, 205))
-		#self.AddSetting(left, "Height (mm)", settings.IntSpin().getFromValue(10, "machine_height", None, 1000, 200))
 
 		configBase.TitleRow(left, "Machine nozzle")
 		c = configBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
@@ -147,7 +144,6 @@ class mainWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0)
 
 		configBase.TitleRow(right, "Cool")
-		#c = SettingRow(right, "Cool type", self.plugins['cool'].preferencesDict['Cool_Type'])
 		c = configBase.SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
 		validators.validFloat(c, 0.0)
 
@@ -183,7 +179,7 @@ class mainWindow(configBase.configWindowBase):
 		sizer.Add(self.preview3d, (0,1), span=(1,3), flag=wx.EXPAND)
 		sizer.AddGrowableCol(2)
 		sizer.AddGrowableRow(0)
-		sizer.Add(loadButton, (1,1))
+		sizer.Add(loadButton, (1,1), flag=wx.RIGHT, border=5)
 		sizer.Add(sliceButton, (1,2))
 		self.sizer = sizer
 

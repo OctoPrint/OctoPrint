@@ -50,16 +50,8 @@ class configWindowBase(wx.Frame):
 		return leftConfigPanel, rightConfigPanel, configPanel
 	
 	def OnPopupDisplay(self, setting):
-		x, y = setting.ctrl.ClientToScreenXY(0, 0)
-		sx, sy = setting.ctrl.GetSizeTuple()
-		#if platform.system() == "Windows":
-		#	for some reason, under windows, the popup is relative to the main window... in some cases. (Wierd ass bug)
-		#	wx, wy = self.ClientToScreenXY(0, 0)
-		#	x -= wx
-		#	y -= wy
 		self.popup.setting = setting
 		self.UpdatePopup(setting)
-		self.popup.SetPosition((x, y+sy))
 		self.popup.Show(True)
 		
 	def OnPopupHide(self, e):
@@ -73,6 +65,14 @@ class configWindowBase(wx.Frame):
 				self.popup.text.SetLabel(setting.helpText)
 			self.popup.text.Wrap(350)
 			self.popup.Fit()
+			x, y = setting.ctrl.ClientToScreenXY(0, 0)
+			sx, sy = setting.ctrl.GetSizeTuple()
+			#if platform.system() == "Windows":
+			#	for some reason, under windows, the popup is relative to the main window... in some cases. (Wierd ass bug)
+			#	wx, wy = self.ClientToScreenXY(0, 0)
+			#	x -= wx
+			#	y -= wy
+			self.popup.SetPosition((x, y+sy))
 	
 	def updateProfileToControls(self):
 		"Update the configuration wx controls to show the new configuration settings"
@@ -88,8 +88,8 @@ class TitleRow():
 		sizer = panel.GetSizer()
 		self.title = wx.StaticText(panel, -1, name)
 		self.title.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-		sizer.Add(self.title, (sizer.GetRows(),sizer.GetCols()), (1,3), flag=wx.EXPAND)
-		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,sizer.GetCols()), (1,3), flag=wx.EXPAND)
+		sizer.Add(self.title, (sizer.GetRows(),0), (1,3), flag=wx.EXPAND)
+		sizer.Add(wx.StaticLine(panel), (sizer.GetRows()+1,0), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(sizer.GetRows() + 2)
 
 class SettingRow():
@@ -97,7 +97,7 @@ class SettingRow():
 		"Add a setting to the configuration panel"
 		sizer = panel.GetSizer()
 		x = sizer.GetRows()
-		y = sizer.GetCols()
+		y = 0
 		
 		self.validators = []
 		self.validationMsg = ''
@@ -169,6 +169,7 @@ class SettingRow():
 			self.ctrl.SetValue(value)
 
 #Settings notify works as a validator, but instead of validating anything, it calls another function, which can use the value.
+# A bit hacky, bit it works.
 class settingNotify():
 	def __init__(self, setting, func):
 		self.setting = setting
@@ -183,4 +184,3 @@ class settingNotify():
 		except ValueError:
 			self.func()
 			return validators.SUCCESS, ''
-

@@ -1,6 +1,7 @@
 import os, struct, sys, time
 
 from serial import Serial
+from serial import SerialException
 
 import ispBase, intelHex
 
@@ -15,7 +16,7 @@ class Stk500v2(ispBase.IspBase):
 			self.close()
 		try:
 			self.serial = Serial(port, speed, timeout=1)
-		except Serial.SerialException as e:
+		except SerialException as e:
 			raise ispBase.IspError("Failed to open serial port")
 		self.seq = 1
 		
