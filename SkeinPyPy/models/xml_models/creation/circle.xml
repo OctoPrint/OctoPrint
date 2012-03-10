@@ -1,5 +1,0 @@
-<?xml version='1.0' ?>
-<fabmetheus>
-	<circle id='circleTest' radiusAreal='True' radius='9' sides='-11'/>
-	<extrude target='=document.getElementByID(circleTest)'/>
-</fabmetheus>
