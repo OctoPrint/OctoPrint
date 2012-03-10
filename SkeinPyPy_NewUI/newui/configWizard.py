@@ -177,12 +177,14 @@ class UltimakerCheckupPage(InfoPage):
 		wx.CallAfter(self.AddProgressText, "Checking start message...")
 		if self.DoCommCommandWithTimeout(None, 'start') == False:
 			wx.CallAfter(self.AddProgressText, "Error: Missing start message.")
+			self.comm.close()
 			return
 			
 		wx.CallAfter(self.AddProgressText, "Disabling step motors...")
 		if self.DoCommCommandWithTimeout('M84') == False:
 			wx.CallAfter(self.AddProgressText, "Error: Missing reply to Deactivate steppers (M84).")
 			wx.CallAfter(self.AddProgressText, "Possible cause: Temperature MIN/MAX.\nCheck temperature sensor connections.")
+			self.comm.close()
 			return
 
 		wx.MessageBox('Please move the printer head to the center of the machine\nalso move the platform so it is not at the highest or lowest position,\nand make sure the machine is powered on.', 'Machine check', wx.OK | wx.ICON_INFORMATION)
@@ -193,6 +195,7 @@ class UltimakerCheckupPage(InfoPage):
 		wx.CallAfter(self.AddProgressText, "(This takes about 30 seconds)")
 		if self.DoCommCommandWithTimeout("M104 S100") == False:
 			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
+			self.comm.close()
 			return
 		
 		time.sleep(25)
@@ -200,40 +203,49 @@ class UltimakerCheckupPage(InfoPage):
 		
 		if self.DoCommCommandWithTimeout("M104 S0") == False:
 			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
+			self.comm.close()
 			return
 		
 		if tempInc < 15:
 			wx.CallAfter(self.AddProgressText, "Your temperature sensor or heater is not working!")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "Heater and temperature sensor working\nWarning: head might still be hot!")
 
 		wx.CallAfter(self.AddProgressText, "Checking endstops")
 		if self.DoCommCommandWithTimeout('M119', 'x_min') != "x_min:L x_max:L y_min:L y_max:L z_min:L z_max:L":
 			wx.CallAfter(self.AddProgressText, "Error: There is a problem in your endstops!\nOne of them seems to be pressed while it shouldn't\ncheck the cable connections and the switches themselfs.")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "Please press the X end switch in the front left corner.")
 		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:H x_max:L y_min:L y_max:L z_min:L z_max:L"):
 			wx.CallAfter(self.AddProgressText, "Failed to check the x_min endstop!")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "Please press the X end switch in the front right corner.")
 		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:H y_min:L y_max:L z_min:L z_max:L"):
 			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "Please press the Y end switch in the front left corner.")
 		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:H y_max:L z_min:L z_max:L"):
 			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "Please press the Y end switch in the back left corner.")
 		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:H z_min:L z_max:L"):
 			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "Please press the Z end switch in the top.")
 		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:L z_min:H z_max:L"):
 			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "Please press the Z end switch in the bottom.")
 		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:L z_min:L z_max:H"):
 			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
+			self.comm.close()
 			return
 		wx.CallAfter(self.AddProgressText, "End stops are working.")
 
@@ -332,9 +344,16 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 
 	def OnRun(self):
 		self.comm = machineCom.MachineCom()
+		while True:
+			line = self.comm.readline()
+			if line == '':
+				return
+			if line.startswith('start'):
+				break
 		self.sendGCommand('M302') #Disable cold extrusion protection
 		self.sendGCommand("G92 E0");
 		self.sendGCommand("G1 E100 F300");
+		time.sleep(5)
 		self.comm.close()
 	
 	def sendGCommand(self, cmd):

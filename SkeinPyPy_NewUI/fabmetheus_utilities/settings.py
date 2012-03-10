@@ -486,7 +486,7 @@ def getAlterationFile(fileName, allowMagicPrefix = True):
 		if fileName == 'start.gcode':
 			#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
 			#We also set our steps per E here, if configured.
-			eSteps = float(getProfileSetting('steps_per_e_unit', '0'))
+			eSteps = float(getPreference('steps_per_e', '0'))
 			if eSteps > 0:
 				prefix += 'M92 E'+str(eSteps)+'\n'
 			temp = float(getProfileSetting('print_temperature', '0'))
