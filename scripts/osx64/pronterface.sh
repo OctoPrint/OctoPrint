@@ -1,8 +1,8 @@
 #!/bin/bash
 
-arch -arch i386 python2.7 -c 'import wx'
+python2.7 -c 'import wx'
 if [ $? != 0 ]; then
-	echo "Requires wx. Download and install from:"
+	echo "Requires wx. Download and install (the Cocoa/64-bit variant) from:"
 	echo " http://www.wxpython.org/download.php"
 	exit 1
 fi
@@ -15,5 +15,5 @@ if [ $? != 0 ]; then
 fi
 
 SCRIPT_DIR=`dirname $0`
-arch -arch i386 python2.7 ${SCRIPT_DIR}/Printrun/pronterface.py
+python2.7 ${SCRIPT_DIR}/Printrun/pronterface.py
 
