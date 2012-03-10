@@ -16,11 +16,11 @@ BUILD_TARGET=win32
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=NewUI-Beta2
+BUILD_NAME=NewUI-Beta4
 TARGET_DIR=${BUILD_TARGET}-SkeinPyPy-${BUILD_NAME}
 
 ##Which versions of external programs to use
-PYPY_VERSION=1.8
+PYPY_VERSION=c-jit-53274-487174b08100
 WIN_PORTABLE_PY_VERSION=2.7.2.1
 WIN_PYSERIAL_VERSION=2.5
 
@@ -71,11 +71,13 @@ if [ $BUILD_TARGET = "win32" ]; then
 	fi
 	#Get pypy
 	if [ ! -f "pypy-${PYPY_VERSION}-win32.zip" ]; then
-		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
+	#	curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
+		curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-win32.zip
 	fi
 else
 	if [ ! -f "pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2" ]; then
-		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
+	#	curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
+		curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
 	fi
 fi
 
@@ -114,15 +116,17 @@ if [ $BUILD_TARGET = "win32" ]; then
 	rm -rf ${TARGET_DIR}/python/Lib/distutils
 	rm -rf ${TARGET_DIR}/python/Lib/site-packages/wx-2.8-msw-unicode/wx/tools
 	rm -rf ${TARGET_DIR}/python/Lib/site-packages/wx-2.8-msw-unicode/wx/locale
+	#Remove the gle files because they require MSVCR71.dll, which is not included. We also don't need gle, so it's safe to remove it.
+	rm -rf ${TARGET_DIR}/python/Lib/OpenGL/DLLS/gle*
 fi
 
 #Extract pypy
 if [ $BUILD_TARGET = "win32" ]; then
 	7z x pypy-${PYPY_VERSION}-win32.zip -o${TARGET_DIR}
-	mv ${TARGET_DIR}/pypy-${PYPY_VERSION} ${TARGET_DIR}/pypy
+	mv ${TARGET_DIR}/pypy-${PYPY_VERSION}* ${TARGET_DIR}/pypy
 else
 	cd ${TARGET_DIR}; $TAR -xjf ../pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2; cd ..
-	mv ${TARGET_DIR}/pypy-${PYPY_VERSION} ${TARGET_DIR}/pypy
+	mv ${TARGET_DIR}/pypy-${PYPY_VERSION}* ${TARGET_DIR}/pypy
 fi
 #Cleanup pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
