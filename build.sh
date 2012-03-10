@@ -9,7 +9,7 @@
 
 
 ##Select the build target
-BUILD_TARGET=win32
+BUILD_TARGET=${1:-win32}
 #BUILD_TARGET=linux
 #BUILD_TARGET=osx64
 
@@ -20,7 +20,7 @@ BUILD_NAME=NewUI-Beta4
 TARGET_DIR=${BUILD_TARGET}-SkeinPyPy-${BUILD_NAME}
 
 ##Which versions of external programs to use
-PYPY_VERSION=c-jit-53274-487174b08100
+PYPY_VERSION=c-jit-latest
 WIN_PORTABLE_PY_VERSION=2.7.2.1
 WIN_PYSERIAL_VERSION=2.5
 
@@ -126,7 +126,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	mv ${TARGET_DIR}/pypy-${PYPY_VERSION}* ${TARGET_DIR}/pypy
 else
 	cd ${TARGET_DIR}; $TAR -xjf ../pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2; cd ..
-	mv ${TARGET_DIR}/pypy-${PYPY_VERSION}* ${TARGET_DIR}/pypy
+	mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
 fi
 #Cleanup pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
