@@ -105,7 +105,7 @@ class mainWindow(configBase.configWindowBase):
 		validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine, be careful!")
 		
 		configBase.TitleRow(right, "Support")
-		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior only', 'Everywhere', 'Empty layers only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
+		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
 
 		configBase.TitleRow(right, "Filament")
 		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.89', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
