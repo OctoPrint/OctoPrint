@@ -138,7 +138,11 @@ cp -a SkeinPyPy_NewUI ${TARGET_DIR}/SkeinPyPy
 mv Printrun ${TARGET_DIR}/Printrun
 
 #add script files
-cp -a scripts/${BUILD_TARGET}/* $TARGET_DIR/
+if [ $BUILD_TARGET = "win32" ]; then
+    cp -a scripts/${BUILD_TARGET}/*.bat $TARGET_DIR/
+else
+    cp -a scripts/${BUILD_TARGET}/*.sh $TARGET_DIR/
+fi
 
 #add readme file
 cp README ${TARGET_DIR}/README.txt
