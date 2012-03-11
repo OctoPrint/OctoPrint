@@ -74,18 +74,18 @@ class sliceProgessPanel(wx.Panel):
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
 		self.progressLog = result.progressLog
+		self.sizer.Remove(self.abortButton)
+		self.logButton = wx.Button(self, -1, "Show Log")
+		self.Bind(wx.EVT_BUTTON, self.OnShowLog, self.logButton)
+		self.sizer.Add(self.logButton, 0)
 		if result.returnCode == 0:
 			self.statusText.SetLabel("Ready.")
-			self.logButton = wx.Button(self, -1, "Show Log")
-			self.Bind(wx.EVT_BUTTON, self.OnShowLog, self.logButton)
 			self.showButton = wx.Button(self, -1, "Show GCode")
 			self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
-			self.sizer.Remove(self.abortButton)
-			self.sizer.Add(self.logButton, 0)
 			self.sizer.Add(self.showButton, 0)
-			self.sizer.Add(self.abortButton, 0)
 		else:
 			self.statusText.SetLabel("Something went wrong during slicing!")
+		self.sizer.Add(self.abortButton, 0)
 		self.sizer.Layout()
 		self.Layout()
 		self.abort = True

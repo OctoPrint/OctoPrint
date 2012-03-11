@@ -141,12 +141,11 @@ class BoundarySegment:
 
 	def getSegment(self, boundarySegmentIndex, boundarySegments, edgeWidth, runningJumpSpace):
 		'Get both paths along the loop from the point closest to the begin to the point closest to the end.'
-		negativeEdgeWidth = -edgeWidth
 		nextBoundarySegment = boundarySegments[boundarySegmentIndex + 1]
 		nextBegin = nextBoundarySegment.segment[0]
 		end = getJumpPointIfInside(self.boundary, nextBegin, edgeWidth, runningJumpSpace)
 		if end == None:
-			end = self.boundary.segment[1]
+			end = self.segment[1]
 		nextBegin = getJumpPointIfInside(nextBoundarySegment.boundary, end, edgeWidth, runningJumpSpace)
 		if nextBegin != None:
 			nextBoundarySegment.segment[0] = nextBegin
