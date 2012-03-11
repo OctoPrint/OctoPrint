@@ -204,11 +204,11 @@ class CarveSkein:
 		scaleX = scale
 		scaleY = scale
 		scaleZ = scale
-		if repository.flipX.value == 'True':
+		if repository.flipX.value == True:
 			scaleX = -scaleX
-		if repository.flipY.value == 'True':
+		if repository.flipY.value == True:
 			scaleY = -scaleY
-		if repository.flipZ.value == 'True':
+		if repository.flipZ.value == True:
 			scaleZ = -scaleZ
 		mat00 = math.cos(rotate) * scaleX
 		mat01 =-math.sin(rotate) * scaleY
