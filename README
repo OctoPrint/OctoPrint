@@ -1,45 +1,70 @@
 For documentation check: https://github.com/daid/SkeinPyPy/wiki
 For downloads check: https://github.com/daid/SkeinPyPy/downloads
 
+This package includes two programs:
 
+Pronterface:
 
+    An application for both manually controlling and automatically feeding gcode to a 3D printer.
 
+SkeinPyPy:
 
+   A easy to use program for slicing STL files using SkeinForge. SkeinPyPy can also visualize the 3D models in a variety of ways.
 
-(Old README, is outdated!)
+   On first run, SkeinPyPy will ask to go through a set of calibration steps that will perform a series of operations on your 3D printer.
+   One of those steps involves extruding a bit of filament where the filament is initially nearly fully extracted.  As such, it you will
+   probably need to run Pronterface first, heat up the extruder enough to be able to extract the filament and then use the Pronterface
+   interface to reverse the extruder motor until the filament is at the right position (specifically, until the filament end is even with
+   where the Bowden tube leaves the extuder motor assembly, on an Ultimaker).
 
-SkeinPyPy is a patched version of Skeinforge. Made to make use of PyPy in combination with Skeinforge easier.
-It's also packaged with a customized version of PrintRun. To make a compleet software package.
+========
+BUILDING
+========
 
-It's best to use this package with the Marlin firmware. See: http://wiki.ultimaker.com/Skeinforge_PyPy
+    ./build.sh
+    
+The build script defaults to building for Windows.  If you want to build for Mac OS X or Linux, choose one of:
 
-====How to use===
-Download the package for your operating system.
+    ./build.sh osx64
+    ./build.sh linux
 
-Windows:
-	Double click the "skeinforge.bat" for Skeinforge, this can be used to slice your models into GCode.
-	Double click the "Printrun.bat" for "PrintRun" this is a graphical command&control interface for your printer. This can run the generated GCode.
+Note that Mac OS X currently requires the manual installation of wxPython, PySerial, and PyOpenGL:
 
-Linux/MacOSX: (experimental, no packaged python)
-	First you'll need to have python installed on your system! With pyserial when you want to use PrintRun. You do not need pypy, this is packaged with SkeinPyPy
-	Then run SkeinPyPy/skeinforge_application/skeinforge.py for skeinforge to slice your model
-	Or run printrun\\pronterface.py for the PrintRun interface to print your model
+    sudo easy_install-2.7 pyserial
+    sudo easy_install-2.7 PyOpenGL
 
-====What is changed====
-* Do not show settings when ran from command line
-* Run PyPy to slice a model instead of normal python
-* Changing "Perimeter width over thickness (ratio)" into "Perimeter width".
-	With 5D machines this makes more sense, as you have good control over the width.
-* Save settings in .skeinforge_pypy to not mess up normal skeinforge profiles.
-* Default settings changed to match Ultimaker with dimension firmware (Marlin or Sprinter) and PLA.
-* Modified "Object first layer speed" settings to work on the first 3 layers (configurable)
-* Added "Object first layer travel speed" setting, to slow down the travel on the first layers.
-	Reduces the chance that a travel pulls the first layer lose.
+You will need to download the appropriate wxPython Installer package and install it.  It is available from:
 
-====Bugs====
-The graphical analize plugins don't work (Skeinlayer and Skeiniso)
+    http://www.wxpython.org/download.php
 
-====How does it work====
-The user interface still runs in normal python (as PyPy with TK is a bit hard to build, especially for windows),
-	and when you slice it will run command line PyPy to slice the model.
+Specifically, install "wxPython2.9-osx-cocoa-py2.7" as it is the build that supports 64-bit execution.
+
+=======
+RUNNING
+=======
+
+Windows
+-------
+
+Double-click skeinforge.bat and Printrun.bat.
+
+Mac OS X & Linux
+----------------
+
+Once built, the two apps -- Pronterface and SkeinPyPy -- must be started from the command line (for now):
+
+    # open a new terminal window and....
+    cd osx64-SkeinPyPy-NewUI-Beta4
+    ./pronterface.sh &
+    ./skeinpypy.sh &
+
+This will start both applications with their console logging output directed into the terminal window.
+
+========
+FIRMWARE
+========
+
+For Ultimaker users, it is highly recommended -- nearly required -- that you upgrade your firmware to the latest Marlin builds.  See:
+
+    http://wiki.ultimaker.com/Skeinforge_PyPy
 
