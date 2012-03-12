@@ -125,6 +125,8 @@ class SettingRow():
 		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: panel.main.OnPopupDisplay(self))
 		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, panel.main.OnPopupHide)
 		
+		self.defaultBGColour = self.ctrl.GetBackgroundColour()
+		
 		panel.main.settingControlList.append(self)
 		
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -151,7 +153,7 @@ class SettingRow():
 		elif result == validators.WARNING:
 			self.ctrl.SetBackgroundColour('Yellow')
 		else:
-			self.ctrl.SetBackgroundColour(wx.NullColour)
+			self.ctrl.SetBackgroundColour(self.defaultBGColour)
 		self.ctrl.Refresh()
 
 		self.validationMsg = '\n'.join(msgs)
