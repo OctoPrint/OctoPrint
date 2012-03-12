@@ -9,7 +9,6 @@ G28 Z0     ;move Z to min endstops
 ; height of the nozzle in mm. This can take some messing around
 ; with to get just right...
 G92 X0 Y0 Z0 E0 ;reset software position to front/left/z=0.0
-G21
 G1 Z15.0 F400  ;move the platform down 15mm
 G92 E0         ;zero the extruded length
 
