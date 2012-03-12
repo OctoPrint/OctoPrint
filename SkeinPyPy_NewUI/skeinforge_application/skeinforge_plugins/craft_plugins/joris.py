@@ -134,7 +134,6 @@ class JorisSkein:
 		if len(splitLine) < 1:
 			return
 		firstWord = splitLine[0]
-		print 'joris:' + firstWord
 		if firstWord == 'G1':
 			self.feedRateMinute = gcodec.getFeedRateMinute(self.feedRateMinute, splitLine)
 			location = gcodec.getLocationFromSplitLine(self.oldLocation, splitLine)
