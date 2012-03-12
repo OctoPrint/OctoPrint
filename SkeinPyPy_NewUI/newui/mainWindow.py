@@ -239,6 +239,7 @@ class mainWindow(configBase.configWindowBase):
 
 	def OnFirstRunWizard(self, e):
 		configWizard.configWizard()
+		self.updateProfileToControls()
 
 	def OnLoadSTL(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
