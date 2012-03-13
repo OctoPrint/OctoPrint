@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types
+import wx, os, sys, platform, types
 
 from fabmetheus_utilities import settings
 
@@ -18,7 +18,7 @@ class configWindowBase(wx.Frame):
 		super(configWindowBase, self).__init__(None, title=title)
 		
 		self.settingControlList = []
-
+		
 		#Create the popup window
 		self.popup = wx.PopupWindow(self, wx.BORDER_SIMPLE)
 		self.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
@@ -27,7 +27,10 @@ class configWindowBase(wx.Frame):
 		self.popup.sizer = wx.BoxSizer()
 		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
 		self.popup.SetSizer(self.popup.sizer)
-
+		
+		self.popup.Bind(wx.EVT_MOTION, self.OnPopupHide)
+		self.popup.text.Bind(wx.EVT_MOTION, self.OnPopupHide)
+	
 	def CreateConfigTab(self, nb, name):
 		leftConfigPanel, rightConfigPanel, configPanel = self.CreateConfigPanel(nb)
 		nb.AddPage(configPanel, name)
@@ -48,7 +51,7 @@ class configWindowBase(wx.Frame):
 		leftConfigPanel.main = self
 		rightConfigPanel.main = self
 		return leftConfigPanel, rightConfigPanel, configPanel
-	
+
 	def OnPopupDisplay(self, setting):
 		self.popup.setting = setting
 		self.UpdatePopup(setting)
@@ -125,6 +128,12 @@ class SettingRow():
 		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: panel.main.OnPopupDisplay(self))
 		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, panel.main.OnPopupHide)
 		
+		#MacOS X doesn't get EVT_ENTER/LEAVE_WINDOW for controls. So we use the motion event then. This results in slightly less good popups, but it works.
+		if sys.platform == 'darwin':
+			self.ctrl.Bind(wx.EVT_MOTION, lambda e: panel.main.OnPopupDisplay(self))
+		
+		self.defaultBGColour = self.ctrl.GetBackgroundColour()
+		
 		panel.main.settingControlList.append(self)
 		
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -151,7 +160,7 @@ class SettingRow():
 		elif result == validators.WARNING:
 			self.ctrl.SetBackgroundColour('Yellow')
 		else:
-			self.ctrl.SetBackgroundColour(wx.NullColour)
+			self.ctrl.SetBackgroundColour(self.defaultBGColour)
 		self.ctrl.Refresh()
 
 		self.validationMsg = '\n'.join(msgs)

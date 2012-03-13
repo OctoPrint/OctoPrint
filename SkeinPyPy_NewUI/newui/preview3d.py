@@ -113,6 +113,7 @@ class previewPanel(wx.Panel):
 		triangleMesh.origonalVertexes = list(triangleMesh.vertexes)
 		for i in xrange(0, len(triangleMesh.origonalVertexes)):
 			triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
+		triangleMesh.getMinimumZ()
 		self.triangleMesh = triangleMesh
 		self.gcode = None
 		self.updateModelTransform()
