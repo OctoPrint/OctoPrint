@@ -343,6 +343,7 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		threading.Thread(target=self.OnRun).start()
 
 	def OnRun(self):
+		currentEValue = float(self.stepsPerEInput.GetValue())
 		self.comm = machineCom.MachineCom()
 		while True:
 			line = self.comm.readline()
@@ -351,6 +352,7 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 			if line.startswith('start'):
 				break
 		self.sendGCommand('M302') #Disable cold extrusion protection
+		self.sendGCommand("M92 E%f" % (currentEValue));
 		self.sendGCommand("G92 E0");
 		self.sendGCommand("G1 E100 F300");
 		time.sleep(5)
