@@ -2,6 +2,7 @@ import sys
 import math
 import threading
 import re
+import time
 
 from wx import glcanvas
 import wx
@@ -152,8 +153,6 @@ class previewPanel(wx.Panel):
 	def updateModelTransform(self, f=0):
 		if self.triangleMesh == None:
 			return
-		for face in self.triangleMesh.faces:
-			face.normal = None
 		scale = 1.0
 		rotate = 0.0
 		try:
@@ -179,6 +178,14 @@ class previewPanel(wx.Panel):
 			self.triangleMesh.vertexes[i].x = self.triangleMesh.origonalVertexes[i].x * mat00 + self.triangleMesh.origonalVertexes[i].y * mat01
 			self.triangleMesh.vertexes[i].y = self.triangleMesh.origonalVertexes[i].x * mat10 + self.triangleMesh.origonalVertexes[i].y * mat11
 			self.triangleMesh.vertexes[i].z = self.triangleMesh.origonalVertexes[i].z * scaleZ
+
+		for face in self.triangleMesh.faces:
+			v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
+			v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
+			v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
+			face.normal = (v2 - v1).cross(v3 - v1)
+			face.normal.normalize()
+
 		self.moveModel()
 	
 	def moveModel(self):
@@ -378,9 +385,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
 					v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
 					v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
-					if face.normal == None:
-						face.normal = (v2 - v1).cross(v3 - v1)
-						face.normal.normalize()
 					glNormal3f(face.normal.x, face.normal.y, face.normal.z)
 					glVertex3f(v1.x, v1.y, v1.z)
 					glVertex3f(v2.x, v2.y, v2.z)
