@@ -20,16 +20,13 @@ class configWindowBase(wx.Frame):
 		self.settingControlList = []
 		
 		#Create the popup window
-		self.popup = wx.PopupWindow(self, wx.BORDER_SIMPLE)
+		self.popup = wx.PopupWindow(self, flags=wx.BORDER_SIMPLE)
 		self.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
 		self.popup.setting = None
 		self.popup.text = wx.StaticText(self.popup, -1, '');
 		self.popup.sizer = wx.BoxSizer()
 		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
 		self.popup.SetSizer(self.popup.sizer)
-		
-		self.popup.Bind(wx.EVT_MOTION, self.OnPopupHide)
-		self.popup.text.Bind(wx.EVT_MOTION, self.OnPopupHide)
 	
 	def CreateConfigTab(self, nb, name):
 		leftConfigPanel, rightConfigPanel, configPanel = self.CreateConfigPanel(nb)
@@ -124,21 +121,23 @@ class SettingRow():
 		else:
 			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
+
+		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
+		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		sizer.SetRows(x+1)
 		
-		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: panel.main.OnPopupDisplay(self))
-		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, panel.main.OnPopupHide)
-		
-		#MacOS X doesn't get EVT_ENTER/LEAVE_WINDOW for controls. So we use the motion event then. This results in slightly less good popups, but it works.
-		if sys.platform == 'darwin':
-			self.ctrl.Bind(wx.EVT_MOTION, lambda e: panel.main.OnPopupDisplay(self))
+		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseExit)
 		
 		self.defaultBGColour = self.ctrl.GetBackgroundColour()
 		
 		panel.main.settingControlList.append(self)
-		
-		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
-		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
-		sizer.SetRows(x+1)
+
+	def OnMouseEnter(self, e):
+		self.panel.main.OnPopupDisplay(self)
+
+	def OnMouseExit(self, e):
+		self.panel.main.OnPopupHide(self)
 
 	def OnSettingChange(self, e):
 		if self.type == 'profile':
