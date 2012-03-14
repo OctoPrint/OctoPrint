@@ -104,7 +104,7 @@ class MachineSelectPage(InfoPage):
 			settings.putPreference('machine_width', '80')
 			settings.putPreference('machine_depth', '80')
 			settings.putPreference('machine_height', '60')
-			settings.putProfileSetting('nozzle_size', '0.4')
+			settings.putProfileSetting('nozzle_size', '0.5')
 			settings.putProfileSetting('machine_center_x', '40')
 			settings.putProfileSetting('machine_center_y', '40')
 

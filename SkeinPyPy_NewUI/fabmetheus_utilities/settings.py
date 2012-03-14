@@ -26,7 +26,7 @@ def ifSettingIs(name, value, default):
 	return lambda setting: getProfileSetting(name, default) == value
 
 def storedPercentSetting(name):
-	return lambda setting: float(getProfileSetting(name, setting.value)) / 100
+	return lambda setting: float(getProfileSetting(name, setting.value * 100)) / 100
 
 def calculateEdgeWidth(setting):
 	wallThickness = float(getProfileSetting('wall_thickness'))
@@ -138,7 +138,7 @@ def getSkeinPyPyProfileInformation():
 			'Grid_Hexagonal': ifSettingIs('infill_type', 'Grid Hexagonal', 'Line'),
 			'Grid_Rectangular': ifSettingIs('infill_type', 'Grid Rectangular', 'Line'),
 			'Line': ifSettingIs('infill_type', 'Line', 'Line'),
-			'Infill_Perimeter_Overlap_ratio': DEFSET,
+			'Infill_Perimeter_Overlap_ratio': storedPercentSetting('fill_overlap'),
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
 			'Infill_Width': storedSetting("nozzle_size"),
 			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
