@@ -14,10 +14,12 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
-from fabmetheus_utilities.vector3 import Vector3
 from fabmetheus_utilities import settings
 from newui import gcodeInterpreter
+from newui import util3d
+
+from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
+from fabmetheus_utilities.vector3 import Vector3
 
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
@@ -347,7 +349,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 						for i in xrange(0, len(path['list'])-1):
 							v0 = path['list'][i]
 							v1 = path['list'][i+1]
-							normal = (v0 - v1).cross(Vector3(0,0,1))
+							normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
 							normal.normalize()
 							v2 = v0 + normal * lineWidth
 							v3 = v1 + normal * lineWidth

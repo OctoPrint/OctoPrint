@@ -3,13 +3,13 @@ import math
 import threading
 import re
 
-from fabmetheus_utilities.vector3 import Vector3
+from newui import util3d
 
 class gcode():
 	def __init__(self, filename):
 		f = open(filename, 'r')
-		pos = Vector3()
-		posOffset = Vector3()
+		pos = util3d.Vector3()
+		posOffset = util3d.Vector3()
 		currentE = 0
 		pathList = []
 		scale = 1.0
@@ -73,7 +73,7 @@ class gcode():
 					y = self.getCodeFloat(line, 'Y')
 					z = self.getCodeFloat(line, 'Z')
 					if x is None and y is None and z is None:
-						pos = Vector3()
+						pos = util3d.Vector3()
 					else:
 						if x is not None:
 							pos.x = 0.0
