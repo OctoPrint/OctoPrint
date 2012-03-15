@@ -687,6 +687,10 @@ def isPathAdded( edges, faces, loops, remainingEdgeTable, vertexes, z ):
 		nextEdgeIndexAroundZ = getNextEdgeIndexAroundZ( edges[ nextEdgeIndexAroundZ ], faces, remainingEdgeTable )
 	if len( pathIndexes ) < 3:
 		print('Dangling edges, will use intersecting circles to get import layer at height %s' % z)
+		for idx in pathIndexes:
+			if not hasattr(edges[idx], 'errorReported'):
+				print('Model error(dangle): ' + str(vertexes[edges[idx].vertexIndexes[0]]) + ' ' + str(vertexes[edges[idx].vertexIndexes[1]]))
+				edges[idx].errorReported = True
 		del loops[:]
 		return False
 	loops.append( getPath( edges, pathIndexes, vertexes, z ) )

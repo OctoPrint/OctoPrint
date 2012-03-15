@@ -32,8 +32,8 @@ class mainWindow(configBase.configWindowBase):
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Load STL file...')
-		self.Bind(wx.EVT_MENU, self.OnLoadSTL, i)
+		i = fileMenu.Append(-1, 'Load model file...')
+		self.Bind(wx.EVT_MENU, self.OnLoadModel, i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
@@ -173,12 +173,12 @@ class mainWindow(configBase.configWindowBase):
 		configBase.settingNotify(c, self.preview3d.updateModelTransform)
 
 		# load and slice buttons.
-		loadButton = wx.Button(self, -1, 'Load STL')
+		loadButton = wx.Button(self, -1, 'Load Model')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
-		self.Bind(wx.EVT_BUTTON, self.OnLoadSTL, loadButton)
+		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		#Also bind double clicking the 3D preview to load an STL file.
-		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadSTL, self.preview3d.glCanvas)
+		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
 
 		#Main sizer, to position the preview window, buttons and tab control
 		sizer = wx.GridBagSizer()
@@ -242,9 +242,9 @@ class mainWindow(configBase.configWindowBase):
 		configWizard.configWizard()
 		self.updateProfileToControls()
 
-	def OnLoadSTL(self, e):
+	def OnLoadModel(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
+		dlg.SetWildcard("STL files (*.stl)|*.stl")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
 			settings.putPreference('lastFile', self.filename)
