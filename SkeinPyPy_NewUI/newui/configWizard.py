@@ -328,9 +328,13 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.stepsPerEInput = wx.TextCtrl(self, -1, settings.getPreference('steps_per_e', '865.888'))
 		self.GetSizer().Add(self.stepsPerEInput, 0, wx.LEFT, 5)
 		self.AddText("You can repeat these steps to get better calibration.")
+		self.AddSeperator()
+		self.AddText("If you still have filament in your printer which needs\nheat to remove, press the heat up button below:")
+		self.heatButton = self.AddButton("Heatup for filament removal")
 		
 		self.saveLengthButton.Bind(wx.EVT_BUTTON, self.OnSaveLengthClick)
 		self.extrudeButton.Bind(wx.EVT_BUTTON, self.OnExtrudeClick)
+		self.heatButton.Bind(wx.EVT_BUTTON, self.OnHeatClick)
 	
 	def OnSaveLengthClick(self, e):
 		currentEValue = float(self.stepsPerEInput.GetValue())
@@ -340,9 +344,11 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.lengthInput.SetValue("100")
 	
 	def OnExtrudeClick(self, e):
-		threading.Thread(target=self.OnRun).start()
+		threading.Thread(target=self.OnExtrudeRun).start()
 
-	def OnRun(self):
+	def OnExtrudeRun(self):
+		self.heatButton.Enable(False)
+		self.extrudeButton.Enable(False)
 		currentEValue = float(self.stepsPerEInput.GetValue())
 		self.comm = machineCom.MachineCom()
 		while True:
@@ -355,7 +361,26 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.sendGCommand("M92 E%f" % (currentEValue));
 		self.sendGCommand("G92 E0");
 		self.sendGCommand("G1 E100 F300");
-		time.sleep(5)
+		time.sleep(10)
+		self.comm.close()
+		self.extrudeButton.Enable()
+		self.heatButton.Enable()
+
+	def OnHeatClick(self, e):
+		threading.Thread(target=self.OnHeatRun).start()
+	
+	def OnHeatRun(self, e):
+		self.comm = machineCom.MachineCom()
+		while True:
+			line = self.comm.readline()
+			if line == '':
+				return
+			if line.startswith('start'):
+				break
+		self.sendGCommand('M104 S200') #Set the temperature to 200C, should be enough to get PLA and ABS out.
+		wx.MessageBox('Wait till you can remove the filament from the machine, and press OK.\n(Temperature is set to 200C)', 'Machine heatup', wx.OK | wx.ICON_INFORMATION)
+		self.sendGCommand('M104 S0')
+		time.sleep(1)
 		self.comm.close()
 	
 	def sendGCommand(self, cmd):
