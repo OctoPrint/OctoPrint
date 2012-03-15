@@ -65,8 +65,12 @@ class configWindowBase(wx.Frame):
 				self.popup.text.SetLabel(setting.helpText)
 			self.popup.text.Wrap(350)
 			self.popup.Fit()
-			x, y = setting.ctrl.ClientToScreenXY(0, 0)
-			sx, sy = setting.ctrl.GetSizeTuple()
+			if os.name == 'darwin':
+				x, y = self.ClientToScreenXY(0, 0)
+				sx, sy = self.GetClientSizeTuple()
+			else:
+				x, y = setting.ctrl.ClientToScreenXY(0, 0)
+				sx, sy = setting.ctrl.GetSizeTuple()
 			#if platform.system() == "Windows":
 			#	for some reason, under windows, the popup is relative to the main window... in some cases. (Wierd ass bug)
 			#	wx, wy = self.ClientToScreenXY(0, 0)
@@ -126,8 +130,12 @@ class SettingRow():
 		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		sizer.SetRows(x+1)
 		
-		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
-		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseExit)
+		if os.name == 'darwin':
+			self.ctrl.Bind(wx.EVT_SET_FOCUS, self.OnMouseEnter)
+			self.ctrl.Bind(wx.EVT_KILL_FOCUS, self.OnMouseExit)
+		else:
+			self.ctrl.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+			self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseExit)
 		
 		self.defaultBGColour = self.ctrl.GetBackgroundColour()
 		
