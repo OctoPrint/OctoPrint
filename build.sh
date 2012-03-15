@@ -82,9 +82,14 @@ else
 fi
 
 #Get our own version of Printrun
-rm -rf Printrun
-git clone git://github.com/daid/Printrun.git
-rm -rf Printrun/.git
+if [ ! -d "Printrun" ]; then
+  git clone git://github.com/daid/Printrun.git
+else
+  echo "Updating Printrun"
+  cd Printrun
+  git pull
+  cd ..
+fi
 
 #############################
 # Build the packages
@@ -135,7 +140,8 @@ rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 cp -a SkeinPyPy_NewUI ${TARGET_DIR}/SkeinPyPy
 
 #add printrun
-mv Printrun ${TARGET_DIR}/Printrun
+cp -a Printrun ${TARGET_DIR}/Printrun
+rm -rf ${TARGET_DIR}/Printrun/.git*
 
 #add script files
 if [ $BUILD_TARGET = "win32" ]; then
