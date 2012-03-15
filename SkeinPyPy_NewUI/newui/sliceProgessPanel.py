@@ -132,6 +132,11 @@ class WorkerThread(threading.Thread):
 			line = p.stdout.readline()
 		self.returnCode = p.wait()
 		self.gcodeFilename = self.filename[: self.filename.rfind('.')] + "_export.gcode"
+		logfile = open(self.filename[: self.filename.rfind('.')] + "_export.log", "w")
+		for logLine in self.progressLog:
+			logfile.write(logLine)
+			logfile.write('\n')
+		logfile.close()
 		wx.CallAfter(self.notifyWindow.OnSliceDone, self)
 
 class LogWindow(wx.Frame):
