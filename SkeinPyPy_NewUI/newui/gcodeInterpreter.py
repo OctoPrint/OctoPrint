@@ -10,7 +10,8 @@ class gcode():
 		f = open(filename, 'r')
 		pos = util3d.Vector3()
 		posOffset = util3d.Vector3()
-		currentE = 0
+		currentE = 0.0
+		totalExtrusion = 0.0
 		pathList = []
 		scale = 1.0
 		posAbs = True
@@ -52,18 +53,26 @@ class gcode():
 							layerNr += 1
 					if f is not None:
 						feedRate = f
-					newPoint = pos.copy()
 					moveType = 'move'
 					if e is not None:
-						if e > currentE:
-							moveType = 'extrude'
-						if e < currentE:
-							moveType = 'retract'
-						currentE = e
+						if posAbs:
+							if e > currentE:
+								moveType = 'extrude'
+							if e < currentE:
+								moveType = 'retract'
+							totalExtrusion += e - currentE
+							currentE = e
+						else:
+							if e > 0:
+								moveType = 'extrude'
+							if e < 0:
+								moveType = 'retract'
+							totalExtrusion += e
+							currentE += e
 					if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
 						pathList.append(currentPath)
 						currentPath = {'type': moveType, 'pathType': pathType, 'list': [currentPath['list'][-1]], 'layerNr': layerNr}
-					currentPath['list'].append(newPoint)
+					currentPath['list'].append(pos.copy())
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
@@ -125,6 +134,8 @@ class gcode():
 						print "Unknown M code:" + str(M)
 		self.layerCount = layerNr
 		self.pathList = pathList
+		self.totalExtrusion = totalExtrusion
+		print "Extruded a total of: %d mm of filament" % (self.totalExtrusion)
 
 	def getCodeInt(self, str, id):
 		m = re.search(id + '([^\s]+)', str)
