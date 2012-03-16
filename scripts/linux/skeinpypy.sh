@@ -20,5 +20,5 @@ if [ $? != 0 ]; then
 fi
 
 SCRIPT_DIR=`dirname $0`
-python2.7 ${SCRIPT_DIR}/SkeinPyPy/skeinpypy.py
+python ${SCRIPT_DIR}/SkeinPyPy/skeinpypy.py
 
