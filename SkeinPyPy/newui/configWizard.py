@@ -369,7 +369,7 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 	def OnHeatClick(self, e):
 		threading.Thread(target=self.OnHeatRun).start()
 	
-	def OnHeatRun(self, e):
+	def OnHeatRun(self):
 		self.comm = machineCom.MachineCom()
 		while True:
 			line = self.comm.readline()
