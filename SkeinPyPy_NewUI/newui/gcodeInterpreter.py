@@ -137,7 +137,7 @@ class gcode():
 						print "Unknown M code:" + str(M)
 		self.layerCount = layerNr
 		self.pathList = pathList
-		self.extrusionAmount = extrusionAmount
+		self.extrusionAmount = maxExtrusion
 		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
 
 	def getCodeInt(self, str, id):
