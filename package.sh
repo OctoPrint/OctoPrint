@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script is to build the SkeinPyPy package for Windows/Linux and OSx
+# This script is to package the SkeinPyPy package for Windows/Linux and OSx
 # This script should run under Linux and OSx, as well as Windows with Cygwin.
 
 #############################
@@ -137,7 +137,7 @@ fi
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
 #add Skeinforge
-cp -a SkeinPyPy_NewUI ${TARGET_DIR}/SkeinPyPy
+cp -a SkeinPyPy ${TARGET_DIR}/SkeinPyPy
 
 #add printrun
 cp -a Printrun ${TARGET_DIR}/Printrun
