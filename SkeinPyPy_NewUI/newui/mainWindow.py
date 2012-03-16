@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types
+import wx, os, platform, types, webbrowser
 
 from fabmetheus_utilities import settings
 
@@ -18,6 +18,8 @@ from newui import machineCom
 def main():
 	app = wx.App(False)
 	if settings.getPreference('wizardDone', 'False') == 'False':
+		if os.name == 'darwin':
+			wx.MessageBox('The MacOS version of SkeinPyPy is experimental.\nThere are still UI/usability bugs. Check the issue list at:\nhttps://github.com/daid/SkeinPyPy/issues\nfor details.\nPlease report any extra issue you find.', 'MacOS Warning', wx.OK | wx.ICON_INFORMATION)
 		configWizard.configWizard()
 		settings.putPreference("wizardDone", "True")
 	mainWindow()
@@ -59,6 +61,13 @@ class mainWindow(configBase.configWindowBase):
 		i = expertMenu.Append(-1, 'ReRun first run wizard...')
 		self.Bind(wx.EVT_MENU, self.OnFirstRunWizard, i)
 		menubar.Append(expertMenu, 'Expert')
+		
+		helpMenu = wx.Menu()
+		i = helpMenu.Append(-1, 'Online documentation...')
+		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/SkeinPyPy/wiki'), i)
+		i = helpMenu.Append(-1, 'Report a problem...')
+		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/SkeinPyPy/issues'), i)
+		menubar.Append(helpMenu, 'Help')
 		self.SetMenuBar(menubar)
 		
 		self.lastPath = ""
