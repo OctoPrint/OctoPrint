@@ -325,9 +325,9 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					c = 1.0
 					if path['layerNr'] != self.parent.layerSpin.GetValue():
 						if path['layerNr'] < self.parent.layerSpin.GetValue():
-							c = 0.5 - (self.parent.layerSpin.GetValue() - path['layerNr']) * 0.1
-							if c < 0.1:
-								c = 0.1
+							c = 0.9 - (self.parent.layerSpin.GetValue() - path['layerNr']) * 0.1
+							if c < 0.4:
+								c = 0.4
 						else:
 							break
 					if path['type'] == 'move':
@@ -341,7 +341,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							glColor3f(c,0,0)
 					if path['type'] == 'retract':
 						glColor3f(0,c,c)
-					if c > 0.1 and path['type'] == 'extrude':
+					if c > 0.4 and path['type'] == 'extrude':
 						if path['pathType'] == 'FILL':
 							lineWidth = self.fillLineWidth / 2
 						else:
