@@ -154,8 +154,8 @@ def getSkeinPyPyProfileInformation():
 			'Activate_Multiply': "True",
 			'Center_X_mm': storedSetting("machine_center_x"),
 			'Center_Y_mm': storedSetting("machine_center_y"),
-			'Number_of_Columns_integer': "1",
-			'Number_of_Rows_integer': "1",
+			'Number_of_Columns_integer': storedSetting('model_multiply_x', '1'),
+			'Number_of_Rows_integer': storedSetting('model_multiply_y', '1'),
 			'Reverse_Sequence_every_Odd_Layer': DEFSET,
 			'Separation_over_Perimeter_Width_ratio': DEFSET,
 		},'speed': {

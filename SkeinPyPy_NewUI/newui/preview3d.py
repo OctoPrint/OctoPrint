@@ -381,21 +381,32 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.modelDisplayList = glGenLists(1);
 			if self.parent.modelDirty:
 				self.parent.modelDirty = False
+				multiX = int(settings.getProfileSetting('model_multiply_x', '1'))
+				multiY = int(settings.getProfileSetting('model_multiply_y', '1'))
+				modelSize = self.parent.triangleMesh.getCarveCornerMaximum() - self.parent.triangleMesh.getCarveCornerMinimum()
 				glNewList(self.modelDisplayList, GL_COMPILE)
-				glBegin(GL_TRIANGLES)
-				for face in self.parent.triangleMesh.faces:
-					v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
-					v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
-					v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
-					glNormal3f(face.normal.x, face.normal.y, face.normal.z)
-					glVertex3f(v1.x, v1.y, v1.z)
-					glVertex3f(v2.x, v2.y, v2.z)
-					glVertex3f(v3.x, v3.y, v3.z)
-					glNormal3f(-face.normal.x, -face.normal.y, -face.normal.z)
-					glVertex3f(v1.x, v1.y, v1.z)
-					glVertex3f(v3.x, v3.y, v3.z)
-					glVertex3f(v2.x, v2.y, v2.z)
-				glEnd()
+				glPushMatrix()
+				glTranslate(-(modelSize.x+self.lineWidth*15)*(multiX-1)/2,-(modelSize.y+self.lineWidth*15)*(multiY-1)/2, 0)
+				for mx in xrange(0, multiX):
+					for my in xrange(0, multiY):
+						for face in self.parent.triangleMesh.faces:
+							glPushMatrix()
+							glTranslate((modelSize.x+self.lineWidth*15)*mx,(modelSize.y+self.lineWidth*15)*my, 0)
+							glBegin(GL_TRIANGLES)
+							v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
+							v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
+							v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
+							glNormal3f(face.normal.x, face.normal.y, face.normal.z)
+							glVertex3f(v1.x, v1.y, v1.z)
+							glVertex3f(v2.x, v2.y, v2.z)
+							glVertex3f(v3.x, v3.y, v3.z)
+							glNormal3f(-face.normal.x, -face.normal.y, -face.normal.z)
+							glVertex3f(v1.x, v1.y, v1.z)
+							glVertex3f(v3.x, v3.y, v3.z)
+							glVertex3f(v2.x, v2.y, v2.z)
+							glEnd()
+							glPopMatrix()
+				glPopMatrix()
 				glEndList()
 			if self.renderTransparent:
 				#If we want transparent, then first render a solid black model to remove the printer size lines.
