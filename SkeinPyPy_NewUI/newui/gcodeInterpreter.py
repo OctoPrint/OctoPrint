@@ -12,6 +12,7 @@ class gcode():
 		posOffset = util3d.Vector3()
 		currentE = 0.0
 		totalExtrusion = 0.0
+		maxExtrusion = 0.0
 		pathList = []
 		scale = 1.0
 		posAbs = True
@@ -69,6 +70,8 @@ class gcode():
 								moveType = 'retract'
 							totalExtrusion += e
 							currentE += e
+						if totalExtrusion > maxExtrusion:
+							maxExtrusion = totalExtrusion
 					if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
 						pathList.append(currentPath)
 						currentPath = {'type': moveType, 'pathType': pathType, 'list': [currentPath['list'][-1]], 'layerNr': layerNr}
@@ -134,8 +137,8 @@ class gcode():
 						print "Unknown M code:" + str(M)
 		self.layerCount = layerNr
 		self.pathList = pathList
-		self.totalExtrusion = totalExtrusion
-		print "Extruded a total of: %d mm of filament" % (self.totalExtrusion)
+		self.extrusionAmount = extrusionAmount
+		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
 
 	def getCodeInt(self, str, id):
 		m = re.search(id + '([^\s]+)', str)
