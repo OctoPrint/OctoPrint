@@ -128,11 +128,10 @@ fi
 #Extract pypy
 if [ $BUILD_TARGET = "win32" ]; then
 	7z x pypy-${PYPY_VERSION}-win32.zip -o${TARGET_DIR}
-	mv ${TARGET_DIR}/pypy-${PYPY_VERSION}* ${TARGET_DIR}/pypy
 else
 	cd ${TARGET_DIR}; $TAR -xjf ../pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2; cd ..
-	mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
 fi
+mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
 #Cleanup pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
