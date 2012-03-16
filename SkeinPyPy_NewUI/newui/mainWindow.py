@@ -278,6 +278,7 @@ class mainWindow(configBase.configWindowBase):
 		newSize = self.GetSize();
 		newSize.IncBy(0, -spp.GetSize().GetHeight())
 		self.SetSize(newSize)
+		self.sizer.Remove(spp)
 		spp.Destroy()
 		for spp in self.progressPanelList:
 			self.sizer.Remove(spp)
