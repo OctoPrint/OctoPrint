@@ -360,8 +360,8 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.sendGCommand('M302') #Disable cold extrusion protection
 		self.sendGCommand("M92 E%f" % (currentEValue));
 		self.sendGCommand("G92 E0");
-		self.sendGCommand("G1 E100 F300");
-		time.sleep(10)
+		self.sendGCommand("G1 E100 F600");
+		time.sleep(15)
 		self.comm.close()
 		self.extrudeButton.Enable()
 		self.heatButton.Enable()
