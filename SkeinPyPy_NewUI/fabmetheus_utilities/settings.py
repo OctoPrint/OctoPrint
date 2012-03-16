@@ -72,6 +72,11 @@ def firstLayerSpeedRatio(setting):
 	speed = float(getProfileSetting('print_speed'))
 	return bottomSpeed/speed
 
+def calcSupportDistanceRatio(setting):
+	edgeWidth = calculateEdgeWidth(setting)
+	distance = float(getProfileSetting('support_distance', '0.5'))
+	return distance / edgeWidth
+
 def getSkeinPyPyProfileInformation():
 	return {
 		'carve': {
@@ -207,8 +212,8 @@ def getSkeinPyPyProfileInformation():
 			'Raft_Additional_Margin_over_Length_%': DEFSET,
 			'Raft_Margin_mm': DEFSET,
 			'Support_Cross_Hatch': 'False',
-			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': DEFSET,
-			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': DEFSET,
+			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': storedPercentSetting('support_rate'),
+			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': calcSupportDistanceRatio,
 			'Support_Material_Choice_': storedSetting("support"),
 			'Support_Minimum_Angle_degrees': DEFSET,
 		},'skirt': {
