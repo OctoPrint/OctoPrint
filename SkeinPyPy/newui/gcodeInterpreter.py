@@ -13,6 +13,7 @@ class gcode():
 		currentE = 0.0
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
+		totalMoveTimeMinute = 0.0
 		pathList = []
 		scale = 1.0
 		posAbs = True
@@ -34,6 +35,7 @@ class gcode():
 					z = self.getCodeFloat(line, 'Z')
 					e = self.getCodeFloat(line, 'E')
 					f = self.getCodeFloat(line, 'F')
+					oldPos = pos.copy()
 					if x is not None:
 						if posAbs:
 							pos.x = x * scale
@@ -45,15 +47,16 @@ class gcode():
 						else:
 							pos.y += y * scale
 					if z is not None:
-						oldZ = pos.z
 						if posAbs:
 							pos.z = z * scale
 						else:
 							pos.z += z * scale
-						if oldZ != pos.z and startCodeDone:
+						if oldPos.z != pos.z and startCodeDone:
 							layerNr += 1
 					if f is not None:
 						feedRate = f
+					if x is not None or y is not None or z is not None:
+						totalMoveTimeMinute += (oldPos - pos).vsize() / feedRate
 					moveType = 'move'
 					if e is not None:
 						if posAbs:
@@ -138,7 +141,9 @@ class gcode():
 		self.layerCount = layerNr
 		self.pathList = pathList
 		self.extrusionAmount = maxExtrusion
+		self.totalMoveTimeMinute = totalMoveTimeMinute
 		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
+		print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
 	def getCodeInt(self, str, id):
 		m = re.search(id + '([^\s]+)', str)
