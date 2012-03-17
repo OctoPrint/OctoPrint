@@ -3,8 +3,6 @@ import __init__
 
 import wx, os, platform, types, webbrowser
 
-from fabmetheus_utilities import settings
-
 from newui import configBase
 from newui import advancedConfig
 from newui import preview3d
@@ -14,14 +12,15 @@ from newui import validators
 from newui import preferencesDialog
 from newui import configWizard
 from newui import machineCom
+from newui import profile
 
 def main():
 	app = wx.App(False)
-	if settings.getPreference('wizardDone', 'False') == 'False':
+	if profile.getPreference('wizardDone') == 'False':
 		if os.name == 'darwin':
 			wx.MessageBox('The MacOS version of SkeinPyPy is experimental.\nThere are still UI/usability bugs. Check the issue list at:\nhttps://github.com/daid/SkeinPyPy/issues\nfor details.\nPlease report any extra issue you find.', 'MacOS Warning', wx.OK | wx.ICON_INFORMATION)
 		configWizard.configWizard()
-		settings.putPreference("wizardDone", "True")
+		profile.putPreference("wizardDone", "True")
 	mainWindow()
 	app.MainLoop()
 
@@ -71,7 +70,7 @@ class mainWindow(configBase.configWindowBase):
 		self.SetMenuBar(menubar)
 		
 		self.lastPath = ""
-		self.filename = settings.getPreference('lastFile', "None")
+		self.filename = profile.getPreference('lastFile')
 		self.progressPanelList = []
 
 		#Preview window
@@ -223,7 +222,7 @@ class mainWindow(configBase.configWindowBase):
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
 			self.lastPath = os.path.split(profileFile)[0]
-			settings.loadGlobalProfile(profileFile)
+			profile.loadGlobalProfile(profileFile)
 			self.updateProfileToControls()
 		dlg.Destroy()
 	
@@ -233,7 +232,7 @@ class mainWindow(configBase.configWindowBase):
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
 			self.lastPath = os.path.split(profileFile)[0]
-			settings.saveGlobalProfile(profileFile)
+			profile.saveGlobalProfile(profileFile)
 		dlg.Destroy()
 	
 	def OnPreferences(self, e):
@@ -242,7 +241,7 @@ class mainWindow(configBase.configWindowBase):
 		prefDialog.Show(True)
 	
 	def OnDefaultMarlinFirmware(self, e):
-		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"), settings.getPreference('serial_port', 'AUTO'))
+		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"), profile.getPreference('serial_port'))
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
@@ -252,7 +251,7 @@ class mainWindow(configBase.configWindowBase):
 			if not(os.path.exists(filename)):
 				return
 			#For some reason my Ubuntu 10.10 crashes here.
-			machineCom.InstallFirmware(filename, settings.getPreference('serial_port', 'AUTO'))
+			machineCom.InstallFirmware(filename, profile.getPreference('serial_port'))
 
 	def OnFirstRunWizard(self, e):
 		configWizard.configWizard()
@@ -263,7 +262,7 @@ class mainWindow(configBase.configWindowBase):
 		dlg.SetWildcard("STL files (*.stl)|*.stl")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
-			settings.putPreference('lastFile', self.filename)
+			profile.putPreference('lastFile', self.filename)
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
@@ -273,7 +272,7 @@ class mainWindow(configBase.configWindowBase):
 	def OnSlice(self, e):
 		if self.filename == None:
 			return
-		settings.saveGlobalProfile(settings.getDefaultProfilePath())
+		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
@@ -308,5 +307,5 @@ class mainWindow(configBase.configWindowBase):
 		self.Close()
 	
 	def OnClose(self, e):
-		settings.saveGlobalProfile(settings.getDefaultProfilePath())
+		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		self.Destroy()

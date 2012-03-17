@@ -7,30 +7,30 @@ from __future__ import absolute_import
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import ConfigParser
 import os, sys
 import types, math
 
+from newui import profile
 from fabmetheus_utilities import archive
 
 def DEFSET(setting):
 	return setting.value
 
 def storedSetting(name):
-	return lambda setting: getProfileSetting(name, setting.value)
+	return lambda setting: profile.getProfileSetting(name)
 
 def ifSettingAboveZero(name):
-	return lambda setting: float(getProfileSetting(name, '0.0')) > 0
+	return lambda setting: float(profile.getProfileSetting(name)) > 0
 
-def ifSettingIs(name, value, default):
-	return lambda setting: getProfileSetting(name, default) == value
+def ifSettingIs(name, value):
+	return lambda setting: profile.getProfileSetting(name) == value
 
 def storedPercentSetting(name):
-	return lambda setting: float(getProfileSetting(name, setting.value * 100)) / 100
+	return lambda setting: float(profile.getProfileSetting(name)) / 100
 
 def calculateEdgeWidth(setting):
-	wallThickness = float(getProfileSetting('wall_thickness'))
-	nozzleSize = float(getProfileSetting('nozzle_size'))
+	wallThickness = float(profile.getProfileSetting('wall_thickness'))
+	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return wallThickness
@@ -43,13 +43,13 @@ def calculateEdgeWidth(setting):
 	return lineWidth
 
 def calculateShells(setting):
-	return calculateShellsImp(float(getProfileSetting('wall_thickness')))
+	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')))
 
 def calculateShellsBase(setting):
-	return calculateShellsImp(float(getProfileSetting('wall_thickness')) + float(getProfileSetting('extra_base_wall_thickness', '0')))
+	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')) + float(profile.getProfileSetting('extra_base_wall_thickness')))
 
 def calculateShellsImp(wallThickness):
-	nozzleSize = float(getProfileSetting('nozzle_size'))
+	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return 0
@@ -62,19 +62,19 @@ def calculateShellsImp(wallThickness):
 	return lineCount - 1
 
 def calculateSolidLayerCount(setting):
-	layerHeight = float(getProfileSetting('layer_height'))
-	solidThickness = float(getProfileSetting('solid_layer_thickness'))
+	layerHeight = float(profile.getProfileSetting('layer_height'))
+	solidThickness = float(profile.getProfileSetting('solid_layer_thickness'))
 	ret = int(math.ceil(solidThickness / layerHeight - 0.0001))
 	return ret
 
 def firstLayerSpeedRatio(setting):
-	bottomSpeed = float(getProfileSetting('bottom_layer_speed'))
-	speed = float(getProfileSetting('print_speed'))
+	bottomSpeed = float(profile.getProfileSetting('bottom_layer_speed'))
+	speed = float(profile.getProfileSetting('print_speed'))
 	return bottomSpeed/speed
 
 def calcSupportDistanceRatio(setting):
 	edgeWidth = calculateEdgeWidth(setting)
-	distance = float(getProfileSetting('support_distance', '0.5'))
+	distance = float(profile.getProfileSetting('support_distance'))
 	return distance / edgeWidth
 
 def getSkeinPyPyProfileInformation():
@@ -139,10 +139,10 @@ def getSkeinPyPyProfileInformation():
 			'Infill_Begin_Rotation_degrees': DEFSET,
 			'Infill_Begin_Rotation_Repeat_layers': DEFSET,
 			'Infill_Odd_Layer_Extra_Rotation_degrees': DEFSET,
-			'Grid_Circular': ifSettingIs('infill_type', 'Grid Circular', 'Line'),
-			'Grid_Hexagonal': ifSettingIs('infill_type', 'Grid Hexagonal', 'Line'),
-			'Grid_Rectangular': ifSettingIs('infill_type', 'Grid Rectangular', 'Line'),
-			'Line': ifSettingIs('infill_type', 'Line', 'Line'),
+			'Grid_Circular': ifSettingIs('infill_type', 'Grid Circular'),
+			'Grid_Hexagonal': ifSettingIs('infill_type', 'Grid Hexagonal'),
+			'Grid_Rectangular': ifSettingIs('infill_type', 'Grid Rectangular'),
+			'Line': ifSettingIs('infill_type', 'Line'),
 			'Infill_Perimeter_Overlap_ratio': storedPercentSetting('fill_overlap'),
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
 			'Infill_Width': storedSetting("nozzle_size"),
@@ -380,69 +380,6 @@ def getSkeinPyPyProfileInformation():
 		}
 	}
 
-def loadGlobalProfile(filename):
-	"Read a configuration file as global config"
-	global globalProfileParser
-	globalProfileParser = ConfigParser.ConfigParser()
-	globalProfileParser.read(filename)
-
-def saveGlobalProfile(filename):
-	globalProfileParser.write(open(filename, 'w'))
-
-def getProfileSetting(name, default = "ERR", section = 'profile'):
-	#Check if we have a configuration file loaded, else load the default.
-	if not globals().has_key('globalProfileParser'):
-		loadGlobalProfile(getDefaultProfilePath())
-	if not globalProfileParser.has_option(section, name):
-		if not globalProfileParser.has_section(section):
-			globalProfileParser.add_section(section)
-		globalProfileParser.set(section, name, str(default))
-		print name + " not found in profile, so using default: " + str(default)
-		return default
-	return globalProfileParser.get(section, name)
-
-def putProfileSetting(name, value, section = 'profile'):
-	#Check if we have a configuration file loaded, else load the default.
-	if not globals().has_key('globalProfileParser'):
-		loadGlobalProfile(getDefaultProfilePath())
-	if not globalProfileParser.has_section(section):
-		globalProfileParser.add_section(section)
-	globalProfileParser.set(section, name, str(value))
-
-global globalPreferenceParser
-globalPreferenceParser = None
-
-def getPreferencePath():
-	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
-
-def getPreference(name, default = "ERR"):
-	global globalPreferenceParser
-	if globalPreferenceParser == None:
-		globalPreferenceParser = ConfigParser.ConfigParser()
-		globalPreferenceParser.read(getPreferencePath())
-	if not globalPreferenceParser.has_option('preference', name):
-		if not globalPreferenceParser.has_section('preference'):
-			globalPreferenceParser.add_section('preference')
-		globalPreferenceParser.set('preference', name, str(default))
-		print name + " not found in preferences, so using default: " + str(default)
-		return default
-	return globalPreferenceParser.get('preference', name)
-
-def putPreference(name, value):
-	#Check if we have a configuration file loaded, else load the default.
-	global globalPreferenceParser
-	if globalPreferenceParser == None:
-		globalPreferenceParser = ConfigParser.ConfigParser()
-		globalPreferenceParser.read(getPreferencePath())
-	if not globalPreferenceParser.has_section('preference'):
-		globalPreferenceParser.add_section('preference')
-	globalPreferenceParser.set('preference', name, str(value))
-	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
-
-
-def getDefaultProfilePath():
-	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
-
 def safeConfigName(name):
 	return name.replace("=", "").replace(":", "").replace(" ", "_").replace("(", "").replace(")", "")
 
@@ -491,10 +428,10 @@ def getAlterationFile(fileName, allowMagicPrefix = True):
 		if fileName == 'start.gcode':
 			#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
 			#We also set our steps per E here, if configured.
-			eSteps = float(getPreference('steps_per_e', '0'))
+			eSteps = float(profile.getPreference('steps_per_e'))
 			if eSteps > 0:
 				prefix += 'M92 E'+str(eSteps)+'\n'
-			temp = float(getProfileSetting('print_temperature', '0'))
+			temp = float(profile.getProfileSetting('print_temperature'))
 			if temp > 0:
 				prefix += 'M109 S'+str(temp)+'\n'
 		elif fileName == 'replace.csv':

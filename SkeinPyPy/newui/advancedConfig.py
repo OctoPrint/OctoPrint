@@ -4,8 +4,6 @@ import __init__
 import wx, os, platform, types
 import ConfigParser
 
-from fabmetheus_utilities import settings
-
 from newui import configBase
 from newui import preview3d
 from newui import sliceProgessPanel

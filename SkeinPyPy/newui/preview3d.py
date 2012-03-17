@@ -14,10 +14,11 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from fabmetheus_utilities import settings
+from newui import profile
 from newui import gcodeInterpreter
 from newui import util3d
 
+from fabmetheus_utilities import settings
 from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from fabmetheus_utilities.vector3 import Vector3
 
@@ -32,7 +33,7 @@ class previewPanel(wx.Panel):
 		self.init = 0
 		self.triangleMesh = None
 		self.gcode = None
-		self.machineSize = Vector3(float(settings.getPreference('machine_width', '205')), float(settings.getPreference('machine_depth', '205')), float(settings.getPreference('machine_height', '200')))
+		self.machineSize = Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
 		self.machineCenter = Vector3(0, 0, 0)
 		
 		self.toolbar = wx.ToolBar( self, -1 )
@@ -93,10 +94,12 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def updateWallLineWidth(self, setting):
+		#TODO: this shouldn't be needed, you can calculate the line width from the E values combined with the steps_per_E and the filament diameter (reverse volumatric)
 		self.glCanvas.lineWidth = settings.calculateEdgeWidth(setting)
 	
 	def updateInfillLineWidth(self, setting):
-		self.glCanvas.infillLineWidth = settings.getProfileSetting('nozzle_size')
+		#TODO: this shouldn't be needed, you can calculate the line width from the E values combined with the steps_per_E and the filament diameter (reverse volumatric)
+		self.glCanvas.infillLineWidth = profile.getProfileSetting('nozzle_size')
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
@@ -158,18 +161,18 @@ class previewPanel(wx.Panel):
 		scale = 1.0
 		rotate = 0.0
 		try:
-			scale = float(settings.getProfileSetting('model_scale', '1.0'))
-			rotate = float(settings.getProfileSetting('model_rotate_base', '0.0')) / 180 * math.pi
+			scale = float(profile.getProfileSetting('model_scale'))
+			rotate = float(profile.getProfileSetting('model_rotate_base')) / 180 * math.pi
 		except:
 			pass
 		scaleX = scale
 		scaleY = scale
 		scaleZ = scale
-		if settings.getProfileSetting('flip_x') == 'True':
+		if profile.getProfileSetting('flip_x') == 'True':
 			scaleX = -scaleX
-		if settings.getProfileSetting('flip_y') == 'True':
+		if profile.getProfileSetting('flip_y') == 'True':
 			scaleY = -scaleY
-		if settings.getProfileSetting('flip_z') == 'True':
+		if profile.getProfileSetting('flip_z') == 'True':
 			scaleZ = -scaleZ
 		mat00 = math.cos(rotate) * scaleX
 		mat01 =-math.sin(rotate) * scaleY
@@ -381,8 +384,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.modelDisplayList = glGenLists(1);
 			if self.parent.modelDirty:
 				self.parent.modelDirty = False
-				multiX = int(settings.getProfileSetting('model_multiply_x', '1'))
-				multiY = int(settings.getProfileSetting('model_multiply_y', '1'))
+				multiX = int(profile.getProfileSetting('model_multiply_x'))
+				multiY = int(profile.getProfileSetting('model_multiply_y'))
 				modelSize = self.parent.triangleMesh.getCarveCornerMaximum() - self.parent.triangleMesh.getCarveCornerMinimum()
 				glNewList(self.modelDisplayList, GL_COMPILE)
 				glPushMatrix()

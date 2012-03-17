@@ -3,9 +3,8 @@ import __init__
 
 import wx, os, sys, platform, types
 
-from fabmetheus_utilities import settings
-
 from newui import validators
+from newui import profile
 
 def main():
 	app = wx.App(False)
@@ -82,9 +81,9 @@ class configWindowBase(wx.Frame):
 		"Update the configuration wx controls to show the new configuration settings"
 		for setting in self.settingControlList:
 			if setting.type == 'profile':
-				setting.SetValue(settings.getProfileSetting(setting.configName))
+				setting.SetValue(profile.getProfileSetting(setting.configName))
 			else:
-				setting.SetValue(settings.getPreference(setting.configName))
+				setting.SetValue(profile.getPreference(setting.configName))
 
 class TitleRow():
 	def __init__(self, panel, name):
@@ -112,18 +111,18 @@ class SettingRow():
 		self.type = type
 		
 		self.label = wx.StaticText(panel, -1, label)
-		getSettingFunc = settings.getPreference
+		getSettingFunc = profile.getPreference
 		if self.type == 'profile':
-			getSettingFunc = settings.getProfileSetting
+			getSettingFunc = profile.getProfileSetting
 		if isinstance(defaultValue, types.StringTypes):
-			self.ctrl = wx.TextCtrl(panel, -1, getSettingFunc(configName, defaultValue))
+			self.ctrl = wx.TextCtrl(panel, -1, getSettingFunc(configName))
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
 		elif isinstance(defaultValue, types.BooleanType):
 			self.ctrl = wx.CheckBox(panel, -1, style=wx.ALIGN_RIGHT)
-			self.SetValue(getSettingFunc(configName, defaultValue))
+			self.SetValue(getSettingFunc(configName))
 			self.ctrl.Bind(wx.EVT_CHECKBOX, self.OnSettingChange)
 		else:
-			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
 
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -149,9 +148,9 @@ class SettingRow():
 
 	def OnSettingChange(self, e):
 		if self.type == 'profile':
-			settings.putProfileSetting(self.configName, self.GetValue())
+			profile.putProfileSetting(self.configName, self.GetValue())
 		else:
-			settings.putPreference(self.configName, self.GetValue())
+			profile.putPreference(self.configName, self.GetValue())
 		result = validators.SUCCESS
 		msgs = []
 		for validator in self.validators:
