@@ -25,6 +25,11 @@ def ifSettingAboveZero(name):
 def ifSettingIs(name, value):
 	return lambda setting: profile.getProfileSetting(name) == value
 
+def raftLayerCount(setting):
+	if profile.getProfileSetting('enable_raft') == "True":
+		return '1'
+	return '0'
+
 def storedPercentSetting(name):
 	return lambda setting: float(profile.getProfileSetting(name)) / 100
 
@@ -196,7 +201,7 @@ def getSkeinPyPyProfileInformation():
 			'Base_Flow_Rate_Multiplier_ratio': DEFSET,
 			'Base_Infill_Density_ratio': DEFSET,
 			'Base_Layer_Thickness_over_Layer_Thickness': DEFSET,
-			'Base_Layers_integer': '0',
+			'Base_Layers_integer': raftLayerCount,
 			'Base_Nozzle_Lift_over_Base_Layer_Thickness_ratio': DEFSET,
 			'Initial_Circling': DEFSET,
 			'Infill_Overhang_over_Extrusion_Width_ratio': DEFSET,
@@ -204,7 +209,7 @@ def getSkeinPyPyProfileInformation():
 			'Interface_Flow_Rate_Multiplier_ratio': DEFSET,
 			'Interface_Infill_Density_ratio': DEFSET,
 			'Interface_Layer_Thickness_over_Layer_Thickness': DEFSET,
-			'Interface_Layers_integer': '0',
+			'Interface_Layers_integer': raftLayerCount,
 			'Interface_Nozzle_Lift_over_Interface_Layer_Thickness_ratio': DEFSET,
 			'Name_of_Support_End_File': DEFSET,
 			'Name_of_Support_Start_File': DEFSET,

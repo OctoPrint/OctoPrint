@@ -46,6 +46,7 @@ profileDefaultSettings = {
 	'support_rate': '100',
 	'support_distance': '0.5',
 	'joris': 'False',
+	'enable_raft': 'False',
 }
 preferencesDefaultSettings = {
 	'wizardDone': 'False',

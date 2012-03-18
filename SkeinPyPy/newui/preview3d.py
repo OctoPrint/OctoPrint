@@ -19,7 +19,6 @@ from newui import profile
 from newui import gcodeInterpreter
 from newui import util3d
 
-from fabmetheus_utilities import settings
 from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from fabmetheus_utilities.vector3 import Vector3
 
@@ -91,14 +90,6 @@ class previewPanel(wx.Panel):
 		self.machineCenter.y = y
 		self.moveModel()
 		self.glCanvas.Refresh()
-	
-	def updateWallLineWidth(self, setting):
-		#TODO: this shouldn't be needed, you can calculate the line width from the E values combined with the steps_per_E and the filament diameter (reverse volumatric)
-		self.glCanvas.lineWidth = settings.calculateEdgeWidth(setting)
-	
-	def updateInfillLineWidth(self, setting):
-		#TODO: this shouldn't be needed, you can calculate the line width from the E values combined with the steps_per_E and the filament diameter (reverse volumatric)
-		self.glCanvas.infillLineWidth = profile.getProfileSetting('nozzle_size')
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
@@ -216,8 +207,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.zoom = 150
 		self.offsetX = 0
 		self.offsetY = 0
-		self.lineWidth = 0.4
-		self.fillLineWidth = 0.4
 		self.view3D = True
 		self.modelDisplayList = None
 		self.gcodeDisplayList = None
@@ -315,7 +304,22 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			if self.parent.gcodeDirty:
 				self.parent.gcodeDirty = False
 				glNewList(self.gcodeDisplayList, GL_COMPILE)
+				prevLayerZ = 0.0
+				curLayerZ = 0.0
+				
+				layerThickness = 0.0
+				filamentRadius = float(profile.getProfileSetting('filament_diameter')) / 2
+				filamentArea = math.pi * filamentRadius * filamentRadius
+				lineWidth = float(profile.getProfileSetting('nozzle_size')) / 2
+				
+				curLayerNum = 0
 				for path in self.parent.gcode.pathList:
+					if path['layerNr'] != curLayerNum:
+						prevLayerZ = curLayerZ
+						curLayerZ = path['list'][1].z
+						curLayerNum = path['layerNr']
+						layerThickness = curLayerZ - prevLayerZ
+					
 					c = 1.0
 					if path['layerNr'] != self.parent.layerSpin.GetValue():
 						if path['layerNr'] < self.parent.layerSpin.GetValue():
@@ -336,16 +340,14 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					if path['type'] == 'retract':
 						glColor3f(0,c,c)
 					if c > 0.4 and path['type'] == 'extrude':
-						if path['pathType'] == 'FILL':
-							lineWidth = self.fillLineWidth / 2
-						else:
-							lineWidth = self.lineWidth / 2
 						for i in xrange(0, len(path['list'])-1):
 							v0 = path['list'][i]
 							v1 = path['list'][i+1]
 							dist = (v0 - v1).vsize()
-							if dist > 0:
-								extrusionMMperDist = (v1.e - v0.e) / (v0 - v1).vsize() / self.parent.gcode.stepsPerE
+							if dist > 0 and layerThickness > 0:
+								extrusionMMperDist = (v1.e - v0.e) / (v0 - v1).vsize()
+								lineWidth = extrusionMMperDist * filamentArea / layerThickness / 2
+
 							#TODO: Calculate line width from ePerDistance (needs layer thickness, steps_per_E and filament diameter)
 							normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
 							normal.normalize()
@@ -394,12 +396,12 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				modelSize = self.parent.triangleMesh.getCarveCornerMaximum() - self.parent.triangleMesh.getCarveCornerMinimum()
 				glNewList(self.modelDisplayList, GL_COMPILE)
 				glPushMatrix()
-				glTranslate(-(modelSize.x+self.lineWidth*15)*(multiX-1)/2,-(modelSize.y+self.lineWidth*15)*(multiY-1)/2, 0)
+				glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
 				for mx in xrange(0, multiX):
 					for my in xrange(0, multiY):
 						for face in self.parent.triangleMesh.faces:
 							glPushMatrix()
-							glTranslate((modelSize.x+self.lineWidth*15)*mx,(modelSize.y+self.lineWidth*15)*my, 0)
+							glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
 							glBegin(GL_TRIANGLES)
 							v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
 							v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
