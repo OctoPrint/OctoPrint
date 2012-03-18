@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types
-
-from fabmetheus_utilities import settings
+import wx, os, platform, types, webbrowser
 
 from newui import configBase
 from newui import advancedConfig
@@ -14,12 +12,15 @@ from newui import validators
 from newui import preferencesDialog
 from newui import configWizard
 from newui import machineCom
+from newui import profile
 
 def main():
 	app = wx.App(False)
-	if settings.getPreference('wizardDone', 'False') == 'False':
+	if profile.getPreference('wizardDone') == 'False':
+		if os.name == 'darwin':
+			wx.MessageBox('The MacOS version of SkeinPyPy is experimental.\nThere are still UI/usability bugs. Check the issue list at:\nhttps://github.com/daid/SkeinPyPy/issues\nfor details.\nPlease report any extra issue you find.', 'MacOS Warning', wx.OK | wx.ICON_INFORMATION)
 		configWizard.configWizard()
-		settings.putPreference("wizardDone", "True")
+		profile.putPreference("wizardDone", "True")
 	mainWindow()
 	app.MainLoop()
 
@@ -32,8 +33,8 @@ class mainWindow(configBase.configWindowBase):
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Load STL file...')
-		self.Bind(wx.EVT_MENU, self.OnLoadSTL, i)
+		i = fileMenu.Append(-1, 'Load model file...')
+		self.Bind(wx.EVT_MENU, self.OnLoadModel, i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
@@ -59,10 +60,17 @@ class mainWindow(configBase.configWindowBase):
 		i = expertMenu.Append(-1, 'ReRun first run wizard...')
 		self.Bind(wx.EVT_MENU, self.OnFirstRunWizard, i)
 		menubar.Append(expertMenu, 'Expert')
+		
+		helpMenu = wx.Menu()
+		i = helpMenu.Append(-1, 'Online documentation...')
+		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/SkeinPyPy/wiki'), i)
+		i = helpMenu.Append(-1, 'Report a problem...')
+		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/SkeinPyPy/issues'), i)
+		menubar.Append(helpMenu, 'Help')
 		self.SetMenuBar(menubar)
 		
 		self.lastPath = ""
-		self.filename = settings.getPreference('lastFile', "None")
+		self.filename = profile.getPreference('lastFile')
 		self.progressPanelList = []
 
 		#Preview window
@@ -171,14 +179,21 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Rotate (deg)", 'model_rotate_base', '0', '')
 		validators.validFloat(c)
 		configBase.settingNotify(c, self.preview3d.updateModelTransform)
+		configBase.TitleRow(right, "Multiply")
+		c = configBase.SettingRow(right, "Multiple X", 'model_multiply_x', '1', '')
+		validators.validInt(c)
+		configBase.settingNotify(c, self.preview3d.updateModelTransform)
+		c = configBase.SettingRow(right, "Multiple Y", 'model_multiply_y', '1', '')
+		validators.validInt(c)
+		configBase.settingNotify(c, self.preview3d.updateModelTransform)
 
 		# load and slice buttons.
-		loadButton = wx.Button(self, -1, 'Load STL')
+		loadButton = wx.Button(self, -1, 'Load Model')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
-		self.Bind(wx.EVT_BUTTON, self.OnLoadSTL, loadButton)
+		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		#Also bind double clicking the 3D preview to load an STL file.
-		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadSTL, self.preview3d.glCanvas)
+		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
 
 		#Main sizer, to position the preview window, buttons and tab control
 		sizer = wx.GridBagSizer()
@@ -207,7 +222,7 @@ class mainWindow(configBase.configWindowBase):
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
 			self.lastPath = os.path.split(profileFile)[0]
-			settings.loadGlobalProfile(profileFile)
+			profile.loadGlobalProfile(profileFile)
 			self.updateProfileToControls()
 		dlg.Destroy()
 	
@@ -217,7 +232,7 @@ class mainWindow(configBase.configWindowBase):
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
 			self.lastPath = os.path.split(profileFile)[0]
-			settings.saveGlobalProfile(profileFile)
+			profile.saveGlobalProfile(profileFile)
 		dlg.Destroy()
 	
 	def OnPreferences(self, e):
@@ -226,7 +241,7 @@ class mainWindow(configBase.configWindowBase):
 		prefDialog.Show(True)
 	
 	def OnDefaultMarlinFirmware(self, e):
-		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"), settings.getPreference('serial_port', 'AUTO'))
+		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"), profile.getPreference('serial_port'))
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
@@ -236,18 +251,18 @@ class mainWindow(configBase.configWindowBase):
 			if not(os.path.exists(filename)):
 				return
 			#For some reason my Ubuntu 10.10 crashes here.
-			machineCom.InstallFirmware(filename, settings.getPreference('serial_port', 'AUTO'))
+			machineCom.InstallFirmware(filename, profile.getPreference('serial_port'))
 
 	def OnFirstRunWizard(self, e):
 		configWizard.configWizard()
 		self.updateProfileToControls()
 
-	def OnLoadSTL(self, e):
+	def OnLoadModel(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("OBJ, STL files (*.stl;*.obj)|*.stl;*.obj")
+		dlg.SetWildcard("STL files (*.stl)|*.stl")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
-			settings.putPreference('lastFile', self.filename)
+			profile.putPreference('lastFile', self.filename)
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
@@ -257,7 +272,7 @@ class mainWindow(configBase.configWindowBase):
 	def OnSlice(self, e):
 		if self.filename == None:
 			return
-		settings.saveGlobalProfile(settings.getDefaultProfilePath())
+		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
@@ -278,6 +293,7 @@ class mainWindow(configBase.configWindowBase):
 		newSize = self.GetSize();
 		newSize.IncBy(0, -spp.GetSize().GetHeight())
 		self.SetSize(newSize)
+		self.sizer.Remove(spp)
 		spp.Destroy()
 		for spp in self.progressPanelList:
 			self.sizer.Remove(spp)
@@ -291,5 +307,5 @@ class mainWindow(configBase.configWindowBase):
 		self.Close()
 	
 	def OnClose(self, e):
-		settings.saveGlobalProfile(settings.getDefaultProfilePath())
+		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		self.Destroy()

@@ -3,14 +3,17 @@ import math
 import threading
 import re
 
-from fabmetheus_utilities.vector3 import Vector3
+from newui import util3d
 
 class gcode():
 	def __init__(self, filename):
 		f = open(filename, 'r')
-		pos = Vector3()
-		posOffset = Vector3()
-		currentE = 0
+		pos = util3d.Vector3()
+		posOffset = util3d.Vector3()
+		currentE = 0.0
+		totalExtrusion = 0.0
+		maxExtrusion = 0.0
+		totalMoveTimeMinute = 0.0
 		pathList = []
 		scale = 1.0
 		posAbs = True
@@ -32,6 +35,7 @@ class gcode():
 					z = self.getCodeFloat(line, 'Z')
 					e = self.getCodeFloat(line, 'E')
 					f = self.getCodeFloat(line, 'F')
+					oldPos = pos.copy()
 					if x is not None:
 						if posAbs:
 							pos.x = x * scale
@@ -43,27 +47,38 @@ class gcode():
 						else:
 							pos.y += y * scale
 					if z is not None:
-						oldZ = pos.z
 						if posAbs:
 							pos.z = z * scale
 						else:
 							pos.z += z * scale
-						if oldZ != pos.z and startCodeDone:
+						if oldPos.z != pos.z and startCodeDone:
 							layerNr += 1
 					if f is not None:
 						feedRate = f
-					newPoint = pos.copy()
+					if x is not None or y is not None or z is not None:
+						totalMoveTimeMinute += (oldPos - pos).vsize() / feedRate
 					moveType = 'move'
 					if e is not None:
-						if e > currentE:
-							moveType = 'extrude'
-						if e < currentE:
-							moveType = 'retract'
-						currentE = e
+						if posAbs:
+							if e > currentE:
+								moveType = 'extrude'
+							if e < currentE:
+								moveType = 'retract'
+							totalExtrusion += e - currentE
+							currentE = e
+						else:
+							if e > 0:
+								moveType = 'extrude'
+							if e < 0:
+								moveType = 'retract'
+							totalExtrusion += e
+							currentE += e
+						if totalExtrusion > maxExtrusion:
+							maxExtrusion = totalExtrusion
 					if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
 						pathList.append(currentPath)
 						currentPath = {'type': moveType, 'pathType': pathType, 'list': [currentPath['list'][-1]], 'layerNr': layerNr}
-					currentPath['list'].append(newPoint)
+					currentPath['list'].append(pos.copy())
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
@@ -73,7 +88,7 @@ class gcode():
 					y = self.getCodeFloat(line, 'Y')
 					z = self.getCodeFloat(line, 'Z')
 					if x is None and y is None and z is None:
-						pos = Vector3()
+						pos = util3d.Vector3()
 					else:
 						if x is not None:
 							pos.x = 0.0
@@ -125,6 +140,10 @@ class gcode():
 						print "Unknown M code:" + str(M)
 		self.layerCount = layerNr
 		self.pathList = pathList
+		self.extrusionAmount = maxExtrusion
+		self.totalMoveTimeMinute = totalMoveTimeMinute
+		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
+		print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
 	def getCodeInt(self, str, id):
 		m = re.search(id + '([^\s]+)', str)

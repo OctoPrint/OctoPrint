@@ -2,6 +2,7 @@ import sys
 import math
 import threading
 import re
+import time
 
 from wx import glcanvas
 import wx
@@ -13,10 +14,13 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
+from newui import profile
+from newui import gcodeInterpreter
+from newui import util3d
+
+from fabmetheus_utilities import settings
 from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from fabmetheus_utilities.vector3 import Vector3
-from fabmetheus_utilities import settings
-from newui import gcodeInterpreter
 
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
@@ -29,7 +33,7 @@ class previewPanel(wx.Panel):
 		self.init = 0
 		self.triangleMesh = None
 		self.gcode = None
-		self.machineSize = Vector3(float(settings.getPreference('machine_width', '205')), float(settings.getPreference('machine_depth', '205')), float(settings.getPreference('machine_height', '200')))
+		self.machineSize = Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
 		self.machineCenter = Vector3(0, 0, 0)
 		
 		self.toolbar = wx.ToolBar( self, -1 )
@@ -90,10 +94,12 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def updateWallLineWidth(self, setting):
+		#TODO: this shouldn't be needed, you can calculate the line width from the E values combined with the steps_per_E and the filament diameter (reverse volumatric)
 		self.glCanvas.lineWidth = settings.calculateEdgeWidth(setting)
 	
 	def updateInfillLineWidth(self, setting):
-		self.glCanvas.infillLineWidth = settings.getProfileSetting('nozzle_size')
+		#TODO: this shouldn't be needed, you can calculate the line width from the E values combined with the steps_per_E and the filament diameter (reverse volumatric)
+		self.glCanvas.infillLineWidth = profile.getProfileSetting('nozzle_size')
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
@@ -152,23 +158,21 @@ class previewPanel(wx.Panel):
 	def updateModelTransform(self, f=0):
 		if self.triangleMesh == None:
 			return
-		for face in self.triangleMesh.faces:
-			face.normal = None
 		scale = 1.0
 		rotate = 0.0
 		try:
-			scale = float(settings.getProfileSetting('model_scale', '1.0'))
-			rotate = float(settings.getProfileSetting('model_rotate_base', '0.0')) / 180 * math.pi
+			scale = float(profile.getProfileSetting('model_scale'))
+			rotate = float(profile.getProfileSetting('model_rotate_base')) / 180 * math.pi
 		except:
 			pass
 		scaleX = scale
 		scaleY = scale
 		scaleZ = scale
-		if settings.getProfileSetting('flip_x') == 'True':
+		if profile.getProfileSetting('flip_x') == 'True':
 			scaleX = -scaleX
-		if settings.getProfileSetting('flip_y') == 'True':
+		if profile.getProfileSetting('flip_y') == 'True':
 			scaleY = -scaleY
-		if settings.getProfileSetting('flip_z') == 'True':
+		if profile.getProfileSetting('flip_z') == 'True':
 			scaleZ = -scaleZ
 		mat00 = math.cos(rotate) * scaleX
 		mat01 =-math.sin(rotate) * scaleY
@@ -179,6 +183,14 @@ class previewPanel(wx.Panel):
 			self.triangleMesh.vertexes[i].x = self.triangleMesh.origonalVertexes[i].x * mat00 + self.triangleMesh.origonalVertexes[i].y * mat01
 			self.triangleMesh.vertexes[i].y = self.triangleMesh.origonalVertexes[i].x * mat10 + self.triangleMesh.origonalVertexes[i].y * mat11
 			self.triangleMesh.vertexes[i].z = self.triangleMesh.origonalVertexes[i].z * scaleZ
+
+		for face in self.triangleMesh.faces:
+			v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
+			v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
+			v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
+			face.normal = (v2 - v1).cross(v3 - v1)
+			face.normal.normalize()
+
 		self.moveModel()
 	
 	def moveModel(self):
@@ -316,9 +328,9 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					c = 1.0
 					if path['layerNr'] != self.parent.layerSpin.GetValue():
 						if path['layerNr'] < self.parent.layerSpin.GetValue():
-							c = 0.5 - (self.parent.layerSpin.GetValue() - path['layerNr']) * 0.1
-							if c < 0.1:
-								c = 0.1
+							c = 0.9 - (self.parent.layerSpin.GetValue() - path['layerNr']) * 0.1
+							if c < 0.4:
+								c = 0.4
 						else:
 							break
 					if path['type'] == 'move':
@@ -332,7 +344,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							glColor3f(c,0,0)
 					if path['type'] == 'retract':
 						glColor3f(0,c,c)
-					if c > 0.1 and path['type'] == 'extrude':
+					if c > 0.4 and path['type'] == 'extrude':
 						if path['pathType'] == 'FILL':
 							lineWidth = self.fillLineWidth / 2
 						else:
@@ -340,7 +352,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 						for i in xrange(0, len(path['list'])-1):
 							v0 = path['list'][i]
 							v1 = path['list'][i+1]
-							normal = (v0 - v1).cross(Vector3(0,0,1))
+							normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
 							normal.normalize()
 							v2 = v0 + normal * lineWidth
 							v3 = v1 + normal * lineWidth
@@ -372,24 +384,32 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.modelDisplayList = glGenLists(1);
 			if self.parent.modelDirty:
 				self.parent.modelDirty = False
+				multiX = int(profile.getProfileSetting('model_multiply_x'))
+				multiY = int(profile.getProfileSetting('model_multiply_y'))
+				modelSize = self.parent.triangleMesh.getCarveCornerMaximum() - self.parent.triangleMesh.getCarveCornerMinimum()
 				glNewList(self.modelDisplayList, GL_COMPILE)
-				glBegin(GL_TRIANGLES)
-				for face in self.parent.triangleMesh.faces:
-					v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
-					v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
-					v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
-					if face.normal == None:
-						face.normal = (v2 - v1).cross(v3 - v1)
-						face.normal.normalize()
-					glNormal3f(face.normal.x, face.normal.y, face.normal.z)
-					glVertex3f(v1.x, v1.y, v1.z)
-					glVertex3f(v2.x, v2.y, v2.z)
-					glVertex3f(v3.x, v3.y, v3.z)
-					glNormal3f(-face.normal.x, -face.normal.y, -face.normal.z)
-					glVertex3f(v1.x, v1.y, v1.z)
-					glVertex3f(v3.x, v3.y, v3.z)
-					glVertex3f(v2.x, v2.y, v2.z)
-				glEnd()
+				glPushMatrix()
+				glTranslate(-(modelSize.x+self.lineWidth*15)*(multiX-1)/2,-(modelSize.y+self.lineWidth*15)*(multiY-1)/2, 0)
+				for mx in xrange(0, multiX):
+					for my in xrange(0, multiY):
+						for face in self.parent.triangleMesh.faces:
+							glPushMatrix()
+							glTranslate((modelSize.x+self.lineWidth*15)*mx,(modelSize.y+self.lineWidth*15)*my, 0)
+							glBegin(GL_TRIANGLES)
+							v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
+							v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
+							v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
+							glNormal3f(face.normal.x, face.normal.y, face.normal.z)
+							glVertex3f(v1.x, v1.y, v1.z)
+							glVertex3f(v2.x, v2.y, v2.z)
+							glVertex3f(v3.x, v3.y, v3.z)
+							glNormal3f(-face.normal.x, -face.normal.y, -face.normal.z)
+							glVertex3f(v1.x, v1.y, v1.z)
+							glVertex3f(v3.x, v3.y, v3.z)
+							glVertex3f(v2.x, v2.y, v2.z)
+							glEnd()
+							glPopMatrix()
+				glPopMatrix()
 				glEndList()
 			if self.renderTransparent:
 				#If we want transparent, then first render a solid black model to remove the printer size lines.

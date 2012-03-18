@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script is to build the SkeinPyPy package for Windows/Linux and OSx
+# This script is to package the SkeinPyPy package for Windows/Linux and OSx
 # This script should run under Linux and OSx, as well as Windows with Cygwin.
 
 #############################
@@ -82,9 +82,14 @@ else
 fi
 
 #Get our own version of Printrun
-rm -rf Printrun
-git clone git://github.com/daid/Printrun.git
-rm -rf Printrun/.git
+if [ ! -d "Printrun" ]; then
+  git clone git://github.com/daid/Printrun.git
+else
+  echo "Updating Printrun"
+  cd Printrun
+  git pull
+  cd ..
+fi
 
 #############################
 # Build the packages
@@ -123,19 +128,19 @@ fi
 #Extract pypy
 if [ $BUILD_TARGET = "win32" ]; then
 	7z x pypy-${PYPY_VERSION}-win32.zip -o${TARGET_DIR}
-	mv ${TARGET_DIR}/pypy-${PYPY_VERSION}* ${TARGET_DIR}/pypy
 else
 	cd ${TARGET_DIR}; $TAR -xjf ../pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2; cd ..
-	mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
 fi
+mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
 #Cleanup pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
 #add Skeinforge
-cp -a SkeinPyPy_NewUI ${TARGET_DIR}/SkeinPyPy
+cp -a SkeinPyPy ${TARGET_DIR}/SkeinPyPy
 
 #add printrun
-mv Printrun ${TARGET_DIR}/Printrun
+cp -a Printrun ${TARGET_DIR}/Printrun
+rm -rf ${TARGET_DIR}/Printrun/.git*
 
 #add script files
 if [ $BUILD_TARGET = "win32" ]; then

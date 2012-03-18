@@ -7,20 +7,20 @@ from skeinforge_application.skeinforge_utilities import skeinforge_craft
 def getPyPyExe():
 	"Return the path to the pypy executable if we can find it. Else return False"
 	if platform.system() == "Windows":
+		exeName = "pypy.exe"
 		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/pypy.exe"));
 	else:
+		exeName = "pypy"
 		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/bin/pypy"));
 	if os.path.exists(pypyExe):
 		return pypyExe
-	pypyExe = "/bin/pypy";
-	if os.path.exists(pypyExe):
-		return pypyExe
-	pypyExe = "/usr/bin/pypy";
-	if os.path.exists(pypyExe):
-		return pypyExe
-	pypyExe = "/usr/local/bin/pypy";
-	if os.path.exists(pypyExe):
-		return pypyExe
+
+	path = os.environ['PATH']
+	paths = path.split(os.pathsep)
+	for p in paths:
+		pypyExe = os.path.join(p, exeName)
+		if os.path.exists(pypyExe):
+			return pypyExe 
 	return False
 
 def runSkein(fileNames):

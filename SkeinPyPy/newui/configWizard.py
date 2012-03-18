@@ -4,8 +4,8 @@ import __init__
 import wx, os, platform, types, webbrowser, threading, time, re
 import wx.wizard
 
-from fabmetheus_utilities import settings
 from newui import machineCom
+from newui import profile
 
 class InfoPage(wx.wizard.WizardPageSimple):
 	def __init__(self, parent, title):
@@ -94,19 +94,20 @@ class MachineSelectPage(InfoPage):
 	
 	def StoreData(self):
 		if self.UltimakerRadio.GetValue():
-			settings.putPreference('machine_width', '205')
-			settings.putPreference('machine_depth', '205')
-			settings.putPreference('machine_height', '200')
-			settings.putProfileSetting('nozzle_size', '0.4')
-			settings.putProfileSetting('machine_center_x', '100')
-			settings.putProfileSetting('machine_center_y', '100')
+			profile.putPreference('machine_width', '205')
+			profile.putPreference('machine_depth', '205')
+			profile.putPreference('machine_height', '200')
+			profile.putProfileSetting('nozzle_size', '0.4')
+			profile.putProfileSetting('machine_center_x', '100')
+			profile.putProfileSetting('machine_center_y', '100')
 		else:
-			settings.putPreference('machine_width', '80')
-			settings.putPreference('machine_depth', '80')
-			settings.putPreference('machine_height', '60')
-			settings.putProfileSetting('nozzle_size', '0.4')
-			settings.putProfileSetting('machine_center_x', '40')
-			settings.putProfileSetting('machine_center_y', '40')
+			profile.putPreference('machine_width', '80')
+			profile.putPreference('machine_depth', '80')
+			profile.putPreference('machine_height', '60')
+			profile.putProfileSetting('nozzle_size', '0.5')
+			profile.putProfileSetting('machine_center_x', '40')
+			profile.putProfileSetting('machine_center_y', '40')
+		profile.putProfileSetting('wall_thickness', float(profile.getProfileSetting('nozzle_size')) * 2)
 
 class FirmwareUpgradePage(InfoPage):
 	def __init__(self, parent):
@@ -299,13 +300,13 @@ class UltimakerCalibrationPage(InfoPage):
 		self.AddText("The better you have calibrated these values, the better your prints\nwill become.");
 		self.AddSeperator()
 		self.AddText("First we need the diameter of your filament:");
-		self.filamentDiameter = wx.TextCtrl(self, -1, settings.getProfileSetting('filament_diameter', '2.89'))
+		self.filamentDiameter = wx.TextCtrl(self, -1, profile.getProfileSetting('filament_diameter'))
 		self.GetSizer().Add(self.filamentDiameter, 0, wx.LEFT, 5)
 		self.AddText("If you do not own digital Calipers that can measure\nat least 2 digits then use 2.89mm.\nWhich is the average diameter of most filament.");
 		self.AddText("Note: This value can be changed later at any time.");
 
 	def StoreData(self):
-		settings.putProfileSetting('filament_diameter', self.filamentDiameter.GetValue())
+		profile.putProfileSetting('filament_diameter', self.filamentDiameter.GetValue())
 
 class UltimakerCalibrateStepsPerEPage(InfoPage):
 	def __init__(self, parent):
@@ -325,12 +326,16 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		p.GetSizer().Add(self.saveLengthButton, 0)
 		self.GetSizer().Add(p, 0, wx.LEFT, 5)
 		self.AddText("This results in the following steps per E:")
-		self.stepsPerEInput = wx.TextCtrl(self, -1, settings.getPreference('steps_per_e', '865.888'))
+		self.stepsPerEInput = wx.TextCtrl(self, -1, profile.getPreference('steps_per_e'))
 		self.GetSizer().Add(self.stepsPerEInput, 0, wx.LEFT, 5)
 		self.AddText("You can repeat these steps to get better calibration.")
+		self.AddSeperator()
+		self.AddText("If you still have filament in your printer which needs\nheat to remove, press the heat up button below:")
+		self.heatButton = self.AddButton("Heatup for filament removal")
 		
 		self.saveLengthButton.Bind(wx.EVT_BUTTON, self.OnSaveLengthClick)
 		self.extrudeButton.Bind(wx.EVT_BUTTON, self.OnExtrudeClick)
+		self.heatButton.Bind(wx.EVT_BUTTON, self.OnHeatClick)
 	
 	def OnSaveLengthClick(self, e):
 		currentEValue = float(self.stepsPerEInput.GetValue())
@@ -340,9 +345,12 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.lengthInput.SetValue("100")
 	
 	def OnExtrudeClick(self, e):
-		threading.Thread(target=self.OnRun).start()
+		threading.Thread(target=self.OnExtrudeRun).start()
 
-	def OnRun(self):
+	def OnExtrudeRun(self):
+		self.heatButton.Enable(False)
+		self.extrudeButton.Enable(False)
+		currentEValue = float(self.stepsPerEInput.GetValue())
 		self.comm = machineCom.MachineCom()
 		while True:
 			line = self.comm.readline()
@@ -351,9 +359,29 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 			if line.startswith('start'):
 				break
 		self.sendGCommand('M302') #Disable cold extrusion protection
+		self.sendGCommand("M92 E%f" % (currentEValue));
 		self.sendGCommand("G92 E0");
-		self.sendGCommand("G1 E100 F300");
-		time.sleep(5)
+		self.sendGCommand("G1 E100 F600");
+		time.sleep(15)
+		self.comm.close()
+		self.extrudeButton.Enable()
+		self.heatButton.Enable()
+
+	def OnHeatClick(self, e):
+		threading.Thread(target=self.OnHeatRun).start()
+	
+	def OnHeatRun(self):
+		self.comm = machineCom.MachineCom()
+		while True:
+			line = self.comm.readline()
+			if line == '':
+				return
+			if line.startswith('start'):
+				break
+		self.sendGCommand('M104 S200') #Set the temperature to 200C, should be enough to get PLA and ABS out.
+		wx.MessageBox('Wait till you can remove the filament from the machine, and press OK.\n(Temperature is set to 200C)', 'Machine heatup', wx.OK | wx.ICON_INFORMATION)
+		self.sendGCommand('M104 S0')
+		time.sleep(1)
 		self.comm.close()
 	
 	def sendGCommand(self, cmd):
@@ -366,7 +394,7 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 				break
 	
 	def StoreData(self):
-		settings.putPreference('steps_per_e', self.stepsPerEInput.GetValue())
+		profile.putPreference('steps_per_e', self.stepsPerEInput.GetValue())
 
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):

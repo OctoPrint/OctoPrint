@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-from fabmetheus_utilities import settings
+from newui import profile
 
 SUCCESS = 0
 WARNING = 1
@@ -68,7 +68,7 @@ class wallThicknessValidator():
 	def validate(self):
 		try:
 			wallThickness = float(self.setting.GetValue())
-			nozzleSize = float(settings.getProfileSetting('nozzle_size'))
+			nozzleSize = float(profile.getProfileSetting('nozzle_size'))
 			if wallThickness <= nozzleSize * 0.5:
 				return ERROR, 'Trying to print walls thinner then the half of your nozzle size, this will not produce anything usable'
 			if wallThickness <= nozzleSize * 0.85:

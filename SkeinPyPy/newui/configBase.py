@@ -3,9 +3,8 @@ import __init__
 
 import wx, os, sys, platform, types
 
-from fabmetheus_utilities import settings
-
 from newui import validators
+from newui import profile
 
 def main():
 	app = wx.App(False)
@@ -20,16 +19,13 @@ class configWindowBase(wx.Frame):
 		self.settingControlList = []
 		
 		#Create the popup window
-		self.popup = wx.PopupWindow(self, wx.BORDER_SIMPLE)
+		self.popup = wx.PopupWindow(self, flags=wx.BORDER_SIMPLE)
 		self.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
 		self.popup.setting = None
 		self.popup.text = wx.StaticText(self.popup, -1, '');
 		self.popup.sizer = wx.BoxSizer()
 		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
 		self.popup.SetSizer(self.popup.sizer)
-		
-		self.popup.Bind(wx.EVT_MOTION, self.OnPopupHide)
-		self.popup.text.Bind(wx.EVT_MOTION, self.OnPopupHide)
 	
 	def CreateConfigTab(self, nb, name):
 		leftConfigPanel, rightConfigPanel, configPanel = self.CreateConfigPanel(nb)
@@ -68,8 +64,12 @@ class configWindowBase(wx.Frame):
 				self.popup.text.SetLabel(setting.helpText)
 			self.popup.text.Wrap(350)
 			self.popup.Fit()
-			x, y = setting.ctrl.ClientToScreenXY(0, 0)
-			sx, sy = setting.ctrl.GetSizeTuple()
+			if os.name == 'darwin':
+				x, y = self.ClientToScreenXY(0, 0)
+				sx, sy = self.GetClientSizeTuple()
+			else:
+				x, y = setting.ctrl.ClientToScreenXY(0, 0)
+				sx, sy = setting.ctrl.GetSizeTuple()
 			#if platform.system() == "Windows":
 			#	for some reason, under windows, the popup is relative to the main window... in some cases. (Wierd ass bug)
 			#	wx, wy = self.ClientToScreenXY(0, 0)
@@ -81,9 +81,9 @@ class configWindowBase(wx.Frame):
 		"Update the configuration wx controls to show the new configuration settings"
 		for setting in self.settingControlList:
 			if setting.type == 'profile':
-				setting.SetValue(settings.getProfileSetting(setting.configName))
+				setting.SetValue(profile.getProfileSetting(setting.configName))
 			else:
-				setting.SetValue(settings.getPreference(setting.configName))
+				setting.SetValue(profile.getPreference(setting.configName))
 
 class TitleRow():
 	def __init__(self, panel, name):
@@ -111,40 +111,46 @@ class SettingRow():
 		self.type = type
 		
 		self.label = wx.StaticText(panel, -1, label)
-		getSettingFunc = settings.getPreference
+		getSettingFunc = profile.getPreference
 		if self.type == 'profile':
-			getSettingFunc = settings.getProfileSetting
+			getSettingFunc = profile.getProfileSetting
 		if isinstance(defaultValue, types.StringTypes):
-			self.ctrl = wx.TextCtrl(panel, -1, getSettingFunc(configName, defaultValue))
+			self.ctrl = wx.TextCtrl(panel, -1, getSettingFunc(configName))
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
 		elif isinstance(defaultValue, types.BooleanType):
 			self.ctrl = wx.CheckBox(panel, -1, style=wx.ALIGN_RIGHT)
-			self.SetValue(getSettingFunc(configName, defaultValue))
+			self.SetValue(getSettingFunc(configName))
 			self.ctrl.Bind(wx.EVT_CHECKBOX, self.OnSettingChange)
 		else:
-			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName, defaultValue[0]), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
+
+		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
+		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		sizer.SetRows(x+1)
 		
-		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, lambda e: panel.main.OnPopupDisplay(self))
-		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, panel.main.OnPopupHide)
-		
-		#MacOS X doesn't get EVT_ENTER/LEAVE_WINDOW for controls. So we use the motion event then. This results in slightly less good popups, but it works.
-		if sys.platform == 'darwin':
-			self.ctrl.Bind(wx.EVT_MOTION, lambda e: panel.main.OnPopupDisplay(self))
+		if os.name == 'darwin':
+			self.ctrl.Bind(wx.EVT_SET_FOCUS, self.OnMouseEnter)
+			self.ctrl.Bind(wx.EVT_KILL_FOCUS, self.OnMouseExit)
+		else:
+			self.ctrl.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+			self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseExit)
 		
 		self.defaultBGColour = self.ctrl.GetBackgroundColour()
 		
 		panel.main.settingControlList.append(self)
-		
-		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
-		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
-		sizer.SetRows(x+1)
+
+	def OnMouseEnter(self, e):
+		self.panel.main.OnPopupDisplay(self)
+
+	def OnMouseExit(self, e):
+		self.panel.main.OnPopupHide(self)
 
 	def OnSettingChange(self, e):
 		if self.type == 'profile':
-			settings.putProfileSetting(self.configName, self.GetValue())
+			profile.putProfileSetting(self.configName, self.GetValue())
 		else:
-			settings.putPreference(self.configName, self.GetValue())
+			profile.putPreference(self.configName, self.GetValue())
 		result = validators.SUCCESS
 		msgs = []
 		for validator in self.validators:

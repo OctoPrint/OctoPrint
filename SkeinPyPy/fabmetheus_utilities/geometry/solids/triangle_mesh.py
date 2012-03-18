@@ -429,14 +429,15 @@ def getLoopsFromCorrectMesh( edges, faces, vertexes, z ):
 	'Get loops from a carve of a correct mesh.'
 	remainingEdgeTable = getRemainingEdgeTable(edges, vertexes, z)
 	remainingValues = remainingEdgeTable.values()
+	error = False
 	for edge in remainingValues:
 		if len( edge.faceIndexes ) < 2:
-			print('This should never happen, there is a hole in the triangle mesh, each edge should have two faces.')
-			print(edge)
-			print('Something will still be printed, but there is no guarantee that it will be the correct shape.' )
-			print('Once the gcode is saved, you should check over the layer with a z of:')
-			print(z)
-			return []
+			if not hasattr(edge, 'errorReported'):
+				print('Model error(hole): ' + str(vertexes[edge.vertexIndexes[0]]) + ' ' + str(vertexes[edge.vertexIndexes[1]]))
+				edge.errorReported = True
+			error = True
+	if error:
+		return []
 	loops = []
 	while isPathAdded( edges, faces, loops, remainingEdgeTable, vertexes, z ):
 		pass
@@ -686,6 +687,10 @@ def isPathAdded( edges, faces, loops, remainingEdgeTable, vertexes, z ):
 		nextEdgeIndexAroundZ = getNextEdgeIndexAroundZ( edges[ nextEdgeIndexAroundZ ], faces, remainingEdgeTable )
 	if len( pathIndexes ) < 3:
 		print('Dangling edges, will use intersecting circles to get import layer at height %s' % z)
+		for idx in pathIndexes:
+			if not hasattr(edges[idx], 'errorReported'):
+				print('Model error(dangle): ' + str(vertexes[edges[idx].vertexIndexes[0]]) + ' ' + str(vertexes[edges[idx].vertexIndexes[1]]))
+				edges[idx].errorReported = True
 		del loops[:]
 		return False
 	loops.append( getPath( edges, pathIndexes, vertexes, z ) )

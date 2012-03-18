@@ -1,0 +1,9 @@
+*.tar.bz2
+*.tar.gz
+*.pyc
+*.zip
+*.exe
+osx64-SkeinPyPy-NewUI*
+win32-SkeinPyPy-NewUI*
+linux-SkeinPyPy-NewUI*
+Printrun
