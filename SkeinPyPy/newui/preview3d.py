@@ -3,6 +3,7 @@ import math
 import threading
 import re
 import time
+import os
 
 from wx import glcanvas
 import wx
@@ -47,13 +48,11 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddControl(button)
 		self.Bind(wx.EVT_BUTTON, self.OnTopClick, button)
 
-		self.transparentButton = wx.Button(self.toolbar, -1, "T", size=(21,21))
-		self.toolbar.AddControl(self.transparentButton)
-		self.Bind(wx.EVT_BUTTON, self.OnTransparentClick, self.transparentButton)
-		self.XRayButton = wx.Button(self.toolbar, -1, "X-RAY", size=(21*2,21))
-		self.toolbar.AddControl(self.XRayButton)
-		self.Bind(wx.EVT_BUTTON, self.OnXRayClick, self.XRayButton)
-		
+		self.viewSelect = wx.ComboBox(self.toolbar, -1, 'Model - Normal', choices=['Model - Normal', 'Model - Transparent', 'Model - X-Ray', 'GCode', 'Mixed'], style=wx.CB_DROPDOWN|wx.CB_READONLY)
+		self.toolbar.AddControl(self.viewSelect)
+		self.viewSelect.Bind(wx.EVT_TEXT, self.OnViewChange)
+		self.glCanvas.viewMode = self.viewSelect.GetValue()
+
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
@@ -80,7 +79,7 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 
 	def OnLayerNrChange(self, e):
-		self.modelDirty = True
+		self.gcodeDirty = True
 		self.glCanvas.Refresh()
 
 	def updateCenterX(self, x):
@@ -103,6 +102,7 @@ class previewPanel(wx.Panel):
 	
 	def loadModelFile(self, filename):
 		self.modelFilename = filename
+		self.gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
 		#Do the STL file loading in a background thread so we don't block the UI.
 		thread = threading.Thread(target=self.DoModelLoad)
 		thread.start()
@@ -121,38 +121,29 @@ class previewPanel(wx.Panel):
 			triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
 		triangleMesh.getMinimumZ()
 		self.triangleMesh = triangleMesh
-		self.gcode = None
 		self.updateModelTransform()
 		wx.CallAfter(self.updateToolbar)
 		wx.CallAfter(self.glCanvas.Refresh)
+		
+		if os.path.isfile(self.gcodeFilename):
+			self.DoGCodeLoad()
 	
 	def DoGCodeLoad(self):
 		gcode = gcodeInterpreter.gcode(self.gcodeFilename)
-		self.modelDirty = False
+		self.gcodeDirty = False
 		self.gcode = gcode
-		self.triangleMesh = None
-		self.modelDirty = True
+		self.gcodeDirty = True
 		wx.CallAfter(self.updateToolbar)
 		wx.CallAfter(self.glCanvas.Refresh)
 	
 	def updateToolbar(self):
-		self.transparentButton.Show(self.triangleMesh != None)
-		self.XRayButton.Show(self.triangleMesh != None)
 		self.layerSpin.Show(self.gcode != None)
 		if self.gcode != None:
 			self.layerSpin.SetRange(1, self.gcode.layerCount)
 		self.toolbar.Realize()
 	
-	def OnTransparentClick(self, e):
-		self.glCanvas.renderTransparent = not self.glCanvas.renderTransparent
-		if self.glCanvas.renderTransparent:
-			self.glCanvas.renderXRay = False
-		self.glCanvas.Refresh()
-	
-	def OnXRayClick(self, e):
-		self.glCanvas.renderXRay = not self.glCanvas.renderXRay
-		if self.glCanvas.renderXRay:
-			self.glCanvas.renderTransparent = False
+	def OnViewChange(self, e):
+		self.glCanvas.viewMode = self.viewSelect.GetValue()
 		self.glCanvas.Refresh()
 	
 	def updateModelTransform(self, f=0):
@@ -228,9 +219,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.lineWidth = 0.4
 		self.fillLineWidth = 0.4
 		self.view3D = True
-		self.renderTransparent = False
-		self.renderXRay = False
 		self.modelDisplayList = None
+		self.gcodeDisplayList = None
 	
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
@@ -260,6 +250,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.Refresh()
 	
 	def OnEraseBackground(self,event):
+		#Workaround for windows background redraw flicker.
 		pass
 	
 	def OnSize(self,event):
@@ -319,11 +310,11 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glEnd()
 
 		if self.parent.gcode != None:
-			if self.modelDisplayList == None:
-				self.modelDisplayList = glGenLists(1);
-			if self.parent.modelDirty:
-				self.parent.modelDirty = False
-				glNewList(self.modelDisplayList, GL_COMPILE)
+			if self.gcodeDisplayList == None:
+				self.gcodeDisplayList = glGenLists(1);
+			if self.parent.gcodeDirty:
+				self.parent.gcodeDirty = False
+				glNewList(self.gcodeDisplayList, GL_COMPILE)
 				for path in self.parent.gcode.pathList:
 					c = 1.0
 					if path['layerNr'] != self.parent.layerSpin.GetValue():
@@ -352,6 +343,10 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 						for i in xrange(0, len(path['list'])-1):
 							v0 = path['list'][i]
 							v1 = path['list'][i+1]
+							dist = (v0 - v1).vsize()
+							if dist > 0:
+								extrusionMMperDist = (v1.e - v0.e) / (v0 - v1).vsize() / self.parent.gcode.stepsPerE
+							#TODO: Calculate line width from ePerDistance (needs layer thickness, steps_per_E and filament diameter)
 							normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
 							normal.normalize()
 							v2 = v0 + normal * lineWidth
@@ -360,16 +355,25 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							v1 = v1 - normal * lineWidth
 
 							glBegin(GL_QUADS)
-							glVertex3f(v0.x, v0.y, v0.z - 0.001)
-							glVertex3f(v1.x, v1.y, v1.z - 0.001)
-							glVertex3f(v3.x, v3.y, v3.z - 0.001)
-							glVertex3f(v2.x, v2.y, v2.z - 0.001)
+							if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+								glVertex3f(v0.x, v0.y, v0.z - 0.02)
+								glVertex3f(v1.x, v1.y, v1.z - 0.02)
+								glVertex3f(v3.x, v3.y, v3.z - 0.02)
+								glVertex3f(v2.x, v2.y, v2.z - 0.02)
+							else:
+								glVertex3f(v0.x, v0.y, v0.z - 0.01)
+								glVertex3f(v1.x, v1.y, v1.z - 0.01)
+								glVertex3f(v3.x, v3.y, v3.z - 0.01)
+								glVertex3f(v2.x, v2.y, v2.z - 0.01)
 							glEnd()
 						for v in path['list']:
 							glBegin(GL_TRIANGLE_FAN)
 							glVertex3f(v.x, v.y, v.z - 0.001)
 							for i in xrange(0, 16+1):
-								glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.001)
+								if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+									glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
+								else:
+									glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
 							glEnd()
 					else:
 						glBegin(GL_LINE_STRIP)
@@ -377,7 +381,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							glVertex3f(v.x, v.y, v.z)
 						glEnd()
 				glEndList()
-			glCallList(self.modelDisplayList)
+			if self.viewMode == "GCode" or self.viewMode == "Mixed":
+				glCallList(self.gcodeDisplayList)
 		
 		if self.parent.triangleMesh != None:
 			if self.modelDisplayList == None:
@@ -411,13 +416,14 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							glPopMatrix()
 				glPopMatrix()
 				glEndList()
-			if self.renderTransparent:
+			if self.viewMode == "Model - Transparent" or self.viewMode == "Mixed":
 				#If we want transparent, then first render a solid black model to remove the printer size lines.
-				glDisable(GL_BLEND)
-				glDisable(GL_LIGHTING)
-				glColor3f(0,0,0)
-				glCallList(self.modelDisplayList)
-				glColor3f(1,1,1)
+				if self.viewMode != "Mixed":
+					glDisable(GL_BLEND)
+					glDisable(GL_LIGHTING)
+					glColor3f(0,0,0)
+					glCallList(self.modelDisplayList)
+					glColor3f(1,1,1)
 				#After the black model is rendered, render the model again but now with lighting and no depth testing.
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_LIGHTING)
@@ -425,7 +431,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glBlendFunc(GL_ONE, GL_ONE)
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
-			elif self.renderXRay:
+			elif self.viewMode == "Model - X-Ray":
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_STENCIL_TEST);
@@ -436,7 +442,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				
 				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
 				glStencilFunc(GL_EQUAL, 0, 1);
-				glColor(0, 1, 0)
+				glColor(1, 1, 1)
 				glCallList(self.modelDisplayList)
 				glStencilFunc(GL_EQUAL, 1, 1);
 				glColor(1, 0, 0)
@@ -444,16 +450,16 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 				glPushMatrix()
 				glLoadIdentity()
-				for i in xrange(2, 20, 2):
+				for i in xrange(2, 15, 2):
 					glStencilFunc(GL_EQUAL, i, 0xFF);
-					glColor(0, float(i)/10, 0)
+					glColor(float(i)/10, float(i)/10, float(i)/5)
 					glBegin(GL_QUADS)
 					glVertex3f(-1000,-1000,-1)
 					glVertex3f( 1000,-1000,-1)
 					glVertex3f( 1000, 1000,-1)
 					glVertex3f(-1000, 1000,-1)
 					glEnd()
-				for i in xrange(1, 20, 2):
+				for i in xrange(1, 15, 2):
 					glStencilFunc(GL_EQUAL, i, 0xFF);
 					glColor(float(i)/10, 0, 0)
 					glBegin(GL_QUADS)
@@ -466,7 +472,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 				glDisable(GL_STENCIL_TEST);
 				glEnable(GL_DEPTH_TEST)
-			else:
+			elif self.viewMode == "Model - Normal":
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
 		glFlush()
@@ -478,7 +484,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		size = self.GetSize()
 		glViewport(0,0, size.GetWidth(), size.GetHeight())
 		
-		if self.renderTransparent:
+		if self.viewMode == "Model - Transparent" or self.viewMode == "Mixed":
 			glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])
 			glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.1, 0.1, 0.1, 0.0])
 		else:
