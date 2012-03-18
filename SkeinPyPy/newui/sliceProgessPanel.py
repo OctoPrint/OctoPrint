@@ -66,7 +66,9 @@ class sliceProgessPanel(wx.Panel):
 			self.abort = True
 	
 	def OnShowGCode(self, e):
-		self.mainWindow.preview3d.loadGCodeFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
+		self.mainWindow.preview3d.loadModelFile(self.filename)
+		self.mainWindow.preview3d.viewSelect.SetValue("GCode")
+		self.mainWindow.preview3d.OnViewChange(None)
 	
 	def OnShowLog(self, e):
 		LogWindow('\n'.join(self.progressLog))

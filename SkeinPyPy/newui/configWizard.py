@@ -188,9 +188,19 @@ class UltimakerCheckupPage(InfoPage):
 			self.comm.close()
 			return
 
+		if self.DoCommCommandWithTimeout("M104 S0") == False:
+			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
+			self.comm.close()
+			return
+
 		wx.MessageBox('Please move the printer head to the center of the machine\nalso move the platform so it is not at the highest or lowest position,\nand make sure the machine is powered on.', 'Machine check', wx.OK | wx.ICON_INFORMATION)
 		
 		idleTemp = self.readTemp()
+		if idleTemp > 40:
+			wx.CallAfter(self.AddProgressText, "Waiting for head to cool down before temperature test...")
+			while idleTemp > 40:
+				idleTemp = self.readTemp()
+				time.sleep(1)
 		
 		wx.CallAfter(self.AddProgressText, "Checking heater and temperature sensor...")
 		wx.CallAfter(self.AddProgressText, "(This takes about 30 seconds)")
@@ -267,6 +277,7 @@ class UltimakerCheckupPage(InfoPage):
 				return True
 			if ret == False:
 				return False
+			time.sleep(1)
 	
 	def DoCommCommandWithTimeout(self, cmd = None, replyStart = 'ok'):
 		if cmd != None:

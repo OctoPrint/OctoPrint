@@ -2,11 +2,13 @@ import sys
 import math
 import threading
 import re
+import os
 
 from newui import util3d
 
 class gcode():
 	def __init__(self, filename):
+		print os.stat(filename).st_size
 		f = open(filename, 'r')
 		pos = util3d.Vector3()
 		posOffset = util3d.Vector3()
@@ -21,7 +23,9 @@ class gcode():
 		pathType = 'CUSTOM';
 		layerNr = 0;	#Note layer 0 will be the start code.
 		startCodeDone = False
+		self.stepsPerE = 865.888
 		currentPath = {'type': 'move', 'pathType': pathType, 'list': [pos.copy()], 'layerNr': layerNr}
+		currentPath['list'][-1].e = totalExtrusion
 		for line in f:
 			if line.startswith(';TYPE:'):
 				pathType = line[6:].strip()
@@ -79,6 +83,7 @@ class gcode():
 						pathList.append(currentPath)
 						currentPath = {'type': moveType, 'pathType': pathType, 'list': [currentPath['list'][-1]], 'layerNr': layerNr}
 					currentPath['list'].append(pos.copy())
+					currentPath['list'][-1].e = totalExtrusion
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
@@ -123,6 +128,9 @@ class gcode():
 					elif M == 84:	#Disable step drivers
 						pass
 					elif M == 92:	#Set steps per unit
+						e = self.getCodeFloat(line, 'E')
+						if e is not None:
+							self.stepsPerE = e
 						pass
 					elif M == 104:	#Set temperature, no wait
 						pass
