@@ -110,7 +110,7 @@ class printSpeedValidator():
 			maxPrintVolumePerSecond = 10 / (math.pi*(0.2*0.2)) * (math.pi*(nozzleSize/2*nozzleSize/2))
 			
 			if printVolumePerSecond > maxPrintVolumePerSecond:
-				return WARNING, 'You are trying to print more then %.1fmm^3 of filament per second. This might cause filament slipping.' % (maxPrintVolumePerSecond)
+				return WARNING, 'You are trying to print more then %.1fmm^3 of filament per second. This might cause filament slipping. (You are printing at %0.1fmm^3 per second)' % (maxPrintVolumePerSecond, printVolumePerSecond)
 			
 			return SUCCESS, ''
 		except ValueError:
