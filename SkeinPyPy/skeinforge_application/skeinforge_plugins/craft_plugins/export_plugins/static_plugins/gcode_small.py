@@ -68,6 +68,7 @@ class GcodeSmallSkein:
 		self.lastFeedRateString = None
 		self.lastZString = None
 		self.output = cStringIO.StringIO()
+		self.layerNr = 0
 
 	def getCraftedGcode( self, gcodeText ):
 		"Parse gcode text and store the gcode."
@@ -125,4 +126,7 @@ class GcodeSmallSkein:
 			self.output.write(';TYPE:FILL\n');
 		elif line.startswith('(<alteration>'):
 			self.output.write(';TYPE:CUSTOM\n');
+		elif line.startswith('(<layer>'):
+			self.output.write(';LAYER:%d\n' % (self.layerNr));
+			self.layerNr += 1
 
