@@ -283,6 +283,7 @@ def getSkeinPyPyProfileInformation():
 			'Orbital_Outset_millimeters': DEFSET,
 			'Turn_Fan_On_at_Beginning': DEFSET,
 			'Turn_Fan_Off_at_Ending': DEFSET,
+			'Minimum_feed_rate_mm/s': storedSetting("cool_min_feedrate"),
 		},'hop': {
 			'Activate_Hop': "False",
 			'Hop_Over_Layer_Thickness_ratio': DEFSET,
