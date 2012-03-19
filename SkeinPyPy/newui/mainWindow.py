@@ -239,7 +239,7 @@ class mainWindow(configBase.configWindowBase):
 		prefDialog.Show(True)
 	
 	def OnDefaultMarlinFirmware(self, e):
-		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"), profile.getPreference('serial_port'))
+		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
@@ -249,7 +249,7 @@ class mainWindow(configBase.configWindowBase):
 			if not(os.path.exists(filename)):
 				return
 			#For some reason my Ubuntu 10.10 crashes here.
-			machineCom.InstallFirmware(filename, profile.getPreference('serial_port'))
+			machineCom.InstallFirmware(filename)
 
 	def OnFirstRunWizard(self, e):
 		configWizard.configWizard()
