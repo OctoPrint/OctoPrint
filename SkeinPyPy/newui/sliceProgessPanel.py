@@ -82,7 +82,7 @@ class sliceProgessPanel(wx.Panel):
 		self.sizer.Add(self.logButton, 0)
 		if result.returnCode == 0:
 			self.statusText.SetLabel("Ready.")
-			self.showButton = wx.Button(self, -1, "Show GCode")
+			self.showButton = wx.Button(self, -1, "Show result")
 			self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
 			self.sizer.Add(self.showButton, 0)
 		else:
@@ -133,7 +133,6 @@ class WorkerThread(threading.Thread):
 				return
 			line = p.stdout.readline()
 		self.returnCode = p.wait()
-		self.gcodeFilename = self.filename[: self.filename.rfind('.')] + "_export.gcode"
 		logfile = open(self.filename[: self.filename.rfind('.')] + "_export.log", "w")
 		for logLine in self.progressLog:
 			logfile.write(logLine)

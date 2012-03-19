@@ -33,6 +33,7 @@ class previewPanel(wx.Panel):
 		self.init = 0
 		self.triangleMesh = None
 		self.gcode = None
+		self.modelFilename = None
 		self.machineSize = Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
 		self.machineCenter = Vector3(0, 0, 0)
 		
@@ -92,40 +93,39 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def loadModelFile(self, filename):
-		self.modelFilename = filename
-		self.gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
-		#Do the STL file loading in a background thread so we don't block the UI.
-		thread = threading.Thread(target=self.DoModelLoad)
-		thread.start()
-
-	def loadGCodeFile(self, filename):
-		self.gcodeFilename = filename
-		#Do the STL file loading in a background thread so we don't block the UI.
-		thread = threading.Thread(target=self.DoGCodeLoad)
-		thread.start()
-	
-	def DoModelLoad(self):
-		self.modelDirty = False
-		triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
-		triangleMesh.origonalVertexes = list(triangleMesh.vertexes)
-		for i in xrange(0, len(triangleMesh.origonalVertexes)):
-			triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
-		triangleMesh.getMinimumZ()
-		self.triangleMesh = triangleMesh
-		self.updateModelTransform()
-		wx.CallAfter(self.updateToolbar)
-		wx.CallAfter(self.glCanvas.Refresh)
+		gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
+		if self.modelFilename != filename:
+			self.modelFileTime = None
+			self.gcodeFileTime = None
 		
-		if os.path.isfile(self.gcodeFilename):
-			self.DoGCodeLoad()
+		self.modelFilename = filename
+		self.gcodeFilename = gcodeFilename
+		#Do the STL file loading in a background thread so we don't block the UI.
+		thread = threading.Thread(target=self.doFileLoad)
+		thread.start()
 	
-	def DoGCodeLoad(self):
-		gcode = gcodeInterpreter.gcode(self.gcodeFilename)
-		self.gcodeDirty = False
-		self.gcode = gcode
-		self.gcodeDirty = True
-		wx.CallAfter(self.updateToolbar)
-		wx.CallAfter(self.glCanvas.Refresh)
+	def doFileLoad(self):
+		if os.path.isfile(self.modelFilename) and self.modelFileTime != os.stat(self.modelFilename).st_mtime:
+			self.modelFileTime = os.stat(self.modelFilename).st_mtime
+			triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
+			triangleMesh.origonalVertexes = list(triangleMesh.vertexes)
+			for i in xrange(0, len(triangleMesh.origonalVertexes)):
+				triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
+			triangleMesh.getMinimumZ()
+			self.modelDirty = False
+			self.triangleMesh = triangleMesh
+			self.updateModelTransform()
+			wx.CallAfter(self.updateToolbar)
+			wx.CallAfter(self.glCanvas.Refresh)
+		
+		if os.path.isfile(self.gcodeFilename) and self.gcodeFileTime != os.stat(self.gcodeFilename).st_mtime:
+			self.gcodeFileTime = os.stat(self.gcodeFilename).st_mtime
+			gcode = gcodeInterpreter.gcode(self.gcodeFilename)
+			self.gcodeDirty = False
+			self.gcode = gcode
+			self.gcodeDirty = True
+			wx.CallAfter(self.updateToolbar)
+			wx.CallAfter(self.glCanvas.Refresh)
 	
 	def updateToolbar(self):
 		self.layerSpin.Show(self.gcode != None)
