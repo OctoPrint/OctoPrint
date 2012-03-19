@@ -93,13 +93,14 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def loadModelFile(self, filename):
-		gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
 		if self.modelFilename != filename:
 			self.modelFileTime = None
 			self.gcodeFileTime = None
+			self.logFileTime = None
 		
 		self.modelFilename = filename
-		self.gcodeFilename = gcodeFilename
+		self.gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
+		self.logFilename = filename[: filename.rfind('.')] + "_export.log"
 		#Do the STL file loading in a background thread so we don't block the UI.
 		thread = threading.Thread(target=self.doFileLoad)
 		thread.start()
@@ -113,6 +114,7 @@ class previewPanel(wx.Panel):
 				triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
 			triangleMesh.getMinimumZ()
 			self.modelDirty = False
+			self.errorList = []
 			self.triangleMesh = triangleMesh
 			self.updateModelTransform()
 			wx.CallAfter(self.updateToolbar)
@@ -122,9 +124,23 @@ class previewPanel(wx.Panel):
 			self.gcodeFileTime = os.stat(self.gcodeFilename).st_mtime
 			gcode = gcodeInterpreter.gcode(self.gcodeFilename)
 			self.gcodeDirty = False
+			self.errorList = []
 			self.gcode = gcode
 			self.gcodeDirty = True
 			wx.CallAfter(self.updateToolbar)
+			wx.CallAfter(self.glCanvas.Refresh)
+		elif not os.path.isfile(self.gcodeFilename):
+			self.gcode = None
+		
+		if os.path.isfile(self.logFilename):
+			errorList = []
+			for line in open(self.logFilename, "rt"):
+				res = re.search('Model error\(([a-z ]*)\): \(([0-9\.\-e]*), ([0-9\.\-e]*), ([0-9\.\-e]*)\) \(([0-9\.\-e]*), ([0-9\.\-e]*), ([0-9\.\-e]*)\)', line)
+				if res != None:
+					v1 = util3d.Vector3(float(res.group(2)), float(res.group(3)), float(res.group(4)))
+					v2 = util3d.Vector3(float(res.group(5)), float(res.group(6)), float(res.group(7)))
+					errorList.append([v1, v2])
+			self.errorList = errorList
 			wx.CallAfter(self.glCanvas.Refresh)
 	
 	def updateToolbar(self):
@@ -478,6 +494,16 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			elif self.viewMode == "Model - Normal":
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
+				
+				glDisable(GL_LIGHTING)
+				glDisable(GL_DEPTH_TEST)
+				glColor3f(1,0,0)
+				glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
+				glBegin(GL_LINES)
+				for err in self.parent.errorList:
+					glVertex3f(err[0].x, err[0].y, err[0].z)
+					glVertex3f(err[1].x, err[1].y, err[1].z)
+				glEnd()
 		glFlush()
 
 	def InitGL(self):

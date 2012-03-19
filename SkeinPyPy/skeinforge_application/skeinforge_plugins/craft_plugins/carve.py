@@ -214,6 +214,16 @@ class CarveSkein:
 		mat01 =-math.sin(rotate) * scaleY
 		mat10 = math.sin(rotate) * scaleX
 		mat11 = math.cos(rotate) * scaleY
+
+		minZ = carving.getMinimumZ()
+		minSize = carving.getCarveCornerMinimum()
+		maxSize = carving.getCarveCornerMaximum()
+		for v in carving.vertexes:
+			v.z -= minZ
+			v.x -= minSize.x + (maxSize.x - minSize.x) / 2
+			v.y -= minSize.y + (maxSize.y - minSize.y) / 2
+			#v.x += self.machineCenter.x
+			#v.y += self.machineCenter.y
 		
 		for i in xrange(0, len(carving.vertexes)):
 			carving.vertexes[i] = Vector3(
