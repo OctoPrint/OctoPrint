@@ -27,7 +27,7 @@ class advancedConfigWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(left, "Force first layer sequence", 'force_first_layer_sequence', True, 'This setting forces the order of the first layer to be \'Perimeter > Loops > Infill\'')
 
 		configBase.TitleRow(left, "Cool")
-		c = configBase.SettingRow(left, "Minimum feedrate (mm/s)", 'cool_min_feedrate', False, 'The minimal layer time can cause the print to slow down so much it starts to ooze. The minimal feedrate protects against this. Even if a print gets slown down it will never be slower then this minimal feedrate.')
+		c = configBase.SettingRow(left, "Minimum feedrate (mm/s)", 'cool_min_feedrate', '5', 'The minimal layer time can cause the print to slow down so much it starts to ooze. The minimal feedrate protects against this. Even if a print gets slown down it will never be slower then this minimal feedrate.')
 
 		configBase.TitleRow(left, "Joris")
 		c = configBase.SettingRow(left, "Joris the outer edge", 'joris', False, '[Joris] is a code name for smoothing out the Z move of the outer edge. This will create a steady Z increase over the whole print. It is intended to be used with a single walled wall thickness to make cups/vases.')
