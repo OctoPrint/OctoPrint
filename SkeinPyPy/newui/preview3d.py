@@ -343,12 +343,13 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 						for i in xrange(0, len(path['list'])-1):
 							v0 = path['list'][i]
 							v1 = path['list'][i+1]
+
+							# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
 							dist = (v0 - v1).vsize()
 							if dist > 0 and layerThickness > 0:
 								extrusionMMperDist = (v1.e - v0.e) / (v0 - v1).vsize()
 								lineWidth = extrusionMMperDist * filamentArea / layerThickness / 2
 
-							#TODO: Calculate line width from ePerDistance (needs layer thickness, steps_per_E and filament diameter)
 							normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
 							normal.normalize()
 							v2 = v0 + normal * lineWidth

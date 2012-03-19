@@ -84,7 +84,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0)
-		validators.warningAbove(c, 0.31, "Thicker layers then 0.3mm usually give bad results and are not recommended.")
+		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 80 / 100), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
 		c = configBase.SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
 		validators.validFloat(c, 0.0)
 		validators.wallThicknessValidator(c)
@@ -105,6 +105,7 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Print speed (mm/s)", 'print_speed', '50', 'Speed at which printing happens. A well adjusted Ultimaker can reach 150mm/s, but for good quality prints you want to print slower. Printing speed depends on a lot of factors. So you will be experimenting with optimal settings for this.')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
+		validators.printSpeedValidator(c)
 		
 		configBase.TitleRow(right, "Temperature")
 		c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
