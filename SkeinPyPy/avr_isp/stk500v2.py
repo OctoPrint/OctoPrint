@@ -18,6 +18,8 @@ class Stk500v2(ispBase.IspBase):
 			self.serial = Serial(port, speed, timeout=1)
 		except SerialException as e:
 			raise ispBase.IspError("Failed to open serial port")
+		except:
+			raise ispBase.IspError("Unexpected error while connecting to serial port:" + port + ":" + str(sys.exc_info()[0]))
 		self.seq = 1
 		
 		#Reset the controller

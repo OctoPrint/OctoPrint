@@ -111,9 +111,14 @@ class MachineCom():
 					break
 				except ispBase.IspError:
 					pass
+				except:
+					print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 			programmer.close()
 		else:
-			self.serial = Serial(port, baudrate, timeout=5)
+			try:
+				self.serial = Serial(port, baudrate, timeout=5)
+			except:
+				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 
 	def readline(self):
 		if self.serial == None:
