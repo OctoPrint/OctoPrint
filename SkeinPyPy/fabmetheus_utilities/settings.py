@@ -18,6 +18,8 @@ def DEFSET(setting):
 
 def storedSetting(name):
 	return lambda setting: profile.getProfileSetting(name)
+def storedPreference(name):
+	return lambda setting: profile.getPreference(name)
 
 def ifSettingAboveZero(name):
 	return lambda setting: float(profile.getProfileSetting(name)) > 0
@@ -35,7 +37,7 @@ def storedPercentSetting(name):
 
 def calculateEdgeWidth(setting):
 	wallThickness = float(profile.getProfileSetting('wall_thickness'))
-	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
+	nozzleSize = float(profile.getPreference('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return wallThickness
@@ -54,7 +56,7 @@ def calculateShellsBase(setting):
 	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')) + float(profile.getProfileSetting('extra_base_wall_thickness')))
 
 def calculateShellsImp(wallThickness):
-	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
+	nozzleSize = float(profile.getPreference('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return 0
@@ -150,7 +152,7 @@ def getSkeinPyPyProfileInformation():
 			'Line': ifSettingIs('infill_type', 'Line'),
 			'Infill_Perimeter_Overlap_ratio': storedPercentSetting('fill_overlap'),
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
-			'Infill_Width': storedSetting("nozzle_size"),
+			'Infill_Width': storedPreference("nozzle_size"),
 			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
 			'Start_From_Choice': DEFSET,
 			'Surrounding_Angle_degrees': DEFSET,

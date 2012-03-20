@@ -331,7 +331,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				layerThickness = 0.0
 				filamentRadius = float(profile.getProfileSetting('filament_diameter')) / 2
 				filamentArea = math.pi * filamentRadius * filamentRadius
-				lineWidth = float(profile.getProfileSetting('nozzle_size')) / 2
+				lineWidth = float(profile.getPreference('nozzle_size')) / 2
 				
 				curLayerNum = 0
 				for path in self.parent.gcode.pathList:
