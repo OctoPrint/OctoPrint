@@ -75,10 +75,12 @@ class sliceProgessPanel(wx.Panel):
 	
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
+		self.abortButton.Destroy()
 		self.progressLog = result.progressLog
-		self.sizer.Remove(self.abortButton)
 		self.logButton = wx.Button(self, -1, "Show Log")
+		self.abortButton = wx.Button(self, -1, "X", style=wx.BU_EXACTFIT)
 		self.Bind(wx.EVT_BUTTON, self.OnShowLog, self.logButton)
+		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.abortButton)
 		self.sizer.Add(self.logButton, 0)
 		if result.returnCode == 0:
 			self.statusText.SetLabel("Ready.")
