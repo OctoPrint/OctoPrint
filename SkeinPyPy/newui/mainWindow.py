@@ -208,6 +208,7 @@ class mainWindow(configBase.configWindowBase):
 		self.updateProfileToControls()
 
 		self.Fit()
+		self.SetMinSize(self.GetSize())
 		self.Centre()
 		self.Show(True)
 	
