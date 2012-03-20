@@ -91,6 +91,7 @@ class sliceProgessPanel(wx.Panel):
 		self.sizer.Layout()
 		self.Layout()
 		self.abort = True
+		self.mainWindow.preview3d.loadReModelFile(self.filename)
 	
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:

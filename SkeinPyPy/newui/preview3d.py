@@ -102,8 +102,13 @@ class previewPanel(wx.Panel):
 		self.gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
 		self.logFilename = filename[: filename.rfind('.')] + "_export.log"
 		#Do the STL file loading in a background thread so we don't block the UI.
-		thread = threading.Thread(target=self.doFileLoad)
-		thread.start()
+		threading.Thread(target=self.doFileLoad).start()
+	
+	def loadReModelFile(self, filename):
+		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
+		if self.modelFilename != filename:
+			return
+		threading.Thread(target=self.doFileLoad).start()
 	
 	def doFileLoad(self):
 		if os.path.isfile(self.modelFilename) and self.modelFileTime != os.stat(self.modelFilename).st_mtime:
