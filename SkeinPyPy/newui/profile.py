@@ -47,6 +47,9 @@ profileDefaultSettings = {
 	'support_distance': '0.5',
 	'joris': 'False',
 	'enable_raft': 'False',
+	'cool_min_feedrate': '5',
+	'bridge_speed': '100',
+	'bridge_material_amount': '100',
 }
 preferencesDefaultSettings = {
 	'wizardDone': 'False',

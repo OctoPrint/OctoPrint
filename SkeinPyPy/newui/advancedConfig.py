@@ -41,6 +41,10 @@ class advancedConfigWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Support material amount (%)", 'support_rate', '100', 'Amount of material used for support, less material gives a weaker support structure which is easier to remove.')
 		c = configBase.SettingRow(right, "Support distance from object (mm)", 'support_distance', '0.5', 'Distance between the support structure and the object.')
 
+		configBase.TitleRow(right, "Bridge")
+		c = configBase.SettingRow(right, "Bridge speed (%)", 'bridge_speed', '100', 'Speed at which bridges are printed, compared to normal printing speed.')
+		c = configBase.SettingRow(right, "Bridge material (%)", 'bridge_material_amount', '100', 'Amount of material used for bridges, increase go extrude more material when printing a bridge.')
+
 		main.Fit()
 		self.Fit()
 

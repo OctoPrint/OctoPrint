@@ -166,8 +166,8 @@ def getSkeinPyPyProfileInformation():
 		},'speed': {
 			'Activate_Speed': "True",
 			'Add_Flow_Rate': "True",
-			'Bridge_Feed_Rate_Multiplier_ratio': DEFSET,
-			'Bridge_Flow_Rate_Multiplier_ratio': DEFSET,
+			'Bridge_Feed_Rate_Multiplier_ratio': storedPercentSetting('bridge_speed'),
+			'Bridge_Flow_Rate_Multiplier_ratio': storedPercentSetting('bridge_material_amount'),
 			'Duty_Cyle_at_Beginning_portion': DEFSET,
 			'Duty_Cyle_at_Ending_portion': DEFSET,
 			'Feed_Rate_mm/s': storedSetting("print_speed"),
