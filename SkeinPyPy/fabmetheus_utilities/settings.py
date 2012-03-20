@@ -18,6 +18,8 @@ def DEFSET(setting):
 
 def storedSetting(name):
 	return lambda setting: profile.getProfileSetting(name)
+def storedPreference(name):
+	return lambda setting: profile.getPreference(name)
 
 def ifSettingAboveZero(name):
 	return lambda setting: float(profile.getProfileSetting(name)) > 0
@@ -25,12 +27,17 @@ def ifSettingAboveZero(name):
 def ifSettingIs(name, value):
 	return lambda setting: profile.getProfileSetting(name) == value
 
+def raftLayerCount(setting):
+	if profile.getProfileSetting('enable_raft') == "True":
+		return '1'
+	return '0'
+
 def storedPercentSetting(name):
 	return lambda setting: float(profile.getProfileSetting(name)) / 100
 
 def calculateEdgeWidth(setting):
 	wallThickness = float(profile.getProfileSetting('wall_thickness'))
-	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
+	nozzleSize = float(profile.getPreference('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return wallThickness
@@ -49,7 +56,7 @@ def calculateShellsBase(setting):
 	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')) + float(profile.getProfileSetting('extra_base_wall_thickness')))
 
 def calculateShellsImp(wallThickness):
-	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
+	nozzleSize = float(profile.getPreference('nozzle_size'))
 	
 	if wallThickness < nozzleSize:
 		return 0
@@ -145,7 +152,7 @@ def getSkeinPyPyProfileInformation():
 			'Line': ifSettingIs('infill_type', 'Line'),
 			'Infill_Perimeter_Overlap_ratio': storedPercentSetting('fill_overlap'),
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
-			'Infill_Width': storedSetting("nozzle_size"),
+			'Infill_Width': storedPreference("nozzle_size"),
 			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
 			'Start_From_Choice': DEFSET,
 			'Surrounding_Angle_degrees': DEFSET,
@@ -161,8 +168,8 @@ def getSkeinPyPyProfileInformation():
 		},'speed': {
 			'Activate_Speed': "True",
 			'Add_Flow_Rate': "True",
-			'Bridge_Feed_Rate_Multiplier_ratio': DEFSET,
-			'Bridge_Flow_Rate_Multiplier_ratio': DEFSET,
+			'Bridge_Feed_Rate_Multiplier_ratio': storedPercentSetting('bridge_speed'),
+			'Bridge_Flow_Rate_Multiplier_ratio': storedPercentSetting('bridge_material_amount'),
 			'Duty_Cyle_at_Beginning_portion': DEFSET,
 			'Duty_Cyle_at_Ending_portion': DEFSET,
 			'Feed_Rate_mm/s': storedSetting("print_speed"),
@@ -193,28 +200,28 @@ def getSkeinPyPyProfileInformation():
 			'Activate_Raft': "True",
 			'Add_Raft,_Elevate_Nozzle,_Orbit': DEFSET,
 			'Base_Feed_Rate_Multiplier_ratio': DEFSET,
-			'Base_Flow_Rate_Multiplier_ratio': DEFSET,
+			'Base_Flow_Rate_Multiplier_ratio': storedPercentSetting('raft_base_material_amount'),
 			'Base_Infill_Density_ratio': DEFSET,
 			'Base_Layer_Thickness_over_Layer_Thickness': DEFSET,
-			'Base_Layers_integer': '0',
+			'Base_Layers_integer': raftLayerCount,
 			'Base_Nozzle_Lift_over_Base_Layer_Thickness_ratio': DEFSET,
 			'Initial_Circling': DEFSET,
 			'Infill_Overhang_over_Extrusion_Width_ratio': DEFSET,
 			'Interface_Feed_Rate_Multiplier_ratio': DEFSET,
-			'Interface_Flow_Rate_Multiplier_ratio': DEFSET,
+			'Interface_Flow_Rate_Multiplier_ratio': storedPercentSetting('raft_interface_material_amount'),
 			'Interface_Infill_Density_ratio': DEFSET,
 			'Interface_Layer_Thickness_over_Layer_Thickness': DEFSET,
-			'Interface_Layers_integer': '0',
+			'Interface_Layers_integer': raftLayerCount,
 			'Interface_Nozzle_Lift_over_Interface_Layer_Thickness_ratio': DEFSET,
 			'Name_of_Support_End_File': DEFSET,
 			'Name_of_Support_Start_File': DEFSET,
 			'Operating_Nozzle_Lift_over_Layer_Thickness_ratio': DEFSET,
 			'Raft_Additional_Margin_over_Length_%': DEFSET,
-			'Raft_Margin_mm': DEFSET,
+			'Raft_Margin_mm': storedSetting('raft_margin'),
 			'Support_Cross_Hatch': 'False',
 			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': storedPercentSetting('support_rate'),
 			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': calcSupportDistanceRatio,
-			'Support_Material_Choice_': storedSetting("support"),
+			'Support_Material_Choice_': storedSetting('support'),
 			'Support_Minimum_Angle_degrees': DEFSET,
 		},'skirt': {
 			'Skirt_line_count': storedSetting("skirt_line_count"),
@@ -278,6 +285,7 @@ def getSkeinPyPyProfileInformation():
 			'Orbital_Outset_millimeters': DEFSET,
 			'Turn_Fan_On_at_Beginning': DEFSET,
 			'Turn_Fan_Off_at_Ending': DEFSET,
+			'Minimum_feed_rate_mm/s': storedSetting("cool_min_feedrate"),
 		},'hop': {
 			'Activate_Hop': "False",
 			'Hop_Over_Layer_Thickness_ratio': DEFSET,

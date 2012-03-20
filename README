@@ -17,12 +17,12 @@ SkeinPyPy:
 BUILDING
 ========
 
-    ./build.sh
+    ./package.sh
     
 The build script defaults to building for Windows.  If you want to build for Mac OS X or Linux, choose one of:
 
-    ./build.sh osx64
-    ./build.sh linux
+    ./package.sh osx64
+    ./package.sh linux
 
 Note that Mac OS X currently requires the manual installation of wxPython, PySerial, and PyOpenGL:
 

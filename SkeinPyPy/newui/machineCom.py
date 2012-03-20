@@ -9,6 +9,8 @@ from avr_isp import stk500v2
 from avr_isp import ispBase
 from avr_isp import intelHex
 
+from newui import profile
+
 try:
 	import _winreg
 except:
@@ -28,8 +30,11 @@ def serialList():
     return baselist+glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') +glob.glob("/dev/tty.usb*")+glob.glob("/dev/cu.*")+glob.glob("/dev/rfcomm*")
 
 class InstallFirmware(wx.Dialog):
-	def __init__(self, filename, port = 'AUTO'):
+	def __init__(self, filename, port = None):
 		super(InstallFirmware, self).__init__(parent=None, title="Firmware install", size=(250, 100))
+		if port == None:
+			port = profile.getPreference('serial_port')
+
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		
 		self.progressLabel = wx.StaticText(self, -1, 'Reading firmware...')
@@ -99,7 +104,11 @@ class InstallFirmware(wx.Dialog):
 		self.Destroy()
 
 class MachineCom():
-	def __init__(self, port = 'AUTO', baudrate = 250000):
+	def __init__(self, port = None, baudrate = None):
+		if port == None:
+			port = profile.getPreference('serial_port')
+		if baudrate == None:
+			baudrate = profile.getPreference('serial_baud')
 		self.serial = None
 		if port == 'AUTO':
 			programmer = stk500v2.Stk500v2()
@@ -111,9 +120,14 @@ class MachineCom():
 					break
 				except ispBase.IspError:
 					pass
+				except:
+					print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 			programmer.close()
 		else:
-			self.serial = Serial(port, baudrate, timeout=5)
+			try:
+				self.serial = Serial(port, baudrate, timeout=5)
+			except:
+				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 
 	def readline(self):
 		if self.serial == None:

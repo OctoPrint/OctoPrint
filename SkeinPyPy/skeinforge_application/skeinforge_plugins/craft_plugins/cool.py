@@ -161,6 +161,8 @@ class CoolRepository:
 		self.turnFanOnAtBeginning = settings.BooleanSetting().getFromValue('Turn Fan On at Beginning', self, True)
 		self.turnFanOffAtEnding = settings.BooleanSetting().getFromValue('Turn Fan Off at Ending', self, True)
 		self.executeTitle = 'Cool'
+		
+		self.minimumFeedRate = settings.FloatSpin().getFromValue(0.0, 'Minimum feed rate (mm/s):', self, 10.0, 5.0)
 
 	def execute(self):
 		'Cool button has been clicked.'
@@ -188,6 +190,7 @@ class CoolSkein:
 		self.oldFlowRateString = None
 		self.oldLocation = None
 		self.oldTemperature = None
+		self.minFeedrate = 0
 
 	def addCoolOrbits(self, remainingOrbitTime):
 		'Add the minimum radius cool orbits.'
@@ -245,7 +248,7 @@ class CoolSkein:
 	def getCoolMove(self, line, location, splitLine):
 		'Get cool line according to time spent on layer.'
 		self.feedRateMinute = gcodec.getFeedRateMinute(self.feedRateMinute, splitLine)
-		return self.distanceFeedRate.getLineWithFeedRate(self.multiplier * self.feedRateMinute, line, splitLine)
+		return self.distanceFeedRate.getLineWithFeedRate(max(self.minFeedrate, self.multiplier * self.feedRateMinute), line, splitLine)
 
 	def getCraftedGcode(self, gcodeText, repository):
 		'Parse gcode text and store the cool gcode.'
@@ -255,6 +258,7 @@ class CoolSkein:
 		self.halfCorner = complex(repository.minimumOrbitalRadius.value, repository.minimumOrbitalRadius.value)
 		self.lines = archive.getTextLines(gcodeText)
 		self.minimumArea = 4.0 * repository.minimumOrbitalRadius.value * repository.minimumOrbitalRadius.value
+		self.minFeedrate = repository.minimumFeedRate.value * 60
 		self.parseInitialization()
 		self.boundingRectangle = gcodec.BoundingRectangle().getFromGcodeLines(self.lines[self.lineIndex :], 0.5 * self.edgeWidth)
 		margin = 0.2 * self.edgeWidth

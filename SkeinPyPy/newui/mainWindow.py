@@ -84,11 +84,10 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0)
-		validators.warningAbove(c, 0.31, "Thicker layers then 0.3mm usually give bad results and are not recommended.")
+		validators.warningAbove(c, lambda : (float(profile.getPreference('nozzle_size')) * 80 / 100), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
 		c = configBase.SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
 		validators.validFloat(c, 0.0)
 		validators.wallThicknessValidator(c)
-		configBase.settingNotify(c, self.preview3d.updateWallLineWidth)
 		
 		configBase.TitleRow(left, "Fill")
 		c = configBase.SettingRow(left, "Bottom/Top thickness (mm)", 'solid_layer_thickness', '0.6', 'This controls the thickness of the bottom and top layers, the amount of solid layers put down is calculated by the layer thickness and this value.\nHaving this value a multiply of the layer thickness makes sense. And keep it near your wall thickness to make an evenly strong part.')
@@ -106,6 +105,7 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Print speed (mm/s)", 'print_speed', '50', 'Speed at which printing happens. A well adjusted Ultimaker can reach 150mm/s, but for good quality prints you want to print slower. Printing speed depends on a lot of factors. So you will be experimenting with optimal settings for this.')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
+		validators.printSpeedValidator(c)
 		
 		configBase.TitleRow(right, "Temperature")
 		c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
@@ -114,6 +114,7 @@ class mainWindow(configBase.configWindowBase):
 		
 		configBase.TitleRow(right, "Support")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
+		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the advanced settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
 
 		configBase.TitleRow(right, "Filament")
 		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.89', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
@@ -131,12 +132,6 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(left, "Machine center Y (mm)", 'machine_center_y', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
 		configBase.settingNotify(c, self.preview3d.updateCenterY)
-
-		configBase.TitleRow(left, "Machine nozzle")
-		c = configBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
-		validators.validFloat(c, 0.1, 1.0)
-		configBase.settingNotify(c, self.preview3d.updateWallLineWidth)
-		configBase.settingNotify(c, self.preview3d.updateInfillLineWidth)
 
 		configBase.TitleRow(left, "Retraction")
 		c = configBase.SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0', 'Minimal amount of travel needed for a retraction to happen at all. To make sure you do not get a lot of retractions in a small area')
@@ -213,6 +208,7 @@ class mainWindow(configBase.configWindowBase):
 		self.updateProfileToControls()
 
 		self.Fit()
+		self.SetMinSize(self.GetSize())
 		self.Centre()
 		self.Show(True)
 	
@@ -241,7 +237,7 @@ class mainWindow(configBase.configWindowBase):
 		prefDialog.Show(True)
 	
 	def OnDefaultMarlinFirmware(self, e):
-		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"), profile.getPreference('serial_port'))
+		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
@@ -251,7 +247,7 @@ class mainWindow(configBase.configWindowBase):
 			if not(os.path.exists(filename)):
 				return
 			#For some reason my Ubuntu 10.10 crashes here.
-			machineCom.InstallFirmware(filename, profile.getPreference('serial_port'))
+			machineCom.InstallFirmware(filename)
 
 	def OnFirstRunWizard(self, e):
 		configWizard.configWizard()
