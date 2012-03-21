@@ -69,13 +69,19 @@ def getDefaultProfilePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
 
 def loadGlobalProfile(filename):
-	"Read a configuration file as global config"
+	#Read a configuration file as global config
 	global globalProfileParser
 	globalProfileParser = ConfigParser.ConfigParser()
 	globalProfileParser.read(filename)
 
 def saveGlobalProfile(filename):
+	#Save the current profile to an ini file
 	globalProfileParser.write(open(filename, 'w'))
+
+def resetGlobalProfile():
+	#Create an empty profile with no settings, so everything gets default settings.
+	global globalProfileParser
+	globalProfileParser = ConfigParser.ConfigParser()
 
 def getProfileSetting(name):
 	if name in profileDefaultSettings:
