@@ -142,6 +142,8 @@ class gcode():
 						pass
 					elif M == 108:	#Extruder RPM (these should not be in the final GCode, but they are)
 						pass
+					elif M == 109:	#Set temperature, wait
+						pass
 					elif M == 113:	#Extruder PWM (these should not be in the final GCode, but they are)
 						pass
 					else:
