@@ -56,13 +56,43 @@ class previewPanel(wx.Panel):
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
+
+		self.toolbar2 = wx.ToolBar( self, -1 )
+		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Flip:'))
+
+		self.flipX = wx.CheckBox(self.toolbar2, -1, "X")
+		self.flipX.SetValue(profile.getProfileSetting('flip_x') == 'True')
+		self.toolbar2.AddControl(self.flipX)
+		self.Bind(wx.EVT_CHECKBOX, self.OnFlipXClick, self.flipX)
+		self.flipY = wx.CheckBox(self.toolbar2, -1, "Y")
+		self.flipY.SetValue(profile.getProfileSetting('flip_y') == 'True')
+		self.toolbar2.AddControl(self.flipY)
+		self.Bind(wx.EVT_CHECKBOX, self.OnFlipYClick, self.flipY)
+		self.flipZ = wx.CheckBox(self.toolbar2, -1, "Z")
+		self.flipZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
+		self.toolbar2.AddControl(self.flipZ)
+		self.Bind(wx.EVT_CHECKBOX, self.OnFlipZClick, self.flipZ)
 		
 		self.updateToolbar()
 		
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(self.toolbar, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
+		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
+	
+	def OnFlipXClick(self, e):
+		profile.putProfileSetting('flip_x', str(self.flipX.GetValue()))
+		self.updateModelTransform()
+		
+	def OnFlipYClick(self, e):
+		profile.putProfileSetting('flip_y', str(self.flipY.GetValue()))
+		self.updateModelTransform()
+
+	def OnFlipZClick(self, e):
+		profile.putProfileSetting('flip_z', str(self.flipZ.GetValue()))
+		self.updateModelTransform()
 
 	def On3DClick(self, e):
 		self.glCanvas.yaw = 30
