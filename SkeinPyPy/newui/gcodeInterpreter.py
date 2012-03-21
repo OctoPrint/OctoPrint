@@ -23,7 +23,6 @@ class gcode():
 		pathType = 'CUSTOM';
 		layerNr = 0;	#Note layer 0 will be the start code.
 		startCodeDone = False
-		self.stepsPerE = 865.888
 		currentPath = {'type': 'move', 'pathType': pathType, 'list': [pos.copy()], 'layerNr': layerNr}
 		currentPath['list'][-1].e = totalExtrusion
 		for line in f:
@@ -128,9 +127,6 @@ class gcode():
 					elif M == 84:	#Disable step drivers
 						pass
 					elif M == 92:	#Set steps per unit
-						e = self.getCodeFloat(line, 'E')
-						if e is not None:
-							self.stepsPerE = e
 						pass
 					elif M == 104:	#Set temperature, no wait
 						pass
