@@ -499,9 +499,11 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			elif self.viewMode == "Model - Normal":
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
-				
+			
+			if self.viewMode == "Model - Normal" or self.viewMode == "Model - Transparent" or self.viewMode == "Model - X-Ray":
 				glDisable(GL_LIGHTING)
 				glDisable(GL_DEPTH_TEST)
+				glDisable(GL_BLEND)
 				glColor3f(1,0,0)
 				glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 				glBegin(GL_LINES)
