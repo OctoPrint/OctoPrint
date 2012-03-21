@@ -18,9 +18,6 @@ import platform
 from optparse import OptionParser
 from newui import skeinRun
 
-if platform.python_implementation() != "PyPy":
-	from newui import mainWindow
-
 __author__ = 'Daid'
 __credits__ = """
 Enrique Perez (perez_enrique@yahoo.com)
@@ -52,6 +49,7 @@ def main():
 	if len( args ) > 0:
 		skeinRun.runSkein(args)
 	else:
+		from newui import mainWindow
 		mainWindow.main()
 
 if __name__ == '__main__':
