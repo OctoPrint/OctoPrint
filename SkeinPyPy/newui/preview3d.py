@@ -50,7 +50,7 @@ class previewPanel(wx.Panel):
 
 		self.viewSelect = wx.ComboBox(self.toolbar, -1, 'Model - Normal', choices=['Model - Normal', 'Model - Transparent', 'Model - X-Ray', 'GCode', 'Mixed'], style=wx.CB_DROPDOWN|wx.CB_READONLY)
 		self.toolbar.AddControl(self.viewSelect)
-		self.viewSelect.Bind(wx.EVT_TEXT, self.OnViewChange)
+		self.viewSelect.Bind(wx.EVT_COMBOBOX, self.OnViewChange)
 		self.glCanvas.viewMode = self.viewSelect.GetValue()
 
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
