@@ -84,6 +84,10 @@ def calcSupportDistanceRatio(setting):
 	distance = float(profile.getProfileSetting('support_distance'))
 	return distance / edgeWidth
 
+def calculateMultiplyDistance(setting):
+	edgeWidth = calculateEdgeWidth(setting)
+	return 10.0 / edgeWidth
+
 def getSkeinPyPyProfileInformation():
 	return {
 		'carve': {
@@ -164,7 +168,7 @@ def getSkeinPyPyProfileInformation():
 			'Number_of_Columns_integer': storedSetting('model_multiply_x'),
 			'Number_of_Rows_integer': storedSetting('model_multiply_y'),
 			'Reverse_Sequence_every_Odd_Layer': DEFSET,
-			'Separation_over_Perimeter_Width_ratio': DEFSET,
+			'Separation_over_Perimeter_Width_ratio': calculateMultiplyDistance,
 		},'speed': {
 			'Activate_Speed': "True",
 			'Add_Flow_Rate': "True",
