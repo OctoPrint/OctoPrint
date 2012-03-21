@@ -74,6 +74,13 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddControl(self.flipZ)
 		self.Bind(wx.EVT_CHECKBOX, self.OnFlipZClick, self.flipZ)
 		
+		self.toolbar2.InsertSeparator(4)
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
+		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
+		self.toolbar2.AddControl(self.scale)
+		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
+		
+		self.toolbar2.Realize()
 		self.updateToolbar()
 		
 		sizer = wx.BoxSizer(wx.VERTICAL)
@@ -92,6 +99,14 @@ class previewPanel(wx.Panel):
 
 	def OnFlipZClick(self, e):
 		profile.putProfileSetting('flip_z', str(self.flipZ.GetValue()))
+		self.updateModelTransform()
+
+	def OnScale(self, e):
+		try:
+			scale = float(self.scale.GetValue())
+		except:
+			scale = 1.0
+		profile.putProfileSetting('model_scale', str(scale))
 		self.updateModelTransform()
 
 	def On3DClick(self, e):

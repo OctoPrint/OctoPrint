@@ -159,10 +159,6 @@ class mainWindow(configBase.configWindowBase):
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
 		(left, right) = self.CreateConfigTab(nb, '3D Model')
-		configBase.TitleRow(left, "Scale")
-		c = configBase.SettingRow(left, "Scale", 'model_scale', '1.0', '')
-		validators.validFloat(c, 0.01)
-		configBase.settingNotify(c, self.preview3d.updateModelTransform)
 		configBase.TitleRow(right, "Rotate")
 		c = configBase.SettingRow(right, "Rotate (deg)", 'model_rotate_base', '0', '')
 		validators.validFloat(c)
