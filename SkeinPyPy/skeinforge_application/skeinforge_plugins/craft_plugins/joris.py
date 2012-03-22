@@ -100,6 +100,7 @@ class JorisSkein:
 		self.travelFeedRateMinute = 957.0
 		self.perimeter = None
 		self.oldLocation = None
+		self.doJoris = False
 	
 	def getCraftedGcode( self, gcodeText, repository ):
 		'Parse gcode text and store the joris gcode.'
@@ -134,7 +135,7 @@ class JorisSkein:
 		if len(splitLine) < 1:
 			return
 		firstWord = splitLine[0]
-		if firstWord == 'G1':
+		if firstWord == 'G1' and self.doJoris:
 			self.feedRateMinute = gcodec.getFeedRateMinute(self.feedRateMinute, splitLine)
 			location = gcodec.getLocationFromSplitLine(self.oldLocation, splitLine)
 			self.oldLocation = location
@@ -148,9 +149,15 @@ class JorisSkein:
 			self.oldFlowRate = gcodec.getDoubleAfterFirstLetter(splitLine[1])
 		elif firstWord == '(<edge>':
 			if self.layerIndex >= self.layersFromBottom:
-				self.perimeter = []
-		elif firstWord == '(</edge>)':
+				self.doJoris = True
+		elif firstWord == 'M101' and self.doJoris:
+			self.perimeter = []
+			return
+		elif firstWord == 'M103' and self.doJoris:
 			self.addJorisedPerimeter()
+			return
+		elif firstWord == '(</edge>)':
+			self.doJoris = False
 		self.distanceFeedRate.addLine(line)
 		
 	def addJorisedPerimeter(self):
@@ -160,7 +167,7 @@ class JorisSkein:
 		#Calculate the total length of the perimeter.
 		p = self.oldLocation.dropAxis()
 		perimeterLength = 0;
-		for point in self.perimeter[1 :]:
+		for point in self.perimeter:
 			perimeterLength += abs( point - p );
 			p = point
 		
@@ -168,7 +175,7 @@ class JorisSkein:
 		p = self.oldLocation.dropAxis()
 		len = 0;
 		self.distanceFeedRate.addLine('M101') # Turn extruder on.
-		for point in self.perimeter[1 :]:
+		for point in self.perimeter:
 			len += abs( point - p );
 			p = point
 			self.distanceFeedRate.addGcodeMovementZWithFeedRate(self.feedRateMinute, point, self.oldLocation.z + self.layerThickness * len / perimeterLength)
