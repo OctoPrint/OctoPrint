@@ -36,6 +36,8 @@ class previewPanel(wx.Panel):
 		self.triangleMesh = None
 		self.gcode = None
 		self.modelFilename = None
+		self.loadingProgressAmount = 0
+		self.loadThread = None
 		self.machineSize = Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
 		self.machineCenter = Vector3(0, 0, 0)
 		
@@ -192,15 +194,19 @@ class previewPanel(wx.Panel):
 		self.gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
 		self.logFilename = filename[: filename.rfind('.')] + "_export.log"
 		#Do the STL file loading in a background thread so we don't block the UI.
-		threading.Thread(target=self.doFileLoad).start()
+		if self.loadThread != None and self.loadThread.isAlive():
+			self.loadThread.join()
+		self.loadThread = threading.Thread(target=self.doFileLoadThread)
+		self.loadThread.daemon = True
+		self.loadThread.start()
 	
 	def loadReModelFile(self, filename):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
 		if self.modelFilename != filename:
 			return
-		threading.Thread(target=self.doFileLoad).start()
+		self.loadModelFile(filename)
 	
-	def doFileLoad(self):
+	def doFileLoadThread(self):
 		if os.path.isfile(self.modelFilename) and self.modelFileTime != os.stat(self.modelFilename).st_mtime:
 			self.modelFileTime = os.stat(self.modelFilename).st_mtime
 			triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
@@ -217,7 +223,10 @@ class previewPanel(wx.Panel):
 		
 		if os.path.isfile(self.gcodeFilename) and self.gcodeFileTime != os.stat(self.gcodeFilename).st_mtime:
 			self.gcodeFileTime = os.stat(self.gcodeFilename).st_mtime
-			gcode = gcodeInterpreter.gcode(self.gcodeFilename)
+			gcode = gcodeInterpreter.gcode()
+			gcode.progressCallback = self.loadProgress
+			gcode.load(self.gcodeFilename)
+			self.loadingProgressAmount = 0
 			self.gcodeDirty = False
 			self.errorList = []
 			self.gcode = gcode
@@ -237,6 +246,10 @@ class previewPanel(wx.Panel):
 					errorList.append([v1, v2])
 			self.errorList = errorList
 			wx.CallAfter(self.glCanvas.Refresh)
+	
+	def loadProgress(self, progress):
+		self.loadingProgressAmount = progress
+		wx.CallAfter(self.glCanvas.Refresh)
 	
 	def updateToolbar(self):
 		self.layerSpin.Show(self.gcode != None)
@@ -480,15 +493,16 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 								glVertex3f(v3.x, v3.y, v3.z - 0.01)
 								glVertex3f(v2.x, v2.y, v2.z - 0.01)
 							glEnd()
-						for v in path['list']:
-							glBegin(GL_TRIANGLE_FAN)
-							glVertex3f(v.x, v.y, v.z - 0.001)
-							for i in xrange(0, 16+1):
-								if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
-									glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
-								else:
-									glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
-							glEnd()
+						
+						#for v in path['list']:
+						#	glBegin(GL_TRIANGLE_FAN)
+						#	glVertex3f(v.x, v.y, v.z - 0.001)
+						#	for i in xrange(0, 16+1):
+						#		if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
+						#		else:
+						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
+						#	glEnd()
 					else:
 						glBegin(GL_LINE_STRIP)
 						for v in path['list']:
@@ -601,6 +615,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glVertex3f(err[0].x, err[0].y, err[0].z)
 					glVertex3f(err[1].x, err[1].y, err[1].z)
 				glEnd()
+		
 		glFlush()
 
 	def InitGL(self):

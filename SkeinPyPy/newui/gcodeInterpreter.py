@@ -10,9 +10,15 @@ import os
 from newui import util3d
 
 class gcode():
-	def __init__(self, filename):
+	def __init__(self):
 		self.regMatch = {}
+		self.layerCount = 0
+		self.pathList = []
+		self.extrusionAmount = 0
+		self.totalMoveTimeMinute = 0
+		self.progressCallback = None
 	
+	def load(self, filename):
 		fileSize = os.stat(filename).st_size
 		filePos = 0
 		gcodeFile = open(filename, 'r')
@@ -34,7 +40,8 @@ class gcode():
 		for line in gcodeFile:
 			if filePos != gcodeFile.tell():
 				filePos = gcodeFile.tell()
-				#print float(filePos) / float(fileSize)
+				if self.progressCallback != None:
+					self.progressCallback(float(filePos) / float(fileSize))
 			if line.startswith(';TYPE:'):
 				pathType = line[6:].strip()
 				if pathType != "CUSTOM":
@@ -185,5 +192,5 @@ class gcode():
 
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:
-		gcode(filename)
+		gcode().load(filename)
 
