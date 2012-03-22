@@ -311,7 +311,7 @@ def getDescendingAreaLoops(allPoints, corners, importRadius):
 	sortLoopsInOrderOfArea(True, loops)
 	pointDictionary = {}
 	for loop in loops:
-		if len(loop) > 2 and getOverlapRatio(loop, pointDictionary) < 0.3:
+		if len(loop) > 2 and getOverlapRatio(loop, pointDictionary) < 0.3 and intercircle.getIsLarge(loop, importRadius):
 			intercircle.directLoop(not euclidean.getIsInFilledRegion(descendingAreaLoops, loop[0]), loop)
 			descendingAreaLoops.append(loop)
 			addLoopToPointTable(loop, pointDictionary)

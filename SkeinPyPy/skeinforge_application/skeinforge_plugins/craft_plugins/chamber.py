@@ -17,6 +17,9 @@ The default 'Activate Chamber' checkbox is on.  When it is on, the functions des
 ===Bed===
 The initial bed temperature is defined by 'Bed Temperature'.  If the 'Bed Temperature End Change Height' is greater or equal to the 'Bed Temperature Begin Change Height' and the 'Bed Temperature Begin Change Height' is greater or equal to zero, then the temperature will be ramped toward the 'Bed Temperature End'.  The ramp will start once the extruder reaches the 'Bed Temperature Begin Change Height', then the bed temperature will approach the 'Bed Temperature End' as the extruder reaches the 'Bed Temperature End Change Height', finally the bed temperature will stay at the 'Bed Temperature End' for the remainder of the build.
 
+The idea is described at:
+http://www.makerbot.com/blog/2011/03/17/if-you-cant-stand-the-heat/
+
 ====Bed Temperature====
 Default: 60C
 
