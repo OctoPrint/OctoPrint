@@ -8,6 +8,8 @@ import os
 from wx import glcanvas
 import wx
 try:
+	import OpenGL
+	OpenGL.ERROR_CHECKING = False
 	from OpenGL.GLU import *
 	from OpenGL.GL import *
 	hasOpenGLlibs = True

@@ -187,7 +187,6 @@ class mainWindow(configBase.configWindowBase):
 		self.SetMinSize(self.GetSize())
 		self.Centre()
 		self.Show(True)
-		print self.GetSize()
 	
 	def OnLoadProfile(self, e):
 		dlg=wx.FileDialog(self, "Select profile file to load", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)

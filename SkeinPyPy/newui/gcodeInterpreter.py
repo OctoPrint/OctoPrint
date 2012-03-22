@@ -8,8 +8,9 @@ from newui import util3d
 
 class gcode():
 	def __init__(self, filename):
-		print os.stat(filename).st_size
-		f = open(filename, 'r')
+		fileSize = os.stat(filename).st_size
+		filePos = 0
+		gcodeFile = open(filename, 'r')
 		pos = util3d.Vector3()
 		posOffset = util3d.Vector3()
 		currentE = 0.0
@@ -25,7 +26,10 @@ class gcode():
 		startCodeDone = False
 		currentPath = {'type': 'move', 'pathType': pathType, 'list': [pos.copy()], 'layerNr': layerNr}
 		currentPath['list'][-1].e = totalExtrusion
-		for line in f:
+		for line in gcodeFile:
+			if filePos != gcodeFile.tell():
+				filePos = gcodeFile.tell()
+				#print float(filePos) / float(fileSize)
 			if line.startswith(';TYPE:'):
 				pathType = line[6:].strip()
 				if pathType != "CUSTOM":
@@ -144,6 +148,7 @@ class gcode():
 						pass
 					else:
 						print "Unknown M code:" + str(M)
+		gcodeFile.close()
 		self.layerCount = layerNr
 		self.pathList = pathList
 		self.extrusionAmount = maxExtrusion
