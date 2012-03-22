@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+import __init__
+
 import sys
 import math
 import threading
@@ -8,6 +11,8 @@ from newui import util3d
 
 class gcode():
 	def __init__(self, filename):
+		self.regMatch = {}
+	
 		fileSize = os.stat(filename).st_size
 		filePos = 0
 		gcodeFile = open(filename, 'r')
@@ -156,8 +161,10 @@ class gcode():
 		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
 		print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
-	def getCodeInt(self, str, id):
-		m = re.search(id + '([^\s]+)', str)
+	def getCodeInt(self, line, code):
+		if code not in self.regMatch:
+			self.regMatch[code] = re.compile(code + '([^\s]+)')
+		m = self.regMatch[code].search(line)
 		if m == None:
 			return None
 		try:
@@ -165,12 +172,18 @@ class gcode():
 		except:
 			return None
 
-	def getCodeFloat(self, str, id):
-		m = re.search(id + '([^\s]+)', str)
+	def getCodeFloat(self, line, code):
+		if code not in self.regMatch:
+			self.regMatch[code] = re.compile(code + '([^\s]+)')
+		m = self.regMatch[code].search(line)
 		if m == None:
 			return None
 		try:
 			return float(m.group(1))
 		except:
 			return None
+
+if __name__ == '__main__':
+	for filename in sys.argv[1:]:
+		gcode(filename)
 
