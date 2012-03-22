@@ -163,13 +163,6 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Rotate (deg)", 'model_rotate_base', '0', '')
 		validators.validFloat(c)
 		configBase.settingNotify(c, self.preview3d.updateModelTransform)
-		configBase.TitleRow(right, "Multiply")
-		c = configBase.SettingRow(right, "Multiple X", 'model_multiply_x', '1', '')
-		validators.validInt(c)
-		configBase.settingNotify(c, self.preview3d.updateModelTransform)
-		c = configBase.SettingRow(right, "Multiple Y", 'model_multiply_y', '1', '')
-		validators.validInt(c)
-		configBase.settingNotify(c, self.preview3d.updateModelTransform)
 
 		# load and slice buttons.
 		loadButton = wx.Button(self, -1, 'Load Model')

@@ -74,11 +74,27 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddControl(self.flipZ)
 		self.Bind(wx.EVT_CHECKBOX, self.OnFlipZClick, self.flipZ)
 		
-		self.toolbar2.InsertSeparator(4)
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
 		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
 		self.toolbar2.AddControl(self.scale)
 		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy:'))
+		self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		self.toolbar2.AddControl(self.mulXsub)
+		self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
+		self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		self.toolbar2.AddControl(self.mulXadd)
+		self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
+
+		self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		self.toolbar2.AddControl(self.mulYsub)
+		self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
+		self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		self.toolbar2.AddControl(self.mulYadd)
+		self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
 		
 		self.toolbar2.Realize()
 		self.updateToolbar()
@@ -99,6 +115,22 @@ class previewPanel(wx.Panel):
 
 	def OnFlipZClick(self, e):
 		profile.putProfileSetting('flip_z', str(self.flipZ.GetValue()))
+		self.updateModelTransform()
+
+	def OnMulXAddClick(self, e):
+		profile.putProfileSetting('model_multiply_x', str(max(1, int(profile.getProfileSetting('model_multiply_x'))+1)))
+		self.updateModelTransform()
+
+	def OnMulXSubClick(self, e):
+		profile.putProfileSetting('model_multiply_x', str(max(1, int(profile.getProfileSetting('model_multiply_x'))-1)))
+		self.updateModelTransform()
+
+	def OnMulYAddClick(self, e):
+		profile.putProfileSetting('model_multiply_y', str(max(1, int(profile.getProfileSetting('model_multiply_y'))+1)))
+		self.updateModelTransform()
+
+	def OnMulYSubClick(self, e):
+		profile.putProfileSetting('model_multiply_y', str(max(1, int(profile.getProfileSetting('model_multiply_y'))-1)))
 		self.updateModelTransform()
 
 	def OnScale(self, e):
