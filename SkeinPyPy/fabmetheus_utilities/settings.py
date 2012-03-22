@@ -125,10 +125,11 @@ def getSkeinPyPyProfileInformation():
 			'Turn_Extruder_Off_at_Start_Up': DEFSET,
 		},'widen': {
 			'Activate_Widen': DEFSET,
+			'Widen_Width_over_Edge_Width_ratio': DEFSET,
 		},'inset': {
 			'Add_Custom_Code_for_Temperature_Reading': DEFSET,
 			'Infill_in_Direction_of_Bridge': "True",
-			'Infill_Width_over_Thickness_ratio': DEFSET,
+			'Infill_Width': storedPreference("nozzle_size"),
 			'Loop_Order_Choice': DEFSET,
 			'Overlap_Removal_Width_over_Perimeter_Width_ratio': DEFSET,
 			'Turn_Extruder_Heater_Off_at_Shut_Down': DEFSET,
@@ -157,6 +158,7 @@ def getSkeinPyPyProfileInformation():
 			'Infill_Perimeter_Overlap_ratio': storedPercentSetting('fill_overlap'),
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
 			'Infill_Width': storedPreference("nozzle_size"),
+			'Sharpest_Angle_degrees': DEFSET,
 			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
 			'Start_From_Choice': DEFSET,
 			'Surrounding_Angle_degrees': DEFSET,
