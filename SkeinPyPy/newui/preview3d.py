@@ -27,7 +27,7 @@ class previewPanel(wx.Panel):
 		wx.Panel.__init__(self, parent,-1)
 		
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
-		self.SetMinSize((400,300))
+		self.SetMinSize((440,320))
 
 		self.glCanvas = PreviewGLCanvas(self)
 		self.init = 0
@@ -59,7 +59,7 @@ class previewPanel(wx.Panel):
 
 		self.toolbar2 = wx.ToolBar( self, -1 )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Flip:'))
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Flip'))
 
 		self.flipX = wx.CheckBox(self.toolbar2, -1, "X")
 		self.flipX.SetValue(profile.getProfileSetting('flip_x') == 'True')
@@ -79,9 +79,9 @@ class previewPanel(wx.Panel):
 		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
 		self.toolbar2.AddControl(self.scale)
 		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
 
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy:'))
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
 		self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
 		self.toolbar2.AddControl(self.mulXsub)
 		self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
@@ -95,6 +95,13 @@ class previewPanel(wx.Panel):
 		self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
 		self.toolbar2.AddControl(self.mulYadd)
 		self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
+		
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
+		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
+		self.rotate.SetRange(0, 360)
+		self.toolbar2.AddControl(self.rotate)
+		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
 		
 		self.toolbar2.Realize()
 		self.updateToolbar()
@@ -139,6 +146,10 @@ class previewPanel(wx.Panel):
 		except:
 			scale = 1.0
 		profile.putProfileSetting('model_scale', str(scale))
+		self.updateModelTransform()
+	
+	def OnRotate(self, e):
+		profile.putProfileSetting('model_rotate_base', self.rotate.GetValue())
 		self.updateModelTransform()
 
 	def On3DClick(self, e):

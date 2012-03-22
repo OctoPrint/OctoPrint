@@ -158,12 +158,6 @@ class mainWindow(configBase.configWindowBase):
 
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
-		(left, right) = self.CreateConfigTab(nb, '3D Model')
-		configBase.TitleRow(right, "Rotate")
-		c = configBase.SettingRow(right, "Rotate (deg)", 'model_rotate_base', '0', '')
-		validators.validFloat(c)
-		configBase.settingNotify(c, self.preview3d.updateModelTransform)
-
 		# load and slice buttons.
 		loadButton = wx.Button(self, -1, 'Load Model')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
@@ -193,6 +187,7 @@ class mainWindow(configBase.configWindowBase):
 		self.SetMinSize(self.GetSize())
 		self.Centre()
 		self.Show(True)
+		print self.GetSize()
 	
 	def OnLoadProfile(self, e):
 		dlg=wx.FileDialog(self, "Select profile file to load", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
