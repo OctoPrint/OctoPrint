@@ -184,6 +184,11 @@ class previewPanel(wx.Panel):
 		self.moveModel()
 		self.glCanvas.Refresh()
 	
+	def setViewMode(self, mode):
+		self.viewSelect.SetValue(mode)
+		self.glCanvas.viewMode = self.viewSelect.GetValue()
+		wx.CallAfter(self.glCanvas.Refresh)
+	
 	def loadModelFile(self, filename):
 		if self.modelFilename != filename:
 			self.modelFileTime = None
@@ -203,8 +208,9 @@ class previewPanel(wx.Panel):
 	def loadReModelFile(self, filename):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
 		if self.modelFilename != filename:
-			return
+			return False
 		self.loadModelFile(filename)
+		return True
 	
 	def doFileLoadThread(self):
 		if os.path.isfile(self.modelFilename) and self.modelFileTime != os.stat(self.modelFilename).st_mtime:

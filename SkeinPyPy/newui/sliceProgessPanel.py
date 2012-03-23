@@ -67,8 +67,7 @@ class sliceProgessPanel(wx.Panel):
 	
 	def OnShowGCode(self, e):
 		self.mainWindow.preview3d.loadModelFile(self.filename)
-		self.mainWindow.preview3d.viewSelect.SetValue("GCode")
-		self.mainWindow.preview3d.OnViewChange(None)
+		self.mainWindow.preview3d.setViewMode("GCode")
 	
 	def OnShowLog(self, e):
 		LogWindow('\n'.join(self.progressLog))
@@ -93,7 +92,8 @@ class sliceProgessPanel(wx.Panel):
 		self.sizer.Layout()
 		self.Layout()
 		self.abort = True
-		self.mainWindow.preview3d.loadReModelFile(self.filename)
+		if self.mainWindow.preview3d.loadReModelFile(self.filename):
+			self.mainWindow.preview3d.setViewMode("GCode")
 	
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:
