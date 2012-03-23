@@ -16,7 +16,7 @@ import sys
 import platform
 
 from optparse import OptionParser
-from newui import skeinRun
+from newui import sliceRun
 
 __author__ = 'Daid'
 __credits__ = """
@@ -47,7 +47,7 @@ def main():
 	(options, args) = parser.parse_args()
 	sys.argv = [sys.argv[0]] + args
 	if len( args ) > 0:
-		skeinRun.runSkein(args)
+		sliceRun.runSlice(args)
 	else:
 		from newui import mainWindow
 		mainWindow.main()

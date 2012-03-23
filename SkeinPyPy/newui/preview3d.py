@@ -30,7 +30,7 @@ class previewPanel(wx.Panel):
 		
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
 		self.SetMinSize((440,320))
-
+		
 		self.glCanvas = PreviewGLCanvas(self)
 		self.init = 0
 		self.triangleMesh = None
@@ -60,7 +60,7 @@ class previewPanel(wx.Panel):
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
-
+		
 		self.toolbar2 = wx.ToolBar( self, -1 )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Flip'))
