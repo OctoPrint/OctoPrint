@@ -8,6 +8,8 @@ import os
 from wx import glcanvas
 import wx
 try:
+	import OpenGL
+	OpenGL.ERROR_CHECKING = False
 	from OpenGL.GLU import *
 	from OpenGL.GL import *
 	hasOpenGLlibs = True
@@ -27,13 +29,15 @@ class previewPanel(wx.Panel):
 		wx.Panel.__init__(self, parent,-1)
 		
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
-		self.SetMinSize((400,300))
-
+		self.SetMinSize((440,320))
+		
 		self.glCanvas = PreviewGLCanvas(self)
 		self.init = 0
 		self.triangleMesh = None
 		self.gcode = None
 		self.modelFilename = None
+		self.loadingProgressAmount = 0
+		self.loadThread = None
 		self.machineSize = Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
 		self.machineCenter = Vector3(0, 0, 0)
 		
@@ -50,19 +54,107 @@ class previewPanel(wx.Panel):
 
 		self.viewSelect = wx.ComboBox(self.toolbar, -1, 'Model - Normal', choices=['Model - Normal', 'Model - Transparent', 'Model - X-Ray', 'GCode', 'Mixed'], style=wx.CB_DROPDOWN|wx.CB_READONLY)
 		self.toolbar.AddControl(self.viewSelect)
-		self.viewSelect.Bind(wx.EVT_TEXT, self.OnViewChange)
+		self.viewSelect.Bind(wx.EVT_COMBOBOX, self.OnViewChange)
 		self.glCanvas.viewMode = self.viewSelect.GetValue()
 
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
 		
+		self.toolbar2 = wx.ToolBar( self, -1 )
+		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Flip'))
+
+		self.flipX = wx.CheckBox(self.toolbar2, -1, "X")
+		self.flipX.SetValue(profile.getProfileSetting('flip_x') == 'True')
+		self.toolbar2.AddControl(self.flipX)
+		self.Bind(wx.EVT_CHECKBOX, self.OnFlipXClick, self.flipX)
+		self.flipY = wx.CheckBox(self.toolbar2, -1, "Y")
+		self.flipY.SetValue(profile.getProfileSetting('flip_y') == 'True')
+		self.toolbar2.AddControl(self.flipY)
+		self.Bind(wx.EVT_CHECKBOX, self.OnFlipYClick, self.flipY)
+		self.flipZ = wx.CheckBox(self.toolbar2, -1, "Z")
+		self.flipZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
+		self.toolbar2.AddControl(self.flipZ)
+		self.Bind(wx.EVT_CHECKBOX, self.OnFlipZClick, self.flipZ)
+		
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
+		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
+		self.toolbar2.AddControl(self.scale)
+		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
+
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
+		self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		self.toolbar2.AddControl(self.mulXsub)
+		self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
+		self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		self.toolbar2.AddControl(self.mulXadd)
+		self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
+
+		self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		self.toolbar2.AddControl(self.mulYsub)
+		self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
+		self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		self.toolbar2.AddControl(self.mulYadd)
+		self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
+		
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
+		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
+		self.rotate.SetRange(0, 360)
+		self.toolbar2.AddControl(self.rotate)
+		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
+		
+		self.toolbar2.Realize()
 		self.updateToolbar()
 		
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(self.toolbar, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
+		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
+	
+	def OnFlipXClick(self, e):
+		profile.putProfileSetting('flip_x', str(self.flipX.GetValue()))
+		self.updateModelTransform()
+		
+	def OnFlipYClick(self, e):
+		profile.putProfileSetting('flip_y', str(self.flipY.GetValue()))
+		self.updateModelTransform()
+
+	def OnFlipZClick(self, e):
+		profile.putProfileSetting('flip_z', str(self.flipZ.GetValue()))
+		self.updateModelTransform()
+
+	def OnMulXAddClick(self, e):
+		profile.putProfileSetting('model_multiply_x', str(max(1, int(profile.getProfileSetting('model_multiply_x'))+1)))
+		self.updateModelTransform()
+
+	def OnMulXSubClick(self, e):
+		profile.putProfileSetting('model_multiply_x', str(max(1, int(profile.getProfileSetting('model_multiply_x'))-1)))
+		self.updateModelTransform()
+
+	def OnMulYAddClick(self, e):
+		profile.putProfileSetting('model_multiply_y', str(max(1, int(profile.getProfileSetting('model_multiply_y'))+1)))
+		self.updateModelTransform()
+
+	def OnMulYSubClick(self, e):
+		profile.putProfileSetting('model_multiply_y', str(max(1, int(profile.getProfileSetting('model_multiply_y'))-1)))
+		self.updateModelTransform()
+
+	def OnScale(self, e):
+		try:
+			scale = float(self.scale.GetValue())
+		except:
+			scale = 1.0
+		profile.putProfileSetting('model_scale', str(scale))
+		self.updateModelTransform()
+	
+	def OnRotate(self, e):
+		profile.putProfileSetting('model_rotate_base', self.rotate.GetValue())
+		self.updateModelTransform()
 
 	def On3DClick(self, e):
 		self.glCanvas.yaw = 30
@@ -102,15 +194,19 @@ class previewPanel(wx.Panel):
 		self.gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
 		self.logFilename = filename[: filename.rfind('.')] + "_export.log"
 		#Do the STL file loading in a background thread so we don't block the UI.
-		threading.Thread(target=self.doFileLoad).start()
+		if self.loadThread != None and self.loadThread.isAlive():
+			self.loadThread.join()
+		self.loadThread = threading.Thread(target=self.doFileLoadThread)
+		self.loadThread.daemon = True
+		self.loadThread.start()
 	
 	def loadReModelFile(self, filename):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
 		if self.modelFilename != filename:
 			return
-		threading.Thread(target=self.doFileLoad).start()
+		self.loadModelFile(filename)
 	
-	def doFileLoad(self):
+	def doFileLoadThread(self):
 		if os.path.isfile(self.modelFilename) and self.modelFileTime != os.stat(self.modelFilename).st_mtime:
 			self.modelFileTime = os.stat(self.modelFilename).st_mtime
 			triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
@@ -127,7 +223,10 @@ class previewPanel(wx.Panel):
 		
 		if os.path.isfile(self.gcodeFilename) and self.gcodeFileTime != os.stat(self.gcodeFilename).st_mtime:
 			self.gcodeFileTime = os.stat(self.gcodeFilename).st_mtime
-			gcode = gcodeInterpreter.gcode(self.gcodeFilename)
+			gcode = gcodeInterpreter.gcode()
+			gcode.progressCallback = self.loadProgress
+			gcode.load(self.gcodeFilename)
+			self.loadingProgressAmount = 0
 			self.gcodeDirty = False
 			self.errorList = []
 			self.gcode = gcode
@@ -147,6 +246,10 @@ class previewPanel(wx.Panel):
 					errorList.append([v1, v2])
 			self.errorList = errorList
 			wx.CallAfter(self.glCanvas.Refresh)
+	
+	def loadProgress(self, progress):
+		self.loadingProgressAmount = progress
+		wx.CallAfter(self.glCanvas.Refresh)
 	
 	def updateToolbar(self):
 		self.layerSpin.Show(self.gcode != None)
@@ -390,15 +493,16 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 								glVertex3f(v3.x, v3.y, v3.z - 0.01)
 								glVertex3f(v2.x, v2.y, v2.z - 0.01)
 							glEnd()
-						for v in path['list']:
-							glBegin(GL_TRIANGLE_FAN)
-							glVertex3f(v.x, v.y, v.z - 0.001)
-							for i in xrange(0, 16+1):
-								if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
-									glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
-								else:
-									glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
-							glEnd()
+						
+						#for v in path['list']:
+						#	glBegin(GL_TRIANGLE_FAN)
+						#	glVertex3f(v.x, v.y, v.z - 0.001)
+						#	for i in xrange(0, 16+1):
+						#		if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
+						#		else:
+						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
+						#	glEnd()
 					else:
 						glBegin(GL_LINE_STRIP)
 						for v in path['list']:
@@ -499,9 +603,11 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			elif self.viewMode == "Model - Normal":
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
-				
+			
+			if self.viewMode == "Model - Normal" or self.viewMode == "Model - Transparent" or self.viewMode == "Model - X-Ray":
 				glDisable(GL_LIGHTING)
 				glDisable(GL_DEPTH_TEST)
+				glDisable(GL_BLEND)
 				glColor3f(1,0,0)
 				glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 				glBegin(GL_LINES)
@@ -509,6 +615,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glVertex3f(err[0].x, err[0].y, err[0].z)
 					glVertex3f(err[1].x, err[1].y, err[1].z)
 				glEnd()
+		
 		glFlush()
 
 	def InitGL(self):

@@ -218,9 +218,7 @@ class SVGWriter:
 		self.setTexts('volume', 'Volume: %s cm3' % self.getRounded(volume))
 		if not self.addLayerTemplateToSVG:
 			self.svgElement.getFirstChildByLocalName('script').removeFromIDNameParent()
-			self.svgElement.getElementNodeByID('isoControlBox').removeFromIDNameParent()
-			self.svgElement.getElementNodeByID('layerControlBox').removeFromIDNameParent()
-			self.svgElement.getElementNodeByID('scrollControlBox').removeFromIDNameParent()
+			self.svgElement.getElementNodeByID('controls').removeFromIDNameParent()
 		self.graphicsElementNode.removeFromIDNameParent()
 		self.addOriginalAsComment(elementNode)
 		return documentNode.__repr__()

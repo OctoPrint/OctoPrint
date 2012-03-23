@@ -311,7 +311,7 @@ def getDescendingAreaLoops(allPoints, corners, importRadius):
 	sortLoopsInOrderOfArea(True, loops)
 	pointDictionary = {}
 	for loop in loops:
-		if len(loop) > 2 and getOverlapRatio(loop, pointDictionary) < 0.3:
+		if len(loop) > 2 and getOverlapRatio(loop, pointDictionary) < 0.3 and intercircle.getIsLarge(loop, importRadius):
 			intercircle.directLoop(not euclidean.getIsInFilledRegion(descendingAreaLoops, loop[0]), loop)
 			descendingAreaLoops.append(loop)
 			addLoopToPointTable(loop, pointDictionary)
@@ -441,11 +441,18 @@ def getLoopsFromCorrectMesh( edges, faces, vertexes, z ):
 	loops = []
 	while isPathAdded( edges, faces, loops, remainingEdgeTable, vertexes, z ):
 		pass
-	if euclidean.isLoopListIntersecting(loops):
-		print('Warning, the triangle mesh slice intersects itself in getLoopsFromCorrectMesh in triangle_mesh.')
-		print('Something will still be printed, but there is no guarantee that it will be the correct shape.')
-		print('Once the gcode is saved, you should check over the layer with a z of:')
-		print(z)
+	
+	warning = False
+	for idx in xrange(0, len(loops)-1):
+		loop = loops[idx]
+		p0 = loop[-1]
+		for p1 in loop:
+			if euclidean.isLineIntersectingLoops(loops[idx+1:], p0, p1):
+				print('Warning, the triangle mesh slice intersects itself in getLoopsFromCorrectMesh in triangle_mesh.')
+				print('Model error(intersect): (%f, %f, %f) (%f, %f, %f)' % (p0.real, p0.imag, z, p1.real, p1.imag, z))
+				warning = True
+			p0 = p1
+	if warning:
 		return []
 	return loops
 #	untouchables = []

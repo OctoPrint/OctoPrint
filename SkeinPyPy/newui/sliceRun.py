@@ -23,7 +23,7 @@ def getPyPyExe():
 			return pypyExe 
 	return False
 
-def runSkein(fileNames):
+def runSlice(fileNames):
 	"Run the slicer on the files. If we are running with PyPy then just do the slicing action. If we are running as Python, try to find pypy."
 	pypyExe = getPyPyExe()
 	for fileName in fileNames:
@@ -40,7 +40,7 @@ def runSkein(fileNames):
 		else:
 			subprocess.call([pypyExe, os.path.join(sys.path[0], sys.argv[0]), fileName])
 
-def getSkeinCommand(filename):
+def getSliceCommand(filename):
 	pypyExe = getPyPyExe()
 	if pypyExe == False:
 		pypyExe = sys.executable

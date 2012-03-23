@@ -363,41 +363,41 @@ def compareSegmentLength( endpoint, otherEndpoint ):
 		return - 1
 	return 0
 
-def concatenateRemovePath( connectedPaths, pathIndex, paths, pixelDictionary, segments, width ):
+def concatenateRemovePath(connectedPaths, pathIndex, paths, pixelDictionary, segments, sharpestProduct, width):
 	'Get connected paths from paths.'
-	bottomSegment = segments[ pathIndex ]
-	path = paths[ pathIndex ]
+	bottomSegment = segments[pathIndex]
+	path = paths[pathIndex]
 	if bottomSegment == None:
 		connectedPaths.append(path)
 		return
-	endpoints = getEndpointsFromSegments( segments[ pathIndex + 1 : ] )
+	endpoints = getEndpointsFromSegments(segments[pathIndex + 1 :])
 	bottomSegmentEndpoint = bottomSegment[0]
-	nextEndpoint = bottomSegmentEndpoint.getClosestMissCheckEndpointPath( endpoints, bottomSegmentEndpoint.path, pixelDictionary, width )
+	nextEndpoint = bottomSegmentEndpoint.getClosestMissCheckEndpointPath(endpoints, bottomSegmentEndpoint.path, pixelDictionary, sharpestProduct, width)
 	if nextEndpoint == None:
 		bottomSegmentEndpoint = bottomSegment[1]
-		nextEndpoint = bottomSegmentEndpoint.getClosestMissCheckEndpointPath( endpoints, bottomSegmentEndpoint.path, pixelDictionary, width )
+		nextEndpoint = bottomSegmentEndpoint.getClosestMissCheckEndpointPath(endpoints, bottomSegmentEndpoint.path, pixelDictionary, sharpestProduct, width)
 	if nextEndpoint == None:
 		connectedPaths.append(path)
 		return
-	if len( bottomSegmentEndpoint.path ) > 0 and len( nextEndpoint.path ) > 0:
+	if len(bottomSegmentEndpoint.path) > 0 and len(nextEndpoint.path) > 0:
 		bottomEnd = bottomSegmentEndpoint.path[-1]
 		nextBegin = nextEndpoint.path[-1]
-		nextMinusBottomNormalized = getNormalized( nextBegin - bottomEnd )
+		nextMinusBottomNormalized = getNormalized(nextBegin - bottomEnd)
 		if len( bottomSegmentEndpoint.path ) > 1:
 			bottomPenultimate = bottomSegmentEndpoint.path[-2]
-			if getDotProduct( getNormalized( bottomPenultimate - bottomEnd ), nextMinusBottomNormalized ) > 0.9:
+			if getDotProduct(getNormalized(bottomPenultimate - bottomEnd), nextMinusBottomNormalized) > 0.99:
 				connectedPaths.append(path)
 				return
 		if len( nextEndpoint.path ) > 1:
 			nextPenultimate = nextEndpoint.path[-2]
-			if getDotProduct( getNormalized( nextPenultimate - nextBegin ), - nextMinusBottomNormalized ) > 0.9:
+			if getDotProduct(getNormalized(nextPenultimate - nextBegin), - nextMinusBottomNormalized) > 0.99:
 				connectedPaths.append(path)
 				return
 	nextEndpoint.path.reverse()
 	concatenatedPath = bottomSegmentEndpoint.path + nextEndpoint.path
-	paths[ nextEndpoint.pathIndex ] = concatenatedPath
-	segments[ nextEndpoint.pathIndex ] = getSegmentFromPath( concatenatedPath, nextEndpoint.pathIndex )
-	addValueSegmentToPixelTable( bottomSegmentEndpoint.point, nextEndpoint.point, pixelDictionary, None, width )
+	paths[nextEndpoint.pathIndex] = concatenatedPath
+	segments[nextEndpoint.pathIndex] = getSegmentFromPath(concatenatedPath, nextEndpoint.pathIndex)
+	addValueSegmentToPixelTable(bottomSegmentEndpoint.point, nextEndpoint.point, pixelDictionary, None, width)
 
 def getAngleAroundZAxisDifference( subtractFromVec3, subtractVec3 ):
 	'Get the angle around the Z axis difference between a pair of Vector3s.'
@@ -668,18 +668,18 @@ def getConcatenatedList(originalLists):
 		concatenatedList += originalList
 	return concatenatedList
 
-def getConnectedPaths( paths, pixelDictionary, width ):
+def getConnectedPaths(paths, pixelDictionary, sharpestProduct, width):
 	'Get connected paths from paths.'
 	if len(paths) < 2:
 		return paths
 	connectedPaths = []
 	segments = []
-	for pathIndex in xrange( len(paths) ):
-		path = paths[ pathIndex ]
-		segments.append( getSegmentFromPath( path, pathIndex ) )
-	for pathIndex in xrange( 0, len(paths) - 1 ):
-		concatenateRemovePath( connectedPaths, pathIndex, paths, pixelDictionary, segments, width )
-	connectedPaths.append( paths[-1] )
+	for pathIndex in xrange(len(paths)):
+		path = paths[pathIndex]
+		segments.append(getSegmentFromPath(path, pathIndex))
+	for pathIndex in xrange(0, len(paths) - 1):
+		concatenateRemovePath(connectedPaths, pathIndex, paths, pixelDictionary, segments, sharpestProduct, width)
+	connectedPaths.append(paths[-1])
 	return connectedPaths
 
 def getCrossProduct(firstComplex, secondComplex):
@@ -1327,7 +1327,7 @@ def getPathLength(path):
 		pathLength += abs(firstPoint - secondPoint)
 	return pathLength
 
-def getPathsFromEndpoints(endpoints, maximumConnectionLength, pixelDictionary, width):
+def getPathsFromEndpoints(endpoints, maximumConnectionLength, pixelDictionary, sharpestProduct, width):
 	'Get paths from endpoints.'
 	if len(endpoints) < 2:
 		return []
@@ -1343,7 +1343,7 @@ def getPathsFromEndpoints(endpoints, maximumConnectionLength, pixelDictionary, w
 	path = []
 	paths = [path]
 	if len(endpoints) > 1:
-		nextEndpoint = otherEndpoint.getClosestMiss(endpoints, path, pixelDictionary, width)
+		nextEndpoint = otherEndpoint.getClosestMiss(endpoints, path, pixelDictionary, sharpestProduct, width)
 		if nextEndpoint != None:
 			if abs(nextEndpoint.point - endpointFirst.point) < abs(nextEndpoint.point - otherEndpoint.point):
 				endpointFirst = endpointFirst.otherEndpoint
@@ -1359,7 +1359,7 @@ def getPathsFromEndpoints(endpoints, maximumConnectionLength, pixelDictionary, w
 			if len(endpointTable.values()[0]) < 2:
 				return []
 		endpoints = getSquareValuesFromPoint(endpointTable, otherEndpoint.point * oneOverEndpointWidth)
-		nextEndpoint = otherEndpoint.getClosestMiss(endpoints, path, pixelDictionary, width)
+		nextEndpoint = otherEndpoint.getClosestMiss(endpoints, path, pixelDictionary, sharpestProduct, width)
 		if nextEndpoint == None:
 			path = []
 			paths.append(path)
@@ -2096,7 +2096,7 @@ class Endpoint:
 				closestEndpoint = endpoint
 		return closestEndpoint
 
-	def getClosestMiss(self, endpoints, path, pixelDictionary, width):
+	def getClosestMiss(self, endpoints, path, pixelDictionary, sharpestProduct, width):
 		'Get the closest endpoint which the segment to that endpoint misses the other extrusions.'
 		pathMaskTable = {}
 		smallestDistance = 987654321.0
@@ -2115,7 +2115,7 @@ class Endpoint:
 		endpoints.sort(compareSegmentLength)
 		for endpoint in endpoints[: 15]: # increasing the number of searched endpoints increases the search time, with 20 fill took 600 seconds for cilinder.gts, with 10 fill took 533 seconds
 			normalizedSegment = endpoint.segment / endpoint.segmentLength
-			isOverlappingSelf = getDotProduct(penultimateMinusPoint, normalizedSegment) > 0.9
+			isOverlappingSelf = getDotProduct(penultimateMinusPoint, normalizedSegment) > sharpestProduct
 			if not isOverlappingSelf:
 				if len(path) > 2:
 					segmentYMirror = complex(normalizedSegment.real, -normalizedSegment.imag)
@@ -2132,14 +2132,14 @@ class Endpoint:
 					return endpoint
 		return None
 
-	def getClosestMissCheckEndpointPath( self, endpoints, path, pixelDictionary, width ):
+	def getClosestMissCheckEndpointPath(self, endpoints, path, pixelDictionary, sharpestProduct, width):
 		'Get the closest endpoint which the segment to that endpoint misses the other extrusions, also checking the path of the endpoint.'
 		pathMaskTable = {}
 		smallestDistance = 987654321.0
 		penultimateMinusPoint = complex(0.0, 0.0)
 		if len(path) > 1:
 			penultimatePoint = path[-2]
-			addSegmentToPixelTable( penultimatePoint, self.point, pathMaskTable, 0, 0, width )
+			addSegmentToPixelTable(penultimatePoint, self.point, pathMaskTable, 0, 0, width)
 			penultimateMinusPoint = penultimatePoint - self.point
 			if abs(penultimateMinusPoint) > 0.0:
 				penultimateMinusPoint /= abs(penultimateMinusPoint)
@@ -2151,27 +2151,27 @@ class Endpoint:
 		endpoints.sort( compareSegmentLength )
 		for endpoint in endpoints[ : 15 ]: # increasing the number of searched endpoints increases the search time, with 20 fill took 600 seconds for cilinder.gts, with 10 fill took 533 seconds
 			normalizedSegment = endpoint.segment / endpoint.segmentLength
-			isOverlappingSelf = getDotProduct( penultimateMinusPoint, normalizedSegment ) > 0.9
+			isOverlappingSelf = getDotProduct(penultimateMinusPoint, normalizedSegment) > sharpestProduct
 			if not isOverlappingSelf:
 				if len(path) > 2:
 					segmentYMirror = complex(normalizedSegment.real, -normalizedSegment.imag)
 					pointRotated = segmentYMirror * self.point
 					endpointPointRotated = segmentYMirror * endpoint.point
-					if isXSegmentIntersectingPath( path[ max( 0, len(path) - 21 ) : - 1 ], pointRotated.real, endpointPointRotated.real, segmentYMirror, pointRotated.imag ):
+					if isXSegmentIntersectingPath(path[ max(0, len(path) - 21) : -1], pointRotated.real, endpointPointRotated.real, segmentYMirror, pointRotated.imag):
 						isOverlappingSelf = True
 				endpointPath = endpoint.path
-				if len( endpointPath ) > 2:
+				if len(endpointPath) > 2:
 					segmentYMirror = complex(normalizedSegment.real, -normalizedSegment.imag)
 					pointRotated = segmentYMirror * self.point
 					endpointPointRotated = segmentYMirror * endpoint.point
-					if isXSegmentIntersectingPath( endpointPath, pointRotated.real, endpointPointRotated.real, segmentYMirror, pointRotated.imag ):
+					if isXSegmentIntersectingPath(endpointPath, pointRotated.real, endpointPointRotated.real, segmentYMirror, pointRotated.imag):
 						isOverlappingSelf = True
 			if not isOverlappingSelf:
 				totalMaskTable = pathMaskTable.copy()
-				addSegmentToPixelTable( endpoint.point, endpoint.otherEndpoint.point, totalMaskTable, 0, 0, width )
+				addSegmentToPixelTable(endpoint.point, endpoint.otherEndpoint.point, totalMaskTable, 0, 0, width)
 				segmentTable = {}
-				addSegmentToPixelTable( self.point, endpoint.point, segmentTable, 0, 0, width )
-				if not isPixelTableIntersecting( pixelDictionary, segmentTable, totalMaskTable ):
+				addSegmentToPixelTable(self.point, endpoint.point, segmentTable, 0, 0, width)
+				if not isPixelTableIntersecting(pixelDictionary, segmentTable, totalMaskTable):
 					return endpoint
 		return None
 

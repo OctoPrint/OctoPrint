@@ -1,8 +1,6 @@
 """
 This page is in the table of contents.
-Dwindle is a plugin to smooth the surface dwindle of an object by replacing the edge surface with a surface printed at a fraction of the carve
-height.  This gives the impression that the object was carved at a much thinner height giving a high-quality finish, but still prints 
-in a relatively short time.  The latest process has some similarities with a description at:
+Dwindle is a plugin to reduce the feed rate and flow rate at the end of the thread, in order to reduce the ooze when traveling. It reduces the flow rate by a bit more than the feed rate, in order to use up the pent up plastic in the thread so that there is less remaining in the ooze.
 
 The dwindle manual page is at:
 http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Dwindle
@@ -11,10 +9,25 @@ http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Dwindle
 The default 'Activate Dwindle' checkbox is off.  When it is on, the functions described below will work, when it is off, nothing will be done.
 
 ==Settings==
-====Vertical Divisions====
-Default: 2
+===End Rate Multiplier===
+Default: 0.5
 
-Defines the number of times the dwindle infill and edges are divided vertically.
+Defines the ratio of the feed and flow rate at the end over the feed and flow rate of the rest of the thread. With reasonable values for the 'Pent Up Volume' and 'Slowdown Volume', the amount of ooze should be roughly proportional to the square of the 'End Rate Multiplier'. If the 'End Rate Multiplier' is too low, the printing will be very slow because the feed rate will be lower. If the 'End Rate Multiplier' is too high, there will still be a lot of ooze.
+
+===Pent Up Volume===
+Default: 0.4 mm3
+
+When the filament is stopped, there is a pent up volume of plastic that comes out afterwards. For best results, the 'Pent Up Volume' in dwindle should be set to that amount. If the 'Pent Up Volume' is too small, there will still be a lot of ooze. If the 'Pent Up Volume' is too large, the end of the thread will be thinner than the rest of the thread.
+
+===Slowdown Steps===
+Default: 3
+
+Dwindle reduces the feed rate and flow rate in steps so the thread will remain at roughly the same thickness until the end.  The "Slowdown Steps" setting is the number of steps, the more steps the smaller the variation in the thread thickness, but the larger the size of the resulting gcode file and the more time spent pausing between segments.
+
+===Slowdown Volume===
+Default: 5 mm3
+
+The 'Slowdown Volume' is the volume of the end of the thread where the feed and flow rates will be decreased. If the 'Slowdown Volume' is too small, there won't be enough time to get rid of the pent up plastic, so there will still be a lot of ooze. If the 'Slowdown Volume' is too large, a bit of time will be wasted because for a large portion of the thread, the feed rate will be slow. Overall, it is best to err on being too large, because too large would only waste machine time in production, rather than the more important string removal labor time.
 
 ==Examples==
 The following examples dwindle the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and dwindle.py.
@@ -80,15 +93,15 @@ class DwindleRepository:
 	'A class to handle the dwindle settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
-		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.dwindle.html', self )
-		self.fileNameInput = settings.FileNameInput().getFromFileName( fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Dwindle', self, '')
+		skeinforge_profile.addListsToCraftTypeRepository('skeinforge_application.skeinforge_plugins.craft_plugins.dwindle.html', self)
+		self.fileNameInput = settings.FileNameInput().getFromFileName(fabmetheus_interpret.getGNUTranslatorGcodeFileTypeTuples(), 'Open File for Dwindle', self, '')
 		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute('http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Dwindle')
 		self.activateDwindle = settings.BooleanSetting().getFromValue('Activate Dwindle', self, False)
 		settings.LabelSeparator().getFromRepository(self)
 		self.endRateMultiplier = settings.FloatSpin().getFromValue(0.4, 'End Rate Multiplier (ratio):', self, 0.8, 0.5)
 		self.pentUpVolume = settings.FloatSpin().getFromValue(0.1, 'Pent Up Volume (cubic millimeters):', self, 1.0, 0.4)
 		self.slowdownSteps = settings.IntSpin().getFromValue(2, 'Slowdown Steps (positive integer):', self, 10, 3)
-		self.slowdownVolume = settings.FloatSpin().getFromValue(0.4, 'Slowdown Volume (cubic millimeters):', self, 4.0, 2.0)
+		self.slowdownVolume = settings.FloatSpin().getFromValue(1.0, 'Slowdown Volume (cubic millimeters):', self, 10.0, 5.0)
 		self.executeTitle = 'Dwindle'
 
 	def execute(self):
@@ -110,6 +123,7 @@ class DwindleSkein:
 		self.lines = None
 		self.oldFlowRate = None
 		self.oldLocation = None
+		self.operatingFlowRate = None
 		self.threadSections = []
 
 	def addThread(self):
@@ -138,7 +152,10 @@ class DwindleSkein:
 		self.lines = archive.getTextLines(gcodeText)
 		self.repository = repository
 		self.parseInitialization()
-		self.area = self.infillWidth * self.layerHeight
+		if self.operatingFlowRate == None:
+			print('Warning, there is no operatingFlowRate so dwindle will do nothing.')
+			return gcodeText
+		self.area = self.infillWidth * self.layerHeight * self.volumeFraction
 		self.oneOverSteps = 1.0 / float(repository.slowdownSteps.value)
 		self.halfOverSteps = 0.5 * self.oneOverSteps
 		for self.lineIndex in xrange(self.lineIndex, len(self.lines)):
@@ -165,6 +182,8 @@ class DwindleSkein:
 			elif firstWord == '(<operatingFlowRate>':
 				self.operatingFlowRate = float(splitLine[1])
 				self.oldFlowRate = self.operatingFlowRate
+			elif firstWord == '(<volumeFraction>':
+				self.volumeFraction = float(splitLine[1])
 			self.distanceFeedRate.addLine(line)
 
 	def parseLine(self, line):

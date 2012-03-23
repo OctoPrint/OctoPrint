@@ -96,15 +96,15 @@ def getNewRepository():
 	'Get new repository.'
 	return WidenRepository()
 
-def getWidenedLoop(loop, loopList, outsetLoop, radius):
+def getWidenedLoops(loop, loopList, outsetLoop, radius):
 	'Get the widened loop.'
 	intersectingWithinLoops = getIntersectingWithinLoops(loop, loopList, outsetLoop)
 	if len(intersectingWithinLoops) < 1:
-		return loop
+		return [loop]
 	loopsUnified = boolean_solid.getLoopsUnion(radius, [[loop], intersectingWithinLoops])
 	if len(loopsUnified) < 1:
-		return loop
-	return euclidean.getLargestLoop(loopsUnified)
+		return [loop]
+	return loopsUnified
 
 def writeOutput(fileName, shouldAnalyze=True):
 	'Widen the carving of a gcode file.'
@@ -121,6 +121,7 @@ class WidenRepository:
 		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute(
 			'http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Widen')
 		self.activateWiden = settings.BooleanSetting().getFromValue('Activate Widen', self, False)
+		self.widenWidthOverEdgeWidth = settings.IntSpin().getFromValue(2, 'Widen Width over Edge Width (ratio):', self, 4, 2)
 		self.executeTitle = 'Widen'
 
 	def execute(self):
@@ -155,15 +156,15 @@ class WidenSkein:
 				else:
 					widdershinsLoops.append(loop)
 			else:
-#				clockwiseInsetLoop = intercircle.getLargestInsetLoopFromLoop(loop, self.doubleEdgeWidth)
+#				clockwiseInsetLoop = intercircle.getLargestInsetLoopFromLoop(loop, self.widenEdgeWidth)
 #				clockwiseInsetLoop.reverse()
 #				clockwiseInsetLoops.append(clockwiseInsetLoop)
-				clockwiseInsetLoops += intercircle.getInsetLoopsFromLoop(loop, self.doubleEdgeWidth)
+				clockwiseInsetLoops += intercircle.getInsetLoopsFromLoop(loop, self.widenEdgeWidth)
 				self.distanceFeedRate.addGcodeFromLoop(loop, loopLayer.z)
 		for widdershinsLoop in widdershinsLoops:
-			outsetLoop = intercircle.getLargestInsetLoopFromLoop(widdershinsLoop, -self.doubleEdgeWidth)
-			widenedLoop = getWidenedLoop(widdershinsLoop, clockwiseInsetLoops, outsetLoop, self.edgeWidth)
-			self.distanceFeedRate.addGcodeFromLoop(widenedLoop, loopLayer.z)
+			outsetLoop = intercircle.getLargestInsetLoopFromLoop(widdershinsLoop, -self.widenEdgeWidth)
+			for widenedLoop in getWidenedLoops(widdershinsLoop, clockwiseInsetLoops, outsetLoop, self.lessThanHalfEdgeWidth):
+				self.distanceFeedRate.addGcodeFromLoop(widenedLoop, loopLayer.z)
 
 	def getCraftedGcode(self, gcodeText, repository):
 		'Parse gcode text and store the widen gcode.'
@@ -188,7 +189,8 @@ class WidenSkein:
 				return
 			elif firstWord == '(<edgeWidth>':
 				self.edgeWidth = float(splitLine[1])
-				self.doubleEdgeWidth = 2.0 * self.edgeWidth
+				self.widenEdgeWidth = float(self.repository.widenWidthOverEdgeWidth.value) * self.edgeWidth
+				self.lessThanHalfEdgeWidth = 0.49 * self.edgeWidth
 			self.distanceFeedRate.addLine(line)
 
 	def parseLine(self, line):

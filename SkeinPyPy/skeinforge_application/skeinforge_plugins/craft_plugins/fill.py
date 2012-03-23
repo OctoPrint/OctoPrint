@@ -118,6 +118,13 @@ Default is 1.5.
 
 Defines the ratio of the infill width over the layer height.  The higher the value the wider apart the infill will be and therefore the sparser the infill will be.
 
+===Sharpest Angle===
+Default: 60 degrees
+
+Defines the sharpest angle that a thread is allowed to make before it is separated into two threads. If 'Sharpest Angle' is too low, the extruder will stop and start often, slowing printing and putting more wear and tear on the extruder. If 'Sharpest Angle' is too high, then threads will almost double back on themselves, leading to bumps in the fill, and sometimes filament being dragged by the nozzle.
+
+This parameter is used in fill, raft and skin.
+
 ===Solid Surface Thickness===
 Default is three.
 
@@ -791,7 +798,7 @@ class FillRepository:
 		settings.LabelDisplay().getFromName('- Infill -', self )
 		self.infillBeginRotation = settings.FloatSpin().getFromValue( 0.0, 'Infill Begin Rotation (degrees):', self, 90.0, 45.0 )
 		self.infillBeginRotationRepeat = settings.IntSpin().getFromValue( 0, 'Infill Begin Rotation Repeat (layers):', self, 3, 1 )
-		self.infillOddLayerExtraRotation = settings.FloatSpin().getFromValue( 30.0, 'Infill Odd Layer Extra Rotation (degrees):', self, 90.0, 90.0 )
+		self.infillOddLayerExtraRotation = settings.FloatSpin().getFromValue(30.0, 'Infill Odd Layer Extra Rotation (degrees):', self, 90.0, 90.0)
 		self.infillPatternLabel = settings.LabelDisplay().getFromName('Infill Pattern:', self )
 		infillLatentStringVar = settings.LatentStringVar()
 		self.infillPatternGridCircular = settings.Radio().getFromRadio( infillLatentStringVar, 'Grid Circular', self, False )
@@ -800,8 +807,8 @@ class FillRepository:
 		self.infillPatternLine = settings.Radio().getFromRadio( infillLatentStringVar, 'Line', self, True )
 		self.infillPerimeterOverlap = settings.FloatSpin().getFromValue( 0.0, 'Infill Perimeter Overlap (ratio):', self, 0.4, 0.15 )
 		self.infillSolidity = settings.FloatSpin().getFromValue( 0.04, 'Infill Solidity (ratio):', self, 0.3, 0.2 )
-		self.infillWidth = settings.FloatSpin().getFromValue( 0.1, 'Infill Width:', self, 1.7, 0.4 )
 		settings.LabelSeparator().getFromRepository(self)
+		self.sharpestAngle = settings.FloatSpin().getFromValue(50.0, 'Sharpest Angle (degrees):', self, 70.0, 60.0)
 		self.solidSurfaceThickness = settings.IntSpin().getFromValue(0, 'Solid Surface Thickness (layers):', self, 5, 3)
 		self.startFromChoice = settings.MenuButtonDisplay().getFromName('Start From Choice:', self)
 		self.startFromLowerLeft = settings.MenuRadio().getFromMenuButtonDisplay(self.startFromChoice, 'Lower Left', self, True)
@@ -878,7 +885,8 @@ class FillSkein:
 			extraShells = 0
 			self.distanceFeedRate.addLine('(<bridgeRotation> %s )' % layerRotation)
 		self.distanceFeedRate.addLine('(<rotation> %s )' % layerRotation)
-		aroundWidth = 0.34321 * self.infillWidth
+#		aroundWidth = 0.34321 * self.infillWidth
+		aroundWidth = 0.24321 * self.infillWidth
 		doubleInfillWidth = 2.0 * self.infillWidth
 		gridPointInsetX = 0.5 * self.fillInset
 		self.lastExtraShells = extraShells
@@ -929,7 +937,7 @@ class FillSkein:
 			for segments in self.horizontalSegmentsDictionary.values():
 				for segment in segments:
 					endpoints += segment
-		paths = euclidean.getPathsFromEndpoints(endpoints, 5.0 * self.infillWidth, pixelTable, aroundWidth)
+		paths = euclidean.getPathsFromEndpoints(endpoints, 5.0 * self.infillWidth, pixelTable, self.sharpestProduct, aroundWidth)
 		if gridCircular:
 			startAngle = euclidean.globalGoldenAngle * float(layerIndex)
 			for gridPoint in self.getGridPoints(fillLoops, reverseRotation):
@@ -942,7 +950,7 @@ class FillSkein:
 			while oldRemovedEndpointLength - len(removedEndpoints) > 0:
 				oldRemovedEndpointLength = len(removedEndpoints)
 				removeEndpoints(self.infillWidth, paths, pixelTable, removedEndpoints, aroundWidth)
-			paths = euclidean.getConnectedPaths(paths, pixelTable, aroundWidth)
+			paths = euclidean.getConnectedPaths(paths, pixelTable, self.sharpestProduct, aroundWidth)
 		for path in paths:
 			addPath(self.infillWidth, infillPaths, path, layerRotation)
 		euclidean.transferPathsToNestedRings(nestedRings, infillPaths)
@@ -1118,6 +1126,7 @@ class FillSkein:
 		'Parse gcode text and store the bevel gcode.'
 		self.repository = repository
 		self.lines = archive.getTextLines(gcodeText)
+		self.sharpestProduct = math.sin(math.radians(repository.sharpestAngle.value))
 		self.threadSequence = None
 		if repository.threadSequenceInfillLoops.value:
 			self.threadSequence = ['infill', 'loops', 'edge']
@@ -1251,12 +1260,13 @@ class FillSkein:
 			if firstWord == '(<crafting>)':
 				self.distanceFeedRate.addLine(line)
 				return
+			elif firstWord == '(<infillWidth>':
+				self.infillWidth = float(splitLine[1])
 			elif firstWord == '(<layerHeight>':
 				self.layerHeight = float(splitLine[1])
-				self.infillWidth = self.repository.infillWidth.value
 				self.surroundingSlope = math.tan(math.radians(min(self.repository.surroundingAngle.value, 80.0)))
 				self.distanceFeedRate.addTagRoundedLine('infillPerimeterOverlap', self.repository.infillPerimeterOverlap.value)
-				self.distanceFeedRate.addTagRoundedLine('infillWidth', self.infillWidth)
+				self.distanceFeedRate.addTagRoundedLine('sharpestProduct', self.sharpestProduct)
 			elif firstWord == '(<edgeWidth>':
 				self.edgeWidth = float(splitLine[1])
 				threadSequenceString = ' '.join( self.threadSequence )

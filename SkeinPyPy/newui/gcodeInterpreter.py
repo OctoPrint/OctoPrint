@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+import __init__
+
 import sys
 import math
 import threading
@@ -7,9 +10,18 @@ import os
 from newui import util3d
 
 class gcode():
-	def __init__(self, filename):
-		print os.stat(filename).st_size
-		f = open(filename, 'r')
+	def __init__(self):
+		self.regMatch = {}
+		self.layerCount = 0
+		self.pathList = []
+		self.extrusionAmount = 0
+		self.totalMoveTimeMinute = 0
+		self.progressCallback = None
+	
+	def load(self, filename):
+		fileSize = os.stat(filename).st_size
+		filePos = 0
+		gcodeFile = open(filename, 'r')
 		pos = util3d.Vector3()
 		posOffset = util3d.Vector3()
 		currentE = 0.0
@@ -23,10 +35,13 @@ class gcode():
 		pathType = 'CUSTOM';
 		layerNr = 0;	#Note layer 0 will be the start code.
 		startCodeDone = False
-		self.stepsPerE = 865.888
 		currentPath = {'type': 'move', 'pathType': pathType, 'list': [pos.copy()], 'layerNr': layerNr}
 		currentPath['list'][-1].e = totalExtrusion
-		for line in f:
+		for line in gcodeFile:
+			if filePos != gcodeFile.tell():
+				filePos = gcodeFile.tell()
+				if self.progressCallback != None:
+					self.progressCallback(float(filePos) / float(fileSize))
 			if line.startswith(';TYPE:'):
 				pathType = line[6:].strip()
 				if pathType != "CUSTOM":
@@ -128,9 +143,6 @@ class gcode():
 					elif M == 84:	#Disable step drivers
 						pass
 					elif M == 92:	#Set steps per unit
-						e = self.getCodeFloat(line, 'E')
-						if e is not None:
-							self.stepsPerE = e
 						pass
 					elif M == 104:	#Set temperature, no wait
 						pass
@@ -142,10 +154,13 @@ class gcode():
 						pass
 					elif M == 108:	#Extruder RPM (these should not be in the final GCode, but they are)
 						pass
+					elif M == 109:	#Set temperature, wait
+						pass
 					elif M == 113:	#Extruder PWM (these should not be in the final GCode, but they are)
 						pass
 					else:
 						print "Unknown M code:" + str(M)
+		gcodeFile.close()
 		self.layerCount = layerNr
 		self.pathList = pathList
 		self.extrusionAmount = maxExtrusion
@@ -153,8 +168,10 @@ class gcode():
 		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
 		print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
-	def getCodeInt(self, str, id):
-		m = re.search(id + '([^\s]+)', str)
+	def getCodeInt(self, line, code):
+		if code not in self.regMatch:
+			self.regMatch[code] = re.compile(code + '([^\s]+)')
+		m = self.regMatch[code].search(line)
 		if m == None:
 			return None
 		try:
@@ -162,12 +179,18 @@ class gcode():
 		except:
 			return None
 
-	def getCodeFloat(self, str, id):
-		m = re.search(id + '([^\s]+)', str)
+	def getCodeFloat(self, line, code):
+		if code not in self.regMatch:
+			self.regMatch[code] = re.compile(code + '([^\s]+)')
+		m = self.regMatch[code].search(line)
 		if m == None:
 			return None
 		try:
 			return float(m.group(1))
 		except:
 			return None
+
+if __name__ == '__main__':
+	for filename in sys.argv[1:]:
+		gcode().load(filename)
 

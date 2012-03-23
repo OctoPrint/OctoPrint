@@ -123,7 +123,7 @@ class SettingRow():
 			self.ctrl.Bind(wx.EVT_CHECKBOX, self.OnSettingChange)
 		else:
 			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
-			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
+			self.ctrl.Bind(wx.EVT_COMBOBOX, self.OnSettingChange)
 
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
 		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)

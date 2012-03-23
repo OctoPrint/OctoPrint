@@ -200,7 +200,7 @@ class MillSkein:
 		endpoints = euclidean.getEndpointsFromSegmentTable( boundaryLayer.segmentTable )
 		if len(endpoints) < 1:
 			return
-		paths = euclidean.getPathsFromEndpoints(endpoints, 5.0 * self.millWidth, self.aroundPixelTable, self.aroundWidth)
+		paths = euclidean.getPathsFromEndpoints(endpoints, 5.0 * self.millWidth, self.aroundPixelTable, 1.0, self.aroundWidth)
 		averageZ = self.average.getAverage()
 		if self.repository.addInnerLoops.value:
 			self.addGcodeFromLoops( boundaryLayer.innerLoops, averageZ )

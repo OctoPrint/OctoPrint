@@ -427,7 +427,7 @@ def getLargestInsetLoopFromLoopRegardless( loop, radius ):
 		largestInsetLoop = getLargestInsetLoopFromLoop( loop, decreasingRadius )
 		if len( largestInsetLoop ) > 0:
 			return largestInsetLoop
-	print('This should never happen, there should always be a largestInsetLoop in getLargestInsetLoopFromLoopRegardless in intercircle.')
+	print('Warning, there should always be a largestInsetLoop in getLargestInsetLoopFromLoopRegardless in intercircle.')
 	print(loop)
 	return loop
 

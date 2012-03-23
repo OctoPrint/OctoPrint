@@ -230,7 +230,8 @@ class CoolSkein:
 
 	def addFlowRate(self, flowRate):
 		'Add a multipled line of flow rate if different.'
-		self.distanceFeedRate.addLine('M108 S' + euclidean.getFourSignificantFigures(flowRate))
+		if flowRate != None:
+			self.distanceFeedRate.addLine('M108 S' + euclidean.getFourSignificantFigures(flowRate))
 
 	def addGcodeFromFeedRateMovementZ(self, feedRateMinute, point, z):
 		'Add a movement to the output.'

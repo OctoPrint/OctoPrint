@@ -38,6 +38,11 @@ Default is on.
 
 When selected, the M104 S0 gcode line will be added to the end of the file to turn the extruder heater off by setting the extruder heater temperature to 0.
 
+===Volume Fraction===
+Default: 0.82
+
+The 'Volume Fraction' is the estimated volume of the thread compared to the box defined by the layer height and infill width. This is used in dwindle, splodge, and statistic. It is in inset because inset is a required extrusion tool, earlier in the chain than dwindle and splodge. In dwindle and splodge it is used to determine the filament volume, in statistic it is used to determine the extrusion diameter.
+
 ==Examples==
 The following examples inset the file Screw Holder Bottom.stl.  The examples are run in a terminal in the folder which contains Screw Holder Bottom.stl and inset.py.
 
@@ -296,7 +301,7 @@ class InsetRepository:
 		self.openWikiManualHelpPage = settings.HelpPage().getOpenFromAbsolute('http://fabmetheus.crsndoo.com/wiki/index.php/Skeinforge_Inset')
 		self.addCustomCodeForTemperatureReading = settings.BooleanSetting().getFromValue('Add Custom Code for Temperature Reading', self, True)
 		self.infillInDirectionOfBridge = settings.BooleanSetting().getFromValue('Infill in Direction of Bridge', self, True)
-		self.infillWidthOverThickness = settings.FloatSpin().getFromValue(1.3, 'Infill Width over Thickness (ratio):', self, 1.7, 1.5)
+		self.infillWidth = settings.FloatSpin().getFromValue(0.1, 'Infill Width:', self, 1.7, 0.4)
 		self.loopOrderChoice = settings.MenuButtonDisplay().getFromName('Loop Order Choice:', self )
 		self.loopOrderAscendingArea = settings.MenuRadio().getFromMenuButtonDisplay(self.loopOrderChoice, 'Ascending Area', self, True)
 		self.loopOrderDescendingArea = settings.MenuRadio().getFromMenuButtonDisplay(self.loopOrderChoice, 'Descending Area', self, False)
@@ -425,7 +430,7 @@ class InsetSkein:
 				return
 			elif firstWord == '(<layerHeight>':
 				layerHeight = float(splitLine[1])
-				self.infillWidth = self.repository.infillWidthOverThickness.value * layerHeight
+				self.infillWidth = self.repository.infillWidth.value
 				self.distanceFeedRate.addTagRoundedLine('infillWidth', self.infillWidth)
 				self.distanceFeedRate.addTagRoundedLine('volumeFraction', self.repository.volumeFraction.value)
 			elif firstWord == '(<edgeWidth>':
