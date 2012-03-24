@@ -13,12 +13,13 @@ from newui import preferencesDialog
 from newui import configWizard
 from newui import machineCom
 from newui import profile
+from newui import printWindow
 
 def main():
 	app = wx.App(False)
 	if profile.getPreference('wizardDone') == 'False':
 		if os.name == 'darwin':
-			wx.MessageBox('The MacOS version of SkeinPyPy is experimental.\nThere are still UI/usability bugs. Check the issue list at:\nhttps://github.com/daid/SkeinPyPy/issues\nfor details.\nPlease report any extra issue you find.', 'MacOS Warning', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('The MacOS version of Cura is experimental.\nThere are still UI/usability bugs. Check the issue list at:\nhttps://github.com/daid/SkeinPyPy/issues\nfor details.\nPlease report any extra issue you find.', 'MacOS Warning', wx.OK | wx.ICON_INFORMATION)
 		configWizard.configWizard()
 		profile.putPreference("wizardDone", "True")
 	mainWindow()
@@ -27,7 +28,7 @@ def main():
 class mainWindow(configBase.configWindowBase):
 	"Main user interface window"
 	def __init__(self):
-		super(mainWindow, self).__init__(title='SkeinPyPy')
+		super(mainWindow, self).__init__(title='Cura')
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		
@@ -161,8 +162,10 @@ class mainWindow(configBase.configWindowBase):
 		# load and slice buttons.
 		loadButton = wx.Button(self, -1, 'Load Model')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
+		#printButton = wx.Button(self, -1, 'Print GCode')
 		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
+		#self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
 		#Also bind double clicking the 3D preview to load an STL file.
 		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
 
@@ -174,7 +177,8 @@ class mainWindow(configBase.configWindowBase):
 		sizer.AddGrowableCol(2)
 		sizer.AddGrowableRow(0)
 		sizer.Add(loadButton, (1,1), flag=wx.RIGHT, border=5)
-		sizer.Add(sliceButton, (1,2))
+		sizer.Add(sliceButton, (1,2), flag=wx.RIGHT, border=5)
+		#sizer.Add(printButton, (1,3), flag=wx.RIGHT, border=5)
 		self.sizer = sizer
 
 		if self.filename != "None":
@@ -254,6 +258,9 @@ class mainWindow(configBase.configWindowBase):
 		newSize.IncBy(0, spp.GetSize().GetHeight())
 		self.SetSize(newSize)
 		self.progressPanelList.append(spp)
+	
+	def OnPrint(self, e):
+		printWindow.printWindow()
 
 	def OnExpertOpen(self, e):
 		acw = advancedConfig.advancedConfigWindow()

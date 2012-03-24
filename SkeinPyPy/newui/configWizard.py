@@ -60,10 +60,10 @@ class InfoPage(wx.wizard.WizardPageSimple):
 class FirstInfoPage(InfoPage):
 	def __init__(self, parent):
 		super(FirstInfoPage, self).__init__(parent, "First time run wizard")
-		self.AddText('Welcome, and thanks for trying SkeinPyPy!')
+		self.AddText('Welcome, and thanks for trying Cura!')
 		self.AddSeperator()
 		self.AddText('This wizard will help you with the following steps:')
-		self.AddText('* Configure SkeinPyPy for your machine')
+		self.AddText('* Configure Cura for your machine')
 		self.AddText('* Upgrade your firmware')
 		self.AddText('* Calibrate your machine')
 		#self.AddText('* Do your first print')
@@ -73,7 +73,7 @@ class RepRapInfoPage(InfoPage):
 		super(RepRapInfoPage, self).__init__(parent, "RepRap information")
 		self.AddText('Sorry, but this wizard will not help you with\nconfiguring and calibrating your RepRap.')
 		self.AddSeperator()
-		self.AddText('You will have to manually install Marlin firmware\nand configure SkeinPyPy.')
+		self.AddText('You will have to manually install Marlin or Sprinter firmware\nand configure Cura.')
 
 class MachineSelectPage(InfoPage):
 	def __init__(self, parent):
@@ -116,7 +116,7 @@ class FirmwareUpgradePage(InfoPage):
 		self.AddHiddenSeperator()
 		self.AddText('The firmware shipping with new Ultimakers works, but upgrades\nhave been made to make better prints, and make calibration easier.')
 		self.AddHiddenSeperator()
-		self.AddText('SkeinPyPy requires these new features and thus\nyour firmware will most likely need to be upgraded.\nYou will get the chance to do so now.')
+		self.AddText('Cura requires these new features and thus\nyour firmware will most likely need to be upgraded.\nYou will get the chance to do so now.')
 		upgradeButton, skipUpgradeButton = self.AddDualButton('Upgrade to Marlin firmware', 'Skip upgrade')
 		upgradeButton.Bind(wx.EVT_BUTTON, self.OnUpgradeClick)
 		skipUpgradeButton.Bind(wx.EVT_BUTTON, self.OnSkipClick)

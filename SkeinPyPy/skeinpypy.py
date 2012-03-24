@@ -3,7 +3,7 @@
 This page is in the table of contents.
 ==Overview==
 ===Introduction===
-SkeinPyPy is a GPL tool chain to forge a gcode skein for a model. Based on Skeinforge.
+Cura is a GPL tool chain to forge a gcode skein for a model. Based on Skeinforge.
 
 The slicing code is the same as Skeinforge. But the UI has been revamped to be... sane.
 

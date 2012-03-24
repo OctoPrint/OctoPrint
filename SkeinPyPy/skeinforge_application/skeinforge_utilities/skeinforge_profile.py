@@ -15,7 +15,7 @@ def getCraftTypeName():
 	return 'extrusion'
 
 def getProfileName(craftTypeName):
-	return 'SkeinPyPy profile:' + craftTypeName
+	return 'Cura profile:' + craftTypeName
 
 def addListsToCraftTypeRepository(fileNameHelp, repository):
     #print('addListsToCraftTypeRepository:', fileNameHelp, repository)
