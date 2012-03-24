@@ -1,1 +1,1 @@
-@python\python.exe SkeinPyPy\SkeinPyPy.py
+@python\python.exe Cura\cura.py

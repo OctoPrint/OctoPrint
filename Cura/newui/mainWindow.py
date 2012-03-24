@@ -19,7 +19,7 @@ def main():
 	app = wx.App(False)
 	if profile.getPreference('wizardDone') == 'False':
 		if os.name == 'darwin':
-			wx.MessageBox('The MacOS version of Cura is experimental.\nThere are still UI/usability bugs. Check the issue list at:\nhttps://github.com/daid/SkeinPyPy/issues\nfor details.\nPlease report any extra issue you find.', 'MacOS Warning', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('The MacOS version of Cura is experimental.\nThere are still UI/usability bugs. Check the issue list at:\nhttps://github.com/daid/Cura/issues\nfor details.\nPlease report any extra issue you find.', 'MacOS Warning', wx.OK | wx.ICON_INFORMATION)
 		configWizard.configWizard()
 		profile.putPreference("wizardDone", "True")
 	mainWindow()
@@ -64,9 +64,9 @@ class mainWindow(configBase.configWindowBase):
 		
 		helpMenu = wx.Menu()
 		i = helpMenu.Append(-1, 'Online documentation...')
-		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/SkeinPyPy/wiki'), i)
+		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/Cura/wiki'), i)
 		i = helpMenu.Append(-1, 'Report a problem...')
-		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/SkeinPyPy/issues'), i)
+		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/Cura/issues'), i)
 		menubar.Append(helpMenu, 'Help')
 		self.SetMenuBar(menubar)
 		

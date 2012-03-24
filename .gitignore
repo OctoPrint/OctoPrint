@@ -3,7 +3,7 @@
 *.pyc
 *.zip
 *.exe
-osx64-SkeinPyPy-NewUI*
-win32-SkeinPyPy-NewUI*
-linux-SkeinPyPy-NewUI*
+osx64-Cura-NewUI*
+win32-Cura-NewUI*
+linux-Cura-NewUI*
 Printrun
