@@ -162,10 +162,10 @@ class mainWindow(configBase.configWindowBase):
 		# load and slice buttons.
 		loadButton = wx.Button(self, -1, 'Load Model')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
-		#printButton = wx.Button(self, -1, 'Print GCode')
+		printButton = wx.Button(self, -1, 'Print GCode')
 		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
-		#self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
+		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
 		#Also bind double clicking the 3D preview to load an STL file.
 		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
 
@@ -178,7 +178,7 @@ class mainWindow(configBase.configWindowBase):
 		sizer.AddGrowableRow(0)
 		sizer.Add(loadButton, (1,1), flag=wx.RIGHT, border=5)
 		sizer.Add(sliceButton, (1,2), flag=wx.RIGHT, border=5)
-		#sizer.Add(printButton, (1,3), flag=wx.RIGHT, border=5)
+		sizer.Add(printButton, (1,3), flag=wx.RIGHT, border=5)
 		self.sizer = sizer
 
 		if self.filename != "None":
