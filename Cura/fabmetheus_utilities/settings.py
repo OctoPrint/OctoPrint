@@ -36,43 +36,19 @@ def storedPercentSetting(name):
 	return lambda setting: float(profile.getProfileSetting(name)) / 100
 
 def calculateEdgeWidth(setting):
-	wallThickness = float(profile.getProfileSetting('wall_thickness'))
-	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
-	
-	if wallThickness < nozzleSize:
-		return wallThickness
-
-	lineCount = int(wallThickness / nozzleSize)
-	lineWidth = wallThickness / lineCount
-	lineWidthAlt = wallThickness / (lineCount + 1)
-	if lineWidth > nozzleSize * 1.5:
-		return lineWidthAlt
-	return lineWidth
+	return profile.calculateEdgeWidth()
 
 def calculateShells(setting):
-	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')))
+	return profile.calculateLineCount() - 1
 
 def calculateShellsBase(setting):
-	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')) + float(profile.getProfileSetting('extra_base_wall_thickness')))
-
-def calculateShellsImp(wallThickness):
-	nozzleSize = float(profile.getProfileSetting('nozzle_size'))
+	edgeWidth = profile.calculateEdgeWidth()
+	extraWall = float(profile.getProfileSetting('extra_base_wall_thickness'))
 	
-	if wallThickness < nozzleSize:
-		return 0
-
-	lineCount = int(wallThickness / nozzleSize + 0.0001)
-	lineWidth = wallThickness / lineCount
-	lineWidthAlt = wallThickness / (lineCount + 1)
-	if lineWidth > nozzleSize * 1.5:
-		return lineCount
-	return lineCount - 1
+	return profile.calculateLineCount() - 1 + int(extraWall / edgeWidth + 0.0001)
 
 def calculateSolidLayerCount(setting):
-	layerHeight = float(profile.getProfileSetting('layer_height'))
-	solidThickness = float(profile.getProfileSetting('solid_layer_thickness'))
-	ret = int(math.ceil(solidThickness / layerHeight - 0.0001))
-	return ret
+	return profile.calculateSolidLayerCount()
 
 def firstLayerSpeedRatio(setting):
 	bottomSpeed = float(profile.getProfileSetting('bottom_layer_speed'))

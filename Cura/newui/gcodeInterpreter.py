@@ -46,6 +46,17 @@ class gcode():
 				pathType = line[6:].strip()
 				if pathType != "CUSTOM":
 					startCodeDone = True
+			if ';' in line:
+				comment = line[line.find(';')+1:].strip()
+				if comment == 'fill':
+					pathType = 'FILL'
+				elif comment == 'perimeter':
+					pathType = 'WALL-INNER'
+				elif comment == 'skirt':
+					pathType = 'SKIRT'
+				if pathType != "CUSTOM":
+					startCodeDone = True
+				line = line[0:line.find(';')]
 			G = self.getCodeInt(line, 'G')
 			if G is not None:
 				if G == 0 or G == 1:	#Move

@@ -5,6 +5,7 @@ import __init__
 import ConfigParser
 import os
 import traceback
+import math
 
 #Single place to store the defaults, so we have a consistent set of default settings.
 profileDefaultSettings = {
@@ -63,6 +64,7 @@ preferencesDefaultSettings = {
 	'steps_per_e': '0',
 	'serial_port': 'AUTO',
 	'serial_baud': '250000',
+	'slicer': 'Cura (Skeinforge based)',
 }
 
 def getDefaultProfilePath():
@@ -146,3 +148,39 @@ def putPreference(name, value):
 		globalPreferenceParser.add_section('preference')
 	globalPreferenceParser.set('preference', name, str(value))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
+
+## Utility functions to calculate common profile values
+
+def calculateEdgeWidth():
+	wallThickness = float(getProfileSetting('wall_thickness'))
+	nozzleSize = float(getProfileSetting('nozzle_size'))
+	
+	if wallThickness < nozzleSize:
+		return wallThickness
+
+	lineCount = int(wallThickness / nozzleSize)
+	lineWidth = wallThickness / lineCount
+	lineWidthAlt = wallThickness / (lineCount + 1)
+	if lineWidth > nozzleSize * 1.5:
+		return lineWidthAlt
+	return lineWidth
+
+def calculateLineCount():
+	wallThickness = float(getProfileSetting('wall_thickness'))
+	nozzleSize = float(getProfileSetting('nozzle_size'))
+	
+	if wallThickness < nozzleSize:
+		return 1
+
+	lineCount = int(wallThickness / nozzleSize + 0.0001)
+	lineWidth = wallThickness / lineCount
+	lineWidthAlt = wallThickness / (lineCount + 1)
+	if lineWidth > nozzleSize * 1.5:
+		return lineCount + 1
+	return lineCount
+
+def calculateSolidLayerCount():
+	layerHeight = float(getProfileSetting('layer_height'))
+	solidThickness = float(getProfileSetting('solid_layer_thickness'))
+	return int(math.ceil(solidThickness / layerHeight - 0.0001))
+

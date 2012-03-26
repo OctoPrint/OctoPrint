@@ -28,6 +28,9 @@ class preferencesDialog(configBase.configWindowBase):
 		configBase.TitleRow(left, 'Communication settings')
 		c = configBase.SettingRow(left, 'Serial port', 'serial_port', ['AUTO'] + machineCom.serialList(), 'Serial port to use for communication with the printer', type = 'preference')
 		c = configBase.SettingRow(left, 'Baudrate', 'serial_baud', '250000', 'Speed of the serial port communication\nNeeds to match your firmware settings\nCommon values are 250000, 115200, 57600', type = 'preference')
+
+		configBase.TitleRow(left, 'Slicer settings')
+		c = configBase.SettingRow(left, 'Slicer selection', 'slicer', ['Cura (Skeinforge based)', 'Slic3r'], 'Which slicer to use to slice objects. Usually the Cura engine produces the best results. But Slic3r is developing fast and is faster with slicing.', type = 'preference')
 		
 		self.MakeModal(True)
 		main.Fit()
