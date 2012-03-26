@@ -85,7 +85,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0)
-		validators.warningAbove(c, lambda : (float(profile.getPreference('nozzle_size')) * 80 / 100), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
+		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 80 / 100), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
 		c = configBase.SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
 		validators.validFloat(c, 0.0)
 		validators.wallThicknessValidator(c)
@@ -124,9 +124,11 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
 		validators.validFloat(c, 0.5, 1.5)
 		
-		(left, right) = self.CreateConfigTab(nb, 'Machine config')
+		(left, right) = self.CreateConfigTab(nb, 'Advanced config')
 		
 		configBase.TitleRow(left, "Machine size")
+		c = configBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
+		validators.validFloat(c, 0.1, 1.0)
 		c = configBase.SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
 		configBase.settingNotify(c, self.preview3d.updateCenterX)

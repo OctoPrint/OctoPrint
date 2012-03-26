@@ -16,8 +16,6 @@ class preferencesDialog(configBase.configWindowBase):
 		
 		left, right, main = self.CreateConfigPanel(self)
 		configBase.TitleRow(left, 'Machine settings')
-		c = configBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.', type = 'preference')
-		validators.validFloat(c, 0.1, 1.0)
 		c = configBase.SettingRow(left, 'Steps per E', 'steps_per_e', '0', 'Amount of steps per mm filament extrusion', type = 'preference')
 		validators.validFloat(c, 0.1)
 		c = configBase.SettingRow(left, 'Machine width (mm)', 'machine_width', '205', 'Size of the machine in mm', type = 'preference')

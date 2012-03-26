@@ -75,7 +75,7 @@ class wallThicknessValidator():
 	def validate(self):
 		try:
 			wallThickness = float(self.setting.GetValue())
-			nozzleSize = float(profile.getPreference('nozzle_size'))
+			nozzleSize = float(profile.getProfileSetting('nozzle_size'))
 			if wallThickness <= nozzleSize * 0.5:
 				return ERROR, 'Trying to print walls thinner then the half of your nozzle size, this will not produce anything usable'
 			if wallThickness <= nozzleSize * 0.85:
@@ -100,7 +100,7 @@ class printSpeedValidator():
 
 	def validate(self):
 		try:
-			nozzleSize = float(profile.getPreference('nozzle_size'))
+			nozzleSize = float(profile.getProfileSetting('nozzle_size'))
 			layerHeight = float(profile.getProfileSetting('layer_height'))
 			printSpeed = float(profile.getProfileSetting('print_speed'))
 			

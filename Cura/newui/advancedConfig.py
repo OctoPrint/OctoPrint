@@ -13,7 +13,7 @@ from newui import validators
 class advancedConfigWindow(configBase.configWindowBase):
 	"Advanced configuration window"
 	def __init__(self):
-		super(advancedConfigWindow, self).__init__(title='Advanced config')
+		super(advancedConfigWindow, self).__init__(title='Expert config')
 
 		wx.EVT_CLOSE(self, self.OnClose)
 
@@ -22,6 +22,7 @@ class advancedConfigWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Extra Wall thickness for bottom/top (mm)", 'extra_base_wall_thickness', '0.0', 'Additional wall thickness of the bottom and top layers.')
 		validators.validFloat(c, 0.0)
+		
 		configBase.TitleRow(left, "Sequence")
 		c = configBase.SettingRow(left, "Print order sequence", 'sequence', ['Loops > Perimeter > Infill', 'Loops > Infill > Perimeter', 'Infill > Loops > Perimeter', 'Infill > Perimeter > Loops', 'Perimeter > Infill > Loops', 'Perimeter > Loops > Infill'], 'Sequence of printing. The perimeter is the outer print edge, the loops are the insides of the walls, and the infill is the insides.');
 		c = configBase.SettingRow(left, "Force first layer sequence", 'force_first_layer_sequence', True, 'This setting forces the order of the first layer to be \'Perimeter > Loops > Infill\'')

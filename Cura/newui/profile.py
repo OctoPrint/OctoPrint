@@ -8,6 +8,7 @@ import traceback
 
 #Single place to store the defaults, so we have a consistent set of default settings.
 profileDefaultSettings = {
+	'nozzle_size': '0.4',
 	'layer_height': '0.2',
 	'wall_thickness': '0.8',
 	'solid_layer_thickness': '0.6',
@@ -59,7 +60,6 @@ preferencesDefaultSettings = {
 	'machine_width': '205',
 	'machine_depth': '205',
 	'machine_height': '200',
-	'nozzle_size': '0.4',
 	'steps_per_e': '0',
 	'serial_port': 'AUTO',
 	'serial_baud': '250000',
