@@ -73,7 +73,7 @@ def getSliceCommand(filename):
 			'--gcode-flavor', 'reprap',
 			'--gcode-comments',
 			'--filament-diameter', profile.getProfileSetting('filament_diameter'),
-			'--extrusion-multiplier', profile.getProfileSetting('filament_density'),
+			'--extrusion-multiplier', str(1.0 / float(profile.getProfileSetting('filament_density'))),
 			'--temperature', profile.getProfileSetting('print_temperature'),
 			'--travel-speed', profile.getProfileSetting('travel_speed'),
 			'--perimeter-speed', profile.getProfileSetting('print_speed'),
