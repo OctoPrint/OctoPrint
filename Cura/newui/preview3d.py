@@ -444,35 +444,35 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				
 				curLayerNum = 0
 				for path in self.parent.gcode.pathList:
-					if path['layerNr'] != curLayerNum:
+					if path.layerNr != curLayerNum:
 						prevLayerZ = curLayerZ
-						curLayerZ = path['list'][1].z
-						curLayerNum = path['layerNr']
+						curLayerZ = path.list[1].z
+						curLayerNum = path.layerNr
 						layerThickness = curLayerZ - prevLayerZ
 					
 					c = 1.0
-					if path['layerNr'] != self.parent.layerSpin.GetValue():
-						if path['layerNr'] < self.parent.layerSpin.GetValue():
-							c = 0.9 - (self.parent.layerSpin.GetValue() - path['layerNr']) * 0.1
+					if path.layerNr != self.parent.layerSpin.GetValue():
+						if path.layerNr < self.parent.layerSpin.GetValue():
+							c = 0.9 - (self.parent.layerSpin.GetValue() - path.layerNr) * 0.1
 							if c < 0.4:
 								c = 0.4
 						else:
 							break
-					if path['type'] == 'move':
+					if path.type == 'move':
 						glColor3f(0,0,c)
-					if path['type'] == 'extrude':
-						if path['pathType'] == 'FILL':
+					if path.type == 'extrude':
+						if path.pathType == 'FILL':
 							glColor3f(c/2,c/2,0)
-						elif path['pathType'] == 'WALL-INNER':
+						elif path.pathType == 'WALL-INNER':
 							glColor3f(0,c,0)
 						else:
 							glColor3f(c,0,0)
-					if path['type'] == 'retract':
+					if path.type == 'retract':
 						glColor3f(0,c,c)
-					if c > 0.4 and path['type'] == 'extrude':
-						for i in xrange(0, len(path['list'])-1):
-							v0 = path['list'][i]
-							v1 = path['list'][i+1]
+					if c > 0.4 and path.type == 'extrude':
+						for i in xrange(0, len(path.list)-1):
+							v0 = path.list[i]
+							v1 = path.list[i+1]
 
 							# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
 							dist = (v0 - v1).vsize()
@@ -488,7 +488,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							v1 = v1 - normal * lineWidth
 
 							glBegin(GL_QUADS)
-							if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+							if path.pathType == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
 								glVertex3f(v0.x, v0.y, v0.z - 0.02)
 								glVertex3f(v1.x, v1.y, v1.z - 0.02)
 								glVertex3f(v3.x, v3.y, v3.z - 0.02)
@@ -511,7 +511,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 						#	glEnd()
 					else:
 						glBegin(GL_LINE_STRIP)
-						for v in path['list']:
+						for v in path.list:
 							glVertex3f(v.x, v.y, v.z)
 						glEnd()
 				glEndList()

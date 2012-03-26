@@ -9,6 +9,13 @@ import os
 
 from newui import util3d
 
+class gcodePath():
+	def __init__(self, newType, pathType, layerNr, startPoint):
+		self.type = newType
+		self.pathType = pathType
+		self.list = [startPoint]
+		self.layerNr = layerNr
+
 class gcode():
 	def __init__(self):
 		self.regMatch = {}
@@ -35,8 +42,9 @@ class gcode():
 		pathType = 'CUSTOM';
 		layerNr = 0;	#Note layer 0 will be the start code.
 		startCodeDone = False
-		currentPath = {'type': 'move', 'pathType': pathType, 'list': [pos.copy()], 'layerNr': layerNr}
-		currentPath['list'][-1].e = totalExtrusion
+		currentPath = gcodePath('move', pathType, layerNr, pos.copy())
+		currentPath.list[0].e = totalExtrusion
+		pathList.append(currentPath)
 		for line in gcodeFile:
 			if filePos != gcodeFile.tell():
 				filePos = gcodeFile.tell()
@@ -105,11 +113,12 @@ class gcode():
 							currentE += e
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
-					if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
+					if currentPath.type != moveType or currentPath.pathType != pathType:
+						currentPath = gcodePath(moveType, pathType, layerNr, currentPath.list[-1])
 						pathList.append(currentPath)
-						currentPath = {'type': moveType, 'pathType': pathType, 'list': [currentPath['list'][-1]], 'layerNr': layerNr}
-					currentPath['list'].append(pos.copy())
-					currentPath['list'][-1].e = totalExtrusion
+					newPos = pos.copy()
+					newPos.e = totalExtrusion
+					currentPath.list.append(newPos)
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
