@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import os, glob, wx, threading
+import os, glob, wx, threading, sys
 
 from serial import Serial
 
