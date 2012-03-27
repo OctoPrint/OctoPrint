@@ -223,7 +223,7 @@ class mainWindow(configBase.configWindowBase):
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("HEX file (*.hex)|*.hex")
+		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetPath()
 			if not(os.path.exists(filename)):
@@ -237,7 +237,7 @@ class mainWindow(configBase.configWindowBase):
 
 	def OnLoadModel(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("STL files (*.stl)|*.stl")
+		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename=dlg.GetPath()
 			profile.putPreference('lastFile', self.filename)
