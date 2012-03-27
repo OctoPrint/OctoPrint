@@ -7,6 +7,10 @@ import os
 import traceback
 import math
 
+#########################################################
+## Profile and preferences functions
+#########################################################
+
 #Single place to store the defaults, so we have a consistent set of default settings.
 profileDefaultSettings = {
 	'nozzle_size': '0.4',
@@ -149,8 +153,9 @@ def putPreference(name, value):
 	globalPreferenceParser.set('preference', name, str(value))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
 
+#########################################################
 ## Utility functions to calculate common profile values
-
+#########################################################
 def calculateEdgeWidth():
 	wallThickness = float(getProfileSetting('wall_thickness'))
 	nozzleSize = float(getProfileSetting('nozzle_size'))
@@ -183,4 +188,36 @@ def calculateSolidLayerCount():
 	layerHeight = float(getProfileSetting('layer_height'))
 	solidThickness = float(getProfileSetting('solid_layer_thickness'))
 	return int(math.ceil(solidThickness / layerHeight - 0.0001))
+
+#########################################################
+## Alteration file functions
+#########################################################
+def getCuraBasePath():
+	return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+def getAlterationFilePath(filename):
+	return os.path.join(getCuraBasePath(), "alterations", filename)
+
+def getAlterationFileContents(filename, allowMagicPrefix = True):
+	"Get the file from the fileName or the lowercase fileName in the alterations directories."
+	prefix = ''
+	if allowMagicPrefix:
+		if filename == 'start.gcode':
+			#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
+			#We also set our steps per E here, if configured.
+			eSteps = float(getPreference('steps_per_e'))
+			if eSteps > 0:
+				prefix += 'M92 E'+str(eSteps)+'\n'
+			temp = float(getProfileSetting('print_temperature'))
+			if temp > 0:
+				prefix += 'M109 S'+str(temp)+'\n'
+		elif filename == 'replace.csv':
+			prefix = 'M101\nM103\n'
+	fullFilename = getAlterationFilePath(filename)
+	if os.path.isfile(fullFilename):
+		file = open(fullFilename, "r")
+		fileText = file.read()
+		file.close()
+		return prefix + fileText
+	return prefix
 
