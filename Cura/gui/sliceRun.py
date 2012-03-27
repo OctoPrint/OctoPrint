@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import platform, os, subprocess, sys
 
-from skeinforge_application.skeinforge_utilities import skeinforge_craft
-from newui import profile
+from cura_sf.skeinforge_application.skeinforge_utilities import skeinforge_craft
+from gui import profile
 
 def getPyPyExe():
 	"Return the path to the pypy executable if we can find it. Else return False"
@@ -116,5 +116,5 @@ def getSliceCommand(filename):
 		pypyExe = getPyPyExe()
 		if pypyExe == False:
 			pypyExe = sys.executable
-		return [pypyExe, os.path.join(sys.path[0], os.path.split(sys.argv[0])[1]), filename]
+		return [pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), filename]
 

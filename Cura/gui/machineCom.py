@@ -9,7 +9,7 @@ from avr_isp import stk500v2
 from avr_isp import ispBase
 from avr_isp import intelHex
 
-from newui import profile
+from gui import profile
 
 try:
 	import _winreg

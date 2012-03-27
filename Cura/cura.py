@@ -14,9 +14,9 @@ import __init__
 
 import sys
 import platform
-
 from optparse import OptionParser
-from newui import sliceRun
+
+from gui import sliceRun
 
 __author__ = 'Daid'
 __credits__ = """
@@ -49,7 +49,7 @@ def main():
 	if len( args ) > 0:
 		sliceRun.runSlice(args)
 	else:
-		from newui import mainWindow
+		from gui import mainWindow
 		mainWindow.main()
 
 if __name__ == '__main__':

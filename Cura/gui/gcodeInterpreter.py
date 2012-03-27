@@ -7,7 +7,7 @@ import threading
 import re
 import os
 
-from newui import util3d
+from gui import util3d
 
 class gcodePath():
 	def __init__(self, newType, pathType, layerNr, startPoint):

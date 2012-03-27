@@ -1,7 +1,7 @@
 import wx
 import sys,math,threading,os
 
-from newui import profile
+from gui import profile
 
 class alterationPanel(wx.Panel):
 	def __init__(self, parent):

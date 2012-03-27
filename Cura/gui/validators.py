@@ -4,7 +4,7 @@ import __init__
 import types
 import math
 
-from newui import profile
+from gui import profile
 
 SUCCESS = 0
 WARNING = 1

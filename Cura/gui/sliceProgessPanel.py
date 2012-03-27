@@ -8,7 +8,7 @@ import threading
 import subprocess
 import time
 
-from newui import sliceRun
+from gui import sliceRun
 
 class sliceProgessPanel(wx.Panel):
 	def __init__(self, mainWindow, parent, filename):
@@ -115,6 +115,7 @@ class WorkerThread(threading.Thread):
 		self.start()
 
 	def run(self):
+		print sliceRun.getSliceCommand(self.filename)
 		p = subprocess.Popen(sliceRun.getSliceCommand(self.filename), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		line = p.stdout.readline()
 		maxValue = 1

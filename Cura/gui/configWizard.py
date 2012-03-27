@@ -4,8 +4,8 @@ import __init__
 import wx, os, platform, types, webbrowser, threading, time, re
 import wx.wizard
 
-from newui import machineCom
-from newui import profile
+from gui import machineCom
+from gui import profile
 
 class InfoPage(wx.wizard.WizardPageSimple):
 	def __init__(self, parent, title):

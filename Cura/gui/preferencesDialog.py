@@ -4,9 +4,9 @@ import __init__
 import wx, os, platform, types
 import ConfigParser
 
-from newui import configBase
-from newui import validators
-from newui import machineCom
+from gui import configBase
+from gui import validators
+from gui import machineCom
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):

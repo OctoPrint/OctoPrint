@@ -3,17 +3,17 @@ import __init__
 
 import wx, os, platform, types, webbrowser
 
-from newui import configBase
-from newui import advancedConfig
-from newui import preview3d
-from newui import sliceProgessPanel
-from newui import alterationPanel
-from newui import validators
-from newui import preferencesDialog
-from newui import configWizard
-from newui import machineCom
-from newui import profile
-from newui import printWindow
+from gui import configBase
+from gui import advancedConfig
+from gui import preview3d
+from gui import sliceProgessPanel
+from gui import alterationPanel
+from gui import validators
+from gui import preferencesDialog
+from gui import configWizard
+from gui import machineCom
+from gui import profile
+from gui import printWindow
 
 def main():
 	app = wx.App(False)

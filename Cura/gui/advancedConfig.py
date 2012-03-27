@@ -4,11 +4,11 @@ import __init__
 import wx, os, platform, types
 import ConfigParser
 
-from newui import configBase
-from newui import preview3d
-from newui import sliceProgessPanel
-from newui import alterationPanel
-from newui import validators
+from gui import configBase
+from gui import preview3d
+from gui import sliceProgessPanel
+from gui import alterationPanel
+from gui import validators
 
 class advancedConfigWindow(configBase.configWindowBase):
 	"Advanced configuration window"
