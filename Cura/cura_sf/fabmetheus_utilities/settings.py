@@ -10,7 +10,7 @@ import __init__
 import os, sys
 import types, math
 
-from gui import profile
+from util import profile
 from fabmetheus_utilities import archive
 
 def DEFSET(setting):

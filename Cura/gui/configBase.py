@@ -4,7 +4,7 @@ import __init__
 import wx, os, sys, platform, types
 
 from gui import validators
-from gui import profile
+from util import profile
 
 def main():
 	app = wx.App(False)

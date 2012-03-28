@@ -17,9 +17,9 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from gui import profile
-from gui import gcodeInterpreter
-from gui import util3d
+from util import profile
+from util import gcodeInterpreter
+from util import util3d
 
 from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from fabmetheus_utilities.vector3 import Vector3

@@ -12,8 +12,8 @@ from gui import validators
 from gui import preferencesDialog
 from gui import configWizard
 from gui import machineCom
-from gui import profile
 from gui import printWindow
+from util import profile
 
 def main():
 	app = wx.App(False)

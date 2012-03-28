@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import platform, os, subprocess, sys
 
 from cura_sf.skeinforge_application.skeinforge_utilities import skeinforge_craft
-from gui import profile
+from util import profile
 
 def getPyPyExe():
 	"Return the path to the pypy executable if we can find it. Else return False"

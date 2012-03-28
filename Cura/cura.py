@@ -16,7 +16,7 @@ import sys
 import platform
 from optparse import OptionParser
 
-from gui import sliceRun
+from util import sliceRun
 
 __author__ = 'Daid'
 __credits__ = """

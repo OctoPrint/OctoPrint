@@ -8,7 +8,7 @@ import threading
 import subprocess
 import time
 
-from gui import sliceRun
+from util import sliceRun
 
 class sliceProgessPanel(wx.Panel):
 	def __init__(self, mainWindow, parent, filename):
