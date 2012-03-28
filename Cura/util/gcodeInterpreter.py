@@ -3,7 +3,6 @@ import __init__
 
 import sys
 import math
-import threading
 import re
 import os
 
