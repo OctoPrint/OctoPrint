@@ -4,8 +4,8 @@ import __init__
 import wx, os, platform, types, webbrowser, threading, time, re
 import wx.wizard
 
-from newui import machineCom
-from newui import profile
+from gui import machineCom
+from util import profile
 
 class InfoPage(wx.wizard.WizardPageSimple):
 	def __init__(self, parent, title):
@@ -97,17 +97,17 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_width', '205')
 			profile.putPreference('machine_depth', '205')
 			profile.putPreference('machine_height', '200')
-			profile.putPreference('nozzle_size', '0.4')
+			profile.putProfileSetting('nozzle_size', '0.4')
 			profile.putProfileSetting('machine_center_x', '100')
 			profile.putProfileSetting('machine_center_y', '100')
 		else:
 			profile.putPreference('machine_width', '80')
 			profile.putPreference('machine_depth', '80')
 			profile.putPreference('machine_height', '60')
-			profile.putPreference('nozzle_size', '0.5')
+			profile.putProfileSetting('nozzle_size', '0.5')
 			profile.putProfileSetting('machine_center_x', '40')
 			profile.putProfileSetting('machine_center_y', '40')
-		profile.putProfileSetting('wall_thickness', float(profile.getPreference('nozzle_size')) * 2)
+		profile.putProfileSetting('wall_thickness', float(profile.getProfileSetting('nozzle_size')) * 2)
 
 class FirmwareUpgradePage(InfoPage):
 	def __init__(self, parent):

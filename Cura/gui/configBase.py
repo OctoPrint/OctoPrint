@@ -3,8 +3,8 @@ import __init__
 
 import wx, os, sys, platform, types
 
-from newui import validators
-from newui import profile
+from gui import validators
+from util import profile
 
 def main():
 	app = wx.App(False)

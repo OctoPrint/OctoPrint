@@ -17,12 +17,10 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from newui import profile
-from newui import gcodeInterpreter
-from newui import util3d
-
-from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
-from fabmetheus_utilities.vector3 import Vector3
+from util import profile
+from util import gcodeInterpreter
+from util import stl
+from util import util3d
 
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
@@ -38,8 +36,8 @@ class previewPanel(wx.Panel):
 		self.modelFilename = None
 		self.loadingProgressAmount = 0
 		self.loadThread = None
-		self.machineSize = Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
-		self.machineCenter = Vector3(0, 0, 0)
+		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
+		self.machineCenter = util3d.Vector3(0, 0, 0)
 		
 		self.toolbar = wx.ToolBar( self, -1 )
 		self.toolbar.SetToolBitmapSize( ( 21, 21 ) )
@@ -215,7 +213,8 @@ class previewPanel(wx.Panel):
 	def doFileLoadThread(self):
 		if os.path.isfile(self.modelFilename) and self.modelFileTime != os.stat(self.modelFilename).st_mtime:
 			self.modelFileTime = os.stat(self.modelFilename).st_mtime
-			triangleMesh = fabmetheus_interpret.getCarving(self.modelFilename)
+			triangleMesh = stl.stlModel()
+			triangleMesh.load(self.modelFilename)
 			triangleMesh.origonalVertexes = list(triangleMesh.vertexes)
 			for i in xrange(0, len(triangleMesh.origonalVertexes)):
 				triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
@@ -297,9 +296,9 @@ class previewPanel(wx.Panel):
 			self.triangleMesh.vertexes[i].z = self.triangleMesh.origonalVertexes[i].z * scaleZ
 
 		for face in self.triangleMesh.faces:
-			v1 = self.triangleMesh.vertexes[face.vertexIndexes[0]]
-			v2 = self.triangleMesh.vertexes[face.vertexIndexes[1]]
-			v3 = self.triangleMesh.vertexes[face.vertexIndexes[2]]
+			v1 = face.v[0]
+			v2 = face.v[1]
+			v3 = face.v[2]
 			face.normal = (v2 - v1).cross(v3 - v1)
 			face.normal.normalize()
 
@@ -309,8 +308,8 @@ class previewPanel(wx.Panel):
 		if self.triangleMesh == None:
 			return
 		minZ = self.triangleMesh.getMinimumZ()
-		min = self.triangleMesh.getCarveCornerMinimum()
-		max = self.triangleMesh.getCarveCornerMaximum()
+		min = self.triangleMesh.getMinimum()
+		max = self.triangleMesh.getMaximum()
 		for v in self.triangleMesh.vertexes:
 			v.z -= minZ
 			v.x -= min.x + (max.x - min.x) / 2
@@ -440,39 +439,39 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				layerThickness = 0.0
 				filamentRadius = float(profile.getProfileSetting('filament_diameter')) / 2
 				filamentArea = math.pi * filamentRadius * filamentRadius
-				lineWidth = float(profile.getPreference('nozzle_size')) / 2
+				lineWidth = float(profile.getProfileSetting('nozzle_size')) / 2
 				
 				curLayerNum = 0
 				for path in self.parent.gcode.pathList:
-					if path['layerNr'] != curLayerNum:
+					if path.layerNr != curLayerNum:
 						prevLayerZ = curLayerZ
-						curLayerZ = path['list'][1].z
-						curLayerNum = path['layerNr']
+						curLayerZ = path.list[1].z
+						curLayerNum = path.layerNr
 						layerThickness = curLayerZ - prevLayerZ
 					
 					c = 1.0
-					if path['layerNr'] != self.parent.layerSpin.GetValue():
-						if path['layerNr'] < self.parent.layerSpin.GetValue():
-							c = 0.9 - (self.parent.layerSpin.GetValue() - path['layerNr']) * 0.1
+					if path.layerNr != self.parent.layerSpin.GetValue():
+						if path.layerNr < self.parent.layerSpin.GetValue():
+							c = 0.9 - (self.parent.layerSpin.GetValue() - path.layerNr) * 0.1
 							if c < 0.4:
 								c = 0.4
 						else:
 							break
-					if path['type'] == 'move':
+					if path.type == 'move':
 						glColor3f(0,0,c)
-					if path['type'] == 'extrude':
-						if path['pathType'] == 'FILL':
+					if path.type == 'extrude':
+						if path.pathType == 'FILL':
 							glColor3f(c/2,c/2,0)
-						elif path['pathType'] == 'WALL-INNER':
+						elif path.pathType == 'WALL-INNER':
 							glColor3f(0,c,0)
 						else:
 							glColor3f(c,0,0)
-					if path['type'] == 'retract':
+					if path.type == 'retract':
 						glColor3f(0,c,c)
-					if c > 0.4 and path['type'] == 'extrude':
-						for i in xrange(0, len(path['list'])-1):
-							v0 = path['list'][i]
-							v1 = path['list'][i+1]
+					if c > 0.4 and path.type == 'extrude':
+						for i in xrange(0, len(path.list)-1):
+							v0 = path.list[i]
+							v1 = path.list[i+1]
 
 							# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
 							dist = (v0 - v1).vsize()
@@ -488,7 +487,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							v1 = v1 - normal * lineWidth
 
 							glBegin(GL_QUADS)
-							if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+							if path.pathType == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
 								glVertex3f(v0.x, v0.y, v0.z - 0.02)
 								glVertex3f(v1.x, v1.y, v1.z - 0.02)
 								glVertex3f(v3.x, v3.y, v3.z - 0.02)
@@ -511,7 +510,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 						#	glEnd()
 					else:
 						glBegin(GL_LINE_STRIP)
-						for v in path['list']:
+						for v in path.list:
 							glVertex3f(v.x, v.y, v.z)
 						glEnd()
 				glEndList()
@@ -525,7 +524,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.parent.modelDirty = False
 				multiX = int(profile.getProfileSetting('model_multiply_x'))
 				multiY = int(profile.getProfileSetting('model_multiply_y'))
-				modelSize = self.parent.triangleMesh.getCarveCornerMaximum() - self.parent.triangleMesh.getCarveCornerMinimum()
+				modelSize = self.parent.triangleMesh.getMaximum() - self.parent.triangleMesh.getMinimum()
 				glNewList(self.modelDisplayList, GL_COMPILE)
 				glPushMatrix()
 				glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
@@ -535,9 +534,9 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 							glPushMatrix()
 							glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
 							glBegin(GL_TRIANGLES)
-							v1 = self.parent.triangleMesh.vertexes[face.vertexIndexes[0]]
-							v2 = self.parent.triangleMesh.vertexes[face.vertexIndexes[1]]
-							v3 = self.parent.triangleMesh.vertexes[face.vertexIndexes[2]]
+							v1 = face.v[0]
+							v2 = face.v[1]
+							v3 = face.v[2]
 							glNormal3f(face.normal.x, face.normal.y, face.normal.z)
 							glVertex3f(v1.x, v1.y, v1.z)
 							glVertex3f(v2.x, v2.y, v2.z)
@@ -664,7 +663,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glRotate(-self.pitch, 1,0,0)
 			glRotate(self.yaw, 0,0,1)
 			if self.parent.triangleMesh != None:
-				glTranslate(0,0,-self.parent.triangleMesh.getCarveCornerMaximum().z / 2)
+				glTranslate(0,0,-self.parent.triangleMesh.getMaximum().z / 2)
 		else:
 			glTranslate(self.offsetX, self.offsetY, 0)
 

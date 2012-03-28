@@ -10,7 +10,7 @@ import __init__
 import os, sys
 import types, math
 
-from newui import profile
+from util import profile
 from fabmetheus_utilities import archive
 
 def DEFSET(setting):
@@ -36,43 +36,19 @@ def storedPercentSetting(name):
 	return lambda setting: float(profile.getProfileSetting(name)) / 100
 
 def calculateEdgeWidth(setting):
-	wallThickness = float(profile.getProfileSetting('wall_thickness'))
-	nozzleSize = float(profile.getPreference('nozzle_size'))
-	
-	if wallThickness < nozzleSize:
-		return wallThickness
-
-	lineCount = int(wallThickness / nozzleSize)
-	lineWidth = wallThickness / lineCount
-	lineWidthAlt = wallThickness / (lineCount + 1)
-	if lineWidth > nozzleSize * 1.5:
-		return lineWidthAlt
-	return lineWidth
+	return profile.calculateEdgeWidth()
 
 def calculateShells(setting):
-	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')))
+	return profile.calculateLineCount() - 1
 
 def calculateShellsBase(setting):
-	return calculateShellsImp(float(profile.getProfileSetting('wall_thickness')) + float(profile.getProfileSetting('extra_base_wall_thickness')))
-
-def calculateShellsImp(wallThickness):
-	nozzleSize = float(profile.getPreference('nozzle_size'))
+	edgeWidth = profile.calculateEdgeWidth()
+	extraWall = float(profile.getProfileSetting('extra_base_wall_thickness'))
 	
-	if wallThickness < nozzleSize:
-		return 0
-
-	lineCount = int(wallThickness / nozzleSize + 0.0001)
-	lineWidth = wallThickness / lineCount
-	lineWidthAlt = wallThickness / (lineCount + 1)
-	if lineWidth > nozzleSize * 1.5:
-		return lineCount
-	return lineCount - 1
+	return profile.calculateLineCount() - 1 + int(extraWall / edgeWidth + 0.0001)
 
 def calculateSolidLayerCount(setting):
-	layerHeight = float(profile.getProfileSetting('layer_height'))
-	solidThickness = float(profile.getProfileSetting('solid_layer_thickness'))
-	ret = int(math.ceil(solidThickness / layerHeight - 0.0001))
-	return ret
+	return profile.calculateSolidLayerCount()
 
 def firstLayerSpeedRatio(setting):
 	bottomSpeed = float(profile.getProfileSetting('bottom_layer_speed'))
@@ -129,7 +105,7 @@ def getProfileInformation():
 		},'inset': {
 			'Add_Custom_Code_for_Temperature_Reading': DEFSET,
 			'Infill_in_Direction_of_Bridge': "True",
-			'Infill_Width': storedPreference("nozzle_size"),
+			'Infill_Width': storedSetting("nozzle_size"),
 			'Loop_Order_Choice': DEFSET,
 			'Overlap_Removal_Width_over_Perimeter_Width_ratio': DEFSET,
 			'Turn_Extruder_Heater_Off_at_Shut_Down': DEFSET,
@@ -157,7 +133,7 @@ def getProfileInformation():
 			'Line': ifSettingIs('infill_type', 'Line'),
 			'Infill_Perimeter_Overlap_ratio': storedPercentSetting('fill_overlap'),
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
-			'Infill_Width': storedPreference("nozzle_size"),
+			'Infill_Width': storedSetting("nozzle_size"),
 			'Sharpest_Angle_degrees': DEFSET,
 			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
 			'Start_From_Choice': DEFSET,
@@ -434,27 +410,8 @@ def getAlterationFileLines(fileName):
 def getAlterationLines(fileName):
 	return archive.getTextLines(getAlterationFile(fileName))
 
-def getAlterationFile(fileName, allowMagicPrefix = True):
-	"Get the file from the fileName or the lowercase fileName in the alterations directories."
-	#print ('getAlterationFile:', fileName)
-	prefix = ''
-	if allowMagicPrefix:
-		if fileName == 'start.gcode':
-			#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
-			#We also set our steps per E here, if configured.
-			eSteps = float(profile.getPreference('steps_per_e'))
-			if eSteps > 0:
-				prefix += 'M92 E'+str(eSteps)+'\n'
-			temp = float(profile.getProfileSetting('print_temperature'))
-			if temp > 0:
-				prefix += 'M109 S'+str(temp)+'\n'
-		elif fileName == 'replace.csv':
-			prefix = 'M101\nM103\n'
-	alterationsDirectory = archive.getSkeinforgePath('alterations')
-	fullFilename = os.path.join(alterationsDirectory, fileName)
-	if os.path.isfile(fullFilename):
-		return prefix + archive.getFileText( fullFilename )
-	return prefix
+def getAlterationFile(fileName):
+	return profile.getAlterationFileContents(fileName)
 
 ####################################
 ## Configuration settings classes ##

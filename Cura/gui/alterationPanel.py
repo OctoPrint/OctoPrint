@@ -1,14 +1,13 @@
 import wx
 import sys,math,threading,os
 
-from fabmetheus_utilities import settings
-from fabmetheus_utilities import archive
+from util import profile
 
 class alterationPanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent,-1)
 
-		self.alterationFileList = ['start.gcode', 'end.gcode', 'cool_start.gcode', 'cool_end.gcode']
+		self.alterationFileList = ['start.gcode', 'end.gcode', 'cool_start.gcode', 'cool_end.gcode', 'replace.csv']
 		self.currentFile = None
 
 		self.textArea = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
@@ -32,11 +31,11 @@ class alterationPanel(wx.Panel):
 		self.currentFile = self.list.GetSelection()
 
 	def loadFile(self, filename):
-		self.textArea.SetValue(unicode(settings.getAlterationFile(filename, False), "utf-8"))
+		self.textArea.SetValue(unicode(profile.getAlterationFileContents(filename, False), "utf-8"))
 
 	def OnFocusLost(self, e):
 		if self.currentFile == self.list.GetSelection():
-			filename = os.path.join(archive.getSkeinforgePath('alterations'), self.alterationFileList[self.list.GetSelection()])
+			filename = profile.getAlterationFilePath(self.alterationFileList[self.list.GetSelection()])
 			f = open(filename, "wb")
 			f.write(self.textArea.GetValue().encode("utf-8"))
 			f.close()

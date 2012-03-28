@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import os, glob, wx, threading
+import os, glob, wx, threading, sys
 
 from serial import Serial
 
@@ -9,7 +9,7 @@ from avr_isp import stk500v2
 from avr_isp import ispBase
 from avr_isp import intelHex
 
-from newui import profile
+from util import profile
 
 try:
 	import _winreg
