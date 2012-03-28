@@ -261,7 +261,13 @@ class mainWindow(configBase.configWindowBase):
 		self.progressPanelList.append(spp)
 	
 	def OnPrint(self, e):
-		printWindow.printWindow()
+		if self.filename == None:
+			wx.MessageBox('You need to load a file before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			return
+		if not os.path.exists(self.filename[: self.filename.rfind('.')] + "_export.gcode"):
+			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			return
+		printWindow.printFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
 
 	def OnExpertOpen(self, e):
 		acw = advancedConfig.advancedConfigWindow()
