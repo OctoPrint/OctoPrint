@@ -9,17 +9,15 @@ import os
 from util import util3d
 
 class gcodePath():
-	def __init__(self, newType, pathType, layerNr, startPoint):
+	def __init__(self, newType, pathType, startPoint):
 		self.type = newType
 		self.pathType = pathType
 		self.list = [startPoint]
-		self.layerNr = layerNr
 
 class gcode():
 	def __init__(self):
 		self.regMatch = {}
-		self.layerCount = 0
-		self.pathList = []
+		self.layerList = []
 		self.extrusionAmount = 0
 		self.totalMoveTimeMinute = 0
 		self.progressCallback = None
@@ -34,21 +32,22 @@ class gcode():
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
 		totalMoveTimeMinute = 0.0
-		pathList = []
 		scale = 1.0
 		posAbs = True
 		feedRate = 3600
 		pathType = 'CUSTOM';
-		layerNr = 0;	#Note layer 0 will be the start code.
 		startCodeDone = False
-		currentPath = gcodePath('move', pathType, layerNr, pos.copy())
+		currentLayer = []
+		currentPath = gcodePath('move', pathType, pos.copy())
 		currentPath.list[0].e = totalExtrusion
-		pathList.append(currentPath)
+		currentLayer.append(currentPath)
 		for line in gcodeFile:
 			if filePos != gcodeFile.tell():
 				filePos = gcodeFile.tell()
 				if self.progressCallback != None:
 					self.progressCallback(float(filePos) / float(fileSize))
+			
+			#Parse Cura_SF comments
 			if line.startswith(';TYPE:'):
 				pathType = line[6:].strip()
 				if pathType != "CUSTOM":
@@ -91,8 +90,10 @@ class gcode():
 							pos.z = z * scale
 						else:
 							pos.z += z * scale
+						#Check if we have a new layer.
 						if oldPos.z != pos.z and startCodeDone:
-							layerNr += 1
+							self.layerList.append(currentLayer)
+							currentLayer = []
 					if f is not None:
 						feedRate = f
 					if x is not None or y is not None or z is not None:
@@ -116,8 +117,8 @@ class gcode():
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
 					if currentPath.type != moveType or currentPath.pathType != pathType:
-						currentPath = gcodePath(moveType, pathType, layerNr, currentPath.list[-1])
-						pathList.append(currentPath)
+						currentPath = gcodePath(moveType, pathType, currentPath.list[-1])
+						currentLayer.append(currentPath)
 					newPos = pos.copy()
 					newPos.e = totalExtrusion
 					currentPath.list.append(newPos)
@@ -183,8 +184,7 @@ class gcode():
 					else:
 						print "Unknown M code:" + str(M)
 		gcodeFile.close()
-		self.layerCount = layerNr
-		self.pathList = pathList
+		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
 		self.totalMoveTimeMinute = totalMoveTimeMinute
 		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
