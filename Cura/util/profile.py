@@ -61,6 +61,7 @@ profileDefaultSettings = {
 }
 preferencesDefaultSettings = {
 	'wizardDone': 'False',
+	'startMode': 'Simple',
 	'lastFile': 'None',
 	'machine_width': '205',
 	'machine_depth': '205',

@@ -37,7 +37,7 @@ class previewPanel(wx.Panel):
 		self.loadingProgressAmount = 0
 		self.loadThread = None
 		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
-		self.machineCenter = util3d.Vector3(0, 0, 0)
+		self.machineCenter = util3d.Vector3(float(profile.getProfileSetting('machine_center_x')), float(profile.getProfileSetting('machine_center_y')), 0)
 		
 		self.toolbar = wx.ToolBar( self, -1 )
 		self.toolbar.SetToolBitmapSize( ( 21, 21 ) )
