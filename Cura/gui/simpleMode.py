@@ -220,6 +220,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('layer_height', '0.3')
 			put('fill_density', '10')
 			put('print_speed', '80')
+			put('bottom_layer_speed', '40')
 		elif self.printTypeHigh.GetValue():
 			put('wall_thickness', nozzle_size * 3.0)
 			put('layer_height', '0.1')
