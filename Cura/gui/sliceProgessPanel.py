@@ -57,7 +57,8 @@ class sliceProgessPanel(wx.Panel):
 		self.prevStep = 'start'
 		self.totalDoneFactor = 0.0
 		self.startTime = time.time()
-		self.thread = WorkerThread(self, filename)
+		p = subprocess.Popen(sliceRun.getSliceCommand(self.filename), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		self.thread = WorkerThread(self, filename, p)
 	
 	def OnAbort(self, e):
 		if self.abort:
@@ -108,14 +109,15 @@ class sliceProgessPanel(wx.Panel):
 		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
 
 class WorkerThread(threading.Thread):
-	def __init__(self, notifyWindow, filename):
+	def __init__(self, notifyWindow, filename, process):
 		threading.Thread.__init__(self)
 		self.filename = filename
 		self.notifyWindow = notifyWindow
+		self.process = process
 		self.start()
 
 	def run(self):
-		p = subprocess.Popen(sliceRun.getSliceCommand(self.filename), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		p = self.process
 		line = p.stdout.readline()
 		maxValue = 1
 		self.progressLog = []

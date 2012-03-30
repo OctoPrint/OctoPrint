@@ -265,8 +265,6 @@ class mainWindow(configBase.configWindowBase):
 	def OnSlice(self, e):
 		if self.filename == None:
 			return
-		profile.saveGlobalProfile(profile.getDefaultProfilePath())
-		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)

@@ -162,6 +162,9 @@ class simpleModeWindow(configBase.configWindowBase):
 	def OnSlice(self, e):
 		if self.filename == None:
 			return
+		#save the current profile so we can put it back latter
+		oldProfile = profile.getGlobalProfileString()
+		
 		put = profile.putProfileSetting
 		get = profile.getProfileSetting
 
@@ -220,6 +223,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('layer_height', '0.3')
 			put('fill_density', '10')
 			put('print_speed', '80')
+			put('bottom_layer_speed', '40')
 		elif self.printTypeHigh.GetValue():
 			put('wall_thickness', nozzle_size * 3.0)
 			put('layer_height', '0.1')
@@ -240,11 +244,11 @@ class simpleModeWindow(configBase.configWindowBase):
 		if self.printMaterialPLA.GetValue():
 			put('filament_density', '1.00')
 			put('enable_raft', 'False')
+			put('skirt_line_count', '1')
 		else:
 			put('filament_density', '0.85')
 			put('enable_raft', 'True')
-		
-		profile.saveGlobalProfile(profile.getDefaultProfilePath())
+			put('skirt_line_count', '0')
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
@@ -254,6 +258,9 @@ class simpleModeWindow(configBase.configWindowBase):
 		newSize.IncBy(0, spp.GetSize().GetHeight())
 		self.SetSize(newSize)
 		self.progressPanelList.append(spp)
+		
+		#Restore the old profile.
+		profile.loadGlobalProfileFromString(oldProfile)
 	
 	def OnPrint(self, e):
 		printWindow.printWindow()
@@ -283,5 +290,4 @@ class simpleModeWindow(configBase.configWindowBase):
 		self.Close()
 	
 	def OnClose(self, e):
-		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		self.Destroy()

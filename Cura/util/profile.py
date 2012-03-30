@@ -85,10 +85,23 @@ def saveGlobalProfile(filename):
 	#Save the current profile to an ini file
 	globalProfileParser.write(open(filename, 'w'))
 
-def resetGlobalProfile():
-	#Create an empty profile with no settings, so everything gets default settings.
+def loadGlobalProfileFromString(options):
 	global globalProfileParser
 	globalProfileParser = ConfigParser.ConfigParser()
+	globalProfileParser.add_section('profile')
+	for option in options.split('#'):
+		(key, value) = option.split('=', 1)
+		globalProfileParser.set('profile', key, value)
+
+def getGlobalProfileString():
+	global globalProfileParser
+	if not globals().has_key('globalProfileParser'):
+		loadGlobalProfile(getDefaultProfilePath())
+	
+	ret = []
+	for key in globalProfileParser.options('profile'):
+		ret.append(key + "=" + globalProfileParser.get('profile', key))
+	return '#'.join(ret)
 
 def getProfileSetting(name):
 	if name in profileDefaultSettings:
