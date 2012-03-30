@@ -103,7 +103,7 @@ def getProfileInformation():
 			'Activate_Widen': DEFSET,
 			'Widen_Width_over_Edge_Width_ratio': DEFSET,
 		},'inset': {
-			'Add_Custom_Code_for_Temperature_Reading': DEFSET,
+			'Add_Custom_Code_for_Temperature_Reading': "False",
 			'Infill_in_Direction_of_Bridge': "True",
 			'Infill_Width': storedSetting("nozzle_size"),
 			'Loop_Order_Choice': DEFSET,
@@ -265,8 +265,8 @@ def getProfileInformation():
 			'Name_of_Cool_End_File': DEFSET,
 			'Name_of_Cool_Start_File': DEFSET,
 			'Orbital_Outset_millimeters': DEFSET,
-			'Turn_Fan_On_at_Beginning': DEFSET,
-			'Turn_Fan_Off_at_Ending': DEFSET,
+			'Turn_Fan_On_at_Beginning': "False",
+			'Turn_Fan_Off_at_Ending': "False",
 			'Minimum_feed_rate_mm/s': storedSetting("cool_min_feedrate"),
 		},'hop': {
 			'Activate_Hop': "False",
