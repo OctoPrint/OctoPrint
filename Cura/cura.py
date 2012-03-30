@@ -16,6 +16,7 @@ import sys
 import platform
 from optparse import OptionParser
 
+from util import profile
 from util import sliceRun
 
 __author__ = 'Daid'
@@ -43,9 +44,11 @@ Art of Illusion <http://www.artofillusion.org/>"""
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 def main():
-	parser = OptionParser()
+	parser = OptionParser(usage="usage: %prog [options] <filename>.stl")
+	parser.add_option("-p", "--profile", action="store", type="string", dest="profile", help="Use these profile settings instead of loading current_profile.ini")
 	(options, args) = parser.parse_args()
-	sys.argv = [sys.argv[0]] + args
+	if options.profile != None:
+		profile.loadGlobalProfileFromString(options.profile)
 	if len( args ) > 0:
 		sliceRun.runSlice(args)
 	else:

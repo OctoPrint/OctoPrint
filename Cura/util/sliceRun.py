@@ -58,7 +58,7 @@ def runSlice(fileNames):
 			print "* Failed to find pypy, so sliced with python!  *"
 			print "************************************************"
 		else:
-			subprocess.call([pypyExe, os.path.join(sys.path[0], sys.argv[0]), fileName])
+			subprocess.call([pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString(), fileName])
 
 def getSliceCommand(filename):
 	if profile.getPreference('slicer').startswith('Slic3r'):
@@ -116,5 +116,5 @@ def getSliceCommand(filename):
 		pypyExe = getPyPyExe()
 		if pypyExe == False:
 			pypyExe = sys.executable
-		return [pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), filename]
+		return [pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString(), filename]
 
