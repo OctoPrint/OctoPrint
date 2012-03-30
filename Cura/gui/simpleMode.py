@@ -240,9 +240,11 @@ class simpleModeWindow(configBase.configWindowBase):
 		if self.printMaterialPLA.GetValue():
 			put('filament_density', '1.00')
 			put('enable_raft', 'False')
+			put('skirt_line_count', '1')
 		else:
 			put('filament_density', '0.85')
 			put('enable_raft', 'True')
+			put('skirt_line_count', '0')
 		
 		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		
