@@ -25,6 +25,7 @@ class alterationPanel(wx.Panel):
 		self.SetSizer(sizer)
 		
 		self.loadFile(self.alterationFileList[self.list.GetSelection()])
+		self.currentFile = self.list.GetSelection()
 
 	def OnSelect(self, e):
 		self.loadFile(self.alterationFileList[self.list.GetSelection()])
