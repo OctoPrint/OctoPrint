@@ -471,7 +471,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 								# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
 								dist = (v0 - v1).vsize()
 								if dist > 0 and layerThickness > 0:
-									extrusionMMperDist = (v1.e - v0.e) / (v0 - v1).vsize()
+									extrusionMMperDist = (v1.e - v0.e) / dist
 									lineWidth = extrusionMMperDist * filamentArea / layerThickness / 2
 
 								normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
