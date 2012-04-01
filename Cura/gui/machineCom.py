@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import os, glob, wx, threading, sys
+import os, glob, wx, threading, sys, time
 
 from serial import Serial
 
@@ -108,7 +108,7 @@ class MachineCom():
 		if port == None:
 			port = profile.getPreference('serial_port')
 		if baudrate == None:
-			baudrate = profile.getPreference('serial_baud')
+			baudrate = int(profile.getPreference('serial_baud'))
 		self.serial = None
 		if port == 'AUTO':
 			programmer = stk500v2.Stk500v2()
@@ -116,6 +116,7 @@ class MachineCom():
 				try:
 					programmer.connect(port)
 					programmer.close()
+					print "Connecting to: %s %i" % (port, baudrate)
 					self.serial = Serial(port, baudrate, timeout=5)
 					break
 				except ispBase.IspError:
@@ -131,9 +132,10 @@ class MachineCom():
 
 	def readline(self):
 		if self.serial == None:
-			return ''
+			return None
 		ret = self.serial.readline()
-		print "Recv: " + ret.rstrip()
+		if ret != '':
+			print "Recv: " + ret.rstrip()
 		return ret
 	
 	def close(self):
@@ -144,5 +146,6 @@ class MachineCom():
 	def sendCommand(self, cmd):
 		if self.serial == None:
 			return
+		print 'Send: ' + cmd
 		self.serial.write(cmd + '\n')
 
