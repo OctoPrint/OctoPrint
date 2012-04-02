@@ -135,3 +135,4 @@ class printWindow(wx.Frame):
 						if "rs" in line:
 							lineNr=int(line.split()[1])
 					self.printIdx = lineNr
+					#we should actually resend the line here, but we also get an "ok" for each error from Marlin. And thus we'll resend on the OK.
