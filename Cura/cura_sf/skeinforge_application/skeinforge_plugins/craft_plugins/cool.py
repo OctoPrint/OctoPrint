@@ -163,6 +163,8 @@ class CoolRepository:
 		self.executeTitle = 'Cool'
 		
 		self.minimumFeedRate = settings.FloatSpin().getFromValue(0.0, 'Minimum feed rate (mm/s):', self, 10.0, 5.0)
+		self.fanTurnOnLayerNr = settings.IntSpin().getFromValue(0, 'Fan on at layer:', self, 100, 0)
+		self.fanSpeed = settings.IntSpin().getFromValue(0, 'Fan speed (%):', self, 100, 100)
 
 	def execute(self):
 		'Cool button has been clicked.'
@@ -333,8 +335,6 @@ class CoolSkein:
 				self.oldFlowRate = float(splitLine[1][1 :])
 			elif firstWord == '(<edgeWidth>':
 				self.edgeWidth = float(splitLine[1])
-				if self.repository.turnFanOnAtBeginning.value:
-					self.distanceFeedRate.addLine('M106')
 			elif firstWord == '(</extruderInitialization>)':
 				self.distanceFeedRate.addTagBracketedProcedure('cool')
 				return
@@ -371,6 +371,8 @@ class CoolSkein:
 		elif firstWord == '(<layer>':
 			self.layerCount.printProgressIncrement('cool')
 			self.distanceFeedRate.addLine(line)
+			if self.repository.turnFanOnAtBeginning.value and self.repository.fanTurnOnLayerNr.value == self.layerCount.layerIndex:
+				self.distanceFeedRate.addLine('M106 S%d' % (self.repository.fanSpeed.value * 255 / 100))
 			self.distanceFeedRate.addLinesSetAbsoluteDistanceMode(self.coolStartLines)
 			layerTime = self.getLayerTime()
 			remainingOrbitTime = max(self.repository.minimumLayerTime.value - layerTime, 0.0)

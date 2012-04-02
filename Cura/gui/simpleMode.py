@@ -189,6 +189,9 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('max_z_speed', '1.0')
 		put('bottom_layer_speed', '25')
 		put('cool_min_layer_time', '10')
+		put('fan_enabled', 'True')
+		put('fan_layer', '0')
+		put('fan_speed', '100')
 		#put('model_scale', '1.0')
 		#put('flip_x', 'False')
 		#put('flip_y', 'False')
@@ -251,6 +254,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('filament_density', '0.85')
 			put('enable_raft', 'True')
 			put('skirt_line_count', '0')
+			put('fan_layer', '1')
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
