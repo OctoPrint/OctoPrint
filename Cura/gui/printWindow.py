@@ -4,6 +4,7 @@ import __init__
 import wx, threading
 
 from gui import machineCom
+from gui import icon
 
 printWindowHandle = None
 
@@ -25,6 +26,8 @@ class printWindow(wx.Frame):
 		self.printIdx = None
 		self.bufferLineCount = 4
 		self.sendCnt = 0
+
+		self.SetIcon(icon.getMainIcon())
 		
 		self.SetSizer(wx.BoxSizer())
 		self.panel = wx.Panel(self)

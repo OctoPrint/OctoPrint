@@ -14,6 +14,7 @@ from gui import configWizard
 from gui import machineCom
 from gui import printWindow
 from gui import simpleMode
+from gui import icon
 from util import profile
 
 def main():
@@ -34,7 +35,7 @@ class mainWindow(configBase.configWindowBase):
 	def __init__(self):
 		super(mainWindow, self).__init__(title='Cura')
 		
-		wx.EVT_CLOSE(self, self.OnClose)
+		self.SetIcon(icon.getMainIcon())
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()

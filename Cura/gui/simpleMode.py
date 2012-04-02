@@ -11,6 +11,7 @@ from gui import preferencesDialog
 from gui import configWizard
 from gui import machineCom
 from gui import printWindow
+from gui import icon
 from util import profile
 
 class simpleModeWindow(configBase.configWindowBase):
@@ -19,6 +20,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		super(simpleModeWindow, self).__init__(title='Cura - Simple mode')
 		
 		wx.EVT_CLOSE(self, self.OnClose)
+		self.SetIcon(icon.getMainIcon())
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
