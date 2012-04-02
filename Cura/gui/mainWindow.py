@@ -14,6 +14,7 @@ from gui import configWizard
 from gui import machineCom
 from gui import printWindow
 from gui import simpleMode
+from gui import icon
 from util import profile
 
 def main():
@@ -35,6 +36,7 @@ class mainWindow(configBase.configWindowBase):
 		super(mainWindow, self).__init__(title='Cura')
 		
 		wx.EVT_CLOSE(self, self.OnClose)
+		self.SetIcon(icon.getMainIcon())
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
@@ -167,6 +169,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Cool")
 		c = configBase.SettingRow(right, "Minimal layer time (sec)", 'cool_min_layer_time', '10', 'Minimum time spend in a layer, gives the layer time to cool down before the next layer is put on top. If the layer will be placed down too fast the printer will slow down to make sure it has spend atleast this amount of seconds printing this layer.')
 		validators.validFloat(c, 0.0)
+		c = configBase.SettingRow(right, "Enable cooling fan", 'fan_enabled', True, 'Enable the cooling fan during the print. The extra cooling from the cooling fan is essensial during faster prints.')
 
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
@@ -309,3 +312,4 @@ class mainWindow(configBase.configWindowBase):
 	def OnClose(self, e):
 		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		self.Destroy()
+

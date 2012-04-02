@@ -4,8 +4,6 @@ G90        ;absolute positioning
 G28 X0 Y0  ;move X/Y to min endstops
 G28 Z0     ;move Z to min endstops
 
-M106       ;turn on fan
-
 ; if your prints start too high, try changing the Z0.0 below
 ; to Z1.0 - the number after the Z is the actual, physical
 ; height of the nozzle in mm. This can take some messing around

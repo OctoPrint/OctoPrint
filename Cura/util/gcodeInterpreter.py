@@ -23,9 +23,16 @@ class gcode():
 		self.progressCallback = None
 	
 	def load(self, filename):
-		fileSize = os.stat(filename).st_size
-		filePos = 0
+		self._fileSize = os.stat(filename).st_size
 		gcodeFile = open(filename, 'r')
+		self._load(gcodeFile)
+		gcodeFile.close()
+	
+	def loadList(self, l):
+		self._load(l)
+	
+	def _load(self, gcodeFile):
+		filePos = 0
 		pos = util3d.Vector3()
 		posOffset = util3d.Vector3()
 		currentE = 0.0
@@ -42,10 +49,10 @@ class gcode():
 		currentPath.list[0].e = totalExtrusion
 		currentLayer.append(currentPath)
 		for line in gcodeFile:
-			if filePos != gcodeFile.tell():
-				filePos = gcodeFile.tell()
-				if self.progressCallback != None:
-					self.progressCallback(float(filePos) / float(fileSize))
+			if self.progressCallback != None:
+				if filePos != gcodeFile.tell():
+					filePos = gcodeFile.tell()
+					self.progressCallback(float(filePos) / float(self._fileSize))
 			
 			#Parse Cura_SF comments
 			if line.startswith(';TYPE:'):
@@ -183,7 +190,6 @@ class gcode():
 						pass
 					else:
 						print "Unknown M code:" + str(M)
-		gcodeFile.close()
 		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
 		self.totalMoveTimeMinute = totalMoveTimeMinute

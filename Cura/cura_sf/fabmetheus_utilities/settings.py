@@ -265,9 +265,11 @@ def getProfileInformation():
 			'Name_of_Cool_End_File': DEFSET,
 			'Name_of_Cool_Start_File': DEFSET,
 			'Orbital_Outset_millimeters': DEFSET,
-			'Turn_Fan_On_at_Beginning': "False",
+			'Turn_Fan_On_at_Beginning': storedSetting("fan_enabled"),
 			'Turn_Fan_Off_at_Ending': "False",
 			'Minimum_feed_rate_mm/s': storedSetting("cool_min_feedrate"),
+			'Fan_on_at_layer': storedSetting('fan_layer'),
+			'Fan_speed_%': storedSetting('fan_speed'),
 		},'hop': {
 			'Activate_Hop': "False",
 			'Hop_Over_Layer_Thickness_ratio': DEFSET,
