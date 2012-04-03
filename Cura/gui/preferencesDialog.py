@@ -25,6 +25,10 @@ class preferencesDialog(configBase.configWindowBase):
 		c = configBase.SettingRow(left, 'Machine height (mm)', 'machine_height', '200', 'Size of the machine in mm', type = 'preference')
 		validators.validFloat(c, 10.0)
 
+		configBase.TitleRow(left, 'Filament settings')
+		c = configBase.SettingRow(left, 'Filament density (kg/m3)', 'filament_density', '1300', 'Weight of the filament per m3. Around 1300 for PLA. And around 1040 for ABS. This value is used to estimate the weight if the filament used for the print.', type = 'preference')
+		validators.validFloat(c, 500.0, 3000.0)
+		
 		configBase.TitleRow(left, 'Communication settings')
 		c = configBase.SettingRow(left, 'Serial port', 'serial_port', ['AUTO'] + machineCom.serialList(), 'Serial port to use for communication with the printer', type = 'preference')
 		c = configBase.SettingRow(left, 'Baudrate', 'serial_baud', '250000', 'Speed of the serial port communication\nNeeds to match your firmware settings\nCommon values are 250000, 115200, 57600', type = 'preference')

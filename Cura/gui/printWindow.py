@@ -24,6 +24,7 @@ class printWindow(wx.Frame):
 		self.machineCom = None
 		self.machineConnected = False
 		self.thread = None
+		self.gcode = None
 		self.gcodeList = None
 		self.printIdx = None
 		self.bufferLineCount = 4
@@ -78,8 +79,13 @@ class printWindow(wx.Frame):
 	
 	def UpdateProgress(self):
 		status = ""
+		if self.gcode != None:
+			status += "Filament: %.2fm %.2fg\n" % (self.gcode.extrusionAmount / 1000, self.gcode.calculateWeight() * 1000)
+			status += "Print time: %02d:%02d\n" % (int(self.gcode.totalMoveTimeMinute / 60), int(self.gcode.totalMoveTimeMinute % 60))
 		if self.printIdx == None:
 			self.progress.SetValue(0)
+			if self.gcodeList != None:
+				status += 'Line: -/%d\n' % (len(self.gcodeList))
 		else:
 			self.progress.SetValue(self.printIdx)
 			status += 'Line: %d/%d\n' % (self.printIdx, len(self.gcodeList))
@@ -131,19 +137,19 @@ class printWindow(wx.Frame):
 				gcodeList.append(line)
 		gcode = gcodeInterpreter.gcode()
 		gcode.loadList(gcodeList)
-		print gcode.extrusionAmount
-		print gcode.totalMoveTimeMinute
 		print "Loaded: %s (%d)" % (filename, len(gcodeList))
 		self.progress.SetRange(len(gcodeList))
+		self.gcode = gcode
 		self.gcodeList = gcodeList
 		self.UpdateButtonStates()
 		self.UpdateProgress()
 
 	def sendLine(self, lineNr):
 		if lineNr >= len(self.gcodeList):
-			return
+			return False
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, self.gcodeList[lineNr])))
 		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, self.gcodeList[lineNr], checksum))
+		return True
 
 	def PrinterMonitor(self):
 		skipCount = 0
@@ -151,7 +157,7 @@ class printWindow(wx.Frame):
 			line = self.machineCom.readline()
 			if line == None:
 				self.machineConnected = False
-				wx.CallAfter(self.UpdateButtonState)
+				wx.CallAfter(self.UpdateButtonStates)
 				return
 			if self.machineConnected:
 				while self.sendCnt > 0:
@@ -160,14 +166,14 @@ class printWindow(wx.Frame):
 					self.sendCnt -= 1
 			elif line.startswith("start"):
 				self.machineConnected = True
-				wx.CallAfter(self.UpdateButtonState)
+				wx.CallAfter(self.UpdateButtonStates)
 			if self.printIdx != None:
 				if line.startswith("ok"):
 					if skipCount > 0:
 						skipCount -= 1
 					else:
-						self.sendLine(self.printIdx)
-						self.printIdx += 1
+						if self.sendLine(self.printIdx):
+							self.printIdx += 1
 						wx.CallAfter(self.UpdateProgress)
 				elif "resend" in line.lower() or "rs" in line:
 					try:
@@ -177,3 +183,4 @@ class printWindow(wx.Frame):
 							lineNr=int(line.split()[1])
 					self.printIdx = lineNr
 					#we should actually resend the line here, but we also get an "ok" for each error from Marlin. And thus we'll resend on the OK.
+
