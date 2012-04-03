@@ -110,7 +110,6 @@ class VirtualPrinter():
 	def write(self, data):
 		if self.readList == None:
 			return
-		time.sleep(0.001)
 		print "Send: %s" % (data.rstrip())
 		self.readList.append("ok\n")
 
@@ -121,6 +120,7 @@ class VirtualPrinter():
 			time.sleep(0.1)
 			if self.readList == None:
 				return ''
+		time.sleep(0.001)
 		print "Recv: %s" % (self.readList[0].rstrip())
 		return self.readList.pop(0)
 	
