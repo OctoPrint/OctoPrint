@@ -29,7 +29,7 @@ class printWindow(wx.Frame):
 		self.bufferLineCount = 4
 		self.sendCnt = 0
 
-		self.SetIcon(icon.getMainIcon())
+		#self.SetIcon(icon.getMainIcon())
 		
 		self.SetSizer(wx.BoxSizer())
 		self.panel = wx.Panel(self)

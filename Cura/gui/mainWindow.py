@@ -36,7 +36,7 @@ class mainWindow(configBase.configWindowBase):
 		super(mainWindow, self).__init__(title='Cura')
 		
 		wx.EVT_CLOSE(self, self.OnClose)
-		self.SetIcon(icon.getMainIcon())
+		#self.SetIcon(icon.getMainIcon())
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
