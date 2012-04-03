@@ -41,17 +41,17 @@ class printWindow(wx.Frame):
 		
 		sb = wx.StaticBox(self.panel, label="Statistics")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
-		self.statsText = wx.StaticText(self.panel, -1, "Filament: #.##m #.##g\nPrint time: ##:##")
+		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
 		self.sizer.Add(boxsizer, pos=(0,0), span=(4,1), flag=wx.EXPAND)
 		
-		#self.connectButton = wx.Button(self.panel, -1, 'Connect')
+		self.connectButton = wx.Button(self.panel, -1, 'Connect')
 		#self.loadButton = wx.Button(self.panel, -1, 'Load GCode')
 		self.printButton = wx.Button(self.panel, -1, 'Print GCode')
 		self.cancelButton = wx.Button(self.panel, -1, 'Cancel print')
 		self.progress = wx.Gauge(self.panel, -1)
-		#self.sizer.Add(self.connectButton, pos=(0,1))
+		self.sizer.Add(self.connectButton, pos=(0,1))
 		#self.sizer.Add(self.loadButton, pos=(1,1))
 		self.sizer.Add(self.printButton, pos=(2,1))
 		self.sizer.Add(self.cancelButton, pos=(3,1))
@@ -60,7 +60,7 @@ class printWindow(wx.Frame):
 		self.sizer.AddGrowableCol(0)
 		
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
-		#self.connectButton.Bind(wx.EVT_BUTTON, self.OnConnect)
+		self.connectButton.Bind(wx.EVT_BUTTON, self.OnConnect)
 		#self.loadButton.Bind(wx.EVT_BUTTON, self.OnLoad)
 		self.printButton.Bind(wx.EVT_BUTTON, self.OnPrint)
 		self.cancelButton.Bind(wx.EVT_BUTTON, self.OnCancel)
@@ -73,7 +73,7 @@ class printWindow(wx.Frame):
 		self.UpdateProgress()
 	
 	def UpdateButtonStates(self):
-		#self.connectButton.Enable(not self.machineConnected)
+		self.connectButton.Enable(not self.machineConnected)
 		#self.loadButton.Enable(self.printIdx == None)
 		self.printButton.Enable(self.machineConnected and self.gcodeList != None and self.printIdx == None)
 		self.cancelButton.Enable(self.printIdx != None)

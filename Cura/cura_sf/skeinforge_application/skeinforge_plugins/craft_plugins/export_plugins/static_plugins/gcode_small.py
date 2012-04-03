@@ -126,6 +126,8 @@ class GcodeSmallSkein:
 			self.output.write(';TYPE:FILL\n');
 		elif line.startswith('(<alteration>'):
 			self.output.write(';TYPE:CUSTOM\n');
+		elif line.startswith('(<supportLayer>'):
+			self.output.write(';TYPE:SUPPORT\n');
 		elif line.startswith('(<layer>'):
 			self.output.write(';LAYER:%d\n' % (self.layerNr));
 			self.layerNr += 1
