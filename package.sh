@@ -16,7 +16,7 @@ BUILD_TARGET=${1:-win32}
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=NewUI-Beta4
+BUILD_NAME=RC1
 TARGET_DIR=${BUILD_TARGET}-Cura-${BUILD_NAME}
 
 ##Which versions of external programs to use
@@ -159,6 +159,12 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		cd ${TARGET_DIR}
 		7z a ../${TARGET_DIR}.zip *
 		cd ..
+		
+		if [ ! -z `which wine` ]; then
+			#if we have wine, try to run our nsis script.
+			ln -sf `pwd`/${TARGET_DIR} scripts/win32/dist
+			wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe /DVERSION=${BUILD_NAME} scripts/win32/installer.nsi 
+		fi
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
 		$TAR cfp - ${TARGET_DIR} | gzip --best -c > ${TARGET_DIR}.tar.gz
