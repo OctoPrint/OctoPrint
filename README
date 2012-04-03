@@ -1,5 +1,5 @@
-For documentation check: https://github.com/daid/SkeinPyPy/wiki
-For downloads check: https://github.com/daid/SkeinPyPy/downloads
+For documentation check: https://github.com/daid/Cura/wiki
+For downloads check: https://github.com/daid/Cura/downloads
 
 This package includes two programs:
 
@@ -7,11 +7,11 @@ Pronterface:
 
     An application for both manually controlling and automatically feeding gcode to a 3D printer.
 
-SkeinPyPy:
+Cura:
 
-   A easy to use program for slicing STL files using SkeinForge. SkeinPyPy can also visualize the 3D models in a variety of ways.
+   A easy to use program for slicing STL files using SkeinForge. Cura can also visualize the 3D models in a variety of ways.
 
-   On first run, SkeinPyPy will ask to go through a set of calibration steps that will perform a series of operations on your 3D printer. One of those steps involves extruding a bit of filament where the filament is initially nearly fully extracted.  As such, it you will probably need to run Pronterface first, heat up the extruder enough to be able to extract the filament and then use the Pronterface interface to reverse the extruder motor until the filament is at the right position (specifically, until the filament end is even with where the Bowden tube leaves the extuder motor assembly, on an Ultimaker).
+   On first run, Cura will ask to go through a set of calibration steps that will perform a series of operations on your 3D printer. One of those steps involves extruding a bit of filament where the filament is initially nearly fully extracted.  As such, it you will probably need to run Pronterface first, heat up the extruder enough to be able to extract the filament and then use the Pronterface interface to reverse the extruder motor until the filament is at the right position (specifically, until the filament end is even with where the Bowden tube leaves the extuder motor assembly, on an Ultimaker).
 
 ========
 BUILDING
@@ -47,12 +47,12 @@ Double-click skeinforge.bat and Printrun.bat.
 Mac OS X & Linux
 ----------------
 
-Once built, the two apps -- Pronterface and SkeinPyPy -- must be started from the command line (for now):
+Once built, the two apps -- Pronterface and Cura -- must be started from the command line (for now):
 
     # open a new terminal window and....
-    cd osx64-SkeinPyPy-NewUI-Beta4
+    cd osx64-Cura-NewUI-Beta4
     ./pronterface.sh &
-    ./skeinpypy.sh &
+    ./Cura.sh &
 
 This will start both applications with their console logging output directed into the terminal window.
 

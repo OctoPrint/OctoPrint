@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script is to package the SkeinPyPy package for Windows/Linux and OSx
+# This script is to package the Cura package for Windows/Linux and OSx
 # This script should run under Linux and OSx, as well as Windows with Cygwin.
 
 #############################
@@ -17,7 +17,7 @@ BUILD_TARGET=${1:-win32}
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
 BUILD_NAME=NewUI-Beta4
-TARGET_DIR=${BUILD_TARGET}-SkeinPyPy-${BUILD_NAME}
+TARGET_DIR=${BUILD_TARGET}-Cura-${BUILD_NAME}
 
 ##Which versions of external programs to use
 PYPY_VERSION=c-jit-latest
@@ -136,7 +136,7 @@ mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
 #add Skeinforge
-cp -a SkeinPyPy ${TARGET_DIR}/SkeinPyPy
+cp -a Cura ${TARGET_DIR}/Cura
 
 #add printrun
 cp -a Printrun ${TARGET_DIR}/Printrun
