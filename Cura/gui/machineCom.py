@@ -103,6 +103,30 @@ class InstallFirmware(wx.Dialog):
 	def OnClose(self, e):
 		self.Destroy()
 
+class VirtualPrinter():
+	def __init__(self):
+		self.readList = ['start\n']
+	
+	def write(self, data):
+		if self.readList == None:
+			return
+		print "Send: %s" % (data.rstrip())
+		self.readList.append("ok\n")
+
+	def readline(self):
+		if self.readList == None:
+			return ''
+		while len(self.readList) < 1:
+			time.sleep(0.1)
+			if self.readList == None:
+				return ''
+		time.sleep(0.001)
+		print "Recv: %s" % (self.readList[0].rstrip())
+		return self.readList.pop(0)
+	
+	def close(self):
+		self.readList = None
+
 class MachineCom():
 	def __init__(self, port = None, baudrate = None):
 		if port == None:
@@ -124,6 +148,8 @@ class MachineCom():
 				except:
 					print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 			programmer.close()
+		elif port == 'VIRTUAL':
+			self.serial = VirtualPrinter()
 		else:
 			try:
 				self.serial = Serial(port, baudrate, timeout=5)
@@ -134,8 +160,8 @@ class MachineCom():
 		if self.serial == None:
 			return None
 		ret = self.serial.readline()
-		if ret != '':
-			print "Recv: " + ret.rstrip()
+		#if ret != '':
+		#	print "Recv: " + ret.rstrip()
 		return ret
 	
 	def close(self):
@@ -146,6 +172,6 @@ class MachineCom():
 	def sendCommand(self, cmd):
 		if self.serial == None:
 			return
-		print 'Send: ' + cmd
+		#print 'Send: ' + cmd
 		self.serial.write(cmd + '\n')
 

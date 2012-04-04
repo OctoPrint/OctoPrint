@@ -13,6 +13,7 @@ def printFile(filename):
 	global printWindowHandle
 	if printWindowHandle == None:
 		printWindowHandle = printWindow()
+		printWindowHandle.OnConnect(None)
 	printWindowHandle.Show(True)
 	printWindowHandle.Raise()
 	printWindowHandle.LoadGCodeFile(filename)
@@ -24,12 +25,13 @@ class printWindow(wx.Frame):
 		self.machineCom = None
 		self.machineConnected = False
 		self.thread = None
+		self.gcode = None
 		self.gcodeList = None
 		self.printIdx = None
 		self.bufferLineCount = 4
 		self.sendCnt = 0
 
-		self.SetIcon(icon.getMainIcon())
+		#self.SetIcon(icon.getMainIcon())
 		
 		self.SetSizer(wx.BoxSizer())
 		self.panel = wx.Panel(self)
@@ -39,18 +41,18 @@ class printWindow(wx.Frame):
 		
 		sb = wx.StaticBox(self.panel, label="Statistics")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
-		self.statsText = wx.StaticText(self.panel, -1, "Filament: #.##m #.##g\nPrint time: ##:##")
+		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
 		self.sizer.Add(boxsizer, pos=(0,0), span=(4,1), flag=wx.EXPAND)
 		
 		self.connectButton = wx.Button(self.panel, -1, 'Connect')
-		self.loadButton = wx.Button(self.panel, -1, 'Load GCode')
+		#self.loadButton = wx.Button(self.panel, -1, 'Load GCode')
 		self.printButton = wx.Button(self.panel, -1, 'Print GCode')
 		self.cancelButton = wx.Button(self.panel, -1, 'Cancel print')
 		self.progress = wx.Gauge(self.panel, -1)
 		self.sizer.Add(self.connectButton, pos=(0,1))
-		self.sizer.Add(self.loadButton, pos=(1,1))
+		#self.sizer.Add(self.loadButton, pos=(1,1))
 		self.sizer.Add(self.printButton, pos=(2,1))
 		self.sizer.Add(self.cancelButton, pos=(3,1))
 		self.sizer.Add(self.progress, pos=(4,0), span=(1,2), flag=wx.EXPAND)
@@ -59,7 +61,7 @@ class printWindow(wx.Frame):
 		
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
 		self.connectButton.Bind(wx.EVT_BUTTON, self.OnConnect)
-		self.loadButton.Bind(wx.EVT_BUTTON, self.OnLoad)
+		#self.loadButton.Bind(wx.EVT_BUTTON, self.OnLoad)
 		self.printButton.Bind(wx.EVT_BUTTON, self.OnPrint)
 		self.cancelButton.Bind(wx.EVT_BUTTON, self.OnCancel)
 		
@@ -72,14 +74,19 @@ class printWindow(wx.Frame):
 	
 	def UpdateButtonStates(self):
 		self.connectButton.Enable(not self.machineConnected)
-		self.loadButton.Enable(self.printIdx == None)
+		#self.loadButton.Enable(self.printIdx == None)
 		self.printButton.Enable(self.machineConnected and self.gcodeList != None and self.printIdx == None)
 		self.cancelButton.Enable(self.printIdx != None)
 	
 	def UpdateProgress(self):
 		status = ""
+		if self.gcode != None:
+			status += "Filament: %.2fm %.2fg\n" % (self.gcode.extrusionAmount / 1000, self.gcode.calculateWeight() * 1000)
+			status += "Print time: %02d:%02d\n" % (int(self.gcode.totalMoveTimeMinute / 60), int(self.gcode.totalMoveTimeMinute % 60))
 		if self.printIdx == None:
 			self.progress.SetValue(0)
+			if self.gcodeList != None:
+				status += 'Line: -/%d\n' % (len(self.gcodeList))
 		else:
 			self.progress.SetValue(self.printIdx)
 			status += 'Line: %d/%d\n' % (self.printIdx, len(self.gcodeList))
@@ -122,6 +129,8 @@ class printWindow(wx.Frame):
 		self.Destroy()
 
 	def LoadGCodeFile(self, filename):
+		if self.printIdx != None:
+			return
 		gcodeList = ["M110"]
 		for line in open(filename, 'r'):
 			if ';' in line:
@@ -131,19 +140,19 @@ class printWindow(wx.Frame):
 				gcodeList.append(line)
 		gcode = gcodeInterpreter.gcode()
 		gcode.loadList(gcodeList)
-		print gcode.extrusionAmount
-		print gcode.totalMoveTimeMinute
 		print "Loaded: %s (%d)" % (filename, len(gcodeList))
 		self.progress.SetRange(len(gcodeList))
+		self.gcode = gcode
 		self.gcodeList = gcodeList
 		self.UpdateButtonStates()
 		self.UpdateProgress()
 
 	def sendLine(self, lineNr):
 		if lineNr >= len(self.gcodeList):
-			return
+			return False
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, self.gcodeList[lineNr])))
 		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, self.gcodeList[lineNr], checksum))
+		return True
 
 	def PrinterMonitor(self):
 		skipCount = 0
@@ -151,7 +160,7 @@ class printWindow(wx.Frame):
 			line = self.machineCom.readline()
 			if line == None:
 				self.machineConnected = False
-				wx.CallAfter(self.UpdateButtonState)
+				wx.CallAfter(self.UpdateButtonStates)
 				return
 			if self.machineConnected:
 				while self.sendCnt > 0:
@@ -160,14 +169,17 @@ class printWindow(wx.Frame):
 					self.sendCnt -= 1
 			elif line.startswith("start"):
 				self.machineConnected = True
-				wx.CallAfter(self.UpdateButtonState)
+				wx.CallAfter(self.UpdateButtonStates)
 			if self.printIdx != None:
 				if line.startswith("ok"):
 					if skipCount > 0:
 						skipCount -= 1
 					else:
-						self.sendLine(self.printIdx)
-						self.printIdx += 1
+						if self.sendLine(self.printIdx):
+							self.printIdx += 1
+						else:
+							self.printIdx = None
+							wx.CallAfter(self.UpdateButtonStates)
 						wx.CallAfter(self.UpdateProgress)
 				elif "resend" in line.lower() or "rs" in line:
 					try:
@@ -177,3 +189,4 @@ class printWindow(wx.Frame):
 							lineNr=int(line.split()[1])
 					self.printIdx = lineNr
 					#we should actually resend the line here, but we also get an "ok" for each error from Marlin. And thus we'll resend on the OK.
+

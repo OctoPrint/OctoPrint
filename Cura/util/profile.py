@@ -69,6 +69,7 @@ preferencesDefaultSettings = {
 	'machine_width': '205',
 	'machine_depth': '205',
 	'machine_height': '200',
+	'filament_density': '1300',
 	'steps_per_e': '0',
 	'serial_port': 'AUTO',
 	'serial_baud': '250000',

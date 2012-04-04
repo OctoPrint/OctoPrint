@@ -1,4 +1,6 @@
-!define VERSION 'RC1'
+!ifndef VERSION
+  !define VERSION 'DEV'
+!endif
 
 ; The name of the installer
 Name "Cura ${VERSION}"

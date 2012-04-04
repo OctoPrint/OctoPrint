@@ -459,6 +459,10 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 								glColor3f(c/2,c/2,0)
 							elif path.pathType == 'WALL-INNER':
 								glColor3f(0,c,0)
+							elif path.pathType == 'SUPPORT':
+								glColor3f(0,c,c)
+							elif path.pathType == 'SKIRT':
+								glColor3f(0,c/2,c/2)
 							else:
 								glColor3f(c,0,0)
 						if path.type == 'retract':

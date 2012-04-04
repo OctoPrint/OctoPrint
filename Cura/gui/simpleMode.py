@@ -20,7 +20,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		super(simpleModeWindow, self).__init__(title='Cura - Simple mode')
 		
 		wx.EVT_CLOSE(self, self.OnClose)
-		self.SetIcon(icon.getMainIcon())
+		#self.SetIcon(icon.getMainIcon())
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()

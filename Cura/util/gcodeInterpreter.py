@@ -7,6 +7,7 @@ import re
 import os
 
 from util import util3d
+from util import profile
 
 class gcodePath():
 	def __init__(self, newType, pathType, startPoint):
@@ -30,6 +31,12 @@ class gcode():
 	
 	def loadList(self, l):
 		self._load(l)
+	
+	def calculateWeight(self):
+		#Calculates the weight of the filament in kg
+		radius = float(profile.getProfileSetting('filament_diameter')) / 2
+		volumeM3 = (self.extrusionAmount * (math.pi * radius * radius)) / (1000*1000*1000)
+		return volumeM3 * float(profile.getPreference('filament_density'))
 	
 	def _load(self, gcodeFile):
 		filePos = 0
