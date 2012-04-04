@@ -106,18 +106,33 @@ class InstallFirmware(wx.Dialog):
 class VirtualPrinter():
 	def __init__(self):
 		self.readList = ['start\n']
+		self.temp = 0.0
+		self.targetTemp = 0.0
 	
 	def write(self, data):
 		if self.readList == None:
 			return
 		print "Send: %s" % (data.rstrip())
-		self.readList.append("ok\n")
+		if 'M104' in data:
+			try:
+				self.targetTemp = float(data[data.find('S')+1:])
+			except:
+				pass
+		if 'M105' in data:
+			self.readList.append("ok T:%f/%f\n" % (self.temp, self.targetTemp))
+		else:
+			self.readList.append("ok\n")
 
 	def readline(self):
 		if self.readList == None:
 			return ''
+		n = 0
+		self.temp = (self.temp + self.targetTemp) / 2
 		while len(self.readList) < 1:
 			time.sleep(0.1)
+			n += 1
+			if n == 20:
+				return ''
 			if self.readList == None:
 				return ''
 		time.sleep(0.001)
@@ -141,7 +156,7 @@ class MachineCom():
 					programmer.connect(port)
 					programmer.close()
 					print "Connecting to: %s %i" % (port, baudrate)
-					self.serial = Serial(port, baudrate, timeout=5)
+					self.serial = Serial(port, baudrate, timeout=2)
 					break
 				except ispBase.IspError:
 					pass
@@ -152,7 +167,7 @@ class MachineCom():
 			self.serial = VirtualPrinter()
 		else:
 			try:
-				self.serial = Serial(port, baudrate, timeout=5)
+				self.serial = Serial(port, baudrate, timeout=2)
 			except:
 				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 

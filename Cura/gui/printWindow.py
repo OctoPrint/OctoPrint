@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, threading
+import wx, threading, re
 
 from gui import machineCom
 from gui import icon
@@ -27,7 +27,9 @@ class printWindow(wx.Frame):
 		self.thread = None
 		self.gcode = None
 		self.gcodeList = None
+		self.sendList = []
 		self.printIdx = None
+		self.temp = None
 		self.bufferLineCount = 4
 		self.sendCnt = 0
 
@@ -51,11 +53,20 @@ class printWindow(wx.Frame):
 		self.printButton = wx.Button(self.panel, -1, 'Print GCode')
 		self.cancelButton = wx.Button(self.panel, -1, 'Cancel print')
 		self.progress = wx.Gauge(self.panel, -1)
+		
+		h = self.connectButton.GetSize().GetHeight()
+		self.temperatureSelect = wx.SpinCtrl(self.panel, -1, '0', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.temperatureSelect.SetRange(0, 400)
+		
 		self.sizer.Add(self.connectButton, pos=(0,1))
 		#self.sizer.Add(self.loadButton, pos=(1,1))
 		self.sizer.Add(self.printButton, pos=(2,1))
 		self.sizer.Add(self.cancelButton, pos=(3,1))
 		self.sizer.Add(self.progress, pos=(4,0), span=(1,2), flag=wx.EXPAND)
+
+		self.sizer.Add(wx.StaticText(self.panel, -1, "Temp:"), pos=(0,3))
+		self.sizer.Add(self.temperatureSelect, pos=(0,4))
+
 		self.sizer.AddGrowableRow(3)
 		self.sizer.AddGrowableCol(0)
 		
@@ -64,6 +75,8 @@ class printWindow(wx.Frame):
 		#self.loadButton.Bind(wx.EVT_BUTTON, self.OnLoad)
 		self.printButton.Bind(wx.EVT_BUTTON, self.OnPrint)
 		self.cancelButton.Bind(wx.EVT_BUTTON, self.OnCancel)
+		
+		self.Bind(wx.EVT_SPINCTRL, self.OnTempChange, self.temperatureSelect)
 		
 		self.Layout()
 		self.Fit()
@@ -90,6 +103,8 @@ class printWindow(wx.Frame):
 		else:
 			self.progress.SetValue(self.printIdx)
 			status += 'Line: %d/%d\n' % (self.printIdx, len(self.gcodeList))
+		if self.temp != None:
+			status += 'Temp: %d\n' % (self.temp)
 		self.statsText.SetLabel(status)
 	
 	def OnConnect(self, e):
@@ -128,9 +143,13 @@ class printWindow(wx.Frame):
 			self.thread.join()
 		self.Destroy()
 
+	def OnTempChange(self, e):
+		self.sendCommand("M104 S%d" % (self.temperatureSelect.GetValue()))
+
 	def LoadGCodeFile(self, filename):
 		if self.printIdx != None:
 			return
+		#Send an initial M110 to reset the line counter to zero.
 		gcodeList = ["M110"]
 		for line in open(filename, 'r'):
 			if ';' in line:
@@ -146,6 +165,13 @@ class printWindow(wx.Frame):
 		self.gcodeList = gcodeList
 		self.UpdateButtonStates()
 		self.UpdateProgress()
+		
+	def sendCommand(self, cmd):
+		if self.machineConnected:
+			if self.printIdx == None:
+				self.machineCom.sendCommand(cmd)
+			else:
+				self.sendList.append(cmd)
 
 	def sendLine(self, lineNr):
 		if lineNr >= len(self.gcodeList):
@@ -155,7 +181,6 @@ class printWindow(wx.Frame):
 		return True
 
 	def PrinterMonitor(self):
-		skipCount = 0
 		while True:
 			line = self.machineCom.readline()
 			if line == None:
@@ -170,10 +195,16 @@ class printWindow(wx.Frame):
 			elif line.startswith("start"):
 				self.machineConnected = True
 				wx.CallAfter(self.UpdateButtonStates)
-			if self.printIdx != None:
+			if 'T:' in line:
+				self.temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
+				wx.CallAfter(self.UpdateProgress)
+			if self.printIdx == None:
+				if line == '':	#When we have a communication "timeout" and we're not sending gcode read the temperature.
+					self.machineCom.sendCommand("M105")
+			else:
 				if line.startswith("ok"):
-					if skipCount > 0:
-						skipCount -= 1
+					if len(self.sendList) > 0:
+						self.machineCom.sendCommand(self.sendList.pop(0))
 					else:
 						if self.sendLine(self.printIdx):
 							self.printIdx += 1
