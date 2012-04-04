@@ -158,7 +158,7 @@ def getPreference(name):
 		globalPreferenceParser.set('preference', name, str(default))
 		print name + " not found in preferences, so using default: " + str(default)
 		return default
-	return globalPreferenceParser.get('preference', name)
+	return unicode(globalPreferenceParser.get('preference', name), "utf-8")
 
 def putPreference(name, value):
 	#Check if we have a configuration file loaded, else load the default.
@@ -168,7 +168,7 @@ def putPreference(name, value):
 		globalPreferenceParser.read(getPreferencePath())
 	if not globalPreferenceParser.has_section('preference'):
 		globalPreferenceParser.add_section('preference')
-	globalPreferenceParser.set('preference', name, str(value))
+	globalPreferenceParser.set('preference', name, str(value).encode("utf-8"))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
 
 #########################################################
