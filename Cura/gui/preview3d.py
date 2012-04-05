@@ -17,6 +17,8 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
+from gui import opengl
+
 from util import profile
 from util import gcodeInterpreter
 from util import stl
@@ -75,6 +77,16 @@ class previewPanel(wx.Panel):
 		self.flipZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
 		self.toolbar2.AddControl(self.flipZ)
 		self.Bind(wx.EVT_CHECKBOX, self.OnFlipZClick, self.flipZ)
+
+		self.swapXZ = wx.CheckBox(self.toolbar2, -1, "XZ")
+		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
+		self.toolbar2.AddControl(self.swapXZ)
+		self.Bind(wx.EVT_CHECKBOX, self.OnSwapXZClick, self.swapXZ)
+
+		self.swapYZ = wx.CheckBox(self.toolbar2, -1, "YZ")
+		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
+		self.toolbar2.AddControl(self.swapYZ)
+		self.Bind(wx.EVT_CHECKBOX, self.OnSwapYZClick, self.swapYZ)
 		
 		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
@@ -124,6 +136,14 @@ class previewPanel(wx.Panel):
 
 	def OnFlipZClick(self, e):
 		profile.putProfileSetting('flip_z', str(self.flipZ.GetValue()))
+		self.updateModelTransform()
+
+	def OnSwapXZClick(self, e):
+		profile.putProfileSetting('swap_xz', str(self.swapXZ.GetValue()))
+		self.updateModelTransform()
+
+	def OnSwapYZClick(self, e):
+		profile.putProfileSetting('swap_yz', str(self.swapYZ.GetValue()))
 		self.updateModelTransform()
 
 	def OnMulXAddClick(self, e):
@@ -285,15 +305,24 @@ class previewPanel(wx.Panel):
 			scaleY = -scaleY
 		if profile.getProfileSetting('flip_z') == 'True':
 			scaleZ = -scaleZ
+		swapXZ = profile.getProfileSetting('swap_xz') == 'True'
+		swapYZ = profile.getProfileSetting('swap_yz') == 'True'
 		mat00 = math.cos(rotate) * scaleX
 		mat01 =-math.sin(rotate) * scaleY
 		mat10 = math.sin(rotate) * scaleX
 		mat11 = math.cos(rotate) * scaleY
 		
 		for i in xrange(0, len(self.triangleMesh.origonalVertexes)):
-			self.triangleMesh.vertexes[i].x = self.triangleMesh.origonalVertexes[i].x * mat00 + self.triangleMesh.origonalVertexes[i].y * mat01
-			self.triangleMesh.vertexes[i].y = self.triangleMesh.origonalVertexes[i].x * mat10 + self.triangleMesh.origonalVertexes[i].y * mat11
-			self.triangleMesh.vertexes[i].z = self.triangleMesh.origonalVertexes[i].z * scaleZ
+			x = self.triangleMesh.origonalVertexes[i].x
+			y = self.triangleMesh.origonalVertexes[i].y
+			z = self.triangleMesh.origonalVertexes[i].z
+			if swapXZ:
+				x, z = z, x
+			if swapYZ:
+				y, z = z, y
+			self.triangleMesh.vertexes[i].x = x * mat00 + y * mat01
+			self.triangleMesh.vertexes[i].y = x * mat10 + y * mat11
+			self.triangleMesh.vertexes[i].z = z * scaleZ
 
 		for face in self.triangleMesh.faces:
 			v1 = face.v[0]
@@ -381,51 +410,24 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			dc.DrawText("No PyOpenGL installation found.\nNo preview window available.", 10, 10)
 			return
 		self.SetCurrent(self.context)
-		self.InitGL()
+		opengl.InitGL(self, self.view3D, self.zoom)
+		if self.view3D:
+			glTranslate(0,0,-self.zoom)
+			glRotate(-self.pitch, 1,0,0)
+			glRotate(self.yaw, 0,0,1)
+			if self.parent.triangleMesh != None:
+				glTranslate(0,0,-self.parent.triangleMesh.getMaximum().z / 2)
+		else:
+			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
+			glTranslate(self.offsetX, self.offsetY, 0.0)
+		glTranslate(-self.parent.machineCenter.x, -self.parent.machineCenter.y, 0)
+
 		self.OnDraw()
 		self.SwapBuffers()
 
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
-		
-		glTranslate(-self.parent.machineCenter.x, -self.parent.machineCenter.y, 0)
-		
-		glColor3f(1,1,1)
-		glLineWidth(4)
-		glDisable(GL_LIGHTING)
-		glBegin(GL_LINE_LOOP)
-		glVertex3f(0, 0, 0)
-		glVertex3f(machineSize.x, 0, 0)
-		glVertex3f(machineSize.x, machineSize.y, 0)
-		glVertex3f(0, machineSize.y, 0)
-		glEnd()
-		glLineWidth(2)
-		glBegin(GL_LINES)
-		for i in xrange(0, int(machineSize.x), 10):
-			glVertex3f(i, 0, 0)
-			glVertex3f(i, machineSize.y, 0)
-		for i in xrange(0, int(machineSize.y), 10):
-			glVertex3f(0, i, 0)
-			glVertex3f(machineSize.x, i, 0)
-		glEnd()
-		glLineWidth(1)
-		glBegin(GL_LINE_LOOP)
-		glVertex3f(0, 0, machineSize.z)
-		glVertex3f(machineSize.x, 0, machineSize.z)
-		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
-		glVertex3f(0, machineSize.y, machineSize.z)
-		glEnd()
-		glBegin(GL_LINES)
-		glVertex3f(0, 0, 0)
-		glVertex3f(0, 0, machineSize.z)
-		glVertex3f(machineSize.x, 0, 0)
-		glVertex3f(machineSize.x, 0, machineSize.z)
-		glVertex3f(machineSize.x, machineSize.y, 0)
-		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
-		glVertex3f(0, machineSize.y, 0)
-		glVertex3f(0, machineSize.y, machineSize.z)
-		glEnd()
+		opengl.DrawMachine(machineSize)
 
 		if self.parent.gcode != None:
 			if self.gcodeDisplayList == None:
@@ -533,26 +535,16 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
 				for mx in xrange(0, multiX):
 					for my in xrange(0, multiY):
-						for face in self.parent.triangleMesh.faces:
-							glPushMatrix()
-							glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
-							glBegin(GL_TRIANGLES)
-							v1 = face.v[0]
-							v2 = face.v[1]
-							v3 = face.v[2]
-							glNormal3f(face.normal.x, face.normal.y, face.normal.z)
-							glVertex3f(v1.x, v1.y, v1.z)
-							glVertex3f(v2.x, v2.y, v2.z)
-							glVertex3f(v3.x, v3.y, v3.z)
-							glNormal3f(-face.normal.x, -face.normal.y, -face.normal.z)
-							glVertex3f(v1.x, v1.y, v1.z)
-							glVertex3f(v3.x, v3.y, v3.z)
-							glVertex3f(v2.x, v2.y, v2.z)
-							glEnd()
-							glPopMatrix()
+						glPushMatrix()
+						glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
+						opengl.DrawSTL(self.parent.triangleMesh)
+						glPopMatrix()
 				glPopMatrix()
 				glEndList()
+			
 			if self.viewMode == "Model - Transparent" or self.viewMode == "Mixed":
+				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])
+				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.1, 0.1, 0.1, 0.0])
 				#If we want transparent, then first render a solid black model to remove the printer size lines.
 				if self.viewMode != "Mixed":
 					glDisable(GL_BLEND)
@@ -609,6 +601,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glDisable(GL_STENCIL_TEST);
 				glEnable(GL_DEPTH_TEST)
 			elif self.viewMode == "Model - Normal":
+				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
+				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.2, 0.2, 0.0])
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
 			
@@ -625,48 +619,3 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glEnd()
 		
 		glFlush()
-
-	def InitGL(self):
-		# set viewing projection
-		glMatrixMode(GL_MODELVIEW)
-		glLoadIdentity()
-		size = self.GetSize()
-		glViewport(0,0, size.GetWidth(), size.GetHeight())
-		
-		if self.viewMode == "Model - Transparent" or self.viewMode == "Mixed":
-			glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])
-			glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.1, 0.1, 0.1, 0.0])
-		else:
-			glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
-			glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.2, 0.2, 0.0])
-		glLightfv(GL_LIGHT0, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
-
-		glEnable(GL_LIGHTING)
-		glEnable(GL_LIGHT0)
-		glEnable(GL_DEPTH_TEST)
-		glEnable(GL_CULL_FACE)
-		glDisable(GL_BLEND)
-
-		glClearColor(0.0, 0.0, 0.0, 1.0)
-		glClearStencil(0)
-		glClearDepth(1.0)
-
-		glMatrixMode(GL_PROJECTION)
-		glLoadIdentity()
-		aspect = float(self.GetSize().GetWidth()) / float(self.GetSize().GetHeight())
-		if self.view3D:
-			gluPerspective(90.0, aspect, 1.0, 1000.0)
-		else:
-			glOrtho(-self.zoom * aspect, self.zoom * aspect, -self.zoom, self.zoom, -1000.0, 1000.0)
-
-		glMatrixMode(GL_MODELVIEW)
-		glLoadIdentity()
-		if self.view3D:
-			glTranslate(0,0,-self.zoom)
-			glRotate(-self.pitch, 1,0,0)
-			glRotate(self.yaw, 0,0,1)
-			if self.parent.triangleMesh != None:
-				glTranslate(0,0,-self.parent.triangleMesh.getMaximum().z / 2)
-		else:
-			glTranslate(self.offsetX, self.offsetY, 0)
-

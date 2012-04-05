@@ -183,6 +183,8 @@ class CarveRepository:
 		self.flipX = settings.BooleanSetting().getFromValue('FlipX', self, False)
 		self.flipY = settings.BooleanSetting().getFromValue('FlipY', self, False)
 		self.flipZ = settings.BooleanSetting().getFromValue('FlipZ', self, False)
+		self.swapXZ = settings.BooleanSetting().getFromValue('SwapXZ', self, False)
+		self.swapYZ = settings.BooleanSetting().getFromValue('SwapYZ', self, False)
 		self.scale = settings.FloatSpin().getFromValue( 0.1, 'Scale', self, 10.0, 1.0 )
 		self.rotate = settings.FloatSpin().getFromValue( -180.0, 'Rotate', self, 180.0, 0.0 )
 
@@ -210,6 +212,8 @@ class CarveSkein:
 			scaleY = -scaleY
 		if repository.flipZ.value == True:
 			scaleZ = -scaleZ
+		swapXZ = repository.swapXZ.value
+		swapYZ = repository.swapYZ.value
 		mat00 = math.cos(rotate) * scaleX
 		mat01 =-math.sin(rotate) * scaleY
 		mat10 = math.sin(rotate) * scaleX
@@ -226,10 +230,17 @@ class CarveSkein:
 			#v.y += self.machineCenter.y
 		
 		for i in xrange(0, len(carving.vertexes)):
+			x = carving.vertexes[i].x
+			y = carving.vertexes[i].y
+			z = carving.vertexes[i].z
+			if swapXZ:
+				x, z = z, x
+			if swapYZ:
+				y, z = z, y
 			carving.vertexes[i] = Vector3(
-				carving.vertexes[i].x * mat00 + carving.vertexes[i].y * mat01,
-				carving.vertexes[i].x * mat10 + carving.vertexes[i].y * mat11,
-				carving.vertexes[i].z * scaleZ)
+				x * mat00 + y * mat01,
+				x * mat10 + y * mat11,
+				z * scaleZ)
 
 		layerHeight = repository.layerHeight.value
 		edgeWidth = repository.edgeWidth.value

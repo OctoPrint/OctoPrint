@@ -101,6 +101,8 @@ def getProfileInformation():
 			'FlipX': storedSetting("flip_x"),
 			'FlipY': storedSetting("flip_y"),
 			'FlipZ': storedSetting("flip_z"),
+			'SwapXZ': storedSetting("swap_xz"),
+			'SwapYZ': storedSetting("swap_yz"),
 			'Scale': storedSetting("model_scale"),
 			'Rotate': storedSetting("model_rotate_base"),
 		},'scale': {
