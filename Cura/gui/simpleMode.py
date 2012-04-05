@@ -205,7 +205,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('infill_type', 'Line')
 		put('solid_top', 'True')
 		put('fill_overlap', '15')
-		put('support_rate', '100')
+		put('support_rate', '50')
 		put('support_distance', '0.5')
 		put('joris', 'False')
 		put('cool_min_feedrate', '5')

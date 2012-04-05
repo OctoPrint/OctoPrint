@@ -51,7 +51,7 @@ profileDefaultSettings = {
 	'infill_type': 'Line',
 	'solid_top': 'True',
 	'fill_overlap': '15',
-	'support_rate': '100',
+	'support_rate': '50',
 	'support_distance': '0.5',
 	'joris': 'False',
 	'enable_raft': 'False',
