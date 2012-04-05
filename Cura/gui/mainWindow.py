@@ -171,6 +171,10 @@ class mainWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0)
 		c = configBase.SettingRow(right, "Enable cooling fan", 'fan_enabled', True, 'Enable the cooling fan during the print. The extra cooling from the cooling fan is essensial during faster prints.')
 
+		configBase.TitleRow(right, "Accuracy")
+		c = configBase.SettingRow(right, "Initial layer thickness (mm)", 'bottom_thickness', '0.0', 'Layer thickness of the bottom layer. A thicker bottom layer makes sticking to the bed easier. Set to 0.0 to have the bottom layer thickness the same as the other layers.')
+		validators.validFloat(c, 0.0)
+
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
 		# load and slice buttons.

@@ -61,6 +61,7 @@ profileDefaultSettings = {
 	'raft_margin': '5',
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',
+	'bottom_thickness': '0.0',
 }
 preferencesDefaultSettings = {
 	'wizardDone': 'False',

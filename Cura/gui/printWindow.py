@@ -199,7 +199,7 @@ class printWindow(wx.Frame):
 				self.temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
 				wx.CallAfter(self.UpdateProgress)
 			if self.printIdx == None:
-				if line == '':	#When we have a communication "timeout" and we're not sending gcode read the temperature.
+				if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.
 					self.machineCom.sendCommand("M105")
 			else:
 				if line.startswith("ok"):

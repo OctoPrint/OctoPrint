@@ -64,6 +64,27 @@ def calculateMultiplyDistance(setting):
 	edgeWidth = calculateEdgeWidth(setting)
 	return 10.0 / edgeWidth
 
+def calcBottomLayerFlowRateRatio(setting):
+	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
+	layerThickness = float(profile.getProfileSetting('layer_height'))
+	if bottomThickness < layerThickness:
+		return 1.0
+	return bottomThickness / layerThickness
+
+def calcExtraBottomThickness(setting):
+	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
+	layerThickness = float(profile.getProfileSetting('layer_height'))
+	if bottomThickness < layerThickness:
+		return 0.0
+	return bottomThickness - layerThickness
+
+def calcLayerSkip(setting):
+	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
+	layerThickness = float(profile.getProfileSetting('layer_height'))
+	if bottomThickness < layerThickness:
+		return 0
+	return int(math.ceil((bottomThickness - layerThickness) / layerThickness + 0.0001) - 1)
+
 def getProfileInformation():
 	return {
 		'carve': {
@@ -72,7 +93,7 @@ def getProfileInformation():
 			'Extra_Decimal_Places_float': DEFSET,
 			'Import_Coarseness_ratio': DEFSET,
 			'Layer_Height_mm': storedSetting("layer_height"),
-			'Layers_From_index': DEFSET,
+			'Layers_From_index': calcLayerSkip,
 			'Layers_To_index': DEFSET,
 			'Correct_Mesh': DEFSET,
 			'Unproven_Mesh': DEFSET,
@@ -90,7 +111,7 @@ def getProfileInformation():
 		},'bottom': {
 			'Activate_Bottom': DEFSET,
 			'Additional_Height_over_Layer_Thickness_ratio': DEFSET,
-			'Altitude_mm': DEFSET,
+			'Altitude_mm': calcExtraBottomThickness,
 			'SVG_Viewer': DEFSET,
 		},'preface': {
 			'Meta': DEFSET,
@@ -167,6 +188,7 @@ def getProfileInformation():
 			'Perimeter_Feed_Rate_Multiplier_ratio': DEFSET,
 			'Perimeter_Flow_Rate_Multiplier_ratio': DEFSET,
 			'Travel_Feed_Rate_mm/s': storedSetting("travel_speed"),
+			'Bottom_layer_flow_rate_ratio': calcBottomLayerFlowRateRatio,
 		},'temperature': {
 			'Activate_Temperature': DEFSET,#ifSettingAboveZero('print_temperature'),
 			'Cooling_Rate_Celcius/second': DEFSET,

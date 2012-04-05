@@ -214,6 +214,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('raft_margin', '5')
 		put('raft_base_material_amount', '100')
 		put('raft_interface_material_amount', '100')
+		put('bottom_thickness', '0.0')
 
 		if self.printSupport.GetValue():
 			put('support', 'Exterior Only')
@@ -234,6 +235,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('layer_height', '0.1')
 			put('fill_density', '30')
 			put('bottom_layer_speed', '15')
+			put('bottom_thickness', '0.2')
 		elif self.printTypeJoris.GetValue():
 			put('wall_thickness', nozzle_size * 1.5)
 			put('layer_height', '0.2')
@@ -255,6 +257,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('enable_raft', 'True')
 			put('skirt_line_count', '0')
 			put('fan_layer', '1')
+			put('bottom_thickness', '0.0')
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
