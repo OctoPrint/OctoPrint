@@ -270,12 +270,12 @@ def getProfileInformation():
 			'Perimeter_Outside_Stretch_Over_Perimeter_Width_ratio': DEFSET,
 			'Stretch_From_Distance_Over_Perimeter_Width_ratio': DEFSET,
 		},'skin': {
-			'Activate_Skin': "False",
-			'Horizontal_Infill_Divisions_integer': DEFSET,
-			'Horizontal_Perimeter_Divisions_integer': DEFSET,
-			'Vertical_Divisions_integer': DEFSET,
-			'Hop_When_Extruding_Infill': DEFSET,
-			'Layers_From_index': DEFSET,
+			'Activate_Skin': storedSetting("enable_skin"),
+			'Horizontal_Infill_Divisions_integer': "1",
+			'Horizontal_Perimeter_Divisions_integer': "1",
+			'Vertical_Divisions_integer': "2",
+			'Hop_When_Extruding_Infill': "False",
+			'Layers_From_index': "1",
 		},'comb': {
 			'Activate_Comb': "True",
 			'Running_Jump_Space_mm': DEFSET,

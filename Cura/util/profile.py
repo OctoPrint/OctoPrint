@@ -56,6 +56,7 @@ profileDefaultSettings = {
 	'support_rate': '50',
 	'support_distance': '0.5',
 	'joris': 'False',
+	'enable_skin': 'False',
 	'enable_raft': 'False',
 	'cool_min_feedrate': '5',
 	'bridge_speed': '100',

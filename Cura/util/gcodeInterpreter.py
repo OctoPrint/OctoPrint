@@ -105,7 +105,7 @@ class gcode():
 						else:
 							pos.z += z * scale
 						#Check if we have a new layer.
-						if oldPos.z != pos.z and startCodeDone:
+						if oldPos.z < pos.z and startCodeDone and len(currentLayer) > 0:
 							self.layerList.append(currentLayer)
 							currentLayer = []
 					if f is not None:
