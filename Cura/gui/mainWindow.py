@@ -4,7 +4,7 @@ import __init__
 import wx, os, platform, types, webbrowser
 
 from gui import configBase
-from gui import advancedConfig
+from gui import expertConfig
 from gui import preview3d
 from gui import sliceProgessPanel
 from gui import alterationPanel
@@ -126,7 +126,7 @@ class mainWindow(configBase.configWindowBase):
 		
 		configBase.TitleRow(right, "Support")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
-		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the advanced settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
+		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the expert settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
 
 		configBase.TitleRow(right, "Filament")
 		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.89', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
@@ -291,9 +291,9 @@ class mainWindow(configBase.configWindowBase):
 		printWindow.printFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
 
 	def OnExpertOpen(self, e):
-		acw = advancedConfig.advancedConfigWindow()
-		acw.Centre()
-		acw.Show(True)
+		ecw = expertConfig.expertConfigWindow()
+		ecw.Centre()
+		ecw.Show(True)
 
 	def removeSliceProgress(self, spp):
 		self.progressPanelList.remove(spp)
