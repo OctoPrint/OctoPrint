@@ -42,6 +42,8 @@ profileDefaultSettings = {
 	'flip_x': 'False',
 	'flip_y': 'False',
 	'flip_z': 'False',
+	'swap_xz': 'False',
+	'swap_yz': 'False',
 	'model_rotate_base': '0',
 	'model_multiply_x': '1',
 	'model_multiply_y': '1',

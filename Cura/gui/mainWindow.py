@@ -96,7 +96,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0)
-		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 80 / 100), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
+		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 80.0 / 100.0), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
 		c = configBase.SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
 		validators.validFloat(c, 0.0)
 		validators.wallThicknessValidator(c)
@@ -174,6 +174,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Accuracy")
 		c = configBase.SettingRow(right, "Initial layer thickness (mm)", 'bottom_thickness', '0.0', 'Layer thickness of the bottom layer. A thicker bottom layer makes sticking to the bed easier. Set to 0.0 to have the bottom layer thickness the same as the other layers.')
 		validators.validFloat(c, 0.0)
+		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 3.0 / 4.0), "A bottom layer of more then %.2fmm (3/4 nozzle size) usually give bad results and is not recommended.")
 
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
