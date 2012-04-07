@@ -28,6 +28,7 @@ class sliceProgessPanel(wx.Panel):
 			'speed': 12.759510994,
 			'raft': 31.4580039978,
 			'skirt': 19.3436040878,
+			'skin': 1.0,
 			'joris': 1.0,
 			'comb': 23.7805759907,
 			'cool': 27.148763895,
