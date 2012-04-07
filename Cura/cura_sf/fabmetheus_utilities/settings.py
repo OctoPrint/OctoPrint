@@ -64,6 +64,27 @@ def calculateMultiplyDistance(setting):
 	edgeWidth = calculateEdgeWidth(setting)
 	return 10.0 / edgeWidth
 
+def calcBottomLayerFlowRateRatio(setting):
+	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
+	layerThickness = float(profile.getProfileSetting('layer_height'))
+	if bottomThickness < layerThickness:
+		return 1.0
+	return bottomThickness / layerThickness
+
+def calcExtraBottomThickness(setting):
+	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
+	layerThickness = float(profile.getProfileSetting('layer_height'))
+	if bottomThickness < layerThickness:
+		return 0.0
+	return bottomThickness - layerThickness
+
+def calcLayerSkip(setting):
+	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
+	layerThickness = float(profile.getProfileSetting('layer_height'))
+	if bottomThickness < layerThickness:
+		return 0
+	return int(math.ceil((bottomThickness - layerThickness) / layerThickness + 0.0001) - 1)
+
 def getProfileInformation():
 	return {
 		'carve': {
@@ -72,7 +93,7 @@ def getProfileInformation():
 			'Extra_Decimal_Places_float': DEFSET,
 			'Import_Coarseness_ratio': DEFSET,
 			'Layer_Height_mm': storedSetting("layer_height"),
-			'Layers_From_index': DEFSET,
+			'Layers_From_index': calcLayerSkip,
 			'Layers_To_index': DEFSET,
 			'Correct_Mesh': DEFSET,
 			'Unproven_Mesh': DEFSET,
@@ -80,6 +101,8 @@ def getProfileInformation():
 			'FlipX': storedSetting("flip_x"),
 			'FlipY': storedSetting("flip_y"),
 			'FlipZ': storedSetting("flip_z"),
+			'SwapXZ': storedSetting("swap_xz"),
+			'SwapYZ': storedSetting("swap_yz"),
 			'Scale': storedSetting("model_scale"),
 			'Rotate': storedSetting("model_rotate_base"),
 		},'scale': {
@@ -90,7 +113,7 @@ def getProfileInformation():
 		},'bottom': {
 			'Activate_Bottom': DEFSET,
 			'Additional_Height_over_Layer_Thickness_ratio': DEFSET,
-			'Altitude_mm': DEFSET,
+			'Altitude_mm': calcExtraBottomThickness,
 			'SVG_Viewer': DEFSET,
 		},'preface': {
 			'Meta': DEFSET,
@@ -167,6 +190,7 @@ def getProfileInformation():
 			'Perimeter_Feed_Rate_Multiplier_ratio': DEFSET,
 			'Perimeter_Flow_Rate_Multiplier_ratio': DEFSET,
 			'Travel_Feed_Rate_mm/s': storedSetting("travel_speed"),
+			'Bottom_layer_flow_rate_ratio': calcBottomLayerFlowRateRatio,
 		},'temperature': {
 			'Activate_Temperature': DEFSET,#ifSettingAboveZero('print_temperature'),
 			'Cooling_Rate_Celcius/second': DEFSET,
@@ -246,12 +270,12 @@ def getProfileInformation():
 			'Perimeter_Outside_Stretch_Over_Perimeter_Width_ratio': DEFSET,
 			'Stretch_From_Distance_Over_Perimeter_Width_ratio': DEFSET,
 		},'skin': {
-			'Activate_Skin': "False",
-			'Horizontal_Infill_Divisions_integer': DEFSET,
-			'Horizontal_Perimeter_Divisions_integer': DEFSET,
-			'Vertical_Divisions_integer': DEFSET,
-			'Hop_When_Extruding_Infill': DEFSET,
-			'Layers_From_index': DEFSET,
+			'Activate_Skin': storedSetting("enable_skin"),
+			'Horizontal_Infill_Divisions_integer': "1",
+			'Horizontal_Perimeter_Divisions_integer': "1",
+			'Vertical_Divisions_integer': "2",
+			'Hop_When_Extruding_Infill': "False",
+			'Layers_From_index': "1",
 		},'comb': {
 			'Activate_Comb': "True",
 			'Running_Jump_Space_mm': DEFSET,

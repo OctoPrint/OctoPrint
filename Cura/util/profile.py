@@ -42,6 +42,8 @@ profileDefaultSettings = {
 	'flip_x': 'False',
 	'flip_y': 'False',
 	'flip_z': 'False',
+	'swap_xz': 'False',
+	'swap_yz': 'False',
 	'model_rotate_base': '0',
 	'model_multiply_x': '1',
 	'model_multiply_y': '1',
@@ -51,9 +53,10 @@ profileDefaultSettings = {
 	'infill_type': 'Line',
 	'solid_top': 'True',
 	'fill_overlap': '15',
-	'support_rate': '100',
+	'support_rate': '50',
 	'support_distance': '0.5',
 	'joris': 'False',
+	'enable_skin': 'False',
 	'enable_raft': 'False',
 	'cool_min_feedrate': '5',
 	'bridge_speed': '100',
@@ -61,6 +64,7 @@ profileDefaultSettings = {
 	'raft_margin': '5',
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',
+	'bottom_thickness': '0.0',
 }
 preferencesDefaultSettings = {
 	'wizardDone': 'False',
@@ -158,7 +162,7 @@ def getPreference(name):
 		globalPreferenceParser.set('preference', name, str(default))
 		print name + " not found in preferences, so using default: " + str(default)
 		return default
-	return globalPreferenceParser.get('preference', name)
+	return unicode(globalPreferenceParser.get('preference', name), "utf-8")
 
 def putPreference(name, value):
 	#Check if we have a configuration file loaded, else load the default.
@@ -168,7 +172,7 @@ def putPreference(name, value):
 		globalPreferenceParser.read(getPreferencePath())
 	if not globalPreferenceParser.has_section('preference'):
 		globalPreferenceParser.add_section('preference')
-	globalPreferenceParser.set('preference', name, str(value))
+	globalPreferenceParser.set('preference', name, str(value).encode("utf-8"))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
 
 #########################################################

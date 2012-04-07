@@ -10,10 +10,10 @@ from gui import sliceProgessPanel
 from gui import alterationPanel
 from gui import validators
 
-class advancedConfigWindow(configBase.configWindowBase):
-	"Advanced configuration window"
+class expertConfigWindow(configBase.configWindowBase):
+	"Expert configuration window"
 	def __init__(self):
-		super(advancedConfigWindow, self).__init__(title='Expert config')
+		super(expertConfigWindow, self).__init__(title='Expert config')
 
 		wx.EVT_CLOSE(self, self.OnClose)
 

@@ -210,6 +210,8 @@ class SpeedRepository:
 		settings.LabelSeparator().getFromRepository(self)
 		self.travelFeedRatePerSecond = settings.FloatSpin().getFromValue( 2.0, 'Travel Feed Rate (mm/s):', self, 350.0, 250.0 )
 		self.executeTitle = 'Speed'
+		
+		self.bottomLayerFlowRateMultiplier = settings.FloatSpin().getFromValue(0.0, 'Bottom layer flow rate (ratio):', self, 10.0, 1.0)
 
 	def execute(self):
 		"Speed button has been clicked."
@@ -246,6 +248,8 @@ class SpeedSkein:
 				flowRate *= ((self.repository.objectFirstLayerFlowRatePerimeterMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
 			else:
 				flowRate *= ((self.repository.objectFirstLayerFlowRateInfillMultiplier.value * (self.repository.objectFirstLayersLayerAmount.value - self.layerIndex)) + self.layerIndex) / self.repository.objectFirstLayersLayerAmount.value
+		if self.layerIndex == 0:
+			flowRate *= self.repository.bottomLayerFlowRateMultiplier.value
 		if flowRate != self.oldFlowRate:
 			self.distanceFeedRate.addLine('M108 S' + euclidean.getFourSignificantFigures(flowRate))
 		self.oldFlowRate = flowRate

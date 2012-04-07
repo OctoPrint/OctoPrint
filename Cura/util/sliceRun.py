@@ -89,7 +89,7 @@ def getSliceCommand(filename):
 			'--solid-layers', str(profile.calculateSolidLayerCount()),
 			'--fill-density', str(float(profile.getProfileSetting('fill_density'))/100),
 			'--fill-angle', '45',
-			'--fill-pattern', 'rectilinear',
+			'--fill-pattern', 'rectilinear', #rectilinear line concentric hilbertcurve archimedeanchords octagramspiral
 			'--solid-fill-pattern', 'rectilinear',
 			'--start-gcode', profile.getAlterationFilePath('start.gcode'),
 			'--end-gcode', profile.getAlterationFilePath('end.gcode'),

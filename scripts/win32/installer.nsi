@@ -85,6 +85,7 @@ Section "Cura Installer"
   CreateDirectory "$SMPROGRAMS\Cura ${VERSION}"
   CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
   CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Cura.lnk" "$INSTDIR\cura.bat" "" "$INSTDIR\cura.icon" 0
+  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\PrintRun.lnk" "$INSTDIR\printrun.bat" "" "$INSTDIR\cura.icon" 0
 
   ; Set output path to the driver directory.
   SetOutPath "$INSTDIR\drivers\"
@@ -107,9 +108,6 @@ Section "Uninstall"
   ; Remove registry keys
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Cura_${VERSION}"
   DeleteRegKey HKLM "SOFTWARE\Cura_${VERSION}"
-
-  ; Remove shortcuts, if any
-  Delete "$SMPROGRAMS\Cura ${VERSION}\*.*"
 
   ; Remove directories used
   RMDir /r "$SMPROGRAMS\Cura ${VERSION}"
