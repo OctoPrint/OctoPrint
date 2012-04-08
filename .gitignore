@@ -7,3 +7,5 @@ osx64-Cura-NewUI*
 win32-Cura-NewUI*
 linux-Cura-NewUI*
 Printrun
+.idea
+.DS_Store
