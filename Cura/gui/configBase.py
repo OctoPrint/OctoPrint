@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, sys, platform, types
+import wx, wx.lib.stattext, os, sys, platform, types
 
 from gui import validators
 from util import profile
@@ -109,8 +109,11 @@ class SettingRow():
 		self.configName = configName
 		self.panel = panel
 		self.type = type
-		
-		self.label = wx.StaticText(panel, -1, label)
+
+		self.label = wx.lib.stattext.GenStaticText(panel, -1, label)
+		self.label.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+		self.label.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseExit)
+
 		getSettingFunc = profile.getPreference
 		if self.type == 'profile':
 			getSettingFunc = profile.getProfileSetting
@@ -128,13 +131,6 @@ class SettingRow():
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
 		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		sizer.SetRows(x+1)
-		
-		if os.name == 'darwin':
-			self.ctrl.Bind(wx.EVT_SET_FOCUS, self.OnMouseEnter)
-			self.ctrl.Bind(wx.EVT_KILL_FOCUS, self.OnMouseExit)
-		else:
-			self.ctrl.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
-			self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseExit)
 		
 		self.defaultBGColour = self.ctrl.GetBackgroundColour()
 		
