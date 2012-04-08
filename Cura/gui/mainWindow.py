@@ -302,10 +302,10 @@ class mainWindow(configBase.configWindowBase):
 		newSize = self.GetSize();
 		newSize.IncBy(0, -spp.GetSize().GetHeight())
 		self.SetSize(newSize)
-		self.sizer.Remove(spp)
-		spp.Destroy()
+		spp.Show(False)
+		self.sizer.Detach(spp)
 		for spp in self.progressPanelList:
-			self.sizer.Remove(spp)
+			self.sizer.Detach(spp)
 		i = 2
 		for spp in self.progressPanelList:
 			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
