@@ -9,3 +9,6 @@ linux-Cura-*
 Printrun
 .idea
 .DS_Store
+Cura/current_profile.ini
+Cura/preferences.ini
+cura.sh
