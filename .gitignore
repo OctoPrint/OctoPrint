@@ -3,9 +3,9 @@
 *.pyc
 *.zip
 *.exe
-osx64-Cura-NewUI*
-win32-Cura-NewUI*
-linux-Cura-NewUI*
+osx64-Cura-*
+win32-Cura-*
+linux-Cura-*
 Printrun
 .idea
 .DS_Store

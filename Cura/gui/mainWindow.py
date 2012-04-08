@@ -4,7 +4,7 @@ import __init__
 import wx, os, platform, types, webbrowser
 
 from gui import configBase
-from gui import advancedConfig
+from gui import expertConfig
 from gui import preview3d
 from gui import sliceProgessPanel
 from gui import alterationPanel
@@ -96,7 +96,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0)
-		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 80 / 100), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
+		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 80.0 / 100.0), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
 		c = configBase.SettingRow(left, "Wall thickness (mm)", 'wall_thickness', '0.8', 'Thickness of the walls.\nThis is used in combination with the nozzle size to define the number\nof perimeter lines and the thickness of those perimeter lines.')
 		validators.validFloat(c, 0.0)
 		validators.wallThicknessValidator(c)
@@ -126,7 +126,7 @@ class mainWindow(configBase.configWindowBase):
 		
 		configBase.TitleRow(right, "Support")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
-		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the advanced settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
+		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the expert settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
 
 		configBase.TitleRow(right, "Filament")
 		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.89', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
@@ -174,6 +174,8 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Accuracy")
 		c = configBase.SettingRow(right, "Initial layer thickness (mm)", 'bottom_thickness', '0.0', 'Layer thickness of the bottom layer. A thicker bottom layer makes sticking to the bed easier. Set to 0.0 to have the bottom layer thickness the same as the other layers.')
 		validators.validFloat(c, 0.0)
+		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 3.0 / 4.0), "A bottom layer of more then %.2fmm (3/4 nozzle size) usually give bad results and is not recommended.")
+		c = configBase.SettingRow(right, "Enable 'skin'", 'enable_skin', False, 'Skin prints the outer lines of the prints twice, each time with half the thickness. This gives the illusion of a higher print quality.')
 
 		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
 
@@ -291,9 +293,9 @@ class mainWindow(configBase.configWindowBase):
 		printWindow.printFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
 
 	def OnExpertOpen(self, e):
-		acw = advancedConfig.advancedConfigWindow()
-		acw.Centre()
-		acw.Show(True)
+		ecw = expertConfig.expertConfigWindow()
+		ecw.Centre()
+		ecw.Show(True)
 
 	def removeSliceProgress(self, spp):
 		self.progressPanelList.remove(spp)
