@@ -154,9 +154,6 @@ else
     cp -a scripts/${BUILD_TARGET}/*.sh $TARGET_DIR/
 fi
 
-#add readme file
-cp README ${TARGET_DIR}/README.txt
-
 #package the result
 if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 	if [ $BUILD_TARGET = "win32" ]; then
