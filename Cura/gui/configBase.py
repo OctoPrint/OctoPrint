@@ -131,6 +131,9 @@ class SettingRow():
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
 		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		sizer.SetRows(x+1)
+
+		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+		self.ctrl.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseExit)
 		
 		self.defaultBGColour = self.ctrl.GetBackgroundColour()
 		
