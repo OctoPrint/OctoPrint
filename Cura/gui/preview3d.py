@@ -1,3 +1,5 @@
+from __future__ import division
+
 import sys
 import math
 import threading
@@ -163,11 +165,7 @@ class previewPanel(wx.Panel):
 		self.updateModelTransform()
 
 	def OnScale(self, e):
-		try:
-			scale = float(self.scale.GetValue())
-		except:
-			scale = 1.0
-		profile.putProfileSetting('model_scale', str(scale))
+		profile.putProfileSetting('model_scale', self.scale.GetValue())
 		self.updateModelTransform()
 	
 	def OnRotate(self, e):
@@ -292,8 +290,8 @@ class previewPanel(wx.Panel):
 		scale = 1.0
 		rotate = 0.0
 		try:
-			scale = float(profile.getProfileSetting('model_scale'))
-			rotate = float(profile.getProfileSetting('model_rotate_base')) / 180 * math.pi
+			scale = profile.getProfileSettingFloat('model_scale')
+			rotate = profile.getProfileSettingFloat('model_rotate_base') / 180.0 * math.pi
 		except:
 			pass
 		scaleX = scale

@@ -4,6 +4,7 @@ Settings is a collection of utilities to display, read & write the settings and 
 """
 
 from __future__ import absolute_import
+from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
@@ -18,11 +19,15 @@ def DEFSET(setting):
 
 def storedSetting(name):
 	return lambda setting: profile.getProfileSetting(name)
+def storedSettingFloat(name):
+	return lambda setting: profile.getProfileSettingFloat(name)
+def storedSettingInt(name):
+	return lambda setting: int(profile.getProfileSettingFloat(name))
 def storedPreference(name):
 	return lambda setting: profile.getPreference(name)
 
 def ifSettingAboveZero(name):
-	return lambda setting: float(profile.getProfileSetting(name)) > 0
+	return lambda setting: profile.getProfileSettingFloat(name) > 0
 
 def ifSettingIs(name, value):
 	return lambda setting: profile.getProfileSetting(name) == value
@@ -33,7 +38,7 @@ def raftLayerCount(setting):
 	return '0'
 
 def storedPercentSetting(name):
-	return lambda setting: float(profile.getProfileSetting(name)) / 100
+	return lambda setting: profile.getProfileSettingFloat(name) / 100
 
 def calculateEdgeWidth(setting):
 	return profile.calculateEdgeWidth()
@@ -43,7 +48,7 @@ def calculateShells(setting):
 
 def calculateShellsBase(setting):
 	edgeWidth = profile.calculateEdgeWidth()
-	extraWall = float(profile.getProfileSetting('extra_base_wall_thickness'))
+	extraWall = profile.getProfileSettingFloat('extra_base_wall_thickness')
 	
 	return profile.calculateLineCount() - 1 + int(extraWall / edgeWidth + 0.0001)
 
@@ -51,13 +56,13 @@ def calculateSolidLayerCount(setting):
 	return profile.calculateSolidLayerCount()
 
 def firstLayerSpeedRatio(setting):
-	bottomSpeed = float(profile.getProfileSetting('bottom_layer_speed'))
-	speed = float(profile.getProfileSetting('print_speed'))
+	bottomSpeed = profile.getProfileSettingFloat('bottom_layer_speed')
+	speed = profile.getProfileSettingFloat('print_speed')
 	return bottomSpeed/speed
 
 def calcSupportDistanceRatio(setting):
 	edgeWidth = calculateEdgeWidth(setting)
-	distance = float(profile.getProfileSetting('support_distance'))
+	distance = profile.getProfileSettingFloat('support_distance')
 	return distance / edgeWidth
 
 def calculateMultiplyDistance(setting):
@@ -65,22 +70,22 @@ def calculateMultiplyDistance(setting):
 	return 10.0 / edgeWidth
 
 def calcBottomLayerFlowRateRatio(setting):
-	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
-	layerThickness = float(profile.getProfileSetting('layer_height'))
+	bottomThickness = profile.getProfileSettingFloat('bottom_thickness')
+	layerThickness = profile.getProfileSettingFloat('layer_height')
 	if bottomThickness < layerThickness:
 		return 1.0
 	return bottomThickness / layerThickness
 
 def calcExtraBottomThickness(setting):
-	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
-	layerThickness = float(profile.getProfileSetting('layer_height'))
+	bottomThickness = profile.getProfileSettingFloat('bottom_thickness')
+	layerThickness = profile.getProfileSettingFloat('layer_height')
 	if bottomThickness < layerThickness:
 		return 0.0
 	return bottomThickness - layerThickness
 
 def calcLayerSkip(setting):
-	bottomThickness = float(profile.getProfileSetting('bottom_thickness'))
-	layerThickness = float(profile.getProfileSetting('layer_height'))
+	bottomThickness = profile.getProfileSettingFloat('bottom_thickness')
+	layerThickness = profile.getProfileSettingFloat('layer_height')
 	if bottomThickness < layerThickness:
 		return 0
 	return int(math.ceil((bottomThickness - layerThickness) / layerThickness + 0.0001) - 1)
@@ -92,7 +97,7 @@ def getProfileInformation():
 			'Edge_Width_mm': calculateEdgeWidth,
 			'Extra_Decimal_Places_float': DEFSET,
 			'Import_Coarseness_ratio': DEFSET,
-			'Layer_Height_mm': storedSetting("layer_height"),
+			'Layer_Height_mm': storedSettingFloat("layer_height"),
 			'Layers_From_index': calcLayerSkip,
 			'Layers_To_index': DEFSET,
 			'Correct_Mesh': DEFSET,
@@ -103,8 +108,8 @@ def getProfileInformation():
 			'FlipZ': storedSetting("flip_z"),
 			'SwapXZ': storedSetting("swap_xz"),
 			'SwapYZ': storedSetting("swap_yz"),
-			'Scale': storedSetting("model_scale"),
-			'Rotate': storedSetting("model_rotate_base"),
+			'Scale': storedSettingFloat("model_scale"),
+			'Rotate': storedSettingFloat("model_rotate_base"),
 		},'scale': {
 			'Activate_Scale': "False",
 			'XY_Plane_Scale_ratio': DEFSET,
@@ -128,7 +133,7 @@ def getProfileInformation():
 		},'inset': {
 			'Add_Custom_Code_for_Temperature_Reading': "False",
 			'Infill_in_Direction_of_Bridge': "True",
-			'Infill_Width': storedSetting("nozzle_size"),
+			'Infill_Width': storedSettingFloat("nozzle_size"),
 			'Loop_Order_Choice': DEFSET,
 			'Overlap_Removal_Width_over_Perimeter_Width_ratio': DEFSET,
 			'Turn_Extruder_Heater_Off_at_Shut_Down': DEFSET,
@@ -156,7 +161,7 @@ def getProfileInformation():
 			'Line': ifSettingIs('infill_type', 'Line'),
 			'Infill_Perimeter_Overlap_ratio': storedPercentSetting('fill_overlap'),
 			'Infill_Solidity_ratio': storedPercentSetting('fill_density'),
-			'Infill_Width': storedSetting("nozzle_size"),
+			'Infill_Width': storedSettingFloat("nozzle_size"),
 			'Sharpest_Angle_degrees': DEFSET,
 			'Solid_Surface_Thickness_layers': calculateSolidLayerCount,
 			'Start_From_Choice': DEFSET,
@@ -164,8 +169,8 @@ def getProfileInformation():
 			'Thread_Sequence_Choice': storedSetting('sequence'),
 		},'multiply': {
 			'Activate_Multiply': "True",
-			'Center_X_mm': storedSetting("machine_center_x"),
-			'Center_Y_mm': storedSetting("machine_center_y"),
+			'Center_X_mm': storedSettingFloat("machine_center_x"),
+			'Center_Y_mm': storedSettingFloat("machine_center_y"),
 			'Number_of_Columns_integer': storedSetting('model_multiply_x'),
 			'Number_of_Rows_integer': storedSetting('model_multiply_y'),
 			'Reverse_Sequence_every_Odd_Layer': DEFSET,
@@ -177,8 +182,8 @@ def getProfileInformation():
 			'Bridge_Flow_Rate_Multiplier_ratio': storedPercentSetting('bridge_material_amount'),
 			'Duty_Cyle_at_Beginning_portion': DEFSET,
 			'Duty_Cyle_at_Ending_portion': DEFSET,
-			'Feed_Rate_mm/s': storedSetting("print_speed"),
-			'Flow_Rate_Setting_float': storedSetting("print_speed"),
+			'Feed_Rate_mm/s': storedSettingFloat("print_speed"),
+			'Flow_Rate_Setting_float': storedSettingFloat("print_speed"),
 			'Object_First_Layer_Feed_Rate_Infill_Multiplier_ratio': firstLayerSpeedRatio,
 			'Object_First_Layer_Feed_Rate_Perimeter_Multiplier_ratio': firstLayerSpeedRatio,
 			'Object_First_Layer_Feed_Rate_Travel_Multiplier_ratio': firstLayerSpeedRatio,
@@ -189,19 +194,19 @@ def getProfileInformation():
 			'Maximum_Z_Feed_Rate_mm/s': DEFSET,
 			'Perimeter_Feed_Rate_Multiplier_ratio': DEFSET,
 			'Perimeter_Flow_Rate_Multiplier_ratio': DEFSET,
-			'Travel_Feed_Rate_mm/s': storedSetting("travel_speed"),
+			'Travel_Feed_Rate_mm/s': storedSettingFloat("travel_speed"),
 			'Bottom_layer_flow_rate_ratio': calcBottomLayerFlowRateRatio,
 		},'temperature': {
 			'Activate_Temperature': DEFSET,#ifSettingAboveZero('print_temperature'),
 			'Cooling_Rate_Celcius/second': DEFSET,
 			'Heating_Rate_Celcius/second': DEFSET,
-			'Base_Temperature_Celcius': DEFSET,#storedSetting("print_temperature"),
-			'Interface_Temperature_Celcius': DEFSET,#storedSetting("print_temperature"),
-			'Object_First_Layer_Infill_Temperature_Celcius': DEFSET,#storedSetting("print_temperature"),
-			'Object_First_Layer_Perimeter_Temperature_Celcius': DEFSET,#storedSetting("print_temperature"),
-			'Object_Next_Layers_Temperature_Celcius': DEFSET,#storedSetting("print_temperature"),
-			'Support_Layers_Temperature_Celcius': DEFSET,#storedSetting("print_temperature"),
-			'Supported_Layers_Temperature_Celcius': DEFSET,#storedSetting("print_temperature"),
+			'Base_Temperature_Celcius': DEFSET,#storedSettingFloat("print_temperature"),
+			'Interface_Temperature_Celcius': DEFSET,#storedSettingFloat("print_temperature"),
+			'Object_First_Layer_Infill_Temperature_Celcius': DEFSET,#storedSettingFloat("print_temperature"),
+			'Object_First_Layer_Perimeter_Temperature_Celcius': DEFSET,#storedSettingFloat("print_temperature"),
+			'Object_Next_Layers_Temperature_Celcius': DEFSET,#storedSettingFloat("print_temperature"),
+			'Support_Layers_Temperature_Celcius': DEFSET,#storedSettingFloat("print_temperature"),
+			'Supported_Layers_Temperature_Celcius': DEFSET,#storedSettingFloat("print_temperature"),
 		},'raft': {
 			'Activate_Raft': "True",
 			'Add_Raft,_Elevate_Nozzle,_Orbit': DEFSET,
@@ -223,7 +228,7 @@ def getProfileInformation():
 			'Name_of_Support_Start_File': DEFSET,
 			'Operating_Nozzle_Lift_over_Layer_Thickness_ratio': DEFSET,
 			'Raft_Additional_Margin_over_Length_%': DEFSET,
-			'Raft_Margin_mm': storedSetting('raft_margin'),
+			'Raft_Margin_mm': storedSettingFloat('raft_margin'),
 			'Support_Cross_Hatch': 'False',
 			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': storedPercentSetting('support_rate'),
 			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': calcSupportDistanceRatio,
@@ -284,16 +289,16 @@ def getProfileInformation():
 			'Bridge_Cool_Celcius': DEFSET,
 			'Cool_Type': DEFSET,
 			'Maximum_Cool_Celcius': DEFSET,
-			'Minimum_Layer_Time_seconds': storedSetting("cool_min_layer_time"),
+			'Minimum_Layer_Time_seconds': storedSettingFloat("cool_min_layer_time"),
 			'Minimum_Orbital_Radius_millimeters': DEFSET,
 			'Name_of_Cool_End_File': DEFSET,
 			'Name_of_Cool_Start_File': DEFSET,
 			'Orbital_Outset_millimeters': DEFSET,
 			'Turn_Fan_On_at_Beginning': storedSetting("fan_enabled"),
 			'Turn_Fan_Off_at_Ending': "False",
-			'Minimum_feed_rate_mm/s': storedSetting("cool_min_feedrate"),
-			'Fan_on_at_layer': storedSetting('fan_layer'),
-			'Fan_speed_%': storedSetting('fan_speed'),
+			'Minimum_feed_rate_mm/s': storedSettingFloat("cool_min_feedrate"),
+			'Fan_on_at_layer': storedSettingInt('fan_layer'),
+			'Fan_speed_%': storedSettingInt('fan_speed'),
 		},'hop': {
 			'Activate_Hop': "False",
 			'Hop_Over_Layer_Thickness_ratio': DEFSET,
@@ -362,14 +367,14 @@ def getProfileInformation():
 			'Activate_Dimension': "True",
 			'Absolute_Extrusion_Distance': "True",
 			'Relative_Extrusion_Distance': "False",
-			'Extruder_Retraction_Speed_mm/s': storedSetting('retraction_speed'),
-			'Filament_Diameter_mm': storedSetting("filament_diameter"),
-			'Filament_Packing_Density_ratio': storedSetting("filament_density"),
+			'Extruder_Retraction_Speed_mm/s': storedSettingFloat('retraction_speed'),
+			'Filament_Diameter_mm': storedSettingFloat("filament_diameter"),
+			'Filament_Packing_Density_ratio': storedSettingFloat("filament_density"),
 			'Maximum_E_Value_before_Reset_float': DEFSET,
-			'Minimum_Travel_for_Retraction_millimeters': storedSetting("retraction_min_travel"),
+			'Minimum_Travel_for_Retraction_millimeters': storedSettingFloat("retraction_min_travel"),
 			'Retract_Within_Island': DEFSET,
-			'Retraction_Distance_millimeters': storedSetting('retraction_amount'),
-			'Restart_Extra_Distance_millimeters': storedSetting('retraction_extra'),
+			'Retraction_Distance_millimeters': storedSettingFloat('retraction_amount'),
+			'Restart_Extra_Distance_millimeters': storedSettingFloat('retraction_extra'),
 		},'alteration': {
 			'Activate_Alteration': "True",
 			'Name_of_End_File': "end.gcode",

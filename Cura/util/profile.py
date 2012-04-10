@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
@@ -126,9 +127,15 @@ def getProfileSetting(name):
 		if not globalProfileParser.has_section('profile'):
 			globalProfileParser.add_section('profile')
 		globalProfileParser.set('profile', name, str(default))
-		print name + " not found in profile, so using default: " + str(default)
+		#print name + " not found in profile, so using default: " + str(default)
 		return default
 	return globalProfileParser.get('profile', name)
+
+def getProfileSettingFloat(name):
+	try:
+		return float(eval(getProfileSetting(name), {}, {}))
+	except (ValueError, SyntaxError):
+		return 0.0
 
 def putProfileSetting(name, value):
 	#Check if we have a configuration file loaded, else load the default.
@@ -160,7 +167,7 @@ def getPreference(name):
 		if not globalPreferenceParser.has_section('preference'):
 			globalPreferenceParser.add_section('preference')
 		globalPreferenceParser.set('preference', name, str(default))
-		print name + " not found in preferences, so using default: " + str(default)
+		#print name + " not found in preferences, so using default: " + str(default)
 		return default
 	return unicode(globalPreferenceParser.get('preference', name), "utf-8")
 
@@ -179,8 +186,8 @@ def putPreference(name, value):
 ## Utility functions to calculate common profile values
 #########################################################
 def calculateEdgeWidth():
-	wallThickness = float(getProfileSetting('wall_thickness'))
-	nozzleSize = float(getProfileSetting('nozzle_size'))
+	wallThickness = getProfileSettingFloat('wall_thickness')
+	nozzleSize = getProfileSettingFloat('nozzle_size')
 	
 	if wallThickness < nozzleSize:
 		return wallThickness
@@ -193,8 +200,8 @@ def calculateEdgeWidth():
 	return lineWidth
 
 def calculateLineCount():
-	wallThickness = float(getProfileSetting('wall_thickness'))
-	nozzleSize = float(getProfileSetting('nozzle_size'))
+	wallThickness = getProfileSettingFloat('wall_thickness')
+	nozzleSize = getProfileSettingFloat('nozzle_size')
 	
 	if wallThickness < nozzleSize:
 		return 1
@@ -207,8 +214,8 @@ def calculateLineCount():
 	return lineCount
 
 def calculateSolidLayerCount():
-	layerHeight = float(getProfileSetting('layer_height'))
-	solidThickness = float(getProfileSetting('solid_layer_thickness'))
+	layerHeight = getProfileSettingFloat('layer_height')
+	solidThickness = getProfileSettingFloat('solid_layer_thickness')
 	return int(math.ceil(solidThickness / layerHeight - 0.0001))
 
 #########################################################
@@ -230,7 +237,7 @@ def getAlterationFileContents(filename, allowMagicPrefix = True):
 			eSteps = float(getPreference('steps_per_e'))
 			if eSteps > 0:
 				prefix += 'M92 E'+str(eSteps)+'\n'
-			temp = float(getProfileSetting('print_temperature'))
+			temp = getProfileSettingFloat('print_temperature')
 			if temp > 0:
 				prefix += 'M109 S'+str(temp)+'\n'
 		elif filename == 'replace.csv':
