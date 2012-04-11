@@ -105,7 +105,8 @@ class printWindow(wx.Frame):
 			status += 'Line: %d/%d\n' % (self.printIdx, len(self.gcodeList))
 		if self.temp != None:
 			status += 'Temp: %d\n' % (self.temp)
-		self.statsText.SetLabel(status)
+		self.statsText.SetLabel(status.strip())
+		self.Layout()
 	
 	def OnConnect(self, e):
 		if self.machineCom != None:
