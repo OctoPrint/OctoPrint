@@ -16,6 +16,7 @@ from gui import printWindow
 from gui import simpleMode
 from gui import icon
 from util import profile
+from util import version
 
 def main():
 	app = wx.App(False)
@@ -33,7 +34,7 @@ def main():
 class mainWindow(configBase.configWindowBase):
 	"Main user interface window"
 	def __init__(self):
-		super(mainWindow, self).__init__(title='Cura')
+		super(mainWindow, self).__init__(title='Cura - ' + version.getVersion())
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())

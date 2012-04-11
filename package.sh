@@ -16,7 +16,7 @@ BUILD_TARGET=${1:-win32}
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=RC1
+BUILD_NAME=RC2
 TARGET_DIR=${BUILD_TARGET}-Cura-${BUILD_NAME}
 
 ##Which versions of external programs to use
@@ -140,8 +140,10 @@ mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
 #Cleanup pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
-#add Skeinforge
+#add Cura
 cp -a Cura ${TARGET_DIR}/Cura
+#Add cura version file
+echo $BUILD_NAME > ${TARGET_DIR}/Cura/version
 
 #add printrun
 cp -a Printrun ${TARGET_DIR}/Printrun

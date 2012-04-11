@@ -13,11 +13,12 @@ from gui import machineCom
 from gui import printWindow
 from gui import icon
 from util import profile
+from util import version
 
 class simpleModeWindow(configBase.configWindowBase):
 	"Main user interface window for simple mode"
 	def __init__(self):
-		super(simpleModeWindow, self).__init__(title='Cura - Simple mode')
+		super(simpleModeWindow, self).__init__(title='Cura - Simple mode - ' + version.getVersion())
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
