@@ -34,6 +34,14 @@ class previewPanel(wx.Panel):
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
 		self.SetMinSize((440,320))
 		
+		# Create popup window
+		self.popup = wx.PopupWindow(self, flags=wx.BORDER_SIMPLE)
+		self.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
+		self.popup.text = wx.StaticText(self.popup, -1, '')
+		self.popup.sizer = wx.BoxSizer()
+		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
+		self.popup.SetSizer(self.popup.sizer)
+		
 		self.glCanvas = PreviewGLCanvas(self)
 		self.init = 0
 		self.triangleMesh = None
@@ -71,6 +79,8 @@ class previewPanel(wx.Panel):
 		self.flipX.SetBezelWidth(1)
 		self.flipX.SetUseFocusIndicator(False)
 		self.flipX.SetToolTip(wx.ToolTip('Flip X'))
+		self.flipX.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
+		self.flipX.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.flipX.SetValue(profile.getProfileSetting('flip_x') == 'True')
 		self.toolbar2.AddControl(self.flipX)
 		self.Bind(wx.EVT_BUTTON, self.OnFlipXClick, self.flipX)
@@ -78,6 +88,8 @@ class previewPanel(wx.Panel):
 		self.flipY.SetBezelWidth(1)
 		self.flipY.SetUseFocusIndicator(False)
 		self.flipY.SetToolTip(wx.ToolTip('Flip Y'))
+		self.flipY.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
+		self.flipY.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.flipY.SetValue(profile.getProfileSetting('flip_y') == 'True')
 		self.toolbar2.AddControl(self.flipY)
 		self.Bind(wx.EVT_BUTTON, self.OnFlipYClick, self.flipY)
@@ -85,6 +97,8 @@ class previewPanel(wx.Panel):
 		self.flipZ.SetBezelWidth(1)
 		self.flipZ.SetUseFocusIndicator(False)
 		self.flipZ.SetToolTip(wx.ToolTip('Flip Z'))
+		self.flipZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
+		self.flipZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.flipZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
 		self.toolbar2.AddControl(self.flipZ)
 		self.Bind(wx.EVT_BUTTON, self.OnFlipZClick, self.flipZ)
@@ -95,6 +109,8 @@ class previewPanel(wx.Panel):
 		self.swapXZ.SetBezelWidth(1)
 		self.swapXZ.SetUseFocusIndicator(False)
 		self.swapXZ.SetToolTip(wx.ToolTip('Swap XZ'))
+		self.swapXZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
+		self.swapXZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
 		self.toolbar2.AddControl(self.swapXZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapXZClick, self.swapXZ)
@@ -103,6 +119,8 @@ class previewPanel(wx.Panel):
 		self.swapYZ.SetBezelWidth(1)
 		self.swapYZ.SetUseFocusIndicator(False)
 		self.swapYZ.SetToolTip(wx.ToolTip('Swap YZ'))
+		self.swapYZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
+		self.swapYZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
 		self.toolbar2.AddControl(self.swapYZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapYZClick, self.swapYZ)
@@ -144,6 +162,25 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
+	
+	def OnPopupDisplay(self, e):
+		self.UpdatePopup(e.GetEventObject())
+		self.popup.Show(True)
+	
+	def OnPopupHide(self, e):
+		self.popup.Show(False)
+	
+	def UpdatePopup(self, control):
+		self.popup.text.SetLabel(control.GetToolTip().GetTip())
+		self.popup.text.Wrap(350)
+		self.popup.Fit();
+		if os.name == 'darwin':
+			x, y = self.ClientToScreenXY(0, 0)
+			sx, sy = self.GetClientSizeTuple()
+		else:
+			x, y = control.ClientToScreenXY(0, 0)
+			sx, sy = control.GetSizeTuple()
+		self.popup.SetPosition((x, y+sy))
 	
 	def OnFlipXClick(self, e):
 		profile.putProfileSetting('flip_x', str(self.flipX.GetValue()))
