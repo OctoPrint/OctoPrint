@@ -295,7 +295,7 @@ def getProfileInformation():
 			'Name_of_Cool_Start_File': DEFSET,
 			'Orbital_Outset_millimeters': DEFSET,
 			'Turn_Fan_On_at_Beginning': storedSetting("fan_enabled"),
-			'Turn_Fan_Off_at_Ending': "False",
+			'Turn_Fan_Off_at_Ending': storedSetting("fan_enabled"),
 			'Minimum_feed_rate_mm/s': storedSettingFloat("cool_min_feedrate"),
 			'Fan_on_at_layer': storedSettingInt('fan_layer'),
 			'Fan_speed_%': storedSettingInt('fan_speed'),
