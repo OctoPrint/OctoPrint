@@ -97,6 +97,9 @@ Section "Cura Installer"
     ExecWait '"$INSTDIR\drivers\dpinst32.exe" /lm'
   ${EndIf}
   
+  ; Give all users write permissions in the install directory, so they can read/write profile and preferences files.
+  AccessControl::GrantOnFile "$INSTDIR" "(S-1-5-32-545)" "FullAccess"
+  
 SectionEnd
 
 ;--------------------------------
