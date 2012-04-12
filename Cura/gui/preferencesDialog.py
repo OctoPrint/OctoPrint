@@ -35,6 +35,7 @@ class preferencesDialog(configBase.configWindowBase):
 
 		configBase.TitleRow(left, 'Slicer settings')
 		c = configBase.SettingRow(left, 'Slicer selection', 'slicer', ['Cura (Skeinforge based)', 'Slic3r'], 'Which slicer to use to slice objects. Usually the Cura engine produces the best results. But Slic3r is developing fast and is faster with slicing.', type = 'preference')
+		c = configBase.SettingRow(left, 'Save profile on slice', 'save_profile', False, 'When slicing save the profile as [stl_file]_profile.ini next to the model.', type = 'preference')
 		
 		self.MakeModal(True)
 		main.Fit()

@@ -79,6 +79,7 @@ preferencesDefaultSettings = {
 	'serial_port': 'AUTO',
 	'serial_baud': '250000',
 	'slicer': 'Cura (Skeinforge based)',
+	'save_profile': 'False',
 }
 
 def getDefaultProfilePath():
