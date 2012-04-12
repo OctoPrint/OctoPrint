@@ -91,10 +91,6 @@ class previewPanel(wx.Panel):
 
 		self.toolbar2.AddSeparator()
 
-		#self.swapXZ = wx.CheckBox(self.toolbar2, -1, "XZ")
-		#self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
-		#self.toolbar2.AddControl(self.swapXZ)
-		#self.Bind(wx.EVT_CHECKBOX, self.OnSwapXZClick, self.swapXZ)
 		self.swapXZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-xz.png'), size=(20,20))
 		self.swapXZ.SetBezelWidth(1)
 		self.swapXZ.SetUseFocusIndicator(False)
@@ -110,11 +106,6 @@ class previewPanel(wx.Panel):
 		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
 		self.toolbar2.AddControl(self.swapYZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapYZClick, self.swapYZ)
-
-		#self.swapYZ = wx.CheckBox(self.toolbar2, -1, "YZ")
-		#self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
-		#self.toolbar2.AddControl(self.swapYZ)
-		#self.Bind(wx.EVT_CHECKBOX, self.OnSwapYZClick, self.swapYZ)
 		
 		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
