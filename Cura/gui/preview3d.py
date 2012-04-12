@@ -78,7 +78,7 @@ class previewPanel(wx.Panel):
 		self.mirrorX = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-x.png'), size=(20,20))
 		self.mirrorX.SetBezelWidth(1)
 		self.mirrorX.SetUseFocusIndicator(False)
-		self.mirrorX.SetToolTip(wx.ToolTip('Mirror X'))
+		self.mirrorX.helpText = 'Mirror X'
 		self.mirrorX.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.mirrorX.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.mirrorX.SetValue(profile.getProfileSetting('flip_x') == 'True')
@@ -87,7 +87,7 @@ class previewPanel(wx.Panel):
 		self.mirrorY = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-y.png'), size=(20,20))
 		self.mirrorY.SetBezelWidth(1)
 		self.mirrorY.SetUseFocusIndicator(False)
-		self.mirrorY.SetToolTip(wx.ToolTip('Mirror Y'))
+		self.mirrorY.helpText = 'Mirror Y'
 		self.mirrorY.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.mirrorY.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.mirrorY.SetValue(profile.getProfileSetting('flip_y') == 'True')
@@ -96,7 +96,7 @@ class previewPanel(wx.Panel):
 		self.mirrorZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-z.png'), size=(20,20))
 		self.mirrorZ.SetBezelWidth(1)
 		self.mirrorZ.SetUseFocusIndicator(False)
-		self.mirrorZ.SetToolTip(wx.ToolTip('Mirror Z'))
+		self.mirrorZ.helpText = 'Mirror Z'
 		self.mirrorZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.mirrorZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.mirrorZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
@@ -108,7 +108,7 @@ class previewPanel(wx.Panel):
 		self.swapXZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-xz.png'), size=(20,20))
 		self.swapXZ.SetBezelWidth(1)
 		self.swapXZ.SetUseFocusIndicator(False)
-		self.swapXZ.SetToolTip(wx.ToolTip('Swap XZ'))
+		self.swapXZ.helpText = 'Swap XZ'
 		self.swapXZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.swapXZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
@@ -118,7 +118,7 @@ class previewPanel(wx.Panel):
 		self.swapYZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-yz.png'), size=(20,20))
 		self.swapYZ.SetBezelWidth(1)
 		self.swapYZ.SetUseFocusIndicator(False)
-		self.swapYZ.SetToolTip(wx.ToolTip('Swap YZ'))
+		self.swapYZ.helpText = 'Swap YZ'
 		self.swapYZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.swapYZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
 		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
@@ -171,7 +171,7 @@ class previewPanel(wx.Panel):
 		self.popup.Show(False)
 	
 	def UpdatePopup(self, control):
-		self.popup.text.SetLabel(control.GetToolTip().GetTip())
+		self.popup.text.SetLabel(control.helpText)
 		self.popup.text.Wrap(350)
 		self.popup.Fit();
 		if os.name == 'darwin':
