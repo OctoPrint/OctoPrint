@@ -80,6 +80,8 @@ preferencesDefaultSettings = {
 	'serial_baud': '250000',
 	'slicer': 'Cura (Skeinforge based)',
 	'save_profile': 'False',
+	'filament_cost_kg': '0',
+	'filament_cost_meter': '0',
 }
 
 def getDefaultProfilePath():

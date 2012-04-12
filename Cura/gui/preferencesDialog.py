@@ -28,6 +28,10 @@ class preferencesDialog(configBase.configWindowBase):
 		configBase.TitleRow(left, 'Filament settings')
 		c = configBase.SettingRow(left, 'Filament density (kg/m3)', 'filament_density', '1300', 'Weight of the filament per m3. Around 1300 for PLA. And around 1040 for ABS. This value is used to estimate the weight if the filament used for the print.', type = 'preference')
 		validators.validFloat(c, 500.0, 3000.0)
+		c = configBase.SettingRow(left, 'Filament cost (price/kg)', 'filament_cost_kg', '0', 'Cost of your filament per kg, to estimate the cost of the final print.', type = 'preference')
+		validators.validFloat(c, 0.0)
+		c = configBase.SettingRow(left, 'Filament cost (price/m)', 'filament_cost_meter', '0', 'Cost of your filament per meter, to estimate the cost of the final print.', type = 'preference')
+		validators.validFloat(c, 0.0)
 		
 		configBase.TitleRow(left, 'Communication settings')
 		c = configBase.SettingRow(left, 'Serial port', 'serial_port', ['AUTO'] + machineCom.serialList(), 'Serial port to use for communication with the printer', type = 'preference')
