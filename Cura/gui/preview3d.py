@@ -8,6 +8,7 @@ import time
 import os
 
 from wx import glcanvas
+from wx.lib import buttons
 import wx
 try:
 	import OpenGL
@@ -63,32 +64,57 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
 		
-		self.toolbar2 = wx.ToolBar( self, -1 )
+		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_FLAT )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Flip'))
 
-		self.flipX = wx.CheckBox(self.toolbar2, -1, "X")
+		self.flipX = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-flip-x.png'), size=(20,20))
+		self.flipX.SetBezelWidth(1)
+		self.flipX.SetUseFocusIndicator(False)
+		self.flipX.SetToolTip(wx.ToolTip('Flip X'))
 		self.flipX.SetValue(profile.getProfileSetting('flip_x') == 'True')
 		self.toolbar2.AddControl(self.flipX)
-		self.Bind(wx.EVT_CHECKBOX, self.OnFlipXClick, self.flipX)
-		self.flipY = wx.CheckBox(self.toolbar2, -1, "Y")
+		self.Bind(wx.EVT_BUTTON, self.OnFlipXClick, self.flipX)
+		self.flipY = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-flip-y.png'), size=(20,20))
+		self.flipY.SetBezelWidth(1)
+		self.flipY.SetUseFocusIndicator(False)
+		self.flipY.SetToolTip(wx.ToolTip('Flip Y'))
 		self.flipY.SetValue(profile.getProfileSetting('flip_y') == 'True')
 		self.toolbar2.AddControl(self.flipY)
-		self.Bind(wx.EVT_CHECKBOX, self.OnFlipYClick, self.flipY)
-		self.flipZ = wx.CheckBox(self.toolbar2, -1, "Z")
+		self.Bind(wx.EVT_BUTTON, self.OnFlipYClick, self.flipY)
+		self.flipZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-flip-z.png'), size=(20,20))
+		self.flipZ.SetBezelWidth(1)
+		self.flipZ.SetUseFocusIndicator(False)
+		self.flipZ.SetToolTip(wx.ToolTip('Flip Z'))
 		self.flipZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
 		self.toolbar2.AddControl(self.flipZ)
-		self.Bind(wx.EVT_CHECKBOX, self.OnFlipZClick, self.flipZ)
+		self.Bind(wx.EVT_BUTTON, self.OnFlipZClick, self.flipZ)
 
-		self.swapXZ = wx.CheckBox(self.toolbar2, -1, "XZ")
+		self.toolbar2.AddSeparator()
+
+		#self.swapXZ = wx.CheckBox(self.toolbar2, -1, "XZ")
+		#self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
+		#self.toolbar2.AddControl(self.swapXZ)
+		#self.Bind(wx.EVT_CHECKBOX, self.OnSwapXZClick, self.swapXZ)
+		self.swapXZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-xz.png'), size=(20,20))
+		self.swapXZ.SetBezelWidth(1)
+		self.swapXZ.SetUseFocusIndicator(False)
+		self.swapXZ.SetToolTip(wx.ToolTip('Swap XZ'))
 		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
 		self.toolbar2.AddControl(self.swapXZ)
-		self.Bind(wx.EVT_CHECKBOX, self.OnSwapXZClick, self.swapXZ)
+		self.Bind(wx.EVT_BUTTON, self.OnSwapXZClick, self.swapXZ)
 
-		self.swapYZ = wx.CheckBox(self.toolbar2, -1, "YZ")
+		self.swapYZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-yz.png'), size=(20,20))
+		self.swapYZ.SetBezelWidth(1)
+		self.swapYZ.SetUseFocusIndicator(False)
+		self.swapYZ.SetToolTip(wx.ToolTip('Swap YZ'))
 		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
 		self.toolbar2.AddControl(self.swapYZ)
-		self.Bind(wx.EVT_CHECKBOX, self.OnSwapYZClick, self.swapYZ)
+		self.Bind(wx.EVT_BUTTON, self.OnSwapYZClick, self.swapYZ)
+
+		#self.swapYZ = wx.CheckBox(self.toolbar2, -1, "YZ")
+		#self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
+		#self.toolbar2.AddControl(self.swapYZ)
+		#self.Bind(wx.EVT_CHECKBOX, self.OnSwapYZClick, self.swapYZ)
 		
 		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
