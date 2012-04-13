@@ -1,6 +1,7 @@
 !ifndef VERSION
   !define VERSION 'DEV'
 !endif
+!addplugindir "nsisPlugins"
 
 ; The name of the installer
 Name "Cura ${VERSION}"
