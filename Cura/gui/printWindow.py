@@ -1,23 +1,54 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, threading, re
+import wx, threading, re, subprocess, sys
 
 from gui import machineCom
 from gui import icon
 from util import profile
 from util import gcodeInterpreter
 
-printWindowHandle = None
+printWindowMonitorHandle = None
 
 def printFile(filename):
-	global printWindowHandle
-	if printWindowHandle == None:
-		printWindowHandle = printWindow()
-		printWindowHandle.OnConnect(None)
+	global printWindowMonitorHandle
+	if printWindowMonitorHandle == None:
+		printWindowMonitorHandle = printProcessMonitor()
+	printWindowMonitorHandle.loadFile(filename)
+
+
+def startPrintInterface(filename):
+	#startPrintInterface is called from the main script when we want the printer interface to run in a seperate process.
+	# It needs to run in a seperate process, as any running python code blocks the GCode sender pyton code (http://wiki.python.org/moin/GlobalInterpreterLock).
+	app = wx.App(False)
+	printWindowHandle = printWindow()
 	printWindowHandle.Show(True)
 	printWindowHandle.Raise()
+	printWindowHandle.OnConnect(None)
 	printWindowHandle.LoadGCodeFile(filename)
+	app.MainLoop()
+
+class printProcessMonitor():
+	def __init__(self):
+		self.handle = None
+	
+	def loadFile(self, filename):
+		if self.handle == None:
+			self.handle = subprocess.Popen([sys.executable, sys.argv[0], '-r', filename], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			self.thread = threading.Thread(target=self.Monitor)
+			self.thread.start()
+		else:
+			self.handle.stdin.write(filename + '\n')
+	
+	def Monitor(self):
+		p = self.handle
+		line = p.stdout.readline()
+		while(len(line) > 0):
+			print line.rstrip()
+			line = p.stdout.readline()
+		p.wait()
+		self.handle = None
+		self.thread = None
 
 class printWindow(wx.Frame):
 	"Main user interface window"
@@ -110,8 +141,8 @@ class printWindow(wx.Frame):
 			if self.gcodeList != None:
 				status += 'Line: -/%d\n' % (len(self.gcodeList))
 		else:
-			self.progress.SetValue(self.printIdx)
 			status += 'Line: %d/%d\n' % (self.printIdx, len(self.gcodeList))
+			self.progress.SetValue(self.printIdx)
 		if self.temp != None:
 			status += 'Temp: %d\n' % (self.temp)
 		self.statsText.SetLabel(status.strip())
