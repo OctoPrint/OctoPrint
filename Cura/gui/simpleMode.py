@@ -164,6 +164,7 @@ class simpleModeWindow(configBase.configWindowBase):
 	
 	def OnSlice(self, e):
 		if self.filename == None:
+			wx.MessageBox('You need to load a file before you can slice it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		#save the current profile so we can put it back latter
 		oldProfile = profile.getGlobalProfileString()
@@ -273,7 +274,13 @@ class simpleModeWindow(configBase.configWindowBase):
 		profile.loadGlobalProfileFromString(oldProfile)
 	
 	def OnPrint(self, e):
-		printWindow.printWindow()
+		if self.filename == None:
+			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			return
+		if not os.path.exists(self.filename[: self.filename.rfind('.')] + "_export.gcode"):
+			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			return
+		printWindow.printFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
 
 	def OnNormalSwitch(self, e):
 		from gui import mainWindow

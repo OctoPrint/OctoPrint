@@ -274,6 +274,7 @@ class mainWindow(configBase.configWindowBase):
 	
 	def OnSlice(self, e):
 		if self.filename == None:
+			wx.MessageBox('You need to load a file before you can slice it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
@@ -286,7 +287,7 @@ class mainWindow(configBase.configWindowBase):
 	
 	def OnPrint(self, e):
 		if self.filename == None:
-			wx.MessageBox('You need to load a file before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		if not os.path.exists(self.filename[: self.filename.rfind('.')] + "_export.gcode"):
 			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
