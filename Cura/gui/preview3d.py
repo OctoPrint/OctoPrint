@@ -27,6 +27,8 @@ from util import gcodeInterpreter
 from util import stl
 from util import util3d
 
+IdMirrorX2 = 10
+
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent,-1)
@@ -72,42 +74,54 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
 		
-		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_FLAT )
+		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
+		self.toolbar2.AddSeparator()
 
-		self.mirrorX = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-x.png'), size=(20,20))
+
+		self.mirrorX = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-x-off.png'), style=0, size=(20,20))
 		self.mirrorX.SetBezelWidth(1)
 		self.mirrorX.SetUseFocusIndicator(False)
+		self.mirrorX.SetValue(profile.getProfileSetting('flip_x') == 'True')
+		if self.mirrorX.GetValue():
+			self.mirrorX.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-x-on.png'))
 		self.mirrorX.helpText = 'Mirror X'
 		self.mirrorX.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.mirrorX.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
-		self.mirrorX.SetValue(profile.getProfileSetting('flip_x') == 'True')
+		self.mirrorX.Bind(wx.EVT_BUTTON, self.OnFlipXClick)
 		self.toolbar2.AddControl(self.mirrorX)
-		self.Bind(wx.EVT_BUTTON, self.OnFlipXClick, self.mirrorX)
-		self.mirrorY = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-y.png'), size=(20,20))
+
+		self.mirrorY = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-y-off.png'), size=(20,20))
 		self.mirrorY.SetBezelWidth(1)
 		self.mirrorY.SetUseFocusIndicator(False)
+		self.mirrorY.SetValue(profile.getProfileSetting('flip_y') == 'True')
+		if self.mirrorY.GetValue():
+			self.mirrorY.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-x-on.png'))
 		self.mirrorY.helpText = 'Mirror Y'
 		self.mirrorY.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.mirrorY.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
-		self.mirrorY.SetValue(profile.getProfileSetting('flip_y') == 'True')
+		self.mirrorY.Bind(wx.EVT_BUTTON, self.OnFlipYClick)
 		self.toolbar2.AddControl(self.mirrorY)
-		self.Bind(wx.EVT_BUTTON, self.OnFlipYClick, self.mirrorY)
-		self.mirrorZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-z.png'), size=(20,20))
+
+		self.mirrorZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-z-off.png'), size=(20,20))
 		self.mirrorZ.SetBezelWidth(1)
 		self.mirrorZ.SetUseFocusIndicator(False)
+		self.mirrorZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
+		if self.mirrorZ.GetValue():
+			self.mirrorZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-z-on.png'))
 		self.mirrorZ.helpText = 'Mirror Z'
 		self.mirrorZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.mirrorZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
-		self.mirrorZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
+		self.mirrorZ.Bind(wx.EVT_BUTTON, self.OnFlipZClick)
 		self.toolbar2.AddControl(self.mirrorZ)
-		self.Bind(wx.EVT_BUTTON, self.OnFlipZClick, self.mirrorZ)
 
 		self.toolbar2.AddSeparator()
 
-		self.swapXZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-xz.png'), size=(20,20))
+		self.swapXZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-xz-off.png'), size=(20,20))
 		self.swapXZ.SetBezelWidth(1)
 		self.swapXZ.SetUseFocusIndicator(False)
+		if self.swapXZ.GetValue():
+			self.swapXZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-swap-xz-on.png'))
 		self.swapXZ.helpText = 'Swap XZ'
 		self.swapXZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.swapXZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
@@ -115,7 +129,7 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddControl(self.swapXZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapXZClick, self.swapXZ)
 
-		self.swapYZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-yz.png'), size=(20,20))
+		self.swapYZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-yz-off.png'), size=(20,20))
 		self.swapYZ.SetBezelWidth(1)
 		self.swapYZ.SetUseFocusIndicator(False)
 		self.swapYZ.helpText = 'Swap YZ'
@@ -125,35 +139,35 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddControl(self.swapYZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapYZClick, self.swapYZ)
 		
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
-		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
-		self.toolbar2.AddControl(self.scale)
-		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
+		#self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		#self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
+		#self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
+		#self.toolbar2.AddControl(self.scale)
+		#self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
 
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
-		self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		self.toolbar2.AddControl(self.mulXsub)
-		self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
-		self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
-		self.toolbar2.AddControl(self.mulXadd)
-		self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
+		#self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		#self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
+		#self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		#self.toolbar2.AddControl(self.mulXsub)
+		#self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
+		#self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		#self.toolbar2.AddControl(self.mulXadd)
+		#self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
 
-		self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		self.toolbar2.AddControl(self.mulYsub)
-		self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
-		self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
-		self.toolbar2.AddControl(self.mulYadd)
-		self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
+		#self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		#self.toolbar2.AddControl(self.mulYsub)
+		#self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
+		#self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		#self.toolbar2.AddControl(self.mulYadd)
+		#self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
 		
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
-		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
-		self.rotate.SetRange(0, 360)
-		self.toolbar2.AddControl(self.rotate)
-		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
-		
+		#self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		#self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
+		#self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
+		#self.rotate.SetRange(0, 360)
+		#self.toolbar2.AddControl(self.rotate)
+		#self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
+
 		self.toolbar2.Realize()
 		self.updateToolbar()
 		
@@ -184,22 +198,42 @@ class previewPanel(wx.Panel):
 	
 	def OnFlipXClick(self, e):
 		profile.putProfileSetting('flip_x', str(self.mirrorX.GetValue()))
+		if self.mirrorX.GetValue():
+			self.mirrorX.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-x-on.png'))
+		else:
+			self.mirrorX.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-x-off.png'))
 		self.updateModelTransform()
 		
 	def OnFlipYClick(self, e):
 		profile.putProfileSetting('flip_y', str(self.mirrorY.GetValue()))
+		if self.mirrorY.GetValue():
+			self.mirrorY.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-y-on.png'))
+		else:
+			self.mirrorY.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-y-off.png'))
 		self.updateModelTransform()
 
 	def OnFlipZClick(self, e):
 		profile.putProfileSetting('flip_z', str(self.mirrorZ.GetValue()))
+		if self.mirrorZ.GetValue():
+			self.mirrorZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-z-on.png'))
+		else:
+			self.mirrorZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-mirror-z-off.png'))
 		self.updateModelTransform()
 
 	def OnSwapXZClick(self, e):
 		profile.putProfileSetting('swap_xz', str(self.swapXZ.GetValue()))
+		if self.swapXZ.GetValue():
+			self.swapXZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-swap-xz-on.png'))
+		else:
+			self.swapXZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-swap-xz-off.png'))
 		self.updateModelTransform()
 
 	def OnSwapYZClick(self, e):
 		profile.putProfileSetting('swap_yz', str(self.swapYZ.GetValue()))
+		if self.swapYZ.GetValue():
+			self.swapYZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-swap-yz-on.png'))
+		else:
+			self.swapYZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-swap-yz-off.png'))
 		self.updateModelTransform()
 
 	def OnMulXAddClick(self, e):
