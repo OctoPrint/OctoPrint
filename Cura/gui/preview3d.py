@@ -76,8 +76,6 @@ class previewPanel(wx.Panel):
 		
 		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
-		self.toolbar2.AddSeparator()
-
 
 		self.mirrorX = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-mirror-x-off.png'), style=0, size=(20,20))
 		self.mirrorX.SetBezelWidth(1)
