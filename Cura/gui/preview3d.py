@@ -181,7 +181,9 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddSeparator()
 
 # Scale
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
+		self.scaleReset = NormalButton(self.toolbar2, self, 'object-scale.png', 'Reset model scale')
+		self.scaleReset.Bind(wx.EVT_BUTTON, self.OnScaleReset)
+		self.toolbar2.AddControl(self.scaleReset)
 		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
 		self.toolbar2.AddControl(self.scale)
 		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
@@ -208,11 +210,13 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddSeparator()
 
 # Rotate
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
+		self.rotateReset = NormalButton(self.toolbar2, self, 'object-rotate.png', 'Reset model rotation')
+		self.rotateReset.Bind(wx.EVT_BUTTON, self.OnRotateReset)
+		self.toolbar2.AddControl(self.rotateReset)
 		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
 		self.rotate.SetRange(0, 360)
+		self.Bind(wx.EVT_TEXT, self.OnRotate)
 		self.toolbar2.AddControl(self.rotate)
-		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
 
 		self.toolbar2.Realize()
 		self.updateToolbar()
@@ -222,6 +226,9 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
+
+	def GetBitmap(self, bitmapFilename):
+		return wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilename))
 	
 	def OnPopupDisplay(self, e):
 		self.UpdatePopup(e.GetEventObject())
@@ -260,6 +267,9 @@ class previewPanel(wx.Panel):
 		profile.putProfileSetting('model_multiply_y', str(max(1, int(profile.getProfileSetting('model_multiply_y'))-1)))
 		self.updateModelTransform()
 
+	def OnScaleReset(self, e):
+		self.scale.SetValue('1')
+
 	def OnScale(self, e):
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
 		self.updateModelTransform()
@@ -279,7 +289,10 @@ class previewPanel(wx.Panel):
 		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
 		self.updateModelTransform()
-	
+
+	def OnRotateReset(self, e):
+		self.rotate.SetValue(0)
+
 	def OnRotate(self, e):
 		profile.putProfileSetting('model_rotate_base', self.rotate.GetValue())
 		self.updateModelTransform()
