@@ -191,6 +191,7 @@ class DimensionSkein:
 		self.totalExtrusionDistance = 0.0
 		self.travelFeedRatePerSecond = None
 		self.zDistanceRatio = 5.0
+		self.addRetraction = False
 
 	def addLinearMoveExtrusionDistanceLine(self, extrusionDistance):
 		'Get the extrusion distance string from the extrusion distance.'
@@ -379,11 +380,17 @@ class DimensionSkein:
 			self.absoluteDistanceMode = True
 		elif firstWord == 'G91':
 			self.absoluteDistanceMode = False
+		elif firstWord == '(<nextmovehasspacejump>)':
+			#Check for the space jump moves for retraction, these tags are added by the comb plugin.
+			self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
+			self.addRetraction = True
 		elif firstWord == '(<layer>':
 			self.layerIndex += 1
 			settings.printProgress(self.layerIndex, 'dimension')
 		elif firstWord == 'M101':
-			self.addLinearMoveExtrusionDistanceLine(self.restartDistance * self.retractionRatio)
+			if self.addRetraction:
+				self.addLinearMoveExtrusionDistanceLine(self.restartDistance * self.retractionRatio)
+			self.addRetraction = False
 			if self.totalExtrusionDistance > self.repository.maximumEValueBeforeReset.value: 
 				if not self.repository.relativeExtrusionDistance.value:
 					self.distanceFeedRate.addLine('G92 E0')
@@ -391,7 +398,6 @@ class DimensionSkein:
 			self.isExtruderActive = True
 		elif firstWord == 'M103':
 			self.retractionRatio = self.getRetractionRatio(lineIndex)
-			self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
 			self.isExtruderActive = False
 		elif firstWord == 'M108':
 			self.flowRate = float( splitLine[1][1 :] )

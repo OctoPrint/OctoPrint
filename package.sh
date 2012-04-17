@@ -166,6 +166,7 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		
 		if [ ! -z `which wine` ]; then
 			#if we have wine, try to run our nsis script.
+			rm -rf scripts/win32/dist
 			ln -sf `pwd`/${TARGET_DIR} scripts/win32/dist
 			wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe /DVERSION=${BUILD_NAME} scripts/win32/installer.nsi 
 		fi

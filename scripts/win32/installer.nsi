@@ -1,6 +1,7 @@
 !ifndef VERSION
   !define VERSION 'DEV'
 !endif
+!addplugindir "nsisPlugins"
 
 ; The name of the installer
 Name "Cura ${VERSION}"
@@ -96,6 +97,9 @@ Section "Cura Installer"
   ${Else}
     ExecWait '"$INSTDIR\drivers\dpinst32.exe" /lm'
   ${EndIf}
+  
+  ; Give all users write permissions in the install directory, so they can read/write profile and preferences files.
+  AccessControl::GrantOnFile "$INSTDIR" "(S-1-5-32-545)" "FullAccess"
   
 SectionEnd
 

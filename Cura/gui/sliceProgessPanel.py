@@ -8,6 +8,7 @@ import threading
 import subprocess
 import time
 
+from util import profile
 from util import sliceRun
 
 class sliceProgessPanel(wx.Panel):
@@ -58,6 +59,8 @@ class sliceProgessPanel(wx.Panel):
 		self.prevStep = 'start'
 		self.totalDoneFactor = 0.0
 		self.startTime = time.time()
+		if profile.getPreference('save_profile') == 'True':
+			profile.saveGlobalProfile(self.filename[: self.filename.rfind('.')] + "_profile.ini")
 		p = subprocess.Popen(sliceRun.getSliceCommand(self.filename), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		self.thread = WorkerThread(self, filename, p)
 	

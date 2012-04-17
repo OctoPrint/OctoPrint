@@ -97,6 +97,7 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_width', '205')
 			profile.putPreference('machine_depth', '205')
 			profile.putPreference('machine_height', '200')
+			profile.putPreference('steps_per_e', '865.888')
 			profile.putProfileSetting('nozzle_size', '0.4')
 			profile.putProfileSetting('machine_center_x', '100')
 			profile.putProfileSetting('machine_center_y', '100')

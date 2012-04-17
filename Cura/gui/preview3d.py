@@ -139,34 +139,38 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddControl(self.swapYZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapYZClick, self.swapYZ)
 		
-		#self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		#self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
-		#self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
-		#self.toolbar2.AddControl(self.scale)
-		#self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
+		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
+		self.toolbar2.AddControl(self.scale)
+		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
 
-		#self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		#self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
-		#self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		#self.toolbar2.AddControl(self.mulXsub)
-		#self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
-		#self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
-		#self.toolbar2.AddControl(self.mulXadd)
-		#self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
+		self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		self.toolbar2.AddControl(self.mulXsub)
+		self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
+		self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		self.toolbar2.AddControl(self.mulXadd)
+		self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
 
-		#self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		#self.toolbar2.AddControl(self.mulYsub)
-		#self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
-		#self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
-		#self.toolbar2.AddControl(self.mulYadd)
-		#self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
+		self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
+		self.toolbar2.AddControl(self.mulYsub)
+		self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
+		self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+		self.toolbar2.AddControl(self.mulYadd)
+		self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
 		
-		#self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		#self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
-		#self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
-		#self.rotate.SetRange(0, 360)
-		#self.toolbar2.AddControl(self.rotate)
-		#self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
+		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
+		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
+		self.rotate.SetRange(0, 360)
+		self.toolbar2.AddControl(self.rotate)
+		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
+
+		self.scaleMax = wx.Button(self.toolbar, -1, 'Max size', size=(21*3.5,21))
+		self.toolbar.AddControl(self.scaleMax)
+		self.Bind(wx.EVT_BUTTON, self.OnScaleMax, self.scaleMax)
 
 		self.toolbar2.Realize()
 		self.updateToolbar()
@@ -253,6 +257,22 @@ class previewPanel(wx.Panel):
 		self.updateModelTransform()
 
 	def OnScale(self, e):
+		profile.putProfileSetting('model_scale', self.scale.GetValue())
+		self.updateModelTransform()
+	
+	def OnScaleMax(self, e):
+		if self.triangleMesh == None:
+			return
+		scale = float(self.scale.GetValue())
+		vMin = self.triangleMesh.getMinimum() / scale
+		vMax = self.triangleMesh.getMaximum() / scale
+		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
+		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
+		scaleX2 = (self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
+		scaleY2 = (self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
+		scaleZ = self.machineSize.z / (vMax.z - vMin.z)
+		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
+		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
 		self.updateModelTransform()
 	
@@ -448,7 +468,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		wx.EVT_MOUSEWHEEL(self, self.OnMouseWheel)
 		self.yaw = 30
 		self.pitch = 60
-		self.zoom = 150
+		self.zoom = 300
 		self.offsetX = 0
 		self.offsetY = 0
 		self.view3D = True

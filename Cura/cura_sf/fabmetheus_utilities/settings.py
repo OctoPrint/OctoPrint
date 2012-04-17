@@ -90,6 +90,9 @@ def calcLayerSkip(setting):
 		return 0
 	return int(math.ceil((bottomThickness - layerThickness) / layerThickness + 0.0001) - 1)
 
+def calculateBridgeFlow(setting):
+	return (profile.getProfileSettingFloat('bridge_speed') / 100) * (profile.getProfileSettingFloat('bridge_material_amount') / 100)
+
 def getProfileInformation():
 	return {
 		'carve': {
@@ -179,7 +182,7 @@ def getProfileInformation():
 			'Activate_Speed': "True",
 			'Add_Flow_Rate': "True",
 			'Bridge_Feed_Rate_Multiplier_ratio': storedPercentSetting('bridge_speed'),
-			'Bridge_Flow_Rate_Multiplier_ratio': storedPercentSetting('bridge_material_amount'),
+			'Bridge_Flow_Rate_Multiplier_ratio': calculateBridgeFlow,
 			'Duty_Cyle_at_Beginning_portion': DEFSET,
 			'Duty_Cyle_at_Ending_portion': DEFSET,
 			'Feed_Rate_mm/s': storedSettingFloat("print_speed"),
@@ -295,7 +298,7 @@ def getProfileInformation():
 			'Name_of_Cool_Start_File': DEFSET,
 			'Orbital_Outset_millimeters': DEFSET,
 			'Turn_Fan_On_at_Beginning': storedSetting("fan_enabled"),
-			'Turn_Fan_Off_at_Ending': "False",
+			'Turn_Fan_Off_at_Ending': storedSetting("fan_enabled"),
 			'Minimum_feed_rate_mm/s': storedSettingFloat("cool_min_feedrate"),
 			'Fan_on_at_layer': storedSettingInt('fan_layer'),
 			'Fan_speed_%': storedSettingInt('fan_speed'),
