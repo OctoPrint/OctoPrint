@@ -46,10 +46,15 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 def main():
 	parser = OptionParser(usage="usage: %prog [options] <filename>.stl")
 	parser.add_option("-p", "--profile", action="store", type="string", dest="profile", help="Use these profile settings instead of loading current_profile.ini")
+	parser.add_option("-P", "--project", action="store_true", dest="openprojectplanner", help="Open the project planner")
 	parser.add_option("-r", "--print", action="store", type="string", dest="printfile", help="Open the printing interface, instead of the normal cura interface.")
 	(options, args) = parser.parse_args()
 	if options.profile != None:
 		profile.loadGlobalProfileFromString(options.profile)
+	if options.openprojectplanner != None:
+		from gui import projectPlanner
+		projectPlanner.main()
+		return
 	if options.printfile != None:
 		from gui import printWindow
 		printWindow.startPrintInterface(options.printfile)

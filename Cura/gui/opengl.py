@@ -77,6 +77,31 @@ def DrawMachine(machineSize):
 	glVertex3f(0, machineSize.y, machineSize.z)
 	glEnd()
 
+def DrawBox(vMin, vMax):
+	glBegin(GL_LINE_LOOP)
+	glVertex3f(vMin.x, vMin.y, vMin.z)
+	glVertex3f(vMax.x, vMin.y, vMin.z)
+	glVertex3f(vMax.x, vMax.y, vMin.z)
+	glVertex3f(vMin.x, vMax.y, vMin.z)
+	glEnd()
+
+	glBegin(GL_LINE_LOOP)
+	glVertex3f(vMin.x, vMin.y, vMax.z)
+	glVertex3f(vMax.x, vMin.y, vMax.z)
+	glVertex3f(vMax.x, vMax.y, vMax.z)
+	glVertex3f(vMin.x, vMax.y, vMax.z)
+	glEnd()
+	glBegin(GL_LINES)
+	glVertex3f(vMin.x, vMin.y, vMin.z)
+	glVertex3f(vMin.x, vMin.y, vMax.z)
+	glVertex3f(vMax.x, vMin.y, vMin.z)
+	glVertex3f(vMax.x, vMin.y, vMax.z)
+	glVertex3f(vMax.x, vMax.y, vMin.z)
+	glVertex3f(vMax.x, vMax.y, vMax.z)
+	glVertex3f(vMin.x, vMax.y, vMin.z)
+	glVertex3f(vMin.x, vMax.y, vMax.z)
+	glEnd()
+
 def DrawSTL(mesh):
 	for face in mesh.faces:
 		glBegin(GL_TRIANGLES)
