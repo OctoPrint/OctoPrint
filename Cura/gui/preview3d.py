@@ -118,24 +118,26 @@ class previewPanel(wx.Panel):
 		self.swapXZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-xz-off.png'), size=(20,20))
 		self.swapXZ.SetBezelWidth(1)
 		self.swapXZ.SetUseFocusIndicator(False)
+		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
 		if self.swapXZ.GetValue():
 			self.swapXZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-swap-xz-on.png'))
 		self.swapXZ.helpText = 'Swap XZ'
 		self.swapXZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.swapXZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
-		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
-		self.toolbar2.AddControl(self.swapXZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapXZClick, self.swapXZ)
+		self.toolbar2.AddControl(self.swapXZ)
 
 		self.swapYZ = buttons.GenBitmapToggleButton(self.toolbar2, -1, wx.Bitmap('Cura/images/object-swap-yz-off.png'), size=(20,20))
 		self.swapYZ.SetBezelWidth(1)
 		self.swapYZ.SetUseFocusIndicator(False)
+		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
+		if self.swapYZ.GetValue():
+			self.swapYZ.SetBitmapLabel(wx.Bitmap('Cura/images/object-swap-yz-on.png'))
 		self.swapYZ.helpText = 'Swap YZ'
 		self.swapYZ.Bind(wx.EVT_ENTER_WINDOW, self.OnPopupDisplay)
 		self.swapYZ.Bind(wx.EVT_LEAVE_WINDOW, self.OnPopupHide)
-		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
-		self.toolbar2.AddControl(self.swapYZ)
 		self.Bind(wx.EVT_BUTTON, self.OnSwapYZClick, self.swapYZ)
+		self.toolbar2.AddControl(self.swapYZ)
 		
 		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
