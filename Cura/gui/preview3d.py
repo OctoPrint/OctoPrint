@@ -28,14 +28,15 @@ from util import stl
 from util import util3d
 
 class ToggleButton(buttons.GenBitmapToggleButton):
-	def __init__(self, parent, popupParent, profileSetting, bitmapOn, bitmapOff,
+	def __init__(self, parent, popupParent, profileSetting, bitmapFilenameOn, bitmapFilenameOff,
 				 helpText='', id=-1, size=(20,20)):
-		buttons.GenBitmapToggleButton.__init__(self, parent, id, bitmapOff, size=size)
+		self.bitmapOn = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOn))
+		self.bitmapOff = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOff))
+
+		buttons.GenBitmapToggleButton.__init__(self, parent, id, self.bitmapOff, size=size)
 
 		self.popupParent = popupParent
 		self.profileSetting = profileSetting
-		self.bitmapOn = bitmapOn
-		self.bitmapOff = bitmapOff
 		self.helpText = helpText
 
 		self.bezelWidth = 1
@@ -131,21 +132,21 @@ class previewPanel(wx.Panel):
 		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
 
-		self.mirrorX = ToggleButton(self.toolbar2, self, 'flip_x', wx.Bitmap('Cura/images/object-mirror-x-on.png'), wx.Bitmap('Cura/images/object-mirror-x-off.png'), 'Mirror X')
+		self.mirrorX = ToggleButton(self.toolbar2, self, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X')
 		self.toolbar2.AddControl(self.mirrorX)
 
-		self.mirrorY = ToggleButton(self.toolbar2, self, 'flip_y', wx.Bitmap('Cura/images/object-mirror-y-on.png'), wx.Bitmap('Cura/images/object-mirror-y-off.png'), 'Mirror Y')
+		self.mirrorY = ToggleButton(self.toolbar2, self, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y')
 		self.toolbar2.AddControl(self.mirrorY)
 
-		self.mirrorZ = ToggleButton(self.toolbar2, self, 'flip_z', wx.Bitmap('Cura/images/object-mirror-z-on.png'), wx.Bitmap('Cura/images/object-mirror-z-off.png'), 'Mirror Z')
+		self.mirrorZ = ToggleButton(self.toolbar2, self, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z')
 		self.toolbar2.AddControl(self.mirrorZ)
 
 		self.toolbar2.AddSeparator()
 
-		self.swapXZ = ToggleButton(self.toolbar2, self, 'swap_xz', wx.Bitmap('Cura/images/object-swap-xz-on.png'), wx.Bitmap('Cura/images/object-swap-xz-off.png'), 'Swap XZ')
+		self.swapXZ = ToggleButton(self.toolbar2, self, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ')
 		self.toolbar2.AddControl(self.swapXZ)
 
-		self.swapYZ = ToggleButton(self.toolbar2, self, 'swap_yz', wx.Bitmap('Cura/images/object-swap-yz-on.png'), wx.Bitmap('Cura/images/object-swap-yz-off.png'), 'Swap YZ')
+		self.swapYZ = ToggleButton(self.toolbar2, self, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ')
 		self.toolbar2.AddControl(self.swapYZ)
 		
 		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
