@@ -380,7 +380,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		wx.EVT_MOUSEWHEEL(self, self.OnMouseWheel)
 		self.yaw = 30
 		self.pitch = 60
-		self.zoom = 150
+		self.zoom = 300
 		self.offsetX = 0
 		self.offsetY = 0
 		self.view3D = True

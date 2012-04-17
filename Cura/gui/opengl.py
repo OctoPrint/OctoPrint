@@ -32,7 +32,7 @@ def InitGL(window, view3D, zoom):
 	glLoadIdentity()
 	aspect = float(size.GetWidth()) / float(size.GetHeight())
 	if view3D:
-		gluPerspective(90.0, aspect, 1.0, 1000.0)
+		gluPerspective(45.0, aspect, 1.0, 1000.0)
 	else:
 		glOrtho(-aspect, aspect, -1, 1, -1000.0, 1000.0)
 
