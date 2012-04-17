@@ -83,6 +83,29 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 		self.popupParent.OnPopupHide(event)
 		event.Skip()
 
+class NormalButton(buttons.GenBitmapButton):
+	def __init__(self, parent, popupParent, bitmapFilename,
+				 helpText='', id=-1, size=(20,20)):
+		self.bitmap = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilename))
+		buttons.GenBitmapButton.__init__(self, parent, id, self.bitmap, size=size)
+
+		self.popupParent = popupParent
+		self.helpText = helpText
+
+		self.bezelWidth = 1
+		self.useFocusInd = False
+
+		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+
+	def OnMouseEnter(self, event):
+		self.popupParent.OnPopupDisplay(event)
+		event.Skip()
+
+	def OnMouseLeave(self, event):
+		self.popupParent.OnPopupHide(event)
+		event.Skip()
+
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent,-1)
@@ -178,7 +201,7 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddControl(self.rotate)
 		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
 
-		self.scaleMax = wx.Button(self.toolbar, -1, 'Max size', size=(21*3.5,21))
+		self.scaleMax = NormalButton(self.toolbar, self, 'object-max-size.png', 'Scale object to fix machine size')
 		self.toolbar.AddControl(self.scaleMax)
 		self.Bind(wx.EVT_BUTTON, self.OnScaleMax, self.scaleMax)
 
