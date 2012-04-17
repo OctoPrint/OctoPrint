@@ -265,7 +265,7 @@ class previewPanel(wx.Panel):
 		self.updateModelTransform()
 
 	def OnScaleReset(self, e):
-		self.scale.SetValue('1')
+		self.scale.SetValue('1.0')
 
 	def OnScale(self, e):
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
