@@ -65,7 +65,7 @@ profileDefaultSettings = {
 	'raft_margin': '5',
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',
-	'bottom_thickness': '0.0',
+	'bottom_thickness': '0.3',
 	'add_start_end_gcode': 'True',
 	'gcode_extension': 'gcode',
 }
@@ -184,7 +184,7 @@ def putPreference(name, value):
 		globalPreferenceParser.read(getPreferencePath())
 	if not globalPreferenceParser.has_section('preference'):
 		globalPreferenceParser.add_section('preference')
-	globalPreferenceParser.set('preference', name, str(value).encode("utf-8"))
+	globalPreferenceParser.set('preference', name, unicode(value).encode("utf-8"))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
 
 #########################################################
