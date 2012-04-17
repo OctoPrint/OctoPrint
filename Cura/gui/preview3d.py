@@ -151,10 +151,15 @@ class previewPanel(wx.Panel):
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
+
+		self.scaleMax = NormalButton(self.toolbar, self, 'object-max-size.png', 'Scale object to fix machine size')
+		self.scaleMax.Bind(wx.EVT_BUTTON, self.OnScaleMax)
+		self.toolbar.AddControl(self.scaleMax)
 		
 		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
 
+# Mirror
 		self.mirrorX = ToggleButton(self.toolbar2, self, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X')
 		self.toolbar2.AddControl(self.mirrorX)
 
@@ -166,44 +171,48 @@ class previewPanel(wx.Panel):
 
 		self.toolbar2.AddSeparator()
 
+# Swap
 		self.swapXZ = ToggleButton(self.toolbar2, self, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ')
 		self.toolbar2.AddControl(self.swapXZ)
 
 		self.swapYZ = ToggleButton(self.toolbar2, self, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ')
 		self.toolbar2.AddControl(self.swapYZ)
 		
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddSeparator()
+
+# Scale
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
 		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
 		self.toolbar2.AddControl(self.scale)
 		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
 
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
-		self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		self.toolbar2.AddControl(self.mulXsub)
-		self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
-		self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
-		self.toolbar2.AddControl(self.mulXadd)
-		self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
+		self.toolbar2.AddSeparator()
 
-		self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		self.toolbar2.AddControl(self.mulYsub)
-		self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
-		self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+# Multiply
+		self.mulXadd = NormalButton(self.toolbar2, self, 'object-mul-x-add.png', 'Increase number of models on X axis')
+		self.mulXadd.Bind(wx.EVT_BUTTON, self.OnMulXAddClick)
+		self.toolbar2.AddControl(self.mulXadd)
+
+		self.mulXsub = NormalButton(self.toolbar2, self, 'object-mul-x-sub.png', 'Decrease number of models on X axis')
+		self.mulXsub.Bind(wx.EVT_BUTTON, self.OnMulXSubClick)
+		self.toolbar2.AddControl(self.mulXsub)
+
+		self.mulYadd = NormalButton(self.toolbar2, self, 'object-mul-y-add.png', 'Increase number of models on Y axis')
+		self.mulYadd.Bind(wx.EVT_BUTTON, self.OnMulYAddClick)
 		self.toolbar2.AddControl(self.mulYadd)
-		self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
-		
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+
+		self.mulYsub = NormalButton(self.toolbar2, self, 'object-mul-y-sub.png', 'Decrease number of models on Y axis')
+		self.mulYsub.Bind(wx.EVT_BUTTON, self.OnMulYSubClick)
+		self.toolbar2.AddControl(self.mulYsub)
+
+		self.toolbar2.AddSeparator()
+
+# Rotate
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
 		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
 		self.rotate.SetRange(0, 360)
 		self.toolbar2.AddControl(self.rotate)
 		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
-
-		self.scaleMax = NormalButton(self.toolbar, self, 'object-max-size.png', 'Scale object to fix machine size')
-		self.toolbar.AddControl(self.scaleMax)
-		self.Bind(wx.EVT_BUTTON, self.OnScaleMax, self.scaleMax)
 
 		self.toolbar2.Realize()
 		self.updateToolbar()
