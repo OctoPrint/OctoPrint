@@ -27,6 +27,7 @@ class Vector3():
 
 	def __div__(self, v):
 		return Vector3( self.x / v, self.y / v, self.z / v )
+	__truediv__ = __div__
 
 	def __neg__(self):
 		return Vector3( - self.x, - self.y, - self.z )

@@ -118,7 +118,11 @@ class previewPanel(wx.Panel):
 		self.rotate.SetRange(0, 360)
 		self.toolbar2.AddControl(self.rotate)
 		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
-		
+
+		self.scaleMax = wx.Button(self.toolbar, -1, 'Max size', size=(21*3.5,21))
+		self.toolbar.AddControl(self.scaleMax)
+		self.Bind(wx.EVT_BUTTON, self.OnScaleMax, self.scaleMax)
+
 		self.toolbar2.Realize()
 		self.updateToolbar()
 		
@@ -165,6 +169,22 @@ class previewPanel(wx.Panel):
 		self.updateModelTransform()
 
 	def OnScale(self, e):
+		profile.putProfileSetting('model_scale', self.scale.GetValue())
+		self.updateModelTransform()
+	
+	def OnScaleMax(self, e):
+		if self.triangleMesh == None:
+			return
+		scale = float(self.scale.GetValue())
+		vMin = self.triangleMesh.getMinimum() / scale
+		vMax = self.triangleMesh.getMaximum() / scale
+		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
+		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
+		scaleX2 = (self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
+		scaleY2 = (self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
+		scaleZ = self.machineSize.z / (vMax.z - vMin.z)
+		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
+		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
 		self.updateModelTransform()
 	
