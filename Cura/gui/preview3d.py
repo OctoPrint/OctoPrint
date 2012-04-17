@@ -227,9 +227,6 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
 
-	def GetBitmap(self, bitmapFilename):
-		return wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilename))
-	
 	def OnPopupDisplay(self, e):
 		self.UpdatePopup(e.GetEventObject())
 		self.popup.Show(True)
