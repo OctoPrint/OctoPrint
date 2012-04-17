@@ -182,7 +182,7 @@ def putPreference(name, value):
 		globalPreferenceParser.read(getPreferencePath())
 	if not globalPreferenceParser.has_section('preference'):
 		globalPreferenceParser.add_section('preference')
-	globalPreferenceParser.set('preference', name, str(value).encode("utf-8"))
+	globalPreferenceParser.set('preference', name, unicode(value).encode("utf-8"))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
 
 #########################################################
