@@ -29,7 +29,7 @@ profileDefaultSettings = {
 	'machine_center_x': '100',
 	'machine_center_y': '100',
 	'retraction_min_travel': '5.0',
-	'retraction_speed': '13.5',
+	'retraction_speed': '40.0',
 	'retraction_amount': '0.0',
 	'retraction_extra': '0.0',
 	'travel_speed': '150',

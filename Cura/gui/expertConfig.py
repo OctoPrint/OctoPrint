@@ -26,7 +26,7 @@ class expertConfigWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Cool")
 		c = configBase.SettingRow(left, "Minimum feedrate (mm/s)", 'cool_min_feedrate', '5', 'The minimal layer time can cause the print to slow down so much it starts to ooze. The minimal feedrate protects against this. Even if a print gets slown down it will never be slower then this minimal feedrate.')
 		validators.validFloat(c, 0.0)
-		c = configBase.SettingRow(left, "Fan on layer number", 'fan_layer', '0', 'The layer at which the fan is turned on. The first layer is layer 0.')
+		c = configBase.SettingRow(left, "Fan on layer number", 'fan_layer', '0', 'The layer at which the fan is turned on. The first layer is layer 0. The first layer can stick better if you turn on the fan on, on the 2nd layer.')
 		validators.validInt(c, 0)
 		c = configBase.SettingRow(left, "Fan speed (%)", 'fan_speed', '100', 'When the fan is turned on, it is enabled at this speed setting.')
 		validators.validInt(c, 0, 100)
