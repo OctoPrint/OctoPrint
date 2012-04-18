@@ -47,7 +47,7 @@ class previewPanel(wx.Panel):
 		self.toolbar = toolbarUtil.Toolbar(self)
 
 		group = []
-		toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', '3D view', callback=self.On3DClick).SetValue(True)
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', '3D view', callback=self.On3DClick)
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Topdown view', callback=self.OnTopClick)
 		self.toolbar.AddSeparator()
 

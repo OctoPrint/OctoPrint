@@ -129,6 +129,9 @@ class RadioButton(buttons.GenBitmapButton):
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 		
+		if len(group) == 1:
+			self.SetValue(True)
+		
 		parent.AddControl(self)
 
 	def SetBitmap(self, boolValue):
