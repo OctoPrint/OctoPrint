@@ -159,7 +159,7 @@ class simpleModeWindow(configBase.configWindowBase):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
 			self.preview3d.loadModelFile(self.filename)
-			self.preview3d.setViewMode("Model - Normal")
+			self.preview3d.setViewMode("Normal")
 		dlg.Destroy()
 	
 	def OnSlice(self, e):

@@ -51,10 +51,14 @@ class previewPanel(wx.Panel):
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Topdown view', callback=self.OnTopClick)
 		self.toolbar.AddSeparator()
 
-		self.viewSelect = wx.ComboBox(self.toolbar, -1, 'Model - Normal', choices=['Model - Normal', 'Model - Transparent', 'Model - X-Ray', 'GCode', 'Mixed'], style=wx.CB_DROPDOWN|wx.CB_READONLY)
-		self.toolbar.AddControl(self.viewSelect)
-		self.viewSelect.Bind(wx.EVT_COMBOBOX, self.OnViewChange)
-		self.glCanvas.viewMode = self.viewSelect.GetValue()
+		group = []
+		self.normalViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Normal model view', callback=self.OnViewChange)
+		self.transparentViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Transparent model view', callback=self.OnViewChange)
+		self.xrayViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'X-Ray view', callback=self.OnViewChange)
+		self.gcodeViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'GCode view', callback=self.OnViewChange)
+		self.mixedViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mixed model/GCode view', callback=self.OnViewChange)
+		self.OnViewChange()
+		self.toolbar.AddSeparator()
 
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
@@ -183,8 +187,11 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def setViewMode(self, mode):
-		self.viewSelect.SetValue(mode)
-		self.glCanvas.viewMode = self.viewSelect.GetValue()
+		if mode == "Normal":
+			self.normalViewButton.SetValue(True)
+		if mode == "GCode":
+			self.gcodeViewButton.SetValue(True)
+		self.glCanvas.viewMode = mode
 		wx.CallAfter(self.glCanvas.Refresh)
 	
 	def loadModelFile(self, filename):
@@ -262,8 +269,17 @@ class previewPanel(wx.Panel):
 			self.layerSpin.SetRange(1, len(self.gcode.layerList))
 		self.toolbar.Realize()
 	
-	def OnViewChange(self, e):
-		self.glCanvas.viewMode = self.viewSelect.GetValue()
+	def OnViewChange(self):
+		if self.normalViewButton.GetValue():
+			self.glCanvas.viewMode = "Normal"
+		elif self.transparentViewButton.GetValue():
+			self.glCanvas.viewMode = "Transparent"
+		elif self.xrayViewButton.GetValue():
+			self.glCanvas.viewMode = "X-Ray"
+		elif self.gcodeViewButton.GetValue():
+			self.glCanvas.viewMode = "GCode"
+		elif self.mixedViewButton.GetValue():
+			self.glCanvas.viewMode = "Mixed"
 		self.glCanvas.Refresh()
 	
 	def updateModelTransform(self, f=0):
@@ -522,7 +538,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glPopMatrix()
 				glEndList()
 			
-			if self.viewMode == "Model - Transparent" or self.viewMode == "Mixed":
+			if self.viewMode == "Transparent" or self.viewMode == "Mixed":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])
 				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.1, 0.1, 0.1, 0.0])
 				#If we want transparent, then first render a solid black model to remove the printer size lines.
@@ -539,7 +555,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glBlendFunc(GL_ONE, GL_ONE)
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
-			elif self.viewMode == "Model - X-Ray":
+			elif self.viewMode == "X-Ray":
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_STENCIL_TEST);
@@ -580,13 +596,13 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 				glDisable(GL_STENCIL_TEST);
 				glEnable(GL_DEPTH_TEST)
-			elif self.viewMode == "Model - Normal":
+			elif self.viewMode == "Normal":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
 				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.2, 0.2, 0.0])
 				glEnable(GL_LIGHTING)
 				glCallList(self.modelDisplayList)
 			
-			if self.viewMode == "Model - Normal" or self.viewMode == "Model - Transparent" or self.viewMode == "Model - X-Ray":
+			if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
 				glDisable(GL_LIGHTING)
 				glDisable(GL_DEPTH_TEST)
 				glDisable(GL_BLEND)
