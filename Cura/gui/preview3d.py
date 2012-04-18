@@ -140,9 +140,8 @@ class previewPanel(wx.Panel):
 	def OnScaleMax(self, e):
 		if self.triangleMesh == None:
 			return
-		scale = float(self.scale.GetValue())
-		vMin = self.triangleMesh.getMinimum() / scale
-		vMax = self.triangleMesh.getMaximum() / scale
+		vMin = self.triangleMesh.getMinimum()
+		vMax = self.triangleMesh.getMaximum()
 		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
 		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
 		scaleX2 = (self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
@@ -400,7 +399,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glRotate(-self.pitch, 1,0,0)
 			glRotate(self.yaw, 0,0,1)
 			if self.parent.triangleMesh != None:
-				glTranslate(0,0,-self.parent.triangleMesh.getMaximum().z / 2)
+				glTranslate(0,0,-self.parent.triangleMesh.getMaximum().z * profile.getProfileSettingFloat('model_scale') / 2)
 		else:
 			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
 			glTranslate(self.offsetX, self.offsetY, 0.0)
