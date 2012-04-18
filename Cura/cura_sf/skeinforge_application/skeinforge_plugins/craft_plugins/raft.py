@@ -711,7 +711,7 @@ class RaftSkein:
 		if self.layerIndex == 0:
 			feedRateMinuteMultiplied *= self.objectFirstLayerFeedRateInfillMultiplier
 			if supportFlowRateMultiplied != None:
-				supportFlowRateMultiplied *= self.objectFirstLayerFlowRateInfillMultiplier
+				supportFlowRateMultiplied = self.operatingFlowRate * self.objectFirstLayerFlowRateInfillMultiplier
 		self.addFlowRate(supportFlowRateMultiplied)
 		for path in paths:
 			self.distanceFeedRate.addGcodeFromFeedRateThreadZ(feedRateMinuteMultiplied, path, self.travelFeedRateMinute, z)
