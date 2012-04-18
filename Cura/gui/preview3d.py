@@ -133,9 +133,7 @@ class previewPanel(wx.Panel):
 	def OnScale(self, e):
 		scale = 1.0
 		if self.scale.GetValue() != '':
-			scale = float(self.scale.GetValue())
-			if scale <= 0.0:
-				scale = 1.0
+			scale = self.scale.GetValue()
 		profile.putProfileSetting('model_scale', scale)
 		self.modelDirty = True
 		self.glCanvas.Refresh()
