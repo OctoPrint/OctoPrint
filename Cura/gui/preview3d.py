@@ -112,19 +112,19 @@ class previewPanel(wx.Panel):
 	
 	def OnMulXAddClick(self, e):
 		profile.putProfileSetting('model_multiply_x', str(max(1, int(profile.getProfileSetting('model_multiply_x'))+1)))
-		self.updateModelTransform()
+		self.glCanvas.Refresh()
 
 	def OnMulXSubClick(self, e):
 		profile.putProfileSetting('model_multiply_x', str(max(1, int(profile.getProfileSetting('model_multiply_x'))-1)))
-		self.updateModelTransform()
+		self.glCanvas.Refresh()
 
 	def OnMulYAddClick(self, e):
 		profile.putProfileSetting('model_multiply_y', str(max(1, int(profile.getProfileSetting('model_multiply_y'))+1)))
-		self.updateModelTransform()
+		self.glCanvas.Refresh()
 
 	def OnMulYSubClick(self, e):
 		profile.putProfileSetting('model_multiply_y', str(max(1, int(profile.getProfileSetting('model_multiply_y'))-1)))
-		self.updateModelTransform()
+		self.glCanvas.Refresh()
 
 	def OnScaleReset(self, e):
 		self.scale.SetValue('1.0')
@@ -135,7 +135,6 @@ class previewPanel(wx.Panel):
 		if self.scale.GetValue() != '':
 			scale = self.scale.GetValue()
 		profile.putProfileSetting('model_scale', scale)
-		self.modelDirty = True
 		self.glCanvas.Refresh()
 	
 	def OnScaleMax(self, e):
@@ -152,7 +151,6 @@ class previewPanel(wx.Panel):
 		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
 		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
-		self.modelDirty = True
 		self.glCanvas.Refresh()
 
 	def OnRotateReset(self, e):
@@ -324,8 +322,6 @@ class previewPanel(wx.Panel):
 			face.normal = (v2 - v1).cross(v3 - v1)
 			face.normal.normalize()
 
-		if self.triangleMesh == None:
-			return
 		minZ = self.triangleMesh.getMinimumZ()
 		min = self.triangleMesh.getMinimum()
 		max = self.triangleMesh.getMaximum()
@@ -515,21 +511,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.modelDisplayList = glGenLists(1);
 			if self.parent.modelDirty:
 				self.parent.modelDirty = False
-				multiX = int(profile.getProfileSetting('model_multiply_x'))
-				multiY = int(profile.getProfileSetting('model_multiply_y'))
-				modelScale = profile.getProfileSettingFloat('model_scale')
-				modelSize = (self.parent.triangleMesh.getMaximum() - self.parent.triangleMesh.getMinimum()) * modelScale
 				glNewList(self.modelDisplayList, GL_COMPILE)
-				glPushMatrix()
-				glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
-				for mx in xrange(0, multiX):
-					for my in xrange(0, multiY):
-						glPushMatrix()
-						glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
-						glScalef(modelScale, modelScale, modelScale)
-						opengl.DrawSTL(self.parent.triangleMesh)
-						glPopMatrix()
-				glPopMatrix()
+				opengl.DrawSTL(self.parent.triangleMesh)
 				glEndList()
 			
 			glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
@@ -542,7 +525,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glDisable(GL_BLEND)
 					glDisable(GL_LIGHTING)
 					glColor3f(0,0,0)
-					glCallList(self.modelDisplayList)
+					self.drawModel()
 					glColor3f(1,1,1)
 				#After the black model is rendered, render the model again but now with lighting and no depth testing.
 				glDisable(GL_DEPTH_TEST)
@@ -550,23 +533,23 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glEnable(GL_BLEND)
 				glBlendFunc(GL_ONE, GL_ONE)
 				glEnable(GL_LIGHTING)
-				glCallList(self.modelDisplayList)
+				self.drawModel()
 			elif self.viewMode == "X-Ray":
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_STENCIL_TEST);
 				glStencilFunc(GL_ALWAYS, 1, 1)
 				glStencilOp(GL_INCR, GL_INCR, GL_INCR)
-				glCallList(self.modelDisplayList)
+				self.drawModel()
 				glStencilOp (GL_KEEP, GL_KEEP, GL_KEEP);
 				
 				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
 				glStencilFunc(GL_EQUAL, 0, 1);
 				glColor(1, 1, 1)
-				glCallList(self.modelDisplayList)
+				self.drawModel()
 				glStencilFunc(GL_EQUAL, 1, 1);
 				glColor(1, 0, 0)
-				glCallList(self.modelDisplayList)
+				self.drawModel()
 
 				glPushMatrix()
 				glLoadIdentity()
@@ -596,7 +579,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
 				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.2, 0.2, 0.0])
 				glEnable(GL_LIGHTING)
-				glCallList(self.modelDisplayList)
+				self.drawModel()
 			
 			if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
 				glDisable(GL_LIGHTING)
@@ -608,5 +591,21 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glVertex3f(err[0].x, err[0].y, err[0].z)
 					glVertex3f(err[1].x, err[1].y, err[1].z)
 				glEnd()
-		
 		glFlush()
+	
+	def drawModel(self):
+		multiX = int(profile.getProfileSetting('model_multiply_x'))
+		multiY = int(profile.getProfileSetting('model_multiply_y'))
+		modelScale = profile.getProfileSettingFloat('model_scale')
+		modelSize = (self.parent.triangleMesh.getMaximum() - self.parent.triangleMesh.getMinimum()) * modelScale
+		glPushMatrix()
+		glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
+		for mx in xrange(0, multiX):
+			for my in xrange(0, multiY):
+				glPushMatrix()
+				glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
+				glScalef(modelScale, modelScale, modelScale)
+				glCallList(self.modelDisplayList)
+				glPopMatrix()
+		glPopMatrix()
+
