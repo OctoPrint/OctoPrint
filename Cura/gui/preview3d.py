@@ -46,13 +46,10 @@ class previewPanel(wx.Panel):
 		
 		self.toolbar = toolbarUtil.Toolbar(self)
 
-		button = wx.Button(self.toolbar, -1, "3D", size=(21*2,21))
-		self.toolbar.AddControl(button)
-		self.Bind(wx.EVT_BUTTON, self.On3DClick, button)
-		
-		button = wx.Button(self.toolbar, -1, "Top", size=(21*2,21))
-		self.toolbar.AddControl(button)
-		self.Bind(wx.EVT_BUTTON, self.OnTopClick, button)
+		group = []
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', '3D view', callback=self.On3DClick).SetValue(True)
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Topdown view', callback=self.OnTopClick)
+		self.toolbar.AddSeparator()
 
 		self.viewSelect = wx.ComboBox(self.toolbar, -1, 'Model - Normal', choices=['Model - Normal', 'Model - Transparent', 'Model - X-Ray', 'GCode', 'Mixed'], style=wx.CB_DROPDOWN|wx.CB_READONLY)
 		self.toolbar.AddControl(self.viewSelect)
@@ -157,14 +154,14 @@ class previewPanel(wx.Panel):
 		profile.putProfileSetting('model_rotate_base', self.rotate.GetValue())
 		self.updateModelTransform()
 
-	def On3DClick(self, e):
+	def On3DClick(self):
 		self.glCanvas.yaw = 30
 		self.glCanvas.pitch = 60
 		self.glCanvas.zoom = 150
 		self.glCanvas.view3D = True
 		self.glCanvas.Refresh()
 
-	def OnTopClick(self, e):
+	def OnTopClick(self):
 		self.glCanvas.view3D = False
 		self.glCanvas.zoom = 100
 		self.glCanvas.offsetX = 0

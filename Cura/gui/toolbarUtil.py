@@ -77,16 +77,16 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 
 	def SetBitmap(self, boolValue):
 		if boolValue:
-			buttons.GenBitmapToggleButton.SetBitmapLabel(self, self.bitmapOn, False)
+			self.SetBitmapLabel(self.bitmapOn, False)
 		else:
-			buttons.GenBitmapToggleButton.SetBitmapLabel(self, self.bitmapOff, False)
+			self.SetBitmapLabel(self.bitmapOff, False)
 
 	def SetValue(self, boolValue):
 		self.SetBitmap(boolValue)
-		buttons.GenBitmapToggleButton.SetValue(self, boolValue)
+		super(ToggleButton, self).SetValue(boolValue)
 
 	def OnButton(self, event):
-		self.SetBitmap(buttons.GenBitmapToggleButton.GetValue(self))
+		self.SetBitmap(self.GetValue())
 		event.Skip()
 
 	def OnButtonProfile(self, event):
@@ -96,6 +96,61 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 		else:
 			self.SetBitmap(False)
 			profile.putProfileSetting(self.profileSetting, 'False')
+		self.callback()
+		event.Skip()
+
+	def OnMouseEnter(self, event):
+		self.GetParent().OnPopupDisplay(event)
+		event.Skip()
+
+	def OnMouseLeave(self, event):
+		self.GetParent().OnPopupHide(event)
+		event.Skip()
+
+class RadioButton(buttons.GenBitmapButton):
+	def __init__(self, parent, group, bitmapFilenameOn, bitmapFilenameOff,
+				 helpText='', id=-1, callback=None, size=(20,20)):
+		self.bitmapOn = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOn))
+		self.bitmapOff = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOff))
+
+		super(RadioButton, self).__init__(parent, id, self.bitmapOff, size=size)
+
+		self.group = group
+		group.append(self)
+		self.callback = callback
+		self.helpText = helpText
+		self._value = False
+
+		self.SetBezelWidth(1)
+		self.SetUseFocusIndicator(False)
+
+		self.Bind(wx.EVT_BUTTON, self.OnButton)
+
+		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+		
+		parent.AddControl(self)
+
+	def SetBitmap(self, boolValue):
+		if boolValue:
+			self.SetBitmapLabel(self.bitmapOn, False)
+		else:
+			self.SetBitmapLabel(self.bitmapOff, False)
+		self.Refresh()
+
+	def SetValue(self, boolValue):
+		self._value = boolValue
+		self.SetBitmap(self.GetValue())
+		if boolValue == True:
+			for other in self.group:
+				if other != self:
+					other.SetValue(False)
+	
+	def GetValue(self):
+		return self._value
+
+	def OnButton(self, event):
+		self.SetValue(True)
 		self.callback()
 		event.Skip()
 
