@@ -101,10 +101,14 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 
 	def OnMouseEnter(self, event):
 		self.GetParent().OnPopupDisplay(event)
+		self.SetBitmap(True)
+		self.Refresh()
 		event.Skip()
 
 	def OnMouseLeave(self, event):
 		self.GetParent().OnPopupHide(event)
+		self.SetBitmap(self.GetValue())
+		self.Refresh()
 		event.Skip()
 
 class RadioButton(buttons.GenBitmapButton):
@@ -159,10 +163,14 @@ class RadioButton(buttons.GenBitmapButton):
 
 	def OnMouseEnter(self, event):
 		self.GetParent().OnPopupDisplay(event)
+		self.SetBitmap(True)
+		self.Refresh()
 		event.Skip()
 
 	def OnMouseLeave(self, event):
 		self.GetParent().OnPopupHide(event)
+		self.SetBitmap(self.GetValue())
+		self.Refresh()
 		event.Skip()
 
 class NormalButton(buttons.GenBitmapButton):
