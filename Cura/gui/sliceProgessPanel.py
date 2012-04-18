@@ -10,6 +10,7 @@ import time
 
 from util import profile
 from util import sliceRun
+from util import exporer
 
 class sliceProgessPanel(wx.Panel):
 	def __init__(self, mainWindow, parent, filename):
@@ -77,6 +78,9 @@ class sliceProgessPanel(wx.Panel):
 	def OnShowLog(self, e):
 		LogWindow('\n'.join(self.progressLog))
 	
+	def OnOpenFileLocation(self, e):
+		exporer.openExporer(self.filename[: self.filename.rfind('.')] + "_export.gcode")
+	
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
 		self.abortButton.Destroy()
@@ -88,6 +92,10 @@ class sliceProgessPanel(wx.Panel):
 		self.sizer.Add(self.logButton, 0)
 		if result.returnCode == 0:
 			self.statusText.SetLabel("Ready.")
+			if exporer.hasExporer():
+				self.openFileLocationButton = wx.Button(self, -1, "Open file location")
+				self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
+				self.sizer.Add(self.openFileLocationButton, 0)
 			self.showButton = wx.Button(self, -1, "Show result")
 			self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
 			self.sizer.Add(self.showButton, 0)
