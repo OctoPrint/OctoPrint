@@ -137,7 +137,8 @@ class previewPanel(wx.Panel):
 			if scale <= 0.0:
 				scale = 1.0
 		profile.putProfileSetting('model_scale', scale)
-		self.updateModelTransform()
+		self.modelDirty = True
+		self.glCanvas.Refresh()
 	
 	def OnScaleMax(self, e):
 		if self.triangleMesh == None:
@@ -153,7 +154,8 @@ class previewPanel(wx.Panel):
 		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
 		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
-		self.updateModelTransform()
+		self.modelDirty = True
+		self.glCanvas.Refresh()
 
 	def OnRotateReset(self, e):
 		self.rotate.SetValue(0)
@@ -183,12 +185,10 @@ class previewPanel(wx.Panel):
 
 	def updateCenterX(self, x):
 		self.machineCenter.x = x
-		self.moveModel()
 		self.glCanvas.Refresh()
 
 	def updateCenterY(self, y):
 		self.machineCenter.y = y
-		self.moveModel()
 		self.glCanvas.Refresh()
 	
 	def setViewMode(self, mode):
@@ -290,16 +290,10 @@ class previewPanel(wx.Panel):
 	def updateModelTransform(self, f=0):
 		if self.triangleMesh == None:
 			return
-		scale = 1.0
-		rotate = 0.0
-		try:
-			scale = profile.getProfileSettingFloat('model_scale')
-			rotate = profile.getProfileSettingFloat('model_rotate_base') / 180.0 * math.pi
-		except:
-			pass
-		scaleX = scale
-		scaleY = scale
-		scaleZ = scale
+		rotate = profile.getProfileSettingFloat('model_rotate_base') / 180.0 * math.pi
+		scaleX = 1.0
+		scaleY = 1.0
+		scaleZ = 1.0
 		if profile.getProfileSetting('flip_x') == 'True':
 			scaleX = -scaleX
 		if profile.getProfileSetting('flip_y') == 'True':
@@ -332,9 +326,6 @@ class previewPanel(wx.Panel):
 			face.normal = (v2 - v1).cross(v3 - v1)
 			face.normal.normalize()
 
-		self.moveModel()
-	
-	def moveModel(self):
 		if self.triangleMesh == None:
 			return
 		minZ = self.triangleMesh.getMinimumZ()
@@ -344,8 +335,6 @@ class previewPanel(wx.Panel):
 			v.z -= minZ
 			v.x -= min.x + (max.x - min.x) / 2
 			v.y -= min.y + (max.y - min.y) / 2
-			v.x += self.machineCenter.x
-			v.y += self.machineCenter.y
 		self.triangleMesh.getMinimumZ()
 		self.modelDirty = True
 		self.glCanvas.Refresh()
@@ -530,7 +519,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.parent.modelDirty = False
 				multiX = int(profile.getProfileSetting('model_multiply_x'))
 				multiY = int(profile.getProfileSetting('model_multiply_y'))
-				modelSize = self.parent.triangleMesh.getMaximum() - self.parent.triangleMesh.getMinimum()
+				modelScale = profile.getProfileSettingFloat('model_scale')
+				modelSize = (self.parent.triangleMesh.getMaximum() - self.parent.triangleMesh.getMinimum()) * modelScale
 				glNewList(self.modelDisplayList, GL_COMPILE)
 				glPushMatrix()
 				glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
@@ -538,11 +528,14 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					for my in xrange(0, multiY):
 						glPushMatrix()
 						glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
+						glScalef(modelScale, modelScale, modelScale)
 						opengl.DrawSTL(self.parent.triangleMesh)
 						glPopMatrix()
 				glPopMatrix()
 				glEndList()
 			
+			glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
+			glEnable(GL_NORMALIZE)
 			if self.viewMode == "Transparent" or self.viewMode == "Mixed":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])
 				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.1, 0.1, 0.1, 0.0])
@@ -612,7 +605,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glDisable(GL_DEPTH_TEST)
 				glDisable(GL_BLEND)
 				glColor3f(1,0,0)
-				glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 				glBegin(GL_LINES)
 				for err in self.parent.errorList:
 					glVertex3f(err[0].x, err[0].y, err[0].z)
