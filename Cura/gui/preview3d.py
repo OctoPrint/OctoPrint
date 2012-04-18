@@ -159,7 +159,7 @@ class previewPanel(wx.Panel):
 		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
 
-# Mirror
+		# Mirror
 		self.mirrorX = ToggleButton(self.toolbar2, self, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X')
 		self.toolbar2.AddControl(self.mirrorX)
 
@@ -171,7 +171,7 @@ class previewPanel(wx.Panel):
 
 		self.toolbar2.AddSeparator()
 
-# Swap
+		# Swap
 		self.swapXZ = ToggleButton(self.toolbar2, self, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ')
 		self.toolbar2.AddControl(self.swapXZ)
 
@@ -180,17 +180,17 @@ class previewPanel(wx.Panel):
 		
 		self.toolbar2.AddSeparator()
 
-# Scale
+		# Scale
 		self.scaleReset = NormalButton(self.toolbar2, self, 'object-scale.png', 'Reset model scale')
 		self.scaleReset.Bind(wx.EVT_BUTTON, self.OnScaleReset)
 		self.toolbar2.AddControl(self.scaleReset)
 		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
 		self.toolbar2.AddControl(self.scale)
-		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
+		self.scale.Bind(wx.EVT_TEXT, self.OnScale)
 
 		self.toolbar2.AddSeparator()
 
-# Multiply
+		# Multiply
 		self.mulXadd = NormalButton(self.toolbar2, self, 'object-mul-x-add.png', 'Increase number of models on X axis')
 		self.mulXadd.Bind(wx.EVT_BUTTON, self.OnMulXAddClick)
 		self.toolbar2.AddControl(self.mulXadd)
@@ -209,7 +209,7 @@ class previewPanel(wx.Panel):
 
 		self.toolbar2.AddSeparator()
 
-# Rotate
+		# Rotate
 		self.rotateReset = NormalButton(self.toolbar2, self, 'object-rotate.png', 'Reset model rotation')
 		self.rotateReset.Bind(wx.EVT_BUTTON, self.OnRotateReset)
 		self.toolbar2.AddControl(self.rotateReset)
@@ -266,6 +266,7 @@ class previewPanel(wx.Panel):
 
 	def OnScaleReset(self, e):
 		self.scale.SetValue('1.0')
+		self.OnScale(None)
 
 	def OnScale(self, e):
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
@@ -289,6 +290,7 @@ class previewPanel(wx.Panel):
 
 	def OnRotateReset(self, e):
 		self.rotate.SetValue(0)
+		self.OnRotate(None)
 
 	def OnRotate(self, e):
 		profile.putProfileSetting('model_rotate_base', self.rotate.GetValue())
