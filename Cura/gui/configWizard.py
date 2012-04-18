@@ -97,7 +97,6 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_width', '205')
 			profile.putPreference('machine_depth', '205')
 			profile.putPreference('machine_height', '200')
-			profile.putPreference('steps_per_e', '865.888')
 			profile.putProfileSetting('nozzle_size', '0.4')
 			profile.putProfileSetting('machine_center_x', '100')
 			profile.putProfileSetting('machine_center_y', '100')
@@ -323,6 +322,9 @@ class UltimakerCalibrationPage(InfoPage):
 class UltimakerCalibrateStepsPerEPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCalibrateStepsPerEPage, self).__init__(parent, "Ultimaker Calibration")
+
+		if profile.getPreference('steps_per_e') == '0':
+			profile.putPreference('steps_per_e', '865.888')
 		
 		self.AddText("Calibrating the Steps Per E requires some manual actions.")
 		self.AddText("First remove any filament from your machine.")
