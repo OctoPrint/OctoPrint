@@ -52,11 +52,11 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddSeparator()
 
 		group = []
-		self.normalViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Normal model view', callback=self.OnViewChange)
-		self.transparentViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Transparent model view', callback=self.OnViewChange)
-		self.xrayViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'X-Ray view', callback=self.OnViewChange)
-		self.gcodeViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'GCode view', callback=self.OnViewChange)
-		self.mixedViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mixed model/GCode view', callback=self.OnViewChange)
+		self.normalViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-normal-on.png', 'view-normal-off.png', 'Normal model view', callback=self.OnViewChange)
+		self.transparentViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-transparent-on.png', 'view-transparent-off.png', 'Transparent model view', callback=self.OnViewChange)
+		self.xrayViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-xray-on.png', 'view-xray-off.png', 'X-Ray view', callback=self.OnViewChange)
+		self.gcodeViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-gcode-on.png', 'view-gcode-off.png', 'GCode view', callback=self.OnViewChange)
+		self.mixedViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-mixed-on.png', 'view-mixed-off.png', 'Mixed model/GCode view', callback=self.OnViewChange)
 		self.OnViewChange()
 		self.toolbar.AddSeparator()
 
