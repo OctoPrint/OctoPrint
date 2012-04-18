@@ -131,7 +131,12 @@ class previewPanel(wx.Panel):
 		self.OnScale(None)
 
 	def OnScale(self, e):
-		profile.putProfileSetting('model_scale', self.scale.GetValue())
+		scale = 1.0
+		if self.scale.GetValue() != '':
+			scale = float(self.scale.GetValue())
+			if scale <= 0.0:
+				scale = 1.0
+		profile.putProfileSetting('model_scale', scale)
 		self.updateModelTransform()
 	
 	def OnScaleMax(self, e):
