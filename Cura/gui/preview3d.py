@@ -63,8 +63,6 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
 
-		self.scaleMax = toolbarUtil.NormalButton(self.toolbar, self.OnScaleMax, 'object-max-size.png', 'Scale object to fix machine size')
-		
 		self.toolbar2 = toolbarUtil.Toolbar(self)
 
 		# Mirror
@@ -83,6 +81,7 @@ class previewPanel(wx.Panel):
 		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
 		self.toolbar2.AddControl(self.scale)
 		self.scale.Bind(wx.EVT_TEXT, self.OnScale)
+		self.scaleMax = toolbarUtil.NormalButton(self.toolbar2, self.OnScaleMax, 'object-max-size.png', 'Scale object to fix machine size')
 
 		self.toolbar2.AddSeparator()
 
