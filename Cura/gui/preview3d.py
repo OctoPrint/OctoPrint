@@ -8,6 +8,7 @@ import time
 import os
 
 from wx import glcanvas
+from wx.lib import buttons
 import wx
 try:
 	import OpenGL
@@ -26,12 +27,100 @@ from util import gcodeInterpreter
 from util import stl
 from util import util3d
 
+class ToggleButton(buttons.GenBitmapToggleButton):
+	def __init__(self, parent, popupParent, profileSetting, bitmapFilenameOn, bitmapFilenameOff,
+				 helpText='', id=-1, size=(20,20)):
+		self.bitmapOn = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOn))
+		self.bitmapOff = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOff))
+
+		buttons.GenBitmapToggleButton.__init__(self, parent, id, self.bitmapOff, size=size)
+
+		self.popupParent = popupParent
+		self.profileSetting = profileSetting
+		self.helpText = helpText
+
+		self.bezelWidth = 1
+		self.useFocusInd = False
+
+		if self.profileSetting != '':
+			self.SetValue(profile.getProfileSetting(self.profileSetting) == 'True')
+			self.Bind(wx.EVT_BUTTON, self.OnButtonProfile)
+		else:
+			self.Bind(wx.EVT_BUTTON, self.OnButton)
+
+		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+
+	def SetBitmap(self, bool):
+		if bool:
+			buttons.GenBitmapToggleButton.SetBitmapLabel(self, self.bitmapOn, False)
+		else:
+			buttons.GenBitmapToggleButton.SetBitmapLabel(self, self.bitmapOff, False)
+
+	def SetValue(self, bool):
+		self.SetBitmap(bool)
+		buttons.GenBitmapToggleButton.SetValue(self, bool)
+
+	def OnButton(self, event):
+		self.SetBitmap(buttons.GenBitmapToggleButton.GetValue(self))
+		event.Skip()
+
+	def OnButtonProfile(self, event):
+		if buttons.GenBitmapToggleButton.GetValue(self):
+			self.SetBitmap(True)
+			profile.putProfileSetting(self.profileSetting, 'True')
+		else:
+			self.SetBitmap(False)
+			profile.putProfileSetting(self.profileSetting, 'False')
+		self.popupParent.updateModelTransform()
+		event.Skip()
+
+	def OnMouseEnter(self, event):
+		self.popupParent.OnPopupDisplay(event)
+		event.Skip()
+
+	def OnMouseLeave(self, event):
+		self.popupParent.OnPopupHide(event)
+		event.Skip()
+
+class NormalButton(buttons.GenBitmapButton):
+	def __init__(self, parent, popupParent, bitmapFilename,
+				 helpText='', id=-1, size=(20,20)):
+		self.bitmap = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilename))
+		buttons.GenBitmapButton.__init__(self, parent, id, self.bitmap, size=size)
+
+		self.popupParent = popupParent
+		self.helpText = helpText
+
+		self.bezelWidth = 1
+		self.useFocusInd = False
+
+		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
+
+	def OnMouseEnter(self, event):
+		self.popupParent.OnPopupDisplay(event)
+		event.Skip()
+
+	def OnMouseLeave(self, event):
+		self.popupParent.OnPopupHide(event)
+		event.Skip()
+
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent,-1)
 		
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DDKSHADOW))
 		self.SetMinSize((440,320))
+		
+		# Create popup window
+		self.popup = wx.PopupWindow(self, flags=wx.BORDER_SIMPLE)
+		self.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
+		self.popup.text = wx.StaticText(self.popup, -1, '')
+		self.popup.sizer = wx.BoxSizer()
+		self.popup.sizer.Add(self.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
+		self.popup.SetSizer(self.popup.sizer)
+		self.popupOwner = None
 		
 		self.glCanvas = PreviewGLCanvas(self)
 		self.init = 0
@@ -62,66 +151,68 @@ class previewPanel(wx.Panel):
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
+
+		self.scaleMax = NormalButton(self.toolbar, self, 'object-max-size.png', 'Scale object to fix machine size')
+		self.scaleMax.Bind(wx.EVT_BUTTON, self.OnScaleMax)
+		self.toolbar.AddControl(self.scaleMax)
 		
-		self.toolbar2 = wx.ToolBar( self, -1 )
+		self.toolbar2 = wx.ToolBar( self, -1, style = wx.TB_HORIZONTAL | wx.NO_BORDER )
 		self.toolbar2.SetToolBitmapSize( ( 21, 21 ) )
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Flip'))
 
-		self.flipX = wx.CheckBox(self.toolbar2, -1, "X")
-		self.flipX.SetValue(profile.getProfileSetting('flip_x') == 'True')
-		self.toolbar2.AddControl(self.flipX)
-		self.Bind(wx.EVT_CHECKBOX, self.OnFlipXClick, self.flipX)
-		self.flipY = wx.CheckBox(self.toolbar2, -1, "Y")
-		self.flipY.SetValue(profile.getProfileSetting('flip_y') == 'True')
-		self.toolbar2.AddControl(self.flipY)
-		self.Bind(wx.EVT_CHECKBOX, self.OnFlipYClick, self.flipY)
-		self.flipZ = wx.CheckBox(self.toolbar2, -1, "Z")
-		self.flipZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
-		self.toolbar2.AddControl(self.flipZ)
-		self.Bind(wx.EVT_CHECKBOX, self.OnFlipZClick, self.flipZ)
+# Mirror
+		self.mirrorX = ToggleButton(self.toolbar2, self, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X')
+		self.toolbar2.AddControl(self.mirrorX)
 
-		self.swapXZ = wx.CheckBox(self.toolbar2, -1, "XZ")
-		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
+		self.mirrorY = ToggleButton(self.toolbar2, self, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y')
+		self.toolbar2.AddControl(self.mirrorY)
+
+		self.mirrorZ = ToggleButton(self.toolbar2, self, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z')
+		self.toolbar2.AddControl(self.mirrorZ)
+
+		self.toolbar2.AddSeparator()
+
+# Swap
+		self.swapXZ = ToggleButton(self.toolbar2, self, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ')
 		self.toolbar2.AddControl(self.swapXZ)
-		self.Bind(wx.EVT_CHECKBOX, self.OnSwapXZClick, self.swapXZ)
 
-		self.swapYZ = wx.CheckBox(self.toolbar2, -1, "YZ")
-		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
+		self.swapYZ = ToggleButton(self.toolbar2, self, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ')
 		self.toolbar2.AddControl(self.swapYZ)
-		self.Bind(wx.EVT_CHECKBOX, self.OnSwapYZClick, self.swapYZ)
 		
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+		self.toolbar2.AddSeparator()
+
+# Scale
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Scale'))
 		self.scale = wx.TextCtrl(self.toolbar2, -1, profile.getProfileSetting('model_scale'), size=(21*2,21))
 		self.toolbar2.AddControl(self.scale)
 		self.Bind(wx.EVT_TEXT, self.OnScale, self.scale)
 
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
-		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Copy'))
-		self.mulXsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		self.toolbar2.AddControl(self.mulXsub)
-		self.Bind(wx.EVT_BUTTON, self.OnMulXSubClick, self.mulXsub)
-		self.mulXadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
-		self.toolbar2.AddControl(self.mulXadd)
-		self.Bind(wx.EVT_BUTTON, self.OnMulXAddClick, self.mulXadd)
+		self.toolbar2.AddSeparator()
 
-		self.mulYsub = wx.Button(self.toolbar2, -1, '-', size=(21,21))
-		self.toolbar2.AddControl(self.mulYsub)
-		self.Bind(wx.EVT_BUTTON, self.OnMulYSubClick, self.mulYsub)
-		self.mulYadd = wx.Button(self.toolbar2, -1, '+', size=(21,21))
+# Multiply
+		self.mulXadd = NormalButton(self.toolbar2, self, 'object-mul-x-add.png', 'Increase number of models on X axis')
+		self.mulXadd.Bind(wx.EVT_BUTTON, self.OnMulXAddClick)
+		self.toolbar2.AddControl(self.mulXadd)
+
+		self.mulXsub = NormalButton(self.toolbar2, self, 'object-mul-x-sub.png', 'Decrease number of models on X axis')
+		self.mulXsub.Bind(wx.EVT_BUTTON, self.OnMulXSubClick)
+		self.toolbar2.AddControl(self.mulXsub)
+
+		self.mulYadd = NormalButton(self.toolbar2, self, 'object-mul-y-add.png', 'Increase number of models on Y axis')
+		self.mulYadd.Bind(wx.EVT_BUTTON, self.OnMulYAddClick)
 		self.toolbar2.AddControl(self.mulYadd)
-		self.Bind(wx.EVT_BUTTON, self.OnMulYAddClick, self.mulYadd)
-		
-		self.toolbar2.InsertSeparator(self.toolbar2.GetToolsCount())
+
+		self.mulYsub = NormalButton(self.toolbar2, self, 'object-mul-y-sub.png', 'Decrease number of models on Y axis')
+		self.mulYsub.Bind(wx.EVT_BUTTON, self.OnMulYSubClick)
+		self.toolbar2.AddControl(self.mulYsub)
+
+		self.toolbar2.AddSeparator()
+
+# Rotate
 		self.toolbar2.AddControl(wx.StaticText(self.toolbar2, -1, 'Rot'))
 		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
 		self.rotate.SetRange(0, 360)
 		self.toolbar2.AddControl(self.rotate)
 		self.Bind(wx.EVT_SPINCTRL, self.OnRotate, self.rotate)
-
-		self.scaleMax = wx.Button(self.toolbar, -1, 'Max size', size=(21*3.5,21))
-		self.toolbar.AddControl(self.scaleMax)
-		self.Bind(wx.EVT_BUTTON, self.OnScaleMax, self.scaleMax)
 
 		self.toolbar2.Realize()
 		self.updateToolbar()
@@ -132,25 +223,26 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
 	
-	def OnFlipXClick(self, e):
-		profile.putProfileSetting('flip_x', str(self.flipX.GetValue()))
-		self.updateModelTransform()
-		
-	def OnFlipYClick(self, e):
-		profile.putProfileSetting('flip_y', str(self.flipY.GetValue()))
-		self.updateModelTransform()
-
-	def OnFlipZClick(self, e):
-		profile.putProfileSetting('flip_z', str(self.flipZ.GetValue()))
-		self.updateModelTransform()
-
-	def OnSwapXZClick(self, e):
-		profile.putProfileSetting('swap_xz', str(self.swapXZ.GetValue()))
-		self.updateModelTransform()
-
-	def OnSwapYZClick(self, e):
-		profile.putProfileSetting('swap_yz', str(self.swapYZ.GetValue()))
-		self.updateModelTransform()
+	def OnPopupDisplay(self, e):
+		self.UpdatePopup(e.GetEventObject())
+		self.popup.Show(True)
+	
+	def OnPopupHide(self, e):
+		if self.popupOwner == e.GetEventObject():
+			self.popup.Show(False)
+	
+	def UpdatePopup(self, control):
+		self.popupOwner = control
+		self.popup.text.SetLabel(control.helpText)
+		self.popup.text.Wrap(350)
+		self.popup.Fit();
+		if os.name == 'darwin':
+			x, y = self.ClientToScreenXY(0, 0)
+			sx, sy = self.GetClientSizeTuple()
+		else:
+			x, y = control.ClientToScreenXY(0, 0)
+			sx, sy = control.GetSizeTuple()
+		self.popup.SetPosition((x, y+sy))
 
 	def OnMulXAddClick(self, e):
 		profile.putProfileSetting('model_multiply_x', str(max(1, int(profile.getProfileSetting('model_multiply_x'))+1)))

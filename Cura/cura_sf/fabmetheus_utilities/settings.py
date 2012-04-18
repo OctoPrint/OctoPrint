@@ -139,7 +139,7 @@ def getProfileInformation():
 			'Infill_Width': storedSettingFloat("nozzle_size"),
 			'Loop_Order_Choice': DEFSET,
 			'Overlap_Removal_Width_over_Perimeter_Width_ratio': DEFSET,
-			'Turn_Extruder_Heater_Off_at_Shut_Down': DEFSET,
+			'Turn_Extruder_Heater_Off_at_Shut_Down': "False",
 			'Volume_Fraction_ratio': DEFSET,
 		},'fill': {
 			'Activate_Fill': "True",
@@ -379,7 +379,7 @@ def getProfileInformation():
 			'Retraction_Distance_millimeters': storedSettingFloat('retraction_amount'),
 			'Restart_Extra_Distance_millimeters': storedSettingFloat('retraction_extra'),
 		},'alteration': {
-			'Activate_Alteration': "True",
+			'Activate_Alteration': storedSetting('add_start_end_gcode'),
 			'Name_of_End_File': "end.gcode",
 			'Name_of_Start_File': "start.gcode",
 			'Remove_Redundant_Mcode': "True",
@@ -398,7 +398,7 @@ def getProfileInformation():
 			'gcode_step': DEFSET,
 			'gcode_time_segment': DEFSET,
 			'gcode_small': DEFSET,
-			'File_Extension': DEFSET,
+			'File_Extension': storedSetting('gcode_extension'),
 			'Name_of_Replace_File': DEFSET,
 			'Save_Penultimate_Gcode': "False",
 		}
