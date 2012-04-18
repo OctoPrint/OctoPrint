@@ -16,9 +16,9 @@ from util import profile
 from util import version
 
 class simpleModeWindow(configBase.configWindowBase):
-	"Main user interface window for simple mode"
+	"Main user interface window for Quickprint mode"
 	def __init__(self):
-		super(simpleModeWindow, self).__init__(title='Cura - Simple mode - ' + version.getVersion())
+		super(simpleModeWindow, self).__init__(title='Cura - Quickprint - ' + version.getVersion())
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
@@ -67,7 +67,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		self.printMaterialPLA = wx.RadioButton(configPanel, -1, 'PLA', style=wx.RB_GROUP)
 		self.printMaterialABS = wx.RadioButton(configPanel, -1, 'ABS')
 		self.printMaterialDiameter = wx.TextCtrl(configPanel, -1, profile.getProfileSetting('filament_diameter'))
-
+		
 		self.printSupport = wx.CheckBox(configPanel, -1, 'Print support structure')
 		
 		sizer = wx.GridBagSizer()
@@ -254,7 +254,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('filament_density', '1.00')
 			put('enable_raft', 'False')
 			put('skirt_line_count', '1')
-		else:
+		if self.printMaterialABS.GetValue():
 			put('filament_density', '0.85')
 			put('enable_raft', 'True')
 			put('skirt_line_count', '0')

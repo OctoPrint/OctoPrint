@@ -55,7 +55,7 @@ class mainWindow(configBase.configWindowBase):
 		menubar.Append(fileMenu, '&File')
 		
 		simpleMenu = wx.Menu()
-		i = simpleMenu.Append(-1, 'Switch to simple mode...')
+		i = simpleMenu.Append(-1, 'Switch to Quickprint...')
 		self.Bind(wx.EVT_MENU, self.OnSimpleSwitch, i)
 		menubar.Append(simpleMenu, 'Simple')
 		
