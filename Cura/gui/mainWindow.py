@@ -14,6 +14,7 @@ from gui import configWizard
 from gui import machineCom
 from gui import printWindow
 from gui import simpleMode
+from gui import projectPlanner
 from gui import icon
 from util import profile
 from util import version
@@ -49,6 +50,9 @@ class mainWindow(configBase.configWindowBase):
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Preferences...')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
+		fileMenu.AppendSeparator()
+		i = fileMenu.Append(-1, 'Open project planner...')
+		self.Bind(wx.EVT_MENU, self.OnProjectPlanner, i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(wx.ID_EXIT, 'Quit')
 		self.Bind(wx.EVT_MENU, self.OnQuit, i)
@@ -296,6 +300,11 @@ class mainWindow(configBase.configWindowBase):
 		ecw = expertConfig.expertConfigWindow()
 		ecw.Centre()
 		ecw.Show(True)
+	
+	def OnProjectPlanner(self, e):
+		pp = projectPlanner.projectPlanner()
+		pp.Centre()
+		pp.Show(True)
 
 	def removeSliceProgress(self, spp):
 		self.progressPanelList.remove(spp)

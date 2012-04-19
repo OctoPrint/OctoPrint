@@ -56,7 +56,7 @@ class projectPlanner(wx.Frame):
 
 		group = []
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-3d-on.png', 'object-3d-off.png', '3D view', callback=self.On3DClick)
-		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick)
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick).SetValue(True)
 		
 		self.toolbar.Realize()
 		
@@ -259,7 +259,7 @@ class projectPlanner(wx.Frame):
 		
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
-		resultFile.close()	
+		resultFile.close()
 	
 	def loadModelFile(self, item):
 		item.load(item.filename)
