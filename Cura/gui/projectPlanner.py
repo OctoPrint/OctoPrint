@@ -17,6 +17,7 @@ except:
 	hasOpenGLlibs = False
 
 from gui import opengl
+from gui import toolbarUtil
 from gui import icon
 from util import profile
 from util import util3d
@@ -51,16 +52,12 @@ class projectPlanner(wx.Frame):
 		self.headSizeMin = util3d.Vector3(70,16,0)
 		self.headSizeMax = util3d.Vector3(16,35,0)
 
-		self.toolbar = wx.ToolBar( self, -1 )
-		self.toolbar.SetToolBitmapSize( ( 21, 21 ) )
+		self.toolbar = toolbarUtil.Toolbar(self)
 
-		button = wx.Button(self.toolbar, -1, "3D", size=(21*2,21))
-		self.toolbar.AddControl(button)
-		self.Bind(wx.EVT_BUTTON, self.On3DClick, button)
+		group = []
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-3d-on.png', 'object-3d-off.png', '3D view', callback=self.On3DClick)
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick)
 		
-		button = wx.Button(self.toolbar, -1, "Top", size=(21*2,21))
-		self.toolbar.AddControl(button)
-		self.Bind(wx.EVT_BUTTON, self.OnTopClick, button)
 		self.toolbar.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
@@ -150,14 +147,14 @@ class projectPlanner(wx.Frame):
 
 		dlg.Destroy()
 
-	def On3DClick(self, e):
+	def On3DClick(self):
 		self.preview.yaw = 30
 		self.preview.pitch = 60
 		self.preview.zoom = 300
 		self.preview.view3D = True
 		self.preview.Refresh()
 
-	def OnTopClick(self, e):
+	def OnTopClick(self):
 		self.preview.view3D = False
 		self.preview.zoom = self.machineSize.x / 2 + 10
 		self.preview.offsetX = 0
@@ -443,7 +440,10 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					item.validPlacement = False
 					item2.gotHit = True
 		
+		seenSelected = False
 		for item in self.parent.list:
+			if item == self.parent.selection:
+				seenSelected = True
 			if item.modelDisplayList == None:
 				item.modelDisplayList = glGenLists(1);
 			if item.modelDirty:
@@ -479,20 +479,34 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			
 			vMin = item.getMinimum() * item.scale
 			vMax = item.getMaximum() * item.scale
+			vMinHead = vMin - self.parent.headSizeMin
+			vMaxHead = vMax + self.parent.headSizeMax
+
 			glDisable(GL_LIGHTING)
-			if item.gotHit:
-				glColor3f(1.0,0.3,0.0)
+
+			if self.parent.selection == item:
+				if item.gotHit:
+					glColor3f(1.0,0.3,0.0)
+				else:
+					glColor3f(1.0,1.0,0.0)
+				opengl.DrawBox(vMin, vMax)
+				if item.gotHit:
+					glColor3f(1.0,0.0,0.3)
+				else:
+					glColor3f(1.0,0.0,1.0)
+				opengl.DrawBox(vMinHead, vMaxHead)
+			elif seenSelected:
+				if item.gotHit:
+					glColor3f(0.5,0.0,0.1)
+				else:
+					glColor3f(0.5,0.0,0.5)
+				opengl.DrawBox(vMinHead, vMaxHead)
 			else:
-				glColor3f(1.0,1.0,0.0)
-			opengl.DrawBox(vMin, vMax)
-			
-			vMin = vMin - self.parent.headSizeMin
-			vMax = vMax + self.parent.headSizeMax
-			if item.validPlacement:
-				glColor3f(1.0,0.0,1.0)
-			else:
-				glColor3f(1.0,0.0,0.3)
-			opengl.DrawBox(vMin, vMax)
+				if item.gotHit:
+					glColor3f(0.7,0.1,0.0)
+				else:
+					glColor3f(0.7,0.7,0.0)
+				opengl.DrawBox(vMin, vMax)
 			
 			glPopMatrix()
 		
