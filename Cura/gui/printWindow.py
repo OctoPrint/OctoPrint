@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, threading, re, subprocess, sys
+import wx, threading, re, subprocess, sys, os
+from wx.lib import buttons
 
 from gui import machineCom
 from gui import icon
@@ -50,6 +51,23 @@ class printProcessMonitor():
 		self.handle = None
 		self.thread = None
 
+class PrintCommandButton(buttons.GenBitmapButton):
+	def __init__(self, parent, command, bitmapFilename, size=(20,20)):
+		self.bitmap = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilename))
+		super(PrintCommandButton, self).__init__(parent.directControlPanel, -1, self.bitmap, size=size)
+
+		self.command = command
+		self.parent = parent
+
+		self.SetBezelWidth(1)
+		self.SetUseFocusIndicator(False)
+
+		self.Bind(wx.EVT_BUTTON, self.OnClick)
+
+	def OnClick(self, e):
+		self.parent.sendCommand(self.command)
+		e.Skip()
+
 class printWindow(wx.Frame):
 	"Main user interface window"
 	def __init__(self):
@@ -95,9 +113,38 @@ class printWindow(wx.Frame):
 		self.sizer.Add(self.printButton, pos=(2,1))
 		self.sizer.Add(self.cancelButton, pos=(3,1))
 		self.sizer.Add(self.progress, pos=(4,0), span=(1,2), flag=wx.EXPAND)
-
+		
 		self.sizer.Add(wx.StaticText(self.panel, -1, "Temp:"), pos=(0,3))
 		self.sizer.Add(self.temperatureSelect, pos=(0,4))
+		
+		self.directControlPanel = wx.Panel(self.panel)
+		self.sizer.Add(self.directControlPanel, pos=(1,3), span=(5,4))
+		
+		sizer = wx.GridBagSizer(2, 2)
+		self.directControlPanel.SetSizer(sizer)
+		sizer.Add(PrintCommandButton(self, 'G1 Y100 F6000', 'print-move-y100.png'), pos=(0,3))
+		sizer.Add(PrintCommandButton(self, 'G1 Y10 F6000', 'print-move-y10.png'), pos=(1,3))
+		sizer.Add(PrintCommandButton(self, 'G1 Y1 F6000', 'print-move-y1.png'), pos=(2,3))
+
+		sizer.Add(PrintCommandButton(self, 'G1 Y-1 F6000', 'print-move-y-1.png'), pos=(4,3))
+		sizer.Add(PrintCommandButton(self, 'G1 Y-10 F6000', 'print-move-y-10.png'), pos=(5,3))
+		sizer.Add(PrintCommandButton(self, 'G1 Y-100 F6000', 'print-move-y-100.png'), pos=(6,3))
+
+		sizer.Add(PrintCommandButton(self, 'G1 X-100 F6000', 'print-move-x-100.png'), pos=(3,0))
+		sizer.Add(PrintCommandButton(self, 'G1 X-10 F6000', 'print-move-x-10.png'), pos=(3,1))
+		sizer.Add(PrintCommandButton(self, 'G1 X-1 F6000', 'print-move-x-1.png'), pos=(3,2))
+
+		sizer.Add(PrintCommandButton(self, 'G1 X1 F6000', 'print-move-x1.png'), pos=(3,4))
+		sizer.Add(PrintCommandButton(self, 'G1 X10 F6000', 'print-move-x10.png'), pos=(3,5))
+		sizer.Add(PrintCommandButton(self, 'G1 X100 F6000', 'print-move-x100.png'), pos=(3,6))
+
+		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'object-max-size.png'), pos=(0,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'object-max-size.png'), pos=(1,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'object-max-size.png'), pos=(2,6))
+
+		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'object-max-size.png'), pos=(4,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'object-max-size.png'), pos=(5,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'object-max-size.png'), pos=(6,6))
 
 		self.sizer.AddGrowableRow(3)
 		self.sizer.AddGrowableCol(0)
@@ -122,6 +169,8 @@ class printWindow(wx.Frame):
 		#self.loadButton.Enable(self.printIdx == None)
 		self.printButton.Enable(self.machineConnected and self.gcodeList != None and self.printIdx == None)
 		self.cancelButton.Enable(self.printIdx != None)
+		self.temperatureSelect.Enable(self.machineConnected)
+		self.directControlPanel.Enable(self.machineConnected)
 	
 	def UpdateProgress(self):
 		status = ""
