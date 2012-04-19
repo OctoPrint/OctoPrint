@@ -217,23 +217,34 @@ class projectPlanner(wx.Frame):
 		#Restore the old profile.
 		profile.loadGlobalProfileFromString(oldProfile)
 		
-		resultFile = open("D:/Printing/result_export.gcode", "w")
-		resultFile.write(';TYPE:CUSTOM\n')
-		resultFile.write(profile.getAlterationFileContents('start.gcode'))
+		dlg=wx.FileDialog(self, "Save project gcode file", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
+		dlg.SetWildcard("GCode file (*.gcode)|*.gcode")
+		if dlg.ShowModal() != wx.ID_OK:
+			dlg.Destroy()
+			return
+		resultFile = open(dlg.GetPath(), "w")
+		dlg.Destroy()
+		
 		i = 1
 		maxZ = 0
 		prevItem = None
 		for item in self.list:
 			subprocess.call(item.sliceCmd)
 			
-			if prevItem != None:
-				#reset the extrusion length, and move to the next object center.
-				resultFile.write(';PRINTNR:%d\n' % (i))
+			maxZ = max(maxZ, item.getMaximum().z * item.scale)
+			put('machine_center_x', item.centerX)
+			put('machine_center_y', item.centerY)
+			put('clear_z', maxZ)
+			
+			if prevItem == None:
 				resultFile.write(';TYPE:CUSTOM\n')
-				resultFile.write('G1 Z%f F%f\n' % (maxZ + 5, profile.getProfileSettingFloat('travel_speed') * 60))
-				resultFile.write('G92 E0\n')
-				resultFile.write('G1 X%f Y%f F%f\n' % (item.centerX, item.centerY, profile.getProfileSettingFloat('travel_speed') * 60))
-				resultFile.write('G1 Z0 F%f\n' % (profile.getProfileSettingFloat('max_z_speed') * 60))
+				resultFile.write(profile.getAlterationFileContents('start.gcode'))
+			else:
+				#reset the extrusion length, and move to the next object center.
+				resultFile.write(';TYPE:CUSTOM\n')
+				resultFile.write(profile.getAlterationFileContents('nextobject.gcode'))
+			resultFile.write(';PRINTNR:%d\n' % (i))
+			profile.loadGlobalProfileFromString(oldProfile)
 			
 			f = open(item.filename[: item.filename.rfind('.')] + "_export.project_tmp", "r")
 			data = f.read(4096)
@@ -245,7 +256,6 @@ class projectPlanner(wx.Frame):
 			i += 1
 			
 			prevItem = item
-			maxZ = max(maxZ, item.getMaximum().z * item.scale)
 		
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
