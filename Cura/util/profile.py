@@ -3,10 +3,7 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import ConfigParser
-import os
-import traceback
-import math
+import ConfigParser, os, traceback, math, re
 
 #########################################################
 ## Profile and preferences functions
@@ -232,10 +229,16 @@ def getCuraBasePath():
 def getAlterationFilePath(filename):
 	return os.path.join(getCuraBasePath(), "alterations", filename)
 
-def getAlterationFileContents(filename, allowMagicPrefix = True):
+def replaceTagMatch(m):
+	tag = m.group(0)[1:-1]
+	if tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
+		return str(getProfileSettingFloat(tag) * 60)
+	return str(getProfileSettingFloat(tag))
+
+def getAlterationFileContents(filename, modifyForOutput = True):
 	"Get the file from the fileName or the lowercase fileName in the alterations directories."
 	prefix = ''
-	if allowMagicPrefix:
+	if modifyForOutput:
 		if filename == 'start.gcode':
 			#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
 			#We also set our steps per E here, if configured.
@@ -252,6 +255,8 @@ def getAlterationFileContents(filename, allowMagicPrefix = True):
 		file = open(fullFilename, "r")
 		fileText = file.read()
 		file.close()
+		if modifyForOutput:
+			fileText = re.sub("\{[^\}]*\}", replaceTagMatch, fileText)
 		return prefix + fileText
 	return prefix
 
