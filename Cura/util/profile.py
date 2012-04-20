@@ -154,18 +154,17 @@ def getPreferencePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
 
 def getPreference(name):
-	if name in preferencesDefaultSettings:
-		default = preferencesDefaultSettings[name]
-	else:
-		print "Missing default setting for: '" + name + "'"
-		preferencesDefaultSettings[name] = ''
-		default = ''
-
 	global globalPreferenceParser
 	if globalPreferenceParser == None:
 		globalPreferenceParser = ConfigParser.ConfigParser()
 		globalPreferenceParser.read(getPreferencePath())
 	if not globalPreferenceParser.has_option('preference', name):
+		if name in preferencesDefaultSettings:
+			default = preferencesDefaultSettings[name]
+		else:
+			print "Missing default setting for: '" + name + "'"
+			preferencesDefaultSettings[name] = ''
+			default = ''
 		if not globalPreferenceParser.has_section('preference'):
 			globalPreferenceParser.add_section('preference')
 		globalPreferenceParser.set('preference', name, str(default))
