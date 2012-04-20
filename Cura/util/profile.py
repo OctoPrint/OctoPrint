@@ -115,17 +115,16 @@ def getGlobalProfileString():
 	return '#'.join(ret)
 
 def getProfileSetting(name):
-	if name in profileDefaultSettings:
-		default = profileDefaultSettings[name]
-	else:
-		print "Missing default setting for: '" + name + "'"
-		profileDefaultSettings[name] = ''
-		default = ''
-	
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
 	if not globalProfileParser.has_option('profile', name):
+		if name in profileDefaultSettings:
+			default = profileDefaultSettings[name]
+		else:
+			print "Missing default setting for: '" + name + "'"
+			profileDefaultSettings[name] = ''
+			default = ''
 		if not globalProfileParser.has_section('profile'):
 			globalProfileParser.add_section('profile')
 		globalProfileParser.set('profile', name, str(default))
@@ -154,18 +153,17 @@ def getPreferencePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
 
 def getPreference(name):
-	if name in preferencesDefaultSettings:
-		default = preferencesDefaultSettings[name]
-	else:
-		print "Missing default setting for: '" + name + "'"
-		preferencesDefaultSettings[name] = ''
-		default = ''
-
 	global globalPreferenceParser
 	if globalPreferenceParser == None:
 		globalPreferenceParser = ConfigParser.ConfigParser()
 		globalPreferenceParser.read(getPreferencePath())
 	if not globalPreferenceParser.has_option('preference', name):
+		if name in preferencesDefaultSettings:
+			default = preferencesDefaultSettings[name]
+		else:
+			print "Missing default setting for: '" + name + "'"
+			preferencesDefaultSettings[name] = ''
+			default = ''
 		if not globalPreferenceParser.has_section('preference'):
 			globalPreferenceParser.add_section('preference')
 		globalPreferenceParser.set('preference', name, str(default))
