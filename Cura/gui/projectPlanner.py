@@ -68,9 +68,9 @@ class projectPlanner(wx.Frame):
 		self.remButton = wx.Button(self, -1, "Remove")
 		self.sliceButton = wx.Button(self, -1, "Slice")
 		
-		sizer.Add(self.toolbar, (0,0), span=(1,1), flag=wx.EXPAND)
-		sizer.Add(self.preview, (1,0), span=(3,1), flag=wx.EXPAND)
-		sizer.Add(self.listbox, (0,1), span=(2,2), flag=wx.EXPAND)
+		sizer.Add(self.toolbar, (0,0), span=(1,3), flag=wx.EXPAND)
+		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
+		sizer.Add(self.listbox, (1,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.addButton, (2,1), span=(1,1))
 		sizer.Add(self.remButton, (2,2), span=(1,1))
 		sizer.Add(self.sliceButton, (3,1), span=(1,1))
@@ -81,7 +81,25 @@ class projectPlanner(wx.Frame):
 		self.remButton.Bind(wx.EVT_BUTTON, self.OnRemModel)
 		self.sliceButton.Bind(wx.EVT_BUTTON, self.OnSlice)
 		self.listbox.Bind(wx.EVT_LISTBOX, self.OnListSelect)
+
+		panel = wx.Panel(self, -1)
+		sizer.Add(panel, (4,1), span=(1,2))
 		
+		sizer = wx.GridBagSizer(2,2)
+		panel.SetSizer(sizer)
+		
+		self.scaleCtrl = wx.TextCtrl(panel, -1, '')
+		self.rotateCtrl = wx.SpinCtrl(panel, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
+		self.rotateCtrl.SetRange(0, 360)
+
+		sizer.Add(wx.StaticText(panel, -1, 'Scale'), (0,0), flag=wx.ALIGN_CENTER_VERTICAL)
+		sizer.Add(self.scaleCtrl, (0,1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		sizer.Add(wx.StaticText(panel, -1, 'Rotate'), (1,0), flag=wx.ALIGN_CENTER_VERTICAL)
+		sizer.Add(self.rotateCtrl, (1,1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+
+		self.scaleCtrl.Bind(wx.EVT_TEXT, self.OnScaleChange)
+		self.rotateCtrl.Bind(wx.EVT_SPINCTRL, self.OnRotateChange)
+
 		self.SetSize((800,600))
 
 	def OnClose(self, e):
@@ -165,6 +183,8 @@ class projectPlanner(wx.Frame):
 		if self.listbox.GetSelection() == -1:
 			return
 		self.selection = self.list[self.listbox.GetSelection()]
+		self.scaleCtrl.SetValue(str(self.selection.scale))
+		self.rotateCtrl.SetValue(int(self.selection.rotate))
 		self.preview.Refresh()
 
 	def OnAddModel(self, e):
@@ -285,12 +305,29 @@ class projectPlanner(wx.Frame):
 		
 		self.updateModelTransform(item)
 
+		item.centerX = -item.getMinimum().x + 5
+		item.centerY = -item.getMinimum().y + 5
+
+	def OnScaleChange(self, e):
+		if self.selection == None:
+			return
+		try:
+			self.selection.scale = float(self.scaleCtrl.GetValue())
+		except ValueError:
+			self.selection.scale = 1.0
+		self.preview.Refresh()
+	
+	def OnRotateChange(self, e):
+		if self.selection == None:
+			return
+		self.selection.rotate = float(self.rotateCtrl.GetValue())
+		self.updateModelTransform(self.selection)
+
 	def updateModelTransform(self, item):
-		scale = item.scale
-		rotate = item.rotate
-		scaleX = scale
-		scaleY = scale
-		scaleZ = scale
+		rotate = item.rotate / 180.0 * math.pi
+		scaleX = 1.0
+		scaleY = 1.0
+		scaleZ = 1.0
 		if item.flipX:
 			scaleX = -scaleX
 		if item.flipY:
@@ -498,14 +535,14 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 			if self.parent.selection == item:
 				if item.gotHit:
-					glColor3f(1.0,0.3,0.0)
-				else:
-					glColor3f(1.0,1.0,0.0)
-				opengl.DrawBox(vMin, vMax)
-				if item.gotHit:
 					glColor3f(1.0,0.0,0.3)
 				else:
 					glColor3f(1.0,0.0,1.0)
+				opengl.DrawBox(vMin, vMax)
+				if item.gotHit:
+					glColor3f(1.0,0.3,0.0)
+				else:
+					glColor3f(1.0,1.0,0.0)
 				opengl.DrawBox(vMinHead, vMaxHead)
 			elif seenSelected:
 				if item.gotHit:
