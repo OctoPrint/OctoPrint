@@ -30,7 +30,7 @@ class Action():
 class projectPlanner(wx.Frame):
 	"Main user interface window"
 	def __init__(self):
-		super(projectPlanner, self).__init__(None, title='Cura')
+		super(projectPlanner, self).__init__(None, title='Cura - Project Planner')
 		
 		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
 		wx.EVT_CLOSE(self, self.OnClose)
