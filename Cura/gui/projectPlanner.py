@@ -162,6 +162,8 @@ class projectPlanner(wx.Frame):
 		self.preview.Refresh()
 
 	def OnListSelect(self, e):
+		if self.listbox.GetSelection() == -1:
+			return
 		self.selection = self.list[self.listbox.GetSelection()]
 		self.preview.Refresh()
 
