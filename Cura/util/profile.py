@@ -115,17 +115,16 @@ def getGlobalProfileString():
 	return '#'.join(ret)
 
 def getProfileSetting(name):
-	if name in profileDefaultSettings:
-		default = profileDefaultSettings[name]
-	else:
-		print "Missing default setting for: '" + name + "'"
-		profileDefaultSettings[name] = ''
-		default = ''
-	
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
 	if not globalProfileParser.has_option('profile', name):
+		if name in profileDefaultSettings:
+			default = profileDefaultSettings[name]
+		else:
+			print "Missing default setting for: '" + name + "'"
+			profileDefaultSettings[name] = ''
+			default = ''
 		if not globalProfileParser.has_section('profile'):
 			globalProfileParser.add_section('profile')
 		globalProfileParser.set('profile', name, str(default))

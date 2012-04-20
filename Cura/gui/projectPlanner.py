@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser, math, subprocess
+import wx, os, platform, types, webbrowser, math, subprocess, threading, time
 import ConfigParser
 
 from wx import glcanvas
@@ -23,6 +23,9 @@ from util import profile
 from util import util3d
 from util import stl
 from util import sliceRun
+
+class Action():
+	pass
 
 class projectPlanner(wx.Frame):
 	"Main user interface window"
@@ -223,6 +226,8 @@ class projectPlanner(wx.Frame):
 		put('add_start_end_gcode', 'False')
 		put('gcode_extension', 'project_tmp')
 		
+		clearZ = 0
+		actionList = []
 		for item in self.list:
 			put('machine_center_x', item.centerX)
 			put('machine_center_y', item.centerY)
@@ -234,7 +239,14 @@ class projectPlanner(wx.Frame):
 			put('swap_xz', item.swapXZ)
 			put('swap_yz', item.swapYZ)
 			
-			item.sliceCmd = sliceRun.getSliceCommand(item.filename)
+			action = Action()
+			action.sliceCmd = sliceRun.getSliceCommand(item.filename)
+			action.centerX = item.centerX
+			action.centerY = item.centerY
+			action.filename = item.filename
+			clearZ = max(clearZ, item.getMaximum().z * item.scale)
+			action.clearZ = clearZ
+			actionList.append(action)
 		
 		#Restore the old profile.
 		profile.loadGlobalProfileFromString(oldProfile)
@@ -244,44 +256,12 @@ class projectPlanner(wx.Frame):
 		if dlg.ShowModal() != wx.ID_OK:
 			dlg.Destroy()
 			return
-		resultFile = open(dlg.GetPath(), "w")
+		resultFilename = dlg.GetPath()
 		dlg.Destroy()
 		
-		i = 1
-		maxZ = 0
-		prevItem = None
-		for item in self.list:
-			subprocess.call(item.sliceCmd)
-			
-			maxZ = max(maxZ, item.getMaximum().z * item.scale)
-			put('machine_center_x', item.centerX)
-			put('machine_center_y', item.centerY)
-			put('clear_z', maxZ)
-			
-			if prevItem == None:
-				resultFile.write(';TYPE:CUSTOM\n')
-				resultFile.write(profile.getAlterationFileContents('start.gcode'))
-			else:
-				#reset the extrusion length, and move to the next object center.
-				resultFile.write(';TYPE:CUSTOM\n')
-				resultFile.write(profile.getAlterationFileContents('nextobject.gcode'))
-			resultFile.write(';PRINTNR:%d\n' % (i))
-			profile.loadGlobalProfileFromString(oldProfile)
-			
-			f = open(item.filename[: item.filename.rfind('.')] + "_export.project_tmp", "r")
-			data = f.read(4096)
-			while data != '':
-				resultFile.write(data)
-				data = f.read(4096)
-			f.close()
-			os.remove(item.filename[: item.filename.rfind('.')] + "_export.project_tmp")
-			i += 1
-			
-			prevItem = item
-		
-		resultFile.write(';TYPE:CUSTOM\n')
-		resultFile.write(profile.getAlterationFileContents('end.gcode'))
-		resultFile.close()
+		pspw = ProjectSliceProgressWindow(actionList, resultFilename)
+		pspw.Centre()
+		pspw.Show(True)
 	
 	def loadModelFile(self, item):
 		item.load(item.filename)
@@ -560,6 +540,129 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glPopMatrix()
 		
 		glFlush()
+
+class ProjectSliceProgressWindow(wx.Frame):
+	def __init__(self, actionList, resultFilename):
+		super(ProjectSliceProgressWindow, self).__init__(None, title='Cura')
+		self.actionList = actionList
+		self.resultFilename = resultFilename
+		self.abort = False
+		self.prevStep = 'start'
+		self.totalDoneFactor = 0.0
+		self.startTime = time.time()
+		
+		#How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
+		# TODO: Duplicate with sliceProgressPanel, move to sliceRun.
+		self.sliceStepTimeFactor = {
+			'start': 3.3713991642,
+			'slice': 15.4984838963,
+			'preface': 5.17178297043,
+			'inset': 116.362634182,
+			'fill': 215.702672005,
+			'multiply': 21.9536788464,
+			'speed': 12.759510994,
+			'raft': 31.4580039978,
+			'skirt': 19.3436040878,
+			'skin': 1.0,
+			'joris': 1.0,
+			'comb': 23.7805759907,
+			'cool': 27.148763895,
+			'dimension': 90.4914340973
+		}
+		self.totalRunTimeFactor = 0
+		for v in self.sliceStepTimeFactor.itervalues():
+			self.totalRunTimeFactor += v
+		
+		self.sizer = wx.GridBagSizer(2, 2) 
+		self.statusText = wx.StaticText(self, -1, "Building: %s" % (resultFilename))
+		self.progressGauge = wx.Gauge(self, -1)
+		self.progressGauge.SetRange(10000)
+		self.progressGauge2 = wx.Gauge(self, -1)
+		self.progressGauge2.SetRange(len(self.actionList))
+		self.abortButton = wx.Button(self, -1, "Abort")
+		self.sizer.Add(self.statusText, (0,0), flag=wx.ALIGN_CENTER)
+		self.sizer.Add(self.progressGauge, (1, 0), flag=wx.EXPAND)
+		self.sizer.Add(self.progressGauge2, (2, 0), flag=wx.EXPAND)
+		self.sizer.Add(self.abortButton, (3,0), flag=wx.ALIGN_CENTER)
+
+		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.abortButton)
+		self.SetSizer(self.sizer)
+		self.Layout()
+		self.Fit()
+		
+		threading.Thread(target=self.OnRun).start()
+
+	def OnAbort(self, e):
+		self.abort = True
+
+	def SetProgress(self, stepName, layer, maxLayer):
+		if self.prevStep != stepName:
+			self.totalDoneFactor += self.sliceStepTimeFactor[self.prevStep]
+			newTime = time.time()
+			#print "#####" + str(newTime-self.startTime) + " " + self.prevStep + " -> " + stepName
+			self.startTime = newTime
+			self.prevStep = stepName
+		
+		progresValue = ((self.totalDoneFactor + self.sliceStepTimeFactor[stepName] * layer / maxLayer) / self.totalRunTimeFactor) * 10000
+		self.progressGauge.SetValue(int(progresValue))
+		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
+	
+	def OnRun(self):
+		resultFile = open(self.resultFilename, "w")
+		put = profile.putProfileSetting
+		for action in self.actionList:
+			p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			line = p.stdout.readline()
+		
+			maxValue = 1
+			self.progressLog = []
+			while(len(line) > 0):
+				line = line.rstrip()
+				if line[0:9] == "Progress[" and line[-1:] == "]":
+					progress = line[9:-1].split(":")
+					if len(progress) > 2:
+						maxValue = int(progress[2])
+					wx.CallAfter(self.SetProgress, progress[0], int(progress[1]), maxValue)
+				else:
+					print line
+					self.progressLog.append(line)
+					wx.CallAfter(self.statusText.SetLabel, line)
+				if self.abort:
+					p.terminate()
+					wx.CallAfter(self.statusText.SetLabel, "Aborted by user.")
+					return
+				line = p.stdout.readline()
+			self.returnCode = p.wait()
+			
+			oldProfile = profile.getGlobalProfileString()
+			put('machine_center_x', action.centerX)
+			put('machine_center_y', action.centerY)
+			put('clear_z', action.clearZ)
+			
+			if action == self.actionList[0]:
+				resultFile.write(';TYPE:CUSTOM\n')
+				resultFile.write(profile.getAlterationFileContents('start.gcode'))
+			else:
+				#reset the extrusion length, and move to the next object center.
+				resultFile.write(';TYPE:CUSTOM\n')
+				resultFile.write(profile.getAlterationFileContents('nextobject.gcode'))
+			resultFile.write(';PRINTNR:%d\n' % self.actionList.index(action))
+			profile.loadGlobalProfileFromString(oldProfile)
+			
+			f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
+			data = f.read(4096)
+			while data != '':
+				resultFile.write(data)
+				data = f.read(4096)
+			f.close()
+			os.remove(action.filename[: action.filename.rfind('.')] + "_export.project_tmp")
+			
+			wx.CallAfter(self.progressGauge.SetValue, 10000)
+			wx.CallAfter(self.progressGauge2.SetValue, self.actionList.index(action) + 1)
+		
+		resultFile.write(';TYPE:CUSTOM\n')
+		resultFile.write(profile.getAlterationFileContents('end.gcode'))
+		resultFile.close()
 
 def main():
 	app = wx.App(False)
