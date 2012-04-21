@@ -650,7 +650,11 @@ class ProjectSliceProgressWindow(wx.Frame):
 		threading.Thread(target=self.OnRun).start()
 
 	def OnAbort(self, e):
-		self.abort = True
+		if self.abort:
+			self.Close()
+		else:
+			self.abort = True
+			self.abortButton.SetLabel('Close')
 
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:
@@ -720,6 +724,8 @@ class ProjectSliceProgressWindow(wx.Frame):
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
+		self.abort = True
+		wx.CallAfter(self.abortButton.SetLabel, 'Close')
 
 def main():
 	app = wx.App(False)
