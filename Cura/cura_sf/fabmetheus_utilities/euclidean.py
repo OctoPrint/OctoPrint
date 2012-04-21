@@ -882,7 +882,7 @@ def getHalfSimplifiedLoop( loop, radius, remainder ):
 	'Get the loop with half of the points inside the channel removed.'
 	if len(loop) < 2:
 		return loop
-	channelRadius = radius * .01
+	channelRadius = abs(radius * .01)
 	simplified = []
 	addIndex = 0
 	if remainder == 1:
@@ -899,7 +899,7 @@ def getHalfSimplifiedPath(path, radius, remainder):
 	'Get the path with half of the points inside the channel removed.'
 	if len(path) < 2:
 		return path
-	channelRadius = radius * .01
+	channelRadius = abs(radius * .01)
 	simplified = [path[0]]
 	for pointIndex in xrange(1, len(path) - 1):
 		point = path[pointIndex]
