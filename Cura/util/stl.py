@@ -74,12 +74,15 @@ class stlModel():
 			maxv.z = max(maxv.z, v.z)
 		self.min = minv
 		self.max = maxv
+		self.size = maxv - minv
 		return self.min.z
 	
 	def getMaximum(self):
 		return self.max
 	def getMinimum(self):
 		return self.min
+	def getSize(self):
+		return self.size
 
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:

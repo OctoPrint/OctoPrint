@@ -70,6 +70,7 @@ class projectPlanner(wx.Frame):
 		self.addButton = wx.Button(self, -1, "Add")
 		self.remButton = wx.Button(self, -1, "Remove")
 		self.sliceButton = wx.Button(self, -1, "Slice")
+		self.autoPlaceButton = wx.Button(self, -1, "Auto Place")
 		
 		sizer.Add(self.toolbar, (0,0), span=(1,3), flag=wx.EXPAND)
 		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
@@ -77,12 +78,14 @@ class projectPlanner(wx.Frame):
 		sizer.Add(self.addButton, (2,1), span=(1,1))
 		sizer.Add(self.remButton, (2,2), span=(1,1))
 		sizer.Add(self.sliceButton, (3,1), span=(1,1))
+		sizer.Add(self.autoPlaceButton, (3,2), span=(1,1))
 		sizer.AddGrowableCol(0)
 		sizer.AddGrowableRow(1)
 		
 		self.addButton.Bind(wx.EVT_BUTTON, self.OnAddModel)
 		self.remButton.Bind(wx.EVT_BUTTON, self.OnRemModel)
 		self.sliceButton.Bind(wx.EVT_BUTTON, self.OnSlice)
+		self.autoPlaceButton.Bind(wx.EVT_BUTTON, self.OnAutoPlace)
 		self.listbox.Bind(wx.EVT_LISTBOX, self.OnListSelect)
 
 		panel = wx.Panel(self, -1)
@@ -191,28 +194,78 @@ class projectPlanner(wx.Frame):
 		self.preview.Refresh()
 
 	def OnAddModel(self, e):
-		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
-			item = stl.stlModel()
-			item.filename=dlg.GetPath()
-			profile.putPreference('lastFile', item.filename)
-			if not(os.path.exists(item.filename)):
-				return
-			self.loadModelFile(item)
-			self.list.append(item)
-			self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
-			self.listbox.SetSelection(len(self.list)-1)
-			self.OnListSelect(None)
+			for filename in dlg.GetPaths():
+				item = stl.stlModel()
+				item.filename=filename
+				profile.putPreference('lastFile', item.filename)
+				if not(os.path.exists(item.filename)):
+					return
+				self.loadModelFile(item)
+				self.list.append(item)
+				self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
+				self.listbox.SetSelection(len(self.list)-1)
+				self.OnListSelect(None)
 		dlg.Destroy()
 	
 	def OnRemModel(self, e):
 		if self.selection == None:
 			return
 		self.list.remove(self.selection)
-		self.listbox.Delete(self.listbox.GetSelection())
+		i = self.listbox.GetSelection()
+		self.listbox.Delete(i)
+		if len(self.list) > i:
+			self.listbox.SetSelection(i)
+		elif len(self.list) > 0:
+			self.listbox.SetSelection(len(self.list) - 1)
 		self.selection = None
+		self.OnListSelect(None)
 		self.preview.Refresh()
+	
+	def OnAutoPlace(self, e):
+		bestAllowedSize = int(self.machineSize.y)
+		bestArea = self._doAutoPlace(bestAllowedSize)
+		for i in xrange(10, int(self.machineSize.y), 10):
+			area = self._doAutoPlace(i)
+			if area < bestArea:
+				bestAllowedSize = i
+				bestArea = area
+		self._doAutoPlace(bestAllowedSize)
+		self.preview.Refresh()
+	
+	def _doAutoPlace(self, allowedSizeY):
+		posX = self.machineSize.x
+		posY = 0
+		minX = self.machineSize.x
+		minY = self.machineSize.y
+		maxX = 0
+		maxY = 0
+		dirX = -1
+		dirY = 1
+		for item in self.list:
+			item.centerX = posX + item.getMaximum().x * item.scale * dirX
+			item.centerY = posY + item.getMaximum().y * item.scale * dirY
+			if item.centerY + item.getSize().y >= allowedSizeY:
+				posX = minX - self.headSizeMax.x - 1
+				posY = 0
+				item.centerX = posX + item.getMaximum().x * item.scale * dirX
+				item.centerY = posY + item.getMaximum().y * item.scale * dirY
+			posY += item.getSize().y  * item.scale * dirY + self.headSizeMin.y + 1
+			minX = min(minX, item.centerX - item.getSize().x * item.scale / 2)
+			minY = min(minY, item.centerY - item.getSize().y * item.scale / 2)
+			maxX = max(maxX, item.centerX + item.getSize().x * item.scale / 2)
+			maxY = max(maxY, item.centerY + item.getSize().y * item.scale / 2)
+		
+		for item in self.list:
+			item.centerX -= minX / 2
+			item.centerY += (self.machineSize.y - maxY) / 2
+		
+		if minX < 0:
+			return ((maxX - minX) + (maxY - minY)) * 100
+		
+		return (maxX - minX) + (maxY - minY)
 
 	def OnSlice(self, e):
 		oldProfile = profile.getGlobalProfileString()
@@ -544,6 +597,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 class ProjectSliceProgressWindow(wx.Frame):
 	def __init__(self, actionList, resultFilename):
 		super(ProjectSliceProgressWindow, self).__init__(None, title='Cura')
+		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+		
 		self.actionList = actionList
 		self.resultFilename = resultFilename
 		self.abort = False
@@ -584,6 +639,8 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.sizer.Add(self.progressGauge, (1, 0), flag=wx.EXPAND)
 		self.sizer.Add(self.progressGauge2, (2, 0), flag=wx.EXPAND)
 		self.sizer.Add(self.abortButton, (3,0), flag=wx.ALIGN_CENTER)
+		self.sizer.AddGrowableCol(0)
+		self.sizer.AddGrowableRow(0)
 
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.abortButton)
 		self.SetSizer(self.sizer)
@@ -593,7 +650,11 @@ class ProjectSliceProgressWindow(wx.Frame):
 		threading.Thread(target=self.OnRun).start()
 
 	def OnAbort(self, e):
-		self.abort = True
+		if self.abort:
+			self.Close()
+		else:
+			self.abort = True
+			self.abortButton.SetLabel('Close')
 
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:
@@ -663,6 +724,8 @@ class ProjectSliceProgressWindow(wx.Frame):
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
+		self.abort = True
+		wx.CallAfter(self.abortButton.SetLabel, 'Close')
 
 def main():
 	app = wx.App(False)

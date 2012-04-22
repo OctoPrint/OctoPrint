@@ -77,6 +77,99 @@ def DrawMachine(machineSize):
 	glVertex3f(0, machineSize.y, machineSize.z)
 	glEnd()
 
+	glPushMatrix()
+	glTranslate(-5,-5,0)
+	glLineWidth(2)
+	glColor3f(0.5,0,0)
+	glBegin(GL_LINES)
+	glVertex3f(0,0,0)
+	glVertex3f(20,0,0)
+	glEnd()
+	glColor3f(0,0.5,0)
+	glBegin(GL_LINES)
+	glVertex3f(0,0,0)
+	glVertex3f(0,20,0)
+	glEnd()
+	glColor3f(0,0,0.5)
+	glBegin(GL_LINES)
+	glVertex3f(0,0,0)
+	glVertex3f(0,0,20)
+	glEnd()
+
+	glDisable(GL_DEPTH_TEST)
+	#X
+	glColor3f(1,0,0)
+	glPushMatrix()
+	glTranslate(23,0,0)
+	noZ = ResetMatrixRotationAndScale()
+	glBegin(GL_LINES)
+	glVertex3f(-0.8,1,0)
+	glVertex3f(0.8,-1,0)
+	glVertex3f(0.8,1,0)
+	glVertex3f(-0.8,-1,0)
+	glEnd()
+	glPopMatrix()
+
+	#Y
+	glColor3f(0,1,0)
+	glPushMatrix()
+	glTranslate(0,23,0)
+	ResetMatrixRotationAndScale()
+	glBegin(GL_LINES)
+	glVertex3f(-0.8, 1,0)
+	glVertex3f( 0.0, 0,0)
+	glVertex3f( 0.8, 1,0)
+	glVertex3f(-0.8,-1,0)
+	glEnd()
+	glPopMatrix()
+
+	#Z
+	if not noZ:
+		glColor3f(0,0,1)
+		glPushMatrix()
+		glTranslate(0,0,23)
+		ResetMatrixRotationAndScale()
+		glBegin(GL_LINES)
+		glVertex3f(-0.8, 1,0)
+		glVertex3f( 0.8, 1,0)
+		glVertex3f( 0.8, 1,0)
+		glVertex3f(-0.8,-1,0)
+		glVertex3f(-0.8,-1,0)
+		glVertex3f( 0.8,-1,0)
+		glEnd()
+		glPopMatrix()
+
+	glPopMatrix()
+	glEnable(GL_DEPTH_TEST)
+	
+def ResetMatrixRotationAndScale():
+	matrix = glGetFloatv(GL_MODELVIEW_MATRIX)
+	noZ = False
+	scale2D = matrix[0][0]
+	matrix[0][0] = 1.0
+	matrix[1][0] = 0.0
+	matrix[2][0] = 0.0
+	matrix[0][1] = 0.0
+	matrix[1][1] = 1.0
+	matrix[2][1] = 0.0
+	matrix[0][2] = 0.0
+	matrix[1][2] = 0.0
+	matrix[2][2] = 1.0
+	
+	if matrix[3][2] != 0.0:
+		matrix[3][0] /= -matrix[3][2] / 100
+		matrix[3][1] /= -matrix[3][2] / 100
+		matrix[3][2] = -100
+	else:
+		matrix[0][0] = scale2D
+		matrix[1][1] = scale2D
+		matrix[2][2] = scale2D
+		matrix[3][2] = -100
+		noZ = True
+	
+	glLoadMatrixf(matrix)
+	return noZ
+
 def DrawBox(vMin, vMax):
 	glBegin(GL_LINE_LOOP)
 	glVertex3f(vMin.x, vMin.y, vMin.z)
