@@ -236,6 +236,13 @@ class projectPlanner(wx.Frame):
 		self.preview.Refresh()
 	
 	def _doAutoPlace(self, allowedSizeY):
+		extraSizeMin = self.headSizeMin
+		extraSizeMax = self.headSizeMax
+		if profile.getProfileSettingFloat('skirt_line_count') > 0:
+			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
+			extraSizeMin = extraSizeMin - util3d.Vector3(skirtSize, skirtSize, 0)
+			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
+
 		posX = self.machineSize.x
 		posY = 0
 		minX = self.machineSize.x
@@ -248,11 +255,11 @@ class projectPlanner(wx.Frame):
 			item.centerX = posX + item.getMaximum().x * item.scale * dirX
 			item.centerY = posY + item.getMaximum().y * item.scale * dirY
 			if item.centerY + item.getSize().y >= allowedSizeY:
-				posX = minX - self.headSizeMax.x - 1
+				posX = minX - extraSizeMax.x - 1
 				posY = 0
 				item.centerX = posX + item.getMaximum().x * item.scale * dirX
 				item.centerY = posY + item.getMaximum().y * item.scale * dirY
-			posY += item.getSize().y  * item.scale * dirY + self.headSizeMin.y + 1
+			posY += item.getSize().y  * item.scale * dirY + extraSizeMin.y + 1
 			minX = min(minX, item.centerX - item.getSize().x * item.scale / 2)
 			minY = min(minY, item.centerY - item.getSize().y * item.scale / 2)
 			maxX = max(maxX, item.centerX + item.getSize().x * item.scale / 2)
@@ -274,7 +281,6 @@ class projectPlanner(wx.Frame):
 
 		put('model_multiply_x', '1')
 		put('model_multiply_y', '1')
-		put('skirt_line_count', '0')
 		put('enable_raft', 'False')
 		put('add_start_end_gcode', 'False')
 		put('gcode_extension', 'project_tmp')
@@ -505,6 +511,12 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
 		opengl.DrawMachine(machineSize)
+		extraSizeMin = self.parent.headSizeMin
+		extraSizeMax = self.parent.headSizeMax
+		if profile.getProfileSettingFloat('skirt_line_count') > 0:
+			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
+			extraSizeMin = extraSizeMin - util3d.Vector3(skirtSize, skirtSize, 0)
+			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
 
 		for item in self.parent.list:
 			item.validPlacement = True
@@ -512,8 +524,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		
 		for idx1 in xrange(0, len(self.parent.list)):
 			item = self.parent.list[idx1]
-			iMin1 = item.getMinimum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) - self.parent.headSizeMin
-			iMax1 = item.getMaximum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) + self.parent.headSizeMax
+			iMin1 = item.getMinimum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) - extraSizeMin
+			iMax1 = item.getMaximum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) + extraSizeMax
 			for idx2 in xrange(0, idx1):
 				item2 = self.parent.list[idx2]
 				iMin2 = item2.getMinimum() * item2.scale + util3d.Vector3(item2.centerX, item2.centerY, 0)
@@ -561,8 +573,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			
 			vMin = item.getMinimum() * item.scale
 			vMax = item.getMaximum() * item.scale
-			vMinHead = vMin - self.parent.headSizeMin
-			vMaxHead = vMax + self.parent.headSizeMax
+			vMinHead = vMin - extraSizeMin
+			vMaxHead = vMax + extraSizeMax
 
 			glDisable(GL_LIGHTING)
 
