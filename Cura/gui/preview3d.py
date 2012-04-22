@@ -163,7 +163,7 @@ class previewPanel(wx.Panel):
 	def On3DClick(self):
 		self.glCanvas.yaw = 30
 		self.glCanvas.pitch = 60
-		self.glCanvas.zoom = 150
+		self.glCanvas.zoom = 300
 		self.glCanvas.view3D = True
 		self.glCanvas.Refresh()
 
