@@ -144,13 +144,6 @@ def DrawMachine(machineSize):
 	
 def ResetMatrixRotationAndScale():
 	matrix = glGetFloatv(GL_MODELVIEW_MATRIX)
-
-	for x in xrange(0, 4):
-		s = ""
-		for y in xrange(0, 4):
-			s = s + " %8.8f" % (matrix[x][y])
-		print s
-
 	noZ = False
 	scale2D = matrix[0][0]
 	matrix[0][0] = 1.0
