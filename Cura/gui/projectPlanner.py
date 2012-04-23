@@ -36,18 +36,6 @@ class projectPlanner(wx.Frame):
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
 		
-		menubar = wx.MenuBar()
-		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Open Project...')
-		self.Bind(wx.EVT_MENU, self.OnLoadProject, i)
-		i = fileMenu.Append(-1, 'Save Project...')
-		self.Bind(wx.EVT_MENU, self.OnSaveProject, i)
-		fileMenu.AppendSeparator()
-		i = fileMenu.Append(wx.ID_EXIT, 'Quit')
-		self.Bind(wx.EVT_MENU, self.OnQuit, i)
-		menubar.Append(fileMenu, '&File')
-		self.SetMenuBar(menubar)
-		
 		self.list = []
 		self.selection = None
 
@@ -57,9 +45,14 @@ class projectPlanner(wx.Frame):
 
 		self.toolbar = toolbarUtil.Toolbar(self)
 
+		toolbarUtil.NormalButton(self.toolbar, self.OnLoadProject, 'open.png', 'Open project')
+		toolbarUtil.NormalButton(self.toolbar, self.OnSaveProject, 'save.png', 'Save project')
+		self.toolbar.AddSeparator()
 		group = []
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-3d-on.png', 'object-3d-off.png', '3D view', callback=self.On3DClick)
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick).SetValue(True)
+		self.toolbar.AddSeparator()
+		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
 		
 		self.toolbar.Realize()
 		
