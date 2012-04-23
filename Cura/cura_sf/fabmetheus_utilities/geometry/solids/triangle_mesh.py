@@ -448,7 +448,8 @@ def getLoopsFromCorrectMesh( edges, faces, vertexes, z ):
 		p0 = loop[-1]
 		for p1 in loop:
 			if euclidean.isLineIntersectingLoops(loops[idx+1:], p0, p1):
-				print('Warning, the triangle mesh slice intersects itself in getLoopsFromCorrectMesh in triangle_mesh.')
+				if not warning:
+					print('Warning, the triangle mesh slice intersects itself in getLoopsFromCorrectMesh in triangle_mesh.')
 				print('Model error(intersect): (%f, %f, %f) (%f, %f, %f)' % (p0.real, p0.imag, z, p1.real, p1.imag, z))
 				warning = True
 			p0 = p1
