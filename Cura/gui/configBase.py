@@ -189,10 +189,6 @@ class settingNotify():
 		self.func = func
 	
 	def validate(self):
-		try:
-			f = float(self.setting.GetValue())
-			self.func(f)
-			return validators.SUCCESS, ''
-		except ValueError:
-			self.func()
-			return validators.SUCCESS, ''
+		self.func()
+		return validators.SUCCESS, ''
+
