@@ -178,12 +178,12 @@ class previewPanel(wx.Panel):
 		self.gcodeDirty = True
 		self.glCanvas.Refresh()
 
-	def updateCenterX(self, x):
-		self.machineCenter.x = x
+	def updateCenterX(self):
+		self.machineCenter.x = profile.getProfileSettingFloat('machine_center_x')
 		self.glCanvas.Refresh()
 
-	def updateCenterY(self, y):
-		self.machineCenter.y = y
+	def updateCenterY(self):
+		self.machineCenter.y = profile.getProfileSettingFloat('machine_center_y')
 		self.glCanvas.Refresh()
 	
 	def setViewMode(self, mode):
