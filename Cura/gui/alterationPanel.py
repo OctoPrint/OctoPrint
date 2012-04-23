@@ -32,11 +32,9 @@ class alterationPanel(wx.Panel):
 		self.currentFile = self.list.GetSelection()
 
 	def loadFile(self, filename):
-		self.textArea.SetValue(unicode(profile.getAlterationFileContents(filename, False), "utf-8"))
+		self.textArea.SetValue(profile.getAlterationFile(filename))
 
 	def OnFocusLost(self, e):
 		if self.currentFile == self.list.GetSelection():
-			filename = profile.getAlterationFilePath(self.alterationFileList[self.list.GetSelection()])
-			f = open(filename, "wb")
-			f.write(self.textArea.GetValue().encode("utf-8"))
-			f.close()
+			profile.setAlterationFile(self.alterationFileList[self.list.GetSelection()], self.textArea.GetValue())
+
