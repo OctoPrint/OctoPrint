@@ -61,7 +61,7 @@ def runSlice(fileNames):
 			subprocess.call([pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString(), fileName])
 
 def getSliceCommand(filename):
-	if profile.getPreference('slicer').startswith('Slic3r'):
+	if profile.getPreference('slicer').startswith('Slic3r') and getSlic3rExe() != False:
 		slic3rExe = getSlic3rExe()
 		if slic3rExe == False:
 			return False
