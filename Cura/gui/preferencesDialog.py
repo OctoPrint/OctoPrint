@@ -24,6 +24,7 @@ class preferencesDialog(configBase.configWindowBase):
 		validators.validFloat(c, 10.0)
 		c = configBase.SettingRow(left, 'Machine height (mm)', 'machine_height', '200', 'Size of the machine in mm', type = 'preference')
 		validators.validFloat(c, 10.0)
+		c = configBase.SettingRow(left, 'Extruder count', 'extruder_amount', ['1', '2', '3', '4'], 'Amount of extruders in your machine.', type = 'preference')
 
 		configBase.TitleRow(left, 'Filament settings')
 		c = configBase.SettingRow(left, 'Filament density (kg/m3)', 'filament_density', '1300', 'Weight of the filament per m3. Around 1300 for PLA. And around 1040 for ABS. This value is used to estimate the weight if the filament used for the print.', type = 'preference')
@@ -38,7 +39,7 @@ class preferencesDialog(configBase.configWindowBase):
 		c = configBase.SettingRow(left, 'Baudrate', 'serial_baud', '250000', 'Speed of the serial port communication\nNeeds to match your firmware settings\nCommon values are 250000, 115200, 57600', type = 'preference')
 
 		configBase.TitleRow(left, 'Slicer settings')
-		c = configBase.SettingRow(left, 'Slicer selection', 'slicer', ['Cura (Skeinforge based)', 'Slic3r'], 'Which slicer to use to slice objects. Usually the Cura engine produces the best results. But Slic3r is developing fast and is faster with slicing.', type = 'preference')
+		#c = configBase.SettingRow(left, 'Slicer selection', 'slicer', ['Cura (Skeinforge based)', 'Slic3r'], 'Which slicer to use to slice objects. Usually the Cura engine produces the best results. But Slic3r is developing fast and is faster with slicing.', type = 'preference')
 		c = configBase.SettingRow(left, 'Save profile on slice', 'save_profile', False, 'When slicing save the profile as [stl_file]_profile.ini next to the model.', type = 'preference')
 		
 		self.MakeModal(True)

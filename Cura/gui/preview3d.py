@@ -27,6 +27,13 @@ from util import gcodeInterpreter
 from util import stl
 from util import util3d
 
+class previewObject():
+	def __init__(self):
+		self.mesh = None
+		self.filename = None
+		self.displayList = None
+		self.dirty = False
+
 class previewPanel(wx.Panel):
 	def __init__(self, parent):
 		super(previewPanel, self).__init__(parent,-1)
@@ -35,11 +42,10 @@ class previewPanel(wx.Panel):
 		self.SetMinSize((440,320))
 		
 		self.glCanvas = PreviewGLCanvas(self)
-		self.init = 0
-		self.triangleMesh = None
+		self.objectList = []
 		self.gcode = None
-		self.modelFilename = None
-		self.loadingProgressAmount = 0
+		self.objectsMinV = None
+		self.objectsMaxV = None
 		self.loadThread = None
 		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
 		self.machineCenter = util3d.Vector3(float(profile.getProfileSetting('machine_center_x')), float(profile.getProfileSetting('machine_center_y')), 0)
@@ -138,10 +144,10 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def OnScaleMax(self, e):
-		if self.triangleMesh == None:
+		if self.objectsMinV == None:
 			return
-		vMin = self.triangleMesh.getMinimum()
-		vMax = self.triangleMesh.getMaximum()
+		vMin = self.objectsMinV
+		vMax = self.objectsMaxV
 		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
 		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
 		scaleX2 = (self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
@@ -194,15 +200,21 @@ class previewPanel(wx.Panel):
 		self.glCanvas.viewMode = mode
 		wx.CallAfter(self.glCanvas.Refresh)
 	
-	def loadModelFile(self, filename):
-		if self.modelFilename != filename:
-			self.modelFileTime = None
-			self.gcodeFileTime = None
-			self.logFileTime = None
+	def loadModelFiles(self, filelist):
+		while len(filelist) > len(self.objectList):
+			self.objectList.append(previewObject())
+		for idx in xrange(len(self.objectList), len(filelist)):
+			self.objectList[idx].mesh = None
+		for idx in xrange(0, len(filelist)):
+			obj = self.objectList[idx]
+			if obj.filename != filelist[idx]:
+				obj.fileTime = None
+				self.gcodeFileTime = None
+				self.logFileTime = None
+			obj.filename = filelist[idx]
 		
-		self.modelFilename = filename
-		self.gcodeFilename = filename[: filename.rfind('.')] + "_export.gcode"
-		self.logFilename = filename[: filename.rfind('.')] + "_export.log"
+		self.gcodeFilename = filelist[0][: filelist[0].rfind('.')] + "_export.gcode"
+		self.logFilename = filelist[0][: filelist[0].rfind('.')] + "_export.log"
 		#Do the STL file loading in a background thread so we don't block the UI.
 		if self.loadThread != None and self.loadThread.isAlive():
 			self.loadThread.join()
@@ -210,35 +222,32 @@ class previewPanel(wx.Panel):
 		self.loadThread.daemon = True
 		self.loadThread.start()
 	
-	def loadReModelFile(self, filename):
+	def loadReModelFiles(self, filelist):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
-		if self.modelFilename != filename:
-			return False
-		self.loadModelFile(filename)
+		for idx in xrange(0, len(filelist)):
+			if self.objectList[idx].filename != filelist[idx]:
+				return False
+		self.loadModelFiles(filelist)
 		return True
 	
 	def doFileLoadThread(self):
-		if os.path.isfile(self.modelFilename) and self.modelFileTime != os.stat(self.modelFilename).st_mtime:
-			self.modelFileTime = os.stat(self.modelFilename).st_mtime
-			triangleMesh = stl.stlModel()
-			triangleMesh.load(self.modelFilename)
-			triangleMesh.origonalVertexes = list(triangleMesh.vertexes)
-			for i in xrange(0, len(triangleMesh.origonalVertexes)):
-				triangleMesh.origonalVertexes[i] = triangleMesh.origonalVertexes[i].copy()
-			triangleMesh.getMinimumZ()
-			self.modelDirty = False
-			self.errorList = []
-			self.triangleMesh = triangleMesh
-			self.updateModelTransform()
-			wx.CallAfter(self.updateToolbar)
-			wx.CallAfter(self.glCanvas.Refresh)
+		for obj in self.objectList:
+			if os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
+				obj.ileTime = os.stat(obj.filename).st_mtime
+				mesh = stl.stlModel()
+				mesh.load(obj.filename)
+				obj.dirty = False
+				obj.errorList = []
+				obj.mesh = mesh
+				self.updateModelTransform()
+				wx.CallAfter(self.updateToolbar)
+				wx.CallAfter(self.glCanvas.Refresh)
 		
 		if os.path.isfile(self.gcodeFilename) and self.gcodeFileTime != os.stat(self.gcodeFilename).st_mtime:
 			self.gcodeFileTime = os.stat(self.gcodeFilename).st_mtime
 			gcode = gcodeInterpreter.gcode()
 			gcode.progressCallback = self.loadProgress
 			gcode.load(self.gcodeFilename)
-			self.loadingProgressAmount = 0
 			self.gcodeDirty = False
 			self.errorList = []
 			self.gcode = gcode
@@ -260,8 +269,7 @@ class previewPanel(wx.Panel):
 			wx.CallAfter(self.glCanvas.Refresh)
 	
 	def loadProgress(self, progress):
-		self.loadingProgressAmount = progress
-		wx.CallAfter(self.glCanvas.Refresh)
+		pass
 	
 	def updateToolbar(self):
 		self.layerSpin.Show(self.gcode != None)
@@ -283,8 +291,6 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def updateModelTransform(self, f=0):
-		if self.triangleMesh == None:
-			return
 		rotate = profile.getProfileSettingFloat('model_rotate_base') / 180.0 * math.pi
 		scaleX = 1.0
 		scaleY = 1.0
@@ -302,34 +308,54 @@ class previewPanel(wx.Panel):
 		mat10 = math.sin(rotate) * scaleX
 		mat11 = math.cos(rotate) * scaleY
 		
-		for i in xrange(0, len(self.triangleMesh.origonalVertexes)):
-			x = self.triangleMesh.origonalVertexes[i].x
-			y = self.triangleMesh.origonalVertexes[i].y
-			z = self.triangleMesh.origonalVertexes[i].z
-			if swapXZ:
-				x, z = z, x
-			if swapYZ:
-				y, z = z, y
-			self.triangleMesh.vertexes[i].x = x * mat00 + y * mat01
-			self.triangleMesh.vertexes[i].y = x * mat10 + y * mat11
-			self.triangleMesh.vertexes[i].z = z * scaleZ
+		if len(self.objectList) < 1 or self.objectList[0].mesh == None:
+			return
 
-		for face in self.triangleMesh.faces:
-			v1 = face.v[0]
-			v2 = face.v[1]
-			v3 = face.v[2]
-			face.normal = (v2 - v1).cross(v3 - v1)
-			face.normal.normalize()
+		for obj in self.objectList:
+			if obj.mesh == None:
+				continue
+		
+			for i in xrange(0, len(obj.mesh.origonalVertexes)):
+				x = obj.mesh.origonalVertexes[i].x
+				y = obj.mesh.origonalVertexes[i].y
+				z = obj.mesh.origonalVertexes[i].z
+				if swapXZ:
+					x, z = z, x
+				if swapYZ:
+					y, z = z, y
+				obj.mesh.vertexes[i].x = x * mat00 + y * mat01
+				obj.mesh.vertexes[i].y = x * mat10 + y * mat11
+				obj.mesh.vertexes[i].z = z * scaleZ
 
-		minZ = self.triangleMesh.getMinimumZ()
-		min = self.triangleMesh.getMinimum()
-		max = self.triangleMesh.getMaximum()
-		for v in self.triangleMesh.vertexes:
-			v.z -= minZ
-			v.x -= min.x + (max.x - min.x) / 2
-			v.y -= min.y + (max.y - min.y) / 2
-		self.triangleMesh.getMinimumZ()
-		self.modelDirty = True
+			for face in obj.mesh.faces:
+				v1 = face.v[0]
+				v2 = face.v[1]
+				v3 = face.v[2]
+				face.normal = (v2 - v1).cross(v3 - v1)
+				face.normal.normalize()
+		
+		minV = self.objectList[0].mesh.getMinimum()
+		maxV = self.objectList[0].mesh.getMaximum()
+		for obj in self.objectList:
+			if obj.mesh == None:
+				continue
+
+			obj.mesh.getMinimumZ()
+			minV = minV.min(obj.mesh.getMinimum())
+			maxV = maxV.max(obj.mesh.getMaximum())
+
+		self.objectsMaxV = maxV
+		self.objectsMinV = minV
+		for obj in self.objectList:
+			if obj.mesh == None:
+				continue
+
+			for v in obj.mesh.vertexes:
+				v.z -= minV.z
+				v.x -= minV.x + (maxV.x - minV.x) / 2
+				v.y -= minV.y + (maxV.y - minV.y) / 2
+			obj.mesh.getMinimumZ()
+			obj.dirty = True
 		self.glCanvas.Refresh()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
@@ -349,8 +375,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.offsetX = 0
 		self.offsetY = 0
 		self.view3D = True
-		self.modelDisplayList = None
 		self.gcodeDisplayList = None
+		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
 	
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
@@ -398,8 +424,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glTranslate(0,0,-self.zoom)
 			glRotate(-self.pitch, 1,0,0)
 			glRotate(self.yaw, 0,0,1)
-			if self.parent.triangleMesh != None:
-				glTranslate(0,0,-self.parent.triangleMesh.getMaximum().z * profile.getProfileSettingFloat('model_scale') / 2)
+			if self.parent.objectsMaxV != None:
+				glTranslate(0,0,-self.parent.objectsMaxV.z * profile.getProfileSettingFloat('model_scale') / 2)
 		else:
 			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
 			glTranslate(self.offsetX, self.offsetY, 0.0)
@@ -505,26 +531,28 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			if self.viewMode == "GCode" or self.viewMode == "Mixed":
 				glCallList(self.gcodeDisplayList)
 		
-		if self.parent.triangleMesh != None:
-			if self.modelDisplayList == None:
-				self.modelDisplayList = glGenLists(1);
-			if self.parent.modelDirty:
-				self.parent.modelDirty = False
-				glNewList(self.modelDisplayList, GL_COMPILE)
-				opengl.DrawSTL(self.parent.triangleMesh)
+		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
+		for obj in self.parent.objectList:
+			if obj.mesh == None:
+				continue
+			if obj.displayList == None:
+				obj.displayList = glGenLists(1);
+			if obj.dirty:
+				obj.dirty = False
+				glNewList(obj.displayList, GL_COMPILE)
+				opengl.DrawSTL(obj.mesh)
 				glEndList()
 			
-			glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 			glEnable(GL_NORMALIZE)
 			if self.viewMode == "Transparent" or self.viewMode == "Mixed":
-				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [0.5, 0.4, 0.3, 1.0])
-				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.1, 0.1, 0.1, 0.0])
+				glLightfv(GL_LIGHT0, GL_DIFFUSE, map(lambda x: x / 2, self.objColor[self.parent.objectList.index(obj)]))
+				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 10, self.objColor[self.parent.objectList.index(obj)]))
 				#If we want transparent, then first render a solid black model to remove the printer size lines.
 				if self.viewMode != "Mixed":
 					glDisable(GL_BLEND)
 					glDisable(GL_LIGHTING)
 					glColor3f(0,0,0)
-					self.drawModel()
+					self.drawModel(obj)
 					glColor3f(1,1,1)
 				#After the black model is rendered, render the model again but now with lighting and no depth testing.
 				glDisable(GL_DEPTH_TEST)
@@ -532,23 +560,23 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glEnable(GL_BLEND)
 				glBlendFunc(GL_ONE, GL_ONE)
 				glEnable(GL_LIGHTING)
-				self.drawModel()
+				self.drawModel(obj)
 			elif self.viewMode == "X-Ray":
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_STENCIL_TEST);
 				glStencilFunc(GL_ALWAYS, 1, 1)
 				glStencilOp(GL_INCR, GL_INCR, GL_INCR)
-				self.drawModel()
+				self.drawModel(obj)
 				glStencilOp (GL_KEEP, GL_KEEP, GL_KEEP);
 				
 				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
 				glStencilFunc(GL_EQUAL, 0, 1);
 				glColor(1, 1, 1)
-				self.drawModel()
+				self.drawModel(obj)
 				glStencilFunc(GL_EQUAL, 1, 1);
 				glColor(1, 0, 0)
-				self.drawModel()
+				self.drawModel(obj)
 
 				glPushMatrix()
 				glLoadIdentity()
@@ -575,28 +603,29 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glDisable(GL_STENCIL_TEST);
 				glEnable(GL_DEPTH_TEST)
 			elif self.viewMode == "Normal":
-				glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
-				glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.2, 0.2, 0.0])
+				glLightfv(GL_LIGHT0, GL_DIFFUSE, self.objColor[self.parent.objectList.index(obj)])
+				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 5, self.objColor[self.parent.objectList.index(obj)]))
 				glEnable(GL_LIGHTING)
-				self.drawModel()
+				self.drawModel(obj)
 			
 			if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
 				glDisable(GL_LIGHTING)
 				glDisable(GL_DEPTH_TEST)
 				glDisable(GL_BLEND)
 				glColor3f(1,0,0)
-				glBegin(GL_LINES)
-				for err in self.parent.errorList:
-					glVertex3f(err[0].x, err[0].y, err[0].z)
-					glVertex3f(err[1].x, err[1].y, err[1].z)
-				glEnd()
+				#glBegin(GL_LINES)
+				#for err in self.parent.errorList:
+				#	glVertex3f(err[0].x, err[0].y, err[0].z)
+				#	glVertex3f(err[1].x, err[1].y, err[1].z)
+				#glEnd()
+				glEnable(GL_DEPTH_TEST)
 		glFlush()
 	
-	def drawModel(self):
+	def drawModel(self, obj):
 		multiX = int(profile.getProfileSetting('model_multiply_x'))
 		multiY = int(profile.getProfileSetting('model_multiply_y'))
 		modelScale = profile.getProfileSettingFloat('model_scale')
-		modelSize = (self.parent.triangleMesh.getMaximum() - self.parent.triangleMesh.getMinimum()) * modelScale
+		modelSize = (obj.mesh.getMaximum() - obj.mesh.getMinimum()) * modelScale
 		glPushMatrix()
 		glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
 		for mx in xrange(0, multiX):
@@ -604,7 +633,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glPushMatrix()
 				glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
 				glScalef(modelScale, modelScale, modelScale)
-				glCallList(self.modelDisplayList)
+				glCallList(obj.displayList)
 				glPopMatrix()
 		glPopMatrix()
 

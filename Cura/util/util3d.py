@@ -69,3 +69,9 @@ class Vector3():
 			self.y /= f
 			self.z /= f
 
+	def min(self, v):
+		return Vector3(min(self.x, v.x), min(self.y, v.y), min(self.z, v.z))
+
+	def max(self, v):
+		return Vector3(max(self.x, v.x), max(self.y, v.y), max(self.z, v.z))
+

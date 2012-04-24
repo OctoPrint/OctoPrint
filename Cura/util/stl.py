@@ -28,6 +28,8 @@ class stlModel():
 		else:
 			self._loadBinary(f)
 		f.close()
+		
+		self._createOrigonalVertexCopy()
 	
 	def _loadAscii(self, f):
 		cnt = 0
@@ -61,6 +63,12 @@ class stlModel():
 			self.vertexes.append(v0)
 			self.vertexes.append(v1)
 			self.vertexes.append(v2)
+
+	def _createOrigonalVertexCopy(self):
+		self.origonalVertexes = list(self.vertexes)
+		for i in xrange(0, len(self.origonalVertexes)):
+			self.origonalVertexes[i] = self.origonalVertexes[i].copy()
+		self.getMinimumZ()
 
 	def getMinimumZ(self):
 		minv = self.vertexes[0].copy()

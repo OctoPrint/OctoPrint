@@ -116,5 +116,7 @@ def getSliceCommand(filename):
 		pypyExe = getPyPyExe()
 		if pypyExe == False:
 			pypyExe = sys.executable
-		return [pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString(), filename]
+		cmd = [pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString()]
+		cmd.append(filename)
+		return cmd
 

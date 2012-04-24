@@ -1,22 +1,17 @@
 from __future__ import absolute_import
 import __init__
 
-import wx
-import sys
-import math
-import threading
-import subprocess
-import time
+import wx, sys, os, math, threading, subprocess, time
 
 from util import profile
 from util import sliceRun
 from util import exporer
 
 class sliceProgessPanel(wx.Panel):
-	def __init__(self, mainWindow, parent, filename):
+	def __init__(self, mainWindow, parent, filelist):
 		wx.Panel.__init__(self, parent, -1)
 		self.mainWindow = mainWindow
-		self.filename = filename
+		self.filelist = filelist
 		self.abort = False
 		
 		#How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
@@ -40,7 +35,7 @@ class sliceProgessPanel(wx.Panel):
 		for v in self.sliceStepTimeFactor.itervalues():
 			self.totalRunTimeFactor += v
 
-		box = wx.StaticBox(self, -1, filename)
+		box = wx.StaticBox(self, -1, filelist[0])
 		self.sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
 
 		mainSizer = wx.BoxSizer(wx.VERTICAL) 
@@ -61,9 +56,18 @@ class sliceProgessPanel(wx.Panel):
 		self.totalDoneFactor = 0.0
 		self.startTime = time.time()
 		if profile.getPreference('save_profile') == 'True':
-			profile.saveGlobalProfile(self.filename[: self.filename.rfind('.')] + "_profile.ini")
-		p = subprocess.Popen(sliceRun.getSliceCommand(self.filename), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		self.thread = WorkerThread(self, filename, p)
+			profile.saveGlobalProfile(self.filelist[0][: self.filelist[0].rfind('.')] + "_profile.ini")
+		cmdList = []
+		oldProfile = profile.getGlobalProfileString()
+		for filename in self.filelist:
+			if self.filelist.index(filename) > 0:
+				profile.putProfileSetting('fan_enabled', 'False')
+			if len(self.filelist) > 1:
+				profile.putProfileSetting('add_start_end_gcode', 'False')
+				profile.putProfileSetting('gcode_extension', 'multi_extrude_tmp')
+			cmdList.append(sliceRun.getSliceCommand(filename))
+		profile.loadGlobalProfileFromString(oldProfile)
+		self.thread = WorkerThread(self, filelist, cmdList)
 	
 	def OnAbort(self, e):
 		if self.abort:
@@ -72,14 +76,14 @@ class sliceProgessPanel(wx.Panel):
 			self.abort = True
 	
 	def OnShowGCode(self, e):
-		self.mainWindow.preview3d.loadModelFile(self.filename)
+		self.mainWindow.preview3d.loadModelFiles(self.filelist)
 		self.mainWindow.preview3d.setViewMode("GCode")
 	
 	def OnShowLog(self, e):
 		LogWindow('\n'.join(self.progressLog))
 	
 	def OnOpenFileLocation(self, e):
-		exporer.openExporer(self.filename[: self.filename.rfind('.')] + "_export.gcode")
+		exporer.openExporer(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode")
 	
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
@@ -105,7 +109,7 @@ class sliceProgessPanel(wx.Panel):
 		self.sizer.Layout()
 		self.Layout()
 		self.abort = True
-		if self.mainWindow.preview3d.loadReModelFile(self.filename):
+		if self.mainWindow.preview3d.loadReModelFiles(self.filelist):
 			self.mainWindow.preview3d.setViewMode("GCode")
 	
 	def SetProgress(self, stepName, layer, maxLayer):
@@ -121,18 +125,19 @@ class sliceProgessPanel(wx.Panel):
 		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
 
 class WorkerThread(threading.Thread):
-	def __init__(self, notifyWindow, filename, process):
+	def __init__(self, notifyWindow, filelist, cmdList):
 		threading.Thread.__init__(self)
-		self.filename = filename
+		self.filelist = filelist
 		self.notifyWindow = notifyWindow
-		self.process = process
+		self.cmdList = cmdList
+		self.fileIdx = 0
 		self.start()
 
 	def run(self):
-		p = self.process
+		p = subprocess.Popen(self.cmdList[self.fileIdx], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		line = p.stdout.readline()
-		maxValue = 1
 		self.progressLog = []
+		maxValue = 1
 		while(len(line) > 0):
 			line = line.rstrip()
 			if line[0:9] == "Progress[" and line[-1:] == "]":
@@ -150,12 +155,43 @@ class WorkerThread(threading.Thread):
 				return
 			line = p.stdout.readline()
 		self.returnCode = p.wait()
-		logfile = open(self.filename[: self.filename.rfind('.')] + "_export.log", "w")
+		logfile = open(self.filelist[self.fileIdx][: self.filelist[self.fileIdx].rfind('.')] + "_export.log", "w")
 		for logLine in self.progressLog:
 			logfile.write(logLine)
 			logfile.write('\n')
 		logfile.close()
-		wx.CallAfter(self.notifyWindow.OnSliceDone, self)
+		self.fileIdx += 1
+		if self.fileIdx == len(self.cmdList):
+			if len(self.filelist) > 1:
+				self._stitchMultiExtruder()
+			wx.CallAfter(self.notifyWindow.OnSliceDone, self)
+		else:
+			self.run()
+	
+	def _stitchMultiExtruder(self):
+		files = []
+		resultFile = open(self.filelist[0][:self.filelist[0].rfind('.')]+'_export.gcode', "w")
+		resultFile.write(';TYPE:CUSTOM\n')
+		resultFile.write(unicode(profile.getAlterationFileContents('start.gcode')).encode('utf-8'))
+		for filename in self.filelist:
+			files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
+		
+		hasLine = True
+		while hasLine:
+			hasLine = False
+			for f in files:
+				for line in f:
+					resultFile.write(line)
+					hasLine = True
+					if line.startswith(';LAYER:'):
+						break
+		for f in files:
+			f.close()
+		for filename in self.filelist:
+			os.remove(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp')
+		resultFile.write(';TYPE:CUSTOM\n')
+		resultFile.write(unicode(profile.getAlterationFileContents('end.gcode')).encode('utf-8'))
+		resultFile.close()
 
 class LogWindow(wx.Frame):
 	def __init__(self, logText):
