@@ -7,7 +7,7 @@ class alterationPanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent,-1)
 
-		self.alterationFileList = ['start.gcode', 'end.gcode', 'support_start.gcode', 'support_end.gcode', 'replace.csv']
+		self.alterationFileList = ['start.gcode', 'end.gcode', 'support_start.gcode', 'support_end.gcode', 'nextobject.gcode', 'replace.csv']
 		self.currentFile = None
 
 		self.textArea = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
@@ -32,11 +32,9 @@ class alterationPanel(wx.Panel):
 		self.currentFile = self.list.GetSelection()
 
 	def loadFile(self, filename):
-		self.textArea.SetValue(unicode(profile.getAlterationFileContents(filename, False), "utf-8"))
+		self.textArea.SetValue(profile.getAlterationFile(filename))
 
 	def OnFocusLost(self, e):
 		if self.currentFile == self.list.GetSelection():
-			filename = profile.getAlterationFilePath(self.alterationFileList[self.list.GetSelection()])
-			f = open(filename, "wb")
-			f.write(self.textArea.GetValue().encode("utf-8"))
-			f.close()
+			profile.setAlterationFile(self.alterationFileList[self.list.GetSelection()], self.textArea.GetValue())
+
