@@ -64,6 +64,7 @@ profileDefaultSettings = {
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',
 	'bottom_thickness': '0.3',
+	
 	'add_start_end_gcode': 'True',
 	'gcode_extension': 'gcode',
 }
@@ -327,6 +328,7 @@ def setAlterationFile(filename, value):
 ### Get the alteration file for output. (Used by Skeinforge)
 def getAlterationFileContents(filename):
 	prefix = ''
+	alterationContents = getAlterationFile(filename)
 	if filename == 'start.gcode':
 		#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
 		#We also set our steps per E here, if configured.
@@ -334,11 +336,11 @@ def getAlterationFileContents(filename):
 		if eSteps > 0:
 			prefix += 'M92 E%f\n' % (eSteps)
 		temp = getProfileSettingFloat('print_temperature')
-		if temp > 0:
+		if temp > 0 and not '{print_temperature}' in alterationContents:
 			prefix += 'M109 S%f\n' % (temp)
 	elif filename == 'replace.csv':
 		#Always remove the extruder on/off M codes. These are no longer needed in 5D printing.
 		prefix = 'M101\nM103\n'
 	
-	return prefix + re.sub("\{[^\}]*\}", replaceTagMatch, getAlterationFile(filename))
+	return prefix + re.sub("\{[^\}]*\}", replaceTagMatch, alterationContents)
 
