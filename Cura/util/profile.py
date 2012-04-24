@@ -123,10 +123,11 @@ G1 Z0 F{max_z_speed}
 preferencesDefaultSettings = {
 	'wizardDone': 'False',
 	'startMode': 'Simple',
-	'lastFile': 'None',
+	'lastFile': '',
 	'machine_width': '205',
 	'machine_depth': '205',
 	'machine_height': '200',
+	'extruder_amount': '1',
 	'filament_density': '1300',
 	'steps_per_e': '0',
 	'serial_port': 'AUTO',

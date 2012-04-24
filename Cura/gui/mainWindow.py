@@ -84,8 +84,10 @@ class mainWindow(configBase.configWindowBase):
 		menubar.Append(helpMenu, 'Help')
 		self.SetMenuBar(menubar)
 		
-		self.lastPath = ""
-		self.filename = profile.getPreference('lastFile')
+		if profile.getPreference('lastFile') != '':
+			self.filelist = profile.getPreference('lastFile').split(';')
+		else:
+			self.filelist = []
 		self.progressPanelList = []
 
 		#Preview window
@@ -189,6 +191,18 @@ class mainWindow(configBase.configWindowBase):
 		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
+
+		extruderCount = int(profile.getPreference('extruder_amount'))
+		if extruderCount > 1:
+			loadButton2 = wx.Button(self, -1, 'Load Dual')
+			self.Bind(wx.EVT_BUTTON, self.OnLoadModel2, loadButton2)
+		if extruderCount > 2:
+			loadButton3 = wx.Button(self, -1, 'Load Tripple')
+			self.Bind(wx.EVT_BUTTON, self.OnLoadModel3, loadButton3)
+		if extruderCount > 2:
+			loadButton4 = wx.Button(self, -1, 'Load Quad')
+			self.Bind(wx.EVT_BUTTON, self.OnLoadModel4, loadButton4)
+
 		#Also bind double clicking the 3D preview to load an STL file.
 		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
 
@@ -196,17 +210,22 @@ class mainWindow(configBase.configWindowBase):
 		sizer = wx.GridBagSizer()
 		self.SetSizer(sizer)
 		sizer.Add(nb, (0,0), span=(1,1), flag=wx.EXPAND)
-		sizer.Add(self.preview3d, (0,1), span=(1,3), flag=wx.EXPAND)
-		sizer.AddGrowableCol(2)
+		sizer.Add(self.preview3d, (0,1), span=(1,2+extruderCount), flag=wx.EXPAND)
+		sizer.AddGrowableCol(2 + extruderCount)
 		sizer.AddGrowableRow(0)
 		sizer.Add(loadButton, (1,1), flag=wx.RIGHT, border=5)
-		sizer.Add(sliceButton, (1,2), flag=wx.RIGHT, border=5)
-		sizer.Add(printButton, (1,3), flag=wx.RIGHT, border=5)
+		if extruderCount > 1:
+			sizer.Add(loadButton2, (1,2), flag=wx.RIGHT, border=5)
+		if extruderCount > 2:
+			sizer.Add(loadButton3, (1,3), flag=wx.RIGHT, border=5)
+		if extruderCount > 3:
+			sizer.Add(loadButton4, (1,4), flag=wx.RIGHT, border=5)
+		sizer.Add(sliceButton, (1,1+extruderCount), flag=wx.RIGHT, border=5)
+		sizer.Add(printButton, (1,2+extruderCount), flag=wx.RIGHT, border=5)
 		self.sizer = sizer
 
-		if self.filename != "None":
-			self.preview3d.loadModelFile(self.filename)
-			self.lastPath = os.path.split(self.filename)[0]
+		if len(self.filelist) > 0:
+			self.preview3d.loadModelFiles(self.filelist)
 
 		self.updateProfileToControls()
 
@@ -261,25 +280,48 @@ class mainWindow(configBase.configWindowBase):
 		configWizard.configWizard()
 		self.updateProfileToControls()
 
-	def OnLoadModel(self, e):
-		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
+	def _showOpenDialog(self, title, wildcard = "STL files (*.stl)|*.stl;*.STL"):
+		dlg=wx.FileDialog(self, title, os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard(wildcard)
 		if dlg.ShowModal() == wx.ID_OK:
-			self.filename=dlg.GetPath()
-			profile.putPreference('lastFile', self.filename)
-			if not(os.path.exists(self.filename)):
-				return
-			self.lastPath = os.path.split(self.filename)[0]
-			self.preview3d.loadModelFile(self.filename)
-			self.preview3d.setViewMode("Normal")
+			filename = dlg.GetPath()
+			dlg.Destroy()
+			if not(os.path.exists(filename)):
+				return False
+			profile.putPreference('lastFile', filename)
+			return filename
 		dlg.Destroy()
+		return False
+
+	def _showModelLoadDialog(self, amount):
+		filelist = []
+		for i in xrange(0, amount):
+			filelist.append(self._showOpenDialog("Open file to print"))
+			if filelist[-1] == False:
+				return
+		self.filelist = filelist
+		profile.putPreference('lastFile', ';'.join(self.filelist))
+		self.preview3d.loadModelFiles(self.filelist)
+		self.preview3d.setViewMode("Normal")
+
+	def OnLoadModel(self, e):
+		self._showModelLoadDialog(1)
+	
+	def OnLoadModel2(self, e):
+		self._showModelLoadDialog(2)
+
+	def OnLoadModel3(self, e):
+		self._showModelLoadDialog(3)
+
+	def OnLoadModel4(self, e):
+		self._showModelLoadDialog(4)
 	
 	def OnSlice(self, e):
-		if self.filename == None:
+		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file before you can slice it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
-		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
+		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
 		self.sizer.Layout()
 		newSize = self.GetSize();
@@ -288,13 +330,13 @@ class mainWindow(configBase.configWindowBase):
 		self.progressPanelList.append(spp)
 	
 	def OnPrint(self, e):
-		if self.filename == None:
+		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		if not os.path.exists(self.filename[: self.filename.rfind('.')] + "_export.gcode"):
+		if not os.path.exists(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode"):
 			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		printWindow.printFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
+		printWindow.printFile(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode")
 
 	def OnExpertOpen(self, e):
 		ecw = expertConfig.expertConfigWindow()
