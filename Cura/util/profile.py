@@ -322,7 +322,7 @@ def setAlterationFile(filename, value):
 	if not globalProfileParser.has_section('alterations'):
 		globalProfileParser.add_section('alterations')
 	globalProfileParser.set('alterations', filename, value.encode("utf-8"))
-	saveGlobalProfile(profile.getDefaultProfilePath())
+	saveGlobalProfile(getDefaultProfilePath())
 
 ### Get the alteration file for output. (Used by Skeinforge)
 def getAlterationFileContents(filename):
