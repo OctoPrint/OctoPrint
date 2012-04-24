@@ -446,7 +446,7 @@ def getAlterationLines(fileName):
 	return archive.getTextLines(getAlterationFile(fileName))
 
 def getAlterationFile(fileName):
-	return profile.getAlterationFileContents(fileName)
+	return unicode(profile.getAlterationFileContents(fileName)).encode("utf-8")
 
 ####################################
 ## Configuration settings classes ##
