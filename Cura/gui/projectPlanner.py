@@ -707,11 +707,11 @@ class ProjectSliceProgressWindow(wx.Frame):
 			
 			if action == self.actionList[0]:
 				resultFile.write(';TYPE:CUSTOM\n')
-				resultFile.write(profile.getAlterationFileContents('start.gcode').encode('utf-8')
+				resultFile.write(profile.getAlterationFileContents('start.gcode').encode('utf-8'))
 			else:
 				#reset the extrusion length, and move to the next object center.
 				resultFile.write(';TYPE:CUSTOM\n')
-				resultFile.write(profile.getAlterationFileContents('nextobject.gcode').encode('utf-8')
+				resultFile.write(profile.getAlterationFileContents('nextobject.gcode').encode('utf-8'))
 			resultFile.write(';PRINTNR:%d\n' % self.actionList.index(action))
 			profile.loadGlobalProfileFromString(oldProfile)
 			
@@ -727,7 +727,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 			wx.CallAfter(self.progressGauge2.SetValue, self.actionList.index(action) + 1)
 		
 		resultFile.write(';TYPE:CUSTOM\n')
-		resultFile.write(profile.getAlterationFileContents('end.gcode').encode('utf-8')
+		resultFile.write(profile.getAlterationFileContents('end.gcode').encode('utf-8'))
 		resultFile.close()
 		self.abort = True
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
