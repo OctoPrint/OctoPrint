@@ -610,6 +610,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.prevStep = 'start'
 		self.totalDoneFactor = 0.0
 		self.startTime = time.time()
+		self.sliceStartTime = time.time()
 		
 		#How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
 		# TODO: Duplicate with sliceProgressPanel, move to sliceRun.
@@ -724,12 +725,15 @@ class ProjectSliceProgressWindow(wx.Frame):
 			os.remove(action.filename[: action.filename.rfind('.')] + "_export.project_tmp")
 			
 			wx.CallAfter(self.progressGauge.SetValue, 10000)
+			self.totalDoneFactor = 0.0
 			wx.CallAfter(self.progressGauge2.SetValue, self.actionList.index(action) + 1)
 		
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
 		self.abort = True
+		sliceTime = time.time() - self.sliceStartTime
+		wx.CallAfter(self.statusText.SetLabel, 'Slicing took: %d:%d' % (sliceTime / 60, sliceTime % 60))
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
 
 def main():

@@ -63,7 +63,7 @@ class sliceProgessPanel(wx.Panel):
 			print filename, self.filelist.index(filename)
 			if self.filelist.index(filename) > 0:
 				profile.putProfileSetting('fan_enabled', 'False')
-				profile.putProfileSetting('skirt_lines', '0')
+				profile.putProfileSetting('skirt_line_count', '0')
 			if len(self.filelist) > 1:
 				profile.putProfileSetting('add_start_end_gcode', 'False')
 				profile.putProfileSetting('gcode_extension', 'multi_extrude_tmp')
