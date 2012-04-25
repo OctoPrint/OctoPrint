@@ -343,5 +343,5 @@ def getAlterationFileContents(filename):
 		#Always remove the extruder on/off M codes. These are no longer needed in 5D printing.
 		prefix = 'M101\nM103\n'
 	
-	return prefix + re.sub("\{[^\}]*\}", replaceTagMatch, alterationContents)
+	return unicode(prefix + re.sub("\{[^\}]*\}", replaceTagMatch, alterationContents).rstrip() + '\n').encode('utf-8')
 

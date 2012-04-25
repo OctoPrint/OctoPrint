@@ -43,7 +43,7 @@ class sliceProgessPanel(wx.Panel):
 
 		self.statusText = wx.StaticText(self, -1, "Starting...")
 		self.progressGauge = wx.Gauge(self, -1)
-		self.progressGauge.SetRange(10000)
+		self.progressGauge.SetRange(10000 * len(filelist))
 		self.abortButton = wx.Button(self, -1, "X", style=wx.BU_EXACTFIT)
 		self.sizer.Add(self.statusText, 2, flag=wx.ALIGN_CENTER )
 		self.sizer.Add(self.progressGauge, 2)
@@ -60,8 +60,10 @@ class sliceProgessPanel(wx.Panel):
 		cmdList = []
 		oldProfile = profile.getGlobalProfileString()
 		for filename in self.filelist:
+			print filename, self.filelist.index(filename)
 			if self.filelist.index(filename) > 0:
 				profile.putProfileSetting('fan_enabled', 'False')
+				profile.putProfileSetting('skirt_lines', '0')
 			if len(self.filelist) > 1:
 				profile.putProfileSetting('add_start_end_gcode', 'False')
 				profile.putProfileSetting('gcode_extension', 'multi_extrude_tmp')
@@ -146,7 +148,7 @@ class WorkerThread(threading.Thread):
 					maxValue = int(progress[2])
 				wx.CallAfter(self.notifyWindow.SetProgress, progress[0], int(progress[1]), maxValue)
 			else:
-				print line
+				#print line
 				self.progressLog.append(line)
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, line)
 			if self.notifyWindow.abort:
@@ -172,25 +174,40 @@ class WorkerThread(threading.Thread):
 		files = []
 		resultFile = open(self.filelist[0][:self.filelist[0].rfind('.')]+'_export.gcode', "w")
 		resultFile.write(';TYPE:CUSTOM\n')
-		resultFile.write(unicode(profile.getAlterationFileContents('start.gcode')).encode('utf-8'))
+		resultFile.write(profile.getAlterationFileContents('start.gcode'))
 		for filename in self.filelist:
 			files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
 		
+		currentExtruder = 0
+		layerNr = -1
 		hasLine = True
 		while hasLine:
 			hasLine = False
 			for f in files:
+				layerHasLine = False
 				for line in f:
-					resultFile.write(line)
 					hasLine = True
 					if line.startswith(';LAYER:'):
 						break
+					if not layerHasLine:
+						nextExtruder = files.index(f)
+						resultFile.write(';LAYER:%d\n' % (layerNr))
+						resultFile.write(';EXTRUDER:%d\n' % (nextExtruder))
+						if nextExtruder != currentExtruder:
+							resultFile.write("G1 E-2 F3000\n")
+							resultFile.write("T%d\n" % (nextExtruder))
+							resultFile.write("G1 E2 F3000\n")
+							resultFile.write("M92 E0\n")
+							currentExtruder = nextExtruder
+						layerHasLine = True
+					resultFile.write(line)
+			layerNr += 1
 		for f in files:
 			f.close()
 		for filename in self.filelist:
 			os.remove(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp')
 		resultFile.write(';TYPE:CUSTOM\n')
-		resultFile.write(unicode(profile.getAlterationFileContents('end.gcode')).encode('utf-8'))
+		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
 
 class LogWindow(wx.Frame):

@@ -125,8 +125,8 @@ def getProfileInformation():
 			'SVG_Viewer': DEFSET,
 		},'preface': {
 			'Meta': DEFSET,
-			'Set_Positioning_to_Absolute': DEFSET,
-			'Set_Units_to_Millimeters': DEFSET,
+			'Set_Positioning_to_Absolute': "False",
+			'Set_Units_to_Millimeters': "False",
 			'Start_at_Home': DEFSET,
 			'Turn_Extruder_Off_at_Shut_Down': DEFSET,
 			'Turn_Extruder_Off_at_Start_Up': DEFSET,
@@ -446,7 +446,7 @@ def getAlterationLines(fileName):
 	return archive.getTextLines(getAlterationFile(fileName))
 
 def getAlterationFile(fileName):
-	return unicode(profile.getAlterationFileContents(fileName)).encode("utf-8")
+	return profile.getAlterationFileContents(fileName)
 
 ####################################
 ## Configuration settings classes ##

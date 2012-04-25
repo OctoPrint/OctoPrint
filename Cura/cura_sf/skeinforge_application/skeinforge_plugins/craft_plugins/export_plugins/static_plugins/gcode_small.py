@@ -92,6 +92,8 @@ class GcodeSmallSkein:
 			return
 		if firstWord[0] == '(':
 			return
+		if firstWord == 'M108' or firstWord == 'M113':
+			return
 		if firstWord != 'G1':
 			self.output.write(line + '\n')
 			return
