@@ -40,8 +40,8 @@ class projectPlanner(wx.Frame):
 		self.selection = None
 
 		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
-		self.headSizeMin = util3d.Vector3(70,16,0)
-		self.headSizeMax = util3d.Vector3(16,35,0)
+		self.headSizeMin = util3d.Vector3(70,18,0)
+		self.headSizeMax = util3d.Vector3(18,35,0)
 
 		self.toolbar = toolbarUtil.Toolbar(self)
 
