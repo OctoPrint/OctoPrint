@@ -163,7 +163,8 @@ class projectPlanner(wx.Frame):
 				item.flipZ = cp.get(section, 'flipZ') == 'True'
 				item.swapXZ = cp.get(section, 'swapXZ') == 'True'
 				item.swapYZ = cp.get(section, 'swapYZ') == 'True'
-				item.extuder = int(cp.get(section, 'extruder'))-1
+				if cp.has_option(section, 'extruder'):
+					item.extuder = int(cp.get(section, 'extruder'))-1
 				i += 1
 				
 				self.list.append(item)
