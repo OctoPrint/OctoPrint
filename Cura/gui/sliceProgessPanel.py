@@ -64,6 +64,7 @@ class sliceProgessPanel(wx.Panel):
 			if self.filelist.index(filename) > 0:
 				profile.putProfileSetting('fan_enabled', 'False')
 				profile.putProfileSetting('skirt_line_count', '0')
+				profile.putProfileSetting('machine_center_x', profile.getProfileSettingFloat('machine_center_y') + 22)
 			if len(self.filelist) > 1:
 				profile.putProfileSetting('add_start_end_gcode', 'False')
 				profile.putProfileSetting('gcode_extension', 'multi_extrude_tmp')
@@ -179,6 +180,7 @@ class WorkerThread(threading.Thread):
 			files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
 		
 		currentExtruder = 0
+		resultFile.write('T%d\n' % (currentExtruder))
 		layerNr = -1
 		hasLine = True
 		while hasLine:
@@ -194,10 +196,10 @@ class WorkerThread(threading.Thread):
 						resultFile.write(';LAYER:%d\n' % (layerNr))
 						resultFile.write(';EXTRUDER:%d\n' % (nextExtruder))
 						if nextExtruder != currentExtruder:
-							resultFile.write("G1 E-2 F3000\n")
+							resultFile.write("G1 E-5 F5000\n")
 							resultFile.write("T%d\n" % (nextExtruder))
-							resultFile.write("G1 E2 F3000\n")
-							resultFile.write("M92 E0\n")
+							resultFile.write("G1 E5 F5000\n")
+							resultFile.write("G92 E0\n")
 							currentExtruder = nextExtruder
 						layerHasLine = True
 					resultFile.write(line)

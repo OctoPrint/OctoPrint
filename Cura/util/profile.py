@@ -34,7 +34,7 @@ profileDefaultSettings = {
 	'bottom_layer_speed': '20',
 	'cool_min_layer_time': '10',
 	'fan_enabled': 'True',
-	'fan_layer': '0',
+	'fan_layer': '1',
 	'fan_speed': '100',
 	'model_scale': '1.0',
 	'flip_x': 'False',
