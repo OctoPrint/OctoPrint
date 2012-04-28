@@ -177,10 +177,12 @@ def getGlobalProfileString():
 	
 	p = []
 	alt = []
-	for key in globalProfileParser.options('profile'):
-		p.append(key + "=" + globalProfileParser.get('profile', key))
-	for key in globalProfileParser.options('alterations'):
-		alt.append(key + "=" + globalProfileParser.get('alterations', key))
+	if globalProfileParser.has_section('profile'):
+		for key in globalProfileParser.options('profile'):
+			p.append(key + "=" + globalProfileParser.get('profile', key))
+	if globalProfileParser.has_section('alterations'):
+		for key in globalProfileParser.options('alterations'):
+			alt.append(key + "=" + globalProfileParser.get('alterations', key))
 	ret = '\b'.join(p) + '\f' + '\b'.join(alt)
 	ret = base64.b64encode(zlib.compress(ret, 9))
 	return ret
