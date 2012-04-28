@@ -117,7 +117,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		self.sizer = sizer
 
 		if self.filename != "None":
-			self.preview3d.loadModelFile(self.filename)
+			self.preview3d.loadModelFiles([self.filename])
 			self.lastPath = os.path.split(self.filename)[0]
 
 		self.updateProfileToControls()
@@ -158,7 +158,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			if not(os.path.exists(self.filename)):
 				return
 			self.lastPath = os.path.split(self.filename)[0]
-			self.preview3d.loadModelFile(self.filename)
+			self.preview3d.loadModelFiles([self.filename])
 			self.preview3d.setViewMode("Normal")
 		dlg.Destroy()
 	
