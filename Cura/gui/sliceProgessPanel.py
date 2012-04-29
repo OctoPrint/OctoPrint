@@ -68,6 +68,7 @@ class sliceProgessPanel(wx.Panel):
 				profile.putProfileSetting('skirt_line_count', '0')
 				profile.putProfileSetting('machine_center_x', profile.getProfileSettingFloat('machine_center_x') + float(profile.getPreference('extruder_offset_x%d' % (idx))))
 				profile.putProfileSetting('machine_center_y', profile.getProfileSettingFloat('machine_center_y') + float(profile.getPreference('extruder_offset_y%d' % (idx))))
+				profile.putProfileSetting('alternative_center', self.filelist[0])
 			if len(self.filelist) > 1:
 				profile.putProfileSetting('add_start_end_gcode', 'False')
 				profile.putProfileSetting('gcode_extension', 'multi_extrude_tmp')
@@ -105,7 +106,7 @@ class sliceProgessPanel(wx.Panel):
 			status += " Print time: %02d:%02d" % (int(result.gcode.totalMoveTimeMinute / 60), int(result.gcode.totalMoveTimeMinute % 60))
 			cost = result.gcode.calculateCost()
 			if cost != False:
-				status += "Cost: %s" % (cost)
+				status += " Cost: %s" % (cost)
 			self.statusText.SetLabel(status)
 			if exporer.hasExporer():
 				self.openFileLocationButton = wx.Button(self, -1, "Open file location")

@@ -113,6 +113,9 @@ def getProfileInformation():
 			'SwapYZ': storedSetting("swap_yz"),
 			'Scale': storedSettingFloat("model_scale"),
 			'Rotate': storedSettingFloat("model_rotate_base"),
+			'CenterX': storedSettingFloat("machine_center_x"),
+			'CenterY': storedSettingFloat("machine_center_y"),
+			'AlternativeCenterFile': storedSetting("alternative_center"),
 		},'scale': {
 			'Activate_Scale': "False",
 			'XY_Plane_Scale_ratio': DEFSET,
@@ -171,7 +174,7 @@ def getProfileInformation():
 			'Surrounding_Angle_degrees': DEFSET,
 			'Thread_Sequence_Choice': storedSetting('sequence'),
 		},'multiply': {
-			'Activate_Multiply': "True",
+			'Activate_Multiply': "False",
 			'Center_X_mm': storedSettingFloat("machine_center_x"),
 			'Center_Y_mm': storedSettingFloat("machine_center_y"),
 			'Number_of_Columns_integer': storedSetting('model_multiply_x'),

@@ -185,8 +185,11 @@ class CarveRepository:
 		self.flipZ = settings.BooleanSetting().getFromValue('FlipZ', self, False)
 		self.swapXZ = settings.BooleanSetting().getFromValue('SwapXZ', self, False)
 		self.swapYZ = settings.BooleanSetting().getFromValue('SwapYZ', self, False)
+		self.centerX = settings.FloatSpin().getFromValue(0.0, 'CenterX', self, 1000.0, 0.0)
+		self.centerY = settings.FloatSpin().getFromValue(0.0, 'CenterY', self, 1000.0, 0.0)
 		self.scale = settings.FloatSpin().getFromValue( 0.1, 'Scale', self, 10.0, 1.0 )
 		self.rotate = settings.FloatSpin().getFromValue( -180.0, 'Rotate', self, 180.0, 0.0 )
+		self.alternativeCenter = settings.StringSetting().getFromValue('AlternativeCenterFile', self, '')
 
 
 	def execute(self):
@@ -219,16 +222,6 @@ class CarveSkein:
 		mat10 = math.sin(rotate) * scaleX
 		mat11 = math.cos(rotate) * scaleY
 
-		minZ = carving.getMinimumZ()
-		minSize = carving.getCarveCornerMinimum()
-		maxSize = carving.getCarveCornerMaximum()
-		for v in carving.vertexes:
-			v.z -= minZ
-			v.x -= minSize.x + (maxSize.x - minSize.x) / 2
-			v.y -= minSize.y + (maxSize.y - minSize.y) / 2
-			#v.x += self.machineCenter.x
-			#v.y += self.machineCenter.y
-		
 		for i in xrange(0, len(carving.vertexes)):
 			x = carving.vertexes[i].x
 			y = carving.vertexes[i].y
@@ -241,6 +234,34 @@ class CarveSkein:
 				x * mat00 + y * mat01,
 				x * mat10 + y * mat11,
 				z * scaleZ)
+
+		if repository.alternativeCenter.value != '':
+			carving2 = svg_writer.getCarving(repository.alternativeCenter.value)
+			for i in xrange(0, len(carving2.vertexes)):
+				x = carving2.vertexes[i].x
+				y = carving2.vertexes[i].y
+				z = carving2.vertexes[i].z
+				if swapXZ:
+					x, z = z, x
+				if swapYZ:
+					y, z = z, y
+				carving2.vertexes[i] = Vector3(
+					x * mat00 + y * mat01,
+					x * mat10 + y * mat11,
+					z * scaleZ)
+			minZ = carving2.getMinimumZ()
+			minSize = carving2.getCarveCornerMinimum()
+			maxSize = carving2.getCarveCornerMaximum()
+		else:
+			minZ = carving.getMinimumZ()
+			minSize = carving.getCarveCornerMinimum()
+			maxSize = carving.getCarveCornerMaximum()
+		for v in carving.vertexes:
+			v.z -= minZ
+			v.x -= minSize.x + (maxSize.x - minSize.x) / 2
+			v.y -= minSize.y + (maxSize.y - minSize.y) / 2
+			v.x += repository.centerX.value
+			v.y += repository.centerY.value
 
 		layerHeight = repository.layerHeight.value
 		edgeWidth = repository.edgeWidth.value

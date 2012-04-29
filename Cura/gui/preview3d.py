@@ -93,12 +93,11 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddSeparator()
 
 		# Multiply
-		self.mulXadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXAddClick, 'object-mul-x-add.png', 'Increase number of models on X axis')
-		self.mulXsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXSubClick, 'object-mul-x-sub.png', 'Decrease number of models on X axis')
-		self.mulYadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYAddClick, 'object-mul-y-add.png', 'Increase number of models on Y axis')
-		self.mulYsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYSubClick, 'object-mul-y-sub.png', 'Decrease number of models on Y axis')
-
-		self.toolbar2.AddSeparator()
+		#self.mulXadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXAddClick, 'object-mul-x-add.png', 'Increase number of models on X axis')
+		#self.mulXsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXSubClick, 'object-mul-x-sub.png', 'Decrease number of models on X axis')
+		#self.mulYadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYAddClick, 'object-mul-y-add.png', 'Increase number of models on Y axis')
+		#self.mulYsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYSubClick, 'object-mul-y-sub.png', 'Decrease number of models on Y axis')
+		#self.toolbar2.AddSeparator()
 
 		# Rotate
 		self.rotateReset = toolbarUtil.NormalButton(self.toolbar2, self.OnRotateReset, 'object-rotate.png', 'Reset model rotation')
@@ -623,8 +622,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glFlush()
 	
 	def drawModel(self, obj):
-		multiX = int(profile.getProfileSetting('model_multiply_x'))
-		multiY = int(profile.getProfileSetting('model_multiply_y'))
+		multiX = 1 #int(profile.getProfileSetting('model_multiply_x'))
+		multiY = 1 #int(profile.getProfileSetting('model_multiply_y'))
 		modelScale = profile.getProfileSettingFloat('model_scale')
 		modelSize = (obj.mesh.getMaximum() - obj.mesh.getMinimum()) * modelScale
 		glPushMatrix()

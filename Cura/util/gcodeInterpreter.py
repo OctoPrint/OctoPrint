@@ -56,6 +56,7 @@ class gcode():
 		currentE = 0.0
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
+		currentExtruder = 0
 		totalMoveTimeMinute = 0.0
 		scale = 1.0
 		posAbs = True
@@ -90,6 +91,15 @@ class gcode():
 				if pathType != "CUSTOM":
 					startCodeDone = True
 				line = line[0:line.find(';')]
+			T = self.getCodeInt(line, 'T')
+			if T is not None:
+				if currentExtruder > 0:
+					posOffset.x += float(profile.getPreference('extruder_offset_x%d' % (currentExtruder)))
+					posOffset.y += float(profile.getPreference('extruder_offset_y%d' % (currentExtruder)))
+				currentExtruder = T
+				if currentExtruder > 0:
+					posOffset.x -= float(profile.getPreference('extruder_offset_x%d' % (currentExtruder)))
+					posOffset.y -= float(profile.getPreference('extruder_offset_y%d' % (currentExtruder)))
 			
 			G = self.getCodeInt(line, 'G')
 			if G is not None:
@@ -102,17 +112,17 @@ class gcode():
 					oldPos = pos.copy()
 					if x is not None:
 						if posAbs:
-							pos.x = x * scale
+							pos.x = x * scale + posOffset.x
 						else:
 							pos.x += x * scale
 					if y is not None:
 						if posAbs:
-							pos.y = y * scale
+							pos.y = y * scale + posOffset.y
 						else:
 							pos.y += y * scale
 					if z is not None:
 						if posAbs:
-							pos.z = z * scale
+							pos.z = z * scale + posOffset.z
 						else:
 							pos.z += z * scale
 						#Check if we have a new layer.
