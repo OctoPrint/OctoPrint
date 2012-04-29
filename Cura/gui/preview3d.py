@@ -203,8 +203,9 @@ class previewPanel(wx.Panel):
 	def loadModelFiles(self, filelist):
 		while len(filelist) > len(self.objectList):
 			self.objectList.append(previewObject())
-		for idx in xrange(len(self.objectList), len(filelist)):
+		for idx in xrange(len(filelist), len(self.objectList)):
 			self.objectList[idx].mesh = None
+			self.objectList[idx].filename = None
 		for idx in xrange(0, len(filelist)):
 			obj = self.objectList[idx]
 			if obj.filename != filelist[idx]:
@@ -232,7 +233,7 @@ class previewPanel(wx.Panel):
 	
 	def doFileLoadThread(self):
 		for obj in self.objectList:
-			if os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
+			if obj.filename != None and os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
 				obj.ileTime = os.stat(obj.filename).st_mtime
 				mesh = stl.stlModel()
 				mesh.load(obj.filename)
