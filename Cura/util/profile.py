@@ -128,6 +128,12 @@ preferencesDefaultSettings = {
 	'machine_depth': '205',
 	'machine_height': '200',
 	'extruder_amount': '1',
+	'extruder_offset_x1': '-22.0',
+	'extruder_offset_y1': '0.0',
+	'extruder_offset_x2': '0.0',
+	'extruder_offset_y2': '0.0',
+	'extruder_offset_x3': '0.0',
+	'extruder_offset_y3': '0.0',
 	'filament_density': '1300',
 	'steps_per_e': '0',
 	'serial_port': 'AUTO',
@@ -136,6 +142,11 @@ preferencesDefaultSettings = {
 	'save_profile': 'False',
 	'filament_cost_kg': '0',
 	'filament_cost_meter': '0',
+	
+	'extruder_head_size_min_x': '70.0',
+	'extruder_head_size_min_y': '18.0',
+	'extruder_head_size_max_x': '18.0',
+	'extruder_head_size_max_y': '35.0',
 }
 
 #########################################################

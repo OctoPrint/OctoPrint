@@ -40,10 +40,14 @@ class projectPlanner(wx.Frame):
 		self.selection = None
 
 		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
-		self.headSizeMin = util3d.Vector3(70,18,0)
-		self.headSizeMax = util3d.Vector3(18,35,0)
+		self.headSizeMin = util3d.Vector3(float(profile.getPreference('extruder_head_size_min_x')), float(profile.getPreference('extruder_head_size_min_y')),0)
+		self.headSizeMax = util3d.Vector3(float(profile.getPreference('extruder_head_size_max_x')), float(profile.getPreference('extruder_head_size_max_y')),0)
 
-		self.extruderOffset = [util3d.Vector3(0,0,0), util3d.Vector3(-22,0,0), util3d.Vector3(0,0,0), util3d.Vector3(0,0,0)]
+		self.extruderOffset = [
+			util3d.Vector3(0,0,0),
+			util3d.Vector3(float(profile.getPreference('extruder_offset_x1')), float(profile.getPreference('extruder_offset_y1')), 0),
+			util3d.Vector3(float(profile.getPreference('extruder_offset_x2')), float(profile.getPreference('extruder_offset_y2')), 0),
+			util3d.Vector3(float(profile.getPreference('extruder_offset_x3')), float(profile.getPreference('extruder_offset_y3')), 0)]
 
 		self.toolbar = toolbarUtil.Toolbar(self)
 
@@ -467,14 +471,14 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				if item != None:
 					item.centerX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
 					item.centerY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
-					if item.centerX < -item.getMinimum().x * item.scale:
-						item.centerX = -item.getMinimum().x * item.scale
-					if item.centerY < -item.getMinimum().y * item.scale:
-						item.centerY = -item.getMinimum().y * item.scale
-					if item.centerX > self.parent.machineSize.x - item.getMaximum().x * item.scale:
-						item.centerX = self.parent.machineSize.x - item.getMaximum().x * item.scale
-					if item.centerY > self.parent.machineSize.y - item.getMaximum().y * item.scale:
-						item.centerY = self.parent.machineSize.y - item.getMaximum().y * item.scale
+					if item.centerX < -item.getMinimum().x * item.scale + self.parent.extruderOffset[item.extruder].x:
+						item.centerX = -item.getMinimum().x * item.scale + self.parent.extruderOffset[item.extruder].x
+					if item.centerY < -item.getMinimum().y * item.scale + self.parent.extruderOffset[item.extruder].y:
+						item.centerY = -item.getMinimum().y * item.scale + self.parent.extruderOffset[item.extruder].y
+					if item.centerX > self.parent.machineSize.x + self.parent.extruderOffset[item.extruder].x - item.getMaximum().x * item.scale:
+						item.centerX = self.parent.machineSize.x + self.parent.extruderOffset[item.extruder].x - item.getMaximum().x * item.scale
+					if item.centerY > self.parent.machineSize.y + self.parent.extruderOffset[item.extruder].y - item.getMaximum().y * item.scale:
+						item.centerY = self.parent.machineSize.y + self.parent.extruderOffset[item.extruder].y - item.getMaximum().y * item.scale
 			self.Refresh()
 		else:
 			self.allowDrag = False
