@@ -102,10 +102,10 @@ class sliceProgessPanel(wx.Panel):
 		self.sizer.Add(self.logButton, 0)
 		if result.returnCode == 0:
 			status = "Ready: Filament: %.2fm %.2fg" % (result.gcode.extrusionAmount / 1000, result.gcode.calculateWeight() * 1000)
-			status += " Print time: %02d:%02d\n" % (int(result.gcode.totalMoveTimeMinute / 60), int(result.gcode.totalMoveTimeMinute % 60))
+			status += " Print time: %02d:%02d" % (int(result.gcode.totalMoveTimeMinute / 60), int(result.gcode.totalMoveTimeMinute % 60))
 			cost = result.gcode.calculateCost()
 			if cost != False:
-				status += "Cost: %s\n" % (cost)
+				status += "Cost: %s" % (cost)
 			self.statusText.SetLabel(status)
 			if exporer.hasExporer():
 				self.openFileLocationButton = wx.Button(self, -1, "Open file location")
