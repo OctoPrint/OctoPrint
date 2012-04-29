@@ -6,6 +6,7 @@ import wx, sys, os, math, threading, subprocess, time
 from util import profile
 from util import sliceRun
 from util import exporer
+from util import gcodeInterpreter
 
 class sliceProgessPanel(wx.Panel):
 	def __init__(self, mainWindow, parent, filelist):
@@ -100,7 +101,12 @@ class sliceProgessPanel(wx.Panel):
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.abortButton)
 		self.sizer.Add(self.logButton, 0)
 		if result.returnCode == 0:
-			self.statusText.SetLabel("Ready.")
+			status = "Ready: Filament: %.2fm %.2fg" % (result.gcode.extrusionAmount / 1000, result.gcode.calculateWeight() * 1000)
+			status += " Print time: %02d:%02d\n" % (int(result.gcode.totalMoveTimeMinute / 60), int(result.gcode.totalMoveTimeMinute % 60))
+			cost = result.gcode.calculateCost()
+			if cost != False:
+				status += "Cost: %s\n" % (cost)
+			self.statusText.SetLabel(status)
 			if exporer.hasExporer():
 				self.openFileLocationButton = wx.Button(self, -1, "Open file location")
 				self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
@@ -169,6 +175,8 @@ class WorkerThread(threading.Thread):
 		if self.fileIdx == len(self.cmdList):
 			if len(self.filelist) > 1:
 				self._stitchMultiExtruder()
+			self.gcode = gcodeInterpreter.gcode()
+			self.gcode.load(self.filelist[0][:self.filelist[0].rfind('.')]+'_export.gcode')
 			wx.CallAfter(self.notifyWindow.OnSliceDone, self)
 		else:
 			self.run()

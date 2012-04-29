@@ -38,6 +38,17 @@ class gcode():
 		volumeM3 = (self.extrusionAmount * (math.pi * radius * radius)) / (1000*1000*1000)
 		return volumeM3 * float(profile.getPreference('filament_density'))
 	
+	def calculateCost(self):
+		cost_kg = float(profile.getPreference('filament_cost_kg'))
+		cost_meter = float(profile.getPreference('filament_cost_meter'))
+		if cost_kg > 0.0 and cost_meter > 0.0:
+			return "%.2f / %.2f" % (self.calculateWeight() * cost_kg, self.extrusionAmount / 1000 * cost_meter)
+		elif cost_kg > 0.0:
+			return "%.2f" % (self.calculateWeight() * cost_kg)
+		elif cost_meter > 0.0:
+			return "%.2f" % (self.extrusionAmount / 1000 * cost_meter)
+		return False
+	
 	def _load(self, gcodeFile):
 		filePos = 0
 		pos = util3d.Vector3()
@@ -200,8 +211,8 @@ class gcode():
 		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
 		self.totalMoveTimeMinute = totalMoveTimeMinute
-		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
-		print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
+		#print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
+		#print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
 	def getCodeInt(self, line, code):
 		if code not in self.regMatch:

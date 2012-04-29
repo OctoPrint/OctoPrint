@@ -176,14 +176,9 @@ class printWindow(wx.Frame):
 		status = ""
 		if self.gcode != None:
 			status += "Filament: %.2fm %.2fg\n" % (self.gcode.extrusionAmount / 1000, self.gcode.calculateWeight() * 1000)
-			cost_kg = float(profile.getPreference('filament_cost_kg'))
-			cost_meter = float(profile.getPreference('filament_cost_meter'))
-			if cost_kg > 0.0 and cost_meter > 0.0:
-				status += "Filament cost: %.2f / %.2f\n" % (self.gcode.calculateWeight() * cost_kg, self.gcode.extrusionAmount / 1000 * cost_meter)
-			elif cost_kg > 0.0:
-				status += "Filament cost: %.2f\n" % (self.gcode.calculateWeight() * cost_kg)
-			elif cost_meter > 0.0:
-				status += "Filament cost: %.2f\n" % (self.gcode.extrusionAmount / 1000 * cost_meter)
+			cost = self.gcode.calculateCost()
+			if cost != False:
+				status += "Filament cost: %s\n" % (cost)
 			status += "Print time: %02d:%02d\n" % (int(self.gcode.totalMoveTimeMinute / 60), int(self.gcode.totalMoveTimeMinute % 60))
 		if self.printIdx == None:
 			self.progress.SetValue(0)
