@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, sys, os, math, threading, subprocess, time
+import wx, sys, os, math, threading, subprocess, time, re
 
 from util import profile
 from util import sliceRun
@@ -202,6 +202,8 @@ class WorkerThread(threading.Thread):
 					hasLine = True
 					if line.startswith(';LAYER:'):
 						break
+					if 'Z' in line:
+						lastZ = float(re.search('Z([^\s]+)', line).group(1))
 					if not layerHasLine:
 						nextExtruder = files.index(f)
 						resultFile.write(';LAYER:%d\n' % (layerNr))
