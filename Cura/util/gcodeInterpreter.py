@@ -36,11 +36,11 @@ class gcode():
 		#Calculates the weight of the filament in kg
 		radius = float(profile.getProfileSetting('filament_diameter')) / 2
 		volumeM3 = (self.extrusionAmount * (math.pi * radius * radius)) / (1000*1000*1000)
-		return volumeM3 * float(profile.getPreference('filament_density'))
+		return volumeM3 * profile.getPreferenceFloat('filament_density')
 	
 	def calculateCost(self):
-		cost_kg = float(profile.getPreference('filament_cost_kg'))
-		cost_meter = float(profile.getPreference('filament_cost_meter'))
+		cost_kg = profile.getPreferenceFloat('filament_cost_kg')
+		cost_meter = profile.getPreferenceFloat('filament_cost_meter')
 		if cost_kg > 0.0 and cost_meter > 0.0:
 			return "%.2f / %.2f" % (self.calculateWeight() * cost_kg, self.extrusionAmount / 1000 * cost_meter)
 		elif cost_kg > 0.0:
@@ -94,12 +94,12 @@ class gcode():
 			T = self.getCodeInt(line, 'T')
 			if T is not None:
 				if currentExtruder > 0:
-					posOffset.x -= float(profile.getPreference('extruder_offset_x%d' % (currentExtruder)))
-					posOffset.y -= float(profile.getPreference('extruder_offset_y%d' % (currentExtruder)))
+					posOffset.x -= profile.getPreferenceFloat('extruder_offset_x%d' % (currentExtruder))
+					posOffset.y -= profile.getPreferenceFloat('extruder_offset_y%d' % (currentExtruder))
 				currentExtruder = T
 				if currentExtruder > 0:
-					posOffset.x += float(profile.getPreference('extruder_offset_x%d' % (currentExtruder)))
-					posOffset.y += float(profile.getPreference('extruder_offset_y%d' % (currentExtruder)))
+					posOffset.x += profile.getPreferenceFloat('extruder_offset_x%d' % (currentExtruder))
+					posOffset.y += profile.getPreferenceFloat('extruder_offset_y%d' % (currentExtruder))
 			
 			G = self.getCodeInt(line, 'G')
 			if G is not None:

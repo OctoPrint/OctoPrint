@@ -47,7 +47,7 @@ class previewPanel(wx.Panel):
 		self.objectsMinV = None
 		self.objectsMaxV = None
 		self.loadThread = None
-		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
+		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
 		self.machineCenter = util3d.Vector3(float(profile.getProfileSetting('machine_center_x')), float(profile.getProfileSetting('machine_center_y')), 0)
 		
 		self.toolbar = toolbarUtil.Toolbar(self)

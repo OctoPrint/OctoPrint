@@ -236,6 +236,13 @@ globalPreferenceParser = None
 def getPreferencePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
 
+def getPreferenceFloat(name):
+	try:
+		return float(eval(getPreference(name), {}, {}))
+
+	except (ValueError, SyntaxError):
+		return 0.0
+
 def getPreference(name):
 	global globalPreferenceParser
 	if globalPreferenceParser == None:
@@ -346,7 +353,7 @@ def getAlterationFileContents(filename):
 	if filename == 'start.gcode':
 		#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
 		#We also set our steps per E here, if configured.
-		eSteps = float(getPreference('steps_per_e'))
+		eSteps = getPreferenceFloat('steps_per_e')
 		if eSteps > 0:
 			prefix += 'M92 E%f\n' % (eSteps)
 		temp = getProfileSettingFloat('print_temperature')
