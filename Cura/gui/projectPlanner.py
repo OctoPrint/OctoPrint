@@ -39,15 +39,15 @@ class projectPlanner(wx.Frame):
 		self.list = []
 		self.selection = None
 
-		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
-		self.headSizeMin = util3d.Vector3(float(profile.getPreference('extruder_head_size_min_x')), float(profile.getPreference('extruder_head_size_min_y')),0)
-		self.headSizeMax = util3d.Vector3(float(profile.getPreference('extruder_head_size_max_x')), float(profile.getPreference('extruder_head_size_max_y')),0)
+		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
+		self.headSizeMin = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0)
+		self.headSizeMax = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0)
 
 		self.extruderOffset = [
 			util3d.Vector3(0,0,0),
-			util3d.Vector3(float(profile.getPreference('extruder_offset_x1')), float(profile.getPreference('extruder_offset_y1')), 0),
-			util3d.Vector3(float(profile.getPreference('extruder_offset_x2')), float(profile.getPreference('extruder_offset_y2')), 0),
-			util3d.Vector3(float(profile.getPreference('extruder_offset_x3')), float(profile.getPreference('extruder_offset_y3')), 0)]
+			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x1'), profile.getPreferenceFloat('extruder_offset_y1'), 0),
+			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x2'), profile.getPreferenceFloat('extruder_offset_y2'), 0),
+			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x3'), profile.getPreferenceFloat('extruder_offset_y3'), 0)]
 
 		self.toolbar = toolbarUtil.Toolbar(self)
 

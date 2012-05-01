@@ -223,6 +223,8 @@ class CoolSkein:
 
 	def addCoolTemperature(self, remainingOrbitTime):
 		'Parse a gcode line and add it to the cool skein.'
+		if self.repository.minimumLayerTime.value < 0.0001:
+			return
 		layerCool = self.repository.maximumCool.value * remainingOrbitTime / self.repository.minimumLayerTime.value
 		if self.isBridgeLayer:
 			layerCool = max(self.repository.bridgeCool.value, layerCool)
