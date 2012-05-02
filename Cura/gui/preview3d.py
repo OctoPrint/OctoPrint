@@ -63,7 +63,6 @@ class previewPanel(wx.Panel):
 		self.xrayViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-xray-on.png', 'view-xray-off.png', 'X-Ray view', callback=self.OnViewChange)
 		self.gcodeViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-gcode-on.png', 'view-gcode-off.png', 'GCode view', callback=self.OnViewChange)
 		self.mixedViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-mixed-on.png', 'view-mixed-off.png', 'Mixed model/GCode view', callback=self.OnViewChange)
-		self.OnViewChange()
 		self.toolbar.AddSeparator()
 
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
@@ -107,7 +106,7 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddControl(self.rotate)
 
 		self.toolbar2.Realize()
-		self.updateToolbar()
+		self.OnViewChange()
 		
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(self.toolbar, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
@@ -272,7 +271,9 @@ class previewPanel(wx.Panel):
 		pass
 	
 	def updateToolbar(self):
-		self.layerSpin.Show(self.gcode != None)
+		self.gcodeViewButton.Show(self.gcode != None)
+		self.mixedViewButton.Show(self.gcode != None)
+		self.layerSpin.Show(self.glCanvas.viewMode == "GCode" or self.glCanvas.viewMode == "Mixed")
 		if self.gcode != None:
 			self.layerSpin.SetRange(1, len(self.gcode.layerList))
 		self.toolbar.Realize()
@@ -288,6 +289,7 @@ class previewPanel(wx.Panel):
 			self.glCanvas.viewMode = "GCode"
 		elif self.mixedViewButton.GetValue():
 			self.glCanvas.viewMode = "Mixed"
+		self.updateToolbar()
 		self.glCanvas.Refresh()
 	
 	def updateModelTransform(self, f=0):
