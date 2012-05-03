@@ -285,9 +285,7 @@ class projectPlanner(wx.Frame):
 		return (maxX - minX) + (maxY - minY)
 
 	def OnSlice(self, e):
-		oldProfile = profile.getGlobalProfileString()
-		
-		put = profile.putProfileSetting
+		put = profile.setTempOverride
 
 		put('model_multiply_x', '1')
 		put('model_multiply_y', '1')
@@ -319,7 +317,7 @@ class projectPlanner(wx.Frame):
 			actionList.append(action)
 		
 		#Restore the old profile.
-		profile.loadGlobalProfileFromString(oldProfile)
+		profile.resetTempOverride()
 		
 		dlg=wx.FileDialog(self, "Save project gcode file", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
 		dlg.SetWildcard("GCode file (*.gcode)|*.gcode")
@@ -670,6 +668,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.sizer.Add(self.statusText, (0,0), flag=wx.ALIGN_CENTER)
 		self.sizer.Add(self.progressGauge, (1, 0), flag=wx.EXPAND)
 		self.sizer.Add(self.progressGauge2, (2, 0), flag=wx.EXPAND)
+
 		self.sizer.Add(self.abortButton, (3,0), flag=wx.ALIGN_CENTER)
 		self.sizer.AddGrowableCol(0)
 		self.sizer.AddGrowableRow(0)
@@ -702,7 +701,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 	
 	def OnRun(self):
 		resultFile = open(self.resultFilename, "w")
-		put = profile.putProfileSetting
+		put = profile.setTempOverride
 		for action in self.actionList:
 			p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			line = p.stdout.readline()
@@ -727,7 +726,6 @@ class ProjectSliceProgressWindow(wx.Frame):
 				line = p.stdout.readline()
 			self.returnCode = p.wait()
 			
-			oldProfile = profile.getGlobalProfileString()
 			put('machine_center_x', action.centerX - self.extruderOffset[action.extruder].x)
 			put('machine_center_y', action.centerY - self.extruderOffset[action.extruder].y)
 			put('clear_z', action.clearZ)
@@ -743,7 +741,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 				resultFile.write(';TYPE:CUSTOM\n')
 				resultFile.write(profile.getAlterationFileContents('nextobject.gcode'))
 			resultFile.write(';PRINTNR:%d\n' % self.actionList.index(action))
-			profile.loadGlobalProfileFromString(oldProfile)
+			profile.resetTempOverride()
 			
 			f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
 			data = f.read(4096)
@@ -762,7 +760,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		resultFile.close()
 		self.abort = True
 		sliceTime = time.time() - self.sliceStartTime
-		wx.CallAfter(self.statusText.SetLabel, 'Slicing took: %d:%d' % (sliceTime / 60, sliceTime % 60))
+		wx.CallAfter(self.statusText.SetLabel, 'Slicing took: %02d:%02d' % (sliceTime / 60, sliceTime % 60))
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
 
 def main():

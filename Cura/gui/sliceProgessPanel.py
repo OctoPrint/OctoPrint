@@ -59,21 +59,20 @@ class sliceProgessPanel(wx.Panel):
 		if profile.getPreference('save_profile') == 'True':
 			profile.saveGlobalProfile(self.filelist[0][: self.filelist[0].rfind('.')] + "_profile.ini")
 		cmdList = []
-		oldProfile = profile.getGlobalProfileString()
 		for filename in self.filelist:
 			idx = self.filelist.index(filename)
 			print filename, idx
 			if idx > 0:
-				profile.putProfileSetting('fan_enabled', 'False')
-				profile.putProfileSetting('skirt_line_count', '0')
-				profile.putProfileSetting('machine_center_x', profile.getProfileSettingFloat('machine_center_x') - profile.getPreferenceFloat('extruder_offset_x%d' % (idx)))
-				profile.putProfileSetting('machine_center_y', profile.getProfileSettingFloat('machine_center_y') - profile.getPreferenceFloat('extruder_offset_y%d' % (idx)))
-				profile.putProfileSetting('alternative_center', self.filelist[0])
+				profile.setTempOverride('fan_enabled', 'False')
+				profile.setTempOverride('skirt_line_count', '0')
+				profile.setTempOverride('machine_center_x', profile.getProfileSettingFloat('machine_center_x') - profile.getPreferenceFloat('extruder_offset_x%d' % (idx)))
+				profile.setTempOverride('machine_center_y', profile.getProfileSettingFloat('machine_center_y') - profile.getPreferenceFloat('extruder_offset_y%d' % (idx)))
+				profile.setTempOverride('alternative_center', self.filelist[0])
 			if len(self.filelist) > 1:
-				profile.putProfileSetting('add_start_end_gcode', 'False')
-				profile.putProfileSetting('gcode_extension', 'multi_extrude_tmp')
+				profile.setTempOverride('add_start_end_gcode', 'False')
+				profile.setTempOverride('gcode_extension', 'multi_extrude_tmp')
 			cmdList.append(sliceRun.getSliceCommand(filename))
-		profile.loadGlobalProfileFromString(oldProfile)
+		profile.resetTempOverride()
 		self.thread = WorkerThread(self, filelist, cmdList)
 	
 	def OnAbort(self, e):
@@ -188,7 +187,10 @@ class WorkerThread(threading.Thread):
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('start.gcode'))
 		for filename in self.filelist:
-			files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
+			if os.path.isfile(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp'):
+				files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
+			else:
+				return
 		
 		currentExtruder = 0
 		resultFile.write('T%d\n' % (currentExtruder))

@@ -406,9 +406,10 @@ class CoolSkein:
 	def setMultiplier(self, remainingOrbitTime):
 		'Set the feed and flow rate multiplier.'
 		layerTimeActive = self.getLayerTimeActive()
-		self.multiplier = min(1.0, layerTimeActive / (remainingOrbitTime + layerTimeActive))
-		
-
+		if remainingOrbitTime + layerTimeActive > 0.00001:
+			self.multiplier = min(1.0, layerTimeActive / (remainingOrbitTime + layerTimeActive))
+		else:
+			self.multiplier = 1.0
 
 def main():
 	'Display the cool dialog.'

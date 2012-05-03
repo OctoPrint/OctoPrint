@@ -67,6 +67,9 @@ profileDefaultSettings = {
 	
 	'add_start_end_gcode': 'True',
 	'gcode_extension': 'gcode',
+	'alternative_center': '',
+	'clear_z': '0.0',
+	'extruder': '0',
 }
 alterationDefault = {
 #######################################################################################
@@ -153,6 +156,7 @@ preferencesDefaultSettings = {
 ## Profile and preferences functions
 #########################################################
 
+## Profile functions
 def getDefaultProfilePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
 
@@ -188,17 +192,31 @@ def getGlobalProfileString():
 	
 	p = []
 	alt = []
+	tempDone = []
 	if globalProfileParser.has_section('profile'):
 		for key in globalProfileParser.options('profile'):
-			p.append(key + "=" + globalProfileParser.get('profile', key))
+			if key in tempOverride:
+				p.append(key + "=" + unicode(tempOverride[key]))
+				tempDone.append(key)
+			else:
+				p.append(key + "=" + globalProfileParser.get('profile', key))
 	if globalProfileParser.has_section('alterations'):
 		for key in globalProfileParser.options('alterations'):
-			alt.append(key + "=" + globalProfileParser.get('alterations', key))
+			if key in tempOverride:
+				p.append(key + "=" + tempOverride[key])
+				tempDone.append(key)
+			else:
+				alt.append(key + "=" + globalProfileParser.get('alterations', key))
+	for key in tempOverride:
+		if key not in tempDone:
+			p.append(key + "=" + unicode(tempOverride[key]))
 	ret = '\b'.join(p) + '\f' + '\b'.join(alt)
 	ret = base64.b64encode(zlib.compress(ret, 9))
 	return ret
 
 def getProfileSetting(name):
+	if name in tempOverride:
+		return unicode(tempOverride[name])
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
@@ -230,6 +248,12 @@ def putProfileSetting(name, value):
 		globalProfileParser.add_section('profile')
 	globalProfileParser.set('profile', name, str(value))
 
+def isProfileSetting(name):
+	if name in profileDefaultSettings:
+		return True
+	return False
+
+## Preferences functions
 global globalPreferenceParser
 globalPreferenceParser = None
 
@@ -239,11 +263,12 @@ def getPreferencePath():
 def getPreferenceFloat(name):
 	try:
 		return float(eval(getPreference(name), {}, {}))
-
 	except (ValueError, SyntaxError):
 		return 0.0
 
 def getPreference(name):
+	if name in tempOverride:
+		return unicode(tempOverride[name])
 	global globalPreferenceParser
 	if globalPreferenceParser == None:
 		globalPreferenceParser = ConfigParser.ConfigParser()
@@ -272,6 +297,18 @@ def putPreference(name, value):
 		globalPreferenceParser.add_section('preference')
 	globalPreferenceParser.set('preference', name, unicode(value).encode("utf-8"))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
+
+def isPreference(name):
+	if name in preferencesDefaultSettings:
+		return True
+	return False
+
+## Temp overrides for multi-extruder slicing and the project planner.
+tempOverride = {}
+def setTempOverride(name, value):
+	tempOverride[name] = value
+def resetTempOverride():
+	tempOverride = {}
 
 #########################################################
 ## Utility functions to calculate common profile values
@@ -316,7 +353,11 @@ def replaceTagMatch(m):
 	tag = m.group(0)[1:-1]
 	if tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
 		return str(getProfileSettingFloat(tag) * 60)
-	return str(getProfileSettingFloat(tag))
+	if isProfileSetting(tag):
+		return str(getProfileSettingFloat(tag))
+	if isPreference(tag):
+		return str(getProfileSettingFloat(tag))
+	return tag
 
 ### Get aleration raw contents. (Used internally in Cura)
 def getAlterationFile(filename):
