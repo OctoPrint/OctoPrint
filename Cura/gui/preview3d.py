@@ -462,30 +462,22 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				layerThickness = curLayerZ - prevLayerZ
 				prevLayerZ = layer[-1].list[-1].z
 				for path in layer:
-					c = 1.0
-					#if curLayerNum != self.parent.layerSpin.GetValue():
-					#	if curLayerNum < self.parent.layerSpin.GetValue():
-					#		c = 0.9 - (self.parent.layerSpin.GetValue() - curLayerNum) * 0.1
-					#		if c < 0.4:
-					#			c = 0.4
-					#	else:
-					#		break
 					if path.type == 'move':
-						glColor3f(0,0,c)
+						glColor3f(0,0,1)
 					if path.type == 'extrude':
 						if path.pathType == 'FILL':
-							glColor3f(c/2,c/2,0)
+							glColor3f(0.5,0.5,0)
 						elif path.pathType == 'WALL-INNER':
-							glColor3f(0,c,0)
+							glColor3f(0,1,0)
 						elif path.pathType == 'SUPPORT':
-							glColor3f(0,c,c)
+							glColor3f(0,1,1)
 						elif path.pathType == 'SKIRT':
-							glColor3f(0,c/2,c/2)
+							glColor3f(0,0.5,0.5)
 						else:
-							glColor3f(c,0,0)
+							glColor3f(1,0,0)
 					if path.type == 'retract':
-						glColor3f(0,c,c)
-					if c > 0.4 and path.type == 'extrude':
+						glColor3f(0,1,1)
+					if path.type == 'extrude':
 						for i in xrange(0, len(path.list)-1):
 							v0 = path.list[i]
 							v1 = path.list[i+1]
