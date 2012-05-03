@@ -17,7 +17,9 @@ def InitGL(window, view3D, zoom):
 	glViewport(0,0, size.GetWidth(), size.GetHeight())
 	
 	glLightfv(GL_LIGHT0, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
+	glLightfv(GL_LIGHT1, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
 
+	glEnable(GL_NORMALIZE)
 	glEnable(GL_LIGHTING)
 	glEnable(GL_LIGHT0)
 	glEnable(GL_DEPTH_TEST)
@@ -198,6 +200,7 @@ def DrawBox(vMin, vMax):
 	glEnd()
 
 def DrawSTL(mesh):
+	glEnable(GL_CULL_FACE)
 	for face in mesh.faces:
 		glBegin(GL_TRIANGLES)
 		v1 = face.v[0]

@@ -14,7 +14,7 @@ class GcodeTextArea(wx.stc.StyledTextCtrl):
 		fontName = wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL).GetFaceName()
 		self.SetStyleBits(5)
 		self.StyleSetSpec(0, "face:%s,size:%d" % (fontName, fontSize))
-		self.StyleSetSpec(1, "fore:#008000,face:%s,size:%d" % (fontName, fontSize))
+		self.StyleSetSpec(1, "fore:#006000,face:%s,size:%d" % (fontName, fontSize))
 		self.IndicatorSetStyle(0, wx.stc.STC_INDIC_TT)
 		self.IndicatorSetForeground(0, "#0000FF")
 		self.IndicatorSetStyle(1, wx.stc.STC_INDIC_SQUIGGLE)
