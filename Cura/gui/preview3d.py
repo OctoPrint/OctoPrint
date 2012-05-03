@@ -1,11 +1,6 @@
 from __future__ import division
 
-import sys
-import math
-import threading
-import re
-import time
-import os
+import sys, math, threading, re, time, os
 
 from wx import glcanvas
 import wx
@@ -102,7 +97,7 @@ class previewPanel(wx.Panel):
 		self.rotateReset = toolbarUtil.NormalButton(self.toolbar2, self.OnRotateReset, 'object-rotate.png', 'Reset model rotation')
 		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
 		self.rotate.SetRange(0, 360)
-		self.Bind(wx.EVT_TEXT, self.OnRotate)
+		self.rotate.Bind(wx.EVT_TEXT, self.OnRotate)
 		self.toolbar2.AddControl(self.rotate)
 
 		self.toolbar2.Realize()
@@ -179,7 +174,6 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 
 	def OnLayerNrChange(self, e):
-		self.gcodeDirty = True
 		self.glCanvas.Refresh()
 
 	def updateCenterX(self):
@@ -378,6 +372,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.offsetY = 0
 		self.view3D = True
 		self.gcodeDisplayList = None
+		self.gcodeDisplayListCount = 0
 		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
 	
 	def OnMouseMotion(self,e):
@@ -441,33 +436,37 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		opengl.DrawMachine(machineSize)
 
 		if self.parent.gcode != None:
-			if self.gcodeDisplayList == None:
-				self.gcodeDisplayList = glGenLists(1);
 			if self.parent.gcodeDirty:
+				if self.gcodeDisplayListCount < len(self.parent.gcode.layerList) or self.gcodeDisplayList == None:
+					if self.gcodeDisplayList != None:
+						glDeleteLists(self.gcodeDisplayList, self.gcodeDisplayListCount)
+					self.gcodeDisplayList = glGenLists(len(self.parent.gcode.layerList));
+					self.gcodeDisplayListCount = len(self.parent.gcode.layerList)
 				self.parent.gcodeDirty = False
-				glNewList(self.gcodeDisplayList, GL_COMPILE)
 				prevLayerZ = 0.0
 				curLayerZ = 0.0
 				
 				layerThickness = 0.0
-				filamentRadius = float(profile.getProfileSetting('filament_diameter')) / 2
+				filamentRadius = profile.getProfileSettingFloat('filament_diameter') / 2
 				filamentArea = math.pi * filamentRadius * filamentRadius
-				lineWidth = float(profile.getProfileSetting('nozzle_size')) / 2 / 10
+				lineWidth = profile.getProfileSettingFloat('nozzle_size') / 2 / 10
 				
 				curLayerNum = 0
 				for layer in self.parent.gcode.layerList:
+					glNewList(self.gcodeDisplayList + curLayerNum, GL_COMPILE)
+					glDisable(GL_CULL_FACE)
 					curLayerZ = layer[0].list[1].z
 					layerThickness = curLayerZ - prevLayerZ
 					prevLayerZ = layer[-1].list[-1].z
 					for path in layer:
 						c = 1.0
-						if curLayerNum != self.parent.layerSpin.GetValue():
-							if curLayerNum < self.parent.layerSpin.GetValue():
-								c = 0.9 - (self.parent.layerSpin.GetValue() - curLayerNum) * 0.1
-								if c < 0.4:
-									c = 0.4
-							else:
-								break
+						#if curLayerNum != self.parent.layerSpin.GetValue():
+						#	if curLayerNum < self.parent.layerSpin.GetValue():
+						#		c = 0.9 - (self.parent.layerSpin.GetValue() - curLayerNum) * 0.1
+						#		if c < 0.4:
+						#			c = 0.4
+						#	else:
+						#		break
 						if path.type == 'move':
 							glColor3f(0,0,c)
 						if path.type == 'extrude':
@@ -529,9 +528,24 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 								glVertex3f(v.x, v.y, v.z)
 							glEnd()
 					curLayerNum += 1
-				glEndList()
+					glEnable(GL_CULL_FACE)
+					glEndList()
 			if self.viewMode == "GCode" or self.viewMode == "Mixed":
-				glCallList(self.gcodeDisplayList)
+				glEnable(GL_COLOR_MATERIAL)
+				glEnable(GL_LIGHTING)
+				glLightfv(GL_LIGHT0, GL_DIFFUSE, [0,0,0,0])
+				for i in xrange(0, self.parent.layerSpin.GetValue() + 1):
+					c = 1.0
+					if i < self.parent.layerSpin.GetValue():
+						c = 0.9 - (self.parent.layerSpin.GetValue() - i) * 0.1
+						if c < 0.4:
+							c = (0.4 + c) / 2
+						if c < 0.1:
+							c = 0.1
+					glLightfv(GL_LIGHT0, GL_AMBIENT, [c,c,c,c])
+					glCallList(self.gcodeDisplayList + i)
+				glDisable(GL_COLOR_MATERIAL)
+				glDisable(GL_LIGHTING)
 		
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		for obj in self.parent.objectList:
