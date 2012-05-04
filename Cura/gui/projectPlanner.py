@@ -23,6 +23,7 @@ from util import profile
 from util import util3d
 from util import stl
 from util import sliceRun
+from util import gcodeInterpreter
 
 class Action():
 	pass
@@ -722,6 +723,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 				if self.abort:
 					p.terminate()
 					wx.CallAfter(self.statusText.SetLabel, "Aborted by user.")
+					resultFile.close()
 					return
 				line = p.stdout.readline()
 			self.returnCode = p.wait()
@@ -758,9 +760,20 @@ class ProjectSliceProgressWindow(wx.Frame):
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
+		
+		gcode = gcodeInterpreter.gcode()
+		gcode.load(self.resultFilename)
+		
 		self.abort = True
 		sliceTime = time.time() - self.sliceStartTime
-		wx.CallAfter(self.statusText.SetLabel, 'Slicing took: %02d:%02d' % (sliceTime / 60, sliceTime % 60))
+		status = "Slicing took: %02d:%02d\n" % (sliceTime / 60, sliceTime % 60)
+		status = "Filament: %.2fm %.2fg\n" % (gcode.extrusionAmount / 1000, gcode.calculateWeight() * 1000)
+		status += "Print time: %02d:%02d\n" % (int(gcode.totalMoveTimeMinute / 60), int(gcode.totalMoveTimeMinute % 60))
+		cost = gcode.calculateCost()
+		if cost != False:
+			status += "Cost: %s\n" % (cost)
+		wx.CallAfter(self.statusText.SetLabel, status)
+		
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
 
 def main():
