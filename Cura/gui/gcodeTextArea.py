@@ -19,6 +19,8 @@ class GcodeTextArea(wx.stc.StyledTextCtrl):
 		self.IndicatorSetForeground(0, "#0000FF")
 		self.IndicatorSetStyle(1, wx.stc.STC_INDIC_SQUIGGLE)
 		self.IndicatorSetForeground(1, "#FF0000")
+		self.SetWrapMode(wx.stc.STC_WRAP_NONE)
+		self.SetScrollWidth(1000)
 		
 		#GCodes and MCodes as supported by Marlin
 		#GCode 21 is not really supported by Marlin, but we still do not report it as error as it's often used.
