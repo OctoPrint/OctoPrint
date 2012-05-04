@@ -15,27 +15,6 @@ class sliceProgessPanel(wx.Panel):
 		self.filelist = filelist
 		self.abort = False
 		
-		#How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
-		self.sliceStepTimeFactor = {
-			'start': 3.3713991642,
-			'slice': 15.4984838963,
-			'preface': 5.17178297043,
-			'inset': 116.362634182,
-			'fill': 215.702672005,
-			'multiply': 21.9536788464,
-			'speed': 12.759510994,
-			'raft': 31.4580039978,
-			'skirt': 19.3436040878,
-			'skin': 1.0,
-			'joris': 1.0,
-			'comb': 23.7805759907,
-			'cool': 27.148763895,
-			'dimension': 90.4914340973
-		}
-		self.totalRunTimeFactor = 0
-		for v in self.sliceStepTimeFactor.itervalues():
-			self.totalRunTimeFactor += v
-
 		box = wx.StaticBox(self, -1, filelist[0])
 		self.sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
 
@@ -125,13 +104,13 @@ class sliceProgessPanel(wx.Panel):
 	
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:
-			self.totalDoneFactor += self.sliceStepTimeFactor[self.prevStep]
+			self.totalDoneFactor += sliceRun.sliceStepTimeFactor[self.prevStep]
 			newTime = time.time()
 			#print "#####" + str(newTime-self.startTime) + " " + self.prevStep + " -> " + stepName
 			self.startTime = newTime
 			self.prevStep = stepName
 		
-		progresValue = ((self.totalDoneFactor + self.sliceStepTimeFactor[stepName] * layer / maxLayer) / self.totalRunTimeFactor) * 10000
+		progresValue = ((self.totalDoneFactor + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
 		self.progressGauge.SetValue(int(progresValue))
 		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
 
