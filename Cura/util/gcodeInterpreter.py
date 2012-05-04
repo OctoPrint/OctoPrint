@@ -9,13 +9,13 @@ import os
 from util import util3d
 from util import profile
 
-class gcodePath():
+class gcodePath(object):
 	def __init__(self, newType, pathType, startPoint):
 		self.type = newType
 		self.pathType = pathType
 		self.list = [startPoint]
 
-class gcode():
+class gcode(object):
 	def __init__(self):
 		self.regMatch = {}
 		self.layerList = []

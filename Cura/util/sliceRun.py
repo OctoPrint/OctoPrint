@@ -5,6 +5,28 @@ import platform, os, subprocess, sys
 from cura_sf.skeinforge_application.skeinforge_utilities import skeinforge_craft
 from util import profile
 
+#How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
+sliceStepTimeFactor = {
+	'start': 3.3713991642,
+	'slice': 15.4984838963,
+	'preface': 5.17178297043,
+	'inset': 116.362634182,
+	'fill': 215.702672005,
+	'multiply': 21.9536788464,
+	'speed': 12.759510994,
+	'raft': 31.4580039978,
+	'skirt': 19.3436040878,
+	'skin': 1.0,
+	'joris': 1.0,
+	'comb': 23.7805759907,
+	'cool': 27.148763895,
+	'dimension': 90.4914340973
+}
+
+totalRunTimeFactor = 0
+for v in sliceStepTimeFactor.itervalues():
+	totalRunTimeFactor += v
+
 def getPyPyExe():
 	"Return the path to the pypy executable if we can find it. Else return False"
 	if platform.system() == "Windows":

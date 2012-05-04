@@ -180,6 +180,7 @@ class NormalButton(buttons.GenBitmapButton):
 		super(NormalButton, self).__init__(parent, id, self.bitmap, size=size)
 
 		self.helpText = helpText
+		self.callback = callback
 
 		self.SetBezelWidth(1)
 		self.SetUseFocusIndicator(False)
@@ -187,9 +188,13 @@ class NormalButton(buttons.GenBitmapButton):
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 		
-		self.Bind(wx.EVT_BUTTON, callback)
+		self.Bind(wx.EVT_BUTTON, self.OnButton)
 		
 		parent.AddControl(self)
+
+	def OnButton(self, event):
+		self.GetParent().OnPopupHide(event)
+		self.callback(event)
 
 	def OnMouseEnter(self, event):
 		self.GetParent().OnPopupDisplay(event)
