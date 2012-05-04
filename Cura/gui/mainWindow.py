@@ -86,6 +86,7 @@ class mainWindow(configBase.configWindowBase):
 		
 		if profile.getPreference('lastFile') != '':
 			self.filelist = profile.getPreference('lastFile').split(';')
+			self.SetTitle(self.filelist[-1] + ' - Cura - ' + version.getVersion())
 		else:
 			self.filelist = []
 		self.progressPanelList = []
@@ -299,6 +300,7 @@ class mainWindow(configBase.configWindowBase):
 			filelist.append(self._showOpenDialog("Open file to print"))
 			if filelist[-1] == False:
 				return
+			self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
 		self.filelist = filelist
 		profile.putPreference('lastFile', ';'.join(self.filelist))
 		self.preview3d.loadModelFiles(self.filelist)

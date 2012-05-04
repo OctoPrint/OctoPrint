@@ -34,7 +34,7 @@ profileDefaultSettings = {
 	'bottom_layer_speed': '20',
 	'cool_min_layer_time': '10',
 	'fan_enabled': 'True',
-	'fan_layer': '0',
+	'fan_layer': '1',
 	'fan_speed': '100',
 	'model_scale': '1.0',
 	'flip_x': 'False',
@@ -67,6 +67,9 @@ profileDefaultSettings = {
 	
 	'add_start_end_gcode': 'True',
 	'gcode_extension': 'gcode',
+	'alternative_center': '',
+	'clear_z': '0.0',
+	'extruder': '0',
 }
 alterationDefault = {
 #######################################################################################
@@ -128,6 +131,12 @@ preferencesDefaultSettings = {
 	'machine_depth': '205',
 	'machine_height': '200',
 	'extruder_amount': '1',
+	'extruder_offset_x1': '-22.0',
+	'extruder_offset_y1': '0.0',
+	'extruder_offset_x2': '0.0',
+	'extruder_offset_y2': '0.0',
+	'extruder_offset_x3': '0.0',
+	'extruder_offset_y3': '0.0',
 	'filament_density': '1300',
 	'steps_per_e': '0',
 	'serial_port': 'AUTO',
@@ -136,12 +145,18 @@ preferencesDefaultSettings = {
 	'save_profile': 'False',
 	'filament_cost_kg': '0',
 	'filament_cost_meter': '0',
+	
+	'extruder_head_size_min_x': '70.0',
+	'extruder_head_size_min_y': '18.0',
+	'extruder_head_size_max_x': '18.0',
+	'extruder_head_size_max_y': '35.0',
 }
 
 #########################################################
 ## Profile and preferences functions
 #########################################################
 
+## Profile functions
 def getDefaultProfilePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
 
@@ -177,15 +192,31 @@ def getGlobalProfileString():
 	
 	p = []
 	alt = []
-	for key in globalProfileParser.options('profile'):
-		p.append(key + "=" + globalProfileParser.get('profile', key))
-	for key in globalProfileParser.options('alterations'):
-		alt.append(key + "=" + globalProfileParser.get('alterations', key))
+	tempDone = []
+	if globalProfileParser.has_section('profile'):
+		for key in globalProfileParser.options('profile'):
+			if key in tempOverride:
+				p.append(key + "=" + unicode(tempOverride[key]))
+				tempDone.append(key)
+			else:
+				p.append(key + "=" + globalProfileParser.get('profile', key))
+	if globalProfileParser.has_section('alterations'):
+		for key in globalProfileParser.options('alterations'):
+			if key in tempOverride:
+				p.append(key + "=" + tempOverride[key])
+				tempDone.append(key)
+			else:
+				alt.append(key + "=" + globalProfileParser.get('alterations', key))
+	for key in tempOverride:
+		if key not in tempDone:
+			p.append(key + "=" + unicode(tempOverride[key]))
 	ret = '\b'.join(p) + '\f' + '\b'.join(alt)
 	ret = base64.b64encode(zlib.compress(ret, 9))
 	return ret
 
 def getProfileSetting(name):
+	if name in tempOverride:
+		return unicode(tempOverride[name])
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
@@ -217,13 +248,27 @@ def putProfileSetting(name, value):
 		globalProfileParser.add_section('profile')
 	globalProfileParser.set('profile', name, str(value))
 
+def isProfileSetting(name):
+	if name in profileDefaultSettings:
+		return True
+	return False
+
+## Preferences functions
 global globalPreferenceParser
 globalPreferenceParser = None
 
 def getPreferencePath():
 	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
 
+def getPreferenceFloat(name):
+	try:
+		return float(eval(getPreference(name), {}, {}))
+	except (ValueError, SyntaxError):
+		return 0.0
+
 def getPreference(name):
+	if name in tempOverride:
+		return unicode(tempOverride[name])
 	global globalPreferenceParser
 	if globalPreferenceParser == None:
 		globalPreferenceParser = ConfigParser.ConfigParser()
@@ -252,6 +297,18 @@ def putPreference(name, value):
 		globalPreferenceParser.add_section('preference')
 	globalPreferenceParser.set('preference', name, unicode(value).encode("utf-8"))
 	globalPreferenceParser.write(open(getPreferencePath(), 'w'))
+
+def isPreference(name):
+	if name in preferencesDefaultSettings:
+		return True
+	return False
+
+## Temp overrides for multi-extruder slicing and the project planner.
+tempOverride = {}
+def setTempOverride(name, value):
+	tempOverride[name] = value
+def resetTempOverride():
+	tempOverride.clear()
 
 #########################################################
 ## Utility functions to calculate common profile values
@@ -296,7 +353,11 @@ def replaceTagMatch(m):
 	tag = m.group(0)[1:-1]
 	if tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
 		return str(getProfileSettingFloat(tag) * 60)
-	return str(getProfileSettingFloat(tag))
+	if isProfileSetting(tag):
+		return str(getProfileSettingFloat(tag))
+	if isPreference(tag):
+		return str(getProfileSettingFloat(tag))
+	return tag
 
 ### Get aleration raw contents. (Used internally in Cura)
 def getAlterationFile(filename):
@@ -333,7 +394,7 @@ def getAlterationFileContents(filename):
 	if filename == 'start.gcode':
 		#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
 		#We also set our steps per E here, if configured.
-		eSteps = float(getPreference('steps_per_e'))
+		eSteps = getPreferenceFloat('steps_per_e')
 		if eSteps > 0:
 			prefix += 'M92 E%f\n' % (eSteps)
 		temp = getProfileSettingFloat('print_temperature')

@@ -9,13 +9,13 @@ import os
 from util import util3d
 from util import profile
 
-class gcodePath():
+class gcodePath(object):
 	def __init__(self, newType, pathType, startPoint):
 		self.type = newType
 		self.pathType = pathType
 		self.list = [startPoint]
 
-class gcode():
+class gcode(object):
 	def __init__(self):
 		self.regMatch = {}
 		self.layerList = []
@@ -36,7 +36,18 @@ class gcode():
 		#Calculates the weight of the filament in kg
 		radius = float(profile.getProfileSetting('filament_diameter')) / 2
 		volumeM3 = (self.extrusionAmount * (math.pi * radius * radius)) / (1000*1000*1000)
-		return volumeM3 * float(profile.getPreference('filament_density'))
+		return volumeM3 * profile.getPreferenceFloat('filament_density')
+	
+	def calculateCost(self):
+		cost_kg = profile.getPreferenceFloat('filament_cost_kg')
+		cost_meter = profile.getPreferenceFloat('filament_cost_meter')
+		if cost_kg > 0.0 and cost_meter > 0.0:
+			return "%.2f / %.2f" % (self.calculateWeight() * cost_kg, self.extrusionAmount / 1000 * cost_meter)
+		elif cost_kg > 0.0:
+			return "%.2f" % (self.calculateWeight() * cost_kg)
+		elif cost_meter > 0.0:
+			return "%.2f" % (self.extrusionAmount / 1000 * cost_meter)
+		return False
 	
 	def _load(self, gcodeFile):
 		filePos = 0
@@ -45,6 +56,7 @@ class gcode():
 		currentE = 0.0
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
+		currentExtruder = 0
 		totalMoveTimeMinute = 0.0
 		scale = 1.0
 		posAbs = True
@@ -79,6 +91,15 @@ class gcode():
 				if pathType != "CUSTOM":
 					startCodeDone = True
 				line = line[0:line.find(';')]
+			T = self.getCodeInt(line, 'T')
+			if T is not None:
+				if currentExtruder > 0:
+					posOffset.x -= profile.getPreferenceFloat('extruder_offset_x%d' % (currentExtruder))
+					posOffset.y -= profile.getPreferenceFloat('extruder_offset_y%d' % (currentExtruder))
+				currentExtruder = T
+				if currentExtruder > 0:
+					posOffset.x += profile.getPreferenceFloat('extruder_offset_x%d' % (currentExtruder))
+					posOffset.y += profile.getPreferenceFloat('extruder_offset_y%d' % (currentExtruder))
 			
 			G = self.getCodeInt(line, 'G')
 			if G is not None:
@@ -91,17 +112,17 @@ class gcode():
 					oldPos = pos.copy()
 					if x is not None:
 						if posAbs:
-							pos.x = x * scale
+							pos.x = x * scale + posOffset.x
 						else:
 							pos.x += x * scale
 					if y is not None:
 						if posAbs:
-							pos.y = y * scale
+							pos.y = y * scale + posOffset.y
 						else:
 							pos.y += y * scale
 					if z is not None:
 						if posAbs:
-							pos.z = z * scale
+							pos.z = z * scale + posOffset.z
 						else:
 							pos.z += z * scale
 						#Check if we have a new layer.
@@ -200,8 +221,8 @@ class gcode():
 		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
 		self.totalMoveTimeMinute = totalMoveTimeMinute
-		print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
-		print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
+		#print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
+		#print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
 	def getCodeInt(self, line, code):
 		if code not in self.regMatch:

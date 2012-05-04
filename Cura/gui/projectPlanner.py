@@ -23,9 +23,109 @@ from util import profile
 from util import util3d
 from util import stl
 from util import sliceRun
+from util import gcodeInterpreter
 
-class Action():
+class Action(object):
 	pass
+
+class ProjectObject(stl.stlModel):
+	def __init__(self, filename):
+		super(ProjectObject, self).__init__()
+
+		self.load(filename)
+
+		self.filename = filename
+		self.scale = 1.0
+		self.rotate = 0.0
+		self.flipX = False
+		self.flipY = False
+		self.flipZ = False
+		self.swapXZ = False
+		self.swapYZ = False
+		self.extruder = 0
+		
+		self.modelDisplayList = None
+		self.modelDirty = False
+
+		self.origonalVertexes = list(self.vertexes)
+		for i in xrange(0, len(self.origonalVertexes)):
+			self.origonalVertexes[i] = self.origonalVertexes[i].copy()
+		self.getMinimumZ()
+		
+		self.centerX = -self.getMinimum().x + 5
+		self.centerY = -self.getMinimum().y + 5
+		
+		self.updateModelTransform()
+
+		self.centerX = -self.getMinimum().x + 5
+		self.centerY = -self.getMinimum().y + 5
+
+	def updateModelTransform(self):
+		rotate = self.rotate / 180.0 * math.pi
+		scaleX = 1.0
+		scaleY = 1.0
+		scaleZ = 1.0
+		if self.flipX:
+			scaleX = -scaleX
+		if self.flipY:
+			scaleY = -scaleY
+		if self.flipZ:
+			scaleZ = -scaleZ
+		swapXZ = self.swapXZ
+		swapYZ = self.swapYZ
+		mat00 = math.cos(rotate) * scaleX
+		mat01 =-math.sin(rotate) * scaleY
+		mat10 = math.sin(rotate) * scaleX
+		mat11 = math.cos(rotate) * scaleY
+		
+		for i in xrange(0, len(self.origonalVertexes)):
+			x = self.origonalVertexes[i].x
+			y = self.origonalVertexes[i].y
+			z = self.origonalVertexes[i].z
+			if swapXZ:
+				x, z = z, x
+			if swapYZ:
+				y, z = z, y
+			self.vertexes[i].x = x * mat00 + y * mat01
+			self.vertexes[i].y = x * mat10 + y * mat11
+			self.vertexes[i].z = z * scaleZ
+
+		for face in self.faces:
+			v1 = face.v[0]
+			v2 = face.v[1]
+			v3 = face.v[2]
+			face.normal = (v2 - v1).cross(v3 - v1)
+			face.normal.normalize()
+
+		minZ = self.getMinimumZ()
+		minV = self.getMinimum()
+		maxV = self.getMaximum()
+		for v in self.vertexes:
+			v.z -= minZ
+			v.x -= minV.x + (maxV.x - minV.x) / 2
+			v.y -= minV.y + (maxV.y - minV.y) / 2
+		self.getMinimumZ()
+		self.modelDirty = True
+	
+	def clone(self):
+		p = ProjectObject(self.filename)
+
+		p.centerX = self.centerX + 5
+		p.centerY = self.centerY + 5
+		
+		p.filename = self.filename
+		p.scale = self.scale
+		p.rotate = self.rotate
+		p.flipX = self.flipX
+		p.flipY = self.flipY
+		p.flipZ = self.flipZ
+		p.swapXZ = self.swapXZ
+		p.swapYZ = self.swapYZ
+		p.extruder = self.extruder
+		
+		p.updateModelTransform()
+		
+		return p
 
 class projectPlanner(wx.Frame):
 	"Main user interface window"
@@ -39,9 +139,15 @@ class projectPlanner(wx.Frame):
 		self.list = []
 		self.selection = None
 
-		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
-		self.headSizeMin = util3d.Vector3(70,16,0)
-		self.headSizeMax = util3d.Vector3(16,35,0)
+		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
+		self.headSizeMin = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0)
+		self.headSizeMax = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0)
+
+		self.extruderOffset = [
+			util3d.Vector3(0,0,0),
+			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x1'), profile.getPreferenceFloat('extruder_offset_y1'), 0),
+			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x2'), profile.getPreferenceFloat('extruder_offset_y2'), 0),
+			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x3'), profile.getPreferenceFloat('extruder_offset_y3'), 0)]
 
 		self.toolbar = toolbarUtil.Toolbar(self)
 
@@ -55,6 +161,14 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
 		
 		self.toolbar.Realize()
+
+		self.toolbar2 = toolbarUtil.Toolbar(self)
+		toolbarUtil.NormalButton(self.toolbar2, self.OnAddModel, 'object-add.png', 'Add model')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnRemModel, 'object-remove.png', 'Remove model')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveUp, 'move-up.png', 'Move model up in print list')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveDown, 'move-down.png', 'Move model down in print list')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnCopy, 'copy.png', 'Make a copy of the current selected object')
+		self.toolbar2.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
 		self.SetSizer(sizer)
@@ -65,7 +179,8 @@ class projectPlanner(wx.Frame):
 		self.sliceButton = wx.Button(self, -1, "Slice")
 		self.autoPlaceButton = wx.Button(self, -1, "Auto Place")
 		
-		sizer.Add(self.toolbar, (0,0), span=(1,3), flag=wx.EXPAND)
+		sizer.Add(self.toolbar, (0,0), span=(1,1), flag=wx.EXPAND)
+		sizer.Add(self.toolbar2, (0,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
 		sizer.Add(self.listbox, (1,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.addButton, (2,1), span=(1,1))
@@ -95,6 +210,12 @@ class projectPlanner(wx.Frame):
 		sizer.Add(self.scaleCtrl, (0,1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		sizer.Add(wx.StaticText(panel, -1, 'Rotate'), (1,0), flag=wx.ALIGN_CENTER_VERTICAL)
 		sizer.Add(self.rotateCtrl, (1,1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		
+		if int(profile.getPreference('extruder_amount')) > 1:
+			self.extruderCtrl = wx.ComboBox(panel, -1, '1', choices=map(str, range(1, int(profile.getPreference('extruder_amount'))+1)), style=wx.CB_DROPDOWN|wx.CB_READONLY)
+			sizer.Add(wx.StaticText(panel, -1, 'Extruder'), (2,0), flag=wx.ALIGN_CENTER_VERTICAL)
+			sizer.Add(self.extruderCtrl, (2,1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+			self.extruderCtrl.Bind(wx.EVT_COMBOBOX, self.OnExtruderChange)
 
 		self.scaleCtrl.Bind(wx.EVT_TEXT, self.OnScaleChange)
 		self.rotateCtrl.Bind(wx.EVT_SPINCTRL, self.OnRotateChange)
@@ -126,6 +247,7 @@ class projectPlanner(wx.Frame):
 				cp.set(section, 'flipZ', str(item.flipZ))
 				cp.set(section, 'swapXZ', str(item.swapXZ))
 				cp.set(section, 'swapYZ', str(item.swapYZ))
+				cp.set(section, 'extruder', str(item.extruder+1))
 				i += 1
 			cp.write(open(dlg.GetPath(), "w"))
 		dlg.Destroy()
@@ -142,18 +264,19 @@ class projectPlanner(wx.Frame):
 			while cp.has_section('model_%d' % (i)):
 				section = 'model_%d' % (i)
 				
-				item = stl.stlModel()
-				item.filename = unicode(cp.get(section, 'filename'), "utf-8")
-				self.loadModelFile(item)
+				item = ProjectObject(unicode(cp.get(section, 'filename'), "utf-8"))
 				item.centerX = float(cp.get(section, 'centerX'))
 				item.centerY = float(cp.get(section, 'centerY'))
 				item.scale = float(cp.get(section, 'scale'))
 				item.rotate = float(cp.get(section, 'rotate'))
-				cp.get(section, 'flipX')
-				cp.get(section, 'flipY')
-				cp.get(section, 'flipZ')
-				cp.get(section, 'swapXZ')
-				cp.get(section, 'swapYZ')
+				item.flipX = cp.get(section, 'flipX') == 'True'
+				item.flipY = cp.get(section, 'flipY') == 'True'
+				item.flipZ = cp.get(section, 'flipZ') == 'True'
+				item.swapXZ = cp.get(section, 'swapXZ') == 'True'
+				item.swapYZ = cp.get(section, 'swapYZ') == 'True'
+				if cp.has_option(section, 'extruder'):
+					item.extuder = int(cp.get(section, 'extruder'))-1
+				item.updateModelTransform()
 				i += 1
 				
 				self.list.append(item)
@@ -161,6 +284,7 @@ class projectPlanner(wx.Frame):
 			
 			self.listbox.SetSelection(len(self.list)-1)
 			self.OnListSelect(None)
+			self.preview.Refresh()
 
 		dlg.Destroy()
 
@@ -184,39 +308,76 @@ class projectPlanner(wx.Frame):
 		self.selection = self.list[self.listbox.GetSelection()]
 		self.scaleCtrl.SetValue(str(self.selection.scale))
 		self.rotateCtrl.SetValue(int(self.selection.rotate))
+		if int(profile.getPreference('extruder_amount')) > 1:
+			self.extruderCtrl.SetValue(str(self.selection.extruder+1))
 		self.preview.Refresh()
-
+	
 	def OnAddModel(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
 			for filename in dlg.GetPaths():
-				item = stl.stlModel()
-				item.filename=filename
+				item = ProjectObject(filename)
 				profile.putPreference('lastFile', item.filename)
-				if not(os.path.exists(item.filename)):
-					return
-				self.loadModelFile(item)
 				self.list.append(item)
-				self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
-				self.listbox.SetSelection(len(self.list)-1)
-				self.OnListSelect(None)
+				self.selection = item
+				self._updateListbox()
+		self.preview.Refresh()
 		dlg.Destroy()
 	
 	def OnRemModel(self, e):
 		if self.selection == None:
 			return
 		self.list.remove(self.selection)
-		i = self.listbox.GetSelection()
-		self.listbox.Delete(i)
-		if len(self.list) > i:
-			self.listbox.SetSelection(i)
-		elif len(self.list) > 0:
-			self.listbox.SetSelection(len(self.list) - 1)
-		self.selection = None
-		self.OnListSelect(None)
+		self._updateListbox()
 		self.preview.Refresh()
 	
+	def OnMoveUp(self, e):
+		if self.selection == None:
+			return
+		i = self.listbox.GetSelection()
+		if i == 0:
+			return
+		self.list.remove(self.selection)
+		self.list.insert(i-1, self.selection)
+		self._updateListbox()
+		self.preview.Refresh()
+
+	def OnMoveDown(self, e):
+		if self.selection == None:
+			return
+		i = self.listbox.GetSelection()
+		if i == len(self.list) - 1:
+			return
+		self.list.remove(self.selection)
+		self.list.insert(i+1, self.selection)
+		self._updateListbox()
+		self.preview.Refresh()
+	
+	def OnCopy(self, e):
+		if self.selection == None:
+			return
+		
+		item = self.selection.clone()
+		self.list.append(item)
+		self.selection = item
+		
+		self._updateListbox()
+		self.preview.Refresh()
+	
+	def _updateListbox(self):
+		self.listbox.Clear()
+		for item in self.list:
+			self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
+		if self.selection in self.list:
+			self.listbox.SetSelection(self.list.index(self.selection))
+		elif len(self.list) > 0:
+			self.selection = self.list[0]
+			self.listbox.SetSelection(0)
+		else:
+			self.selection = None
+			self.listbox.SetSelection(-1)
+
 	def OnAutoPlace(self, e):
 		bestAllowedSize = int(self.machineSize.y)
 		bestArea = self._doAutoPlace(bestAllowedSize)
@@ -233,7 +394,7 @@ class projectPlanner(wx.Frame):
 		extraSizeMax = self.headSizeMax
 		if profile.getProfileSettingFloat('skirt_line_count') > 0:
 			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
-			extraSizeMin = extraSizeMin - util3d.Vector3(skirtSize, skirtSize, 0)
+			extraSizeMin = extraSizeMin + util3d.Vector3(skirtSize, skirtSize, 0)
 			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
 
 		posX = self.machineSize.x
@@ -268,9 +429,7 @@ class projectPlanner(wx.Frame):
 		return (maxX - minX) + (maxY - minY)
 
 	def OnSlice(self, e):
-		oldProfile = profile.getGlobalProfileString()
-		
-		put = profile.putProfileSetting
+		put = profile.setTempOverride
 
 		put('model_multiply_x', '1')
 		put('model_multiply_y', '1')
@@ -281,8 +440,8 @@ class projectPlanner(wx.Frame):
 		clearZ = 0
 		actionList = []
 		for item in self.list:
-			put('machine_center_x', item.centerX)
-			put('machine_center_y', item.centerY)
+			put('machine_center_x', item.centerX - self.extruderOffset[item.extruder].x)
+			put('machine_center_y', item.centerY - self.extruderOffset[item.extruder].y)
 			put('model_scale', item.scale)
 			put('flip_x', item.flipX)
 			put('flip_y', item.flipY)
@@ -295,13 +454,14 @@ class projectPlanner(wx.Frame):
 			action.sliceCmd = sliceRun.getSliceCommand(item.filename)
 			action.centerX = item.centerX
 			action.centerY = item.centerY
+			action.extruder = item.extruder
 			action.filename = item.filename
 			clearZ = max(clearZ, item.getMaximum().z * item.scale)
 			action.clearZ = clearZ
 			actionList.append(action)
 		
 		#Restore the old profile.
-		profile.loadGlobalProfileFromString(oldProfile)
+		profile.resetTempOverride()
 		
 		dlg=wx.FileDialog(self, "Save project gcode file", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
 		dlg.SetWildcard("GCode file (*.gcode)|*.gcode")
@@ -312,34 +472,10 @@ class projectPlanner(wx.Frame):
 		dlg.Destroy()
 		
 		pspw = ProjectSliceProgressWindow(actionList, resultFilename)
+		pspw.extruderOffset = self.extruderOffset
 		pspw.Centre()
 		pspw.Show(True)
 	
-	def loadModelFile(self, item):
-		item.load(item.filename)
-		item.origonalVertexes = list(item.vertexes)
-		for i in xrange(0, len(item.origonalVertexes)):
-			item.origonalVertexes[i] = item.origonalVertexes[i].copy()
-		item.getMinimumZ()
-		
-		item.centerX = -item.getMinimum().x + 5
-		item.centerY = -item.getMinimum().y + 5
-		item.scale = 1.0
-		item.rotate = 0.0
-		item.flipX = False
-		item.flipY = False
-		item.flipZ = False
-		item.swapXZ = False
-		item.swapYZ = False
-		
-		item.modelDisplayList = None
-		item.modelDirty = False
-		
-		self.updateModelTransform(item)
-
-		item.centerX = -item.getMinimum().x + 5
-		item.centerY = -item.getMinimum().y + 5
-
 	def OnScaleChange(self, e):
 		if self.selection == None:
 			return
@@ -353,57 +489,13 @@ class projectPlanner(wx.Frame):
 		if self.selection == None:
 			return
 		self.selection.rotate = float(self.rotateCtrl.GetValue())
-		self.updateModelTransform(self.selection)
+		self.selection.updateModelTransform()
+		self.preview.Refresh()
 
-	def updateModelTransform(self, item):
-		rotate = item.rotate / 180.0 * math.pi
-		scaleX = 1.0
-		scaleY = 1.0
-		scaleZ = 1.0
-		if item.flipX:
-			scaleX = -scaleX
-		if item.flipY:
-			scaleY = -scaleY
-		if item.flipZ:
-			scaleZ = -scaleZ
-		swapXZ = item.swapXZ
-		swapYZ = item.swapYZ
-		mat00 = math.cos(rotate) * scaleX
-		mat01 =-math.sin(rotate) * scaleY
-		mat10 = math.sin(rotate) * scaleX
-		mat11 = math.cos(rotate) * scaleY
-		
-		for i in xrange(0, len(item.origonalVertexes)):
-			x = item.origonalVertexes[i].x
-			y = item.origonalVertexes[i].y
-			z = item.origonalVertexes[i].z
-			if swapXZ:
-				x, z = z, x
-			if swapYZ:
-				y, z = z, y
-			item.vertexes[i].x = x * mat00 + y * mat01
-			item.vertexes[i].y = x * mat10 + y * mat11
-			item.vertexes[i].z = z * scaleZ
-
-		for face in item.faces:
-			v1 = face.v[0]
-			v2 = face.v[1]
-			v3 = face.v[2]
-			face.normal = (v2 - v1).cross(v3 - v1)
-			face.normal.normalize()
-
-		self.moveModel(item)
-	
-	def moveModel(self, item):
-		minZ = item.getMinimumZ()
-		min = item.getMinimum()
-		max = item.getMaximum()
-		for v in item.vertexes:
-			v.z -= minZ
-			v.x -= min.x + (max.x - min.x) / 2
-			v.y -= min.y + (max.y - min.y) / 2
-		item.getMinimumZ()
-		item.modelDirty = True
+	def OnExtruderChange(self, e):
+		if self.selection == None:
+			return
+		self.selection.extruder = int(self.extruderCtrl.GetValue()) - 1
 		self.preview.Refresh()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
@@ -445,14 +537,14 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				if item != None:
 					item.centerX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
 					item.centerY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
-					if item.centerX < -item.getMinimum().x * item.scale:
-						item.centerX = -item.getMinimum().x * item.scale
-					if item.centerY < -item.getMinimum().y * item.scale:
-						item.centerY = -item.getMinimum().y * item.scale
-					if item.centerX > self.parent.machineSize.x - item.getMaximum().x * item.scale:
-						item.centerX = self.parent.machineSize.x - item.getMaximum().x * item.scale
-					if item.centerY > self.parent.machineSize.y - item.getMaximum().y * item.scale:
-						item.centerY = self.parent.machineSize.y - item.getMaximum().y * item.scale
+					if item.centerX < -item.getMinimum().x * item.scale + self.parent.extruderOffset[item.extruder].x:
+						item.centerX = -item.getMinimum().x * item.scale + self.parent.extruderOffset[item.extruder].x
+					if item.centerY < -item.getMinimum().y * item.scale + self.parent.extruderOffset[item.extruder].y:
+						item.centerY = -item.getMinimum().y * item.scale + self.parent.extruderOffset[item.extruder].y
+					if item.centerX > self.parent.machineSize.x + self.parent.extruderOffset[item.extruder].x - item.getMaximum().x * item.scale:
+						item.centerX = self.parent.machineSize.x + self.parent.extruderOffset[item.extruder].x - item.getMaximum().x * item.scale
+					if item.centerY > self.parent.machineSize.y + self.parent.extruderOffset[item.extruder].y - item.getMaximum().y * item.scale:
+						item.centerY = self.parent.machineSize.y + self.parent.extruderOffset[item.extruder].y - item.getMaximum().y * item.scale
 			self.Refresh()
 		else:
 			self.allowDrag = False
@@ -508,7 +600,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		extraSizeMax = self.parent.headSizeMax
 		if profile.getProfileSettingFloat('skirt_line_count') > 0:
 			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
-			extraSizeMin = extraSizeMin - util3d.Vector3(skirtSize, skirtSize, 0)
+			extraSizeMin = extraSizeMin + util3d.Vector3(skirtSize, skirtSize, 0)
 			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
 
 		for item in self.parent.list:
@@ -517,8 +609,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		
 		for idx1 in xrange(0, len(self.parent.list)):
 			item = self.parent.list[idx1]
-			iMin1 = item.getMinimum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) - extraSizeMin
-			iMax1 = item.getMaximum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) + extraSizeMax
+			iMin1 = item.getMinimum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) - extraSizeMin - self.parent.extruderOffset[item.extruder]
+			iMax1 = item.getMaximum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) + extraSizeMax - self.parent.extruderOffset[item.extruder]
 			for idx2 in xrange(0, idx1):
 				item2 = self.parent.list[idx2]
 				iMin2 = item2.getMinimum() * item2.scale + util3d.Vector3(item2.centerX, item2.centerY, 0)
@@ -566,8 +658,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			
 			vMin = item.getMinimum() * item.scale
 			vMax = item.getMaximum() * item.scale
-			vMinHead = vMin - extraSizeMin
-			vMaxHead = vMax + extraSizeMax
+			vMinHead = vMin - extraSizeMin - self.parent.extruderOffset[item.extruder]
+			vMaxHead = vMax + extraSizeMax - self.parent.extruderOffset[item.extruder]
 
 			glDisable(GL_LIGHTING)
 
@@ -612,28 +704,6 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.startTime = time.time()
 		self.sliceStartTime = time.time()
 		
-		#How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
-		# TODO: Duplicate with sliceProgressPanel, move to sliceRun.
-		self.sliceStepTimeFactor = {
-			'start': 3.3713991642,
-			'slice': 15.4984838963,
-			'preface': 5.17178297043,
-			'inset': 116.362634182,
-			'fill': 215.702672005,
-			'multiply': 21.9536788464,
-			'speed': 12.759510994,
-			'raft': 31.4580039978,
-			'skirt': 19.3436040878,
-			'skin': 1.0,
-			'joris': 1.0,
-			'comb': 23.7805759907,
-			'cool': 27.148763895,
-			'dimension': 90.4914340973
-		}
-		self.totalRunTimeFactor = 0
-		for v in self.sliceStepTimeFactor.itervalues():
-			self.totalRunTimeFactor += v
-		
 		self.sizer = wx.GridBagSizer(2, 2) 
 		self.statusText = wx.StaticText(self, -1, "Building: %s" % (resultFilename))
 		self.progressGauge = wx.Gauge(self, -1)
@@ -644,6 +714,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.sizer.Add(self.statusText, (0,0), flag=wx.ALIGN_CENTER)
 		self.sizer.Add(self.progressGauge, (1, 0), flag=wx.EXPAND)
 		self.sizer.Add(self.progressGauge2, (2, 0), flag=wx.EXPAND)
+
 		self.sizer.Add(self.abortButton, (3,0), flag=wx.ALIGN_CENTER)
 		self.sizer.AddGrowableCol(0)
 		self.sizer.AddGrowableRow(0)
@@ -664,19 +735,19 @@ class ProjectSliceProgressWindow(wx.Frame):
 
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:
-			self.totalDoneFactor += self.sliceStepTimeFactor[self.prevStep]
+			self.totalDoneFactor += sliceRun.sliceStepTimeFactor[self.prevStep]
 			newTime = time.time()
 			#print "#####" + str(newTime-self.startTime) + " " + self.prevStep + " -> " + stepName
 			self.startTime = newTime
 			self.prevStep = stepName
 		
-		progresValue = ((self.totalDoneFactor + self.sliceStepTimeFactor[stepName] * layer / maxLayer) / self.totalRunTimeFactor) * 10000
+		progresValue = ((self.totalDoneFactor + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
 		self.progressGauge.SetValue(int(progresValue))
 		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
 	
 	def OnRun(self):
 		resultFile = open(self.resultFilename, "w")
-		put = profile.putProfileSetting
+		put = profile.setTempOverride
 		for action in self.actionList:
 			p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			line = p.stdout.readline()
@@ -697,24 +768,27 @@ class ProjectSliceProgressWindow(wx.Frame):
 				if self.abort:
 					p.terminate()
 					wx.CallAfter(self.statusText.SetLabel, "Aborted by user.")
+					resultFile.close()
 					return
 				line = p.stdout.readline()
 			self.returnCode = p.wait()
 			
-			oldProfile = profile.getGlobalProfileString()
-			put('machine_center_x', action.centerX)
-			put('machine_center_y', action.centerY)
+			put('machine_center_x', action.centerX - self.extruderOffset[action.extruder].x)
+			put('machine_center_y', action.centerY - self.extruderOffset[action.extruder].y)
 			put('clear_z', action.clearZ)
+			put('extruder', action.extruder)
 			
 			if action == self.actionList[0]:
 				resultFile.write(';TYPE:CUSTOM\n')
+				resultFile.write('T%d\n' % (action.extruder))
+				currentExtruder = action.extruder
 				resultFile.write(profile.getAlterationFileContents('start.gcode'))
 			else:
 				#reset the extrusion length, and move to the next object center.
 				resultFile.write(';TYPE:CUSTOM\n')
 				resultFile.write(profile.getAlterationFileContents('nextobject.gcode'))
 			resultFile.write(';PRINTNR:%d\n' % self.actionList.index(action))
-			profile.loadGlobalProfileFromString(oldProfile)
+			profile.resetTempOverride()
 			
 			f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
 			data = f.read(4096)
@@ -731,9 +805,20 @@ class ProjectSliceProgressWindow(wx.Frame):
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
+		
+		gcode = gcodeInterpreter.gcode()
+		gcode.load(self.resultFilename)
+		
 		self.abort = True
 		sliceTime = time.time() - self.sliceStartTime
-		wx.CallAfter(self.statusText.SetLabel, 'Slicing took: %d:%d' % (sliceTime / 60, sliceTime % 60))
+		status = "Slicing took: %02d:%02d\n" % (sliceTime / 60, sliceTime % 60)
+		status = "Filament: %.2fm %.2fg\n" % (gcode.extrusionAmount / 1000, gcode.calculateWeight() * 1000)
+		status += "Print time: %02d:%02d\n" % (int(gcode.totalMoveTimeMinute / 60), int(gcode.totalMoveTimeMinute % 60))
+		cost = gcode.calculateCost()
+		if cost != False:
+			status += "Cost: %s\n" % (cost)
+		wx.CallAfter(self.statusText.SetLabel, status)
+		
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
 
 def main():

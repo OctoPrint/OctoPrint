@@ -11,7 +11,7 @@ SUCCESS = 0
 WARNING = 1
 ERROR   = 2
 
-class validFloat():
+class validFloat(object):
 	def __init__(self, setting, minValue = None, maxValue = None):
 		self.setting = setting
 		self.setting.validators.append(self)
@@ -29,7 +29,7 @@ class validFloat():
 		except (ValueError, SyntaxError):
 			return ERROR, '"' + str(self.setting.GetValue()) + '" is not a valid number or expression'
 
-class validInt():
+class validInt(object):
 	def __init__(self, setting, minValue = None, maxValue = None):
 		self.setting = setting
 		self.setting.validators.append(self)
@@ -47,7 +47,7 @@ class validInt():
 		except (ValueError, SyntaxError):
 			return ERROR, '"' + str(self.setting.GetValue()) + '" is not a valid whole number or expression'
 
-class warningAbove():
+class warningAbove(object):
 	def __init__(self, setting, minValueForWarning, warningMessage):
 		self.setting = setting
 		self.setting.validators.append(self)
@@ -68,7 +68,7 @@ class warningAbove():
 			#We already have an error by the int/float validator in this case.
 			return SUCCESS, ''
 
-class wallThicknessValidator():
+class wallThicknessValidator(object):
 	def __init__(self, setting):
 		self.setting = setting
 		self.setting.validators.append(self)
@@ -94,7 +94,7 @@ class wallThicknessValidator():
 			#We already have an error by the int/float validator in this case.
 			return SUCCESS, ''
 
-class printSpeedValidator():
+class printSpeedValidator(object):
 	def __init__(self, setting):
 		self.setting = setting
 		self.setting.validators.append(self)

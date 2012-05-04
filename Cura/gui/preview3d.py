@@ -1,11 +1,6 @@
 from __future__ import division
 
-import sys
-import math
-import threading
-import re
-import time
-import os
+import sys, math, threading, re, time, os
 
 from wx import glcanvas
 import wx
@@ -43,11 +38,12 @@ class previewPanel(wx.Panel):
 		
 		self.glCanvas = PreviewGLCanvas(self)
 		self.objectList = []
+		self.errorList = []
 		self.gcode = None
 		self.objectsMinV = None
 		self.objectsMaxV = None
 		self.loadThread = None
-		self.machineSize = util3d.Vector3(float(profile.getPreference('machine_width')), float(profile.getPreference('machine_depth')), float(profile.getPreference('machine_height')))
+		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
 		self.machineCenter = util3d.Vector3(float(profile.getProfileSetting('machine_center_x')), float(profile.getProfileSetting('machine_center_y')), 0)
 		
 		self.toolbar = toolbarUtil.Toolbar(self)
@@ -63,7 +59,6 @@ class previewPanel(wx.Panel):
 		self.xrayViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-xray-on.png', 'view-xray-off.png', 'X-Ray view', callback=self.OnViewChange)
 		self.gcodeViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-gcode-on.png', 'view-gcode-off.png', 'GCode view', callback=self.OnViewChange)
 		self.mixedViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-mixed-on.png', 'view-mixed-off.png', 'Mixed model/GCode view', callback=self.OnViewChange)
-		self.OnViewChange()
 		self.toolbar.AddSeparator()
 
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
@@ -93,22 +88,21 @@ class previewPanel(wx.Panel):
 		self.toolbar2.AddSeparator()
 
 		# Multiply
-		self.mulXadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXAddClick, 'object-mul-x-add.png', 'Increase number of models on X axis')
-		self.mulXsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXSubClick, 'object-mul-x-sub.png', 'Decrease number of models on X axis')
-		self.mulYadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYAddClick, 'object-mul-y-add.png', 'Increase number of models on Y axis')
-		self.mulYsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYSubClick, 'object-mul-y-sub.png', 'Decrease number of models on Y axis')
-
-		self.toolbar2.AddSeparator()
+		#self.mulXadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXAddClick, 'object-mul-x-add.png', 'Increase number of models on X axis')
+		#self.mulXsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulXSubClick, 'object-mul-x-sub.png', 'Decrease number of models on X axis')
+		#self.mulYadd = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYAddClick, 'object-mul-y-add.png', 'Increase number of models on Y axis')
+		#self.mulYsub = toolbarUtil.NormalButton(self.toolbar2, self.OnMulYSubClick, 'object-mul-y-sub.png', 'Decrease number of models on Y axis')
+		#self.toolbar2.AddSeparator()
 
 		# Rotate
 		self.rotateReset = toolbarUtil.NormalButton(self.toolbar2, self.OnRotateReset, 'object-rotate.png', 'Reset model rotation')
 		self.rotate = wx.SpinCtrl(self.toolbar2, -1, profile.getProfileSetting('model_rotate_base'), size=(21*3,21), style=wx.SP_WRAP|wx.SP_ARROW_KEYS)
 		self.rotate.SetRange(0, 360)
-		self.Bind(wx.EVT_TEXT, self.OnRotate)
+		self.rotate.Bind(wx.EVT_TEXT, self.OnRotate)
 		self.toolbar2.AddControl(self.rotate)
 
 		self.toolbar2.Realize()
-		self.updateToolbar()
+		self.OnViewChange()
 		
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(self.toolbar, 0, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=1)
@@ -181,7 +175,6 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 
 	def OnLayerNrChange(self, e):
-		self.gcodeDirty = True
 		self.glCanvas.Refresh()
 
 	def updateCenterX(self):
@@ -203,8 +196,9 @@ class previewPanel(wx.Panel):
 	def loadModelFiles(self, filelist):
 		while len(filelist) > len(self.objectList):
 			self.objectList.append(previewObject())
-		for idx in xrange(len(self.objectList), len(filelist)):
+		for idx in xrange(len(filelist), len(self.objectList)):
 			self.objectList[idx].mesh = None
+			self.objectList[idx].filename = None
 		for idx in xrange(0, len(filelist)):
 			obj = self.objectList[idx]
 			if obj.filename != filelist[idx]:
@@ -232,12 +226,11 @@ class previewPanel(wx.Panel):
 	
 	def doFileLoadThread(self):
 		for obj in self.objectList:
-			if os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
+			if obj.filename != None and os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
 				obj.ileTime = os.stat(obj.filename).st_mtime
 				mesh = stl.stlModel()
 				mesh.load(obj.filename)
 				obj.dirty = False
-				obj.errorList = []
 				obj.mesh = mesh
 				self.updateModelTransform()
 				wx.CallAfter(self.updateToolbar)
@@ -272,9 +265,11 @@ class previewPanel(wx.Panel):
 		pass
 	
 	def updateToolbar(self):
-		self.layerSpin.Show(self.gcode != None)
+		self.gcodeViewButton.Show(self.gcode != None)
+		self.mixedViewButton.Show(self.gcode != None)
+		self.layerSpin.Show(self.glCanvas.viewMode == "GCode" or self.glCanvas.viewMode == "Mixed")
 		if self.gcode != None:
-			self.layerSpin.SetRange(1, len(self.gcode.layerList))
+			self.layerSpin.SetRange(1, len(self.gcode.layerList) - 1)
 		self.toolbar.Realize()
 	
 	def OnViewChange(self):
@@ -288,6 +283,7 @@ class previewPanel(wx.Panel):
 			self.glCanvas.viewMode = "GCode"
 		elif self.mixedViewButton.GetValue():
 			self.glCanvas.viewMode = "Mixed"
+		self.updateToolbar()
 		self.glCanvas.Refresh()
 	
 	def updateModelTransform(self, f=0):
@@ -376,6 +372,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.offsetY = 0
 		self.view3D = True
 		self.gcodeDisplayList = None
+		self.gcodeDisplayListCount = 0
 		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
 	
 	def OnMouseMotion(self,e):
@@ -424,8 +421,12 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glTranslate(0,0,-self.zoom)
 			glRotate(-self.pitch, 1,0,0)
 			glRotate(self.yaw, 0,0,1)
-			if self.parent.objectsMaxV != None:
-				glTranslate(0,0,-self.parent.objectsMaxV.z * profile.getProfileSettingFloat('model_scale') / 2)
+			if self.viewMode == "GCode" or self.viewMode == "Mixed":
+				if self.parent.gcode != None:
+					glTranslate(0,0,-self.parent.gcode.layerList[self.parent.layerSpin.GetValue()][0].list[-1].z)
+			else:
+				if self.parent.objectsMaxV != None:
+					glTranslate(0,0,-self.parent.objectsMaxV.z * profile.getProfileSettingFloat('model_scale') / 2)
 		else:
 			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
 			glTranslate(self.offsetX, self.offsetY, 0.0)
@@ -438,99 +439,113 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		machineSize = self.parent.machineSize
 		opengl.DrawMachine(machineSize)
 
-		if self.parent.gcode != None:
-			if self.gcodeDisplayList == None:
-				self.gcodeDisplayList = glGenLists(1);
-			if self.parent.gcodeDirty:
-				self.parent.gcodeDirty = False
-				glNewList(self.gcodeDisplayList, GL_COMPILE)
-				prevLayerZ = 0.0
-				curLayerZ = 0.0
-				
-				layerThickness = 0.0
-				filamentRadius = float(profile.getProfileSetting('filament_diameter')) / 2
-				filamentArea = math.pi * filamentRadius * filamentRadius
-				lineWidth = float(profile.getProfileSetting('nozzle_size')) / 2 / 10
-				
-				curLayerNum = 0
-				for layer in self.parent.gcode.layerList:
-					curLayerZ = layer[0].list[1].z
-					layerThickness = curLayerZ - prevLayerZ
-					prevLayerZ = layer[-1].list[-1].z
-					for path in layer:
-						c = 1.0
-						if curLayerNum != self.parent.layerSpin.GetValue():
-							if curLayerNum < self.parent.layerSpin.GetValue():
-								c = 0.9 - (self.parent.layerSpin.GetValue() - curLayerNum) * 0.1
-								if c < 0.4:
-									c = 0.4
-							else:
-								break
-						if path.type == 'move':
-							glColor3f(0,0,c)
-						if path.type == 'extrude':
-							if path.pathType == 'FILL':
-								glColor3f(c/2,c/2,0)
-							elif path.pathType == 'WALL-INNER':
-								glColor3f(0,c,0)
-							elif path.pathType == 'SUPPORT':
-								glColor3f(0,c,c)
-							elif path.pathType == 'SKIRT':
-								glColor3f(0,c/2,c/2)
-							else:
-								glColor3f(c,0,0)
-						if path.type == 'retract':
-							glColor3f(0,c,c)
-						if c > 0.4 and path.type == 'extrude':
-							for i in xrange(0, len(path.list)-1):
-								v0 = path.list[i]
-								v1 = path.list[i+1]
-
-								# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
-								dist = (v0 - v1).vsize()
-								if dist > 0 and layerThickness > 0:
-									extrusionMMperDist = (v1.e - v0.e) / dist
-									lineWidth = extrusionMMperDist * filamentArea / layerThickness / 2
-
-								normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
-								normal.normalize()
-								v2 = v0 + normal * lineWidth
-								v3 = v1 + normal * lineWidth
-								v0 = v0 - normal * lineWidth
-								v1 = v1 - normal * lineWidth
-
-								glBegin(GL_QUADS)
-								if path.pathType == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
-									glVertex3f(v0.x, v0.y, v0.z - 0.02)
-									glVertex3f(v1.x, v1.y, v1.z - 0.02)
-									glVertex3f(v3.x, v3.y, v3.z - 0.02)
-									glVertex3f(v2.x, v2.y, v2.z - 0.02)
-								else:
-									glVertex3f(v0.x, v0.y, v0.z - 0.01)
-									glVertex3f(v1.x, v1.y, v1.z - 0.01)
-									glVertex3f(v3.x, v3.y, v3.z - 0.01)
-									glVertex3f(v2.x, v2.y, v2.z - 0.01)
-								glEnd()
-						
-							#for v in path['list']:
-							#	glBegin(GL_TRIANGLE_FAN)
-							#	glVertex3f(v.x, v.y, v.z - 0.001)
-							#	for i in xrange(0, 16+1):
-							#		if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
-							#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
-							#		else:
-							#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
-							#	glEnd()
+		if self.parent.gcode != None and self.parent.gcodeDirty:
+			if self.gcodeDisplayListCount < len(self.parent.gcode.layerList) or self.gcodeDisplayList == None:
+				if self.gcodeDisplayList != None:
+					glDeleteLists(self.gcodeDisplayList, self.gcodeDisplayListCount)
+				self.gcodeDisplayList = glGenLists(len(self.parent.gcode.layerList));
+				self.gcodeDisplayListCount = len(self.parent.gcode.layerList)
+			self.parent.gcodeDirty = False
+			prevLayerZ = 0.0
+			curLayerZ = 0.0
+			
+			layerThickness = 0.0
+			filamentRadius = profile.getProfileSettingFloat('filament_diameter') / 2
+			filamentArea = math.pi * filamentRadius * filamentRadius
+			lineWidth = profile.getProfileSettingFloat('nozzle_size') / 2 / 10
+			
+			curLayerNum = 0
+			for layer in self.parent.gcode.layerList:
+				glNewList(self.gcodeDisplayList + curLayerNum, GL_COMPILE)
+				glDisable(GL_CULL_FACE)
+				curLayerZ = layer[0].list[1].z
+				layerThickness = curLayerZ - prevLayerZ
+				prevLayerZ = layer[-1].list[-1].z
+				for path in layer:
+					if path.type == 'move':
+						glColor3f(0,0,1)
+					if path.type == 'extrude':
+						if path.pathType == 'FILL':
+							glColor3f(0.5,0.5,0)
+						elif path.pathType == 'WALL-INNER':
+							glColor3f(0,1,0)
+						elif path.pathType == 'SUPPORT':
+							glColor3f(0,1,1)
+						elif path.pathType == 'SKIRT':
+							glColor3f(0,0.5,0.5)
 						else:
-							glBegin(GL_LINE_STRIP)
-							for v in path.list:
-								glVertex3f(v.x, v.y, v.z)
+							glColor3f(1,0,0)
+					if path.type == 'retract':
+						glColor3f(0,1,1)
+					if path.type == 'extrude':
+						for i in xrange(0, len(path.list)-1):
+							v0 = path.list[i]
+							v1 = path.list[i+1]
+
+							# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
+							dist = (v0 - v1).vsize()
+							if dist > 0 and layerThickness > 0:
+								extrusionMMperDist = (v1.e - v0.e) / dist
+								lineWidth = extrusionMMperDist * filamentArea / layerThickness / 2
+
+							normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
+							normal.normalize()
+							v2 = v0 + normal * lineWidth
+							v3 = v1 + normal * lineWidth
+							v0 = v0 - normal * lineWidth
+							v1 = v1 - normal * lineWidth
+
+							glBegin(GL_QUADS)
+							if path.pathType == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+								glVertex3f(v0.x, v0.y, v0.z - 0.02)
+								glVertex3f(v1.x, v1.y, v1.z - 0.02)
+								glVertex3f(v3.x, v3.y, v3.z - 0.02)
+								glVertex3f(v2.x, v2.y, v2.z - 0.02)
+							else:
+								glVertex3f(v0.x, v0.y, v0.z - 0.01)
+								glVertex3f(v1.x, v1.y, v1.z - 0.01)
+								glVertex3f(v3.x, v3.y, v3.z - 0.01)
+								glVertex3f(v2.x, v2.y, v2.z - 0.01)
 							glEnd()
-					curLayerNum += 1
+					
+						#for v in path['list']:
+						#	glBegin(GL_TRIANGLE_FAN)
+						#	glVertex3f(v.x, v.y, v.z - 0.001)
+						#	for i in xrange(0, 16+1):
+						#		if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
+						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
+						#		else:
+						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
+						#	glEnd()
+					else:
+						glBegin(GL_LINE_STRIP)
+						for v in path.list:
+							glVertex3f(v.x, v.y, v.z)
+						glEnd()
+				curLayerNum += 1
+				glEnable(GL_CULL_FACE)
 				glEndList()
-			if self.viewMode == "GCode" or self.viewMode == "Mixed":
-				glCallList(self.gcodeDisplayList)
 		
+		if self.parent.gcode != None and (self.viewMode == "GCode" or self.viewMode == "Mixed"):
+			glEnable(GL_COLOR_MATERIAL)
+			glEnable(GL_LIGHTING)
+			for i in xrange(0, self.parent.layerSpin.GetValue() + 1):
+				c = 1.0
+				if i < self.parent.layerSpin.GetValue():
+					c = 0.9 - (self.parent.layerSpin.GetValue() - i) * 0.1
+					if c < 0.4:
+						c = (0.4 + c) / 2
+					if c < 0.1:
+						c = 0.1
+				glLightfv(GL_LIGHT0, GL_DIFFUSE, [0,0,0,0])
+				glLightfv(GL_LIGHT0, GL_AMBIENT, [c,c,c,c])
+				glCallList(self.gcodeDisplayList + i)
+			glDisable(GL_LIGHTING)
+			glDisable(GL_COLOR_MATERIAL)
+			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0]);
+			glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, [0.8, 0.8, 0.8, 1.0]);
+
+		glColor3f(1.0,1.0,1.0)
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		for obj in self.parent.objectList:
 			if obj.mesh == None:
@@ -543,17 +558,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				opengl.DrawSTL(obj.mesh)
 				glEndList()
 			
-			glEnable(GL_NORMALIZE)
 			if self.viewMode == "Transparent" or self.viewMode == "Mixed":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, map(lambda x: x / 2, self.objColor[self.parent.objectList.index(obj)]))
 				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 10, self.objColor[self.parent.objectList.index(obj)]))
 				#If we want transparent, then first render a solid black model to remove the printer size lines.
 				if self.viewMode != "Mixed":
 					glDisable(GL_BLEND)
-					glDisable(GL_LIGHTING)
-					glColor3f(0,0,0)
+					glColor3f(0.0,0.0,0.0)
 					self.drawModel(obj)
-					glColor3f(1,1,1)
+					glColor3f(1.0,1.0,1.0)
 				#After the black model is rendered, render the model again but now with lighting and no depth testing.
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_LIGHTING)
@@ -608,22 +621,22 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glEnable(GL_LIGHTING)
 				self.drawModel(obj)
 			
-			if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
-				glDisable(GL_LIGHTING)
-				glDisable(GL_DEPTH_TEST)
-				glDisable(GL_BLEND)
-				glColor3f(1,0,0)
-				#glBegin(GL_LINES)
-				#for err in self.parent.errorList:
-				#	glVertex3f(err[0].x, err[0].y, err[0].z)
-				#	glVertex3f(err[1].x, err[1].y, err[1].z)
-				#glEnd()
-				glEnable(GL_DEPTH_TEST)
+		if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
+			glDisable(GL_LIGHTING)
+			glDisable(GL_DEPTH_TEST)
+			glDisable(GL_BLEND)
+			glColor3f(1,0,0)
+			glBegin(GL_LINES)
+			for err in self.parent.errorList:
+				glVertex3f(err[0].x, err[0].y, err[0].z)
+				glVertex3f(err[1].x, err[1].y, err[1].z)
+			glEnd()
+			glEnable(GL_DEPTH_TEST)
 		glFlush()
 	
 	def drawModel(self, obj):
-		multiX = int(profile.getProfileSetting('model_multiply_x'))
-		multiY = int(profile.getProfileSetting('model_multiply_y'))
+		multiX = 1 #int(profile.getProfileSetting('model_multiply_x'))
+		multiY = 1 #int(profile.getProfileSetting('model_multiply_y'))
 		modelScale = profile.getProfileSettingFloat('model_scale')
 		modelSize = (obj.mesh.getMaximum() - obj.mesh.getMinimum()) * modelScale
 		glPushMatrix()

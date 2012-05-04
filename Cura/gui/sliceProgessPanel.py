@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, sys, os, math, threading, subprocess, time
+import wx, sys, os, math, threading, subprocess, time, re
 
 from util import profile
 from util import sliceRun
 from util import exporer
+from util import gcodeInterpreter
 
 class sliceProgessPanel(wx.Panel):
 	def __init__(self, mainWindow, parent, filelist):
@@ -14,27 +15,6 @@ class sliceProgessPanel(wx.Panel):
 		self.filelist = filelist
 		self.abort = False
 		
-		#How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
-		self.sliceStepTimeFactor = {
-			'start': 3.3713991642,
-			'slice': 15.4984838963,
-			'preface': 5.17178297043,
-			'inset': 116.362634182,
-			'fill': 215.702672005,
-			'multiply': 21.9536788464,
-			'speed': 12.759510994,
-			'raft': 31.4580039978,
-			'skirt': 19.3436040878,
-			'skin': 1.0,
-			'joris': 1.0,
-			'comb': 23.7805759907,
-			'cool': 27.148763895,
-			'dimension': 90.4914340973
-		}
-		self.totalRunTimeFactor = 0
-		for v in self.sliceStepTimeFactor.itervalues():
-			self.totalRunTimeFactor += v
-
 		box = wx.StaticBox(self, -1, filelist[0])
 		self.sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
 
@@ -58,18 +38,20 @@ class sliceProgessPanel(wx.Panel):
 		if profile.getPreference('save_profile') == 'True':
 			profile.saveGlobalProfile(self.filelist[0][: self.filelist[0].rfind('.')] + "_profile.ini")
 		cmdList = []
-		oldProfile = profile.getGlobalProfileString()
 		for filename in self.filelist:
-			print filename, self.filelist.index(filename)
-			if self.filelist.index(filename) > 0:
-				profile.putProfileSetting('fan_enabled', 'False')
-				profile.putProfileSetting('skirt_line_count', '0')
-				profile.putProfileSetting('machine_center_x', profile.getProfileSettingFloat('machine_center_x') + 22)
+			idx = self.filelist.index(filename)
+			print filename, idx
+			if idx > 0:
+				profile.setTempOverride('fan_enabled', 'False')
+				profile.setTempOverride('skirt_line_count', '0')
+				profile.setTempOverride('machine_center_x', profile.getProfileSettingFloat('machine_center_x') - profile.getPreferenceFloat('extruder_offset_x%d' % (idx)))
+				profile.setTempOverride('machine_center_y', profile.getProfileSettingFloat('machine_center_y') - profile.getPreferenceFloat('extruder_offset_y%d' % (idx)))
+				profile.setTempOverride('alternative_center', self.filelist[0])
 			if len(self.filelist) > 1:
-				profile.putProfileSetting('add_start_end_gcode', 'False')
-				profile.putProfileSetting('gcode_extension', 'multi_extrude_tmp')
+				profile.setTempOverride('add_start_end_gcode', 'False')
+				profile.setTempOverride('gcode_extension', 'multi_extrude_tmp')
 			cmdList.append(sliceRun.getSliceCommand(filename))
-		profile.loadGlobalProfileFromString(oldProfile)
+		profile.resetTempOverride()
 		self.thread = WorkerThread(self, filelist, cmdList)
 	
 	def OnAbort(self, e):
@@ -98,7 +80,12 @@ class sliceProgessPanel(wx.Panel):
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.abortButton)
 		self.sizer.Add(self.logButton, 0)
 		if result.returnCode == 0:
-			self.statusText.SetLabel("Ready.")
+			status = "Ready: Filament: %.2fm %.2fg" % (result.gcode.extrusionAmount / 1000, result.gcode.calculateWeight() * 1000)
+			status += " Print time: %02d:%02d" % (int(result.gcode.totalMoveTimeMinute / 60), int(result.gcode.totalMoveTimeMinute % 60))
+			cost = result.gcode.calculateCost()
+			if cost != False:
+				status += " Cost: %s" % (cost)
+			self.statusText.SetLabel(status)
 			if exporer.hasExporer():
 				self.openFileLocationButton = wx.Button(self, -1, "Open file location")
 				self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
@@ -117,13 +104,13 @@ class sliceProgessPanel(wx.Panel):
 	
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:
-			self.totalDoneFactor += self.sliceStepTimeFactor[self.prevStep]
+			self.totalDoneFactor += sliceRun.sliceStepTimeFactor[self.prevStep]
 			newTime = time.time()
 			#print "#####" + str(newTime-self.startTime) + " " + self.prevStep + " -> " + stepName
 			self.startTime = newTime
 			self.prevStep = stepName
 		
-		progresValue = ((self.totalDoneFactor + self.sliceStepTimeFactor[stepName] * layer / maxLayer) / self.totalRunTimeFactor) * 10000
+		progresValue = ((self.totalDoneFactor + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
 		self.progressGauge.SetValue(int(progresValue))
 		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
 
@@ -167,6 +154,8 @@ class WorkerThread(threading.Thread):
 		if self.fileIdx == len(self.cmdList):
 			if len(self.filelist) > 1:
 				self._stitchMultiExtruder()
+			self.gcode = gcodeInterpreter.gcode()
+			self.gcode.load(self.filelist[0][:self.filelist[0].rfind('.')]+'_export.gcode')
 			wx.CallAfter(self.notifyWindow.OnSliceDone, self)
 		else:
 			self.run()
@@ -177,10 +166,13 @@ class WorkerThread(threading.Thread):
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('start.gcode'))
 		for filename in self.filelist:
-			files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
+			if os.path.isfile(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp'):
+				files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
+			else:
+				return
 		
 		currentExtruder = 0
-		resultFile.write("T%d\n" % (currentExtruder))
+		resultFile.write('T%d\n' % (currentExtruder))
 		layerNr = -1
 		hasLine = True
 		while hasLine:
@@ -191,14 +183,17 @@ class WorkerThread(threading.Thread):
 					hasLine = True
 					if line.startswith(';LAYER:'):
 						break
+					if 'Z' in line:
+						lastZ = float(re.search('Z([^\s]+)', line).group(1))
 					if not layerHasLine:
 						nextExtruder = files.index(f)
 						resultFile.write(';LAYER:%d\n' % (layerNr))
 						resultFile.write(';EXTRUDER:%d\n' % (nextExtruder))
 						if nextExtruder != currentExtruder:
-							resultFile.write("G1 E-2 F3000\n")
+							resultFile.write("G1 E-5 F5000\n")
+							resultFile.write("G92 E0\n")
 							resultFile.write("T%d\n" % (nextExtruder))
-							resultFile.write("G1 E2 F3000\n")
+							resultFile.write("G1 E5 F5000\n")
 							resultFile.write("G92 E0\n")
 							currentExtruder = nextExtruder
 						layerHasLine = True

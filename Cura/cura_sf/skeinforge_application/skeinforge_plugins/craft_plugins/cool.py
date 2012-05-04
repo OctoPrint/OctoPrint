@@ -223,6 +223,8 @@ class CoolSkein:
 
 	def addCoolTemperature(self, remainingOrbitTime):
 		'Parse a gcode line and add it to the cool skein.'
+		if self.repository.minimumLayerTime.value < 0.0001:
+			return
 		layerCool = self.repository.maximumCool.value * remainingOrbitTime / self.repository.minimumLayerTime.value
 		if self.isBridgeLayer:
 			layerCool = max(self.repository.bridgeCool.value, layerCool)
@@ -404,9 +406,10 @@ class CoolSkein:
 	def setMultiplier(self, remainingOrbitTime):
 		'Set the feed and flow rate multiplier.'
 		layerTimeActive = self.getLayerTimeActive()
-		self.multiplier = min(1.0, layerTimeActive / (remainingOrbitTime + layerTimeActive))
-		
-
+		if remainingOrbitTime + layerTimeActive > 0.00001:
+			self.multiplier = min(1.0, layerTimeActive / (remainingOrbitTime + layerTimeActive))
+		else:
+			self.multiplier = 1.0
 
 def main():
 	'Display the cool dialog.'
