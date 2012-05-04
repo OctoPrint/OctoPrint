@@ -308,7 +308,7 @@ tempOverride = {}
 def setTempOverride(name, value):
 	tempOverride[name] = value
 def resetTempOverride():
-	tempOverride = {}
+	tempOverride.clear()
 
 #########################################################
 ## Utility functions to calculate common profile values
