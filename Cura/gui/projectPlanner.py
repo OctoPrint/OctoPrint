@@ -61,6 +61,13 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
 		
 		self.toolbar.Realize()
+
+		self.toolbar2 = toolbarUtil.Toolbar(self)
+		toolbarUtil.NormalButton(self.toolbar2, self.OnAddModel, 'object-add.png', 'Add model')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnRemModel, 'object-remove.png', 'Remove model')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveUp, 'move-up.png', 'Move model up in print list')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveDown, 'move-down.png', 'Move model down in print list')
+		self.toolbar2.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
 		self.SetSizer(sizer)
@@ -71,7 +78,8 @@ class projectPlanner(wx.Frame):
 		self.sliceButton = wx.Button(self, -1, "Slice")
 		self.autoPlaceButton = wx.Button(self, -1, "Auto Place")
 		
-		sizer.Add(self.toolbar, (0,0), span=(1,3), flag=wx.EXPAND)
+		sizer.Add(self.toolbar, (0,0), span=(1,1), flag=wx.EXPAND)
+		sizer.Add(self.toolbar2, (0,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
 		sizer.Add(self.listbox, (1,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.addButton, (2,1), span=(1,1))
@@ -169,6 +177,7 @@ class projectPlanner(wx.Frame):
 				item.swapYZ = cp.get(section, 'swapYZ') == 'True'
 				if cp.has_option(section, 'extruder'):
 					item.extuder = int(cp.get(section, 'extruder'))-1
+				self.updateModelTransform(item)
 				i += 1
 				
 				self.list.append(item)
@@ -231,9 +240,36 @@ class projectPlanner(wx.Frame):
 		elif len(self.list) > 0:
 			self.listbox.SetSelection(len(self.list) - 1)
 		self.selection = None
-		self.OnListSelect(None)
 		self.preview.Refresh()
 	
+	def OnMoveUp(self, e):
+		if self.selection == None:
+			return
+		i = self.listbox.GetSelection()
+		if i == 0:
+			return
+		self.list.remove(self.selection)
+		self.list.insert(i-1, self.selection)
+		self._updateListbox()
+		self.preview.Refresh()
+
+	def OnMoveDown(self, e):
+		if self.selection == None:
+			return
+		i = self.listbox.GetSelection()
+		if i == len(self.list) - 1:
+			return
+		self.list.remove(self.selection)
+		self.list.insert(i+1, self.selection)
+		self._updateListbox()
+		self.preview.Refresh()
+	
+	def _updateListbox(self):
+		self.listbox.Clear()
+		for item in self.list:
+			self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
+		self.listbox.SetSelection(self.list.index(self.selection))
+
 	def OnAutoPlace(self, e):
 		bestAllowedSize = int(self.machineSize.y)
 		bestArea = self._doAutoPlace(bestAllowedSize)
