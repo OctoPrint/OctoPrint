@@ -9,11 +9,11 @@ import struct
 
 from util import util3d
 
-class stlFace():
+class stlFace(object):
 	def __init__(self, v0, v1, v2):
 		self.v = [v0, v1, v2]
 
-class stlModel():
+class stlModel(object):
 	def __init__(self):
 		self.faces = []
 		self.vertexes = []

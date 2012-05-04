@@ -24,8 +24,107 @@ from util import util3d
 from util import stl
 from util import sliceRun
 
-class Action():
+class Action(object):
 	pass
+
+class ProjectObject(stl.stlModel):
+	def __init__(self, filename):
+		super(ProjectObject, self).__init__()
+
+		self.load(filename)
+
+		self.filename = filename
+		self.scale = 1.0
+		self.rotate = 0.0
+		self.flipX = False
+		self.flipY = False
+		self.flipZ = False
+		self.swapXZ = False
+		self.swapYZ = False
+		self.extruder = 0
+		
+		self.modelDisplayList = None
+		self.modelDirty = False
+
+		self.origonalVertexes = list(self.vertexes)
+		for i in xrange(0, len(self.origonalVertexes)):
+			self.origonalVertexes[i] = self.origonalVertexes[i].copy()
+		self.getMinimumZ()
+		
+		self.centerX = -self.getMinimum().x + 5
+		self.centerY = -self.getMinimum().y + 5
+		
+		self.updateModelTransform()
+
+		self.centerX = -self.getMinimum().x + 5
+		self.centerY = -self.getMinimum().y + 5
+
+	def updateModelTransform(self):
+		rotate = self.rotate / 180.0 * math.pi
+		scaleX = 1.0
+		scaleY = 1.0
+		scaleZ = 1.0
+		if self.flipX:
+			scaleX = -scaleX
+		if self.flipY:
+			scaleY = -scaleY
+		if self.flipZ:
+			scaleZ = -scaleZ
+		swapXZ = self.swapXZ
+		swapYZ = self.swapYZ
+		mat00 = math.cos(rotate) * scaleX
+		mat01 =-math.sin(rotate) * scaleY
+		mat10 = math.sin(rotate) * scaleX
+		mat11 = math.cos(rotate) * scaleY
+		
+		for i in xrange(0, len(self.origonalVertexes)):
+			x = self.origonalVertexes[i].x
+			y = self.origonalVertexes[i].y
+			z = self.origonalVertexes[i].z
+			if swapXZ:
+				x, z = z, x
+			if swapYZ:
+				y, z = z, y
+			self.vertexes[i].x = x * mat00 + y * mat01
+			self.vertexes[i].y = x * mat10 + y * mat11
+			self.vertexes[i].z = z * scaleZ
+
+		for face in self.faces:
+			v1 = face.v[0]
+			v2 = face.v[1]
+			v3 = face.v[2]
+			face.normal = (v2 - v1).cross(v3 - v1)
+			face.normal.normalize()
+
+		minZ = self.getMinimumZ()
+		minV = self.getMinimum()
+		maxV = self.getMaximum()
+		for v in self.vertexes:
+			v.z -= minZ
+			v.x -= minV.x + (maxV.x - minV.x) / 2
+			v.y -= minV.y + (maxV.y - minV.y) / 2
+		self.getMinimumZ()
+		self.modelDirty = True
+	
+	def clone(self):
+		p = ProjectObject(self.filename)
+
+		p.centerX = self.centerX + 5
+		p.centerY = self.centerY + 5
+		
+		p.filename = self.filename
+		p.scale = self.scale
+		p.rotate = self.rotate
+		p.flipX = self.flipX
+		p.flipY = self.flipY
+		p.flipZ = self.flipZ
+		p.swapXZ = self.swapXZ
+		p.swapYZ = self.swapYZ
+		p.extruder = self.extruder
+		
+		p.updateModelTransform()
+		
+		return p
 
 class projectPlanner(wx.Frame):
 	"Main user interface window"
@@ -67,6 +166,7 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar2, self.OnRemModel, 'object-remove.png', 'Remove model')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveUp, 'move-up.png', 'Move model up in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveDown, 'move-down.png', 'Move model down in print list')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnCopy, 'copy.png', 'Make a copy of the current selected object')
 		self.toolbar2.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
@@ -163,9 +263,7 @@ class projectPlanner(wx.Frame):
 			while cp.has_section('model_%d' % (i)):
 				section = 'model_%d' % (i)
 				
-				item = stl.stlModel()
-				item.filename = unicode(cp.get(section, 'filename'), "utf-8")
-				self.loadModelFile(item)
+				item = ProjectObject(unicode(cp.get(section, 'filename'), "utf-8"))
 				item.centerX = float(cp.get(section, 'centerX'))
 				item.centerY = float(cp.get(section, 'centerY'))
 				item.scale = float(cp.get(section, 'scale'))
@@ -177,7 +275,7 @@ class projectPlanner(wx.Frame):
 				item.swapYZ = cp.get(section, 'swapYZ') == 'True'
 				if cp.has_option(section, 'extruder'):
 					item.extuder = int(cp.get(section, 'extruder'))-1
-				self.updateModelTransform(item)
+				item.updateModelTransform()
 				i += 1
 				
 				self.list.append(item)
@@ -185,6 +283,7 @@ class projectPlanner(wx.Frame):
 			
 			self.listbox.SetSelection(len(self.list)-1)
 			self.OnListSelect(None)
+			self.preview.Refresh()
 
 		dlg.Destroy()
 
@@ -217,29 +316,19 @@ class projectPlanner(wx.Frame):
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
 			for filename in dlg.GetPaths():
-				item = stl.stlModel()
-				item.filename=filename
+				item = ProjectObject(filename)
 				profile.putPreference('lastFile', item.filename)
-				if not(os.path.exists(item.filename)):
-					return
-				self.loadModelFile(item)
 				self.list.append(item)
-				self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
-				self.listbox.SetSelection(len(self.list)-1)
-				self.OnListSelect(None)
+				self.selection = item
+				self._updateListbox()
+		self.preview.Refresh()
 		dlg.Destroy()
 	
 	def OnRemModel(self, e):
 		if self.selection == None:
 			return
 		self.list.remove(self.selection)
-		i = self.listbox.GetSelection()
-		self.listbox.Delete(i)
-		if len(self.list) > i:
-			self.listbox.SetSelection(i)
-		elif len(self.list) > 0:
-			self.listbox.SetSelection(len(self.list) - 1)
-		self.selection = None
+		self._updateListbox()
 		self.preview.Refresh()
 	
 	def OnMoveUp(self, e):
@@ -264,11 +353,29 @@ class projectPlanner(wx.Frame):
 		self._updateListbox()
 		self.preview.Refresh()
 	
+	def OnCopy(self, e):
+		if self.selection == None:
+			return
+		
+		item = self.selection.clone()
+		self.list.append(item)
+		self.selection = item
+		
+		self._updateListbox()
+		self.preview.Refresh()
+	
 	def _updateListbox(self):
 		self.listbox.Clear()
 		for item in self.list:
 			self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
-		self.listbox.SetSelection(self.list.index(self.selection))
+		if self.selection in self.list:
+			self.listbox.SetSelection(self.list.index(self.selection))
+		elif len(self.list) > 0:
+			self.selection = self.list[0]
+			self.listbox.SetSelection(0)
+		else:
+			self.selection = None
+			self.listbox.SetSelection(-1)
 
 	def OnAutoPlace(self, e):
 		bestAllowedSize = int(self.machineSize.y)
@@ -368,32 +475,6 @@ class projectPlanner(wx.Frame):
 		pspw.Centre()
 		pspw.Show(True)
 	
-	def loadModelFile(self, item):
-		item.load(item.filename)
-		item.origonalVertexes = list(item.vertexes)
-		for i in xrange(0, len(item.origonalVertexes)):
-			item.origonalVertexes[i] = item.origonalVertexes[i].copy()
-		item.getMinimumZ()
-		
-		item.centerX = -item.getMinimum().x + 5
-		item.centerY = -item.getMinimum().y + 5
-		item.scale = 1.0
-		item.rotate = 0.0
-		item.flipX = False
-		item.flipY = False
-		item.flipZ = False
-		item.swapXZ = False
-		item.swapYZ = False
-		item.extruder = 0
-		
-		item.modelDisplayList = None
-		item.modelDirty = False
-		
-		self.updateModelTransform(item)
-
-		item.centerX = -item.getMinimum().x + 5
-		item.centerY = -item.getMinimum().y + 5
-
 	def OnScaleChange(self, e):
 		if self.selection == None:
 			return
@@ -407,63 +488,13 @@ class projectPlanner(wx.Frame):
 		if self.selection == None:
 			return
 		self.selection.rotate = float(self.rotateCtrl.GetValue())
-		self.updateModelTransform(self.selection)
+		self.selection.updateModelTransform()
+		self.preview.Refresh()
 
 	def OnExtruderChange(self, e):
 		if self.selection == None:
 			return
 		self.selection.extruder = int(self.extruderCtrl.GetValue()) - 1
-		self.preview.Refresh()
-
-	def updateModelTransform(self, item):
-		rotate = item.rotate / 180.0 * math.pi
-		scaleX = 1.0
-		scaleY = 1.0
-		scaleZ = 1.0
-		if item.flipX:
-			scaleX = -scaleX
-		if item.flipY:
-			scaleY = -scaleY
-		if item.flipZ:
-			scaleZ = -scaleZ
-		swapXZ = item.swapXZ
-		swapYZ = item.swapYZ
-		mat00 = math.cos(rotate) * scaleX
-		mat01 =-math.sin(rotate) * scaleY
-		mat10 = math.sin(rotate) * scaleX
-		mat11 = math.cos(rotate) * scaleY
-		
-		for i in xrange(0, len(item.origonalVertexes)):
-			x = item.origonalVertexes[i].x
-			y = item.origonalVertexes[i].y
-			z = item.origonalVertexes[i].z
-			if swapXZ:
-				x, z = z, x
-			if swapYZ:
-				y, z = z, y
-			item.vertexes[i].x = x * mat00 + y * mat01
-			item.vertexes[i].y = x * mat10 + y * mat11
-			item.vertexes[i].z = z * scaleZ
-
-		for face in item.faces:
-			v1 = face.v[0]
-			v2 = face.v[1]
-			v3 = face.v[2]
-			face.normal = (v2 - v1).cross(v3 - v1)
-			face.normal.normalize()
-
-		self.moveModel(item)
-	
-	def moveModel(self, item):
-		minZ = item.getMinimumZ()
-		min = item.getMinimum()
-		max = item.getMaximum()
-		for v in item.vertexes:
-			v.z -= minZ
-			v.x -= min.x + (max.x - min.x) / 2
-			v.y -= min.y + (max.y - min.y) / 2
-		item.getMinimumZ()
-		item.modelDirty = True
 		self.preview.Refresh()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
