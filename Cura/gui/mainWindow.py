@@ -236,21 +236,19 @@ class mainWindow(configBase.configWindowBase):
 		self.Show(True)
 	
 	def OnLoadProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to load", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg=wx.FileDialog(self, "Select profile file to load", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
-			self.lastPath = os.path.split(profileFile)[0]
 			profile.loadGlobalProfile(profileFile)
 			self.updateProfileToControls()
 		dlg.Destroy()
 	
 	def OnSaveProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to save", self.lastPath, style=wx.FD_SAVE)
+		dlg=wx.FileDialog(self, "Select profile file to save", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
-			self.lastPath = os.path.split(profileFile)[0]
 			profile.saveGlobalProfile(profileFile)
 		dlg.Destroy()
 	
@@ -268,7 +266,7 @@ class mainWindow(configBase.configWindowBase):
 		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
 
 	def OnCustomFirmware(self, e):
-		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetPath()
