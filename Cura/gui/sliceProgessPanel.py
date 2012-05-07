@@ -190,11 +190,10 @@ class WorkerThread(threading.Thread):
 						resultFile.write(';LAYER:%d\n' % (layerNr))
 						resultFile.write(';EXTRUDER:%d\n' % (nextExtruder))
 						if nextExtruder != currentExtruder:
-							resultFile.write("G1 E-5 F5000\n")
-							resultFile.write("G92 E0\n")
-							resultFile.write("T%d\n" % (nextExtruder))
-							resultFile.write("G1 E5 F5000\n")
-							resultFile.write("G92 E0\n")
+							resultFile.write(';TYPE:CUSTOM\n')
+							profile.setTempOverride('extruder', nextExtruder)
+							resultFile.write(profile.getAlterationFileContents('switchExtruder.gcode'))
+							profile.resetTempOverride()
 							currentExtruder = nextExtruder
 						layerHasLine = True
 					resultFile.write(line)

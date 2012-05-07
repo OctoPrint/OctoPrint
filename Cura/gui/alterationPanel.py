@@ -9,6 +9,8 @@ class alterationPanel(wx.Panel):
 		wx.Panel.__init__(self, parent,-1)
 
 		self.alterationFileList = ['start.gcode', 'end.gcode', 'support_start.gcode', 'support_end.gcode', 'nextobject.gcode', 'replace.csv']
+		if int(profile.getPreference('extruder_amount')) > 1:
+			self.alterationFileList.append('switchExtruder.gcode')
 		self.currentFile = None
 
 		#self.textArea = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
