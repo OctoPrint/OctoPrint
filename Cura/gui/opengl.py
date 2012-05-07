@@ -1,3 +1,7 @@
+import math
+
+from util import util3d
+from util import profile
 
 try:
 	import OpenGL
@@ -215,3 +219,91 @@ def DrawSTL(mesh):
 		glVertex3f(v3.x, v3.y, v3.z)
 		glVertex3f(v2.x, v2.y, v2.z)
 		glEnd()
+
+def DrawGCodeLayer(layer):
+	filamentRadius = profile.getProfileSettingFloat('filament_diameter') / 2
+	filamentArea = math.pi * filamentRadius * filamentRadius
+	lineWidth = profile.getProfileSettingFloat('nozzle_size') / 2 / 10
+	
+	fillCycle = 0
+	fillColorCycle = [[0.5,0.5,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5]]
+	
+	glDisable(GL_CULL_FACE)
+	for path in layer:
+		if path.type == 'move':
+			glColor3f(0,0,1)
+		if path.type == 'extrude':
+			if path.pathType == 'FILL':
+				glColor3fv(fillColorCycle[fillCycle])
+				fillCycle = (fillCycle + 1) % len(fillColorCycle)
+			elif path.pathType == 'WALL-INNER':
+				glColor3fv([0,1,0])
+			elif path.pathType == 'SUPPORT':
+				glColor3fv([0,1,1])
+			elif path.pathType == 'SKIRT':
+				glColor3fv([0,0.5,0.5])
+			else:
+				glColor3fv([1,0,0])
+		if path.type == 'retract':
+			glColor3fv([0,1,1])
+		if path.type == 'extrude':
+			drawLength = 0.0
+			prevNormal = None
+			for i in xrange(0, len(path.list)-1):
+				v0 = path.list[i]
+				v1 = path.list[i+1]
+
+				# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
+				dist = (v0 - v1).vsize()
+				if dist > 0 and path.layerThickness > 0:
+					extrusionMMperDist = (v1.e - v0.e) / dist
+					lineWidth = extrusionMMperDist * filamentArea / path.layerThickness / 2
+
+				drawLength += (v0 - v1).vsize()
+				normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
+				normal.normalize()
+
+				vv2 = v0 + normal * lineWidth
+				vv3 = v1 + normal * lineWidth
+				vv0 = v0 - normal * lineWidth
+				vv1 = v1 - normal * lineWidth
+
+				glBegin(GL_QUADS)
+				glVertex3f(vv0.x, vv0.y, vv0.z - 0.01)
+				glVertex3f(vv1.x, vv1.y, vv1.z - 0.01)
+				glVertex3f(vv3.x, vv3.y, vv3.z - 0.01)
+				glVertex3f(vv2.x, vv2.y, vv2.z - 0.01)
+				glEnd()
+				if prevNormal != None:
+					n = (normal + prevNormal)
+					n.normalize()
+					vv4 = v0 + n * lineWidth
+					vv5 = v0 - n * lineWidth
+					glBegin(GL_QUADS)
+					glVertex3f(vv2.x, vv2.y, vv2.z)
+					glVertex3f(vv4.x, vv4.y, vv4.z)
+					glVertex3f(prevVv3.x, prevVv3.y, prevVv3.z)
+					glVertex3f(v0.x, v0.y, v0.z)
+					
+					glVertex3f(vv0.x, vv0.y, vv0.z)
+					glVertex3f(vv5.x, vv5.y, vv5.z)
+					glVertex3f(prevVv1.x, prevVv1.y, prevVv1.z)
+					glVertex3f(v0.x, v0.y, v0.z)
+					glEnd()
+					
+				prevNormal = normal
+				prevVv1 = vv1
+				prevVv3 = vv3
+		
+			#for v in path.list:
+			#	glBegin(GL_TRIANGLE_FAN)
+			#	glVertex3f(v.x, v.y, v.z - 0.001)
+			#	for i in xrange(0, 16+1):
+			#		glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
+			#	glEnd()
+		else:
+			glBegin(GL_LINE_STRIP)
+			for v in path.list:
+				glVertex3f(v.x, v.y, v.z)
+			glEnd()
+	glEnable(GL_CULL_FACE)

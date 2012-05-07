@@ -446,85 +446,13 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.gcodeDisplayList = glGenLists(len(self.parent.gcode.layerList));
 				self.gcodeDisplayListCount = len(self.parent.gcode.layerList)
 			self.parent.gcodeDirty = False
-			prevLayerZ = 0.0
-			curLayerZ = 0.0
-			
-			layerThickness = 0.0
-			filamentRadius = profile.getProfileSettingFloat('filament_diameter') / 2
-			filamentArea = math.pi * filamentRadius * filamentRadius
-			lineWidth = profile.getProfileSettingFloat('nozzle_size') / 2 / 10
 			
 			curLayerNum = 0
 			for layer in self.parent.gcode.layerList:
 				glNewList(self.gcodeDisplayList + curLayerNum, GL_COMPILE)
-				glDisable(GL_CULL_FACE)
-				curLayerZ = layer[0].list[1].z
-				layerThickness = curLayerZ - prevLayerZ
-				prevLayerZ = layer[-1].list[-1].z
-				for path in layer:
-					if path.type == 'move':
-						glColor3f(0,0,1)
-					if path.type == 'extrude':
-						if path.pathType == 'FILL':
-							glColor3f(0.5,0.5,0)
-						elif path.pathType == 'WALL-INNER':
-							glColor3f(0,1,0)
-						elif path.pathType == 'SUPPORT':
-							glColor3f(0,1,1)
-						elif path.pathType == 'SKIRT':
-							glColor3f(0,0.5,0.5)
-						else:
-							glColor3f(1,0,0)
-					if path.type == 'retract':
-						glColor3f(0,1,1)
-					if path.type == 'extrude':
-						for i in xrange(0, len(path.list)-1):
-							v0 = path.list[i]
-							v1 = path.list[i+1]
-
-							# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
-							dist = (v0 - v1).vsize()
-							if dist > 0 and layerThickness > 0:
-								extrusionMMperDist = (v1.e - v0.e) / dist
-								lineWidth = extrusionMMperDist * filamentArea / layerThickness / 2
-
-							normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
-							normal.normalize()
-							v2 = v0 + normal * lineWidth
-							v3 = v1 + normal * lineWidth
-							v0 = v0 - normal * lineWidth
-							v1 = v1 - normal * lineWidth
-
-							glBegin(GL_QUADS)
-							if path.pathType == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
-								glVertex3f(v0.x, v0.y, v0.z - 0.02)
-								glVertex3f(v1.x, v1.y, v1.z - 0.02)
-								glVertex3f(v3.x, v3.y, v3.z - 0.02)
-								glVertex3f(v2.x, v2.y, v2.z - 0.02)
-							else:
-								glVertex3f(v0.x, v0.y, v0.z - 0.01)
-								glVertex3f(v1.x, v1.y, v1.z - 0.01)
-								glVertex3f(v3.x, v3.y, v3.z - 0.01)
-								glVertex3f(v2.x, v2.y, v2.z - 0.01)
-							glEnd()
-					
-						#for v in path['list']:
-						#	glBegin(GL_TRIANGLE_FAN)
-						#	glVertex3f(v.x, v.y, v.z - 0.001)
-						#	for i in xrange(0, 16+1):
-						#		if path['pathType'] == 'FILL':	#Remove depth buffer fighting on infill/wall overlap
-						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.02)
-						#		else:
-						#			glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
-						#	glEnd()
-					else:
-						glBegin(GL_LINE_STRIP)
-						for v in path.list:
-							glVertex3f(v.x, v.y, v.z)
-						glEnd()
-				curLayerNum += 1
-				glEnable(GL_CULL_FACE)
+				opengl.DrawGCodeLayer(layer)
 				glEndList()
+				curLayerNum += 1
 		
 		if self.parent.gcode != None and (self.viewMode == "GCode" or self.viewMode == "Mixed"):
 			glEnable(GL_COLOR_MATERIAL)
