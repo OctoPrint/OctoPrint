@@ -31,11 +31,12 @@ class Action(object):
 	pass
 
 class ProjectObject(stl.stlModel):
-	def __init__(self, filename):
+	def __init__(self, parent, filename):
 		super(ProjectObject, self).__init__()
 
 		self.load(filename)
 
+		self.parent = parent
 		self.filename = filename
 		self.scale = 1.0
 		self.rotate = 0.0
@@ -110,7 +111,7 @@ class ProjectObject(stl.stlModel):
 		self.modelDirty = True
 	
 	def clone(self):
-		p = ProjectObject(self.filename)
+		p = ProjectObject(self.parent, self.filename)
 
 		p.centerX = self.centerX + 5
 		p.centerY = self.centerY + 5
@@ -128,6 +129,16 @@ class ProjectObject(stl.stlModel):
 		p.updateModelTransform()
 		
 		return p
+	
+	def clampXY(self):
+		if self.centerX < -self.getMinimum().x * self.scale + self.parent.extruderOffset[self.extruder].x:
+			self.centerX = -self.getMinimum().x * self.scale + self.parent.extruderOffset[self.extruder].x
+		if self.centerY < -self.getMinimum().y * self.scale + self.parent.extruderOffset[self.extruder].y:
+			self.centerY = -self.getMinimum().y * self.scale + self.parent.extruderOffset[self.extruder].y
+		if self.centerX > self.parent.machineSize.x + self.parent.extruderOffset[self.extruder].x - self.getMaximum().x * self.scale:
+			self.centerX = self.parent.machineSize.x + self.parent.extruderOffset[self.extruder].x - self.getMaximum().x * self.scale
+		if self.centerY > self.parent.machineSize.y + self.parent.extruderOffset[self.extruder].y - self.getMaximum().y * self.scale:
+			self.centerY = self.parent.machineSize.y + self.parent.extruderOffset[self.extruder].y - self.getMaximum().y * self.scale
 
 class projectPlanner(wx.Frame):
 	"Main user interface window"
@@ -273,7 +284,7 @@ class projectPlanner(wx.Frame):
 			while cp.has_section('model_%d' % (i)):
 				section = 'model_%d' % (i)
 				
-				item = ProjectObject(unicode(cp.get(section, 'filename'), "utf-8"))
+				item = ProjectObject(self, unicode(cp.get(section, 'filename'), "utf-8"))
 				item.centerX = float(cp.get(section, 'centerX'))
 				item.centerY = float(cp.get(section, 'centerY'))
 				item.scale = float(cp.get(section, 'scale'))
@@ -326,7 +337,7 @@ class projectPlanner(wx.Frame):
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
 			for filename in dlg.GetPaths():
-				item = ProjectObject(filename)
+				item = ProjectObject(self, filename)
 				profile.putPreference('lastFile', item.filename)
 				self.list.append(item)
 				self.selection = item
@@ -396,6 +407,8 @@ class projectPlanner(wx.Frame):
 				bestAllowedSize = i
 				bestArea = area
 		self._doAutoPlace(bestAllowedSize)
+		for item in self.list:
+			item.clampXY()
 		self.preview.Refresh()
 	
 	def _doAutoPlace(self, allowedSizeY):
@@ -546,14 +559,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				if item != None:
 					item.centerX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
 					item.centerY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
-					if item.centerX < -item.getMinimum().x * item.scale + self.parent.extruderOffset[item.extruder].x:
-						item.centerX = -item.getMinimum().x * item.scale + self.parent.extruderOffset[item.extruder].x
-					if item.centerY < -item.getMinimum().y * item.scale + self.parent.extruderOffset[item.extruder].y:
-						item.centerY = -item.getMinimum().y * item.scale + self.parent.extruderOffset[item.extruder].y
-					if item.centerX > self.parent.machineSize.x + self.parent.extruderOffset[item.extruder].x - item.getMaximum().x * item.scale:
-						item.centerX = self.parent.machineSize.x + self.parent.extruderOffset[item.extruder].x - item.getMaximum().x * item.scale
-					if item.centerY > self.parent.machineSize.y + self.parent.extruderOffset[item.extruder].y - item.getMaximum().y * item.scale:
-						item.centerY = self.parent.machineSize.y + self.parent.extruderOffset[item.extruder].y - item.getMaximum().y * item.scale
+					item.clampXY()
 			self.Refresh()
 		else:
 			self.allowDrag = False
