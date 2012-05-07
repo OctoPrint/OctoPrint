@@ -19,6 +19,8 @@ except:
 from gui import opengl
 from gui import toolbarUtil
 from gui import icon
+from gui import configBase
+from gui import validators
 from util import profile
 from util import util3d
 from util import stl
@@ -159,6 +161,8 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick).SetValue(True)
 		self.toolbar.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
+		self.toolbar.AddSeparator()
+		toolbarUtil.NormalButton(self.toolbar, self.OnPreferences, 'preferences.png', 'Project planner preferences')
 		
 		self.toolbar.Realize()
 
@@ -227,6 +231,11 @@ class projectPlanner(wx.Frame):
 
 	def OnQuit(self, e):
 		self.Close()
+	
+	def OnPreferences(self, e):
+		prefDialog = preferencesDialog(self)
+		prefDialog.Centre()
+		prefDialog.Show(True)
 	
 	def OnSaveProject(self, e):
 		dlg=wx.FileDialog(self, "Save project file", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
@@ -820,6 +829,41 @@ class ProjectSliceProgressWindow(wx.Frame):
 		wx.CallAfter(self.statusText.SetLabel, status)
 		
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
+
+class preferencesDialog(configBase.configWindowBase):
+	def __init__(self, parent):
+		super(preferencesDialog, self).__init__(title="Project Planner Preferences")
+		
+		self.parent = parent
+		wx.EVT_CLOSE(self, self.OnClose)
+		
+		extruderAmount = int(profile.getPreference('extruder_amount'))
+		
+		left, right, main = self.CreateConfigPanel(self)
+		configBase.TitleRow(left, 'Machine head size')
+		c = configBase.SettingRow(left, 'Head size - X towards home (mm)', 'extruder_head_size_min_x', '0', 'Size of your printer head in the X direction, on the Ultimaker your fan is in this direction.', type = 'preference')
+		validators.validFloat(c, 0.1)
+		c = configBase.SettingRow(left, 'Head size - X towards end (mm)', 'extruder_head_size_max_x', '0', 'Size of your printer head in the X direction.', type = 'preference')
+		validators.validFloat(c, 0.1)
+		c = configBase.SettingRow(left, 'Head size - Y towards home (mm)', 'extruder_head_size_min_y', '0', 'Size of your printer head in the Y direction.', type = 'preference')
+		validators.validFloat(c, 0.1)
+		c = configBase.SettingRow(left, 'Head size - Y towards end (mm)', 'extruder_head_size_max_y', '0', 'Size of your printer head in the Y direction.', type = 'preference')
+		validators.validFloat(c, 0.1)
+		
+		self.okButton = wx.Button(left, -1, 'Ok')
+		left.GetSizer().Add(self.okButton, (left.GetSizer().GetRows(), 1))
+		self.okButton.Bind(wx.EVT_BUTTON, self.OnClose)
+		
+		self.MakeModal(True)
+		main.Fit()
+		self.Fit()
+
+	def OnClose(self, e):
+		self.parent.headSizeMin = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0)
+		self.parent.headSizeMax = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0)
+
+		self.MakeModal(False)
+		self.Destroy()
 
 def main():
 	app = wx.App(False)
