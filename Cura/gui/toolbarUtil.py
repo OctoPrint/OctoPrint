@@ -41,7 +41,7 @@ class Toolbar(wx.ToolBar):
 		popup.text.SetLabel(control.helpText)
 		popup.text.Wrap(350)
 		popup.Fit();
-		if os.name == 'darwin':
+		if sys.platform == 'darwin':
 			x, y = self.GetParent().ClientToScreenXY(0, 0)
 			sx, sy = self.GetParent().GetClientSizeTuple()
 		else:
