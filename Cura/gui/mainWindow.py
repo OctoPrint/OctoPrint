@@ -41,7 +41,7 @@ class mainWindow(configBase.configWindowBase):
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
 		i = fileMenu.Append(-1, 'Load model file...')
-		self.Bind(wx.EVT_MENU, self.OnLoadModel, i)
+		self.Bind(wx.EVT_MENU, lambda e: self._showModelLoadDialog(1), i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
@@ -189,23 +189,23 @@ class mainWindow(configBase.configWindowBase):
 		loadButton = wx.Button(self, -1, 'Load Model')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
 		printButton = wx.Button(self, -1, 'Print GCode')
-		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
+		self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(1), loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
 
 		extruderCount = int(profile.getPreference('extruder_amount'))
 		if extruderCount > 1:
 			loadButton2 = wx.Button(self, -1, 'Load Dual')
-			self.Bind(wx.EVT_BUTTON, self.OnLoadModel2, loadButton2)
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(2), loadButton2)
 		if extruderCount > 2:
 			loadButton3 = wx.Button(self, -1, 'Load Tripple')
-			self.Bind(wx.EVT_BUTTON, self.OnLoadModel3, loadButton3)
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(3), loadButton3)
 		if extruderCount > 2:
 			loadButton4 = wx.Button(self, -1, 'Load Quad')
-			self.Bind(wx.EVT_BUTTON, self.OnLoadModel4, loadButton4)
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(4), loadButton4)
 
 		#Also bind double clicking the 3D preview to load an STL file.
-		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
+		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, lambda e: self._showModelLoadDialog(1), self.preview3d.glCanvas)
 
 		#Main sizer, to position the preview window, buttons and tab control
 		sizer = wx.GridBagSizer()

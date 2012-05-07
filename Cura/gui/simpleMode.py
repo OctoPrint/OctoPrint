@@ -51,8 +51,11 @@ class simpleModeWindow(configBase.configWindowBase):
 		menubar.Append(helpMenu, 'Help')
 		self.SetMenuBar(menubar)
 		
-		self.lastPath = ""
-		self.filename = profile.getPreference('lastFile')
+		if profile.getPreference('lastFile') != '':
+			self.filelist = profile.getPreference('lastFile').split(';')
+			self.SetTitle(self.filelist[-1] + ' - Cura - ' + version.getVersion())
+		else:
+			self.filelist = []
 		self.progressPanelList = []
 
 		#Preview window
@@ -116,9 +119,8 @@ class simpleModeWindow(configBase.configWindowBase):
 		sizer.Add(printButton, (1,3), flag=wx.RIGHT, border=5)
 		self.sizer = sizer
 
-		if self.filename != "None":
-			self.preview3d.loadModelFiles([self.filename])
-			self.lastPath = os.path.split(self.filename)[0]
+		if len(self.filelist) > 0:
+			self.preview3d.loadModelFiles(self.filelist)
 
 		self.updateProfileToControls()
 
@@ -136,7 +138,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
 
 	def OnCustomFirmware(self, e):
-		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetPath()
@@ -150,20 +152,17 @@ class simpleModeWindow(configBase.configWindowBase):
 		self.updateProfileToControls()
 
 	def OnLoadModel(self, e):
-		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
-			self.filename=dlg.GetPath()
-			profile.putPreference('lastFile', self.filename)
-			if not(os.path.exists(self.filename)):
-				return
-			self.lastPath = os.path.split(self.filename)[0]
-			self.preview3d.loadModelFiles([self.filename])
+			self.filelist = [dlg.GetPath()]
+			profile.putPreference('lastFile', ';'.join(self.filelist))
+			self.preview3d.loadModelFiles(self.filelist)
 			self.preview3d.setViewMode("Normal")
 		dlg.Destroy()
 	
 	def OnSlice(self, e):
-		if self.filename == None:
+		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file before you can slice it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		#save the current profile so we can put it back latter
@@ -262,7 +261,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('bottom_thickness', '0.0')
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
-		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
+		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
 		self.sizer.Layout()
 		newSize = self.GetSize();
@@ -274,13 +273,13 @@ class simpleModeWindow(configBase.configWindowBase):
 		profile.loadGlobalProfileFromString(oldProfile)
 	
 	def OnPrint(self, e):
-		if self.filename == None:
+		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		if not os.path.exists(self.filename[: self.filename.rfind('.')] + "_export.gcode"):
+		if not os.path.exists(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode"):
 			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		printWindow.printFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
+		printWindow.printFile(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode")
 
 	def OnNormalSwitch(self, e):
 		from gui import mainWindow
