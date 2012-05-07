@@ -447,39 +447,30 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.gcodeDisplayList = glGenLists(len(self.parent.gcode.layerList));
 				self.gcodeDisplayListCount = len(self.parent.gcode.layerList)
 			self.parent.gcodeDirty = False
-			self.gcodeDisplayListMade = []
-			for idx in xrange(0, len(self.parent.gcode.layerList)):
-				self.gcodeDisplayListMade.append(False)
+			self.gcodeDisplayListMade = 0
 		
-		if self.gcodeDisplayListMade != None:
-			curLayerNum = 0
-			for layer in self.parent.gcode.layerList:
-				if not self.gcodeDisplayListMade[curLayerNum]:
-					glNewList(self.gcodeDisplayList + curLayerNum, GL_COMPILE)
-					opengl.DrawGCodeLayer(layer)
-					glEndList()
-					self.gcodeDisplayListMade[curLayerNum] = True
-					self.Refresh()
-					break
-				curLayerNum += 1
-			if curLayerNum == len(self.parent.gcode.layerList):
-				self.gcodeDisplayListMade = None
+		if self.parent.gcode != None and self.gcodeDisplayListMade < len(self.parent.gcode.layerList):
+			glNewList(self.gcodeDisplayList + self.gcodeDisplayListMade, GL_COMPILE)
+			opengl.DrawGCodeLayer(self.parent.gcode.layerList[self.gcodeDisplayListMade])
+			glEndList()
+			self.gcodeDisplayListMade += 1
+			self.Refresh()
 		
 		if self.parent.gcode != None and (self.viewMode == "GCode" or self.viewMode == "Mixed"):
 			glEnable(GL_COLOR_MATERIAL)
 			glEnable(GL_LIGHTING)
-			for i in xrange(0, self.parent.layerSpin.GetValue() + 1):
+			drawUpToLayer = min(self.gcodeDisplayListMade, self.parent.layerSpin.GetValue() + 1)
+			for i in xrange(0, drawUpToLayer):
 				c = 1.0
 				if i < self.parent.layerSpin.GetValue():
-					c = 0.9 - (self.parent.layerSpin.GetValue() - i) * 0.1
+					c = 0.9 - (drawUpToLayer - i) * 0.1
 					if c < 0.4:
 						c = (0.4 + c) / 2
 					if c < 0.1:
 						c = 0.1
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, [0,0,0,0])
 				glLightfv(GL_LIGHT0, GL_AMBIENT, [c,c,c,c])
-				if self.gcodeDisplayListMade == None or self.gcodeDisplayListMade[i]:
-					glCallList(self.gcodeDisplayList + i)
+				glCallList(self.gcodeDisplayList + i)
 			glDisable(GL_LIGHTING)
 			glDisable(GL_COLOR_MATERIAL)
 			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0]);
