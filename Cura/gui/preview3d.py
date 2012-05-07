@@ -372,6 +372,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.offsetY = 0
 		self.view3D = True
 		self.gcodeDisplayList = None
+		self.gcodeDisplayListMade = None
 		self.gcodeDisplayListCount = 0
 		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
 	
@@ -446,13 +447,23 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.gcodeDisplayList = glGenLists(len(self.parent.gcode.layerList));
 				self.gcodeDisplayListCount = len(self.parent.gcode.layerList)
 			self.parent.gcodeDirty = False
-			
+			self.gcodeDisplayListMade = []
+			for idx in xrange(0, len(self.parent.gcode.layerList)):
+				self.gcodeDisplayListMade.append(False)
+		
+		if self.gcodeDisplayListMade != None:
 			curLayerNum = 0
 			for layer in self.parent.gcode.layerList:
-				glNewList(self.gcodeDisplayList + curLayerNum, GL_COMPILE)
-				opengl.DrawGCodeLayer(layer)
-				glEndList()
+				if not self.gcodeDisplayListMade[curLayerNum]:
+					glNewList(self.gcodeDisplayList + curLayerNum, GL_COMPILE)
+					opengl.DrawGCodeLayer(layer)
+					glEndList()
+					self.gcodeDisplayListMade[curLayerNum] = True
+					self.Refresh()
+					break
 				curLayerNum += 1
+			if curLayerNum == len(self.parent.gcode.layerList):
+				self.gcodeDisplayListMade = None
 		
 		if self.parent.gcode != None and (self.viewMode == "GCode" or self.viewMode == "Mixed"):
 			glEnable(GL_COLOR_MATERIAL)
@@ -467,7 +478,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 						c = 0.1
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, [0,0,0,0])
 				glLightfv(GL_LIGHT0, GL_AMBIENT, [c,c,c,c])
-				glCallList(self.gcodeDisplayList + i)
+				if self.gcodeDisplayListMade == None or self.gcodeDisplayListMade[i]:
+					glCallList(self.gcodeDisplayList + i)
 			glDisable(GL_LIGHTING)
 			glDisable(GL_COLOR_MATERIAL)
 			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0]);

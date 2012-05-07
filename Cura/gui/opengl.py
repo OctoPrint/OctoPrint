@@ -294,13 +294,6 @@ def DrawGCodeLayer(layer):
 				prevNormal = normal
 				prevVv1 = vv1
 				prevVv3 = vv3
-		
-			#for v in path.list:
-			#	glBegin(GL_TRIANGLE_FAN)
-			#	glVertex3f(v.x, v.y, v.z - 0.001)
-			#	for i in xrange(0, 16+1):
-			#		glVertex3f(v.x + math.cos(math.pi*2/16*i) * lineWidth, v.y + math.sin(math.pi*2/16*i) * lineWidth, v.z - 0.01)
-			#	glEnd()
 		else:
 			glBegin(GL_LINE_STRIP)
 			for v in path.list:
