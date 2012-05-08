@@ -64,7 +64,7 @@ class configWindowBase(wx.Frame):
 				self.popup.text.SetLabel(setting.helpText)
 			self.popup.text.Wrap(350)
 			self.popup.Fit()
-			if os.name == 'darwin':
+			if sys.platform == 'darwin':
 				x, y = self.ClientToScreenXY(0, 0)
 				sx, sy = self.GetClientSizeTuple()
 			else:

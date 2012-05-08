@@ -180,11 +180,13 @@ class UltimakerCheckupPage(InfoPage):
 			wx.CallAfter(self.AddProgressText, "Error: Missing start message.")
 			self.comm.close()
 			return
-			
+		
+		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+		time.sleep(3)
+		
 		wx.CallAfter(self.AddProgressText, "Disabling step motors...")
 		if self.DoCommCommandWithTimeout('M84') == False:
 			wx.CallAfter(self.AddProgressText, "Error: Missing reply to Deactivate steppers (M84).")
-			wx.CallAfter(self.AddProgressText, "Possible cause: Temperature MIN/MAX.\nCheck temperature sensor connections.")
 			self.comm.close()
 			return
 
@@ -289,6 +291,7 @@ class UltimakerCheckupPage(InfoPage):
 			if line == '':
 				self.comm.close()
 				return False
+			print line
 			if line.startswith(replyStart):
 				break
 		t.cancel()
@@ -372,6 +375,9 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 				return
 			if line.startswith('start'):
 				break
+		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+		time.sleep(3)
+		
 		self.sendGCommand('M302') #Disable cold extrusion protection
 		self.sendGCommand("M92 E%f" % (currentEValue));
 		self.sendGCommand("G92 E0");
@@ -392,6 +398,9 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 				return
 			if line.startswith('start'):
 				break
+		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+		time.sleep(3)
+		
 		self.sendGCommand('M104 S200') #Set the temperature to 200C, should be enough to get PLA and ABS out.
 		wx.MessageBox('Wait till you can remove the filament from the machine, and press OK.\n(Temperature is set to 200C)', 'Machine heatup', wx.OK | wx.ICON_INFORMATION)
 		self.sendGCommand('M104 S0')

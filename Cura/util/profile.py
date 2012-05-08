@@ -122,6 +122,13 @@ G92 E0
 G1 Z0 F{max_z_speed}
 """,
 #######################################################################################
+	'switchExtruder.gcode': """;Switch between the current extruder and the next extruder, when printing with multiple extruders.
+G1 E-5 F5000
+G92 E0
+T{extruder}
+G1 E5 F5000
+G92 E0
+""",
 }
 preferencesDefaultSettings = {
 	'wizardDone': 'False',

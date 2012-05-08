@@ -138,7 +138,7 @@ def getProfileInformation():
 			'Widen_Width_over_Edge_Width_ratio': DEFSET,
 		},'inset': {
 			'Add_Custom_Code_for_Temperature_Reading': "False",
-			'Infill_in_Direction_of_Bridge': "True",
+			'Infill_in_Direction_of_Bridge': ifSettingAboveZero('fill_density'),
 			'Infill_Width': storedSettingFloat("nozzle_size"),
 			'Loop_Order_Choice': DEFSET,
 			'Overlap_Removal_Width_over_Perimeter_Width_ratio': DEFSET,

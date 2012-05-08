@@ -10,9 +10,10 @@ from util import util3d
 from util import profile
 
 class gcodePath(object):
-	def __init__(self, newType, pathType, startPoint):
+	def __init__(self, newType, pathType, layerThickness, startPoint):
 		self.type = newType
 		self.pathType = pathType
+		self.layerThickness = layerThickness
 		self.list = [startPoint]
 
 class gcode(object):
@@ -61,10 +62,11 @@ class gcode(object):
 		scale = 1.0
 		posAbs = True
 		feedRate = 3600
+		layerThickness = 0.1
 		pathType = 'CUSTOM';
 		startCodeDone = False
 		currentLayer = []
-		currentPath = gcodePath('move', pathType, pos.copy())
+		currentPath = gcodePath('move', pathType, layerThickness, pos.copy())
 		currentPath.list[0].e = totalExtrusion
 		currentLayer.append(currentPath)
 		for line in gcodeFile:
@@ -88,6 +90,9 @@ class gcode(object):
 					pathType = 'WALL-INNER'
 				elif comment == 'skirt':
 					pathType = 'SKIRT'
+				if comment.startswith('LAYER:'):
+					self.layerList.append(currentLayer)
+					currentLayer = []
 				if pathType != "CUSTOM":
 					startCodeDone = True
 				line = line[0:line.find(';')]
@@ -126,9 +131,8 @@ class gcode(object):
 						else:
 							pos.z += z * scale
 						#Check if we have a new layer.
-						if oldPos.z < pos.z and startCodeDone and len(currentLayer) > 0:
-							self.layerList.append(currentLayer)
-							currentLayer = []
+						if oldPos.z != pos.z:
+							layerThickness = abs(oldPos.z - pos.z)
 					if f is not None:
 						feedRate = f
 					if x is not None or y is not None or z is not None:
@@ -152,7 +156,7 @@ class gcode(object):
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
 					if currentPath.type != moveType or currentPath.pathType != pathType:
-						currentPath = gcodePath(moveType, pathType, currentPath.list[-1])
+						currentPath = gcodePath(moveType, pathType, layerThickness, currentPath.list[-1])
 						currentLayer.append(currentPath)
 					newPos = pos.copy()
 					newPos.e = totalExtrusion
