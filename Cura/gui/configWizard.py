@@ -174,6 +174,11 @@ class UltimakerCheckupPage(InfoPage):
 	def OnRun(self):
 		wx.CallAfter(self.AddProgressText, "Connecting to machine...")
 		self.comm = machineCom.MachineCom()
+		
+		if not self.comm.isOpen():
+			wx.CallAfter(self.AddProgressText, "Error: Failed to open serial port to machine")
+			wx.CallAfter(self.AddProgressText, "If this keeps happening, try disconnecting and reconnecting the USB cable")
+			return
 
 		wx.CallAfter(self.AddProgressText, "Checking start message...")
 		if self.DoCommCommandWithTimeout(None, 'start') == False:
@@ -288,10 +293,10 @@ class UltimakerCheckupPage(InfoPage):
 		t.start()
 		while True:
 			line = self.comm.readline()
-			if line == '':
+			if line == '' or line == None:
 				self.comm.close()
 				return False
-			print line
+			print line.rstrip()
 			if line.startswith(replyStart):
 				break
 		t.cancel()
@@ -369,6 +374,10 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.extrudeButton.Enable(False)
 		currentEValue = float(self.stepsPerEInput.GetValue())
 		self.comm = machineCom.MachineCom()
+		if not self.comm.isOpen():
+			wx.CallAfter(self.AddProgressText, "Error: Failed to open serial port to machine")
+			wx.CallAfter(self.AddProgressText, "If this keeps happening, try disconnecting and reconnecting the USB cable")
+			return
 		while True:
 			line = self.comm.readline()
 			if line == '':
@@ -392,6 +401,10 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 	
 	def OnHeatRun(self):
 		self.comm = machineCom.MachineCom()
+		if not self.comm.isOpen():
+			wx.CallAfter(self.AddProgressText, "Error: Failed to open serial port to machine")
+			wx.CallAfter(self.AddProgressText, "If this keeps happening, try disconnecting and reconnecting the USB cable")
+			return
 		while True:
 			line = self.comm.readline()
 			if line == '':
