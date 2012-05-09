@@ -359,12 +359,16 @@ def calculateSolidLayerCount():
 def replaceTagMatch(m):
 	tag = m.group(0)[1:-1]
 	if tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
-		return str(getProfileSettingFloat(tag) * 60)
-	if isProfileSetting(tag):
-		return str(getProfileSettingFloat(tag))
-	if isPreference(tag):
-		return str(getProfileSettingFloat(tag))
-	return tag
+		f = getProfileSettingFloat(tag) * 60
+	elif isProfileSetting(tag):
+		f = getProfileSettingFloat(tag)
+	elif isPreference(tag):
+		f = getProfileSettingFloat(tag)
+	else:
+		return tag
+	if (f % 1) == 0:
+		return str(int(f))
+	return str(f)
 
 ### Get aleration raw contents. (Used internally in Cura)
 def getAlterationFile(filename):

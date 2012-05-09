@@ -46,6 +46,7 @@ class ProjectObject(stl.stlModel):
 		self.swapXZ = False
 		self.swapYZ = False
 		self.extruder = 0
+		self.profile = None
 		
 		self.modelDisplayList = None
 		self.modelDirty = False
@@ -183,6 +184,7 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveUp, 'move-up.png', 'Move model up in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveDown, 'move-down.png', 'Move model down in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnCopy, 'copy.png', 'Make a copy of the current selected object')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnAutoPlace, 'autoplace.png', 'Automaticly organize the objects on the platform.')
 		self.toolbar2.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
@@ -225,7 +227,7 @@ class projectPlanner(wx.Frame):
 		sizer.Add(self.scaleCtrl, (0,1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
 		sizer.Add(wx.StaticText(panel, -1, 'Rotate'), (1,0), flag=wx.ALIGN_CENTER_VERTICAL)
 		sizer.Add(self.rotateCtrl, (1,1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
-		
+
 		if int(profile.getPreference('extruder_amount')) > 1:
 			self.extruderCtrl = wx.ComboBox(panel, -1, '1', choices=map(str, range(1, int(profile.getPreference('extruder_amount'))+1)), style=wx.CB_DROPDOWN|wx.CB_READONLY)
 			sizer.Add(wx.StaticText(panel, -1, 'Extruder'), (2,0), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -268,6 +270,8 @@ class projectPlanner(wx.Frame):
 				cp.set(section, 'swapXZ', str(item.swapXZ))
 				cp.set(section, 'swapYZ', str(item.swapYZ))
 				cp.set(section, 'extruder', str(item.extruder+1))
+				if item.profile != None:
+					cp.set(section, 'profile', item.profile)
 				i += 1
 			cp.write(open(dlg.GetPath(), "w"))
 		dlg.Destroy()
@@ -295,7 +299,9 @@ class projectPlanner(wx.Frame):
 				item.swapXZ = cp.get(section, 'swapXZ') == 'True'
 				item.swapYZ = cp.get(section, 'swapYZ') == 'True'
 				if cp.has_option(section, 'extruder'):
-					item.extuder = int(cp.get(section, 'extruder'))-1
+					item.extuder = int(cp.get(section, 'extruder')) - 1
+				if cp.has_option(section, 'profile'):
+					item.profile = cp.get(section, 'profile')
 				item.updateModelTransform()
 				i += 1
 				
@@ -419,19 +425,27 @@ class projectPlanner(wx.Frame):
 			extraSizeMin = extraSizeMin + util3d.Vector3(skirtSize, skirtSize, 0)
 			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
 
-		posX = self.machineSize.x
+		if extraSizeMin.x > extraSizeMax.x:
+			posX = self.machineSize.x
+			dirX = -1
+		else:
+			posX = 0
+			dirX = 1
 		posY = 0
+		dirY = 1
+		
 		minX = self.machineSize.x
 		minY = self.machineSize.y
 		maxX = 0
 		maxY = 0
-		dirX = -1
-		dirY = 1
 		for item in self.list:
 			item.centerX = posX + item.getMaximum().x * item.scale * dirX
 			item.centerY = posY + item.getMaximum().y * item.scale * dirY
 			if item.centerY + item.getSize().y >= allowedSizeY:
-				posX = minX - extraSizeMax.x - 1
+				if dirX < 0:
+					posX = minX - extraSizeMax.x - 1
+				else:
+					posX = maxX + extraSizeMin.x + 1
 				posY = 0
 				item.centerX = posX + item.getMaximum().x * item.scale * dirX
 				item.centerY = posY + item.getMaximum().y * item.scale * dirY
@@ -442,16 +456,20 @@ class projectPlanner(wx.Frame):
 			maxY = max(maxY, item.centerY + item.getSize().y * item.scale / 2)
 		
 		for item in self.list:
-			item.centerX -= minX / 2
+			if dirX < 0:
+				item.centerX -= minX / 2
+			else:
+				item.centerX += (self.machineSize.x - maxX) / 2
 			item.centerY += (self.machineSize.y - maxY) / 2
 		
-		if minX < 0:
+		if minX < 0 or maxX > self.machineSize.x:
 			return ((maxX - minX) + (maxY - minY)) * 100
 		
 		return (maxX - minX) + (maxY - minY)
 
 	def OnSlice(self, e):
 		put = profile.setTempOverride
+		oldProfile = profile.getGlobalProfileString()
 
 		put('model_multiply_x', '1')
 		put('model_multiply_y', '1')
@@ -462,6 +480,8 @@ class projectPlanner(wx.Frame):
 		clearZ = 0
 		actionList = []
 		for item in self.list:
+			if item.profile != None and os.path.isfile(item.profile):
+				profile.loadGlobalProfile(item.profile)
 			put('machine_center_x', item.centerX - self.extruderOffset[item.extruder].x)
 			put('machine_center_y', item.centerY - self.extruderOffset[item.extruder].y)
 			put('model_scale', item.scale)
@@ -481,6 +501,9 @@ class projectPlanner(wx.Frame):
 			clearZ = max(clearZ, item.getMaximum().z * item.scale)
 			action.clearZ = clearZ
 			actionList.append(action)
+
+			if item.profile != None:
+				profile.loadGlobalProfileFromString(oldProfile)
 		
 		#Restore the old profile.
 		profile.resetTempOverride()
@@ -553,8 +576,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				if self.pitch < 10:
 					self.pitch = 10
 			else:
-				#self.offsetX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
-				#self.offsetY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
 				item = self.parent.selection
 				if item != None:
 					item.centerX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
@@ -726,7 +747,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.progressGauge2 = wx.Gauge(self, -1)
 		self.progressGauge2.SetRange(len(self.actionList))
 		self.abortButton = wx.Button(self, -1, "Abort")
-		self.sizer.Add(self.statusText, (0,0), flag=wx.ALIGN_CENTER)
+		self.sizer.Add(self.statusText, (0,0))
 		self.sizer.Add(self.progressGauge, (1, 0), flag=wx.EXPAND)
 		self.sizer.Add(self.progressGauge2, (2, 0), flag=wx.EXPAND)
 
@@ -764,6 +785,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		resultFile = open(self.resultFilename, "w")
 		put = profile.setTempOverride
 		for action in self.actionList:
+			wx.CallAfter(self.SetTitle, "Building: [%d/%d]"  % (self.actionList.index(action) + 1, len(self.actionList)))
 			p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			line = p.stdout.readline()
 		
@@ -826,15 +848,17 @@ class ProjectSliceProgressWindow(wx.Frame):
 		
 		self.abort = True
 		sliceTime = time.time() - self.sliceStartTime
-		status = "Slicing took: %02d:%02d\n" % (sliceTime / 60, sliceTime % 60)
-		status = "Filament: %.2fm %.2fg\n" % (gcode.extrusionAmount / 1000, gcode.calculateWeight() * 1000)
-		status += "Print time: %02d:%02d\n" % (int(gcode.totalMoveTimeMinute / 60), int(gcode.totalMoveTimeMinute % 60))
+		status = "Build: %s" % (self.resultFilename)
+		status += "\nSlicing took: %02d:%02d" % (sliceTime / 60, sliceTime % 60)
+		status += "\nFilament: %.2fm %.2fg" % (gcode.extrusionAmount / 1000, gcode.calculateWeight() * 1000)
+		status += "\nPrint time: %02d:%02d" % (int(gcode.totalMoveTimeMinute / 60), int(gcode.totalMoveTimeMinute % 60))
 		cost = gcode.calculateCost()
 		if cost != False:
-			status += "Cost: %s\n" % (cost)
+			status += "\nCost: %s" % (cost)
 		wx.CallAfter(self.statusText.SetLabel, status)
-		
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
+		wx.CallAfter(self.Layout)
+		wx.CallAfter(self.Fit)
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):
