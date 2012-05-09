@@ -747,7 +747,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.progressGauge2 = wx.Gauge(self, -1)
 		self.progressGauge2.SetRange(len(self.actionList))
 		self.abortButton = wx.Button(self, -1, "Abort")
-		self.sizer.Add(self.statusText, (0,0), flag=wx.ALIGN_CENTER)
+		self.sizer.Add(self.statusText, (0,0))
 		self.sizer.Add(self.progressGauge, (1, 0), flag=wx.EXPAND)
 		self.sizer.Add(self.progressGauge2, (2, 0), flag=wx.EXPAND)
 
@@ -785,6 +785,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		resultFile = open(self.resultFilename, "w")
 		put = profile.setTempOverride
 		for action in self.actionList:
+			wx.CallAfter(self.SetTitle, "Building: [%d/%d]"  % (self.actionList.index(action) + 1, len(self.actionList)))
 			p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			line = p.stdout.readline()
 		
@@ -847,15 +848,17 @@ class ProjectSliceProgressWindow(wx.Frame):
 		
 		self.abort = True
 		sliceTime = time.time() - self.sliceStartTime
-		status = "Slicing took: %02d:%02d\n" % (sliceTime / 60, sliceTime % 60)
-		status = "Filament: %.2fm %.2fg\n" % (gcode.extrusionAmount / 1000, gcode.calculateWeight() * 1000)
-		status += "Print time: %02d:%02d\n" % (int(gcode.totalMoveTimeMinute / 60), int(gcode.totalMoveTimeMinute % 60))
+		status = "Build: %s" % (self.resultFilename)
+		status += "\nSlicing took: %02d:%02d" % (sliceTime / 60, sliceTime % 60)
+		status += "\nFilament: %.2fm %.2fg" % (gcode.extrusionAmount / 1000, gcode.calculateWeight() * 1000)
+		status += "\nPrint time: %02d:%02d" % (int(gcode.totalMoveTimeMinute / 60), int(gcode.totalMoveTimeMinute % 60))
 		cost = gcode.calculateCost()
 		if cost != False:
-			status += "Cost: %s\n" % (cost)
+			status += "\nCost: %s" % (cost)
 		wx.CallAfter(self.statusText.SetLabel, status)
-		
 		wx.CallAfter(self.abortButton.SetLabel, 'Close')
+		wx.CallAfter(self.Layout)
+		wx.CallAfter(self.Fit)
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):
