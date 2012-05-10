@@ -141,13 +141,13 @@ class printWindow(wx.Frame):
 		sizer.Add(PrintCommandButton(self, 'G1 X10 F6000', 'print-move-x10.png'), pos=(3,5))
 		sizer.Add(PrintCommandButton(self, 'G1 X100 F6000', 'print-move-x100.png'), pos=(3,6))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'object-max-size.png'), pos=(0,6))
-		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'object-max-size.png'), pos=(1,6))
-		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'object-max-size.png'), pos=(2,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'print-move-z10.png'), pos=(0,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'print-move-z1.png'), pos=(1,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'print-move-z0.1.png'), pos=(2,6))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Z-0.1 F200', 'object-max-size.png'), pos=(4,6))
-		sizer.Add(PrintCommandButton(self, 'G1 Z-1 F200', 'object-max-size.png'), pos=(5,6))
-		sizer.Add(PrintCommandButton(self, 'G1 Z-10 F200', 'object-max-size.png'), pos=(6,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-0.1 F200', 'print-move-z-0.1.png'), pos=(4,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-1 F200', 'print-move-z-1.png'), pos=(5,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-10 F200', 'print-move-z-10.png'), pos=(6,6))
 
 		self.sizer.AddGrowableRow(3)
 		self.sizer.AddGrowableCol(0)
