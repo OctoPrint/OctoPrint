@@ -156,10 +156,12 @@ class MachineCom():
 					print "Connecting to: %s %i" % (port, baudrate)
 					programmer.connect(port)
 					programmer.close()
+					time.sleep(1)
 					self.serial = Serial(port, baudrate, timeout=2)
 					break
-				except ispBase.IspError:
+				except ispBase.IspError as (e):
 					print "Error while connecting to %s %i" % (port, baudrate)
+					print e
 					pass
 				except:
 					print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]

@@ -65,6 +65,7 @@ class PrintCommandButton(buttons.GenBitmapButton):
 		self.Bind(wx.EVT_BUTTON, self.OnClick)
 
 	def OnClick(self, e):
+		self.parent.sendCommand("G91")
 		self.parent.sendCommand(self.command)
 		e.Skip()
 
@@ -134,6 +135,8 @@ class printWindow(wx.Frame):
 		sizer.Add(PrintCommandButton(self, 'G1 X-10 F6000', 'print-move-x-10.png'), pos=(3,1))
 		sizer.Add(PrintCommandButton(self, 'G1 X-1 F6000', 'print-move-x-1.png'), pos=(3,2))
 
+		sizer.Add(PrintCommandButton(self, 'G28 X0 Y0', 'exit.png'), pos=(3,3))
+
 		sizer.Add(PrintCommandButton(self, 'G1 X1 F6000', 'print-move-x1.png'), pos=(3,4))
 		sizer.Add(PrintCommandButton(self, 'G1 X10 F6000', 'print-move-x10.png'), pos=(3,5))
 		sizer.Add(PrintCommandButton(self, 'G1 X100 F6000', 'print-move-x100.png'), pos=(3,6))
@@ -142,9 +145,9 @@ class printWindow(wx.Frame):
 		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'object-max-size.png'), pos=(1,6))
 		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'object-max-size.png'), pos=(2,6))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'object-max-size.png'), pos=(4,6))
-		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'object-max-size.png'), pos=(5,6))
-		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'object-max-size.png'), pos=(6,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-0.1 F200', 'object-max-size.png'), pos=(4,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-1 F200', 'object-max-size.png'), pos=(5,6))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-10 F200', 'object-max-size.png'), pos=(6,6))
 
 		self.sizer.AddGrowableRow(3)
 		self.sizer.AddGrowableCol(0)

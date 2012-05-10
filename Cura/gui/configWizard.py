@@ -375,8 +375,9 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		currentEValue = float(self.stepsPerEInput.GetValue())
 		self.comm = machineCom.MachineCom()
 		if not self.comm.isOpen():
-			wx.CallAfter(self.AddProgressText, "Error: Failed to open serial port to machine")
-			wx.CallAfter(self.AddProgressText, "If this keeps happening, try disconnecting and reconnecting the USB cable")
+			wx.MessageBox("Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable", 'Printer error', wx.OK | wx.ICON_INFORMATION)
+			self.heatButton.Enable(True)
+			self.extrudeButton.Enable(True)
 			return
 		while True:
 			line = self.comm.readline()
@@ -400,14 +401,19 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		threading.Thread(target=self.OnHeatRun).start()
 	
 	def OnHeatRun(self):
+		self.heatButton.Enable(False)
+		self.extrudeButton.Enable(False)
 		self.comm = machineCom.MachineCom()
 		if not self.comm.isOpen():
-			wx.CallAfter(self.AddProgressText, "Error: Failed to open serial port to machine")
-			wx.CallAfter(self.AddProgressText, "If this keeps happening, try disconnecting and reconnecting the USB cable")
+			wx.MessageBox("Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable", 'Printer error', wx.OK | wx.ICON_INFORMATION)
+			self.heatButton.Enable(True)
+			self.extrudeButton.Enable(True)
 			return
 		while True:
 			line = self.comm.readline()
 			if line == '':
+				self.heatButton.Enable(True)
+				self.extrudeButton.Enable(True)
 				return
 			if line.startswith('start'):
 				break
@@ -419,6 +425,8 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.sendGCommand('M104 S0')
 		time.sleep(1)
 		self.comm.close()
+		self.heatButton.Enable(True)
+		self.extrudeButton.Enable(True)
 	
 	def sendGCommand(self, cmd):
 		self.comm.sendCommand(cmd) #Disable cold extrusion protection
