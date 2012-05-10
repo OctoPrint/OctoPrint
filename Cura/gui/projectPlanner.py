@@ -181,10 +181,13 @@ class projectPlanner(wx.Frame):
 		self.toolbar2 = toolbarUtil.Toolbar(self)
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAddModel, 'object-add.png', 'Add model')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnRemModel, 'object-remove.png', 'Remove model')
+		self.toolbar2.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveUp, 'move-up.png', 'Move model up in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveDown, 'move-down.png', 'Move model down in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnCopy, 'copy.png', 'Make a copy of the current selected object')
+		self.toolbar2.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAutoPlace, 'autoplace.png', 'Automaticly organize the objects on the platform.')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnSlice, 'slice.png', 'Slice to project into a gcode file.')
 		self.toolbar2.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
