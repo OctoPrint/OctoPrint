@@ -126,6 +126,7 @@ class ProjectObject(stl.stlModel):
 		p.swapXZ = self.swapXZ
 		p.swapYZ = self.swapYZ
 		p.extruder = self.extruder
+		p.profile = self.profile
 		
 		p.updateModelTransform()
 		
@@ -185,6 +186,7 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveUp, 'move-up.png', 'Move model up in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveDown, 'move-down.png', 'Move model down in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnCopy, 'copy.png', 'Make a copy of the current selected object')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnSetCustomProfile, 'set-profile.png', 'Set a custom profile to be used to slice a specific object.')
 		self.toolbar2.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAutoPlace, 'autoplace.png', 'Automaticly organize the objects on the platform.')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnSlice, 'slice.png', 'Slice to project into a gcode file.')
@@ -286,7 +288,6 @@ class projectPlanner(wx.Frame):
 			cp = ConfigParser.ConfigParser()
 			cp.read(dlg.GetPath())
 			self.list = []
-			self.listbox.Clear()
 			i = 0
 			while cp.has_section('model_%d' % (i)):
 				section = 'model_%d' % (i)
@@ -309,9 +310,9 @@ class projectPlanner(wx.Frame):
 				i += 1
 				
 				self.list.append(item)
-				self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
-			
-			self.listbox.SetSelection(len(self.list)-1)
+
+			self.selected = self.list[0]
+			self._updateListbox()			
 			self.OnListSelect(None)
 			self.preview.Refresh()
 
@@ -351,6 +352,7 @@ class projectPlanner(wx.Frame):
 				self.list.append(item)
 				self.selection = item
 				self._updateListbox()
+				self.OnListSelect(None)
 		self.preview.Refresh()
 		dlg.Destroy()
 	
@@ -394,10 +396,26 @@ class projectPlanner(wx.Frame):
 		self._updateListbox()
 		self.preview.Refresh()
 	
+	def OnSetCustomProfile(self, e):
+		if self.selection == None:
+			return
+
+		dlg=wx.FileDialog(self, "Select profile", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("Profile files (*.ini)|*.ini;*.INI")
+		if dlg.ShowModal() == wx.ID_OK:
+			self.selection.profile = dlg.GetPath()
+		else:
+			self.selection.profile = None
+		self._updateListbox()
+		dlg.Destroy()
+	
 	def _updateListbox(self):
 		self.listbox.Clear()
 		for item in self.list:
-			self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
+			if item.profile != None:
+				self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1] + " *")
+			else:
+				self.listbox.AppendAndEnsureVisible(os.path.split(item.filename)[1])
 		if self.selection in self.list:
 			self.listbox.SetSelection(self.list.index(self.selection))
 		elif len(self.list) > 0:
