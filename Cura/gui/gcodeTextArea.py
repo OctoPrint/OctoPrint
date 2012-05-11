@@ -3,7 +3,7 @@ import sys,math,os
 
 from util import profile
 
-if sys.platform == 'darwin':
+if False and sys.platform == 'darwin':
 	class GcodeTextArea(wx.TextCtrl):
 		def __init__(self, parent):
 			super(GcodeTextArea, self).__init__(parent, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
