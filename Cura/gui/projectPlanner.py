@@ -21,11 +21,13 @@ from gui import toolbarUtil
 from gui import icon
 from gui import configBase
 from gui import validators
+from gui import printWindow
 from util import profile
 from util import util3d
 from util import stl
 from util import sliceRun
 from util import gcodeInterpreter
+from util import exporer
 
 class Action(object):
 	pass
@@ -770,11 +772,11 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.progressGauge2 = wx.Gauge(self, -1)
 		self.progressGauge2.SetRange(len(self.actionList))
 		self.abortButton = wx.Button(self, -1, "Abort")
-		self.sizer.Add(self.statusText, (0,0))
-		self.sizer.Add(self.progressGauge, (1, 0), flag=wx.EXPAND)
-		self.sizer.Add(self.progressGauge2, (2, 0), flag=wx.EXPAND)
+		self.sizer.Add(self.statusText, (0,0), span=(1,3))
+		self.sizer.Add(self.progressGauge, (1, 0), span=(1,3), flag=wx.EXPAND)
+		self.sizer.Add(self.progressGauge2, (2, 0), span=(1,3), flag=wx.EXPAND)
 
-		self.sizer.Add(self.abortButton, (3,0), flag=wx.ALIGN_CENTER)
+		self.sizer.Add(self.abortButton, (3,0), span=(1,3), flag=wx.ALIGN_CENTER)
 		self.sizer.AddGrowableCol(0)
 		self.sizer.AddGrowableRow(0)
 
@@ -879,9 +881,28 @@ class ProjectSliceProgressWindow(wx.Frame):
 		if cost != False:
 			status += "\nCost: %s" % (cost)
 		wx.CallAfter(self.statusText.SetLabel, status)
-		wx.CallAfter(self.abortButton.SetLabel, 'Close')
-		wx.CallAfter(self.Layout)
-		wx.CallAfter(self.Fit)
+		wx.CallAfter(self.OnSliceDone)
+	
+	def OnSliceDone(self):
+		self.abortButton.Destroy()
+		self.closeButton = wx.Button(self, -1, "Close")
+		self.printButton = wx.Button(self, -1, "Print")
+		self.sizer.Add(self.closeButton, (3,0), span=(1,1))
+		self.sizer.Add(self.printButton, (3,1), span=(1,1))
+		if exporer.hasExporer():
+			self.openFileLocationButton = wx.Button(self, -1, "Open file location")
+			self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
+			self.sizer.Add(self.openFileLocationButton, (3,2), span=(1,1))
+		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.closeButton)
+		self.Bind(wx.EVT_BUTTON, self.OnPrint, self.printButton)
+		self.Layout()
+		self.Fit()
+
+	def OnOpenFileLocation(self, e):
+		exporer.openExporer(self.resultFilename)
+	
+	def OnPrint(self, e):
+		printWindow.printFile(self.resultFilename)
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):
