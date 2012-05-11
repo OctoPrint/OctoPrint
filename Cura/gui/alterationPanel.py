@@ -1,4 +1,4 @@
-import wx
+import wx,wx.stc
 import sys,math,threading,os
 
 from gui import gcodeTextArea
@@ -20,6 +20,7 @@ class alterationPanel(wx.Panel):
 		self.list.SetSelection(0)
 		self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.list)
 		self.textArea.Bind(wx.EVT_KILL_FOCUS, self.OnFocusLost, self.textArea)
+		self.textArea.Bind(wx.stc.EVT_STC_CHANGE, self.OnFocusLost, self.textArea)
 		
 		sizer = wx.GridBagSizer()
 		sizer.Add(self.list, (0,0), span=(1,1), flag=wx.EXPAND)

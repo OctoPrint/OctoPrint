@@ -3,7 +3,7 @@ import sys,math,os
 
 from util import profile
 
-if sys.platform == 'darwin':
+if False and sys.platform == 'darwin':
 	class GcodeTextArea(wx.TextCtrl):
 		def __init__(self, parent):
 			super(GcodeTextArea, self).__init__(parent, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
@@ -29,11 +29,44 @@ else:
 			self.IndicatorSetForeground(1, "#FF0000")
 			self.SetWrapMode(wx.stc.STC_WRAP_NONE)
 			self.SetScrollWidth(1000)
+			if sys.platform == 'darwin':
+				self.Bind(wx.EVT_KEY_DOWN, self.OnMacKeyDown)
 		
 			#GCodes and MCodes as supported by Marlin
 			#GCode 21 is not really supported by Marlin, but we still do not report it as error as it's often used.
 			self.supportedGCodes = [0,1,2,3,4,21,28,90,91,92]
 			self.supportedMCodes = [17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,42,80,81,82,83,84,85,92,104,105,106,107,109,114,115,117,119,140,190,201,202,203,204,205,206,220,221,240,301,302,303,400,500,501,502,503,999]
+		
+		def OnMacKeyDown(self, e):
+			code = e.GetKeyCode();
+			stopPropagation = True
+			#Command
+			if e.CmdDown():
+				if code == wx._core.WXK_LEFT:
+					self.GotoLine(self.GetCurrentLine())
+				elif code == wx._core.WXK_RIGHT:
+					self.GotoPos(self.GetLineEndPosition(self.GetCurrentLine()))
+				elif code == wx._core.WXK_UP:
+					self.GotoPos(0)
+				elif code == wx._core.WXK_DOWN:
+					self.GotoPos(self.GetLength())
+				else:
+					stopPropagation = False
+			# Control
+			elif e.GetModifiers() & 0xF0:
+				if code == 65: # A
+					self.GotoLine(self.GetCurrentLine())
+				elif code == 69: # E
+					self.GotoPos(self.GetLineEndPosition(self.GetCurrentLine()))
+				else:
+					stopPropagation = False
+			else:
+				stopPropagation = False
+			# Event propagation
+			if stopPropagation:
+				e.StopPropagation()
+			else:
+				e.Skip()
 		
 		def OnStyle(self, e):
 			lineNr = self.LineFromPosition(self.GetEndStyled())
