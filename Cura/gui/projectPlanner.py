@@ -169,7 +169,7 @@ class projectPlanner(wx.Frame):
 		self.toolbarPanel = wx.Panel(self, -1)
 		self.toolbarPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.toolbar = toolbarUtil.Toolbar(self.toolbarPanel)
-		self.toolbarPanel.GetSizer().Add(self.toolbar, 0)
+		self.toolbarPanel.GetSizer().Add(self.toolbar, 0, flag=wx.EXPAND)
 
 		toolbarUtil.NormalButton(self.toolbar, self.OnLoadProject, 'open.png', 'Open project')
 		toolbarUtil.NormalButton(self.toolbar, self.OnSaveProject, 'save.png', 'Save project')
@@ -187,7 +187,7 @@ class projectPlanner(wx.Frame):
 		self.toolbar2Panel = wx.Panel(self, -1)
 		self.toolbar2Panel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.toolbar2 = toolbarUtil.Toolbar(self.toolbar2Panel)
-		self.toolbar2Panel.GetSizer().Add(self.toolbar2, 0)
+		self.toolbar2Panel.GetSizer().Add(self.toolbar2, 0, flag=wx.EXPAND)
 
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAddModel, 'object-add.png', 'Add model')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnRemModel, 'object-remove.png', 'Remove model')
@@ -210,8 +210,8 @@ class projectPlanner(wx.Frame):
 		self.sliceButton = wx.Button(self, -1, "Slice")
 		self.autoPlaceButton = wx.Button(self, -1, "Auto Place")
 		
-		sizer.Add(self.toolbarPanel, (0,0), span=(1,1), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT)
-		sizer.Add(self.toolbar2Panel, (0,1), span=(1,2), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT)
+		sizer.Add(self.toolbarPanel, (0,0), span=(1,1), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
+		sizer.Add(self.toolbar2Panel, (0,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
 		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
 		sizer.Add(self.listbox, (1,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.addButton, (2,1), span=(1,1))
