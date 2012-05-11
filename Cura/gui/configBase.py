@@ -64,7 +64,7 @@ class configWindowBase(wx.Frame):
 				self.popup.text.SetLabel(setting.helpText)
 			self.popup.text.Wrap(350)
 			self.popup.Fit()
-			if os.name == 'darwin':
+			if sys.platform == 'darwin':
 				x, y = self.ClientToScreenXY(0, 0)
 				sx, sy = self.GetClientSizeTuple()
 			else:
@@ -189,10 +189,6 @@ class settingNotify():
 		self.func = func
 	
 	def validate(self):
-		try:
-			f = float(self.setting.GetValue())
-			self.func(f)
-			return validators.SUCCESS, ''
-		except ValueError:
-			self.func()
-			return validators.SUCCESS, ''
+		self.func()
+		return validators.SUCCESS, ''
+

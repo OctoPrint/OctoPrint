@@ -97,7 +97,6 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_width', '205')
 			profile.putPreference('machine_depth', '205')
 			profile.putPreference('machine_height', '200')
-			profile.putPreference('steps_per_e', '865.888')
 			profile.putProfileSetting('nozzle_size', '0.4')
 			profile.putProfileSetting('machine_center_x', '100')
 			profile.putProfileSetting('machine_center_y', '100')
@@ -175,17 +174,24 @@ class UltimakerCheckupPage(InfoPage):
 	def OnRun(self):
 		wx.CallAfter(self.AddProgressText, "Connecting to machine...")
 		self.comm = machineCom.MachineCom()
+		
+		if not self.comm.isOpen():
+			wx.CallAfter(self.AddProgressText, "Error: Failed to open serial port to machine")
+			wx.CallAfter(self.AddProgressText, "If this keeps happening, try disconnecting and reconnecting the USB cable")
+			return
 
 		wx.CallAfter(self.AddProgressText, "Checking start message...")
 		if self.DoCommCommandWithTimeout(None, 'start') == False:
 			wx.CallAfter(self.AddProgressText, "Error: Missing start message.")
 			self.comm.close()
 			return
-			
+		
+		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+		time.sleep(3)
+		
 		wx.CallAfter(self.AddProgressText, "Disabling step motors...")
 		if self.DoCommCommandWithTimeout('M84') == False:
 			wx.CallAfter(self.AddProgressText, "Error: Missing reply to Deactivate steppers (M84).")
-			wx.CallAfter(self.AddProgressText, "Possible cause: Temperature MIN/MAX.\nCheck temperature sensor connections.")
 			self.comm.close()
 			return
 
@@ -287,9 +293,10 @@ class UltimakerCheckupPage(InfoPage):
 		t.start()
 		while True:
 			line = self.comm.readline()
-			if line == '':
+			if line == '' or line == None:
 				self.comm.close()
 				return False
+			print line.rstrip()
 			if line.startswith(replyStart):
 				break
 		t.cancel()
@@ -323,6 +330,9 @@ class UltimakerCalibrationPage(InfoPage):
 class UltimakerCalibrateStepsPerEPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCalibrateStepsPerEPage, self).__init__(parent, "Ultimaker Calibration")
+
+		if profile.getPreference('steps_per_e') == '0':
+			profile.putPreference('steps_per_e', '865.888')
 		
 		self.AddText("Calibrating the Steps Per E requires some manual actions.")
 		self.AddText("First remove any filament from your machine.")
@@ -364,12 +374,20 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.extrudeButton.Enable(False)
 		currentEValue = float(self.stepsPerEInput.GetValue())
 		self.comm = machineCom.MachineCom()
+		if not self.comm.isOpen():
+			wx.MessageBox("Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable", 'Printer error', wx.OK | wx.ICON_INFORMATION)
+			self.heatButton.Enable(True)
+			self.extrudeButton.Enable(True)
+			return
 		while True:
 			line = self.comm.readline()
 			if line == '':
 				return
 			if line.startswith('start'):
 				break
+		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+		time.sleep(3)
+		
 		self.sendGCommand('M302') #Disable cold extrusion protection
 		self.sendGCommand("M92 E%f" % (currentEValue));
 		self.sendGCommand("G92 E0");
@@ -383,18 +401,32 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		threading.Thread(target=self.OnHeatRun).start()
 	
 	def OnHeatRun(self):
+		self.heatButton.Enable(False)
+		self.extrudeButton.Enable(False)
 		self.comm = machineCom.MachineCom()
+		if not self.comm.isOpen():
+			wx.MessageBox("Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable", 'Printer error', wx.OK | wx.ICON_INFORMATION)
+			self.heatButton.Enable(True)
+			self.extrudeButton.Enable(True)
+			return
 		while True:
 			line = self.comm.readline()
 			if line == '':
+				self.heatButton.Enable(True)
+				self.extrudeButton.Enable(True)
 				return
 			if line.startswith('start'):
 				break
+		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+		time.sleep(3)
+		
 		self.sendGCommand('M104 S200') #Set the temperature to 200C, should be enough to get PLA and ABS out.
 		wx.MessageBox('Wait till you can remove the filament from the machine, and press OK.\n(Temperature is set to 200C)', 'Machine heatup', wx.OK | wx.ICON_INFORMATION)
 		self.sendGCommand('M104 S0')
 		time.sleep(1)
 		self.comm.close()
+		self.heatButton.Enable(True)
+		self.extrudeButton.Enable(True)
 	
 	def sendGCommand(self, cmd):
 		self.comm.sendCommand(cmd) #Disable cold extrusion protection

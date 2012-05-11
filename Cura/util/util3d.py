@@ -1,7 +1,7 @@
 
 import math
 
-class Vector3():
+class Vector3(object):
 	def __init__(self, x=0.0, y=0.0, z=0.0):
 		self.x = x
 		self.y = y
@@ -27,6 +27,7 @@ class Vector3():
 
 	def __div__(self, v):
 		return Vector3( self.x / v, self.y / v, self.z / v )
+	__truediv__ = __div__
 
 	def __neg__(self):
 		return Vector3( - self.x, - self.y, - self.z )
@@ -67,4 +68,10 @@ class Vector3():
 			self.x /= f
 			self.y /= f
 			self.z /= f
+
+	def min(self, v):
+		return Vector3(min(self.x, v.x), min(self.y, v.y), min(self.z, v.z))
+
+	def max(self, v):
+		return Vector3(max(self.x, v.x), max(self.y, v.y), max(self.z, v.z))
 

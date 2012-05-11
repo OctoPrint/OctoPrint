@@ -448,7 +448,8 @@ def getLoopsFromCorrectMesh( edges, faces, vertexes, z ):
 		p0 = loop[-1]
 		for p1 in loop:
 			if euclidean.isLineIntersectingLoops(loops[idx+1:], p0, p1):
-				print('Warning, the triangle mesh slice intersects itself in getLoopsFromCorrectMesh in triangle_mesh.')
+				if not warning:
+					print('Warning, the triangle mesh slice intersects itself in getLoopsFromCorrectMesh in triangle_mesh.')
 				print('Model error(intersect): (%f, %f, %f) (%f, %f, %f)' % (p0.real, p0.imag, z, p1.real, p1.imag, z))
 				warning = True
 			p0 = p1
@@ -823,7 +824,7 @@ class TriangleMesh( group.Group ):
 		halfHeight = 0.5 * self.layerHeight
 		self.zoneArrangement = ZoneArrangement(self.layerHeight, self.getTransformedVertexes())
 		layerTop = self.cornerMaximum.z - halfHeight * 0.5
-		z = self.cornerMinimum.z + halfHeight
+		z = halfHeight
 		layerCount = int((layerTop - z) / self.layerHeight) + 1
 		while z < layerTop:
 			getLoopLayerAppend(self.loopLayers, layerCount, z).loops = self.getLoopsFromMesh(self.zoneArrangement.getEmptyZ(z))

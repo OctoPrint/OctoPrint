@@ -171,6 +171,8 @@ class SkirtSkein:
 
 	def addSkirt(self, z):
 		'At skirt at z to gcode output.'
+		if len(self.outsetLoops) < 1 or len(self.outsetLoops[0]) < 1:
+			return
 		self.setSkirtFeedFlowTemperature()
 		self.distanceFeedRate.addLine('(<skirt>)')
 		oldTemperature = self.oldTemperatureInput

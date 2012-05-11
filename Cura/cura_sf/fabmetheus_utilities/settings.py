@@ -113,6 +113,9 @@ def getProfileInformation():
 			'SwapYZ': storedSetting("swap_yz"),
 			'Scale': storedSettingFloat("model_scale"),
 			'Rotate': storedSettingFloat("model_rotate_base"),
+			'CenterX': storedSettingFloat("machine_center_x"),
+			'CenterY': storedSettingFloat("machine_center_y"),
+			'AlternativeCenterFile': storedSetting("alternative_center"),
 		},'scale': {
 			'Activate_Scale': "False",
 			'XY_Plane_Scale_ratio': DEFSET,
@@ -125,8 +128,8 @@ def getProfileInformation():
 			'SVG_Viewer': DEFSET,
 		},'preface': {
 			'Meta': DEFSET,
-			'Set_Positioning_to_Absolute': DEFSET,
-			'Set_Units_to_Millimeters': DEFSET,
+			'Set_Positioning_to_Absolute': "False",
+			'Set_Units_to_Millimeters': "False",
 			'Start_at_Home': DEFSET,
 			'Turn_Extruder_Off_at_Shut_Down': DEFSET,
 			'Turn_Extruder_Off_at_Start_Up': DEFSET,
@@ -135,11 +138,11 @@ def getProfileInformation():
 			'Widen_Width_over_Edge_Width_ratio': DEFSET,
 		},'inset': {
 			'Add_Custom_Code_for_Temperature_Reading': "False",
-			'Infill_in_Direction_of_Bridge': "True",
+			'Infill_in_Direction_of_Bridge': ifSettingAboveZero('fill_density'),
 			'Infill_Width': storedSettingFloat("nozzle_size"),
 			'Loop_Order_Choice': DEFSET,
 			'Overlap_Removal_Width_over_Perimeter_Width_ratio': DEFSET,
-			'Turn_Extruder_Heater_Off_at_Shut_Down': DEFSET,
+			'Turn_Extruder_Heater_Off_at_Shut_Down': "False",
 			'Volume_Fraction_ratio': DEFSET,
 		},'fill': {
 			'Activate_Fill': "True",
@@ -171,7 +174,7 @@ def getProfileInformation():
 			'Surrounding_Angle_degrees': DEFSET,
 			'Thread_Sequence_Choice': storedSetting('sequence'),
 		},'multiply': {
-			'Activate_Multiply': "True",
+			'Activate_Multiply': "False",
 			'Center_X_mm': storedSettingFloat("machine_center_x"),
 			'Center_Y_mm': storedSettingFloat("machine_center_y"),
 			'Number_of_Columns_integer': storedSetting('model_multiply_x'),
@@ -237,6 +240,7 @@ def getProfileInformation():
 			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': calcSupportDistanceRatio,
 			'Support_Material_Choice_': storedSetting('support'),
 			'Support_Minimum_Angle_degrees': DEFSET,
+			'Support_Margin_mm': storedSettingFloat('support_margin'),
 		},'skirt': {
 			'Skirt_line_count': storedSetting("skirt_line_count"),
 			'Convex': "True",
@@ -379,7 +383,7 @@ def getProfileInformation():
 			'Retraction_Distance_millimeters': storedSettingFloat('retraction_amount'),
 			'Restart_Extra_Distance_millimeters': storedSettingFloat('retraction_extra'),
 		},'alteration': {
-			'Activate_Alteration': "True",
+			'Activate_Alteration': storedSetting('add_start_end_gcode'),
 			'Name_of_End_File': "end.gcode",
 			'Name_of_Start_File': "start.gcode",
 			'Remove_Redundant_Mcode': "True",
@@ -398,7 +402,7 @@ def getProfileInformation():
 			'gcode_step': DEFSET,
 			'gcode_time_segment': DEFSET,
 			'gcode_small': DEFSET,
-			'File_Extension': DEFSET,
+			'File_Extension': storedSetting('gcode_extension'),
 			'Name_of_Replace_File': DEFSET,
 			'Save_Penultimate_Gcode': "False",
 		}

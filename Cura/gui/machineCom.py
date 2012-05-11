@@ -153,12 +153,15 @@ class MachineCom():
 			programmer = stk500v2.Stk500v2()
 			for port in serialList():
 				try:
+					print "Connecting to: %s %i" % (port, baudrate)
 					programmer.connect(port)
 					programmer.close()
-					print "Connecting to: %s %i" % (port, baudrate)
+					time.sleep(1)
 					self.serial = Serial(port, baudrate, timeout=2)
 					break
-				except ispBase.IspError:
+				except ispBase.IspError as (e):
+					print "Error while connecting to %s %i" % (port, baudrate)
+					print e
 					pass
 				except:
 					print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
@@ -170,6 +173,7 @@ class MachineCom():
 				self.serial = Serial(port, baudrate, timeout=2)
 			except:
 				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
+		print self.serial
 
 	def readline(self):
 		if self.serial == None:
@@ -183,6 +187,12 @@ class MachineCom():
 		if self.serial != None:
 			self.serial.close()
 		self.serial = None
+	
+	def __del__(self):
+		self.close()
+	
+	def isOpen(self):
+		return self.serial != None
 	
 	def sendCommand(self, cmd):
 		if self.serial == None:

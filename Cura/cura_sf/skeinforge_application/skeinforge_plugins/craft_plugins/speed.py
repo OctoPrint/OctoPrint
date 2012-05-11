@@ -312,7 +312,7 @@ class SpeedSkein:
 				self.distanceFeedRate.addTagBracketedLine('objectFirstLayerFeedRateInfillMultiplier', self.repository.objectFirstLayerFeedRateInfillMultiplier.value)
 				self.distanceFeedRate.addTagBracketedLine('operatingFeedRatePerSecond', self.feedRatePerSecond )
 				if self.repository.addFlowRate.value:
-					self.distanceFeedRate.addTagBracketedLine('objectFirstLayerFlowRateInfillMultiplier', self.repository.objectFirstLayerFlowRateInfillMultiplier.value)
+					self.distanceFeedRate.addTagBracketedLine('objectFirstLayerFlowRateInfillMultiplier', self.repository.objectFirstLayerFlowRateInfillMultiplier.value * self.repository.bottomLayerFlowRateMultiplier.value)
 					self.distanceFeedRate.addTagBracketedLine('operatingFlowRate', self.repository.flowRateSetting.value )
 				orbitalFeedRatePerSecond = self.feedRatePerSecond * self.repository.orbitalFeedRateOverOperatingFeedRate.value
 				self.distanceFeedRate.addTagBracketedLine('orbitalFeedRatePerSecond', orbitalFeedRatePerSecond )

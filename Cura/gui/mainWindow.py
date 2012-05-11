@@ -14,6 +14,7 @@ from gui import configWizard
 from gui import machineCom
 from gui import printWindow
 from gui import simpleMode
+from gui import projectPlanner
 from gui import icon
 from util import profile
 from util import version
@@ -40,7 +41,7 @@ class mainWindow(configBase.configWindowBase):
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
 		i = fileMenu.Append(-1, 'Load model file...')
-		self.Bind(wx.EVT_MENU, self.OnLoadModel, i)
+		self.Bind(wx.EVT_MENU, lambda e: self._showModelLoadDialog(1), i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
@@ -50,12 +51,15 @@ class mainWindow(configBase.configWindowBase):
 		i = fileMenu.Append(-1, 'Preferences...')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
 		fileMenu.AppendSeparator()
+		i = fileMenu.Append(-1, 'Open project planner...')
+		self.Bind(wx.EVT_MENU, self.OnProjectPlanner, i)
+		fileMenu.AppendSeparator()
 		i = fileMenu.Append(wx.ID_EXIT, 'Quit')
 		self.Bind(wx.EVT_MENU, self.OnQuit, i)
 		menubar.Append(fileMenu, '&File')
 		
 		simpleMenu = wx.Menu()
-		i = simpleMenu.Append(-1, 'Switch to simple mode...')
+		i = simpleMenu.Append(-1, 'Switch to Quickprint...')
 		self.Bind(wx.EVT_MENU, self.OnSimpleSwitch, i)
 		menubar.Append(simpleMenu, 'Simple')
 		
@@ -80,8 +84,11 @@ class mainWindow(configBase.configWindowBase):
 		menubar.Append(helpMenu, 'Help')
 		self.SetMenuBar(menubar)
 		
-		self.lastPath = ""
-		self.filename = profile.getPreference('lastFile')
+		if profile.getPreference('lastFile') != '':
+			self.filelist = profile.getPreference('lastFile').split(';')
+			self.SetTitle(self.filelist[-1] + ' - Cura - ' + version.getVersion())
+		else:
+			self.filelist = []
 		self.progressPanelList = []
 
 		#Preview window
@@ -107,7 +114,7 @@ class mainWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0, 100.0)
 		
 		configBase.TitleRow(left, "Skirt")
-		c = configBase.SettingRow(left, "Line count", 'skirt_line_count', '1', 'The skirt is a line drawn around the object at the first layer. This helps to prime your extruder, and to see if the object fits on your platform.\nSetting this to 0 will disable the skirt.')
+		c = configBase.SettingRow(left, "Line count", 'skirt_line_count', '1', 'The skirt is a line drawn around the object at the first layer. This helps to prime your extruder, and to see if the object fits on your platform.\nSetting this to 0 will disable the skirt. Multiple skirt lines can help priming your extruder better for small objects.')
 		validators.validInt(c, 0, 10)
 		c = configBase.SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0', 'The distance between the skirt and the first layer.\nThis is the minimal distance, multiple skirt lines will be put outwards from this distance.')
 		validators.validFloat(c, 0.0)
@@ -124,7 +131,7 @@ class mainWindow(configBase.configWindowBase):
 		validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine, be careful!")
 		
 		configBase.TitleRow(right, "Support")
-		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
+		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\n"Exterior only" is the most commonly used support setting.\n\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
 		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the expert settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
 
 		configBase.TitleRow(right, "Filament")
@@ -149,18 +156,18 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(left, "Retraction")
 		c = configBase.SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0', 'Minimal amount of travel needed for a retraction to happen at all. To make sure you do not get a lot of retractions in a small area')
 		validators.validFloat(c, 0.0)
-		c = configBase.SettingRow(left, "Speed (mm/s)", 'retraction_speed', '13.5', 'Speed at which the filament is retracted')
+		c = configBase.SettingRow(left, "Speed (mm/s)", 'retraction_speed', '40.0', 'Speed at which the filament is retracted, a higher retraction speed works better. But a very high retraction speed can lead to filament grinding.')
 		validators.validFloat(c, 0.1)
-		c = configBase.SettingRow(left, "Distance (mm)", 'retraction_amount', '0.0', 'Amount of retraction, set at 0 for no retraction at all.')
+		c = configBase.SettingRow(left, "Distance (mm)", 'retraction_amount', '0.0', 'Amount of retraction, set at 0 for no retraction at all. A value of 2.0mm seems to generate good results.')
 		validators.validFloat(c, 0.0)
-		c = configBase.SettingRow(left, "Extra length on start (mm)", 'retraction_extra', '0.0', 'Extra extrusion amount when restarting after a retraction, to better "Prime" your extruder')
+		c = configBase.SettingRow(left, "Extra length on start (mm)", 'retraction_extra', '0.0', 'Extra extrusion amount when restarting after a retraction, to better "Prime" your extruder after retraction.')
 		validators.validFloat(c, 0.0)
 
 		configBase.TitleRow(right, "Speed")
-		c = configBase.SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150', 'Speed at which travel moves are done')
+		c = configBase.SettingRow(right, "Travel speed (mm/s)", 'travel_speed', '150', 'Speed at which travel moves are done, a high quality build Ultimaker can reach speeds of 250mm/s. But some machines might miss steps then.')
 		validators.validFloat(c, 1.0)
-		validators.warningAbove(c, 300.0, "It is highly unlikely that your machine can achieve a travel speed above 150mm/s")
-		c = configBase.SettingRow(right, "Max Z speed (mm/s)", 'max_z_speed', '1.0', 'Speed at which Z moves are done.')
+		validators.warningAbove(c, 300.0, "It is highly unlikely that your machine can achieve a travel speed above 300mm/s")
+		c = configBase.SettingRow(right, "Max Z speed (mm/s)", 'max_z_speed', '1.0', 'Speed at which Z moves are done. When you Z axis is properly lubercated you can increase this for less Z blob.')
 		validators.validFloat(c, 0.5)
 		c = configBase.SettingRow(right, "Bottom layer speed (mm/s)", 'bottom_layer_speed', '25', 'Print speed for the bottom layer, you want to print the first layer slower so it sticks better to the printer bed.')
 		validators.validFloat(c, 0.0)
@@ -182,27 +189,44 @@ class mainWindow(configBase.configWindowBase):
 		loadButton = wx.Button(self, -1, 'Load Model')
 		sliceButton = wx.Button(self, -1, 'Slice to GCode')
 		printButton = wx.Button(self, -1, 'Print GCode')
-		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
+		self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(1), loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
+
+		extruderCount = int(profile.getPreference('extruder_amount'))
+		if extruderCount > 1:
+			loadButton2 = wx.Button(self, -1, 'Load Dual')
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(2), loadButton2)
+		if extruderCount > 2:
+			loadButton3 = wx.Button(self, -1, 'Load Tripple')
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(3), loadButton3)
+		if extruderCount > 2:
+			loadButton4 = wx.Button(self, -1, 'Load Quad')
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(4), loadButton4)
+
 		#Also bind double clicking the 3D preview to load an STL file.
-		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
+		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, lambda e: self._showModelLoadDialog(1), self.preview3d.glCanvas)
 
 		#Main sizer, to position the preview window, buttons and tab control
 		sizer = wx.GridBagSizer()
 		self.SetSizer(sizer)
 		sizer.Add(nb, (0,0), span=(1,1), flag=wx.EXPAND)
-		sizer.Add(self.preview3d, (0,1), span=(1,3), flag=wx.EXPAND)
-		sizer.AddGrowableCol(2)
+		sizer.Add(self.preview3d, (0,1), span=(1,2+extruderCount), flag=wx.EXPAND)
+		sizer.AddGrowableCol(2 + extruderCount)
 		sizer.AddGrowableRow(0)
 		sizer.Add(loadButton, (1,1), flag=wx.RIGHT, border=5)
-		sizer.Add(sliceButton, (1,2), flag=wx.RIGHT, border=5)
-		sizer.Add(printButton, (1,3), flag=wx.RIGHT, border=5)
+		if extruderCount > 1:
+			sizer.Add(loadButton2, (1,2), flag=wx.RIGHT, border=5)
+		if extruderCount > 2:
+			sizer.Add(loadButton3, (1,3), flag=wx.RIGHT, border=5)
+		if extruderCount > 3:
+			sizer.Add(loadButton4, (1,4), flag=wx.RIGHT, border=5)
+		sizer.Add(sliceButton, (1,1+extruderCount), flag=wx.RIGHT, border=5)
+		sizer.Add(printButton, (1,2+extruderCount), flag=wx.RIGHT, border=5)
 		self.sizer = sizer
 
-		if self.filename != "None":
-			self.preview3d.loadModelFile(self.filename)
-			self.lastPath = os.path.split(self.filename)[0]
+		if len(self.filelist) > 0:
+			self.preview3d.loadModelFiles(self.filelist)
 
 		self.updateProfileToControls()
 
@@ -212,21 +236,19 @@ class mainWindow(configBase.configWindowBase):
 		self.Show(True)
 	
 	def OnLoadProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to load", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg=wx.FileDialog(self, "Select profile file to load", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
-			self.lastPath = os.path.split(profileFile)[0]
 			profile.loadGlobalProfile(profileFile)
 			self.updateProfileToControls()
 		dlg.Destroy()
 	
 	def OnSaveProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to save", self.lastPath, style=wx.FD_SAVE)
+		dlg=wx.FileDialog(self, "Select profile file to save", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
 		if dlg.ShowModal() == wx.ID_OK:
 			profileFile = dlg.GetPath()
-			self.lastPath = os.path.split(profileFile)[0]
 			profile.saveGlobalProfile(profileFile)
 		dlg.Destroy()
 	
@@ -244,7 +266,7 @@ class mainWindow(configBase.configWindowBase):
 		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
 
 	def OnCustomFirmware(self, e):
-		dlg=wx.FileDialog(self, "Open firmware to upload", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetPath()
@@ -257,25 +279,49 @@ class mainWindow(configBase.configWindowBase):
 		configWizard.configWizard()
 		self.updateProfileToControls()
 
-	def OnLoadModel(self, e):
-		dlg=wx.FileDialog(self, "Open file to print", self.lastPath, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
+	def _showOpenDialog(self, title, wildcard = "STL files (*.stl)|*.stl;*.STL"):
+		dlg=wx.FileDialog(self, title, os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard(wildcard)
 		if dlg.ShowModal() == wx.ID_OK:
-			self.filename=dlg.GetPath()
-			profile.putPreference('lastFile', self.filename)
-			if not(os.path.exists(self.filename)):
-				return
-			self.lastPath = os.path.split(self.filename)[0]
-			self.preview3d.loadModelFile(self.filename)
-			self.preview3d.setViewMode("Model - Normal")
+			filename = dlg.GetPath()
+			dlg.Destroy()
+			if not(os.path.exists(filename)):
+				return False
+			profile.putPreference('lastFile', filename)
+			return filename
 		dlg.Destroy()
+		return False
+
+	def _showModelLoadDialog(self, amount):
+		filelist = []
+		for i in xrange(0, amount):
+			filelist.append(self._showOpenDialog("Open file to print"))
+			if filelist[-1] == False:
+				return
+			self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
+		self.filelist = filelist
+		profile.putPreference('lastFile', ';'.join(self.filelist))
+		self.preview3d.loadModelFiles(self.filelist)
+		self.preview3d.setViewMode("Normal")
+
+	def OnLoadModel(self, e):
+		self._showModelLoadDialog(1)
+	
+	def OnLoadModel2(self, e):
+		self._showModelLoadDialog(2)
+
+	def OnLoadModel3(self, e):
+		self._showModelLoadDialog(3)
+
+	def OnLoadModel4(self, e):
+		self._showModelLoadDialog(4)
 	
 	def OnSlice(self, e):
-		if self.filename == None:
+		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file before you can slice it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
-		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filename)
+		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
 		self.sizer.Layout()
 		newSize = self.GetSize();
@@ -284,18 +330,23 @@ class mainWindow(configBase.configWindowBase):
 		self.progressPanelList.append(spp)
 	
 	def OnPrint(self, e):
-		if self.filename == None:
+		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		if not os.path.exists(self.filename[: self.filename.rfind('.')] + "_export.gcode"):
+		if not os.path.exists(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode"):
 			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		printWindow.printFile(self.filename[: self.filename.rfind('.')] + "_export.gcode")
+		printWindow.printFile(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode")
 
 	def OnExpertOpen(self, e):
 		ecw = expertConfig.expertConfigWindow()
 		ecw.Centre()
 		ecw.Show(True)
+	
+	def OnProjectPlanner(self, e):
+		pp = projectPlanner.projectPlanner()
+		pp.Centre()
+		pp.Show(True)
 
 	def removeSliceProgress(self, spp):
 		self.progressPanelList.remove(spp)

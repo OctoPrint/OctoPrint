@@ -9,11 +9,11 @@ import struct
 
 from util import util3d
 
-class stlFace():
+class stlFace(object):
 	def __init__(self, v0, v1, v2):
 		self.v = [v0, v1, v2]
 
-class stlModel():
+class stlModel(object):
 	def __init__(self):
 		self.faces = []
 		self.vertexes = []
@@ -28,6 +28,8 @@ class stlModel():
 		else:
 			self._loadBinary(f)
 		f.close()
+		
+		self._createOrigonalVertexCopy()
 	
 	def _loadAscii(self, f):
 		cnt = 0
@@ -62,6 +64,12 @@ class stlModel():
 			self.vertexes.append(v1)
 			self.vertexes.append(v2)
 
+	def _createOrigonalVertexCopy(self):
+		self.origonalVertexes = list(self.vertexes)
+		for i in xrange(0, len(self.origonalVertexes)):
+			self.origonalVertexes[i] = self.origonalVertexes[i].copy()
+		self.getMinimumZ()
+
 	def getMinimumZ(self):
 		minv = self.vertexes[0].copy()
 		maxv = self.vertexes[0].copy()
@@ -74,12 +82,15 @@ class stlModel():
 			maxv.z = max(maxv.z, v.z)
 		self.min = minv
 		self.max = maxv
+		self.size = maxv - minv
 		return self.min.z
 	
 	def getMaximum(self):
 		return self.max
 	def getMinimum(self):
 		return self.min
+	def getSize(self):
+		return self.size
 
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:

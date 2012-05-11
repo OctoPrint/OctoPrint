@@ -400,6 +400,8 @@ class RaftRepository:
 		self.supportChoiceExteriorOnly = settings.MenuRadio().getFromMenuButtonDisplay(self.supportMaterialChoice, 'Exterior Only', self, False)
 		self.supportMinimumAngle = settings.FloatSpin().getFromValue(40.0, 'Support Minimum Angle (degrees):', self, 80.0, 60.0)
 		self.executeTitle = 'Raft'
+		self.supportMargin = settings.FloatSpin().getFromValue(
+			1.0, 'Support Margin (mm):', self, 5.0, 3.0)
 
 	def execute(self):
 		'Raft button has been clicked.'
@@ -596,6 +598,7 @@ class RaftSkein:
 		self.cornerMinimumComplex = self.cornerMinimum.dropAxis()
 		originalExtent = self.cornerMaximumComplex - self.cornerMinimumComplex
 		self.raftOutsetRadius = self.repository.raftMargin.value + self.repository.raftAdditionalMarginOverLengthPercent.value * 0.01 * max(originalExtent.real, originalExtent.imag)
+		self.supportOutsetRadius = self.repository.supportMargin.value
 		self.setBoundaryLayers()
 		outsetSeparateLoops = intercircle.getInsetSeparateLoopsFromLoops(self.boundaryLayers[0].loops, -self.raftOutsetRadius, 0.8)
 		self.interfaceIntersectionsTable = {}
@@ -711,7 +714,7 @@ class RaftSkein:
 		if self.layerIndex == 0:
 			feedRateMinuteMultiplied *= self.objectFirstLayerFeedRateInfillMultiplier
 			if supportFlowRateMultiplied != None:
-				supportFlowRateMultiplied *= self.objectFirstLayerFlowRateInfillMultiplier
+				supportFlowRateMultiplied = self.operatingFlowRate * self.objectFirstLayerFlowRateInfillMultiplier
 		self.addFlowRate(supportFlowRateMultiplied)
 		for path in paths:
 			self.distanceFeedRate.addGcodeFromFeedRateThreadZ(feedRateMinuteMultiplied, path, self.travelFeedRateMinute, z)
@@ -1035,7 +1038,7 @@ class RaftSkein:
 			euclidean.joinXIntersectionsTables(aboveXIntersectionsTable, xIntersectionsTable)
 		for supportLayerIndex in xrange(len(self.supportLayers)):
 			supportLayer = self.supportLayers[supportLayerIndex]
-			self.extendXIntersections(supportLayer.supportLoops, self.raftOutsetRadius, supportLayer.xIntersectionsTable)
+			self.extendXIntersections(supportLayer.supportLoops, self.supportOutsetRadius, supportLayer.xIntersectionsTable)
 		for supportLayer in self.supportLayers:
 			euclidean.subtractXIntersectionsTable(supportLayer.xIntersectionsTable, supportLayer.fillXIntersectionsTable)
 		self.addSegmentTablesToSupportLayers()

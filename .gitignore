@@ -12,3 +12,10 @@ Printrun
 Cura/current_profile.ini
 Cura/preferences.ini
 cura.sh
+pypy
+python
+drivers
+printrun.bat
+cura.bat
+object-mirror.png
+object.png

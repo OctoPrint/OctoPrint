@@ -24,6 +24,7 @@ class Stk500v2(ispBase.IspBase):
 		
 		#Reset the controller
 		self.serial.setDTR(1)
+		time.sleep(0.1)
 		self.serial.setDTR(0)
 		time.sleep(0.2)
 		

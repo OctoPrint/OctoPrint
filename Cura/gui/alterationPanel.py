@@ -1,21 +1,26 @@
-import wx
+import wx,wx.stc
 import sys,math,threading,os
 
+from gui import gcodeTextArea
 from util import profile
 
 class alterationPanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent,-1)
 
-		self.alterationFileList = ['start.gcode', 'end.gcode', 'support_start.gcode', 'support_end.gcode', 'replace.csv']
+		self.alterationFileList = ['start.gcode', 'end.gcode', 'support_start.gcode', 'support_end.gcode', 'nextobject.gcode', 'replace.csv']
+		if int(profile.getPreference('extruder_amount')) > 1:
+			self.alterationFileList.append('switchExtruder.gcode')
 		self.currentFile = None
 
-		self.textArea = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
-		self.textArea.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+		#self.textArea = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_PROCESS_TAB)
+		#self.textArea.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+		self.textArea = gcodeTextArea.GcodeTextArea(self)
 		self.list = wx.ListBox(self, choices=self.alterationFileList, style=wx.LB_SINGLE)
 		self.list.SetSelection(0)
 		self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.list)
 		self.textArea.Bind(wx.EVT_KILL_FOCUS, self.OnFocusLost, self.textArea)
+		self.textArea.Bind(wx.stc.EVT_STC_CHANGE, self.OnFocusLost, self.textArea)
 		
 		sizer = wx.GridBagSizer()
 		sizer.Add(self.list, (0,0), span=(1,1), flag=wx.EXPAND)
@@ -32,11 +37,9 @@ class alterationPanel(wx.Panel):
 		self.currentFile = self.list.GetSelection()
 
 	def loadFile(self, filename):
-		self.textArea.SetValue(unicode(profile.getAlterationFileContents(filename, False), "utf-8"))
+		self.textArea.SetValue(profile.getAlterationFile(filename))
 
 	def OnFocusLost(self, e):
 		if self.currentFile == self.list.GetSelection():
-			filename = profile.getAlterationFilePath(self.alterationFileList[self.list.GetSelection()])
-			f = open(filename, "wb")
-			f.write(self.textArea.GetValue().encode("utf-8"))
-			f.close()
+			profile.setAlterationFile(self.alterationFileList[self.list.GetSelection()], self.textArea.GetValue())
+
