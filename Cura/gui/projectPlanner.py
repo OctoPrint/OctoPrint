@@ -167,7 +167,9 @@ class projectPlanner(wx.Frame):
 			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x3'), profile.getPreferenceFloat('extruder_offset_y3'), 0)]
 
 		self.toolbarPanel = wx.Panel(self, -1)
+		self.toolbarPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.toolbar = toolbarUtil.Toolbar(self.toolbarPanel)
+		self.toolbarPanel.GetSizer().Add(self.toolbar, 0)
 
 		toolbarUtil.NormalButton(self.toolbar, self.OnLoadProject, 'open.png', 'Open project')
 		toolbarUtil.NormalButton(self.toolbar, self.OnSaveProject, 'save.png', 'Save project')
@@ -183,7 +185,10 @@ class projectPlanner(wx.Frame):
 		self.toolbar.Realize()
 
 		self.toolbar2Panel = wx.Panel(self, -1)
+		self.toolbar2Panel.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.toolbar2 = toolbarUtil.Toolbar(self.toolbar2Panel)
+		self.toolbar2Panel.GetSizer().Add(self.toolbar2, 0)
+
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAddModel, 'object-add.png', 'Add model')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnRemModel, 'object-remove.png', 'Remove model')
 		self.toolbar2.AddSeparator()
