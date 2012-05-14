@@ -196,6 +196,17 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAutoPlace, 'autoplace.png', 'Automaticly organize the objects on the platform.')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnSlice, 'slice.png', 'Slice to project into a gcode file.')
 		self.toolbar2.Realize()
+
+		self.toolbar3 = toolbarUtil.Toolbar(self.panel)
+		self.mirrorX = toolbarUtil.ToggleButton(self.toolbar3, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X', callback=self.OnMirrorChange)
+		self.mirrorY = toolbarUtil.ToggleButton(self.toolbar3, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y', callback=self.OnMirrorChange)
+		self.mirrorZ = toolbarUtil.ToggleButton(self.toolbar3, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z', callback=self.OnMirrorChange)
+		self.toolbar3.AddSeparator()
+
+		# Swap
+		self.swapXZ = toolbarUtil.ToggleButton(self.toolbar3, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ', callback=self.OnMirrorChange)
+		self.swapYZ = toolbarUtil.ToggleButton(self.toolbar3, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ', callback=self.OnMirrorChange)
+		self.toolbar3.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
 		self.panel.SetSizer(sizer)
@@ -210,10 +221,11 @@ class projectPlanner(wx.Frame):
 		sizer.Add(self.toolbar2, (0,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
 		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
 		sizer.Add(self.listbox, (1,1), span=(1,2), flag=wx.EXPAND)
-		sizer.Add(self.addButton, (2,1), span=(1,1))
-		sizer.Add(self.remButton, (2,2), span=(1,1))
-		sizer.Add(self.sliceButton, (3,1), span=(1,1))
-		sizer.Add(self.autoPlaceButton, (3,2), span=(1,1))
+		sizer.Add(self.toolbar3, (2,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
+		sizer.Add(self.addButton, (3,1), span=(1,1))
+		sizer.Add(self.remButton, (3,2), span=(1,1))
+		sizer.Add(self.sliceButton, (4,1), span=(1,1))
+		sizer.Add(self.autoPlaceButton, (4,2), span=(1,1))
 		sizer.AddGrowableCol(0)
 		sizer.AddGrowableRow(1)
 		
@@ -345,6 +357,13 @@ class projectPlanner(wx.Frame):
 		self.rotateCtrl.SetValue(int(self.selection.rotate))
 		if int(profile.getPreference('extruder_amount')) > 1:
 			self.extruderCtrl.SetValue(str(self.selection.extruder+1))
+
+		self.mirrorX.SetValue(self.selection.flipX)
+		self.mirrorY.SetValue(self.selection.flipY)
+		self.mirrorZ.SetValue(self.selection.flipZ)
+		self.swapXZ.SetValue(self.selection.swapXZ)
+		self.swapYZ.SetValue(self.selection.swapYZ)
+		
 		self.preview.Refresh()
 	
 	def OnAddModel(self, e):
@@ -567,6 +586,17 @@ class projectPlanner(wx.Frame):
 		if self.selection == None:
 			return
 		self.selection.extruder = int(self.extruderCtrl.GetValue()) - 1
+		self.preview.Refresh()
+		
+	def OnMirrorChange(self):
+		if self.selection == None:
+			return
+		self.selection.flipX = self.mirrorX.GetValue()
+		self.selection.flipY = self.mirrorY.GetValue()
+		self.selection.flipZ = self.mirrorZ.GetValue()
+		self.selection.swapXZ = self.swapXZ.GetValue()
+		self.selection.swapYZ = self.swapYZ.GetValue()
+		self.selection.updateModelTransform()
 		self.preview.Refresh()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
