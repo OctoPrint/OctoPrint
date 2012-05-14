@@ -65,6 +65,10 @@ profileDefaultSettings = {
 	'raft_interface_material_amount': '100',
 	'bottom_thickness': '0.3',
 	
+	'enable_dwindle': 'False',
+	'dwindle_pent_up_volume': '0.4',
+	'dwindle_slowdown_volume': '5.0',
+
 	'add_start_end_gcode': 'True',
 	'gcode_extension': 'gcode',
 	'alternative_center': '',

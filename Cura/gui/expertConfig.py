@@ -66,6 +66,11 @@ class expertConfigWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Joris")
 		c = configBase.SettingRow(right, "Joris the outer edge", 'joris', False, '[Joris] is a code name for smoothing out the Z move of the outer edge. This will create a steady Z increase over the whole print. It is intended to be used with a single walled wall thickness to make cups/vases.')
 
+		configBase.TitleRow(right, "Dwindle")
+		c = configBase.SettingRow(right, "Enable dwindle", 'enable_dwindle', False, 'Dwindle is used to slow down near the end of a printed line, and reducing the amount of filament printed near the end. This to release the preasure on the printer head.')
+		c = configBase.SettingRow(right, "Pent up volume (mm3)", 'dwindle_pent_up_volume', '0.4', 'Amount of plastic inside the nozzle under pressure. This normally comes out as ooze after printing.')
+		c = configBase.SettingRow(right, "Slow down volume (mm3)", 'dwindle_slowdown_volume', '5.0', 'Amount of printing volume that is used to slow down to release the pressure.')
+
 		main.Fit()
 		self.Fit()
 

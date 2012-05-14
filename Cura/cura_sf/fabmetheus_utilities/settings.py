@@ -333,11 +333,11 @@ def getProfileInformation():
 			'Minimum_Distance_for_Early_Shutdown_millimeters': DEFSET,
 			'Slowdown_Startup_Steps_positive_integer': DEFSET,
 		},'dwindle': {
-			'Activate_Dwindle': "False",
-			'End_Rate_Multiplier_ratio': DEFSET,
-			'Pent_Up_Volume_cubic_millimeters': DEFSET,
-			'Slowdown_Steps_positive_integer': DEFSET,
-			'Slowdown_Volume_cubic_millimeters': DEFSET,
+			'Activate_Dwindle': storedSetting('enable_dwindle'),
+			'End_Rate_Multiplier_ratio': '0.5',
+			'Pent_Up_Volume_cubic_millimeters': storedSetting('dwindle_pent_up_volume'),
+			'Slowdown_Steps_positive_integer': '5',
+			'Slowdown_Volume_cubic_millimeters': storedSetting('dwindle_slowdown_volume'),
 		},'splodge': {
 			'Activate_Splodge': "False",
 			'Initial_Lift_over_Extra_Thickness_ratio': DEFSET,
