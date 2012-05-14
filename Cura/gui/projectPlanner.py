@@ -149,8 +149,10 @@ class projectPlanner(wx.Frame):
 	def __init__(self):
 		super(projectPlanner, self).__init__(None, title='Cura - Project Planner')
 		
-		self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
 		wx.EVT_CLOSE(self, self.OnClose)
+		self.panel = wx.Panel(self, -1)
+		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.GetSizer().Add(self.panel, 1, flag=wx.EXPAND)
 		#self.SetIcon(icon.getMainIcon())
 		
 		self.list = []
@@ -166,10 +168,7 @@ class projectPlanner(wx.Frame):
 			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x2'), profile.getPreferenceFloat('extruder_offset_y2'), 0),
 			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x3'), profile.getPreferenceFloat('extruder_offset_y3'), 0)]
 
-		self.toolbarPanel = wx.Panel(self, -1)
-		self.toolbarPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.toolbar = toolbarUtil.Toolbar(self.toolbarPanel)
-		self.toolbarPanel.GetSizer().Add(self.toolbar, 0, flag=wx.EXPAND)
+		self.toolbar = toolbarUtil.Toolbar(self.panel)
 
 		toolbarUtil.NormalButton(self.toolbar, self.OnLoadProject, 'open.png', 'Open project')
 		toolbarUtil.NormalButton(self.toolbar, self.OnSaveProject, 'save.png', 'Save project')
@@ -184,10 +183,7 @@ class projectPlanner(wx.Frame):
 		
 		self.toolbar.Realize()
 
-		self.toolbar2Panel = wx.Panel(self, -1)
-		self.toolbar2Panel.SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.toolbar2 = toolbarUtil.Toolbar(self.toolbar2Panel)
-		self.toolbar2Panel.GetSizer().Add(self.toolbar2, 0, flag=wx.EXPAND)
+		self.toolbar2 = toolbarUtil.Toolbar(self.panel)
 
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAddModel, 'object-add.png', 'Add model')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnRemModel, 'object-remove.png', 'Remove model')
@@ -202,16 +198,16 @@ class projectPlanner(wx.Frame):
 		self.toolbar2.Realize()
 		
 		sizer = wx.GridBagSizer(2,2)
-		self.SetSizer(sizer)
-		self.preview = PreviewGLCanvas(self)
-		self.listbox = wx.ListBox(self, -1, choices=[])
-		self.addButton = wx.Button(self, -1, "Add")
-		self.remButton = wx.Button(self, -1, "Remove")
-		self.sliceButton = wx.Button(self, -1, "Slice")
-		self.autoPlaceButton = wx.Button(self, -1, "Auto Place")
+		self.panel.SetSizer(sizer)
+		self.preview = PreviewGLCanvas(self.panel, self)
+		self.listbox = wx.ListBox(self.panel, -1, choices=[])
+		self.addButton = wx.Button(self.panel, -1, "Add")
+		self.remButton = wx.Button(self.panel, -1, "Remove")
+		self.sliceButton = wx.Button(self.panel, -1, "Slice")
+		self.autoPlaceButton = wx.Button(self.panel, -1, "Auto Place")
 		
-		sizer.Add(self.toolbarPanel, (0,0), span=(1,1), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
-		sizer.Add(self.toolbar2Panel, (0,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
+		sizer.Add(self.toolbar, (0,0), span=(1,1), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
+		sizer.Add(self.toolbar2, (0,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
 		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
 		sizer.Add(self.listbox, (1,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.addButton, (2,1), span=(1,1))
@@ -227,7 +223,7 @@ class projectPlanner(wx.Frame):
 		self.autoPlaceButton.Bind(wx.EVT_BUTTON, self.OnAutoPlace)
 		self.listbox.Bind(wx.EVT_LISTBOX, self.OnListSelect)
 
-		panel = wx.Panel(self, -1)
+		panel = wx.Panel(self.panel, -1)
 		sizer.Add(panel, (4,1), span=(1,2))
 		
 		sizer = wx.GridBagSizer(2,2)
@@ -574,10 +570,10 @@ class projectPlanner(wx.Frame):
 		self.preview.Refresh()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
-	def __init__(self, parent):
+	def __init__(self, parent, projectPlannerWindow):
 		attribList = (glcanvas.WX_GL_RGBA, glcanvas.WX_GL_DOUBLEBUFFER, glcanvas.WX_GL_DEPTH_SIZE, 24, glcanvas.WX_GL_STENCIL_SIZE, 8)
 		glcanvas.GLCanvas.__init__(self, parent, attribList = attribList)
-		self.parent = parent
+		self.parent = projectPlannerWindow
 		self.context = glcanvas.GLContext(self)
 		wx.EVT_PAINT(self, self.OnPaint)
 		wx.EVT_SIZE(self, self.OnSize)
