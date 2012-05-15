@@ -190,11 +190,13 @@ def loadGlobalProfileFromString(options):
 	options = zlib.decompress(options)
 	(profileOpts, alt) = options.split('\f', 1)
 	for option in profileOpts.split('\b'):
-		(key, value) = option.split('=', 1)
-		globalProfileParser.set('profile', key, value)
+		if len(option) > 0:
+			(key, value) = option.split('=', 1)
+			globalProfileParser.set('profile', key, value)
 	for option in alt.split('\b'):
-		(key, value) = option.split('=', 1)
-		globalProfileParser.set('alterations', key, value)
+		if len(option) > 0:
+			(key, value) = option.split('=', 1)
+			globalProfileParser.set('alterations', key, value)
 
 def getGlobalProfileString():
 	global globalProfileParser
