@@ -15,7 +15,7 @@ def hasExporer():
 
 def openExporer(filename):
 	if sys.platform == 'win32' or sys.platform == 'cygwin':
-		subprocess.Popen(['explorer', "/select,%s" % (filename)])
+		subprocess.Popen(r'explorer /select,"%s"' % (filename))
 	if sys.platform == 'darwin':
 		subprocess.Popen(['open', os.path.split(filename)[0]])
 	if sys.platform == 'linux2':
