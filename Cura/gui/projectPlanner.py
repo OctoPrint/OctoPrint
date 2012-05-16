@@ -566,7 +566,7 @@ class projectPlanner(wx.Frame):
 			action.centerY = item.centerY
 			action.extruder = item.extruder
 			action.filename = item.filename
-			clearZ = max(clearZ, item.getMaximum().z * item.scale)
+			clearZ = max(clearZ, item.getMaximum().z * item.scale + 5.0)
 			action.clearZ = clearZ
 			action.leaveResultForNextSlice = False
 			action.usePreviousSlice = False
@@ -832,11 +832,11 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.progressGauge2 = wx.Gauge(self, -1)
 		self.progressGauge2.SetRange(len(self.actionList))
 		self.abortButton = wx.Button(self, -1, "Abort")
-		self.sizer.Add(self.statusText, (0,0), span=(1,3))
-		self.sizer.Add(self.progressGauge, (1, 0), span=(1,3), flag=wx.EXPAND)
-		self.sizer.Add(self.progressGauge2, (2, 0), span=(1,3), flag=wx.EXPAND)
+		self.sizer.Add(self.statusText, (0,0), span=(1,4))
+		self.sizer.Add(self.progressGauge, (1, 0), span=(1,4), flag=wx.EXPAND)
+		self.sizer.Add(self.progressGauge2, (2, 0), span=(1,4), flag=wx.EXPAND)
 
-		self.sizer.Add(self.abortButton, (3,0), span=(1,3), flag=wx.ALIGN_CENTER)
+		self.sizer.Add(self.abortButton, (3,0), span=(1,4), flag=wx.ALIGN_CENTER)
 		self.sizer.AddGrowableCol(0)
 		self.sizer.AddGrowableRow(0)
 
@@ -941,6 +941,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 			wx.CallAfter(self.progressGauge2.SetValue, self.actionList.index(action) + 1)
 		
 		resultFile.write(';TYPE:CUSTOM\n')
+		resultFile.write('G1 Z%f F%f\n' % self.actionList[-1].clearZ, profile.getProfileSettingFloat('max_z_speed') * 60)
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
 		
@@ -967,14 +968,17 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.abortButton.Destroy()
 		self.closeButton = wx.Button(self, -1, "Close")
 		self.printButton = wx.Button(self, -1, "Print")
+		self.logButton = wx.Button(self, -1, "Show log")
 		self.sizer.Add(self.closeButton, (3,0), span=(1,1))
 		self.sizer.Add(self.printButton, (3,1), span=(1,1))
+		self.sizer.Add(self.logButton, (3,2), span=(1,1))
 		if exporer.hasExporer():
 			self.openFileLocationButton = wx.Button(self, -1, "Open file location")
 			self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
-			self.sizer.Add(self.openFileLocationButton, (3,2), span=(1,1))
+			self.sizer.Add(self.openFileLocationButton, (3,3), span=(1,1))
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.closeButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, self.printButton)
+		self.Bind(wx.EVT_BUTTON, self.OnShowLog, self.logButton)
 		self.Layout()
 		self.Fit()
 
@@ -983,6 +987,9 @@ class ProjectSliceProgressWindow(wx.Frame):
 	
 	def OnPrint(self, e):
 		printWindow.printFile(self.resultFilename)
+
+	def OnShowLog(self, e):
+		LogWindow('\n'.join(self.progressLog))
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):
@@ -1018,6 +1025,14 @@ class preferencesDialog(configBase.configWindowBase):
 
 		self.MakeModal(False)
 		self.Destroy()
+
+class LogWindow(wx.Frame):
+	def __init__(self, logText):
+		super(LogWindow, self).__init__(None, title="Slice log")
+		self.textBox = wx.TextCtrl(self, -1, logText, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_READONLY)
+		self.SetSize((400,300))
+		self.Centre()
+		self.Show(True)
 
 def main():
 	app = wx.App(False)
