@@ -585,9 +585,6 @@ class RaftSkein:
 
 	def addRaft(self):
 		'Add the raft.'
-		if len(self.boundaryLayers) < 1:
-			print('this should never happen, there are no boundary layers in addRaft')
-			return
 		self.baseLayerThicknessOverLayerThickness = self.repository.baseLayerThicknessOverLayerThickness.value
 		baseExtrusionWidth = self.edgeWidth * self.baseLayerThicknessOverLayerThickness
 		self.baseStep = baseExtrusionWidth / self.repository.baseInfillDensity.value
@@ -600,6 +597,9 @@ class RaftSkein:
 		self.raftOutsetRadius = self.repository.raftMargin.value + self.repository.raftAdditionalMarginOverLengthPercent.value * 0.01 * max(originalExtent.real, originalExtent.imag)
 		self.supportOutsetRadius = self.repository.supportMargin.value
 		self.setBoundaryLayers()
+		if len(self.boundaryLayers) < 1:
+			print('this should never happen, there are no boundary layers in addRaft')
+			return
 		outsetSeparateLoops = intercircle.getInsetSeparateLoopsFromLoops(self.boundaryLayers[0].loops, -self.raftOutsetRadius, 0.8)
 		self.interfaceIntersectionsTable = {}
 		euclidean.addXIntersectionsFromLoopsForTable(outsetSeparateLoops, self.interfaceIntersectionsTable, self.interfaceStep)
@@ -990,7 +990,7 @@ class RaftSkein:
 				if len(endpoints) < 1:
 					temperatureChangeTimeBeforeNextLayers = self.getTemperatureChangeTime( self.objectNextLayersTemperature )
 					self.addTemperatureLineIfDifferent( self.objectNextLayersTemperature )
-					if self.repository.addRaftElevateNozzleOrbitSetAltitude.value and len( boundaryLayer.loops ) > 0:
+					if self.repository.addRaftElevateNozzleOrbitSetAltitude.value and boundaryLayer != None and len( boundaryLayer.loops ) > 0:
 						self.addOperatingOrbits( boundaryLayer.loops, euclidean.getXYComplexFromVector3( self.oldLocation ), temperatureChangeTimeBeforeNextLayers, layerZ )
 			if len(endpoints) > 0:
 				self.addSupportLayerTemperature( endpoints, layerZ )

@@ -66,6 +66,29 @@ class ProjectObject(stl.stlModel):
 		self.centerX = -self.getMinimum().x + 5
 		self.centerY = -self.getMinimum().y + 5
 
+	def isSameExceptForPosition(self, other):
+		if self.filename != other.filename:
+			return False
+		if self.scale != other.scale:
+			return False
+		if self.rotate != other.rotate:
+			return False
+		if self.flipX != other.flipX:
+			return False
+		if self.flipY != other.flipY:
+			return False
+		if self.flipZ != other.flipZ:
+			return False
+		if self.swapXZ != other.swapXZ:
+			return False
+		if self.swapYZ != other.swapYZ:
+			return False
+		if self.extruder != other.extruder:
+			return False
+		if self.profile != other.profile:
+			return False
+		return True
+
 	def updateModelTransform(self):
 		rotate = self.rotate / 180.0 * math.pi
 		scaleX = 1.0
@@ -545,7 +568,13 @@ class projectPlanner(wx.Frame):
 			action.filename = item.filename
 			clearZ = max(clearZ, item.getMaximum().z * item.scale)
 			action.clearZ = clearZ
+			action.leaveForNext = False
+			action.usePrevious = False
 			actionList.append(action)
+
+			if self.list.index(item) > 0 and item.isSameExceptForPosition(self.list[self.list.index(item)-1]):
+				actionList[-2].leaveForNext = True
+				actionList[-1].usePrevious = True
 
 			if item.profile != None:
 				profile.loadGlobalProfileFromString(oldProfile)
@@ -842,29 +871,30 @@ class ProjectSliceProgressWindow(wx.Frame):
 		put = profile.setTempOverride
 		for action in self.actionList:
 			wx.CallAfter(self.SetTitle, "Building: [%d/%d]"  % (self.actionList.index(action) + 1, len(self.actionList)))
-			p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-			line = p.stdout.readline()
-		
-			maxValue = 1
-			self.progressLog = []
-			while(len(line) > 0):
-				line = line.rstrip()
-				if line[0:9] == "Progress[" and line[-1:] == "]":
-					progress = line[9:-1].split(":")
-					if len(progress) > 2:
-						maxValue = int(progress[2])
-					wx.CallAfter(self.SetProgress, progress[0], int(progress[1]), maxValue)
-				else:
-					print line
-					self.progressLog.append(line)
-					wx.CallAfter(self.statusText.SetLabel, line)
-				if self.abort:
-					p.terminate()
-					wx.CallAfter(self.statusText.SetLabel, "Aborted by user.")
-					resultFile.close()
-					return
+			if not action.usePrevious:
+				p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 				line = p.stdout.readline()
-			self.returnCode = p.wait()
+		
+				maxValue = 1
+				self.progressLog = []
+				while(len(line) > 0):
+					line = line.rstrip()
+					if line[0:9] == "Progress[" and line[-1:] == "]":
+						progress = line[9:-1].split(":")
+						if len(progress) > 2:
+							maxValue = int(progress[2])
+						wx.CallAfter(self.SetProgress, progress[0], int(progress[1]), maxValue)
+					else:
+						print line
+						self.progressLog.append(line)
+						wx.CallAfter(self.statusText.SetLabel, line)
+					if self.abort:
+						p.terminate()
+						wx.CallAfter(self.statusText.SetLabel, "Aborted by user.")
+						resultFile.close()
+						return
+					line = p.stdout.readline()
+				self.returnCode = p.wait()
 			
 			put('machine_center_x', action.centerX - self.extruderOffset[action.extruder].x)
 			put('machine_center_y', action.centerY - self.extruderOffset[action.extruder].y)
@@ -883,13 +913,21 @@ class ProjectSliceProgressWindow(wx.Frame):
 			resultFile.write(';PRINTNR:%d\n' % self.actionList.index(action))
 			profile.resetTempOverride()
 			
-			f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
-			data = f.read(4096)
-			while data != '':
-				resultFile.write(data)
+			if not action.usePrevious:
+				f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
 				data = f.read(4096)
-			f.close()
-			os.remove(action.filename[: action.filename.rfind('.')] + "_export.project_tmp")
+				while data != '':
+					resultFile.write(data)
+					data = f.read(4096)
+				f.close()
+			else:
+				f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
+				for line in f:
+					resultFile.write(line)
+				f.close()
+
+			if not action.leaveForNext:
+				os.remove(action.filename[: action.filename.rfind('.')] + "_export.project_tmp")
 			
 			wx.CallAfter(self.progressGauge.SetValue, 10000)
 			self.totalDoneFactor = 0.0
