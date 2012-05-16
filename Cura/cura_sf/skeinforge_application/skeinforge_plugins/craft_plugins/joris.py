@@ -175,7 +175,6 @@ class JorisSkein:
 		#Build the perimeter with an increasing Z over the length.
 		if self.firstLayer:
 			#On the first layer, we need to create an extra jorised perimeter, else we create a gap at the end of the perimeter.
-			print "*************"
 			p = self.oldLocation.dropAxis()
 			length = 0;
 			self.distanceFeedRate.addLine('M101') # Turn extruder on.
