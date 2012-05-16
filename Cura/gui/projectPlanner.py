@@ -242,7 +242,7 @@ class projectPlanner(wx.Frame):
 		
 		sizer.Add(self.toolbar, (0,0), span=(1,1), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
 		sizer.Add(self.toolbar2, (0,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
-		sizer.Add(self.preview, (1,0), span=(4,1), flag=wx.EXPAND)
+		sizer.Add(self.preview, (1,0), span=(5,1), flag=wx.EXPAND)
 		sizer.Add(self.listbox, (1,1), span=(1,2), flag=wx.EXPAND)
 		sizer.Add(self.toolbar3, (2,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
 		sizer.Add(self.addButton, (3,1), span=(1,1))
@@ -259,7 +259,7 @@ class projectPlanner(wx.Frame):
 		self.listbox.Bind(wx.EVT_LISTBOX, self.OnListSelect)
 
 		panel = wx.Panel(self.panel, -1)
-		sizer.Add(panel, (4,1), span=(1,2))
+		sizer.Add(panel, (5,1), span=(1,2))
 		
 		sizer = wx.GridBagSizer(2,2)
 		panel.SetSizer(sizer)
