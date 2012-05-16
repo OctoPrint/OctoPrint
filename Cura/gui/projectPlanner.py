@@ -568,13 +568,13 @@ class projectPlanner(wx.Frame):
 			action.filename = item.filename
 			clearZ = max(clearZ, item.getMaximum().z * item.scale)
 			action.clearZ = clearZ
-			action.leaveForNext = False
-			action.usePrevious = False
+			action.leaveResultForNextSlice = False
+			action.usePreviousSlice = False
 			actionList.append(action)
 
 			if self.list.index(item) > 0 and item.isSameExceptForPosition(self.list[self.list.index(item)-1]):
-				actionList[-2].leaveForNext = True
-				actionList[-1].usePrevious = True
+				actionList[-2].leaveResultForNextSlice = True
+				actionList[-1].usePreviousSlice = True
 
 			if item.profile != None:
 				profile.loadGlobalProfileFromString(oldProfile)
@@ -869,14 +869,14 @@ class ProjectSliceProgressWindow(wx.Frame):
 	def OnRun(self):
 		resultFile = open(self.resultFilename, "w")
 		put = profile.setTempOverride
+		self.progressLog = []
 		for action in self.actionList:
 			wx.CallAfter(self.SetTitle, "Building: [%d/%d]"  % (self.actionList.index(action) + 1, len(self.actionList)))
-			if not action.usePrevious:
+			if not action.usePreviousSlice:
 				p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 				line = p.stdout.readline()
 		
 				maxValue = 1
-				self.progressLog = []
 				while(len(line) > 0):
 					line = line.rstrip()
 					if line[0:9] == "Progress[" and line[-1:] == "]":
@@ -913,7 +913,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 			resultFile.write(';PRINTNR:%d\n' % self.actionList.index(action))
 			profile.resetTempOverride()
 			
-			if not action.usePrevious:
+			if not action.usePreviousSlice:
 				f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
 				data = f.read(4096)
 				while data != '':
@@ -933,7 +933,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 					resultFile.write(line)
 				f.close()
 
-			if not action.leaveForNext:
+			if not action.leaveResultForNextSlice:
 				os.remove(action.filename[: action.filename.rfind('.')] + "_export.project_tmp")
 			
 			wx.CallAfter(self.progressGauge.SetValue, 10000)
