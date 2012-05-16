@@ -1022,6 +1022,7 @@ class preferencesDialog(configBase.configWindowBase):
 	def OnClose(self, e):
 		self.parent.headSizeMin = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0)
 		self.parent.headSizeMax = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0)
+		self.parent.Refresh()
 
 		self.MakeModal(False)
 		self.Destroy()
