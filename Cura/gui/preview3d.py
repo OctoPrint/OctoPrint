@@ -423,7 +423,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glRotate(-self.pitch, 1,0,0)
 			glRotate(self.yaw, 0,0,1)
 			if self.viewMode == "GCode" or self.viewMode == "Mixed":
-				if self.parent.gcode != None:
+				if self.parent.gcode != None and len(self.parent.gcode.layerList) > self.parent.layerSpin.GetValue() and len(self.parent.gcode.layerList[self.parent.layerSpin.GetValue()]) > 0:
 					glTranslate(0,0,-self.parent.gcode.layerList[self.parent.layerSpin.GetValue()][0].list[-1].z)
 			else:
 				if self.parent.objectsMaxV != None:
