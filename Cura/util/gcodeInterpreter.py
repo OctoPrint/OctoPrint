@@ -130,9 +130,6 @@ class gcode(object):
 							pos.z = z * scale + posOffset.z
 						else:
 							pos.z += z * scale
-						#Check if we have a new layer.
-						if oldPos.z != pos.z:
-							layerThickness = abs(oldPos.z - pos.z)
 					if f is not None:
 						feedRate = f
 					if x is not None or y is not None or z is not None:
@@ -155,6 +152,8 @@ class gcode(object):
 							currentE += e
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
+					if moveType == 'move' and oldPos.z != pos.z:
+						layerThickness = abs(oldPos.z - pos.z)
 					if currentPath.type != moveType or currentPath.pathType != pathType:
 						currentPath = gcodePath(moveType, pathType, layerThickness, currentPath.list[-1])
 						currentLayer.append(currentPath)
