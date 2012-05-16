@@ -585,7 +585,7 @@ class RaftSkein:
 
 	def addRaft(self):
 		'Add the raft.'
-		if len(self.boundaryLayers) < 0:
+		if len(self.boundaryLayers) < 1:
 			print('this should never happen, there are no boundary layers in addRaft')
 			return
 		self.baseLayerThicknessOverLayerThickness = self.repository.baseLayerThicknessOverLayerThickness.value
