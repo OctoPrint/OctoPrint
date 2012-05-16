@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser, math, subprocess, threading, time
+import wx, os, platform, types, webbrowser, math, subprocess, threading, time, re
 import ConfigParser
 
 from wx import glcanvas
@@ -920,9 +920,16 @@ class ProjectSliceProgressWindow(wx.Frame):
 					resultFile.write(data)
 					data = f.read(4096)
 				f.close()
+				savedCenterX = action.centerX
+				savedCenterY = action.centerY
 			else:
 				f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
 				for line in f:
+					if line[0] != ';':
+						if 'X' in line:
+							line = self._adjustNumberInLine(line, 'X', action.centerX - savedCenterX)
+						if 'Y' in line:
+							line = self._adjustNumberInLine(line, 'Y', action.centerY - savedCenterY)
 					resultFile.write(line)
 				f.close()
 
@@ -951,6 +958,10 @@ class ProjectSliceProgressWindow(wx.Frame):
 			status += "\nCost: %s" % (cost)
 		wx.CallAfter(self.statusText.SetLabel, status)
 		wx.CallAfter(self.OnSliceDone)
+	
+	def _adjustNumberInLine(self, line, tag, f):
+		m = re.search('^(.*'+tag+')([0-9\.]*)(.*)$', line)
+		return m.group(1) + str(float(m.group(2)) + f) + m.group(3) + '\n'
 	
 	def OnSliceDone(self):
 		self.abortButton.Destroy()
