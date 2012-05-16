@@ -941,7 +941,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 			wx.CallAfter(self.progressGauge2.SetValue, self.actionList.index(action) + 1)
 		
 		resultFile.write(';TYPE:CUSTOM\n')
-		resultFile.write('G1 Z%f F%f\n' % self.actionList[-1].clearZ, profile.getProfileSettingFloat('max_z_speed') * 60)
+		resultFile.write('G1 Z%f F%f\n' % (self.actionList[-1].clearZ, profile.getProfileSettingFloat('max_z_speed') * 60))
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
 		
