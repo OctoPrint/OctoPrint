@@ -101,6 +101,7 @@ class JorisSkein:
 		self.perimeter = None
 		self.oldLocation = None
 		self.doJoris = False
+		self.firstLayer = True
 	
 	def getCraftedGcode( self, gcodeText, repository ):
 		'Parse gcode text and store the joris gcode.'
@@ -172,13 +173,26 @@ class JorisSkein:
 			p = point
 		
 		#Build the perimeter with an increasing Z over the length.
+		if self.firstLayer:
+			#On the first layer, we need to create an extra jorised perimeter, else we create a gap at the end of the perimeter.
+			print "*************"
+			p = self.oldLocation.dropAxis()
+			length = 0;
+			self.distanceFeedRate.addLine('M101') # Turn extruder on.
+			for point in self.perimeter:
+				length += abs( point - p );
+				p = point
+				self.distanceFeedRate.addGcodeMovementZWithFeedRate(self.feedRateMinute, point, self.oldLocation.z - self.layerThickness + self.layerThickness * length / perimeterLength)
+			self.distanceFeedRate.addLine('M103') # Turn extruder off.
+			self.firstLayer = False
+
 		p = self.oldLocation.dropAxis()
-		len = 0;
+		length = 0;
 		self.distanceFeedRate.addLine('M101') # Turn extruder on.
 		for point in self.perimeter:
-			len += abs( point - p );
+			length += abs( point - p );
 			p = point
-			self.distanceFeedRate.addGcodeMovementZWithFeedRate(self.feedRateMinute, point, self.oldLocation.z + self.layerThickness * len / perimeterLength)
+			self.distanceFeedRate.addGcodeMovementZWithFeedRate(self.feedRateMinute, point, self.oldLocation.z + self.layerThickness * length / perimeterLength)
 		self.distanceFeedRate.addLine('M103') # Turn extruder off.
 		self.perimeter = None
 
