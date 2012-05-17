@@ -1274,7 +1274,7 @@ class FillSkein:
 			elif firstWord == '(</extruderInitialization>)':
 				self.distanceFeedRate.addTagBracketedProcedure('fill')
 			self.distanceFeedRate.addLine(line)
- 
+
 	def parseLine( self, lineIndex ):
 		'Parse a gcode line and add it to the fill skein.'
 		line = self.lines[lineIndex]
@@ -1314,7 +1314,7 @@ class FillSkein:
 		self.gridInset = 1.2 * self.infillWidth
 		self.gridRadius = self.infillWidth / self.infillSolidity
 		self.gridXStepSize = 2.0 * self.gridRadius
- 		self.offsetMultiplier = self.gridRadius
+		self.offsetMultiplier = self.gridRadius
 		if self.repository.infillPatternGridHexagonal.value:
 			self.gridXStepSize = 4.0 / 3.0 * self.gridRadius
 			self.offsetMultiplier = 1.5 * self.gridXStepSize

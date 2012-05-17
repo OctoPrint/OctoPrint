@@ -18,6 +18,7 @@ sliceStepTimeFactor = {
 	'skirt': 19.3436040878,
 	'skin': 1.0,
 	'joris': 1.0,
+	'dwindle': 1.0,
 	'comb': 23.7805759907,
 	'cool': 27.148763895,
 	'dimension': 90.4914340973
