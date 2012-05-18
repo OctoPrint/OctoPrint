@@ -44,8 +44,6 @@ class expertConfigWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0)
 		c = configBase.SettingRow(left, "Distance from object (mm)", 'support_distance', '0.5', 'Distance between the support structure and the object. Empty gap in which no support structure is printed.')
 		validators.validFloat(c, 0.0)
-		c = configBase.SettingRow(left, "Extra margin (mm)", 'support_margin', '3.0', 'Extra margin which is used to extend the support lines outwards. A margin of 0 generates support structure only directly underneath the model.')
-		validators.validFloat(c, 0.0)
 
 		configBase.TitleRow(right, "Infill")
 		c = configBase.SettingRow(right, "Infill pattern", 'infill_type', ['Line', 'Grid Circular', 'Grid Hexagonal', 'Grid Rectangular'], 'Pattern of the none-solid infill. Line is default, but grids can provide a strong print.')

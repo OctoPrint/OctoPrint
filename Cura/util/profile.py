@@ -53,7 +53,6 @@ profileDefaultSettings = {
 	'fill_overlap': '15',
 	'support_rate': '50',
 	'support_distance': '0.5',
-	'support_margin': '3.0',
 	'joris': 'False',
 	'enable_skin': 'False',
 	'enable_raft': 'False',

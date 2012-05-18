@@ -240,7 +240,7 @@ def getProfileInformation():
 			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': calcSupportDistanceRatio,
 			'Support_Material_Choice_': storedSetting('support'),
 			'Support_Minimum_Angle_degrees': DEFSET,
-			'Support_Margin_mm': storedSettingFloat('support_margin'),
+			'Support_Margin_mm': '3.0',
 		},'skirt': {
 			'Skirt_line_count': storedSetting("skirt_line_count"),
 			'Convex': "True",
