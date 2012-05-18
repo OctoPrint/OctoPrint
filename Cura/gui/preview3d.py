@@ -287,48 +287,20 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 	
 	def updateModelTransform(self, f=0):
-		rotate = profile.getProfileSettingFloat('model_rotate_base') / 180.0 * math.pi
-		scaleX = 1.0
-		scaleY = 1.0
-		scaleZ = 1.0
-		if profile.getProfileSetting('flip_x') == 'True':
-			scaleX = -scaleX
-		if profile.getProfileSetting('flip_y') == 'True':
-			scaleY = -scaleY
-		if profile.getProfileSetting('flip_z') == 'True':
-			scaleZ = -scaleZ
-		swapXZ = profile.getProfileSetting('swap_xz') == 'True'
-		swapYZ = profile.getProfileSetting('swap_yz') == 'True'
-		mat00 = math.cos(rotate) * scaleX
-		mat01 =-math.sin(rotate) * scaleY
-		mat10 = math.sin(rotate) * scaleX
-		mat11 = math.cos(rotate) * scaleY
-		
 		if len(self.objectList) < 1 or self.objectList[0].mesh == None:
 			return
+		
+		rotate = profile.getProfileSettingFloat('model_rotate_base')
+		mirrorX = profile.getProfileSetting('flip_x') == 'True'
+		mirrorY = profile.getProfileSetting('flip_y') == 'True'
+		mirrorZ = profile.getProfileSetting('flip_z') == 'True'
+		swapXZ = profile.getProfileSetting('swap_xz') == 'True'
+		swapYZ = profile.getProfileSetting('swap_yz') == 'True'
 
 		for obj in self.objectList:
 			if obj.mesh == None:
 				continue
-		
-			for i in xrange(0, len(obj.mesh.origonalVertexes)):
-				x = obj.mesh.origonalVertexes[i].x
-				y = obj.mesh.origonalVertexes[i].y
-				z = obj.mesh.origonalVertexes[i].z
-				if swapXZ:
-					x, z = z, x
-				if swapYZ:
-					y, z = z, y
-				obj.mesh.vertexes[i].x = x * mat00 + y * mat01
-				obj.mesh.vertexes[i].y = x * mat10 + y * mat11
-				obj.mesh.vertexes[i].z = z * scaleZ
-
-			for face in obj.mesh.faces:
-				v1 = face.v[0]
-				v2 = face.v[1]
-				v3 = face.v[2]
-				face.normal = (v2 - v1).cross(v3 - v1)
-				face.normal.normalize()
+			obj.mesh.setRotateMirror(rotate, mirrorX, mirrorY, mirrorZ, swapXZ, swapYZ)
 		
 		minV = self.objectList[0].mesh.getMinimum()
 		maxV = self.objectList[0].mesh.getMaximum()

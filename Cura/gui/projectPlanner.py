@@ -90,50 +90,7 @@ class ProjectObject(stl.stlModel):
 		return True
 
 	def updateModelTransform(self):
-		rotate = self.rotate / 180.0 * math.pi
-		scaleX = 1.0
-		scaleY = 1.0
-		scaleZ = 1.0
-		if self.flipX:
-			scaleX = -scaleX
-		if self.flipY:
-			scaleY = -scaleY
-		if self.flipZ:
-			scaleZ = -scaleZ
-		swapXZ = self.swapXZ
-		swapYZ = self.swapYZ
-		mat00 = math.cos(rotate) * scaleX
-		mat01 =-math.sin(rotate) * scaleY
-		mat10 = math.sin(rotate) * scaleX
-		mat11 = math.cos(rotate) * scaleY
-		
-		for i in xrange(0, len(self.origonalVertexes)):
-			x = self.origonalVertexes[i].x
-			y = self.origonalVertexes[i].y
-			z = self.origonalVertexes[i].z
-			if swapXZ:
-				x, z = z, x
-			if swapYZ:
-				y, z = z, y
-			self.vertexes[i].x = x * mat00 + y * mat01
-			self.vertexes[i].y = x * mat10 + y * mat11
-			self.vertexes[i].z = z * scaleZ
-
-		for face in self.faces:
-			v1 = face.v[0]
-			v2 = face.v[1]
-			v3 = face.v[2]
-			face.normal = (v2 - v1).cross(v3 - v1)
-			face.normal.normalize()
-
-		minZ = self.getMinimumZ()
-		minV = self.getMinimum()
-		maxV = self.getMaximum()
-		for v in self.vertexes:
-			v.z -= minZ
-			v.x -= minV.x + (maxV.x - minV.x) / 2
-			v.y -= minV.y + (maxV.y - minV.y) / 2
-		self.getMinimumZ()
+		self.setRotateMirror(self.rotate, self.flipX, self.flipY, self.flipZ, self.swapXZ, self.swapYZ)
 		self.modelDirty = True
 	
 	def clone(self):

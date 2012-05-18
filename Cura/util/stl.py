@@ -8,15 +8,11 @@ import os
 import struct
 
 from util import util3d
+from util import mesh
 
-class stlFace(object):
-	def __init__(self, v0, v1, v2):
-		self.v = [v0, v1, v2]
-
-class stlModel(object):
+class stlModel(mesh.mesh):
 	def __init__(self):
-		self.faces = []
-		self.vertexes = []
+		super(stlModel, self).__init__()
 
 	def load(self, filename):
 		f = open(filename, "rb")
@@ -44,10 +40,7 @@ class stlModel(object):
 					cnt = 2
 				elif cnt == 2:
 					v2 = util3d.Vector3(float(data[1]), float(data[2]), float(data[3]))
-					self.faces.append(stlFace(v0, v1, v2))
-					self.vertexes.append(v0)
-					self.vertexes.append(v1)
-					self.vertexes.append(v2)
+					self.addFace(v0, v1, v2)
 					cnt = 0
 
 	def _loadBinary(self, f):
@@ -59,38 +52,7 @@ class stlModel(object):
 			v0 = util3d.Vector3(data[3], data[4], data[5])
 			v1 = util3d.Vector3(data[6], data[7], data[8])
 			v2 = util3d.Vector3(data[9], data[10], data[11])
-			self.faces.append(stlFace(v0, v1, v2))
-			self.vertexes.append(v0)
-			self.vertexes.append(v1)
-			self.vertexes.append(v2)
-
-	def _createOrigonalVertexCopy(self):
-		self.origonalVertexes = list(self.vertexes)
-		for i in xrange(0, len(self.origonalVertexes)):
-			self.origonalVertexes[i] = self.origonalVertexes[i].copy()
-		self.getMinimumZ()
-
-	def getMinimumZ(self):
-		minv = self.vertexes[0].copy()
-		maxv = self.vertexes[0].copy()
-		for v in self.vertexes:
-			minv.x = min(minv.x, v.x)
-			minv.y = min(minv.y, v.y)
-			minv.z = min(minv.z, v.z)
-			maxv.x = max(maxv.x, v.x)
-			maxv.y = max(maxv.y, v.y)
-			maxv.z = max(maxv.z, v.z)
-		self.min = minv
-		self.max = maxv
-		self.size = maxv - minv
-		return self.min.z
-	
-	def getMaximum(self):
-		return self.max
-	def getMinimum(self):
-		return self.min
-	def getSize(self):
-		return self.size
+			self.addFace(v0, v1, v2)
 
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:
