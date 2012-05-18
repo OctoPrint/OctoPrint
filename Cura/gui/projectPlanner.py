@@ -492,6 +492,9 @@ class projectPlanner(wx.Frame):
 			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
 			extraSizeMin = extraSizeMin + util3d.Vector3(skirtSize, skirtSize, 0)
 			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
+		if profile.getProfileSetting('support') != 'None':
+			extraSizeMin = extraSizeMin + util3d.Vector3(3.0, 0, 0)
+			extraSizeMax = extraSizeMax + util3d.Vector3(3.0, 0, 0)
 
 		if extraSizeMin.x > extraSizeMax.x:
 			posX = self.machineSize.x
