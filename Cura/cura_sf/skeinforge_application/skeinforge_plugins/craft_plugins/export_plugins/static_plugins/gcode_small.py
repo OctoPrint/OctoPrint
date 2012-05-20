@@ -69,6 +69,7 @@ class GcodeSmallSkein:
 		self.lastZString = None
 		self.output = cStringIO.StringIO()
 		self.layerNr = 0
+		self.parsingAlteration = False
 
 	def getCraftedGcode( self, gcodeText ):
 		"Parse gcode text and store the gcode."
@@ -127,7 +128,10 @@ class GcodeSmallSkein:
 		elif line.startswith('(<infill>'):
 			self.output.write(';TYPE:FILL\n');
 		elif line.startswith('(<alteration>'):
-			self.output.write(';TYPE:CUSTOM\n');
+			self.output.write(';TYPE:CUSTOM X\n');
+			self.parsingAlteration = True
+		elif line.startswith('(</alteration>)'):
+			self.parsingAlteration = False
 		elif line.startswith('(<supportLayer>'):
 			self.output.write(';TYPE:SUPPORT\n');
 		elif line.startswith('(<layer>'):

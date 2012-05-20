@@ -164,7 +164,7 @@ class AlterationSkein:
 	"A class to alteration a skein of extrusions."
 	def __init__(self):
 		'Initialize.'
- 		self.distanceFeedRate = gcodec.DistanceFeedRate()
+		self.distanceFeedRate = gcodec.DistanceFeedRate()
 		self.lineIndex = 0
 		self.settingDictionary = None
 
@@ -211,7 +211,7 @@ class AlterationSkein:
 		if self.settingDictionary == None:
 			return self.distanceFeedRate.output.getvalue().replace('(<alterationDeleteThisPrefix/>)', '')
 		lines = archive.getTextLines(self.distanceFeedRate.output.getvalue())
- 		distanceFeedRate = gcodec.DistanceFeedRate()
+		distanceFeedRate = gcodec.DistanceFeedRate()
 		for line in lines:
 			if line.startswith('(<alterationDeleteThisPrefix/>)'):
 				line = self.getReplacedAlterationLine(line[len('(<alterationDeleteThisPrefix/>)') :])

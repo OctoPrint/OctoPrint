@@ -3,7 +3,7 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import ConfigParser, os, traceback, math, re, zlib, base64
+import ConfigParser, os, traceback, math, re, zlib, base64, time
 
 #########################################################
 ## Default settings when none are found.
@@ -76,7 +76,8 @@ profileDefaultSettings = {
 }
 alterationDefault = {
 #######################################################################################
-	'start.gcode': """;Start GCode
+	'start.gcode': """;Sliced at: {day} {date} {time}
+;Basic settings: Layer height: {layer_height} Walls: {wall_thickness} Fill: {fill_density}
 G21        ;metric values
 G90        ;absolute positioning
 M107       ;start with the fan off
@@ -364,6 +365,12 @@ def calculateSolidLayerCount():
 #########################################################
 def replaceTagMatch(m):
 	tag = m.group(0)[1:-1]
+	if tag == 'time':
+		return time.strftime('%H:%M:%S')
+	if tag == 'date':
+		return time.strftime('%d %b %Y')
+	if tag == 'day':
+		return time.strftime('%a')
 	if tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
 		f = getProfileSettingFloat(tag) * 60
 	elif isProfileSetting(tag):

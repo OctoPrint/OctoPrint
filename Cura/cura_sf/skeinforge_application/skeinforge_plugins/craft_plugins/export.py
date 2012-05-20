@@ -398,6 +398,7 @@ class ExportSkein:
 		'Parse a gcode line.'
 		splitLine = gcodec.getSplitLineBeforeBracketSemicolon(line)
 		if len(splitLine) < 1:
+			self.addLine(line)
 			return
 		firstWord = splitLine[0]
 		if firstWord == '(</crafting>)':
