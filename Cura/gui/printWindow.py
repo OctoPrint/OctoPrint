@@ -223,6 +223,7 @@ class printWindow(wx.Frame):
 	
 	def OnCancel(self, e):
 		self.printIdx = None
+		self.sendCommand("M84")
 		self.UpdateButtonStates()
 	
 	def OnClose(self, e):
