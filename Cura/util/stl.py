@@ -1,11 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import sys
-import math
-import re
-import os
-import struct
+import sys, math, re, os, struct, time
 
 from util import util3d
 from util import mesh
@@ -25,7 +21,8 @@ class stlModel(mesh.mesh):
 			self._loadBinary(f)
 		f.close()
 		
-		self._createOrigonalVertexCopy()
+		self._postProcessAfterLoad()
+		return self
 	
 	def _loadAscii(self, f):
 		cnt = 0
@@ -54,7 +51,30 @@ class stlModel(mesh.mesh):
 			v2 = util3d.Vector3(data[9], data[10], data[11])
 			self.addFace(v0, v1, v2)
 
+def saveAsSTL(mesh, filename):
+	f = open(filename, 'wb')
+	#Write the STL binary header. This can contain any info, except for "SOLID" at the start.
+	f.write(("CURA BINARY STL EXPORT. " + time.strftime('%a %d %b %Y %H:%M:%S')).ljust(80, '\000'))
+	#Next follow 4 binary bytes containing the amount of faces, and then the face information.
+	f.write(struct.pack("<I", len(mesh.faces)))
+	for face in mesh.faces:
+		v1 = face.v[0]
+		v2 = face.v[1]
+		v3 = face.v[2]
+		normal = (v2 - v1).cross(v3 - v1)
+		normal.normalize()
+		f.write(struct.pack("<fff", normal.x, normal.y, normal.z))
+		f.write(struct.pack("<fff", v1.x, v1.y, v1.z))
+		f.write(struct.pack("<fff", v2.x, v2.y, v2.z))
+		f.write(struct.pack("<fff", v3.x, v3.y, v3.z))
+		f.write(struct.pack("<H", 0))
+	f.close()
+
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:
-		stlModel().load(filename)
+		m = stlModel().load(filename)
+		print "Loaded %d faces" % (len(m.faces))
+		parts = m.splitToParts()
+		for p in parts:
+			saveAsSTL(p, "export_%i.stl" % parts.index(p))
 

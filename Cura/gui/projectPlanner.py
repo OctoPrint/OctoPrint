@@ -157,9 +157,11 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-3d-on.png', 'object-3d-off.png', '3D view', callback=self.On3DClick)
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick).SetValue(True)
 		self.toolbar.AddSeparator()
-		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
-		self.toolbar.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar, self.OnPreferences, 'preferences.png', 'Project planner preferences')
+		self.toolbar.AddSeparator()
+		toolbarUtil.NormalButton(self.toolbar, self.OnCutMesh, 'cut-mesh.png', 'Cut a plate STL into multiple STL files, and add those files to the project.\nNote: Splitting up plates sometimes takes a few minutes.')
+		self.toolbar.AddSeparator()
+		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
 		
 		self.toolbar.Realize()
 
@@ -251,6 +253,23 @@ class projectPlanner(wx.Frame):
 		prefDialog = preferencesDialog(self)
 		prefDialog.Centre()
 		prefDialog.Show(True)
+	
+	def OnCutMesh(self, e):
+		dlg=wx.FileDialog(self, "Open file to cut", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
+		if dlg.ShowModal() == wx.ID_OK:
+			filename = dlg.GetPath()
+			parts = stl.stlModel().load(filename).splitToParts()
+			for part in parts:
+				partFilename = filename[:filename.rfind('.')] + "_part%d.stl" % (parts.index(part))
+				stl.saveAsSTL(part, partFilename)
+				item = ProjectObject(self, partFilename)
+				self.list.append(item)
+				self.selection = item
+				self._updateListbox()
+				self.OnListSelect(None)
+		self.preview.Refresh()
+		dlg.Destroy()
 	
 	def OnSaveProject(self, e):
 		dlg=wx.FileDialog(self, "Save project file", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
