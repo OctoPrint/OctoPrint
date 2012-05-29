@@ -21,6 +21,7 @@ from util import profile
 from util import gcodeInterpreter
 from util import stl
 from util import util3d
+from util import sliceRun
 
 class previewObject():
 	def __init__(self):
@@ -207,8 +208,8 @@ class previewPanel(wx.Panel):
 				self.logFileTime = None
 			obj.filename = filelist[idx]
 		
-		self.gcodeFilename = filelist[0][: filelist[0].rfind('.')] + "_export.gcode"
-		self.logFilename = filelist[0][: filelist[0].rfind('.')] + "_export.log"
+		self.gcodeFilename = sliceRun.getExportFilename(filelist[0])
+		self.logFilename = sliceRun.getExportFilename(filelist[0], "log")
 		#Do the STL file loading in a background thread so we don't block the UI.
 		if self.loadThread != None and self.loadThread.isAlive():
 			self.loadThread.join()

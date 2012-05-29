@@ -83,6 +83,9 @@ def runSlice(fileNames):
 		else:
 			subprocess.call([pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString(), fileName])
 
+def getExportFilename(filename, ext = "gcode"):
+	return "%s_export.%s" % (filename[: filename.rfind('.')], ext)
+
 def getSliceCommand(filename):
 	if profile.getPreference('slicer').startswith('Slic3r') and getSlic3rExe() != False:
 		slic3rExe = getSlic3rExe()

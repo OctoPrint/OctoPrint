@@ -893,7 +893,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 			profile.resetTempOverride()
 			
 			if not action.usePreviousSlice:
-				f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
+				f = open(sliceRun.getExportFilename(action.filename, "project_tmp"), "r")
 				data = f.read(4096)
 				while data != '':
 					resultFile.write(data)
@@ -902,7 +902,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 				savedCenterX = action.centerX
 				savedCenterY = action.centerY
 			else:
-				f = open(action.filename[: action.filename.rfind('.')] + "_export.project_tmp", "r")
+				f = open(sliceRun.getExportFilename(action.filename, "project_tmp"), "r")
 				for line in f:
 					if line[0] != ';':
 						if 'X' in line:
@@ -913,7 +913,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 				f.close()
 
 			if not action.leaveResultForNextSlice:
-				os.remove(action.filename[: action.filename.rfind('.')] + "_export.project_tmp")
+				os.remove(sliceRun.getExportFilename(action.filename, "project_tmp"))
 			
 			wx.CallAfter(self.progressGauge.SetValue, 10000)
 			self.totalDoneFactor = 0.0

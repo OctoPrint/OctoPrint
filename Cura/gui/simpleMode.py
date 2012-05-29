@@ -14,6 +14,7 @@ from gui import printWindow
 from gui import icon
 from util import profile
 from util import version
+from util import sliceRun
 
 class simpleModeWindow(configBase.configWindowBase):
 	"Main user interface window for Quickprint mode"
@@ -276,10 +277,10 @@ class simpleModeWindow(configBase.configWindowBase):
 		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		if not os.path.exists(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode"):
+		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
 			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		printWindow.printFile(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode")
+		printWindow.printFile(sliceRun.getExportFilename(self.filelist[0]))
 
 	def OnNormalSwitch(self, e):
 		from gui import mainWindow
