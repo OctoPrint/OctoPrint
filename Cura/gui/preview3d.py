@@ -361,6 +361,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			else:
 				self.offsetX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
 				self.offsetY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
+			
+			#Workaround for buggy ATI cards.
 			size = self.GetSizeTuple()
 			self.SetSize((size[0]+1, size[1]))
 			self.SetSize((size[0], size[1]))

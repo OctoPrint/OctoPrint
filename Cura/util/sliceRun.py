@@ -85,7 +85,7 @@ def runSlice(fileNames):
 			print "* Failed to find pypy, so sliced with python!  *"
 			print "************************************************"
 		else:
-			subprocess.call([pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString(), fileName])
+			subprocess.call(getSliceCommand(fileName))
 
 def getExportFilename(filename, ext = "gcode"):
 	return "%s_export.%s" % (filename[: filename.rfind('.')], ext)
@@ -146,7 +146,13 @@ def getSliceCommand(filename):
 		pypyExe = getPyPyExe()
 		if pypyExe == False:
 			pypyExe = sys.executable
-		cmd = [pypyExe, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1])), '-p', profile.getGlobalProfileString()]
+		
+		#In case we have a frozen exe, then argv[0] points to the executable, but we want to give pypy a real script file.
+		if hasattr(sys, 'frozen'):
+			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "cura.py"))
+		else:
+			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1]))
+		cmd = [pypyExe, mainScriptFile, '-p', profile.getGlobalProfileString()]
 		cmd.append(filename)
 		return cmd
 

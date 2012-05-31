@@ -12,6 +12,13 @@ from util import profile
 # toolbar buttons.
 #######################################################
 
+def getBitmapImage(filename):
+	#The frozen executable has the script files in a zip, so we need to exit another level to get to our images.
+	if hasattr(sys, 'frozen'):
+		return wx.Bitmap(os.path.normpath(os.path.join(os.path.split(__file__)[0], "../../images", filename)))
+	else:
+		return wx.Bitmap(os.path.normpath(os.path.join(os.path.split(__file__)[0], "../images", filename)))
+
 class Toolbar(wx.ToolBar):
 	def __init__(self, parent):
 		super(Toolbar, self).__init__(parent, -1, style=wx.TB_HORIZONTAL | wx.NO_BORDER)
@@ -52,8 +59,8 @@ class Toolbar(wx.ToolBar):
 class ToggleButton(buttons.GenBitmapToggleButton):
 	def __init__(self, parent, profileSetting, bitmapFilenameOn, bitmapFilenameOff,
 				 helpText='', id=-1, callback=None, size=(20,20)):
-		self.bitmapOn = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOn))
-		self.bitmapOff = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOff))
+		self.bitmapOn = getBitmapImage(bitmapFilenameOn)
+		self.bitmapOff = getBitmapImage(bitmapFilenameOff)
 
 		super(ToggleButton, self).__init__(parent, id, self.bitmapOff, size=size)
 
@@ -114,8 +121,8 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 class RadioButton(buttons.GenBitmapButton):
 	def __init__(self, parent, group, bitmapFilenameOn, bitmapFilenameOff,
 				 helpText='', id=-1, callback=None, size=(20,20)):
-		self.bitmapOn = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOn))
-		self.bitmapOff = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilenameOff))
+		self.bitmapOn = getBitmapImage(bitmapFilenameOn)
+		self.bitmapOff = getBitmapImage(bitmapFilenameOff)
 
 		super(RadioButton, self).__init__(parent, id, self.bitmapOff, size=size)
 
@@ -176,7 +183,7 @@ class RadioButton(buttons.GenBitmapButton):
 class NormalButton(buttons.GenBitmapButton):
 	def __init__(self, parent, callback, bitmapFilename,
 				 helpText='', id=-1, size=(20,20)):
-		self.bitmap = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilename))
+		self.bitmap = getBitmapImage(bitmapFilename)
 		super(NormalButton, self).__init__(parent, id, self.bitmap, size=size)
 
 		self.helpText = helpText

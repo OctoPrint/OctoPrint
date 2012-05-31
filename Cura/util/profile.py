@@ -3,7 +3,7 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import ConfigParser, os, traceback, math, re, zlib, base64, time
+import ConfigParser, os, traceback, math, re, zlib, base64, time, sys
 
 #########################################################
 ## Default settings when none are found.
@@ -170,7 +170,11 @@ preferencesDefaultSettings = {
 
 ## Profile functions
 def getDefaultProfilePath():
-	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../current_profile.ini"))
+	basePath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+	#If we have a frozen python install, we need to step out of the library.zip
+	if hasattr(sys, 'frozen'):
+		basePath = os.path.normpath(os.path.join(basePath, ".."))
+	return os.path.normpath(os.path.join(basePath, "current_profile.ini"))
 
 def loadGlobalProfile(filename):
 	#Read a configuration file as global config
@@ -273,7 +277,8 @@ globalPreferenceParser = None
 
 def getPreferencePath():
 	basePath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-	if os.path.basename(basePath) == 'library.zip':
+	#If we have a frozen python install, we need to step out of the library.zip
+	if hasattr(sys, 'frozen'):
 		basePath = os.path.normpath(os.path.join(basePath, ".."))
 	return os.path.normpath(os.path.join(basePath, "preferences.ini"))
 

@@ -7,7 +7,13 @@ sys.path.append('./cura_sf/')
 build_exe_options = {"packages": [
 	'encodings.utf_8',
 	"OpenGL", "OpenGL.arrays", "OpenGL.platform",
-], "excludes": [], "optimize": 0}
+], "excludes": [], "optimize": 0, "include_files": [
+	('images', 'images'),
+	('cura.py', 'cura.py'),
+	('__init__.py', '__init__.py'),
+	('util', 'util'),
+	('cura_sf', 'cura_sf')
+]}
 
 # GUI applications require a different base on Windows (the default is for a
 # console application).
