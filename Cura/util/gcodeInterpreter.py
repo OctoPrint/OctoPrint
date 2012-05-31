@@ -22,10 +22,11 @@ class gcode(object):
 		self.progressCallback = None
 	
 	def load(self, filename):
-		self._fileSize = os.stat(filename).st_size
-		gcodeFile = open(filename, 'r')
-		self._load(gcodeFile)
-		gcodeFile.close()
+		if os.path.isfile(filename):
+			self._fileSize = os.stat(filename).st_size
+			gcodeFile = open(filename, 'r')
+			self._load(gcodeFile)
+			gcodeFile.close()
 	
 	def loadList(self, l):
 		self._load(l)
