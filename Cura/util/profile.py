@@ -272,7 +272,10 @@ global globalPreferenceParser
 globalPreferenceParser = None
 
 def getPreferencePath():
-	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../preferences.ini"))
+	basePath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+	if os.path.basename(basePath) == 'library.zip':
+		basePath = os.path.normpath(os.path.join(basePath, ".."))
+	return os.path.normpath(os.path.join(basePath, "preferences.ini"))
 
 def getPreferenceFloat(name):
 	try:

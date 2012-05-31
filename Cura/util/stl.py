@@ -1,10 +1,7 @@
-from __future__ import absolute_import
-import __init__
-
 import sys, math, re, os, struct, time
 
-from util import util3d
-from util import mesh
+import util3d
+import mesh
 
 class stlModel(mesh.mesh):
 	def __init__(self):
