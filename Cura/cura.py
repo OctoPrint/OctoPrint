@@ -46,6 +46,7 @@ def main():
 	parser = OptionParser(usage="usage: %prog [options] <filename>.stl")
 	parser.add_option("-i", "--ini", action="store", type="string", dest="profileini", help="Load settings from a profile ini file")
 	parser.add_option("-P", "--project", action="store_true", dest="openprojectplanner", help="Open the project planner")
+	parser.add_option("-F", "--flat", action="store_true", dest="openflatslicer", help="Open the 2D SVG slicer")
 	parser.add_option("-r", "--print", action="store", type="string", dest="printfile", help="Open the printing interface, instead of the normal cura interface.")
 	parser.add_option("-p", "--profile", action="store", type="string", dest="profile", help="Internal option, do not use!")
 	(options, args) = parser.parse_args()
@@ -56,6 +57,10 @@ def main():
 	if options.openprojectplanner != None:
 		from gui import projectPlanner
 		projectPlanner.main()
+		return
+	if options.openflatslicer != None:
+		from gui import flatSlicerWindow
+		flatSlicerWindow.main()
 		return
 	if options.printfile != None:
 		from gui import printWindow
