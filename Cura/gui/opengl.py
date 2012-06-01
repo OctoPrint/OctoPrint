@@ -313,6 +313,6 @@ def DrawGCodeLayer(layer):
 				glVertex3f(v.x, v.y, v.z)
 			glEnd()
 		prevPathWasRetract = False
-		if path.type == 'retract' and (path.list[0] - path.list[-1]).vsize() < 0.001:
+		if path.type == 'retract' and path.list[0].almostEqual(path.list[-1]):
 			prevPathWasRetract = True
 	glEnable(GL_CULL_FACE)
