@@ -227,25 +227,35 @@ def DrawGCodeLayer(layer):
 	
 	fillCycle = 0
 	fillColorCycle = [[0.5,0.5,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5]]
+	moveColor = [0,0,1]
+	retractColor = [0,1,1]
+	supportColor = [0,1,1]
+	extrudeColor = [1,0,0]
+	innerWallColor = [0,1,0]
+	skirtColor = [0,0.5,0.5]
+	prevPathWasRetract = False
 	
 	glDisable(GL_CULL_FACE)
 	for path in layer:
 		if path.type == 'move':
-			glColor3f(0,0,1)
+			if prevPathWasRetract:
+				c = retractColor
+			else:
+				c = moveColor
 		if path.type == 'extrude':
 			if path.pathType == 'FILL':
-				glColor3fv(fillColorCycle[fillCycle])
+				c = fillColorCycle[fillCycle]
 				fillCycle = (fillCycle + 1) % len(fillColorCycle)
 			elif path.pathType == 'WALL-INNER':
-				glColor3fv([0,1,0])
+				c = innerWallColor
 			elif path.pathType == 'SUPPORT':
-				glColor3fv([0,1,1])
+				c = supportColor
 			elif path.pathType == 'SKIRT':
-				glColor3fv([0,0.5,0.5])
+				c = skirtColor
 			else:
-				glColor3fv([1,0,0])
+				c = extrudeColor
 		if path.type == 'retract':
-			glColor3fv([0,1,1])
+			c = [0,1,1]
 		if path.type == 'extrude':
 			drawLength = 0.0
 			prevNormal = None
@@ -269,6 +279,7 @@ def DrawGCodeLayer(layer):
 				vv1 = v1 - normal * lineWidth
 
 				glBegin(GL_QUADS)
+				glColor3fv(c)
 				glVertex3f(vv0.x, vv0.y, vv0.z - 0.01)
 				glVertex3f(vv1.x, vv1.y, vv1.z - 0.01)
 				glVertex3f(vv3.x, vv3.y, vv3.z - 0.01)
@@ -280,6 +291,7 @@ def DrawGCodeLayer(layer):
 					vv4 = v0 + n * lineWidth
 					vv5 = v0 - n * lineWidth
 					glBegin(GL_QUADS)
+					glColor3fv(c)
 					glVertex3f(vv2.x, vv2.y, vv2.z)
 					glVertex3f(vv4.x, vv4.y, vv4.z)
 					glVertex3f(prevVv3.x, prevVv3.y, prevVv3.z)
@@ -296,7 +308,11 @@ def DrawGCodeLayer(layer):
 				prevVv3 = vv3
 		else:
 			glBegin(GL_LINE_STRIP)
+			glColor3fv(c)
 			for v in path.list:
 				glVertex3f(v.x, v.y, v.z)
 			glEnd()
+		prevPathWasRetract = False
+		if path.type == 'retract' and (path.list[0] - path.list[-1]).vsize() < 0.001:
+			prevPathWasRetract = True
 	glEnable(GL_CULL_FACE)
