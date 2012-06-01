@@ -215,6 +215,8 @@ class gcode(object):
 						pass
 					elif M == 109:	#Set temperature, wait
 						pass
+					elif M == 110:	#Reset N counter
+						pass
 					elif M == 113:	#Extruder PWM (these should not be in the final GCode, but they are)
 						pass
 					else:

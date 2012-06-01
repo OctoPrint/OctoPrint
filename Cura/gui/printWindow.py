@@ -6,6 +6,7 @@ from wx.lib import buttons
 
 from gui import machineCom
 from gui import icon
+from gui import toolbarUtil
 from util import profile
 from util import gcodeInterpreter
 
@@ -53,7 +54,7 @@ class printProcessMonitor():
 
 class PrintCommandButton(buttons.GenBitmapButton):
 	def __init__(self, parent, command, bitmapFilename, size=(20,20)):
-		self.bitmap = wx.Bitmap(os.path.join(os.path.split(__file__)[0], "../images", bitmapFilename))
+		self.bitmap = toolbarUtil.getBitmapImage(bitmapFilename)
 		super(PrintCommandButton, self).__init__(parent.directControlPanel, -1, self.bitmap, size=size)
 
 		self.command = command
