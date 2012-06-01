@@ -2,10 +2,11 @@ from __future__ import absolute_import
 
 import platform, os, subprocess, sys
 
-cura_sf_path = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../cura_sf/"))
-if cura_sf_path not in sys.path:
-	sys.path.append(cura_sf_path)
-from skeinforge_application.skeinforge_utilities import skeinforge_craft
+if not hasattr(sys, 'frozen'):
+	cura_sf_path = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../cura_sf/"))
+	if cura_sf_path not in sys.path:
+		sys.path.append(cura_sf_path)
+	from skeinforge_application.skeinforge_utilities import skeinforge_craft
 
 from util import profile
 
@@ -77,13 +78,20 @@ def runSlice(fileNames):
 		if platform.python_implementation() == "PyPy":
 			skeinforge_craft.writeOutput(fileName)
 		elif pypyExe == False:
-			print "************************************************"
-			print "* Failed to find pypy, so slicing with python! *"
-			print "************************************************"
-			skeinforge_craft.writeOutput(fileName)
-			print "************************************************"
-			print "* Failed to find pypy, so sliced with python!  *"
-			print "************************************************"
+			if not hasattr(sys, 'frozen'):
+				print "************************************************"
+				print "* Failed to find pypy, so slicing with python! *"
+				print "************************************************"
+				skeinforge_craft.writeOutput(fileName)
+				print "************************************************"
+				print "* Failed to find pypy, so sliced with python!  *"
+				print "************************************************"
+			else:
+				print "******************************************************************"
+				print "* Failed to find pypy, we need pypy to slice with a frozen build *"
+				print "* Place pypy in the same directory as Cura so Cura can find it.  *"
+				print "******************************************************************"
+				sys.exit(1)
 		else:
 			subprocess.call(getSliceCommand(fileName))
 
@@ -149,7 +157,7 @@ def getSliceCommand(filename):
 		
 		#In case we have a frozen exe, then argv[0] points to the executable, but we want to give pypy a real script file.
 		if hasattr(sys, 'frozen'):
-			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "cura.py"))
+			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "cura_sf.zip"))
 		else:
 			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1]))
 		cmd = [pypyExe, mainScriptFile, '-p', profile.getGlobalProfileString()]
