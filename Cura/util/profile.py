@@ -58,7 +58,6 @@ profileDefaultSettings = {
 	'enable_raft': 'False',
 	'cool_min_feedrate': '5',
 	'bridge_speed': '100',
-	'bridge_material_amount': '100',
 	'raft_margin': '5',
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',

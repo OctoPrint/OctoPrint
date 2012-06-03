@@ -212,7 +212,6 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('joris', 'False')
 		put('cool_min_feedrate', '5')
 		put('bridge_speed', '100')
-		put('bridge_material_amount', '100')
 		put('raft_margin', '5')
 		put('raft_base_material_amount', '100')
 		put('raft_interface_material_amount', '100')
