@@ -67,6 +67,16 @@ def processPath(e):
 					curPath.append(p)
 					i += 2
 				curPath.append(p)
+			elif cmd == 'C':
+				if curPath == None:
+					curPath = [p]
+					paths.append(curPath)
+				i = 0
+				while i < len(param):
+					addCurve(curPath, p, complex(param[i], -param[i+1]), complex(param[i+2], -param[i+3]), complex(param[i+4], -param[i+5]))
+					p = complex(param[i+4], -param[i+5])
+					curPath.append(p)
+					i += 6
 			elif cmd == 'c':
 				if curPath == None:
 					curPath = [p]
@@ -77,6 +87,18 @@ def processPath(e):
 					p += complex(param[i+4], -param[i+5])
 					curPath.append(p)
 					i += 6
+			elif cmd == 'a':
+				if curPath == None:
+					curPath = [p]
+					paths.append(curPath)
+				i = 0
+				print param
+				while i < len(param):
+					endPoint = p + complex(param[i+5], -param[i+6])
+					addArc(curPath, p, endPoint, param[i], param[i+1], param[i+2], param[i+3], param[i+4])
+					p = endPoint
+					curPath.append(p)
+					i += 7
 			elif cmd == 'Z' or cmd == 'z':
 				curPath.append(curPath[0])
 			elif cmd != None:
@@ -101,6 +123,9 @@ def addCurve(path, p0, q0, q1, p1):
 		if abs(s - oldPoint) > 1.0:
 			path.append(s)
 			oldPoint = s
+
+def addArc(path, end, rx, ry, rot, largeArc, sweep):
+	pass
 
 def movePath(p, offset):
 	return map(lambda _p: _p - offset, p)
