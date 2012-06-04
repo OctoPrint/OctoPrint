@@ -29,6 +29,7 @@ profileDefaultSettings = {
 	'retraction_speed': '40.0',
 	'retraction_amount': '0.0',
 	'retraction_extra': '0.0',
+	'retract_on_jumps_only': 'True',
 	'travel_speed': '150',
 	'max_z_speed': '3.0',
 	'bottom_layer_speed': '20',

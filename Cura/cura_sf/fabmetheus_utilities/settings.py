@@ -382,6 +382,7 @@ def getProfileInformation():
 			'Retract_Within_Island': DEFSET,
 			'Retraction_Distance_millimeters': storedSettingFloat('retraction_amount'),
 			'Restart_Extra_Distance_millimeters': storedSettingFloat('retraction_extra'),
+			'Only_Retract_On_Jumps': storedSetting("retract_on_jumps_only"),
 		},'alteration': {
 			'Activate_Alteration': storedSetting('add_start_end_gcode'),
 			'Name_of_End_File': "end.gcode",

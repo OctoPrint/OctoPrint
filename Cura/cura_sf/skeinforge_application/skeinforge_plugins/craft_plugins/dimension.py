@@ -165,6 +165,7 @@ class DimensionRepository:
 		self.retractionDistance = settings.FloatSpin().getFromValue( 0.0, 'Retraction Distance (millimeters):', self, 100.0, 0.0 )
 		self.restartExtraDistance = settings.FloatSpin().getFromValue( 0.0, 'Restart Extra Distance (millimeters):', self, 100.0, 0.0 )
 		self.executeTitle = 'Dimension'
+		self.onlyRetractOnJumps = settings.BooleanSetting().getFromValue('Only Retract On Jumps', self, True )
 
 	def execute(self):
 		'Dimension button has been clicked.'
@@ -192,6 +193,7 @@ class DimensionSkein:
 		self.travelFeedRatePerSecond = None
 		self.zDistanceRatio = 5.0
 		self.addRetraction = False
+		self.onlyRetractOnJumps = True
 
 	def addLinearMoveExtrusionDistanceLine(self, extrusionDistance):
 		'Get the extrusion distance string from the extrusion distance.'
@@ -203,6 +205,7 @@ class DimensionSkein:
 	def getCraftedGcode(self, gcodeText, repository):
 		'Parse gcode text and store the dimension gcode.'
 		self.repository = repository
+		self.onlyRetractOnJumps = repository.onlyRetractOnJumps.value
 		filamentRadius = 0.5 * repository.filamentDiameter.value
 		filamentPackingArea = math.pi * filamentRadius * filamentRadius * repository.filamentPackingDensity.value
 		self.minimumTravelForRetraction = self.repository.minimumTravelForRetraction.value
@@ -380,7 +383,7 @@ class DimensionSkein:
 			self.absoluteDistanceMode = True
 		elif firstWord == 'G91':
 			self.absoluteDistanceMode = False
-		elif firstWord == '(<nextmovehasspacejump>)':
+		elif firstWord == '(<nextmovehasspacejump>)' and self.onlyRetractOnJumps:
 			#Check for the space jump moves for retraction, these tags are added by the comb plugin.
 			self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
 			self.addRetraction = True
@@ -392,7 +395,7 @@ class DimensionSkein:
 				self.distanceFeedRate.addLine('G92 E0')
 				self.totalExtrusionDistance = 0.0
 		elif firstWord == 'M101':
-			if self.addRetraction:
+			if self.addRetraction or not self.onlyRetractOnJumps:
 				self.addLinearMoveExtrusionDistanceLine(self.restartDistance * self.retractionRatio)
 			self.addRetraction = False
 			if self.totalExtrusionDistance > self.repository.maximumEValueBeforeReset.value: 
@@ -402,6 +405,8 @@ class DimensionSkein:
 			self.isExtruderActive = True
 		elif firstWord == 'M103':
 			self.retractionRatio = self.getRetractionRatio(lineIndex)
+			if not self.onlyRetractOnJumps:
+				self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
 			self.isExtruderActive = False
 		elif firstWord == 'M108':
 			self.flowRate = float( splitLine[1][1 :] )
