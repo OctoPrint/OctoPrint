@@ -15,9 +15,11 @@ from gui import machineCom
 from gui import printWindow
 from gui import simpleMode
 from gui import projectPlanner
+from gui import flatSlicerWindow
 from gui import icon
 from util import profile
 from util import version
+from util import sliceRun
 
 def main():
 	app = wx.App(False)
@@ -66,6 +68,8 @@ class mainWindow(configBase.configWindowBase):
 		expertMenu = wx.Menu()
 		i = expertMenu.Append(-1, 'Open expert settings...')
 		self.Bind(wx.EVT_MENU, self.OnExpertOpen, i)
+		i = expertMenu.Append(-1, 'Open SVG (2D) slicer...')
+		self.Bind(wx.EVT_MENU, self.OnSVGSlicerOpen, i)
 		expertMenu.AppendSeparator()
 		i = expertMenu.Append(-1, 'Install default Marlin firmware')
 		self.Bind(wx.EVT_MENU, self.OnDefaultMarlinFirmware, i)
@@ -333,10 +337,10 @@ class mainWindow(configBase.configWindowBase):
 		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		if not os.path.exists(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode"):
+		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
 			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
-		printWindow.printFile(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode")
+		printWindow.printFile(sliceRun.getExportFilename(self.filelist[0]))
 
 	def OnExpertOpen(self, e):
 		ecw = expertConfig.expertConfigWindow()
@@ -347,6 +351,11 @@ class mainWindow(configBase.configWindowBase):
 		pp = projectPlanner.projectPlanner()
 		pp.Centre()
 		pp.Show(True)
+
+	def OnSVGSlicerOpen(self, e):
+		svgSlicer = flatSlicerWindow.flatSlicerWindow()
+		svgSlicer.Centre()
+		svgSlicer.Show(True)
 
 	def removeSliceProgress(self, spp):
 		self.progressPanelList.remove(spp)

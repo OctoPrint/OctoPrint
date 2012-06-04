@@ -21,6 +21,7 @@ from util import profile
 from util import gcodeInterpreter
 from util import stl
 from util import util3d
+from util import sliceRun
 
 class previewObject():
 	def __init__(self):
@@ -207,8 +208,8 @@ class previewPanel(wx.Panel):
 				self.logFileTime = None
 			obj.filename = filelist[idx]
 		
-		self.gcodeFilename = filelist[0][: filelist[0].rfind('.')] + "_export.gcode"
-		self.logFilename = filelist[0][: filelist[0].rfind('.')] + "_export.log"
+		self.gcodeFilename = sliceRun.getExportFilename(filelist[0])
+		self.logFilename = sliceRun.getExportFilename(filelist[0], "log")
 		#Do the STL file loading in a background thread so we don't block the UI.
 		if self.loadThread != None and self.loadThread.isAlive():
 			self.loadThread.join()
@@ -360,6 +361,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			else:
 				self.offsetX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
 				self.offsetY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
+			
+			#Workaround for buggy ATI cards.
 			size = self.GetSizeTuple()
 			self.SetSize((size[0]+1, size[1]))
 			self.SetSize((size[0], size[1]))

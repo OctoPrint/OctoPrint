@@ -1,9 +1,6 @@
-from __future__ import absolute_import
-import __init__
-
 import sys, math, re, os, struct, time
 
-from util import util3d
+import util3d
 
 class meshFace(object):
 	def __init__(self, v0, v1, v2):

@@ -10,6 +10,7 @@ import __init__
 import os
 import sys
 import traceback
+import zipfile
 
 
 __author__ = 'Enrique Perez (perez_enrique@yahoo.com)'
@@ -101,10 +102,20 @@ def getFilePaths(fileInDirectory=''):
 def getFilePathsByDirectory(directoryName):
 	'Get the file paths in the directory of the file in directory.'
 	absoluteDirectoryPath = os.path.abspath(directoryName)
-	directory = os.listdir(directoryName)
 	filePaths = []
-	for fileName in directory:
-		filePaths.append(os.path.join(absoluteDirectoryPath, fileName))
+	if os.path.isdir(directoryName):
+		for fileName in os.listdir(directoryName):
+			filePaths.append(os.path.join(absoluteDirectoryPath, fileName))
+	elif '.zip/' in directoryName:
+		zipfilename = directoryName[:directoryName.rfind('.zip/')+4]
+		subpath = directoryName[directoryName.rfind('.zip/')+5:]
+
+		z = zipfile.ZipFile(zipfilename, 'r')
+		for name in z.namelist():
+			if os.path.dirname(name) == subpath:
+				filePaths.append(os.path.join(zipfilename, name))
+		z.close()
+		print directoryName, filePaths
 	return filePaths
 
 def getFilePathsRecursively(fileInDirectory=''):
@@ -156,14 +167,30 @@ def getFilesWithFileTypeWithoutWords(fileType, words = [], fileInDirectory=''):
 
 def getFileText(fileName, printWarning=True, readMode='r'):
 	'Get the entire text of a file.'
+	if '.zip/' in fileName:
+		zipfilename = fileName[:fileName.rfind('.zip/')+4]
+		subpath = fileName[fileName.rfind('.zip/')+5:]
+
+		try:
+			z = zipfile.ZipFile(zipfilename, 'r')
+			f = z.open(subpath, 'r')
+			fileText = f.read()
+			f.close()
+			z.close()
+			return fileText
+		except KeyError:
+			if printWarning:
+				print('The file ' + fileName + ' does not exist.')
+			return ''
 	try:
-		file = open(fileName, readMode)
-		fileText = file.read()
-		file.close()
+		f = open(fileName, readMode)
+		fileText = f.read()
+		f.close()
 		return fileText
 	except IOError:
 		if printWarning:
 			print('The file ' + fileName + ' does not exist.')
+	
 	return ''
 
 def getFileTextInFileDirectory(fileInDirectory, fileName, readMode='r'):

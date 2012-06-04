@@ -1,4 +1,3 @@
-
 import math
 
 class Vector3(object):

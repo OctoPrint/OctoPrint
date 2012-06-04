@@ -68,7 +68,7 @@ class sliceProgessPanel(wx.Panel):
 		LogWindow('\n'.join(self.progressLog))
 	
 	def OnOpenFileLocation(self, e):
-		exporer.openExporer(self.filelist[0][: self.filelist[0].rfind('.')] + "_export.gcode")
+		exporer.openExporer(sliceRun.getExportFilename(self.filelist[0]))
 	
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
@@ -145,7 +145,7 @@ class WorkerThread(threading.Thread):
 				return
 			line = p.stdout.readline()
 		self.returnCode = p.wait()
-		logfile = open(self.filelist[self.fileIdx][: self.filelist[self.fileIdx].rfind('.')] + "_export.log", "w")
+		logfile = open(sliceRun.getExportFilename(self.filelist[self.fileIdx], "log"), "w")
 		for logLine in self.progressLog:
 			logfile.write(logLine)
 			logfile.write('\n')
@@ -155,19 +155,19 @@ class WorkerThread(threading.Thread):
 			if len(self.filelist) > 1:
 				self._stitchMultiExtruder()
 			self.gcode = gcodeInterpreter.gcode()
-			self.gcode.load(self.filelist[0][:self.filelist[0].rfind('.')]+'_export.gcode')
+			self.gcode.load(sliceRun.getExportFilename(self.filelist[0]))
 			wx.CallAfter(self.notifyWindow.OnSliceDone, self)
 		else:
 			self.run()
 	
 	def _stitchMultiExtruder(self):
 		files = []
-		resultFile = open(self.filelist[0][:self.filelist[0].rfind('.')]+'_export.gcode', "w")
+		resultFile = open(sliceRun.getExportFilename(self.filelist[0]), "w")
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('start.gcode'))
 		for filename in self.filelist:
-			if os.path.isfile(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp'):
-				files.append(open(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp', "r"))
+			if os.path.isfile(sliceRun.getExportFilename(filename, 'multi_extrude_tmp')):
+				files.append(open(sliceRun.getExportFilename(filename, 'multi_extrude_tmp'), "r"))
 			else:
 				return
 		
@@ -201,7 +201,7 @@ class WorkerThread(threading.Thread):
 		for f in files:
 			f.close()
 		for filename in self.filelist:
-			os.remove(filename[:filename.rfind('.')]+'_export.multi_extrude_tmp')
+			os.remove(sliceRun.getExportFilename(filename, 'multi_extrude_tmp'))
 		resultFile.write(';TYPE:CUSTOM\n')
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()

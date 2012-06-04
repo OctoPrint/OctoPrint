@@ -35,7 +35,7 @@ def getGNUTranslatorFilesUnmodified():
 
 def getGNUTranslatorGcodeFileTypeTuples():
 	"Get the file type tuples from the translators in the import plugins folder plus gcode."
-	fileTypeTuples = getTranslatorFileTypeTuples()
+	fileTypeTuples = [] #getTranslatorFileTypeTuples()
 	fileTypeTuples.append( ('Gcode text files', '*.gcode') )
 	fileTypeTuples.sort()
 	return fileTypeTuples

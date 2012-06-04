@@ -1,13 +1,10 @@
-from __future__ import absolute_import
-import __init__
-
 import sys
 import math
 import re
 import os
 
-from util import util3d
-from util import profile
+import util3d
+import profile
 
 class gcodePath(object):
 	def __init__(self, newType, pathType, layerThickness, startPoint):
@@ -25,10 +22,11 @@ class gcode(object):
 		self.progressCallback = None
 	
 	def load(self, filename):
-		self._fileSize = os.stat(filename).st_size
-		gcodeFile = open(filename, 'r')
-		self._load(gcodeFile)
-		gcodeFile.close()
+		if os.path.isfile(filename):
+			self._fileSize = os.stat(filename).st_size
+			gcodeFile = open(filename, 'r')
+			self._load(gcodeFile)
+			gcodeFile.close()
 	
 	def loadList(self, l):
 		self._load(l)
@@ -216,6 +214,8 @@ class gcode(object):
 					elif M == 108:	#Extruder RPM (these should not be in the final GCode, but they are)
 						pass
 					elif M == 109:	#Set temperature, wait
+						pass
+					elif M == 110:	#Reset N counter
 						pass
 					elif M == 113:	#Extruder PWM (these should not be in the final GCode, but they are)
 						pass

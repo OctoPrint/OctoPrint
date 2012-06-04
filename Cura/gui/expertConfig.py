@@ -52,11 +52,9 @@ class expertConfigWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0)
 
 		configBase.TitleRow(right, "Bridge")
-		c = configBase.SettingRow(right, "Bridge speed (%)", 'bridge_speed', '100', 'Speed at which bridges are printed, compared to normal printing speed.')
+		c = configBase.SettingRow(right, "Bridge speed (%)", 'bridge_speed', '100', 'Speed at which layers with bridges are printed, compared to normal printing speed.')
 		validators.validFloat(c, 0.0)
-		c = configBase.SettingRow(right, "Bridge material (%)", 'bridge_material_amount', '100', 'Amount of material used for bridges, increase go extrude more material when printing a bridge.')
-		validators.validFloat(c, 0.0)
-
+		
 		configBase.TitleRow(right, "Sequence")
 		c = configBase.SettingRow(right, "Print order sequence", 'sequence', ['Loops > Perimeter > Infill', 'Loops > Infill > Perimeter', 'Infill > Loops > Perimeter', 'Infill > Perimeter > Loops', 'Perimeter > Infill > Loops', 'Perimeter > Loops > Infill'], 'Sequence of printing. The perimeter is the outer print edge, the loops are the insides of the walls, and the infill is the insides.');
 		c = configBase.SettingRow(right, "Force first layer sequence", 'force_first_layer_sequence', True, 'This setting forces the order of the first layer to be \'Perimeter > Loops > Infill\'')
