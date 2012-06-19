@@ -158,6 +158,13 @@ class gcode(object):
 					newPos = pos.copy()
 					newPos.e = totalExtrusion
 					currentPath.list.append(newPos)
+				elif G == 4:	#Delay
+					S = self.getCodeFloat(line, 'S')
+					if S is not None:
+						totalMoveTimeMinute += S / 60
+					P = self.getCodeFloat(line, 'P')
+					if P is not None:
+						totalMoveTimeMinute += P / 60 / 1000
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
