@@ -239,7 +239,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('bottom_thickness', '0.2')
 		elif self.printTypeJoris.GetValue():
 			put('wall_thickness', nozzle_size * 1.5)
-			put('layer_height', '0.2')
+			put('layer_height', '0.3')
 			put('fill_density', '0')
 			put('joris', 'True')
 			put('extra_base_wall_thickness', '15.0')
@@ -247,6 +247,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('force_first_layer_sequence', 'False')
 			put('solid_top', 'False')
 			put('support', 'None')
+			put('cool_min_layer_time', '3')
 
 		put('filament_diameter', self.printMaterialDiameter.GetValue())
 		if self.printMaterialPLA.GetValue():

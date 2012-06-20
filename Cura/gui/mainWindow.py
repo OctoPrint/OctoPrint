@@ -50,6 +50,9 @@ class mainWindow(configBase.configWindowBase):
 		i = fileMenu.Append(-1, 'Save Profile...')
 		self.Bind(wx.EVT_MENU, self.OnSaveProfile, i)
 		fileMenu.AppendSeparator()
+		i = fileMenu.Append(-1, 'Reset Profile to default')
+		self.Bind(wx.EVT_MENU, self.OnResetProfile, i)
+		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Preferences...')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
 		fileMenu.AppendSeparator()
@@ -255,6 +258,14 @@ class mainWindow(configBase.configWindowBase):
 			profileFile = dlg.GetPath()
 			profile.saveGlobalProfile(profileFile)
 		dlg.Destroy()
+	
+	def OnResetProfile(self, e):
+		dlg = wx.MessageDialog(self, 'This will reset all profile settings to defaults.\nUnless you have saved your current profile, all settings will be lost!\nDo you really want to reset?', 'Profile reset', wx.YES_NO | wx.ICON_QUESTION)
+		result = dlg.ShowModal() == wx.ID_YES
+		dlg.Destroy()
+		if result:
+			profile.resetGlobalProfile()
+			self.updateProfileToControls()
 	
 	def OnPreferences(self, e):
 		prefDialog = preferencesDialog.preferencesDialog(self)
