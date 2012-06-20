@@ -365,12 +365,12 @@ class CombSkein:
 			beginIndex = pointIndex - 1
 			if beginIndex >= 0:
 				begin = shortestPath[beginIndex]
-				centerPerpendicular = intercircle.getWiddershinsByLength(center, begin, self.edgeWidth)
+				centerPerpendicular = intercircle.getWiddershinsByLength(center, begin, self.edgeWidth*2.0)
 			centerEnd = None
 			endIndex = pointIndex + 1
 			if endIndex < len(shortestPath):
 				end = shortestPath[endIndex]
-				centerEnd = intercircle.getWiddershinsByLength(end, center, self.edgeWidth)
+				centerEnd = intercircle.getWiddershinsByLength(end, center, self.edgeWidth*2.0)
 			if centerPerpendicular == None:
 				centerPerpendicular = centerEnd
 			elif centerEnd != None:
