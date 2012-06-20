@@ -192,7 +192,8 @@ class DimensionSkein:
 		self.totalExtrusionDistance = 0.0
 		self.travelFeedRatePerSecond = None
 		self.zDistanceRatio = 5.0
-		self.addRetraction = False
+		self.addRetraction = True
+		self.reverseRetraction = False
 		self.onlyRetractOnJumps = True
 
 	def addLinearMoveExtrusionDistanceLine(self, extrusionDistance):
@@ -383,10 +384,15 @@ class DimensionSkein:
 			self.absoluteDistanceMode = True
 		elif firstWord == 'G91':
 			self.absoluteDistanceMode = False
-		elif firstWord == '(<nextmovehasspacejump>)' and self.onlyRetractOnJumps:
-			#Check for the space jump moves for retraction, these tags are added by the comb plugin.
-			self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
-			self.addRetraction = True
+		elif firstWord == '(<nestedRing>)':
+			if self.onlyRetractOnJumps:
+				self.addRetraction = False
+		elif firstWord == '(</nestedRing>)':
+			if self.onlyRetractOnJumps:
+				self.addRetraction = True
+				self.retractionRatio = self.getRetractionRatio(lineIndex)
+				self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
+				self.reverseRetraction = True
 		elif firstWord == '(<layer>':
 			self.layerIndex += 1
 			settings.printProgress(self.layerIndex, 'dimension')
@@ -395,9 +401,9 @@ class DimensionSkein:
 				self.distanceFeedRate.addLine('G92 E0')
 				self.totalExtrusionDistance = 0.0
 		elif firstWord == 'M101':
-			if self.addRetraction or not self.onlyRetractOnJumps:
+			if self.reverseRetraction:
 				self.addLinearMoveExtrusionDistanceLine(self.restartDistance * self.retractionRatio)
-			self.addRetraction = False
+				self.reverseRetraction = False
 			if self.totalExtrusionDistance > self.repository.maximumEValueBeforeReset.value: 
 				if not self.repository.relativeExtrusionDistance.value:
 					self.distanceFeedRate.addLine('G92 E0')
@@ -405,8 +411,9 @@ class DimensionSkein:
 			self.isExtruderActive = True
 		elif firstWord == 'M103':
 			self.retractionRatio = self.getRetractionRatio(lineIndex)
-			if not self.onlyRetractOnJumps:
+			if self.addRetraction:
 				self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
+				self.reverseRetraction = True
 			self.isExtruderActive = False
 		elif firstWord == 'M108':
 			self.flowRate = float( splitLine[1][1 :] )

@@ -228,7 +228,7 @@ def DrawGCodeLayer(layer):
 	fillCycle = 0
 	fillColorCycle = [[0.5,0.5,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5]]
 	moveColor = [0,0,1]
-	retractColor = [0,1,1]
+	retractColor = [1,0,0.5]
 	supportColor = [0,1,1]
 	extrudeColor = [1,0,0]
 	innerWallColor = [0,1,0]
@@ -312,7 +312,8 @@ def DrawGCodeLayer(layer):
 			for v in path.list:
 				glVertex3f(v.x, v.y, v.z)
 			glEnd()
-		prevPathWasRetract = False
+		if not path.type == 'move':
+			prevPathWasRetract = False
 		if path.type == 'retract' and path.list[0].almostEqual(path.list[-1]):
 			prevPathWasRetract = True
 	glEnable(GL_CULL_FACE)

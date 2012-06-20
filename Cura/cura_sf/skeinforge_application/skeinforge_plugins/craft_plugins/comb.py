@@ -238,7 +238,6 @@ class CombSkein:
 
 	def getAroundBetweenPath(self, begin, end):
 		'Get the path around the loops in the way of the original line segment.'
-		addedJumpLine = False
 		aroundBetweenPath = []
 		boundaries = self.getBoundaries()
 		boundarySegments = self.getBoundarySegments(begin, boundaries, end)
@@ -246,9 +245,6 @@ class CombSkein:
 			segment = boundarySegment.segment
 			if boundarySegmentIndex < len(boundarySegments) - 1 and self.runningJumpSpace > 0.0:
 				segment = boundarySegment.getSegment(boundarySegmentIndex, boundarySegments, self.edgeWidth, self.runningJumpSpace)
-				if not addedJumpLine:
-					self.distanceFeedRate.addLine("(<nextmovehasspacejump>)")
-					addedJumpLine = True
 			aroundBetweenPath += self.getAroundBetweenLineSegment(segment[0], boundaries, segment[1])
 			if boundarySegmentIndex < len(boundarySegments) - 1:
 				aroundBetweenPath.append(segment[1])
