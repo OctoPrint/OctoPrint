@@ -25,6 +25,7 @@ from gui import printWindow
 from util import profile
 from util import util3d
 from util import stl
+from util import mesh
 from util import sliceRun
 from util import gcodeInterpreter
 from util import exporer
@@ -160,6 +161,7 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar, self.OnPreferences, 'preferences.png', 'Project planner preferences')
 		self.toolbar.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar, self.OnCutMesh, 'cut-mesh.png', 'Cut a plate STL into multiple STL files, and add those files to the project.\nNote: Splitting up plates sometimes takes a few minutes.')
+		toolbarUtil.NormalButton(self.toolbar, self.OnSaveCombinedSTL, 'save-combination.png', 'Save all the combined STL files into a single STL file as a plate.')
 		self.toolbar.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
 		
@@ -269,6 +271,18 @@ class projectPlanner(wx.Frame):
 				self._updateListbox()
 				self.OnListSelect(None)
 		self.preview.Refresh()
+		dlg.Destroy()
+	
+	def OnSaveCombinedSTL(self, e):
+		dlg=wx.FileDialog(self, "Save as STL", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
+		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
+		if dlg.ShowModal() == wx.ID_OK:
+			output = mesh.mesh()
+			for item in self.list:
+				offset = util3d.Vector3(item.centerX, item.centerY, 0)
+				for f in item.faces:
+					output.addFace(f.v[0] * item.scale + offset, f.v[1] * item.scale + offset, f.v[2] * item.scale + offset)
+			stl.saveAsSTL(output, dlg.GetPath())
 		dlg.Destroy()
 	
 	def OnSaveProject(self, e):
