@@ -75,6 +75,8 @@ def runSlice(fileNames):
 	"Run the slicer on the files. If we are running with PyPy then just do the slicing action. If we are running as Python, try to find pypy."
 	pypyExe = getPyPyExe()
 	for fileName in fileNames:
+		if fileName.startswith("#UTF8#"):
+			fileName = unicode(fileName[6:], "utf-8")
 		if platform.python_implementation() == "PyPy":
 			skeinforge_craft.writeOutput(fileName)
 		elif pypyExe == False:
@@ -162,7 +164,10 @@ def getSliceCommand(filename):
 			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1]))
 		cmd = [pypyExe, mainScriptFile, '-p', profile.getGlobalProfileString()]
 		if platform.system() == "Windows":
-			cmd.append(str(filename))
+			try:
+				cmd.append(str(filename))
+			except UnicodeEncodeError:
+				cmd.append("#UTF8#" + filename.encode("utf-8"))
 		else:
 			cmd.append(filename)
 		return cmd
