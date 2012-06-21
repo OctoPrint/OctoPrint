@@ -138,6 +138,7 @@ class projectPlanner(wx.Frame):
 		
 		self.list = []
 		self.selection = None
+		self.printMode = 0
 
 		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
 		self.headSizeMin = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0)
@@ -162,6 +163,10 @@ class projectPlanner(wx.Frame):
 		self.toolbar.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar, self.OnCutMesh, 'cut-mesh.png', 'Cut a plate STL into multiple STL files, and add those files to the project.\nNote: Splitting up plates sometimes takes a few minutes.')
 		toolbarUtil.NormalButton(self.toolbar, self.OnSaveCombinedSTL, 'save-combination.png', 'Save all the combined STL files into a single STL file as a plate.')
+		self.toolbar.AddSeparator()
+		group = []
+		self.printOneAtATime = toolbarUtil.RadioButton(self.toolbar, group, 'view-normal-on.png', 'view-normal-off.png', 'Print one object at a time', callback=self.OnPrintTypeChange)
+		self.printAllAtOnce = toolbarUtil.RadioButton(self.toolbar, group, 'all-at-once-on.png', 'all-at-once-off.png', 'Print all the objects at once', callback=self.OnPrintTypeChange)
 		self.toolbar.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar, self.OnQuit, 'exit.png', 'Close project planner')
 		
@@ -273,17 +278,26 @@ class projectPlanner(wx.Frame):
 		self.preview.Refresh()
 		dlg.Destroy()
 	
+	def OnPrintTypeChange(self):
+		self.printMode = 0
+		if self.printAllAtOnce.GetValue():
+			self.printMode = 1
+		self.preview.Refresh()
+	
 	def OnSaveCombinedSTL(self, e):
 		dlg=wx.FileDialog(self, "Save as STL", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
-			output = mesh.mesh()
-			for item in self.list:
-				offset = util3d.Vector3(item.centerX, item.centerY, 0)
-				for f in item.faces:
-					output.addFace(f.v[0] * item.scale + offset, f.v[1] * item.scale + offset, f.v[2] * item.scale + offset)
-			stl.saveAsSTL(output, dlg.GetPath())
+			self._saveCombinedSTL(dlg.GetPath())
 		dlg.Destroy()
+	
+	def _saveCombinedSTL(filename):
+		output = mesh.mesh()
+		for item in self.list:
+			offset = util3d.Vector3(item.centerX, item.centerY, 0)
+			for f in item.faces:
+				output.addFace(f.v[0] * item.scale + offset, f.v[1] * item.scale + offset, f.v[2] * item.scale + offset)
+		stl.saveAsSTL(output, filename)
 	
 	def OnSaveProject(self, e):
 		dlg=wx.FileDialog(self, "Save project file", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
@@ -485,6 +499,10 @@ class projectPlanner(wx.Frame):
 		if profile.getProfileSetting('support') != 'None':
 			extraSizeMin = extraSizeMin + util3d.Vector3(3.0, 0, 0)
 			extraSizeMax = extraSizeMax + util3d.Vector3(3.0, 0, 0)
+		
+		if self.printMode == 1:
+			extraSizeMin = util3d.Vector3(6.0, 6.0, 0)
+			extraSizeMax = util3d.Vector3(6.0, 6.0, 0)
 
 		if extraSizeMin.x > extraSizeMax.x:
 			posX = self.machineSize.x
@@ -529,52 +547,6 @@ class projectPlanner(wx.Frame):
 		return (maxX - minX) + (maxY - minY)
 
 	def OnSlice(self, e):
-		put = profile.setTempOverride
-		oldProfile = profile.getGlobalProfileString()
-
-		put('model_multiply_x', '1')
-		put('model_multiply_y', '1')
-		put('enable_raft', 'False')
-		put('add_start_end_gcode', 'False')
-		put('gcode_extension', 'project_tmp')
-		
-		clearZ = 0
-		actionList = []
-		for item in self.list:
-			if item.profile != None and os.path.isfile(item.profile):
-				profile.loadGlobalProfile(item.profile)
-			put('machine_center_x', item.centerX - self.extruderOffset[item.extruder].x)
-			put('machine_center_y', item.centerY - self.extruderOffset[item.extruder].y)
-			put('model_scale', item.scale)
-			put('flip_x', item.flipX)
-			put('flip_y', item.flipY)
-			put('flip_z', item.flipZ)
-			put('model_rotate_base', item.rotate)
-			put('swap_xz', item.swapXZ)
-			put('swap_yz', item.swapYZ)
-			
-			action = Action()
-			action.sliceCmd = sliceRun.getSliceCommand(item.filename)
-			action.centerX = item.centerX
-			action.centerY = item.centerY
-			action.extruder = item.extruder
-			action.filename = item.filename
-			clearZ = max(clearZ, item.getMaximum().z * item.scale + 5.0)
-			action.clearZ = clearZ
-			action.leaveResultForNextSlice = False
-			action.usePreviousSlice = False
-			actionList.append(action)
-
-			if self.list.index(item) > 0 and item.isSameExceptForPosition(self.list[self.list.index(item)-1]):
-				actionList[-2].leaveResultForNextSlice = True
-				actionList[-1].usePreviousSlice = True
-
-			if item.profile != None:
-				profile.loadGlobalProfileFromString(oldProfile)
-		
-		#Restore the old profile.
-		profile.resetTempOverride()
-		
 		dlg=wx.FileDialog(self, "Save project gcode file", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
 		dlg.SetWildcard("GCode file (*.gcode)|*.gcode")
 		if dlg.ShowModal() != wx.ID_OK:
@@ -582,6 +554,73 @@ class projectPlanner(wx.Frame):
 			return
 		resultFilename = dlg.GetPath()
 		dlg.Destroy()
+
+		put = profile.setTempOverride
+		oldProfile = profile.getGlobalProfileString()
+		
+		put('add_start_end_gcode', 'False')
+		put('gcode_extension', 'project_tmp')
+		if self.printMode == 0:
+			put('enable_raft', 'False')
+			
+			clearZ = 0
+			actionList = []
+			for item in self.list:
+				if item.profile != None and os.path.isfile(item.profile):
+					profile.loadGlobalProfile(item.profile)
+				put('machine_center_x', item.centerX - self.extruderOffset[item.extruder].x)
+				put('machine_center_y', item.centerY - self.extruderOffset[item.extruder].y)
+				put('model_scale', item.scale)
+				put('flip_x', item.flipX)
+				put('flip_y', item.flipY)
+				put('flip_z', item.flipZ)
+				put('model_rotate_base', item.rotate)
+				put('swap_xz', item.swapXZ)
+				put('swap_yz', item.swapYZ)
+				
+				action = Action()
+				action.sliceCmd = sliceRun.getSliceCommand(item.filename)
+				action.centerX = item.centerX
+				action.centerY = item.centerY
+				action.extruder = item.extruder
+				action.filename = item.filename
+				clearZ = max(clearZ, item.getMaximum().z * item.scale + 5.0)
+				action.clearZ = clearZ
+				action.leaveResultForNextSlice = False
+				action.usePreviousSlice = False
+				actionList.append(action)
+
+				if self.list.index(item) > 0 and item.isSameExceptForPosition(self.list[self.list.index(item)-1]):
+					actionList[-2].leaveResultForNextSlice = True
+					actionList[-1].usePreviousSlice = True
+
+				if item.profile != None:
+					profile.loadGlobalProfileFromString(oldProfile)
+			
+		else:
+			self._saveCombinedSTL(resultFilename + "_temp_.stl")
+			put('model_scale', 1.0)
+			put('flip_x', False)
+			put('flip_y', False)
+			put('flip_z', False)
+			put('model_rotate_base', 0)
+			put('swap_xz', False)
+			put('swap_yz', False)
+			actionList = []
+			
+			action = Action()
+			action.sliceCmd = sliceRun.getSliceCommand(resultFilename + "_temp_.stl")
+			action.centerX = profile.getProfileSettingFloat('machine_center_x')
+			action.centerY = profile.getProfileSettingFloat('machine_center_y')
+			action.extruder = 0
+			action.filename = resultFilename + "_temp_.stl"
+			action.clearZ = 0
+			action.leaveResultForNextSlice = False
+			action.usePreviousSlice = False
+			actionList.append(action)
+			
+		#Restore the old profile.
+		profile.resetTempOverride()
 		
 		pspw = ProjectSliceProgressWindow(actionList, resultFilename)
 		pspw.extruderOffset = self.extruderOffset
@@ -716,6 +755,13 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
 			extraSizeMin = extraSizeMin + util3d.Vector3(skirtSize, skirtSize, 0)
 			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
+		if profile.getProfileSetting('support') != 'None':
+			extraSizeMin = extraSizeMin + util3d.Vector3(3.0, 0, 0)
+			extraSizeMax = extraSizeMax + util3d.Vector3(3.0, 0, 0)
+
+		if self.parent.printMode == 1:
+			extraSizeMin = util3d.Vector3(6.0, 6.0, 0)
+			extraSizeMax = util3d.Vector3(6.0, 6.0, 0)
 
 		for item in self.parent.list:
 			item.validPlacement = True
