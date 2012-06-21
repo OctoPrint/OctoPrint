@@ -182,6 +182,11 @@ def loadGlobalProfile(filename):
 	globalProfileParser = ConfigParser.ConfigParser()
 	globalProfileParser.read(filename)
 
+def resetGlobalProfile():
+	#Read a configuration file as global config
+	global globalProfileParser
+	globalProfileParser = ConfigParser.ConfigParser()
+
 def saveGlobalProfile(filename):
 	#Save the current profile to an ini file
 	globalProfileParser.write(open(filename, 'w'))
