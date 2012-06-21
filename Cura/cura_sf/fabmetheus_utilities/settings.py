@@ -25,6 +25,8 @@ def storedSettingInt(name):
 	return lambda setting: int(profile.getProfileSettingFloat(name))
 def storedPreference(name):
 	return lambda setting: profile.getPreference(name)
+def storedSettingInvertBoolean(name):
+	return lambda setting: profile.getProfileSetting(name) == "False"
 
 def ifSettingAboveZero(name):
 	return lambda setting: profile.getProfileSettingFloat(name) > 0
@@ -376,10 +378,9 @@ def getProfileInformation():
 			'Filament_Packing_Density_ratio': storedSettingFloat("filament_density"),
 			'Maximum_E_Value_before_Reset_float': DEFSET,
 			'Minimum_Travel_for_Retraction_millimeters': storedSettingFloat("retraction_min_travel"),
-			'Retract_Within_Island': DEFSET,
+			'Retract_Within_Island': storedSettingInvertBoolean("retract_on_jumps_only"),
 			'Retraction_Distance_millimeters': storedSettingFloat('retraction_amount'),
 			'Restart_Extra_Distance_millimeters': storedSettingFloat('retraction_extra'),
-			'Only_Retract_On_Jumps': storedSetting("retract_on_jumps_only"),
 		},'alteration': {
 			'Activate_Alteration': storedSetting('add_start_end_gcode'),
 			'Name_of_End_File': "end.gcode",

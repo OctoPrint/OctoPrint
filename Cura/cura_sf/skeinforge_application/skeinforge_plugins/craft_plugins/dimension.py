@@ -165,7 +165,6 @@ class DimensionRepository:
 		self.retractionDistance = settings.FloatSpin().getFromValue( 0.0, 'Retraction Distance (millimeters):', self, 100.0, 0.0 )
 		self.restartExtraDistance = settings.FloatSpin().getFromValue( 0.0, 'Restart Extra Distance (millimeters):', self, 100.0, 0.0 )
 		self.executeTitle = 'Dimension'
-		self.onlyRetractOnJumps = settings.BooleanSetting().getFromValue('Only Retract On Jumps', self, True )
 
 	def execute(self):
 		'Dimension button has been clicked.'
@@ -194,7 +193,6 @@ class DimensionSkein:
 		self.zDistanceRatio = 5.0
 		self.addRetraction = True
 		self.reverseRetraction = False
-		self.onlyRetractOnJumps = True
 
 	def addLinearMoveExtrusionDistanceLine(self, extrusionDistance):
 		'Get the extrusion distance string from the extrusion distance.'
@@ -206,7 +204,6 @@ class DimensionSkein:
 	def getCraftedGcode(self, gcodeText, repository):
 		'Parse gcode text and store the dimension gcode.'
 		self.repository = repository
-		self.onlyRetractOnJumps = repository.onlyRetractOnJumps.value
 		filamentRadius = 0.5 * repository.filamentDiameter.value
 		filamentPackingArea = math.pi * filamentRadius * filamentRadius * repository.filamentPackingDensity.value
 		self.minimumTravelForRetraction = self.repository.minimumTravelForRetraction.value
@@ -264,7 +261,7 @@ class DimensionSkein:
 				if isActive:
 					if not self.repository.retractWithinIsland.value:
 						locationEnclosureIndex = self.getSmallestEnclosureIndex(location.dropAxis())
-						if locationEnclosureIndex != self.getSmallestEnclosureIndex(self.oldLocation.dropAxis()):
+						if locationEnclosureIndex == self.getSmallestEnclosureIndex(self.oldLocation.dropAxis()):
 							return None
 					locationMinusOld = location - self.oldLocation
 					xyTravel = abs(locationMinusOld.dropAxis())
@@ -306,7 +303,7 @@ class DimensionSkein:
 		'Get the retraction ratio.'
 		distanceToNextThread = self.getDistanceToNextThread(lineIndex)
 		if distanceToNextThread == None:
-			return 1.0
+			return 0.0
 		if distanceToNextThread >= self.doubleMinimumTravelForRetraction:
 			return 1.0
 		if distanceToNextThread <= self.minimumTravelForRetraction:
@@ -384,27 +381,17 @@ class DimensionSkein:
 			self.absoluteDistanceMode = True
 		elif firstWord == 'G91':
 			self.absoluteDistanceMode = False
-		elif firstWord == '(<nestedRing>)':
-			if self.onlyRetractOnJumps:
-				self.addRetraction = False
-		elif firstWord == '(</nestedRing>)':
-			if self.onlyRetractOnJumps:
-				self.addRetraction = True
-				if not self.reverseRetraction:
-					self.retractionRatio = self.getRetractionRatio(lineIndex)
-					self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
-					self.reverseRetraction = True
 		elif firstWord == '(<layer>':
 			self.layerIndex += 1
+			print '=layer='
 			settings.printProgress(self.layerIndex, 'dimension')
 		elif firstWord == '(</layer>)':
 			if self.totalExtrusionDistance > 0.0 and not self.repository.relativeExtrusionDistance.value:
 				self.distanceFeedRate.addLine('G92 E0')
 				self.totalExtrusionDistance = 0.0
 		elif firstWord == 'M101':
-			if self.reverseRetraction:
+			if self.retractionRatio > 0.0:
 				self.addLinearMoveExtrusionDistanceLine(self.restartDistance * self.retractionRatio)
-				self.reverseRetraction = False
 			if self.totalExtrusionDistance > self.repository.maximumEValueBeforeReset.value: 
 				if not self.repository.relativeExtrusionDistance.value:
 					self.distanceFeedRate.addLine('G92 E0')
@@ -412,9 +399,8 @@ class DimensionSkein:
 			self.isExtruderActive = True
 		elif firstWord == 'M103':
 			self.retractionRatio = self.getRetractionRatio(lineIndex)
-			if self.addRetraction and not self.reverseRetraction:
+			if self.retractionRatio > 0.0:
 				self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
-				self.reverseRetraction = True
 			self.isExtruderActive = False
 		elif firstWord == 'M108':
 			self.flowRate = float( splitLine[1][1 :] )
