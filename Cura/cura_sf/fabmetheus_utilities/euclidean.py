@@ -32,10 +32,15 @@ import __init__
 
 from fabmetheus_utilities.vector3 import Vector3
 from fabmetheus_utilities import xml_simple_writer
-import cStringIO
+
+import sys
 import math
 import random
 
+if sys.version_info.major < 3:
+	import cStringIO
+else:
+	import io as cStringIO
 
 __author__ = 'Enrique Perez (perez_enrique@yahoo.com)'
 __date__ = '$Date: 2008/21/04 $'

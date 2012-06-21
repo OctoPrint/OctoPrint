@@ -115,7 +115,7 @@ def getFilePathsByDirectory(directoryName):
 			if os.path.dirname(name) == subpath:
 				filePaths.append(os.path.join(zipfilename, name))
 		z.close()
-		print directoryName, filePaths
+		print(directoryName, filePaths)
 	return filePaths
 
 def getFilePathsRecursively(fileInDirectory=''):

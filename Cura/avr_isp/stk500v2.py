@@ -101,7 +101,7 @@ class Stk500v2(ispBase.IspBase):
 				raise ispBase.IspError("Timeout")
 			b = struct.unpack(">B", s)[0]
 			checksum ^= b
-			#print hex(b)
+			#print(hex(b))
 			if state == 'Start':
 				if b == 0x1B:
 					state = 'GetSeq'

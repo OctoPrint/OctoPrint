@@ -415,7 +415,7 @@ def getReadRepository(repository):
 	
 	info = getProfileInformation()
 	if not info.has_key(repository.name):
-		print "Warning: Plugin: " + repository.name + " missing from Cura info"
+		print("Warning: Plugin: " + repository.name + " missing from Cura info")
 		return repository
 	info = info[repository.name]
 	
@@ -423,7 +423,7 @@ def getReadRepository(repository):
 	for p in repository.preferences:
 		name = safeConfigName(p.name)
 		if not info.has_key(name):
-			print "Setting: " + repository.name + ":" + name + " missing from Cura info"
+			print("Setting: " + repository.name + ":" + name + " missing from Cura info")
 			continue
 		if isinstance(info[name], types.FunctionType):
 			p.setValueToString(str(info[name](p)))
@@ -433,11 +433,11 @@ def getReadRepository(repository):
 	return repository
 
 def printProgress(layerIndex, procedureName):
-	print ("Progress[" + procedureName + ":" + str(layerIndex+1) + "]")
+	print("Progress[" + procedureName + ":" + str(layerIndex+1) + "]")
 	sys.stdout.flush()
 
 def printProgressByNumber(layerIndex, numberOfLayers, procedureName):
-	print ("Progress[" + procedureName + ":" + str(layerIndex+1) + ":" + str(numberOfLayers) + "]")
+	print("Progress[" + procedureName + ":" + str(layerIndex+1) + ":" + str(numberOfLayers) + "]")
 	sys.stdout.flush()
 
 def getAlterationFileLines(fileName):

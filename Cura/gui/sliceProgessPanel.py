@@ -40,7 +40,7 @@ class sliceProgessPanel(wx.Panel):
 		cmdList = []
 		for filename in self.filelist:
 			idx = self.filelist.index(filename)
-			print filename, idx
+			#print filename, idx
 			if idx > 0:
 				profile.setTempOverride('fan_enabled', 'False')
 				profile.setTempOverride('skirt_line_count', '0')

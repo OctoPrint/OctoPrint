@@ -30,6 +30,6 @@ def readHex(filename):
 		elif recType == 2:	#Extended Segment Address Record
 			extraAddr = int(line[9:13], 16) * 16
 		else:
-			print recType, recLen, addr, checkSum, line
+			print(recType, recLen, addr, checkSum, line)
 	f.close()
 	return data

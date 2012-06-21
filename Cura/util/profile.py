@@ -3,7 +3,11 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import ConfigParser, os, traceback, math, re, zlib, base64, time, sys
+import os, traceback, math, re, zlib, base64, time, sys
+if sys.version_info.major < 3:
+	import ConfigParser
+else:
+	import configparser as ConfigParser
 
 #########################################################
 ## Default settings when none are found.
@@ -247,13 +251,13 @@ def getProfileSetting(name):
 		if name in profileDefaultSettings:
 			default = profileDefaultSettings[name]
 		else:
-			print "Missing default setting for: '" + name + "'"
+			print("Missing default setting for: '" + name + "'")
 			profileDefaultSettings[name] = ''
 			default = ''
 		if not globalProfileParser.has_section('profile'):
 			globalProfileParser.add_section('profile')
 		globalProfileParser.set('profile', name, str(default))
-		#print name + " not found in profile, so using default: " + str(default)
+		#print(name + " not found in profile, so using default: " + str(default))
 		return default
 	return globalProfileParser.get('profile', name)
 
@@ -304,13 +308,13 @@ def getPreference(name):
 		if name in preferencesDefaultSettings:
 			default = preferencesDefaultSettings[name]
 		else:
-			print "Missing default setting for: '" + name + "'"
+			print("Missing default setting for: '" + name + "'")
 			preferencesDefaultSettings[name] = ''
 			default = ''
 		if not globalPreferenceParser.has_section('preference'):
 			globalPreferenceParser.add_section('preference')
 		globalPreferenceParser.set('preference', name, str(default))
-		#print name + " not found in preferences, so using default: " + str(default)
+		#print(name + " not found in preferences, so using default: " + str(default))
 		return default
 	return unicode(globalPreferenceParser.get('preference', name), "utf-8")
 
@@ -406,12 +410,12 @@ def getAlterationFile(filename):
 		if filename in alterationDefault:
 			default = alterationDefault[filename]
 		else:
-			print "Missing default alteration for: '" + filename + "'"
+			print("Missing default alteration for: '" + filename + "'")
 			alterationDefault[filename] = ''
 			default = ''
 		if not globalProfileParser.has_section('alterations'):
 			globalProfileParser.add_section('alterations')
-		#print "Using default for: %s" % (filename)
+		#print("Using default for: %s" % (filename))
 		globalProfileParser.set('alterations', filename, default)
 	return unicode(globalProfileParser.get('alterations', filename), "utf-8")
 

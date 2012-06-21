@@ -92,7 +92,7 @@ def processPath(e):
 					curPath = [p]
 					paths.append(curPath)
 				i = 0
-				print param
+				print(param)
 				while i < len(param):
 					endPoint = p + complex(param[i+5], -param[i+6])
 					addArc(curPath, p, endPoint, param[i], param[i+1], param[i+2], param[i+3], param[i+4])
@@ -102,7 +102,7 @@ def processPath(e):
 			elif cmd == 'Z' or cmd == 'z':
 				curPath.append(curPath[0])
 			elif cmd != None:
-				print cmd
+				print(cmd)
 			cmd = c
 			param = []
 	return paths
