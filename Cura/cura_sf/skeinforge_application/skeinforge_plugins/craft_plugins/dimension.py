@@ -390,9 +390,10 @@ class DimensionSkein:
 		elif firstWord == '(</nestedRing>)':
 			if self.onlyRetractOnJumps:
 				self.addRetraction = True
-				self.retractionRatio = self.getRetractionRatio(lineIndex)
-				self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
-				self.reverseRetraction = True
+				if not self.reverseRetraction:
+					self.retractionRatio = self.getRetractionRatio(lineIndex)
+					self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
+					self.reverseRetraction = True
 		elif firstWord == '(<layer>':
 			self.layerIndex += 1
 			settings.printProgress(self.layerIndex, 'dimension')
@@ -411,7 +412,7 @@ class DimensionSkein:
 			self.isExtruderActive = True
 		elif firstWord == 'M103':
 			self.retractionRatio = self.getRetractionRatio(lineIndex)
-			if self.addRetraction:
+			if self.addRetraction and not self.reverseRetraction:
 				self.addLinearMoveExtrusionDistanceLine(-self.repository.retractionDistance.value * self.retractionRatio)
 				self.reverseRetraction = True
 			self.isExtruderActive = False

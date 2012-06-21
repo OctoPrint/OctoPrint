@@ -192,7 +192,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('bottom_layer_speed', '25')
 		put('cool_min_layer_time', '10')
 		put('fan_enabled', 'True')
-		put('fan_layer', '0')
+		put('fan_layer', '1')
 		put('fan_speed', '100')
 		#put('model_scale', '1.0')
 		#put('flip_x', 'False')

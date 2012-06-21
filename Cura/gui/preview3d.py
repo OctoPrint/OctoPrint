@@ -234,6 +234,7 @@ class previewPanel(wx.Panel):
 				obj.dirty = False
 				obj.mesh = mesh
 				self.updateModelTransform()
+				self.errorList = []
 				wx.CallAfter(self.updateToolbar)
 				wx.CallAfter(self.glCanvas.Refresh)
 		
@@ -243,7 +244,6 @@ class previewPanel(wx.Panel):
 			gcode.progressCallback = self.loadProgress
 			gcode.load(self.gcodeFilename)
 			self.gcodeDirty = False
-			self.errorList = []
 			self.gcode = gcode
 			self.gcodeDirty = True
 			wx.CallAfter(self.updateToolbar)
@@ -455,6 +455,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, [0.8, 0.8, 0.8, 1.0]);
 
 		glColor3f(1.0,1.0,1.0)
+		glPushMatrix()
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		for obj in self.parent.objectList:
 			if obj.mesh == None:
@@ -529,7 +530,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 5, self.objColor[self.parent.objectList.index(obj)]))
 				glEnable(GL_LIGHTING)
 				self.drawModel(obj)
-			
+		
+		glPopMatrix()	
 		if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
 			glDisable(GL_LIGHTING)
 			glDisable(GL_DEPTH_TEST)
