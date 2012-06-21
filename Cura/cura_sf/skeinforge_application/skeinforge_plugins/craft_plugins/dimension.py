@@ -383,7 +383,6 @@ class DimensionSkein:
 			self.absoluteDistanceMode = False
 		elif firstWord == '(<layer>':
 			self.layerIndex += 1
-			print '=layer='
 			settings.printProgress(self.layerIndex, 'dimension')
 		elif firstWord == '(</layer>)':
 			if self.totalExtrusionDistance > 0.0 and not self.repository.relativeExtrusionDistance.value:
