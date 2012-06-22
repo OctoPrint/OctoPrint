@@ -95,7 +95,7 @@ def processPath(e):
 				print param
 				while i < len(param):
 					endPoint = p + complex(param[i+5], -param[i+6])
-					addArc(curPath, p, endPoint, param[i], param[i+1], param[i+2], param[i+3], param[i+4])
+					addArc(curPath, p, endPoint, complex(param[i], param[i+1]), param[i+2], param[i+3], param[i+4])
 					p = endPoint
 					curPath.append(p)
 					i += 7
@@ -124,8 +124,61 @@ def addCurve(path, p0, q0, q1, p1):
 			path.append(s)
 			oldPoint = s
 
-def addArc(path, end, rx, ry, rot, largeArc, sweep):
-	pass
+def addArc(path, begin, end, radius, xAxisRotation, largeArcFlag, sweepFlag):
+	xAxisRotationComplex = complex(math.cos(math.radians(xAxisRotation)), math.sin(math.radians(xAxisRotation)))
+	reverseXAxisRotationComplex = complex(xAxisRotationComplex.real, -xAxisRotationComplex.imag)
+	beginRotated = begin * reverseXAxisRotationComplex
+	endRotated = end * reverseXAxisRotationComplex
+	beginTransformed = complex(beginRotated.real / radius.real, beginRotated.imag / radius.imag)
+	endTransformed = complex(endRotated.real / radius.real, endRotated.imag / radius.imag)
+	midpointTransformed = 0.5 * (beginTransformed + endTransformed)
+	midMinusBeginTransformed = midpointTransformed - beginTransformed
+	midMinusBeginTransformedLength = abs(midMinusBeginTransformed)
+
+	if midMinusBeginTransformedLength > 1.0:
+		radius *= midMinusBeginTransformedLength
+		beginTransformed /= midMinusBeginTransformedLength
+		endTransformed /= midMinusBeginTransformedLength
+		midpointTransformed /= midMinusBeginTransformedLength
+		midMinusBeginTransformed /= midMinusBeginTransformedLength
+		midMinusBeginTransformedLength = 1.0
+	midWiddershinsTransformed = complex(-midMinusBeginTransformed.imag, midMinusBeginTransformed.real)
+	midWiddershinsLengthSquared = 1.0 - midMinusBeginTransformedLength * midMinusBeginTransformedLength
+	if midWiddershinsLengthSquared < 0.0:
+		midWiddershinsLengthSquared = 0.0
+	midWiddershinsLength = math.sqrt(midWiddershinsLengthSquared)
+	midWiddershinsTransformed *= midWiddershinsLength / abs(midWiddershinsTransformed)
+	centerTransformed = midpointTransformed
+	if largeArcFlag == sweepFlag:
+		centerTransformed -= midWiddershinsTransformed
+	else:
+		centerTransformed += midWiddershinsTransformed
+	beginMinusCenterTransformed = beginTransformed - centerTransformed
+	beginMinusCenterTransformedLength = abs(beginMinusCenterTransformed)
+	if beginMinusCenterTransformedLength <= 0.0:
+		return end
+	beginAngle = math.atan2(beginMinusCenterTransformed.imag, beginMinusCenterTransformed.real)
+	endMinusCenterTransformed = endTransformed - centerTransformed
+	angleDifference = getAngleDifferenceByComplex(endMinusCenterTransformed, beginMinusCenterTransformed)
+	if sweepFlag:
+		if angleDifference < 0.0:
+			angleDifference += 2.0 * math.pi
+	else:
+		if angleDifference > 0.0:
+			angleDifference -= 2.0 * math.pi
+
+	center = complex(centerTransformed.real * radius.real, centerTransformed.imag * radius.imag) * xAxisRotationComplex
+	for side in xrange(1, 32):
+		a = beginAngle + float(side) * math.pi * 2 / 32
+		circumferential = complex(math.cos(a) * radius.real, math.sin(a) * radius.imag) * beginMinusCenterTransformedLength
+		point = center + circumferential * xAxisRotationComplex
+		path.append(point)
+
+def getAngleDifferenceByComplex( subtractFromComplex, subtractComplex ):
+	subtractComplexMirror = complex( subtractComplex.real , - subtractComplex.imag )
+	differenceComplex = subtractComplexMirror * subtractFromComplex
+	return math.atan2( differenceComplex.imag, differenceComplex.real )
+
 
 def movePath(p, offset):
 	return map(lambda _p: _p - offset, p)
