@@ -30,7 +30,7 @@ sliceStepTimeFactor = {
 }
 
 totalRunTimeFactor = 0
-for v in sliceStepTimeFactor.itervalues():
+for v in sliceStepTimeFactor.values():
 	totalRunTimeFactor += v
 
 def getPyPyExe():
@@ -75,22 +75,24 @@ def runSlice(fileNames):
 	"Run the slicer on the files. If we are running with PyPy then just do the slicing action. If we are running as Python, try to find pypy."
 	pypyExe = getPyPyExe()
 	for fileName in fileNames:
+		if fileName.startswith("#UTF8#"):
+			fileName = unicode(fileName[6:], "utf-8")
 		if platform.python_implementation() == "PyPy":
 			skeinforge_craft.writeOutput(fileName)
 		elif pypyExe == False:
 			if not hasattr(sys, 'frozen'):
-				print "************************************************"
-				print "* Failed to find pypy, so slicing with python! *"
-				print "************************************************"
+				print("************************************************")
+				print("* Failed to find pypy, so slicing with python! *")
+				print("************************************************")
 				skeinforge_craft.writeOutput(fileName)
-				print "************************************************"
-				print "* Failed to find pypy, so sliced with python!  *"
-				print "************************************************"
+				print("************************************************")
+				print("* Failed to find pypy, so sliced with python!  *")
+				print("************************************************")
 			else:
-				print "******************************************************************"
-				print "* Failed to find pypy, we need pypy to slice with a frozen build *"
-				print "* Place pypy in the same directory as Cura so Cura can find it.  *"
-				print "******************************************************************"
+				print("******************************************************************")
+				print("* Failed to find pypy, we need pypy to slice with a frozen build *")
+				print("* Place pypy in the same directory as Cura so Cura can find it.  *")
+				print("******************************************************************")
 				sys.exit(1)
 		else:
 			subprocess.call(getSliceCommand(fileName))
@@ -161,6 +163,12 @@ def getSliceCommand(filename):
 		else:
 			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1]))
 		cmd = [pypyExe, mainScriptFile, '-p', profile.getGlobalProfileString()]
-		cmd.append(filename)
+		if platform.system() == "Windows":
+			try:
+				cmd.append(str(filename))
+			except UnicodeEncodeError:
+				cmd.append("#UTF8#" + filename.encode("utf-8"))
+		else:
+			cmd.append(filename)
 		return cmd
 

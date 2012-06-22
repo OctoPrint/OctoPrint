@@ -70,7 +70,7 @@ def saveAsSTL(mesh, filename):
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:
 		m = stlModel().load(filename)
-		print "Loaded %d faces" % (len(m.faces))
+		print("Loaded %d faces" % (len(m.faces)))
 		parts = m.splitToParts()
 		for p in parts:
 			saveAsSTL(p, "export_%i.stl" % parts.index(p))

@@ -23,12 +23,16 @@ import __init__
 from fabmetheus_utilities.vector3 import Vector3
 from fabmetheus_utilities import archive
 from fabmetheus_utilities import euclidean
-import cStringIO
+
 import math
 import os
 import sys
 import traceback
 
+if sys.version_info.major < 3:
+	import cStringIO
+else:
+	import io as cStringIO
 
 __author__ = 'Enrique Perez (perez_enrique@yahoo.com)'
 __date__ = '$Date: 2008/21/04 $'

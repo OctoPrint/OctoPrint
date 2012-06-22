@@ -16,5 +16,5 @@ def getVersion():
 	return "?"
 
 if __name__ == '__main__':
-	print getVersion()
+	print(getVersion())
 

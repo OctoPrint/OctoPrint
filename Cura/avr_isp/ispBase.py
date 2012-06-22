@@ -12,9 +12,9 @@ class IspBase():
 			raise IspError("Chip with signature: " + str(self.getSignature()) + "not found")
 		self.chipErase()
 		
-		print "Flashing %i bytes" % len(flashData)
+		print("Flashing %i bytes" % len(flashData))
 		self.writeFlash(flashData)
-		print "Verifying %i bytes" % len(flashData)
+		print("Verifying %i bytes" % len(flashData))
 		self.verifyFlash(flashData)
 
 	#low level ISP commands
