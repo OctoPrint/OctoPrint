@@ -4,7 +4,7 @@ from __future__ import division
 import __init__
 
 import os, traceback, math, re, zlib, base64, time, sys
-if sys.version_info.major < 3:
+if sys.version_info[0] < 3:
 	import ConfigParser
 else:
 	import configparser as ConfigParser

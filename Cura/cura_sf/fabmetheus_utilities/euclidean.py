@@ -37,7 +37,7 @@ import sys
 import math
 import random
 
-if sys.version_info.major < 3:
+if sys.version_info[0] < 3:
 	import cStringIO
 else:
 	import io as cStringIO
