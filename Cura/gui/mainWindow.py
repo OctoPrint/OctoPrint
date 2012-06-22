@@ -390,3 +390,6 @@ class mainWindow(configBase.configWindowBase):
 		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		self.Destroy()
 
+	def updateProfileToControls(self):
+		super(mainWindow, self).updateProfileToControls()
+		self.preview3d.updateProfileToControls()

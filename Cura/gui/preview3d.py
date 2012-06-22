@@ -326,6 +326,16 @@ class previewPanel(wx.Panel):
 			obj.mesh.getMinimumZ()
 			obj.dirty = True
 		self.glCanvas.Refresh()
+	
+	def updateProfileToControls(self):
+		self.scale.SetValue(profile.getProfileSetting('model_scale'))
+		self.rotate.SetValue(profile.getProfileSettingFloat('model_rotate_base'))
+		self.mirrorX.SetValue(profile.getProfileSetting('flip_x') == 'True')
+		self.mirrorY.SetValue(profile.getProfileSetting('flip_y') == 'True')
+		self.mirrorZ.SetValue(profile.getProfileSetting('flip_z') == 'True')
+		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
+		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
+		self.updateModelTransform()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
 	def __init__(self, parent):
