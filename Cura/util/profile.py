@@ -161,6 +161,8 @@ preferencesDefaultSettings = {
 	'save_profile': 'False',
 	'filament_cost_kg': '0',
 	'filament_cost_meter': '0',
+	'sdpath': '',
+	'sdshortnames': 'True',
 	
 	'extruder_head_size_min_x': '70.0',
 	'extruder_head_size_min_y': '18.0',

@@ -100,6 +100,12 @@ def runSlice(fileNames):
 def getExportFilename(filename, ext = "gcode"):
 	return "%s_export.%s" % (filename[: filename.rfind('.')], ext)
 
+#Get a short filename in 8.3 format for proper saving on SD.
+def getShortFilename(filename):
+	ext = filename[filename.rfind('.'):]
+	filename = filename[: filename.rfind('.')]
+	return filename[:8] + ext[:2]
+
 def getSliceCommand(filename):
 	if profile.getPreference('slicer').startswith('Slic3r') and getSlic3rExe() != False:
 		slic3rExe = getSlic3rExe()

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, sys, os, math, threading, subprocess, time, re
+import wx, sys, os, shutil, math, threading, subprocess, time, re
 
 from util import profile
 from util import sliceRun
@@ -70,6 +70,13 @@ class sliceProgessPanel(wx.Panel):
 	def OnOpenFileLocation(self, e):
 		exporer.openExporer(sliceRun.getExportFilename(self.filelist[0]))
 	
+	def OnCopyToSD(self, e):
+		exportFilename = sliceRun.getExportFilename(self.filelist[0])
+		filename = os.path.basename(exportFilename)
+		if profile.getPreference('sdshortnames') == 'True':
+			filename = sliceRun.getShortFilename(filename)
+		shutil.copy(exportFilename, os.path.join(profile.getPreference('sdpath'), filename))
+	
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
 		self.abortButton.Destroy()
@@ -90,6 +97,10 @@ class sliceProgessPanel(wx.Panel):
 				self.openFileLocationButton = wx.Button(self, -1, "Open file location")
 				self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
 				self.sizer.Add(self.openFileLocationButton, 0)
+			if profile.getPreference('sdpath') != '':
+				self.copyToSDButton = wx.Button(self, -1, "To SDCard")
+				self.Bind(wx.EVT_BUTTON, self.OnCopyToSD, self.copyToSDButton)
+				self.sizer.Add(self.copyToSDButton, 0)
 			self.showButton = wx.Button(self, -1, "Show result")
 			self.Bind(wx.EVT_BUTTON, self.OnShowGCode, self.showButton)
 			self.sizer.Add(self.showButton, 0)

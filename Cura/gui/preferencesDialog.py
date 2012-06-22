@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types
+import wx, os, platform, types, string
 import ConfigParser
 
 from gui import configBase
@@ -51,7 +51,14 @@ class preferencesDialog(configBase.configWindowBase):
 		configBase.TitleRow(right, 'Slicer settings')
 		#c = configBase.SettingRow(right, 'Slicer selection', 'slicer', ['Cura (Skeinforge based)', 'Slic3r'], 'Which slicer to use to slice objects. Usually the Cura engine produces the best results. But Slic3r is developing fast and is faster with slicing.', type = 'preference')
 		c = configBase.SettingRow(right, 'Save profile on slice', 'save_profile', False, 'When slicing save the profile as [stl_file]_profile.ini next to the model.', type = 'preference')
-		
+
+		configBase.TitleRow(right, 'SD Card settings')
+		if len(getDrives()) > 1:
+			c = configBase.SettingRow(right, 'SD card drive', 'sdpath', getDrives(), 'Location of your SD card, when using the copy to SD feature.', type = 'preference')
+		else:
+			c = configBase.SettingRow(right, 'SD card path', 'sdpath', '', 'Location of your SD card, when using the copy to SD feature.', type = 'preference')
+		c = configBase.SettingRow(right, 'Copy to SD with 8.3 names', 'sdshortnames', False, 'Save the gcode files in short filenames, so they are properly shown on the UltiController', type = 'preference')
+
 		self.okButton = wx.Button(left, -1, 'Ok')
 		left.GetSizer().Add(self.okButton, (left.GetSizer().GetRows(), 1))
 		self.okButton.Bind(wx.EVT_BUTTON, self.OnClose)
@@ -65,3 +72,14 @@ class preferencesDialog(configBase.configWindowBase):
 			wx.MessageBox('After changing the amount of extruders you need to restart Cura for full effect.', 'Extruder amount warning.', wx.OK | wx.ICON_INFORMATION)
 		self.MakeModal(False)
 		self.Destroy()
+
+def getDrives():
+	drives = ['']
+	if platform.system() == "Windows":
+		from ctypes import windll
+		bitmask = windll.kernel32.GetLogicalDrives()
+		for letter in string.uppercase:
+			if bitmask & 1:
+				drives.append(letter + ':/')
+			bitmask >>= 1
+	return drives
