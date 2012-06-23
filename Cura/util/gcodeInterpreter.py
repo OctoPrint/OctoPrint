@@ -194,11 +194,11 @@ class gcode(object):
 					if e is not None:
 						currentE = e
 					if x is not None:
-						posOffset.x = pos.x + x
+						posOffset.x = pos.x - x
 					if y is not None:
-						posOffset.y = pos.y + y
+						posOffset.y = pos.y - y
 					if z is not None:
-						posOffset.z = pos.z + z
+						posOffset.z = pos.z - z
 				else:
 					print "Unknown G code:" + str(G)
 			else:
