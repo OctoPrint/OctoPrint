@@ -4,9 +4,9 @@ import __init__
 import wx, threading, re, subprocess, sys, os
 from wx.lib import buttons
 
-from gui import machineCom
 from gui import icon
 from gui import toolbarUtil
+from util import machineCom
 from util import profile
 from util import gcodeInterpreter
 
@@ -82,6 +82,7 @@ class printWindow(wx.Frame):
 		self.sendList = []
 		self.printIdx = None
 		self.temp = None
+		self.bedTemp = None
 		self.bufferLineCount = 4
 		self.sendCnt = 0
 
@@ -109,6 +110,11 @@ class printWindow(wx.Frame):
 		h = self.connectButton.GetSize().GetHeight()
 		self.temperatureSelect = wx.SpinCtrl(self.panel, -1, '0', size=(21*3,21), style=wx.SP_ARROW_KEYS)
 		self.temperatureSelect.SetRange(0, 400)
+		self.bedTemperatureLabel = wx.StaticText(self.panel, -1, "BedTemp:")
+		self.bedTemperatureSelect = wx.SpinCtrl(self.panel, -1, '0', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.bedTemperatureSelect.SetRange(0, 400)
+		self.bedTemperatureLabel.Show(False)
+		self.bedTemperatureSelect.Show(False)
 		
 		self.sizer.Add(self.connectButton, pos=(0,1))
 		#self.sizer.Add(self.loadButton, pos=(1,1))
@@ -118,6 +124,8 @@ class printWindow(wx.Frame):
 		
 		self.sizer.Add(wx.StaticText(self.panel, -1, "Temp:"), pos=(0,3))
 		self.sizer.Add(self.temperatureSelect, pos=(0,4))
+		self.sizer.Add(self.bedTemperatureLabel, pos=(0,5))
+		self.sizer.Add(self.bedTemperatureSelect, pos=(0,6))
 		
 		self.directControlPanel = wx.Panel(self.panel)
 		self.sizer.Add(self.directControlPanel, pos=(1,3), span=(5,4))
@@ -162,6 +170,7 @@ class printWindow(wx.Frame):
 		self.cancelButton.Bind(wx.EVT_BUTTON, self.OnCancel)
 		
 		self.Bind(wx.EVT_SPINCTRL, self.OnTempChange, self.temperatureSelect)
+		self.Bind(wx.EVT_SPINCTRL, self.OnBedTempChange, self.bedTemperatureSelect)
 		
 		self.Layout()
 		self.Fit()
@@ -195,6 +204,10 @@ class printWindow(wx.Frame):
 			self.progress.SetValue(self.printIdx)
 		if self.temp != None:
 			status += 'Temp: %d\n' % (self.temp)
+		if self.bedTemp != None and self.bedTemp > 0:
+			status += 'Bed Temp: %d\n' % (self.bedTemp)
+			self.bedTemperatureLabel.Show(True)
+			self.bedTemperatureSelect.Show(True)
 		self.statsText.SetLabel(status.strip())
 		self.Layout()
 	
@@ -237,6 +250,9 @@ class printWindow(wx.Frame):
 
 	def OnTempChange(self, e):
 		self.sendCommand("M104 S%d" % (self.temperatureSelect.GetValue()))
+
+	def OnBedTempChange(self, e):
+		self.sendCommand("M140 S%d" % (self.bedTemperatureSelect.GetValue()))
 
 	def LoadGCodeFile(self, filename):
 		if self.printIdx != None:
@@ -289,6 +305,8 @@ class printWindow(wx.Frame):
 				wx.CallAfter(self.UpdateButtonStates)
 			if 'T:' in line:
 				self.temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
+				if 'B:' in line:
+					self.bedTemp = float(re.search("[0-9\.]*", line.split('B:')[1]).group(0))
 				wx.CallAfter(self.UpdateProgress)
 			if self.printIdx == None:
 				if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.

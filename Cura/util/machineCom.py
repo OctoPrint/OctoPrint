@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import os, glob, wx, threading, sys, time
+import os, glob, sys, time
 
 from serial import Serial
 
@@ -29,97 +29,30 @@ def serialList():
             pass
     return baselist+glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') +glob.glob("/dev/tty.usb*")+glob.glob("/dev/cu.*")+glob.glob("/dev/rfcomm*")
 
-class InstallFirmware(wx.Dialog):
-	def __init__(self, filename, port = None):
-		super(InstallFirmware, self).__init__(parent=None, title="Firmware install", size=(250, 100))
-		if port == None:
-			port = profile.getPreference('serial_port')
-
-		sizer = wx.BoxSizer(wx.VERTICAL)
-		
-		self.progressLabel = wx.StaticText(self, -1, 'Reading firmware...')
-		sizer.Add(self.progressLabel, 0, flag=wx.ALIGN_CENTER)
-		self.progressGauge = wx.Gauge(self, -1)
-		sizer.Add(self.progressGauge, 0, flag=wx.EXPAND)
-		self.okButton = wx.Button(self, -1, 'Ok')
-		self.okButton.Disable()
-		self.okButton.Bind(wx.EVT_BUTTON, self.OnOk)
-		sizer.Add(self.okButton, 0, flag=wx.ALIGN_CENTER)
-		self.SetSizer(sizer)
-		
-		self.filename = filename
-		self.port = port
-		
-		threading.Thread(target=self.OnRun).start()
-		
-		self.ShowModal()
-		self.Destroy()
-		
-		return
-
-	def OnRun(self):
-		hexFile = intelHex.readHex(self.filename)
-		wx.CallAfter(self.updateLabel, "Connecting to machine...")
-		programmer = stk500v2.Stk500v2()
-		programmer.progressCallback = self.OnProgress
-		if self.port == 'AUTO':
-			for self.port in serialList():
-				try:
-					programmer.connect(self.port)
-					break
-				except ispBase.IspError:
-					pass
-		else:
-			try:
-				programmer.connect(self.port)
-			except ispBase.IspError:
-				pass
-				
-		if programmer.isConnected():
-			wx.CallAfter(self.updateLabel, "Uploading firmware...")
-			try:
-				programmer.programChip(hexFile)
-				wx.CallAfter(self.updateLabel, "Done!")
-			except ispBase.IspError as e:
-				wx.CallAfter(self.updateLabel, "Failed to write firmware.\n" + str(e))
-				
-			programmer.close()
-			wx.CallAfter(self.okButton.Enable)
-			return
-		wx.MessageBox('Failed to find machine for firmware upgrade\nIs your machine connected to the PC?', 'Firmware update', wx.OK | wx.ICON_ERROR)
-		wx.CallAfter(self.Close)
-	
-	def updateLabel(self, text):
-		self.progressLabel.SetLabel(text)
-		self.Layout()
-	
-	def OnProgress(self, value, max):
-		wx.CallAfter(self.progressGauge.SetRange, max)
-		wx.CallAfter(self.progressGauge.SetValue, value)
-
-	def OnOk(self, e):
-		self.Close()
-
-	def OnClose(self, e):
-		self.Destroy()
-
 class VirtualPrinter():
 	def __init__(self):
 		self.readList = ['start\n']
 		self.temp = 0.0
 		self.targetTemp = 0.0
+		self.bedTemp = 1.0
+		self.bedTargetTemp = 1.0
 	
 	def write(self, data):
 		if self.readList == None:
 			return
 		print "Send: %s" % (data.rstrip())
-		if 'M104' in data:
+		if 'M104' in data or 'M109' in data:
 			try:
 				self.targetTemp = float(data[data.find('S')+1:])
 			except:
 				pass
+		if 'M140' in data or 'M190' in data:
+			try:
+				self.bedTargetTemp = float(data[data.find('S')+1:])
+			except:
+				pass
 		if 'M105' in data:
-			self.readList.append("ok T:%f/%f\n" % (self.temp, self.targetTemp))
+			self.readList.append("ok T:%f /%f B:%f /%f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
 		else:
 			self.readList.append("ok\n")
 
@@ -128,6 +61,7 @@ class VirtualPrinter():
 			return ''
 		n = 0
 		self.temp = (self.temp + self.targetTemp) / 2
+		self.bedTemp = (self.bedTemp + self.bedTargetTemp) / 2
 		while len(self.readList) < 1:
 			time.sleep(0.1)
 			n += 1

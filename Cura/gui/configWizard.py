@@ -4,7 +4,8 @@ import __init__
 import wx, os, platform, types, webbrowser, threading, time, re
 import wx.wizard
 
-from gui import machineCom
+from gui import firmwareInstall
+from util import machineCom
 from util import profile
 
 class InfoPage(wx.wizard.WizardPageSimple):
@@ -132,7 +133,7 @@ class FirmwareUpgradePage(InfoPage):
 		return False
 	
 	def OnUpgradeClick(self, e):
-		if machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex")):
+		if firmwareInstall.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex")):
 			self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
 		
 	def OnSkipClick(self, e):

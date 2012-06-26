@@ -6,7 +6,7 @@ import ConfigParser
 
 from gui import configBase
 from gui import validators
-from gui import machineCom
+from util import machineCom
 from util import profile
 
 class preferencesDialog(configBase.configWindowBase):

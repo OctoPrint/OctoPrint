@@ -9,7 +9,7 @@ from gui import sliceProgessPanel
 from gui import validators
 from gui import preferencesDialog
 from gui import configWizard
-from gui import machineCom
+from gui import firmwareInstall
 from gui import printWindow
 from gui import icon
 from util import profile
@@ -136,7 +136,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		prefDialog.Show(True)
 	
 	def OnDefaultMarlinFirmware(self, e):
-		machineCom.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
+		firmwareInstall.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
@@ -146,7 +146,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			if not(os.path.exists(filename)):
 				return
 			#For some reason my Ubuntu 10.10 crashes here.
-			machineCom.InstallFirmware(filename)
+			firmwareInstall.InstallFirmware(filename)
 
 	def OnFirstRunWizard(self, e):
 		configWizard.configWizard()
