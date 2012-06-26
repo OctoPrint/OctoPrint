@@ -85,6 +85,10 @@ class printWindow(wx.Frame):
 		self.bedTemp = None
 		self.bufferLineCount = 4
 		self.sendCnt = 0
+		self.feedrateRatioOuterWall = 1.0
+		self.feedrateRatioInnerWall = 1.0
+		self.feedrateRatioFill = 1.0
+		self.feedrateRatioSupport = 1.0
 
 		#self.SetIcon(icon.getMainIcon())
 		
@@ -107,28 +111,35 @@ class printWindow(wx.Frame):
 		self.cancelButton = wx.Button(self.panel, -1, 'Cancel print')
 		self.progress = wx.Gauge(self.panel, -1)
 		
-		h = self.connectButton.GetSize().GetHeight()
-		self.temperatureSelect = wx.SpinCtrl(self.panel, -1, '0', size=(21*3,21), style=wx.SP_ARROW_KEYS)
-		self.temperatureSelect.SetRange(0, 400)
-		self.bedTemperatureLabel = wx.StaticText(self.panel, -1, "BedTemp:")
-		self.bedTemperatureSelect = wx.SpinCtrl(self.panel, -1, '0', size=(21*3,21), style=wx.SP_ARROW_KEYS)
-		self.bedTemperatureSelect.SetRange(0, 400)
-		self.bedTemperatureLabel.Show(False)
-		self.bedTemperatureSelect.Show(False)
-		
 		self.sizer.Add(self.connectButton, pos=(0,1))
 		#self.sizer.Add(self.loadButton, pos=(1,1))
 		self.sizer.Add(self.printButton, pos=(2,1))
 		self.sizer.Add(self.cancelButton, pos=(3,1))
 		self.sizer.Add(self.progress, pos=(4,0), span=(1,2), flag=wx.EXPAND)
+
+		nb = wx.Notebook(self.panel)
+		self.sizer.Add(nb, pos=(0,3), span=(6,4))
 		
-		self.sizer.Add(wx.StaticText(self.panel, -1, "Temp:"), pos=(0,3))
-		self.sizer.Add(self.temperatureSelect, pos=(0,4))
-		self.sizer.Add(self.bedTemperatureLabel, pos=(0,5))
-		self.sizer.Add(self.bedTemperatureSelect, pos=(0,6))
+		self.temperaturePanel = wx.Panel(nb)
+		sizer = wx.GridBagSizer(2, 2)
+		self.temperaturePanel.SetSizer(sizer)
+
+		self.temperatureSelect = wx.SpinCtrl(self.temperaturePanel, -1, '0', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.temperatureSelect.SetRange(0, 400)
+		self.bedTemperatureLabel = wx.StaticText(self.temperaturePanel, -1, "BedTemp:")
+		self.bedTemperatureSelect = wx.SpinCtrl(self.temperaturePanel, -1, '0', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.bedTemperatureSelect.SetRange(0, 400)
+		self.bedTemperatureLabel.Show(False)
+		self.bedTemperatureSelect.Show(False)
 		
-		self.directControlPanel = wx.Panel(self.panel)
-		self.sizer.Add(self.directControlPanel, pos=(1,3), span=(5,4))
+		sizer.Add(wx.StaticText(self.temperaturePanel, -1, "Temp:"), pos=(0,0))
+		sizer.Add(self.temperatureSelect, pos=(0,1))
+		sizer.Add(self.bedTemperatureLabel, pos=(1,0))
+		sizer.Add(self.bedTemperatureSelect, pos=(1,1))
+
+		nb.AddPage(self.temperaturePanel, 'Temp')
+
+		self.directControlPanel = wx.Panel(nb)
 		
 		sizer = wx.GridBagSizer(2, 2)
 		self.directControlPanel.SetSizer(sizer)
@@ -160,6 +171,36 @@ class printWindow(wx.Frame):
 		sizer.Add(PrintCommandButton(self, 'G1 Z-1 F200', 'print-move-z-1.png'), pos=(5,7))
 		sizer.Add(PrintCommandButton(self, 'G1 Z-10 F200', 'print-move-z-10.png'), pos=(6,7))
 
+		nb.AddPage(self.directControlPanel, 'Jog')
+
+		self.speedPanel = wx.Panel(nb)
+		sizer = wx.GridBagSizer(2, 2)
+		self.speedPanel.SetSizer(sizer)
+
+		self.outerWallSpeedSelect = wx.SpinCtrl(self.speedPanel, -1, '100', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.outerWallSpeedSelect.SetRange(5, 1000)
+		self.innerWallSpeedSelect = wx.SpinCtrl(self.speedPanel, -1, '100', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.innerWallSpeedSelect.SetRange(5, 1000)
+		self.fillSpeedSelect = wx.SpinCtrl(self.speedPanel, -1, '100', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.fillSpeedSelect.SetRange(5, 1000)
+		self.supportSpeedSelect = wx.SpinCtrl(self.speedPanel, -1, '100', size=(21*3,21), style=wx.SP_ARROW_KEYS)
+		self.supportSpeedSelect.SetRange(5, 1000)
+		
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "Outer wall:"), pos=(0,0))
+		sizer.Add(self.outerWallSpeedSelect, pos=(0,1))
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "%"), pos=(0,2))
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "Inner wall:"), pos=(1,0))
+		sizer.Add(self.innerWallSpeedSelect, pos=(1,1))
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "%"), pos=(1,2))
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "Fill:"), pos=(2,0))
+		sizer.Add(self.fillSpeedSelect, pos=(2,1))
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "%"), pos=(2,2))
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "Support:"), pos=(3,0))
+		sizer.Add(self.supportSpeedSelect, pos=(3,1))
+		sizer.Add(wx.StaticText(self.speedPanel, -1, "%"), pos=(3,2))
+
+		nb.AddPage(self.speedPanel, 'Speed')
+
 		self.sizer.AddGrowableRow(3)
 		self.sizer.AddGrowableCol(0)
 		
@@ -171,11 +212,16 @@ class printWindow(wx.Frame):
 		
 		self.Bind(wx.EVT_SPINCTRL, self.OnTempChange, self.temperatureSelect)
 		self.Bind(wx.EVT_SPINCTRL, self.OnBedTempChange, self.bedTemperatureSelect)
+
+		self.Bind(wx.EVT_SPINCTRL, self.OnSpeedChange, self.outerWallSpeedSelect)
+		self.Bind(wx.EVT_SPINCTRL, self.OnSpeedChange, self.innerWallSpeedSelect)
+		self.Bind(wx.EVT_SPINCTRL, self.OnSpeedChange, self.fillSpeedSelect)
+		self.Bind(wx.EVT_SPINCTRL, self.OnSpeedChange, self.supportSpeedSelect)
 		
 		self.Layout()
 		self.Fit()
 		self.Centre()
-		
+
 		self.UpdateButtonStates()
 		self.UpdateProgress()
 	
@@ -208,6 +254,7 @@ class printWindow(wx.Frame):
 			status += 'Bed Temp: %d\n' % (self.bedTemp)
 			self.bedTemperatureLabel.Show(True)
 			self.bedTemperatureSelect.Show(True)
+			self.temperaturePanel.Layout()
 		self.statsText.SetLabel(status.strip())
 		self.Layout()
 	
@@ -253,24 +300,36 @@ class printWindow(wx.Frame):
 
 	def OnBedTempChange(self, e):
 		self.sendCommand("M140 S%d" % (self.bedTemperatureSelect.GetValue()))
+	
+	def OnSpeedChange(self, e):
+		self.feedrateRatioOuterWall = self.outerWallSpeedSelect.GetValue() / 100.0
+		self.feedrateRatioInnerWall = self.innerWallSpeedSelect.GetValue() / 100.0
+		self.feedrateRatioFill = self.fillSpeedSelect.GetValue() / 100.0
+		self.feedrateRatioSupport = self.supportSpeedSelect.GetValue() / 100.0
 
 	def LoadGCodeFile(self, filename):
 		if self.printIdx != None:
 			return
 		#Send an initial M110 to reset the line counter to zero.
+		lineType = 'CUSTOM'
 		gcodeList = ["M110"]
+		typeList = [lineType]
 		for line in open(filename, 'r'):
+			if line.startswith(';TYPE:'):
+				lineType = line[6:].strip()
 			if ';' in line:
 				line = line[0:line.find(';')]
 			line = line.strip()
 			if len(line) > 0:
 				gcodeList.append(line)
+				typeList.append(lineType)
 		gcode = gcodeInterpreter.gcode()
 		gcode.loadList(gcodeList)
 		print "Loaded: %s (%d)" % (filename, len(gcodeList))
 		self.progress.SetRange(len(gcodeList))
 		self.gcode = gcode
 		self.gcodeList = gcodeList
+		self.typeList = typeList
 		self.UpdateButtonStates()
 		self.UpdateProgress()
 		
@@ -284,8 +343,19 @@ class printWindow(wx.Frame):
 	def sendLine(self, lineNr):
 		if lineNr >= len(self.gcodeList):
 			return False
-		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, self.gcodeList[lineNr])))
-		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, self.gcodeList[lineNr], checksum))
+		line = self.gcodeList[lineNr]
+		if self.typeList[lineNr] == 'WALL-OUTER':
+			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioOuterWall)), line)
+		if self.typeList[lineNr] == 'WALL-INNER':
+			print line
+			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioInnerWall)), line)
+			print line
+		if self.typeList[lineNr] == 'FILL':
+			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioFill)), line)
+		if self.typeList[lineNr] == 'SUPPORT':
+			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioSupport)), line)
+		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, line)))
+		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, line, checksum))
 		return True
 
 	def PrinterMonitor(self):
