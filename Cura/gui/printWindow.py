@@ -347,9 +347,7 @@ class printWindow(wx.Frame):
 		if self.typeList[lineNr] == 'WALL-OUTER':
 			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioOuterWall)), line)
 		if self.typeList[lineNr] == 'WALL-INNER':
-			print line
 			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioInnerWall)), line)
-			print line
 		if self.typeList[lineNr] == 'FILL':
 			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioFill)), line)
 		if self.typeList[lineNr] == 'SUPPORT':
