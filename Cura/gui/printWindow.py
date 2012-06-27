@@ -68,6 +68,7 @@ class PrintCommandButton(buttons.GenBitmapButton):
 	def OnClick(self, e):
 		self.parent.sendCommand("G91")
 		self.parent.sendCommand(self.command)
+		self.parent.sendCommand("G90")
 		e.Skip()
 
 class printWindow(wx.Frame):
@@ -89,6 +90,7 @@ class printWindow(wx.Frame):
 		self.feedrateRatioInnerWall = 1.0
 		self.feedrateRatioFill = 1.0
 		self.feedrateRatioSupport = 1.0
+		self.pause = False
 
 		#self.SetIcon(icon.getMainIcon())
 		
@@ -103,22 +105,24 @@ class printWindow(wx.Frame):
 		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
-		self.sizer.Add(boxsizer, pos=(0,0), span=(4,1), flag=wx.EXPAND)
+		self.sizer.Add(boxsizer, pos=(0,0), span=(5,1), flag=wx.EXPAND)
 		
 		self.connectButton = wx.Button(self.panel, -1, 'Connect')
 		#self.loadButton = wx.Button(self.panel, -1, 'Load GCode')
 		self.printButton = wx.Button(self.panel, -1, 'Print GCode')
+		self.pauseButton = wx.Button(self.panel, -1, 'Pause')
 		self.cancelButton = wx.Button(self.panel, -1, 'Cancel print')
 		self.progress = wx.Gauge(self.panel, -1)
 		
 		self.sizer.Add(self.connectButton, pos=(0,1))
 		#self.sizer.Add(self.loadButton, pos=(1,1))
 		self.sizer.Add(self.printButton, pos=(2,1))
-		self.sizer.Add(self.cancelButton, pos=(3,1))
-		self.sizer.Add(self.progress, pos=(4,0), span=(1,2), flag=wx.EXPAND)
+		self.sizer.Add(self.pauseButton, pos=(3,1))
+		self.sizer.Add(self.cancelButton, pos=(4,1))
+		self.sizer.Add(self.progress, pos=(5,0), span=(1,2), flag=wx.EXPAND)
 
 		nb = wx.Notebook(self.panel)
-		self.sizer.Add(nb, pos=(0,3), span=(6,4))
+		self.sizer.Add(nb, pos=(0,3), span=(7,4))
 		
 		self.temperaturePanel = wx.Panel(nb)
 		sizer = wx.GridBagSizer(2, 2)
@@ -208,6 +212,7 @@ class printWindow(wx.Frame):
 		self.connectButton.Bind(wx.EVT_BUTTON, self.OnConnect)
 		#self.loadButton.Bind(wx.EVT_BUTTON, self.OnLoad)
 		self.printButton.Bind(wx.EVT_BUTTON, self.OnPrint)
+		self.pauseButton.Bind(wx.EVT_BUTTON, self.OnPause)
 		self.cancelButton.Bind(wx.EVT_BUTTON, self.OnCancel)
 		
 		self.Bind(wx.EVT_SPINCTRL, self.OnTempChange, self.temperatureSelect)
@@ -229,8 +234,10 @@ class printWindow(wx.Frame):
 		self.connectButton.Enable(not self.machineConnected)
 		#self.loadButton.Enable(self.printIdx == None)
 		self.printButton.Enable(self.machineConnected and self.gcodeList != None and self.printIdx == None)
+		self.pauseButton.Enable(self.printIdx != None)
 		self.cancelButton.Enable(self.printIdx != None)
 		self.temperatureSelect.Enable(self.machineConnected)
+		self.bedTemperatureSelect.Enable(self.machineConnected)
 		self.directControlPanel.Enable(self.machineConnected)
 	
 	def UpdateProgress(self):
@@ -284,8 +291,20 @@ class printWindow(wx.Frame):
 	
 	def OnCancel(self, e):
 		self.printIdx = None
+		self.pause = False
+		self.pauseButton.SetLabel('Pause')
 		self.sendCommand("M84")
 		self.UpdateButtonStates()
+	
+	def OnPause(self, e):
+		if self.pause:
+			self.pause = False
+			self.sendLine(self.printIdx)
+			self.printIdx += 1
+			self.pauseButton.SetLabel('Pause')
+		else:
+			self.pause = True
+			self.pauseButton.SetLabel('Resume')
 	
 	def OnClose(self, e):
 		global printWindowHandle
@@ -335,7 +354,7 @@ class printWindow(wx.Frame):
 		
 	def sendCommand(self, cmd):
 		if self.machineConnected:
-			if self.printIdx == None:
+			if self.printIdx == None or self.pause:
 				self.machineCom.sendCommand(cmd)
 			else:
 				self.sendList.append(cmd)
@@ -354,6 +373,8 @@ class printWindow(wx.Frame):
 			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioSupport)), line)
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, line)))
 		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, line, checksum))
+		if line == 'M0' or line == 'M1':
+			self.OnPause(None)
 		return True
 
 	def PrinterMonitor(self):
@@ -364,7 +385,7 @@ class printWindow(wx.Frame):
 				wx.CallAfter(self.UpdateButtonStates)
 				return
 			if self.machineConnected:
-				while self.sendCnt > 0:
+				while self.sendCnt > 0 and not self.pause:
 					self.sendLine(self.printIdx)
 					self.printIdx += 1
 					self.sendCnt -= 1
@@ -376,13 +397,15 @@ class printWindow(wx.Frame):
 				if 'B:' in line:
 					self.bedTemp = float(re.search("[0-9\.]*", line.split('B:')[1]).group(0))
 				wx.CallAfter(self.UpdateProgress)
-			if self.printIdx == None:
-				if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.
+			if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.
+				if self.printIdx == None or self.pause:
 					self.machineCom.sendCommand("M105")
-			else:
+			if self.printIdx != None:
 				if line.startswith("ok"):
 					if len(self.sendList) > 0:
 						self.machineCom.sendCommand(self.sendList.pop(0))
+					elif self.pause:
+						self.sendCnt += 1
 					else:
 						if self.sendLine(self.printIdx):
 							self.printIdx += 1
