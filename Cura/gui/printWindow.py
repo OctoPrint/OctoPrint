@@ -363,6 +363,9 @@ class printWindow(wx.Frame):
 		if lineNr >= len(self.gcodeList):
 			return False
 		line = self.gcodeList[lineNr]
+		if line == 'M0' or line == 'M1':
+			self.OnPause(None)
+			line = 'M105'
 		if self.typeList[lineNr] == 'WALL-OUTER':
 			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioOuterWall)), line)
 		if self.typeList[lineNr] == 'WALL-INNER':
@@ -373,8 +376,6 @@ class printWindow(wx.Frame):
 			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioSupport)), line)
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, line)))
 		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, line, checksum))
-		if line == 'M0' or line == 'M1':
-			self.OnPause(None)
 		return True
 
 	def PrinterMonitor(self):
