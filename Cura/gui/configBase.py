@@ -42,7 +42,7 @@ class configWindowBase(wx.Frame):
 		rightConfigPanel.SetSizer(sizer)
 		sizer = wx.BoxSizer(wx.HORIZONTAL)
 		configPanel.SetSizer(sizer)
-		sizer.Add(leftConfigPanel)
+		sizer.Add(leftConfigPanel, border=35, flag=wx.RIGHT)
 		sizer.Add(rightConfigPanel)
 		leftConfigPanel.main = self
 		rightConfigPanel.main = self
@@ -92,7 +92,7 @@ class TitleRow():
 		x = sizer.GetRows()
 		self.title = wx.StaticText(panel, -1, name)
 		self.title.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-		sizer.Add(self.title, (x,0), (1,3), flag=wx.EXPAND)
+		sizer.Add(self.title, (x,0), (1,3), flag=wx.EXPAND|wx.TOP, border=10)
 		sizer.Add(wx.StaticLine(panel), (x+1,0), (1,3), flag=wx.EXPAND)
 		sizer.SetRows(x + 2)
 
