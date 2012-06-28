@@ -15,6 +15,7 @@ from gui import firmwareInstall
 from gui import printWindow
 from gui import simpleMode
 from gui import projectPlanner
+from gui import batchRun
 from gui import flatSlicerWindow
 from gui import icon
 from util import profile
@@ -53,6 +54,8 @@ class mainWindow(configBase.configWindowBase):
 		i = fileMenu.Append(-1, 'Reset Profile to default')
 		self.Bind(wx.EVT_MENU, self.OnResetProfile, i)
 		fileMenu.AppendSeparator()
+		i = fileMenu.Append(-1, 'Batch run...')
+		self.Bind(wx.EVT_MENU, self.OnBatchRun, i)
 		i = fileMenu.Append(-1, 'Preferences...')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
 		fileMenu.AppendSeparator()
@@ -266,6 +269,11 @@ class mainWindow(configBase.configWindowBase):
 		if result:
 			profile.resetGlobalProfile()
 			self.updateProfileToControls()
+	
+	def OnBatchRun(self, e):
+		br = batchRun.batchRunWindow(self)
+		br.Centre()
+		br.Show(True)
 	
 	def OnPreferences(self, e):
 		prefDialog = preferencesDialog.preferencesDialog(self)
