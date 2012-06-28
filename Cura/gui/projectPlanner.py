@@ -92,6 +92,14 @@ class ProjectObject(stl.stlModel):
 
 	def updateModelTransform(self):
 		self.setRotateMirror(self.rotate, self.flipX, self.flipY, self.flipZ, self.swapXZ, self.swapYZ)
+		minZ = self.getMinimumZ()
+		minV = self.getMinimum()
+		maxV = self.getMaximum()
+		for v in self.vertexes:
+			v.z -= minZ
+			v.x -= minV.x + (maxV.x - minV.x) / 2
+			v.y -= minV.y + (maxV.y - minV.y) / 2
+		minZ = self.getMinimumZ()
 		self.modelDirty = True
 	
 	def clone(self):

@@ -80,13 +80,6 @@ class mesh(object):
 			face.normal = (v2 - v1).cross(v3 - v1)
 			face.normal.normalize()
 
-		minZ = self.getMinimumZ()
-		minV = self.getMinimum()
-		maxV = self.getMaximum()
-		for v in self.vertexes:
-			v.z -= minZ
-			v.x -= minV.x + (maxV.x - minV.x) / 2
-			v.y -= minV.y + (maxV.y - minV.y) / 2
 		self.getMinimumZ()
 
 	def splitToParts(self):
