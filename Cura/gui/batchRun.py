@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser, math, subprocess, threading, time, re
+import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, threading, time, re
 
 from util import profile
 from util import sliceRun
@@ -93,23 +93,38 @@ class BatchSliceProgressWindow(wx.Frame):
 		self.filenameList = filenameList
 		self.sliceCmdList = sliceCmdList
 		self.abort = False
-		self.prevStep = 'start'
-		self.totalDoneFactor = 0.0
-		self.startTime = time.time()
 		self.sliceStartTime = time.time()
-		
-		self.sizer = wx.GridBagSizer(2, 2) 
-		self.statusText = wx.StaticText(self, -1, "Building: %d XXXXXXXXXXXXXXXXXXXXX" % (len(self.sliceCmdList)))
-		self.progressGauge = wx.Gauge(self, -1)
-		self.progressGauge.SetRange(10000)
-		self.progressGauge2 = wx.Gauge(self, -1)
-		self.progressGauge2.SetRange(len(self.sliceCmdList))
-		self.abortButton = wx.Button(self, -1, "Abort")
-		self.sizer.Add(self.statusText, (0,0), span=(1,4))
-		self.sizer.Add(self.progressGauge, (1, 0), span=(1,4), flag=wx.EXPAND)
-		self.sizer.Add(self.progressGauge2, (2, 0), span=(1,4), flag=wx.EXPAND)
 
-		self.sizer.Add(self.abortButton, (3,0), span=(1,4), flag=wx.ALIGN_CENTER)
+		try:
+			self.threadCount = multiprocessing.cpu_count() - 1
+		except:
+			self.threadCount = 1
+		if self.threadCount < 1:
+			self.threadCount = 1
+		self.cmdIndex = 0
+		
+		self.prevStep = []
+		self.totalDoneFactor = []
+		for i in xrange(0, self.threadCount):
+			self.prevStep.append('start')
+			self.totalDoneFactor.append(0.0)
+
+		self.sizer = wx.GridBagSizer(2, 2) 
+		self.progressGauge = []
+		self.statusText = []
+		for i in xrange(0, self.threadCount):
+			self.statusText.append(wx.StaticText(self, -1, "Building: %d XXXXXXXXXXXXXXXXXXXXX" % (len(self.sliceCmdList))))
+			self.progressGauge.append(wx.Gauge(self, -1))
+			self.progressGauge[i].SetRange(10000)
+		self.progressGaugeTotal = wx.Gauge(self, -1)
+		self.progressGaugeTotal.SetRange(len(self.sliceCmdList))
+		self.abortButton = wx.Button(self, -1, "Abort")
+		for i in xrange(0, self.threadCount):
+			self.sizer.Add(self.statusText[i], (i*2,0), span=(1,4))
+			self.sizer.Add(self.progressGauge[i], (1+i*2, 0), span=(1,4), flag=wx.EXPAND)
+		self.sizer.Add(self.progressGaugeTotal, (1+self.threadCount*2, 0), span=(1,4), flag=wx.EXPAND)
+
+		self.sizer.Add(self.abortButton, (2+self.threadCount*2,0), span=(1,4), flag=wx.ALIGN_CENTER)
 		self.sizer.AddGrowableCol(0)
 		self.sizer.AddGrowableRow(0)
 
@@ -118,7 +133,7 @@ class BatchSliceProgressWindow(wx.Frame):
 		self.Layout()
 		self.Fit()
 		
-		threading.Thread(target=self.OnRun).start()
+		threading.Thread(target=self.OnRunManager).start()
 
 	def OnAbort(self, e):
 		if self.abort:
@@ -127,20 +142,38 @@ class BatchSliceProgressWindow(wx.Frame):
 			self.abort = True
 			self.abortButton.SetLabel('Close')
 
-	def SetProgress(self, stepName, layer, maxLayer):
-		if self.prevStep != stepName:
-			self.totalDoneFactor += sliceRun.sliceStepTimeFactor[self.prevStep]
+	def SetProgress(self, index, stepName, layer, maxLayer):
+		if self.prevStep[index] != stepName:
+			self.totalDoneFactor[index] += sliceRun.sliceStepTimeFactor[self.prevStep[index]]
 			newTime = time.time()
-			#print "#####" + str(newTime-self.startTime) + " " + self.prevStep + " -> " + stepName
-			self.startTime = newTime
-			self.prevStep = stepName
+			self.prevStep[index] = stepName
 		
-		progresValue = ((self.totalDoneFactor + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
-		self.progressGauge.SetValue(int(progresValue))
-		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
+		progresValue = ((self.totalDoneFactor[index] + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
+		self.progressGauge[index].SetValue(int(progresValue))
+		self.statusText[index].SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
 	
-	def OnRun(self):
-		for action in self.sliceCmdList:
+	def OnRunManager(self):
+		threads = []
+		for i in xrange(0, self.threadCount):
+			threads.append(threading.Thread(target=self.OnRun, args=(i,)))
+
+		for t in threads:
+			t.start()
+		for t in threads:
+			t.join()
+
+		self.abort = True
+		sliceTime = time.time() - self.sliceStartTime
+		status = "Build: %d" % (len(self.sliceCmdList))
+		status += "\nSlicing took: %02d:%02d" % (sliceTime / 60, sliceTime % 60)
+
+		wx.CallAfter(self.statusText[0].SetLabel, status)
+		wx.CallAfter(self.OnSliceDone)
+	
+	def OnRun(self, index):
+		while self.cmdIndex < len(self.sliceCmdList):
+			action = self.sliceCmdList[self.cmdIndex]
+			self.cmdIndex += 1
 			wx.CallAfter(self.SetTitle, "Building: [%d/%d]"  % (self.sliceCmdList.index(action) + 1, len(self.sliceCmdList)))
 
 			p = subprocess.Popen(action, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -152,33 +185,25 @@ class BatchSliceProgressWindow(wx.Frame):
 					progress = line[9:-1].split(":")
 					if len(progress) > 2:
 						maxValue = int(progress[2])
-					wx.CallAfter(self.SetProgress, progress[0], int(progress[1]), maxValue)
+					wx.CallAfter(self.SetProgress, index, progress[0], int(progress[1]), maxValue)
 				else:
 					print line
-					wx.CallAfter(self.statusText.SetLabel, line)
+					wx.CallAfter(self.statusText[index].SetLabel, line)
 				if self.abort:
 					p.terminate()
-					wx.CallAfter(self.statusText.SetLabel, "Aborted by user.")
+					wx.CallAfter(self.statusText[index].SetLabel, "Aborted by user.")
 					return
 				line = p.stdout.readline()
 			self.returnCode = p.wait()
 			
-			wx.CallAfter(self.progressGauge.SetValue, 10000)
-			self.totalDoneFactor = 0.0
-			wx.CallAfter(self.progressGauge2.SetValue, self.sliceCmdList.index(action) + 1)
-		
-		self.abort = True
-		sliceTime = time.time() - self.sliceStartTime
-		status = "Build: %d" % (len(self.sliceCmdList))
-		status += "\nSlicing took: %02d:%02d" % (sliceTime / 60, sliceTime % 60)
-
-		wx.CallAfter(self.statusText.SetLabel, status)
-		wx.CallAfter(self.OnSliceDone)
+			wx.CallAfter(self.progressGauge[index].SetValue, 10000)
+			self.totalDoneFactor[index] = 0.0
+			wx.CallAfter(self.progressGaugeTotal.SetValue, self.cmdIndex)
 	
 	def OnSliceDone(self):
 		self.abortButton.Destroy()
 		self.closeButton = wx.Button(self, -1, "Close")
-		self.sizer.Add(self.closeButton, (3,0), span=(1,1))
+		self.sizer.Add(self.closeButton, (2+self.threadCount*2,0), span=(1,1))
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.closeButton)
 		self.Layout()
 		self.Fit()
