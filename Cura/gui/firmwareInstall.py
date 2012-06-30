@@ -12,11 +12,25 @@ from avr_isp import intelHex
 from util import machineCom
 from util import profile
 
+def getDefaultFirmware():
+	if profile.getPreference('machine_type') == 'ultimaker':
+		if sys.platform.startswith('linux'):
+			return os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/ultimaker_115200.hex")
+		else:
+			return os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/ultimaker_250000.hex")
+	return None
+
 class InstallFirmware(wx.Dialog):
-	def __init__(self, filename, port = None):
+	def __init__(self, filename = None, port = None):
 		super(InstallFirmware, self).__init__(parent=None, title="Firmware install", size=(250, 100))
 		if port == None:
 			port = profile.getPreference('serial_port')
+		if filename == None:
+			filename = getDefaultFirmware()
+		if filename == None:
+			wx.MessageBox('Cura does not ship with a default firmware for your machine.', 'Firmware update', wx.OK | wx.ICON_ERROR)
+			self.Destroy()
+			return
 
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		
@@ -37,7 +51,6 @@ class InstallFirmware(wx.Dialog):
 		
 		self.ShowModal()
 		self.Destroy()
-		
 		return
 
 	def OnRun(self):

@@ -136,7 +136,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		prefDialog.Show(True)
 	
 	def OnDefaultMarlinFirmware(self, e):
-		firmwareInstall.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
+		firmwareInstall.InstallFirmware()
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)

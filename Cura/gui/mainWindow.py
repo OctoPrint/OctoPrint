@@ -268,6 +268,10 @@ class mainWindow(configBase.configWindowBase):
 		dlg.Destroy()
 		if result:
 			profile.resetGlobalProfile()
+			if profile.getPreference('machine_type') == 'reprap':
+				profile.putProfileSetting('nozzle_size', '0.5')
+				profile.putProfileSetting('machine_center_x', '40')
+				profile.putProfileSetting('machine_center_y', '40')
 			self.updateProfileToControls()
 	
 	def OnBatchRun(self, e):
@@ -286,7 +290,7 @@ class mainWindow(configBase.configWindowBase):
 		self.Close()
 	
 	def OnDefaultMarlinFirmware(self, e):
-		firmwareInstall.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
+		firmwareInstall.InstallFirmware()
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
