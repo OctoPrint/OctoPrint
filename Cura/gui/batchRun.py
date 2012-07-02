@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, threading, time, re
+import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, threading, time, re, shutil
 
 from util import profile
 from util import sliceRun
@@ -113,7 +113,7 @@ class BatchSliceProgressWindow(wx.Frame):
 		self.progressGauge = []
 		self.statusText = []
 		for i in xrange(0, self.threadCount):
-			self.statusText.append(wx.StaticText(self, -1, "Building: %d XXXXXXXXXXXXXXXXXXXXX" % (len(self.sliceCmdList))))
+			self.statusText.append(wx.StaticText(self, -1, "Building: %d                           " % (len(self.sliceCmdList))))
 			self.progressGauge.append(wx.Gauge(self, -1))
 			self.progressGauge[i].SetRange(10000)
 		self.progressGaugeTotal = wx.Gauge(self, -1)
@@ -204,7 +204,18 @@ class BatchSliceProgressWindow(wx.Frame):
 		self.abortButton.Destroy()
 		self.closeButton = wx.Button(self, -1, "Close")
 		self.sizer.Add(self.closeButton, (2+self.threadCount*2,0), span=(1,1))
+		if profile.getPreference('sdpath') != '':
+			self.copyToSDButton = wx.Button(self, -1, "To SDCard")
+			self.Bind(wx.EVT_BUTTON, self.OnCopyToSD, self.copyToSDButton)
+			self.sizer.Add(self.copyToSDButton, (2+self.threadCount*2,1), span=(1,1))
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.closeButton)
 		self.Layout()
 		self.Fit()
 
+	def OnCopyToSD(self, e):
+		for f in self.filenameList:
+			exportFilename = sliceRun.getExportFilename(f)
+			filename = os.path.basename(exportFilename)
+			if profile.getPreference('sdshortnames') == 'True':
+				filename = sliceRun.getShortFilename(filename)
+			shutil.copy(exportFilename, os.path.join(profile.getPreference('sdpath'), filename))

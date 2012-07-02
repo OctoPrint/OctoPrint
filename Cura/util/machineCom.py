@@ -29,6 +29,9 @@ def serialList():
             pass
     return baselist+glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') +glob.glob("/dev/tty.usb*")+glob.glob("/dev/cu.*")+glob.glob("/dev/rfcomm*")
 
+def baudrateList():
+	return [250000, 115200, 57600, 38400, 19200, 9600]
+
 class VirtualPrinter():
 	def __init__(self):
 		self.readList = ['start\n']
@@ -81,20 +84,23 @@ class MachineCom():
 		if port == None:
 			port = profile.getPreference('serial_port')
 		if baudrate == None:
-			baudrate = int(profile.getPreference('serial_baud'))
+			if profile.getPreference('serial_baud') == 'AUTO':
+				baudrate = 0
+			else:
+				baudrate = int(profile.getPreference('serial_baud'))
 		self.serial = None
 		if port == 'AUTO':
 			programmer = stk500v2.Stk500v2()
 			for port in serialList():
 				try:
-					print "Connecting to: %s %i" % (port, baudrate)
+					print "Connecting to: %s" % (port)
 					programmer.connect(port)
 					programmer.close()
 					time.sleep(1)
-					self.serial = Serial(port, baudrate, timeout=2)
+					self.serial = self._openPortWithBaudrate(port, baudrate)
 					break
 				except ispBase.IspError as (e):
-					print "Error while connecting to %s %i" % (port, baudrate)
+					print "Error while connecting to %s" % (port)
 					print e
 					pass
 				except:
@@ -104,10 +110,29 @@ class MachineCom():
 			self.serial = VirtualPrinter()
 		else:
 			try:
-				self.serial = Serial(port, baudrate, timeout=2)
+				self.serial = self._openPortWithBaudrate(port, baudrate)
 			except:
 				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 		print self.serial
+	
+	def _openPortWithBaudrate(self, port, baudrate):
+		if baudrate != 0:
+			return Serial(port, baudrate, timeout=2)
+		for baudrate in baudrateList():
+			try:
+				ser = Serial(port, baudrate, timeout=2)
+			except:
+				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
+				continue
+			starttime = time.time()
+			for line in ser:
+				if line.startswith('start'):
+					ser.close()
+					return Serial(port, baudrate, timeout=2)
+				if starttime - time.time() > 10:
+					break
+			ser.close()
+		return None
 
 	def readline(self):
 		if self.serial == None:
@@ -133,4 +158,3 @@ class MachineCom():
 			return
 		#print 'Send: ' + cmd
 		self.serial.write(cmd + '\n')
-

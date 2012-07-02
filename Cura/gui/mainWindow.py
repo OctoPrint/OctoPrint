@@ -129,13 +129,13 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(left, "Start distance (mm)", 'skirt_gap', '6.0', 'The distance between the skirt and the first layer.\nThis is the minimal distance, multiple skirt lines will be put outwards from this distance.')
 		validators.validFloat(c, 0.0)
 
-		configBase.TitleRow(right, "Speed")
+		configBase.TitleRow(right, "Speed && Temperature")
 		c = configBase.SettingRow(right, "Print speed (mm/s)", 'print_speed', '50', 'Speed at which printing happens. A well adjusted Ultimaker can reach 150mm/s, but for good quality prints you want to print slower. Printing speed depends on a lot of factors. So you will be experimenting with optimal settings for this.')
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		validators.printSpeedValidator(c)
 		
-		configBase.TitleRow(right, "Temperature")
+		#configBase.TitleRow(right, "Temperature")
 		c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
 		validators.validFloat(c, 0.0, 340.0)
 		validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine, be careful!")
@@ -155,7 +155,7 @@ class mainWindow(configBase.configWindowBase):
 		
 		configBase.TitleRow(left, "Machine size")
 		c = configBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
-		validators.validFloat(c, 0.1, 1.0)
+		validators.validFloat(c, 0.1, 10.0)
 		c = configBase.SettingRow(left, "Machine center X (mm)", 'machine_center_x', '100', 'The center of your machine, your print will be placed at this location')
 		validators.validInt(c, 10)
 		configBase.settingNotify(c, self.preview3d.updateCenterX)
@@ -268,6 +268,10 @@ class mainWindow(configBase.configWindowBase):
 		dlg.Destroy()
 		if result:
 			profile.resetGlobalProfile()
+			if profile.getPreference('machine_type') == 'reprap':
+				profile.putProfileSetting('nozzle_size', '0.5')
+				profile.putProfileSetting('machine_center_x', '40')
+				profile.putProfileSetting('machine_center_y', '40')
 			self.updateProfileToControls()
 	
 	def OnBatchRun(self, e):
@@ -286,7 +290,7 @@ class mainWindow(configBase.configWindowBase):
 		self.Close()
 	
 	def OnDefaultMarlinFirmware(self, e):
-		firmwareInstall.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex"))
+		firmwareInstall.InstallFirmware()
 
 	def OnCustomFirmware(self, e):
 		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)

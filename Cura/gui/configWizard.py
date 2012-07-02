@@ -98,6 +98,7 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_width', '205')
 			profile.putPreference('machine_depth', '205')
 			profile.putPreference('machine_height', '200')
+			profile.putPreference('machine_type', 'ultimaker')
 			profile.putProfileSetting('nozzle_size', '0.4')
 			profile.putProfileSetting('machine_center_x', '100')
 			profile.putProfileSetting('machine_center_y', '100')
@@ -105,6 +106,7 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_width', '80')
 			profile.putPreference('machine_depth', '80')
 			profile.putPreference('machine_height', '60')
+			profile.putPreference('machine_type', 'reprap')
 			profile.putProfileSetting('nozzle_size', '0.5')
 			profile.putProfileSetting('machine_center_x', '40')
 			profile.putProfileSetting('machine_center_y', '40')
@@ -124,7 +126,6 @@ class FirmwareUpgradePage(InfoPage):
 		self.AddHiddenSeperator()
 		self.AddText('Do not upgrade to this firmware if:')
 		self.AddText('* You have an older machine based on ATMega1280')
-		self.AddText('* Using an LCD panel')
 		self.AddText('* Have other changes in the firmware')
 		button = self.AddButton('Goto this page for a custom firmware')
 		button.Bind(wx.EVT_BUTTON, self.OnUrlClick)
@@ -133,7 +134,7 @@ class FirmwareUpgradePage(InfoPage):
 		return False
 	
 	def OnUpgradeClick(self, e):
-		if firmwareInstall.InstallFirmware(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/default.hex")):
+		if firmwareInstall.InstallFirmware():
 			self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
 		
 	def OnSkipClick(self, e):
