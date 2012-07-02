@@ -33,14 +33,14 @@ class Vector3(object):
 
 	def __iadd__(self, v):
 		self.x += v.x
-		self.y += v.x
-		self.z += v.x
+		self.y += v.y
+		self.z += v.z
 		return self
 
 	def __isub__(self, v):
 		self.x += v.x
-		self.y += v.x
-		self.z += v.x
+		self.y += v.y
+		self.z += v.z
 		return self
 
 	def __imul__(self, v):
