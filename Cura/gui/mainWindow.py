@@ -208,9 +208,9 @@ class mainWindow(configBase.configWindowBase):
 			loadButton2 = wx.Button(self, -1, 'Load Dual')
 			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(2), loadButton2)
 		if extruderCount > 2:
-			loadButton3 = wx.Button(self, -1, 'Load Tripple')
+			loadButton3 = wx.Button(self, -1, 'Load Triple')
 			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(3), loadButton3)
-		if extruderCount > 2:
+		if extruderCount > 3:
 			loadButton4 = wx.Button(self, -1, 'Load Quad')
 			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(4), loadButton4)
 
