@@ -267,7 +267,7 @@ def getProfileSetting(name):
 def getProfileSettingFloat(name):
 	try:
 		return float(eval(getProfileSetting(name), {}, {}))
-	except (ValueError, SyntaxError):
+	except (ValueError, SyntaxError, TypeError):
 		return 0.0
 
 def putProfileSetting(name, value):
@@ -297,7 +297,7 @@ def getPreferencePath():
 def getPreferenceFloat(name):
 	try:
 		return float(eval(getPreference(name), {}, {}))
-	except (ValueError, SyntaxError):
+	except (ValueError, SyntaxError, TypeError):
 		return 0.0
 
 def getPreference(name):

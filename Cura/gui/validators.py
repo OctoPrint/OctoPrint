@@ -26,7 +26,7 @@ class validFloat(object):
 			if self.maxValue != None and f > self.maxValue:
 				return ERROR, 'This setting should not be above ' + str(self.maxValue)
 			return SUCCESS, ''
-		except (ValueError, SyntaxError):
+		except (ValueError, SyntaxError, TypeError):
 			return ERROR, '"' + str(self.setting.GetValue()) + '" is not a valid number or expression'
 
 class validInt(object):
@@ -44,7 +44,7 @@ class validInt(object):
 			if self.maxValue != None and f > self.maxValue:
 				return ERROR, 'This setting should not be above ' + str(self.maxValue)
 			return SUCCESS, ''
-		except (ValueError, SyntaxError):
+		except (ValueError, SyntaxError, TypeError):
 			return ERROR, '"' + str(self.setting.GetValue()) + '" is not a valid whole number or expression'
 
 class warningAbove(object):
@@ -64,7 +64,7 @@ class warningAbove(object):
 				if f >= self.minValueForWarning:
 					return WARNING, self.warningMessage
 			return SUCCESS, ''
-		except (ValueError, SyntaxError):
+		except (ValueError, SyntaxError, TypeError):
 			#We already have an error by the int/float validator in this case.
 			return SUCCESS, ''
 
