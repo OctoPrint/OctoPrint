@@ -164,7 +164,8 @@ class CoolRepository:
 		
 		self.minimumFeedRate = settings.FloatSpin().getFromValue(0.0, 'Minimum feed rate (mm/s):', self, 10.0, 5.0)
 		self.fanTurnOnLayerNr = settings.IntSpin().getFromValue(0, 'Fan on at layer:', self, 100, 0)
-		self.fanSpeed = settings.IntSpin().getFromValue(0, 'Fan speed (%):', self, 100, 100)
+		self.fanSpeedMin = settings.IntSpin().getFromValue(0, 'Fan speed min (%):', self, 100, 100)
+		self.fanSpeedMax = settings.IntSpin().getFromValue(0, 'Fan speed max (%):', self, 100, 100)
 
 	def execute(self):
 		'Cool button has been clicked.'
@@ -193,6 +194,8 @@ class CoolSkein:
 		self.oldLocation = None
 		self.oldTemperature = None
 		self.minFeedrate = 0
+		self.fanEnabled = False
+		self.lastFanSpeed = 0
 
 	def addCoolOrbits(self, remainingOrbitTime):
 		'Add the minimum radius cool orbits.'
@@ -231,6 +234,16 @@ class CoolSkein:
 		if self.oldTemperature != None and layerCool != 0.0:
 			self.coolTemperature = self.oldTemperature - layerCool
 			self.addTemperature(self.coolTemperature)
+
+	def addFanSpeed(self, remainingOrbitTime):
+		if self.repository.minimumLayerTime.value < 0.0001:
+			fanSpeed = self.repository.fanSpeedMin.value
+		else:
+			f = min(1.0, 2.0 * remainingOrbitTime / self.repository.minimumLayerTime.value)
+			fanSpeed = self.repository.fanSpeedMin.value + (self.repository.fanSpeedMax.value - self.repository.fanSpeedMin.value) * f
+		if self.lastFanSpeed != fanSpeed:
+			self.distanceFeedRate.addLine('M106 S%d' % (fanSpeed * 255 / 100))
+			self.lastFanSpeed = fanSpeed
 
 	def addFlowRate(self, flowRate):
 		'Add a multipled line of flow rate if different.'
@@ -374,11 +387,13 @@ class CoolSkein:
 			self.layerCount.printProgressIncrement('cool')
 			self.distanceFeedRate.addLine(line)
 			if self.repository.turnFanOnAtBeginning.value and self.repository.fanTurnOnLayerNr.value == self.layerCount.layerIndex:
-				self.distanceFeedRate.addLine('M106 S%d' % (self.repository.fanSpeed.value * 255 / 100))
+				self.fanEnabled = True
 			self.distanceFeedRate.addLinesSetAbsoluteDistanceMode(self.coolStartLines)
 			layerTime = self.getLayerTime()
 			remainingOrbitTime = max(self.repository.minimumLayerTime.value - layerTime, 0.0)
 			self.addCoolTemperature(remainingOrbitTime)
+			if self.fanEnabled:
+				self.addFanSpeed(remainingOrbitTime)
 			if self.repository.orbit.value:
 				self.addOrbitsIfNecessary(remainingOrbitTime)
 			else:

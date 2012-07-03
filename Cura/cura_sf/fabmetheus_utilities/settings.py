@@ -304,7 +304,8 @@ def getProfileInformation():
 			'Turn_Fan_Off_at_Ending': storedSetting("fan_enabled"),
 			'Minimum_feed_rate_mm/s': storedSettingFloat("cool_min_feedrate"),
 			'Fan_on_at_layer': storedSettingInt('fan_layer'),
-			'Fan_speed_%': storedSettingInt('fan_speed'),
+			'Fan_speed_min_%': storedSettingInt('fan_speed'),
+			'Fan_speed_max_%': storedSettingInt('fan_speed_max'),
 		},'hop': {
 			'Activate_Hop': "False",
 			'Hop_Over_Layer_Thickness_ratio': DEFSET,

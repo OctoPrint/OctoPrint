@@ -28,7 +28,9 @@ class expertConfigWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0)
 		c = configBase.SettingRow(left, "Fan on layer number", 'fan_layer', '0', 'The layer at which the fan is turned on. The first layer is layer 0. The first layer can stick better if you turn on the fan on, on the 2nd layer.')
 		validators.validInt(c, 0)
-		c = configBase.SettingRow(left, "Fan speed (%)", 'fan_speed', '100', 'When the fan is turned on, it is enabled at this speed setting.')
+		c = configBase.SettingRow(left, "Fan speed min (%)", 'fan_speed', '100', 'When the fan is turned on, it is enabled at this speed setting. If cool slows down the layer, the fan is adjusted between the min and max speed. Minimal fan speed is used if the layer is not slowed down due to cooling.')
+		validators.validInt(c, 0, 100)
+		c = configBase.SettingRow(left, "Fan speed max (%)", 'fan_speed_max', '100', 'When the fan is turned on, it is enabled at this speed setting. If cool slows down the layer, the fan is adjusted between the min and max speed. Maximal fan speed is used if the layer is slowed down due to cooling by more then 200%.')
 		validators.validInt(c, 0, 100)
 
 		configBase.TitleRow(left, "Raft (if enabled)")

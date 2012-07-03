@@ -41,6 +41,7 @@ profileDefaultSettings = {
 	'fan_enabled': 'True',
 	'fan_layer': '1',
 	'fan_speed': '100',
+	'fan_speed_max': '100',
 	'model_scale': '1.0',
 	'flip_x': 'False',
 	'flip_y': 'False',
