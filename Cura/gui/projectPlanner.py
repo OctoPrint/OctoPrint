@@ -22,6 +22,7 @@ from gui import icon
 from gui import configBase
 from gui import validators
 from gui import printWindow
+from gui import dropTarget
 from util import profile
 from util import util3d
 from util import stl
@@ -143,6 +144,8 @@ class projectPlanner(wx.Frame):
 		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.GetSizer().Add(self.panel, 1, flag=wx.EXPAND)
 		#self.SetIcon(icon.getMainIcon())
+		
+		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, '.stl'))
 		
 		self.list = []
 		self.selection = None
@@ -286,6 +289,16 @@ class projectPlanner(wx.Frame):
 		self.preview.Refresh()
 		dlg.Destroy()
 	
+	def OnDropFiles(self, filenames):
+		for filename in filenames:
+			item = ProjectObject(self, filename)
+			profile.putPreference('lastFile', item.filename)
+			self.list.append(item)
+			self.selection = item
+			self._updateListbox()
+		self.OnListSelect(None)
+		self.preview.Refresh()
+
 	def OnPrintTypeChange(self):
 		self.printMode = 0
 		if self.printAllAtOnce.GetValue():
@@ -391,6 +404,7 @@ class projectPlanner(wx.Frame):
 		self.scaleCtrl.SetValue(str(self.selection.scale))
 		self.rotateCtrl.SetValue(int(self.selection.rotate))
 		if int(profile.getPreference('extruder_amount')) > 1:
+
 			self.extruderCtrl.SetValue(str(self.selection.extruder+1))
 
 		self.mirrorX.SetValue(self.selection.flipX)

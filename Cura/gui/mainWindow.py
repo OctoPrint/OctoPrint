@@ -18,6 +18,7 @@ from gui import projectPlanner
 from gui import batchRun
 from gui import flatSlicerWindow
 from gui import icon
+from gui import dropTarget
 from util import profile
 from util import version
 from util import sliceRun
@@ -40,6 +41,8 @@ class mainWindow(configBase.configWindowBase):
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
+		
+		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, '.stl'))
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
@@ -314,7 +317,6 @@ class mainWindow(configBase.configWindowBase):
 			dlg.Destroy()
 			if not(os.path.exists(filename)):
 				return False
-			profile.putPreference('lastFile', filename)
 			return filename
 		dlg.Destroy()
 		return False
@@ -325,11 +327,17 @@ class mainWindow(configBase.configWindowBase):
 			filelist.append(self._showOpenDialog("Open file to print"))
 			if filelist[-1] == False:
 				return
-			self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
+		self._loadModels(filelist)
+	
+	def _loadModels(self, filelist):
 		self.filelist = filelist
+		self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
 		profile.putPreference('lastFile', ';'.join(self.filelist))
 		self.preview3d.loadModelFiles(self.filelist)
 		self.preview3d.setViewMode("Normal")
+
+	def OnDropFiles(self, filenames):
+		self._loadModels(filenames)
 
 	def OnLoadModel(self, e):
 		self._showModelLoadDialog(1)

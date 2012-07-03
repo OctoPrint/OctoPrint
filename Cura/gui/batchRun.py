@@ -5,12 +5,15 @@ import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, t
 
 from util import profile
 from util import sliceRun
+from gui import dropTarget
 
 class batchRunWindow(wx.Frame):
 	def __init__(self, parent):
 		super(batchRunWindow, self).__init__(parent, title='Cura - Batch run')
 		
 		self.list = []
+		
+		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, '.stl'))
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		self.panel = wx.Panel(self, -1)
@@ -50,6 +53,13 @@ class batchRunWindow(wx.Frame):
 				self._updateListbox()
 		dlg.Destroy()
 	
+	def OnDropFiles(self, filenames):
+		for filename in filenames:
+			profile.putPreference('lastFile', filename)
+			self.list.append(filename)
+			self.selection = filename
+			self._updateListbox()
+
 	def OnRemModel(self, e):
 		if self.selection == None:
 			return
