@@ -128,7 +128,7 @@ class GcodeSmallSkein:
 		elif line.startswith('(<infill>'):
 			self.output.write(';TYPE:FILL\n');
 		elif line.startswith('(<alteration>'):
-			self.output.write(';TYPE:CUSTOM X\n');
+			self.output.write(';TYPE:CUSTOM\n');
 			self.parsingAlteration = True
 		elif line.startswith('(</alteration>)'):
 			self.parsingAlteration = False
