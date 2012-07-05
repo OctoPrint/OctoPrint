@@ -53,6 +53,8 @@ class mainWindow(configBase.configWindowBase):
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
 		i = fileMenu.Append(-1, 'Save Profile...')
 		self.Bind(wx.EVT_MENU, self.OnSaveProfile, i)
+		i = fileMenu.Append(-1, 'Load Profile from GCode...')
+		self.Bind(wx.EVT_MENU, self.OnLoadProfileFromGcode, i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Reset Profile to default')
 		self.Bind(wx.EVT_MENU, self.OnResetProfile, i)
@@ -255,6 +257,23 @@ class mainWindow(configBase.configWindowBase):
 			profileFile = dlg.GetPath()
 			profile.loadGlobalProfile(profileFile)
 			self.updateProfileToControls()
+		dlg.Destroy()
+
+	def OnLoadProfileFromGcode(self, e):
+		dlg=wx.FileDialog(self, "Select gcode file to load profile from", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("gcode files (*.gcode)|*.gcode")
+		if dlg.ShowModal() == wx.ID_OK:
+			gcodeFile = dlg.GetPath()
+			f = open(gcodeFile, 'r')
+			hasProfile = False
+			for line in f:
+				if line.startswith(';CURA_PROFILE_STRING:'):
+					profile.loadGlobalProfileFromString(line[line.find(':')+1:].strip())
+					hasProfile = True
+			if hasProfile:
+				self.updateProfileToControls()
+			else:
+				wx.MessageBox('No profile found in GCode file.\nThis feature only works with GCode files made by Cura 12.07 or newer.', 'Profile load error', wx.OK | wx.ICON_INFORMATION)
 		dlg.Destroy()
 	
 	def OnSaveProfile(self, e):

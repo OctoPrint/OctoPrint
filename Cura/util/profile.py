@@ -435,6 +435,7 @@ def setAlterationFile(filename, value):
 ### Get the alteration file for output. (Used by Skeinforge)
 def getAlterationFileContents(filename):
 	prefix = ''
+	postfix = ''
 	alterationContents = getAlterationFile(filename)
 	if filename == 'start.gcode':
 		#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
@@ -445,9 +446,12 @@ def getAlterationFileContents(filename):
 		temp = getProfileSettingFloat('print_temperature')
 		if temp > 0 and not '{print_temperature}' in alterationContents:
 			prefix += 'M109 S%f\n' % (temp)
+	elif filename == 'end.gcode':
+		#Append the profile string to the end of the GCode, so we can load it from the GCode file later.
+		postfix = ';CURA_PROFILE_STRING:%s\n' % (getGlobalProfileString())
 	elif filename == 'replace.csv':
 		#Always remove the extruder on/off M codes. These are no longer needed in 5D printing.
 		prefix = 'M101\nM103\n'
 	
-	return unicode(prefix + re.sub("\{[^\}]*\}", replaceTagMatch, alterationContents).rstrip() + '\n').encode('utf-8')
+	return unicode(prefix + re.sub("\{[^\}]*\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).encode('utf-8')
 
