@@ -81,7 +81,7 @@ profileDefaultSettings = {
 }
 alterationDefault = {
 #######################################################################################
-	'start.gcode': """;Sliced at: {day} {date} {time}
+	'start.gcode': """;Sliced {filename} at: {day} {date} {time}
 ;Basic settings: Layer height: {layer_height} Walls: {wall_thickness} Fill: {fill_density}
 ;Print time: {print_time}
 ;Filament used: {filament_amount}m {filament_weight}g
@@ -388,7 +388,7 @@ def calculateSolidLayerCount():
 ## Alteration file functions
 #########################################################
 def replaceTagMatch(m):
-	tag = m.group(0)[1:-1]
+	tag = m.group(1)
 	if tag == 'time':
 		return time.strftime('%H:%M:%S')
 	if tag == 'date':
@@ -410,7 +410,7 @@ def replaceTagMatch(m):
 	elif isPreference(tag):
 		f = getProfileSettingFloat(tag)
 	else:
-		return tag
+		return '?%s?' % (tag)
 	if (f % 1) == 0:
 		return str(int(f))
 	return str(f)
@@ -478,5 +478,5 @@ def getAlterationFileContents(filename):
 		#Always remove the extruder on/off M codes. These are no longer needed in 5D printing.
 		prefix = 'M101\nM103\n'
 	
-	return unicode(prefix + re.sub("\{[^\}]*\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).encode('utf-8')
+	return unicode(prefix + re.sub("\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).encode('utf-8')
 

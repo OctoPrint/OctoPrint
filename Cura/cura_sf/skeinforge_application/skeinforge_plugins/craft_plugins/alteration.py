@@ -93,9 +93,9 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 def getCraftedText(fileName, text='', repository=None):
 	'Alteration a gcode linear move text.'
-	return getCraftedTextFromText(archive.getTextIfEmpty(fileName, text), repository)
+	return getCraftedTextFromText(archive.getTextIfEmpty(fileName, text), repository, fileName)
 
-def getCraftedTextFromText(gcodeText, repository=None):
+def getCraftedTextFromText(gcodeText, repository=None, fileName=''):
 	'Alteration a gcode linear move text.'
 	if gcodec.isProcedureDoneOrFileIsEmpty(gcodeText, 'alteration'):
 		return gcodeText
@@ -103,7 +103,7 @@ def getCraftedTextFromText(gcodeText, repository=None):
 		repository = settings.getReadRepository(AlterationRepository())
 	if not repository.activateAlteration.value:
 		return gcodeText
-	return AlterationSkein().getCraftedGcode(gcodeText, repository)
+	return AlterationSkein().getCraftedGcode(gcodeText, repository, fileName)
 
 def getGcodeTextWithoutRedundantMcode(gcodeText):
 	'Get gcode text without redundant M104 and M108.'
@@ -170,11 +170,12 @@ class AlterationSkein:
 
 	def addFromUpperLowerFile(self, fileName):
 		"Add lines of text from the fileName or the lowercase fileName, if there is no file by the original fileName in the directory."
-		alterationFileLines = settings.getAlterationFileLines(fileName)
+		alterationFileLines = map(lambda l: l.replace('?filename?', self.fileName), settings.getAlterationFileLines(fileName))
 		self.distanceFeedRate.addLinesSetAbsoluteDistanceMode(alterationFileLines)
 
-	def getCraftedGcode(self, gcodeText, repository):
+	def getCraftedGcode(self, gcodeText, repository, fileName):
 		"Parse gcode text and store the bevel gcode."
+		self.fileName = fileName
 		self.lines = archive.getTextLines(gcodeText)
 		if repository.replaceVariableWithSetting.value:
 			self.setSettingDictionary()
