@@ -206,6 +206,10 @@ class gcode(object):
 				if M is not None:
 					if M == 1:	#Message with possible wait (ignored)
 						pass
+					elif M == 80:	#Enable power supply
+						pass
+					elif M == 81:	#Suicide/disable power supply
+						pass
 					elif M == 84:	#Disable step drivers
 						pass
 					elif M == 92:	#Set steps per unit
@@ -225,6 +229,10 @@ class gcode(object):
 					elif M == 110:	#Reset N counter
 						pass
 					elif M == 113:	#Extruder PWM (these should not be in the final GCode, but they are)
+						pass
+					elif M == 140:	#Set bed temperature
+						pass
+					elif M == 190:	#Set bed temperature & wait
 						pass
 					else:
 						print "Unknown M code:" + str(M)
