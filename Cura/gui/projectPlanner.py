@@ -1018,6 +1018,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		cost = gcode.calculateCost()
 		if cost != False:
 			status += "\nCost: %s" % (cost)
+		profile.replaceGCodeTags(self.resultFilename, gcode)
 		wx.CallAfter(self.statusText.SetLabel, status)
 		wx.CallAfter(self.OnSliceDone)
 	

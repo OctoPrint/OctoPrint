@@ -156,17 +156,19 @@ class WorkerThread(threading.Thread):
 				return
 			line = p.stdout.readline()
 		self.returnCode = p.wait()
-		logfile = open(sliceRun.getExportFilename(self.filelist[self.fileIdx], "log"), "w")
-		for logLine in self.progressLog:
-			logfile.write(logLine)
-			logfile.write('\n')
-		logfile.close()
 		self.fileIdx += 1
 		if self.fileIdx == len(self.cmdList):
 			if len(self.filelist) > 1:
 				self._stitchMultiExtruder()
+			gcodeFilename = sliceRun.getExportFilename(self.filelist[0])
+			gcodefile = open(gcodeFilename, "a")
+			for logLine in self.progressLog:
+				if logLine.startswith('Model error('):
+					gcodefile.write(';%s\n' % (logLine))
+			gcodefile.close()
 			self.gcode = gcodeInterpreter.gcode()
-			self.gcode.load(sliceRun.getExportFilename(self.filelist[0]))
+			self.gcode.load(gcodeFilename)
+			profile.replaceGCodeTags(gcodeFilename, self.gcode)
 			wx.CallAfter(self.notifyWindow.OnSliceDone, self)
 		else:
 			self.run()

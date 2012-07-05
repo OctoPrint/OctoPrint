@@ -83,6 +83,9 @@ alterationDefault = {
 #######################################################################################
 	'start.gcode': """;Sliced at: {day} {date} {time}
 ;Basic settings: Layer height: {layer_height} Walls: {wall_thickness} Fill: {fill_density}
+;Print time: {print_time}
+;Filament used: {filament_amount}m {filament_weight}g
+;Filament cost: {filament_cost}
 G21        ;metric values
 G90        ;absolute positioning
 M107       ;start with the fan off
@@ -392,6 +395,14 @@ def replaceTagMatch(m):
 		return time.strftime('%d %b %Y')
 	if tag == 'day':
 		return time.strftime('%a')
+	if tag == 'print_time':
+		return '#P_TIME#'
+	if tag == 'filament_amount':
+		return '#F_AMNT#'
+	if tag == 'filament_weight':
+		return '#F_WGHT#'
+	if tag == 'filament_cost':
+		return '#F_COST#'
 	if tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
 		f = getProfileSettingFloat(tag) * 60
 	elif isProfileSetting(tag):
@@ -403,6 +414,20 @@ def replaceTagMatch(m):
 	if (f % 1) == 0:
 		return str(int(f))
 	return str(f)
+
+def replaceGCodeTags(filename, gcodeInt):
+	f = open(filename, 'r+')
+	data = f.read(2048)
+	data = data.replace('#P_TIME#', ('%5d:%02d' % (int(gcodeInt.totalMoveTimeMinute / 60), int(gcodeInt.totalMoveTimeMinute % 60)))[-8:])
+	data = data.replace('#F_AMNT#', ('%8.2f' % (gcodeInt.extrusionAmount / 1000))[-8:])
+	data = data.replace('#F_WGHT#', ('%8.2f' % (gcodeInt.calculateWeight() * 1000))[-8:])
+	cost = gcodeInt.calculateCost()
+	if cost == False:
+		cost = 'Unknown'
+	data = data.replace('#F_COST#', ('%8s' % (cost.split(' ')[0]))[-8:])
+	f.seek(0)
+	f.write(data)
+	f.close()
 
 ### Get aleration raw contents. (Used internally in Cura)
 def getAlterationFile(filename):
