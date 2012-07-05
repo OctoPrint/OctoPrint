@@ -104,12 +104,15 @@ G1 X{machine_center_x} Y{machine_center_y} F{travel_speed} ;go to the middle of 
 """,
 #######################################################################################
 	'end.gcode': """;End GCode
-M104 S0                    ;extruder heat off
+M104 S0                    ;extruder heater off
+M140 S0                    ;heated bed heater off (if you have it)
+
 G91                        ;relative positioning
 G1 E-1 F300                ;retract the filament a bit before lifting the nozzle, to release some of the pressure
 G1 Z+0.5 E-5 F{max_z_speed};move Z up a bit and retract filament even more
-G1 Z+10 F{max_z_speed}     ;move Z up a bit more without retraction
+G1 Z+3 F{max_z_speed}      ;move Z up a bit more without retraction
 G28 X0 Y0                  ;move X/Y to min endstops, so the head is out of the way
+
 M84                        ;steppers off
 G90                        ;absolute positioning
 """,
