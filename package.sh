@@ -154,6 +154,7 @@ if [ $BUILD_TARGET = "win32" ]; then
     cp -a scripts/${BUILD_TARGET}/*.bat $TARGET_DIR/
 else
     cp -a scripts/${BUILD_TARGET}/*.sh $TARGET_DIR/
+    cp -a scripts/${BUILD_TARGET}/*.command $TARGET_DIR/
 fi
 
 #package the result
