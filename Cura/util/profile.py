@@ -104,17 +104,17 @@ G1 X{machine_center_x} Y{machine_center_y} F{travel_speed} ;go to the middle of 
 """,
 #######################################################################################
 	'end.gcode': """;End GCode
-M104 S0                    ;extruder heater off
-M140 S0                    ;heated bed heater off (if you have it)
+M104 S0                     ;extruder heater off
+M140 S0                     ;heated bed heater off (if you have it)
 
-G91                        ;relative positioning
-G1 E-1 F300                ;retract the filament a bit before lifting the nozzle, to release some of the pressure
-G1 Z+0.5 E-5 F{max_z_speed};move Z up a bit and retract filament even more
-G1 Z+3 F{max_z_speed}      ;move Z up a bit more without retraction
-G28 X0 Y0                  ;move X/Y to min endstops, so the head is out of the way
+G91                         ;relative positioning
+G1 E-1 F300                 ;retract the filament a bit before lifting the nozzle, to release some of the pressure
+G1 Z+0.5 E-5 F{max_z_speed} ;move Z up a bit and retract filament even more
+G1 Z+3 F{max_z_speed}       ;move Z up a bit more without retraction
+G28 X0 Y0                   ;move X/Y to min endstops, so the head is out of the way
 
-M84                        ;steppers off
-G90                        ;absolute positioning
+M84                         ;steppers off
+G90                         ;absolute positioning
 """,
 #######################################################################################
 	'support_start.gcode': '',
@@ -386,32 +386,33 @@ def calculateSolidLayerCount():
 ## Alteration file functions
 #########################################################
 def replaceTagMatch(m):
-	tag = m.group(1)
+	pre = m.group(1)
+	tag = m.group(2)
 	if tag == 'time':
-		return time.strftime('%H:%M:%S')
+		return pre + time.strftime('%H:%M:%S')
 	if tag == 'date':
-		return time.strftime('%d %b %Y')
+		return pre + time.strftime('%d %b %Y')
 	if tag == 'day':
-		return time.strftime('%a')
+		return pre + time.strftime('%a')
 	if tag == 'print_time':
-		return '#P_TIME#'
+		return pre + '#P_TIME#'
 	if tag == 'filament_amount':
-		return '#F_AMNT#'
+		return pre + '#F_AMNT#'
 	if tag == 'filament_weight':
-		return '#F_WGHT#'
+		return pre + '#F_WGHT#'
 	if tag == 'filament_cost':
-		return '#F_COST#'
-	if tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
+		return pre + '#F_COST#'
+	if pre == 'F' and tag in ['print_speed', 'retraction_speed', 'travel_speed', 'max_z_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
 		f = getProfileSettingFloat(tag) * 60
 	elif isProfileSetting(tag):
 		f = getProfileSettingFloat(tag)
 	elif isPreference(tag):
 		f = getProfileSettingFloat(tag)
 	else:
-		return '?%s?' % (tag)
+		return '%s?%s?' % (pre, tag)
 	if (f % 1) == 0:
-		return str(int(f))
-	return str(f)
+		return pre + str(int(f))
+	return pre + str(f)
 
 def replaceGCodeTags(filename, gcodeInt):
 	f = open(filename, 'r+')
@@ -476,5 +477,5 @@ def getAlterationFileContents(filename):
 		#Always remove the extruder on/off M codes. These are no longer needed in 5D printing.
 		prefix = 'M101\nM103\n'
 	
-	return unicode(prefix + re.sub("\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).encode('utf-8')
+	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).encode('utf-8')
 
