@@ -446,7 +446,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glEnable(GL_COLOR_MATERIAL)
 			glEnable(GL_LIGHTING)
 			drawUpToLayer = min(self.gcodeDisplayListMade, self.parent.layerSpin.GetValue() + 1)
-			for i in xrange(0, drawUpToLayer):
+			starttime = time.time()
+			for i in xrange(drawUpToLayer - 1, -1, -1):
 				c = 1.0
 				if i < self.parent.layerSpin.GetValue():
 					c = 0.9 - (drawUpToLayer - i) * 0.1
@@ -457,6 +458,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, [0,0,0,0])
 				glLightfv(GL_LIGHT0, GL_AMBIENT, [c,c,c,c])
 				glCallList(self.gcodeDisplayList + i)
+				if time.time() - starttime > 0.1:
+					break
 			glDisable(GL_LIGHTING)
 			glDisable(GL_COLOR_MATERIAL)
 			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0]);
