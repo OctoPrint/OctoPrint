@@ -100,18 +100,19 @@ G92 E0                  ;zero the extruded length
 G1 F200 E3              ;extrude 3mm of feed stock
 G92 E0                  ;zero the extruded length again
 
-G1 X{machine_center_x} Y{machine_center_y} F{travel_speed} ;go to the middle of the platform
+;go to the middle of the platform (disabled, as there is no need to go to the center)
+;G1 X{machine_center_x} Y{machine_center_y} F{travel_speed}
+G1 F{travel_speed}
 """,
 #######################################################################################
 	'end.gcode': """;End GCode
 M104 S0                     ;extruder heater off
 M140 S0                     ;heated bed heater off (if you have it)
 
-G91                         ;relative positioning
-G1 E-1 F300                 ;retract the filament a bit before lifting the nozzle, to release some of the pressure
-G1 Z+0.5 E-5 F{max_z_speed} ;move Z up a bit and retract filament even more
-G1 Z+3 F{max_z_speed}       ;move Z up a bit more without retraction
-G28 X0 Y0                   ;move X/Y to min endstops, so the head is out of the way
+G91                                    ;relative positioning
+G1 E-1 F300                            ;retract the filament a bit before lifting the nozzle, to release some of the pressure
+G1 Z+0.5 E-5 X-20 Y-20 F{travel_speed} ;move Z up a bit and retract filament even more
+G28 X0 Y0                              ;move X/Y to min endstops, so the head is out of the way
 
 M84                         ;steppers off
 G90                         ;absolute positioning
@@ -128,7 +129,7 @@ G92 E0
 G1 Z{clear_z} E-5 F{max_z_speed}
 G92 E0
 G1 X{machine_center_x} Y{machine_center_y} F{travel_speed}
-G1 F200 E5.5
+G1 F200 E5.2
 G92 E0
 G1 Z0 F{max_z_speed}
 """,
