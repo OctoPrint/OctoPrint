@@ -27,7 +27,9 @@ def startPrintInterface(filename):
 	printWindowHandle.Show(True)
 	printWindowHandle.Raise()
 	printWindowHandle.OnConnect(None)
-	printWindowHandle.LoadGCodeFile(filename)
+	t = threading.Thread(target=printWindowHandle.LoadGCodeFile,args=(filename,))
+	t.daemon = True
+	t.start()
 	app.MainLoop()
 
 class printProcessMonitor():
@@ -91,6 +93,8 @@ class printWindow(wx.Frame):
 		self.feedrateRatioFill = 1.0
 		self.feedrateRatioSupport = 1.0
 		self.pause = False
+		self.termHistory = []
+		self.termHistoryIdx = 0
 
 		#self.SetIcon(icon.getMainIcon())
 		
@@ -204,6 +208,24 @@ class printWindow(wx.Frame):
 		sizer.Add(wx.StaticText(self.speedPanel, -1, "%"), pos=(3,2))
 
 		nb.AddPage(self.speedPanel, 'Speed')
+		
+		self.termPanel = wx.Panel(nb)
+		sizer = wx.GridBagSizer(2, 2)
+		self.termPanel.SetSizer(sizer)
+		
+		f = wx.Font(8, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False)
+		self.termLog = wx.TextCtrl(self.termPanel, style=wx.TE_MULTILINE|wx.TE_DONTWRAP)
+		self.termLog.SetFont(f)
+		self.termLog.SetEditable(0)
+		self.termInput = wx.TextCtrl(self.termPanel, style=wx.TE_PROCESS_ENTER)
+		self.termInput.SetFont(f)
+
+		sizer.Add(self.termLog, pos=(0,0),flag=wx.EXPAND)
+		sizer.Add(self.termInput, pos=(1,0),flag=wx.EXPAND)
+		sizer.AddGrowableCol(0)
+		sizer.AddGrowableRow(0)
+
+		nb.AddPage(self.termPanel, 'Term')
 
 		self.sizer.AddGrowableRow(3)
 		self.sizer.AddGrowableCol(0)
@@ -222,6 +244,8 @@ class printWindow(wx.Frame):
 		self.Bind(wx.EVT_SPINCTRL, self.OnSpeedChange, self.innerWallSpeedSelect)
 		self.Bind(wx.EVT_SPINCTRL, self.OnSpeedChange, self.fillSpeedSelect)
 		self.Bind(wx.EVT_SPINCTRL, self.OnSpeedChange, self.supportSpeedSelect)
+		self.Bind(wx.EVT_TEXT_ENTER, self.OnTermEnterLine, self.termInput)
+		self.termInput.Bind(wx.EVT_CHAR, self.OnTermKey)
 		
 		self.Layout()
 		self.Fit()
@@ -242,7 +266,9 @@ class printWindow(wx.Frame):
 	
 	def UpdateProgress(self):
 		status = ""
-		if self.gcode != None:
+		if self.gcode == None:
+			status += "Loading gcode...\n"
+		else:
 			status += "Filament: %.2fm %.2fg\n" % (self.gcode.extrusionAmount / 1000, self.gcode.calculateWeight() * 1000)
 			cost = self.gcode.calculateCost()
 			if cost != False:
@@ -325,6 +351,33 @@ class printWindow(wx.Frame):
 		self.feedrateRatioInnerWall = self.innerWallSpeedSelect.GetValue() / 100.0
 		self.feedrateRatioFill = self.fillSpeedSelect.GetValue() / 100.0
 		self.feedrateRatioSupport = self.supportSpeedSelect.GetValue() / 100.0
+	
+	def AddTermLog(self, line):
+		self.termLog.AppendText(line)
+	
+	def OnTermEnterLine(self, e):
+		line = self.termInput.GetValue()
+		if line == '':
+			return
+		self.termLog.AppendText('>%s\n' % (line))
+		self.sendCommand(line)
+		self.termHistory.append(line)
+		self.termHistoryIdx = len(self.termHistory)
+		self.termInput.SetValue('')
+
+	def OnTermKey(self, e):
+		if len(self.termHistory) > 0:
+			if e.GetKeyCode() == wx.WXK_UP:
+				self.termHistoryIdx = self.termHistoryIdx - 1
+				if self.termHistoryIdx < 0:
+					self.termHistoryIdx = len(self.termHistory) - 1
+				self.termInput.SetValue(self.termHistory[self.termHistoryIdx])
+			if e.GetKeyCode() == wx.WXK_DOWN:
+				self.termHistoryIdx = self.termHistoryIdx - 1
+				if self.termHistoryIdx >= len(self.termHistory):
+					self.termHistoryIdx = 0
+				self.termInput.SetValue(self.termHistory[self.termHistoryIdx])
+		e.Skip()
 
 	def LoadGCodeFile(self, filename):
 		if self.printIdx != None:
@@ -345,12 +398,13 @@ class printWindow(wx.Frame):
 		gcode = gcodeInterpreter.gcode()
 		gcode.loadList(gcodeList)
 		print "Loaded: %s (%d)" % (filename, len(gcodeList))
-		self.progress.SetRange(len(gcodeList))
 		self.gcode = gcode
 		self.gcodeList = gcodeList
 		self.typeList = typeList
-		self.UpdateButtonStates()
-		self.UpdateProgress()
+		
+		wx.CallAfter(self.progress.SetRange, len(gcodeList))
+		wx.CallAfter(self.UpdateButtonStates)
+		wx.CallAfter(self.UpdateProgress)
 		
 	def sendCommand(self, cmd):
 		if self.machineConnected:
@@ -385,22 +439,24 @@ class printWindow(wx.Frame):
 				self.machineConnected = False
 				wx.CallAfter(self.UpdateButtonStates)
 				return
+			if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.
+				if self.printIdx == None or self.pause:
+					self.machineCom.sendCommand("M105")
 			if self.machineConnected:
 				while self.sendCnt > 0 and not self.pause:
 					self.sendLine(self.printIdx)
 					self.printIdx += 1
 					self.sendCnt -= 1
-			elif line.startswith("start"):
+			if line.startswith("start"):
 				self.machineConnected = True
 				wx.CallAfter(self.UpdateButtonStates)
-			if 'T:' in line:
+			elif 'T:' in line:
 				self.temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
 				if 'B:' in line:
 					self.bedTemp = float(re.search("[0-9\.]*", line.split('B:')[1]).group(0))
 				wx.CallAfter(self.UpdateProgress)
-			if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.
-				if self.printIdx == None or self.pause:
-					self.machineCom.sendCommand("M105")
+			elif line.strip() != 'ok':
+				wx.CallAfter(self.AddTermLog, line)
 			if self.printIdx != None:
 				if line.startswith("ok"):
 					if len(self.sendList) > 0:

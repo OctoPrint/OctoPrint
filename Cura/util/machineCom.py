@@ -34,7 +34,7 @@ def baudrateList():
 
 class VirtualPrinter():
 	def __init__(self):
-		self.readList = ['start\n']
+		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n']
 		self.temp = 0.0
 		self.targetTemp = 0.0
 		self.bedTemp = 1.0
@@ -55,7 +55,7 @@ class VirtualPrinter():
 			except:
 				pass
 		if 'M105' in data:
-			self.readList.append("ok T:%f /%f B:%f /%f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
+			self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
 		else:
 			self.readList.append("ok\n")
 
