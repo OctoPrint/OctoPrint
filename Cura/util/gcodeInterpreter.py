@@ -151,6 +151,8 @@ class gcode(object):
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
 					if moveType == 'move' and oldPos.z != pos.z:
+						if oldPos.z > pos.z and abs(oldPos.z - pos.z) > 5.0 and pos.z < 1.0:
+							oldPos.z = 0.0
 						layerThickness = abs(oldPos.z - pos.z)
 					if currentPath.type != moveType or currentPath.pathType != pathType:
 						currentPath = gcodePath(moveType, pathType, layerThickness, currentPath.list[-1])
