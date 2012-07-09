@@ -7,9 +7,9 @@
 # CONFIGURATION
 #############################
 
-
 ##Select the build target
-BUILD_TARGET=${1:-win32}
+BUILD_TARGET=${1:-all}
+#BUILD_TARGET=win32
 #BUILD_TARGET=linux
 #BUILD_TARGET=osx64
 
@@ -39,6 +39,12 @@ function checkTool
 #############################
 # Actual build script
 #############################
+if [ "$BUILD_TARGET" = "all" ]; then
+	$0 win32
+	$0 linux
+	$0 osx64
+	exit
+fi
 
 # Change working directory to the directory the script is in
 # http://stackoverflow.com/a/246128
