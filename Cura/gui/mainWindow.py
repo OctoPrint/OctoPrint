@@ -336,6 +336,7 @@ class mainWindow(configBase.configWindowBase):
 			dlg.Destroy()
 			if not(os.path.exists(filename)):
 				return False
+			profile.putPreference('lastFile', filename)
 			return filename
 		dlg.Destroy()
 		return False
@@ -352,7 +353,7 @@ class mainWindow(configBase.configWindowBase):
 		self.filelist = filelist
 		self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
 		profile.putPreference('lastFile', ';'.join(self.filelist))
-		self.preview3d.loadModelFiles(self.filelist)
+		self.preview3d.loadModelFiles(self.filelist, True)
 		self.preview3d.setViewMode("Normal")
 
 	def OnDropFiles(self, filenames):

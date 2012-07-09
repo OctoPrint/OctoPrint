@@ -158,7 +158,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filelist = [dlg.GetPath()]
 			profile.putPreference('lastFile', ';'.join(self.filelist))
-			self.preview3d.loadModelFiles(self.filelist)
+			self.preview3d.loadModelFiles(self.filelist, True)
 			self.preview3d.setViewMode("Normal")
 		dlg.Destroy()
 	
