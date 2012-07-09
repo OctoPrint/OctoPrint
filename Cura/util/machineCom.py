@@ -30,7 +30,7 @@ def serialList():
     return baselist+glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') +glob.glob("/dev/tty.usb*")+glob.glob("/dev/cu.*")+glob.glob("/dev/rfcomm*")
 
 def baudrateList():
-	return [250000, 115200, 57600, 38400, 19200, 9600]
+	return [250000, 230400, 115200, 57600, 38400, 19200, 9600]
 
 class VirtualPrinter():
 	def __init__(self):
