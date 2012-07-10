@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import os, glob, sys, time
+import os, glob, sys, time, math
 
 from serial import Serial
 
@@ -37,6 +37,7 @@ class VirtualPrinter():
 		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n']
 		self.temp = 0.0
 		self.targetTemp = 0.0
+		self.lastTempAt = time.time()
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
 	
@@ -63,8 +64,12 @@ class VirtualPrinter():
 		if self.readList == None:
 			return ''
 		n = 0
-		self.temp = (self.temp + self.targetTemp) / 2
-		self.bedTemp = (self.bedTemp + self.bedTargetTemp) / 2
+		timeDiff = self.lastTempAt - time.time()
+		self.lastTempAt = time.time()
+		if abs(self.temp - self.targetTemp) > 1:
+			self.temp += math.copysign(timeDiff, self.targetTemp - self.temp)
+		if abs(self.bedTemp - self.bedTargetTemp) > 1:
+			self.bedTemp += math.copysign(timeDiff, self.bedTargetTemp - self.bedTemp)
 		while len(self.readList) < 1:
 			time.sleep(0.1)
 			n += 1

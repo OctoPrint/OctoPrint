@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, threading, re, subprocess, sys, os
+import wx, threading, re, subprocess, sys, os, time
 from wx.lib import buttons
 
 from gui import icon
@@ -140,10 +140,15 @@ class printWindow(wx.Frame):
 		self.bedTemperatureLabel.Show(False)
 		self.bedTemperatureSelect.Show(False)
 		
+		self.temperatureGraph = temperatureGraph(self.temperaturePanel)
+		
 		sizer.Add(wx.StaticText(self.temperaturePanel, -1, "Temp:"), pos=(0,0))
 		sizer.Add(self.temperatureSelect, pos=(0,1))
 		sizer.Add(self.bedTemperatureLabel, pos=(1,0))
 		sizer.Add(self.bedTemperatureSelect, pos=(1,1))
+		sizer.Add(self.temperatureGraph, pos=(2,0), span=(1,2), flag=wx.EXPAND)
+		sizer.AddGrowableRow(2)
+		sizer.AddGrowableCol(0)
 
 		nb.AddPage(self.temperaturePanel, 'Temp')
 
@@ -289,7 +294,7 @@ class printWindow(wx.Frame):
 			self.bedTemperatureSelect.Show(True)
 			self.temperaturePanel.Layout()
 		self.statsText.SetLabel(status.strip())
-		self.Layout()
+		#self.Layout()
 	
 	def OnConnect(self, e):
 		if self.machineCom != None:
@@ -417,17 +422,26 @@ class printWindow(wx.Frame):
 		if lineNr >= len(self.gcodeList):
 			return False
 		line = self.gcodeList[lineNr]
-		if line == 'M0' or line == 'M1':
-			self.OnPause(None)
-			line = 'M105'
-		if self.typeList[lineNr] == 'WALL-OUTER':
-			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioOuterWall)), line)
-		if self.typeList[lineNr] == 'WALL-INNER':
-			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioInnerWall)), line)
-		if self.typeList[lineNr] == 'FILL':
-			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioFill)), line)
-		if self.typeList[lineNr] == 'SUPPORT':
-			line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioSupport)), line)
+		try:
+			if line == 'M0' or line == 'M1':
+				self.OnPause(None)
+				line = 'M105'
+			if ('M104' in line or 'M109' in line) and 'S' in line:
+				n = int(re.search('S([0-9]*)', line).group(1))
+				wx.CallAfter(self.temperatureSelect.SetValue, n)
+			if ('M140' in line or 'M190' in line) and 'S' in line:
+				n = int(re.search('S([0-9]*)', line).group(1))
+				wx.CallAfter(self.bedTemperatureSelect.SetValue, n)
+			if self.typeList[lineNr] == 'WALL-OUTER':
+				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioOuterWall)), line)
+			if self.typeList[lineNr] == 'WALL-INNER':
+				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioInnerWall)), line)
+			if self.typeList[lineNr] == 'FILL':
+				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioFill)), line)
+			if self.typeList[lineNr] == 'SUPPORT':
+				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioSupport)), line)
+		except:
+			print "Unexpected error:", sys.exc_info()
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, line)))
 		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, line, checksum))
 		return True
@@ -442,6 +456,9 @@ class printWindow(wx.Frame):
 			if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.
 				if self.printIdx == None or self.pause:
 					self.machineCom.sendCommand("M105")
+				else:
+					wx.CallAfter(self.AddTermLog, '!!Comm timeout, forcing next line!!\n')
+					line = 'ok'
 			if self.machineConnected:
 				while self.sendCnt > 0 and not self.pause:
 					self.sendLine(self.printIdx)
@@ -454,6 +471,7 @@ class printWindow(wx.Frame):
 				self.temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
 				if 'B:' in line:
 					self.bedTemp = float(re.search("[0-9\.]*", line.split('B:')[1]).group(0))
+				self.temperatureGraph.addPoint(self.temp, self.temperatureSelect.GetValue(), self.bedTemp, self.bedTemperatureSelect.GetValue())
 				wx.CallAfter(self.UpdateProgress)
 			elif line.strip() != 'ok':
 				wx.CallAfter(self.AddTermLog, line)
@@ -478,4 +496,84 @@ class printWindow(wx.Frame):
 							lineNr=int(line.split()[1])
 					self.printIdx = lineNr
 					#we should actually resend the line here, but we also get an "ok" for each error from Marlin. And thus we'll resend on the OK.
+
+class temperatureGraph(wx.Panel):
+	def __init__(self, parent):
+		super(temperatureGraph, self).__init__(parent)
+		
+		self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+		self.Bind(wx.EVT_SIZE, self.OnSize)
+		self.Bind(wx.EVT_PAINT, self.OnDraw)
+		
+		self.lastDraw = time.time() - 1.0
+		self.points = []
+		self.backBuffer = None
+		self.addPoint(0,0,0,0)
+	
+	def OnEraseBackground(self, e):
+		pass
+	
+	def OnSize(self, e):
+		if self.backBuffer == None or self.GetSize() != self.backBuffer.GetSize():
+			self.backBuffer = wx.EmptyBitmap(*self.GetSizeTuple())
+			self.UpdateDrawing(True)
+	
+	def OnDraw(self, e):
+		dc = wx.BufferedPaintDC(self, self.backBuffer)
+	
+	def UpdateDrawing(self, force = False):
+		now = time.time()
+		if not force and now - self.lastDraw < 1.0:
+			return
+		self.lastDraw = now
+		dc = wx.MemoryDC()
+		dc.SelectObject(self.backBuffer)
+		dc.Clear()
+		w, h = self.GetSizeTuple()
+		x0 = 0
+		t0 = 0
+		bt0 = 0
+		tSP0 = 0
+		btSP0 = 0
+		tempPen = wx.Pen('#FF4040')
+		tempSPPen = wx.Pen('#FFA0A0')
+		tempPenBG = wx.Pen('#FFD0D0')
+		bedTempPen = wx.Pen('#4040FF')
+		bedTempSPPen = wx.Pen('#A0A0FF')
+		bedTempPenBG = wx.Pen('#D0D0FF')
+		for temp, tempSP, bedTemp, bedTempSP, t in self.points:
+			x1 = int(w - (now - t))
+			for x in xrange(x0, x1 + 1):
+				t = float(x - x0) / float(x1 - x0 + 1) * (temp - t0) + t0
+				bt = float(x - x0) / float(x1 - x0 + 1) * (bedTemp - bt0) + bt0
+				tSP = float(x - x0) / float(x1 - x0 + 1) * (tempSP - tSP0) + tSP0
+				btSP = float(x - x0) / float(x1 - x0 + 1) * (bedTempSP - btSP0) + btSP0
+				dc.SetPen(tempPenBG)
+				dc.DrawLine(x, h, x, h - (t * h / 300))
+				dc.SetPen(bedTempPenBG)
+				dc.DrawLine(x, h, x, h - (bt * h / 300))
+				dc.SetPen(tempSPPen)
+				dc.DrawPoint(x, h - (tSP * h / 300))
+				dc.SetPen(bedTempSPPen)
+				dc.DrawPoint(x, h - (btSP * h / 300))
+				dc.SetPen(tempPen)
+				dc.DrawPoint(x, h - (t * h / 300))
+				dc.SetPen(bedTempPen)
+				dc.DrawPoint(x, h - (bt * h / 300))
+			t0 = temp
+			bt0 = bedTemp
+			tSP0 = tempSP
+			btSP0 = bedTempSP
+			x0 = x1 + 1
+		
+		del dc
+		self.Refresh(eraseBackground=False)
+		self.Update()
+		
+		if len(self.points) > 0 and (time.time() - self.points[0][4]) > w + 20:
+			self.points.pop(0)
+
+	def addPoint(self, temp, tempSP, bedTemp, bedTempSP):
+		self.points.append((temp, tempSP, bedTemp, bedTempSP, time.time()))
+		wx.CallAfter(self.UpdateDrawing)
 
