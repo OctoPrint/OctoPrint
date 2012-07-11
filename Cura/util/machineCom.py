@@ -129,11 +129,19 @@ class MachineCom():
 			except:
 				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
 				continue
+			ser.setDTR(1)
+			time.sleep(0.1)
+			ser.setDTR(0)
+			time.sleep(0.2)
 			starttime = time.time()
 			for line in ser:
 				if line.startswith('start'):
 					ser.close()
-					return Serial(port, baudrate, timeout=2)
+					ser = Serial(port, baudrate, timeout=2)
+					ser.setDTR(1)
+					time.sleep(0.1)
+					ser.setDTR(0)
+					time.sleep(0.2)
 				if starttime - time.time() > 10:
 					break
 			ser.close()
