@@ -142,6 +142,7 @@ class MachineCom():
 					time.sleep(0.1)
 					ser.setDTR(0)
 					time.sleep(0.2)
+					return ser
 				if starttime - time.time() > 10:
 					break
 			ser.close()
