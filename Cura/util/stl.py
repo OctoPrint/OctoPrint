@@ -9,7 +9,7 @@ class stlModel(mesh.mesh):
 
 	def load(self, filename):
 		f = open(filename, "rb")
-		if f.read(6).lower() == "solid ":
+		if f.read(5).lower() == "solid":
 			self._loadAscii(f)
 			if len(self.faces) < 1:
 				f.seek(6, os.SEEK_SET)
