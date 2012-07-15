@@ -11,8 +11,8 @@ class stlModel(mesh.mesh):
 		f = open(filename, "rb")
 		if f.read(5).lower() == "solid":
 			self._loadAscii(f)
-			if len(self.faces) < 1:
-				f.seek(6, os.SEEK_SET)
+			if not self.faces:
+				f.seek(5, os.SEEK_SET)
 				self._loadBinary(f)
 		else:
 			self._loadBinary(f)
@@ -39,7 +39,7 @@ class stlModel(mesh.mesh):
 
 	def _loadBinary(self, f):
 		#Skip the header
-		f.read(80-6)
+		f.read(80-5)
 		faceCount = struct.unpack('<I', f.read(4))[0]
 		for idx in xrange(0, faceCount):
 			data = struct.unpack("<ffffffffffffH", f.read(50))
