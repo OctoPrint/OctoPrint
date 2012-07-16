@@ -312,7 +312,7 @@ class projectPlanner(wx.Frame):
 			self._saveCombinedSTL(dlg.GetPath())
 		dlg.Destroy()
 	
-	def _saveCombinedSTL(filename):
+	def _saveCombinedSTL(self, filename):
 		output = mesh.mesh()
 		for item in self.list:
 			offset = util3d.Vector3(item.centerX, item.centerY, 0)
