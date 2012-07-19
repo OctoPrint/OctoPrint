@@ -23,7 +23,7 @@ profileDefaultSettings = {
 	'skirt_line_count': '1',
 	'skirt_gap': '3.0',
 	'print_speed': '50',
-	'print_temperature': '0',
+	'print_temperature': '230',
 	'support': 'None',
 	'filament_diameter': '2.89',
 	'filament_density': '1.00',
@@ -126,12 +126,17 @@ G90                         ;absolute positioning
 #######################################################################################
 	'nextobject.gcode': """;Move to next object on the platform. clear_z is the minimal z height we need to make sure we do not hit any objects.
 G92 E0
-G1 Z{clear_z} E-5 F{max_z_speed}
+
+G91                                    ;relative positioning
+G1 E-1 F300                            ;retract the filament a bit before lifting the nozzle, to release some of the pressure
+G1 Z+0.5 E-5 F{travel_speed}           ;move Z up a bit and retract filament even more
+G90                                    ;absolute positioning
+
+G1 Z{clear_z} F{max_z_speed}
 G92 E0
 G1 X{machine_center_x} Y{machine_center_y} F{travel_speed}
-G1 F200 E5.2
+G1 F200 E5
 G92 E0
-G1 Z0 F{max_z_speed}
 """,
 #######################################################################################
 	'switchExtruder.gcode': """;Switch between the current extruder and the next extruder, when printing with multiple extruders.

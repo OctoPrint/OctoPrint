@@ -604,6 +604,7 @@ class projectPlanner(wx.Frame):
 				action.sliceCmd = sliceRun.getSliceCommand(item.filename)
 				action.centerX = item.centerX
 				action.centerY = item.centerY
+				action.temperature = profile.getProfileSettingFloat('print_temperature')
 				action.extruder = item.extruder
 				action.filename = item.filename
 				clearZ = max(clearZ, item.getMaximum().z * item.scale + 5.0)
@@ -634,6 +635,7 @@ class projectPlanner(wx.Frame):
 			action.sliceCmd = sliceRun.getSliceCommand(resultFilename + "_temp_.stl")
 			action.centerX = profile.getProfileSettingFloat('machine_center_x')
 			action.centerY = profile.getProfileSettingFloat('machine_center_y')
+			action.temperature = profile.getProfileSettingFloat('print_temperature')
 			action.extruder = 0
 			action.filename = resultFilename + "_temp_.stl"
 			action.clearZ = 0
@@ -961,15 +963,20 @@ class ProjectSliceProgressWindow(wx.Frame):
 			put('machine_center_y', action.centerY - self.extruderOffset[action.extruder].y)
 			put('clear_z', action.clearZ)
 			put('extruder', action.extruder)
+			put('print_temperature', action.temperature)
 			
 			if action == self.actionList[0]:
 				resultFile.write(';TYPE:CUSTOM\n')
 				resultFile.write('T%d\n' % (action.extruder))
 				currentExtruder = action.extruder
+				prevTemp = action.temperature
 				resultFile.write(profile.getAlterationFileContents('start.gcode'))
 			else:
 				#reset the extrusion length, and move to the next object center.
 				resultFile.write(';TYPE:CUSTOM\n')
+				if prevTemp != action.temperature:
+					resultFile.write('M104 S%d\n' % (int(action.temperature)))
+					prevTemp = action.temperature
 				resultFile.write(profile.getAlterationFileContents('nextobject.gcode'))
 			resultFile.write(';PRINTNR:%d\n' % self.actionList.index(action))
 			profile.resetTempOverride()
