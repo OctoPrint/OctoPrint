@@ -68,6 +68,8 @@ class PrintCommandButton(buttons.GenBitmapButton):
 		self.Bind(wx.EVT_BUTTON, self.OnClick)
 
 	def OnClick(self, e):
+		if self.parent.printIdx != None:
+			return;
 		self.parent.sendCommand("G91")
 		self.parent.sendCommand(self.command)
 		self.parent.sendCommand("G90")
