@@ -34,7 +34,7 @@ def baudrateList():
 
 class VirtualPrinter():
 	def __init__(self):
-		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n']
+		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n']
 		self.temp = 0.0
 		self.targetTemp = 0.0
 		self.lastTempAt = time.time()
@@ -135,7 +135,7 @@ class MachineCom():
 			time.sleep(0.2)
 			starttime = time.time()
 			for line in ser:
-				if line.startswith('start'):
+				if 'start' in line:
 					ser.close()
 					ser = Serial(port, baudrate, timeout=2)
 					ser.setDTR(1)
@@ -151,7 +151,11 @@ class MachineCom():
 	def readline(self):
 		if self.serial == None:
 			return None
-		ret = self.serial.readline()
+		try:
+			ret = self.serial.readline()
+		except:
+			print "Unexpected error while reading serial port:", sys.exc_info()[0]
+			ret = ''
 		#if ret != '':
 		#	print "Recv: " + ret.rstrip()
 		return ret

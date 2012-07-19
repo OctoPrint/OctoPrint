@@ -358,7 +358,7 @@ class printWindow(wx.Frame):
 		self.feedrateRatioSupport = self.supportSpeedSelect.GetValue() / 100.0
 	
 	def AddTermLog(self, line):
-		self.termLog.AppendText(line)
+		self.termLog.AppendText(unicode(line, 'utf-8', 'replace'))
 	
 	def OnTermEnterLine(self, e):
 		line = self.termInput.GetValue()

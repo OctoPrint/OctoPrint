@@ -299,7 +299,7 @@ class UltimakerCheckupPage(InfoPage):
 				self.comm.close()
 				return False
 			print line.rstrip()
-			if line.startswith(replyStart):
+			if replyStart in line:
 				break
 		t.cancel()
 		return line.rstrip()
@@ -385,7 +385,7 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 			line = self.comm.readline()
 			if line == '':
 				return
-			if line.startswith('start'):
+			if 'start' in line:
 				break
 		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
 		time.sleep(3)
@@ -417,7 +417,7 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 				self.heatButton.Enable(True)
 				self.extrudeButton.Enable(True)
 				return
-			if line.startswith('start'):
+			if 'start' in line:
 				break
 		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
 		time.sleep(3)
