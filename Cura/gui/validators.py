@@ -20,7 +20,7 @@ class validFloat(object):
 	
 	def validate(self):
 		try:
-			f = float(eval(self.setting.GetValue(), {}, {}))
+			f = float(eval(self.setting.GetValue().replace(',','.'), {}, {}))
 			if self.minValue != None and f < self.minValue:
 				return ERROR, 'This setting should not be below ' + str(self.minValue)
 			if self.maxValue != None and f > self.maxValue:
@@ -56,7 +56,7 @@ class warningAbove(object):
 	
 	def validate(self):
 		try:
-			f = float(eval(self.setting.GetValue(), {}, {}))
+			f = float(eval(self.setting.GetValue().replace(',','.'), {}, {}))
 			if isinstance(self.minValueForWarning, types.FunctionType):
 				if f >= self.minValueForWarning():
 					return WARNING, self.warningMessage % (self.minValueForWarning())

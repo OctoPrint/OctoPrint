@@ -274,7 +274,8 @@ def getProfileSetting(name):
 
 def getProfileSettingFloat(name):
 	try:
-		return float(eval(getProfileSetting(name), {}, {}))
+		setting = getProfileSetting(name).replace(',', '.')
+		return float(eval(setting, {}, {}))
 	except (ValueError, SyntaxError, TypeError):
 		return 0.0
 
@@ -304,7 +305,8 @@ def getPreferencePath():
 
 def getPreferenceFloat(name):
 	try:
-		return float(eval(getPreference(name), {}, {}))
+		setting = getPreference(name).replace(',', '.')
+		return float(eval(setting, {}, {}))
 	except (ValueError, SyntaxError, TypeError):
 		return 0.0
 
