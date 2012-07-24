@@ -246,6 +246,10 @@ class mainWindow(configBase.configWindowBase):
 		self.updateProfileToControls()
 
 		self.Fit()
+		if wx.Display().GetClientArea().GetWidth() < self.GetSize().GetWidth():
+			f = self.GetSize().GetWidth() - wx.Display().GetClientArea().GetWidth()
+			self.preview3d.SetMinSize(self.preview3d.GetMinSize().DecBy(f, 0))
+			self.Fit()
 		self.SetMinSize(self.GetSize())
 		self.Centre()
 		self.Show(True)
