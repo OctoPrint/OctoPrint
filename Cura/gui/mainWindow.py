@@ -198,7 +198,8 @@ class mainWindow(configBase.configWindowBase):
 		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 3.0 / 4.0), "A bottom layer of more then %.2fmm (3/4 nozzle size) usually give bad results and is not recommended.")
 		c = configBase.SettingRow(right, "Enable 'skin'", 'enable_skin', False, 'Skin prints the outer lines of the prints twice, each time with half the thickness. This gives the illusion of a higher print quality.')
 
-		nb.AddPage(alterationPanel.alterationPanel(nb), "Start/End-GCode")
+		self.alterationPanel = alterationPanel.alterationPanel(nb)
+		nb.AddPage(self.alterationPanel, "Start/End-GCode")
 
 		# load and slice buttons.
 		loadButton = wx.Button(self, -1, 'Load Model')
@@ -437,3 +438,4 @@ class mainWindow(configBase.configWindowBase):
 	def updateProfileToControls(self):
 		super(mainWindow, self).updateProfileToControls()
 		self.preview3d.updateProfileToControls()
+		self.alterationPanel.updateProfileToControls()

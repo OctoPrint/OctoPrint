@@ -43,3 +43,6 @@ class alterationPanel(wx.Panel):
 		if self.currentFile == self.list.GetSelection():
 			profile.setAlterationFile(self.alterationFileList[self.list.GetSelection()], self.textArea.GetValue())
 
+	def updateProfileToControls(self):
+		self.OnSelect(None)
+
