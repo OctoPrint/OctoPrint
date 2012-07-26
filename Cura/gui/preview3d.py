@@ -1,6 +1,7 @@
 from __future__ import division
 
 import sys, math, threading, re, time, os
+import numpy
 
 from wx import glcanvas
 import wx
@@ -170,11 +171,11 @@ class previewPanel(wx.Panel):
 			return
 		vMin = self.objectsMinV
 		vMax = self.objectsMaxV
-		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
-		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
-		scaleX2 = (self.machineCenter.x) / ((vMax.x - vMin.x) / 2)
-		scaleY2 = (self.machineCenter.y) / ((vMax.y - vMin.y) / 2)
-		scaleZ = self.machineSize.z / (vMax.z - vMin.z)
+		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax[0] - vMin[0]) / 2)
+		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
+		scaleX2 = (self.machineCenter.x) / ((vMax[0] - vMin[1]) / 2)
+		scaleY2 = (self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
+		scaleZ = self.machineSize.z / (vMax[2] - vMin[2])
 		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
 		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
@@ -356,8 +357,8 @@ class previewPanel(wx.Panel):
 				continue
 
 			obj.mesh.getMinimumZ()
-			minV = minV.min(obj.mesh.getMinimum())
-			maxV = maxV.max(obj.mesh.getMaximum())
+			minV = numpy.minimum(minV, obj.mesh.getMinimum())
+			maxV = numpy.maximum(maxV, obj.mesh.getMaximum())
 
 		self.objectsMaxV = maxV
 		self.objectsMinV = minV
@@ -365,10 +366,11 @@ class previewPanel(wx.Panel):
 			if obj.mesh == None:
 				continue
 
-			for v in obj.mesh.vertexes:
-				v.z -= minV.z
-				v.x -= minV.x + (maxV.x - minV.x) / 2
-				v.y -= minV.y + (maxV.y - minV.y) / 2
+			obj.mesh.vertexes -= numpy.array([minV[0] + (maxV[0] - minV[0]) / 2, minV[1] + (maxV[1] - minV[1]) / 2, minV[2]])
+			#for v in obj.mesh.vertexes:
+			#	v[2] -= minV[2]
+			#	v[0] -= minV[0] + (maxV[0] - minV[0]) / 2
+			#	v[1] -= minV[1] + (maxV[1] - minV[1]) / 2
 			obj.mesh.getMinimumZ()
 			obj.dirty = True
 		self.glCanvas.Refresh()
@@ -461,7 +463,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glTranslate(0,0,-self.parent.gcode.layerList[self.parent.layerSpin.GetValue()][0].list[-1].z)
 			else:
 				if self.parent.objectsMaxV != None:
-					glTranslate(0,0,-self.parent.objectsMaxV.z * profile.getProfileSettingFloat('model_scale') / 2)
+					glTranslate(0,0,-self.parent.objectsMaxV[2] * profile.getProfileSettingFloat('model_scale') / 2)
 		else:
 			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
 			glTranslate(self.offsetX, self.offsetY, 0.0)
@@ -610,11 +612,11 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		modelScale = profile.getProfileSettingFloat('model_scale')
 		modelSize = (obj.mesh.getMaximum() - obj.mesh.getMinimum()) * modelScale
 		glPushMatrix()
-		glTranslate(-(modelSize.x+10)*(multiX-1)/2,-(modelSize.y+10)*(multiY-1)/2, 0)
+		glTranslate(-(modelSize[0]+10)*(multiX-1)/2,-(modelSize[1]+10)*(multiY-1)/2, 0)
 		for mx in xrange(0, multiX):
 			for my in xrange(0, multiY):
 				glPushMatrix()
-				glTranslate((modelSize.x+10)*mx,(modelSize.y+10)*my, 0)
+				glTranslate((modelSize[0]+10)*mx,(modelSize[1]+10)*my, 0)
 				glScalef(modelScale, modelScale, modelScale)
 				glCallList(obj.displayList)
 				glPopMatrix()

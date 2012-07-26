@@ -3,9 +3,9 @@ import __init__
 
 import wx, os, platform, types, webbrowser, math, subprocess, threading, time, re
 import ConfigParser
+import numpy
 
 from wx import glcanvas
-import wx
 try:
 	import OpenGL
 	OpenGL.ERROR_CHECKING = False
@@ -55,18 +55,15 @@ class ProjectObject(stl.stlModel):
 		self.modelDisplayList = None
 		self.modelDirty = False
 
-		self.origonalVertexes = list(self.vertexes)
-		for i in xrange(0, len(self.origonalVertexes)):
-			self.origonalVertexes[i] = self.origonalVertexes[i].copy()
 		self.getMinimumZ()
 		
-		self.centerX = -self.getMinimum().x + 5
-		self.centerY = -self.getMinimum().y + 5
+		self.centerX = -self.getMinimum()[0] + 5
+		self.centerY = -self.getMinimum()[1] + 5
 		
 		self.updateModelTransform()
 
-		self.centerX = -self.getMinimum().x + 5
-		self.centerY = -self.getMinimum().y + 5
+		self.centerX = -self.getMinimum()[0] + 5
+		self.centerY = -self.getMinimum()[1] + 5
 
 	def isSameExceptForPosition(self, other):
 		if self.filename != other.filename:
@@ -96,10 +93,7 @@ class ProjectObject(stl.stlModel):
 		minZ = self.getMinimumZ()
 		minV = self.getMinimum()
 		maxV = self.getMaximum()
-		for v in self.vertexes:
-			v.z -= minZ
-			v.x -= minV.x + (maxV.x - minV.x) / 2
-			v.y -= minV.y + (maxV.y - minV.y) / 2
+		self.vertexes -= numpy.array([minV[0] + (maxV[0] - minV[0]) / 2, minV[1] + (maxV[1] - minV[1]) / 2, minZ])
 		minZ = self.getMinimumZ()
 		self.modelDirty = True
 	
@@ -125,14 +119,14 @@ class ProjectObject(stl.stlModel):
 		return p
 	
 	def clampXY(self):
-		if self.centerX < -self.getMinimum().x * self.scale + self.parent.extruderOffset[self.extruder].x:
-			self.centerX = -self.getMinimum().x * self.scale + self.parent.extruderOffset[self.extruder].x
-		if self.centerY < -self.getMinimum().y * self.scale + self.parent.extruderOffset[self.extruder].y:
-			self.centerY = -self.getMinimum().y * self.scale + self.parent.extruderOffset[self.extruder].y
-		if self.centerX > self.parent.machineSize.x + self.parent.extruderOffset[self.extruder].x - self.getMaximum().x * self.scale:
-			self.centerX = self.parent.machineSize.x + self.parent.extruderOffset[self.extruder].x - self.getMaximum().x * self.scale
-		if self.centerY > self.parent.machineSize.y + self.parent.extruderOffset[self.extruder].y - self.getMaximum().y * self.scale:
-			self.centerY = self.parent.machineSize.y + self.parent.extruderOffset[self.extruder].y - self.getMaximum().y * self.scale
+		if self.centerX < -self.getMinimum()[0] * self.scale + self.parent.extruderOffset[self.extruder][0]:
+			self.centerX = -self.getMinimum()[0] * self.scale + self.parent.extruderOffset[self.extruder][0]
+		if self.centerY < -self.getMinimum()[1] * self.scale + self.parent.extruderOffset[self.extruder][1]:
+			self.centerY = -self.getMinimum()[1] * self.scale + self.parent.extruderOffset[self.extruder][1]
+		if self.centerX > self.parent.machineSize[0] + self.parent.extruderOffset[self.extruder][0] - self.getMaximum()[0] * self.scale:
+			self.centerX = self.parent.machineSize[0] + self.parent.extruderOffset[self.extruder][0] - self.getMaximum()[0] * self.scale
+		if self.centerY > self.parent.machineSize[1] + self.parent.extruderOffset[self.extruder][1] - self.getMaximum()[1] * self.scale:
+			self.centerY = self.parent.machineSize[1] + self.parent.extruderOffset[self.extruder][1] - self.getMaximum()[1] * self.scale
 
 class projectPlanner(wx.Frame):
 	"Main user interface window"
@@ -151,15 +145,15 @@ class projectPlanner(wx.Frame):
 		self.selection = None
 		self.printMode = 0
 
-		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
-		self.headSizeMin = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0)
-		self.headSizeMax = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0)
+		self.machineSize = numpy.array([profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height')])
+		self.headSizeMin = numpy.array([profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0])
+		self.headSizeMax = numpy.array([profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0])
 
 		self.extruderOffset = [
-			util3d.Vector3(0,0,0),
-			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x1'), profile.getPreferenceFloat('extruder_offset_y1'), 0),
-			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x2'), profile.getPreferenceFloat('extruder_offset_y2'), 0),
-			util3d.Vector3(profile.getPreferenceFloat('extruder_offset_x3'), profile.getPreferenceFloat('extruder_offset_y3'), 0)]
+			numpy.array([0,0,0]),
+			numpy.array([profile.getPreferenceFloat('extruder_offset_x1'), profile.getPreferenceFloat('extruder_offset_y1'), 0]),
+			numpy.array([profile.getPreferenceFloat('extruder_offset_x2'), profile.getPreferenceFloat('extruder_offset_y2'), 0]),
+			numpy.array([profile.getPreferenceFloat('extruder_offset_x3'), profile.getPreferenceFloat('extruder_offset_y3'), 0])]
 
 		self.toolbar = toolbarUtil.Toolbar(self.panel)
 
@@ -392,7 +386,7 @@ class projectPlanner(wx.Frame):
 
 	def OnTopClick(self):
 		self.preview.view3D = False
-		self.preview.zoom = self.machineSize.x / 2 + 10
+		self.preview.zoom = self.machineSize[0] / 2 + 10
 		self.preview.offsetX = 0
 		self.preview.offsetY = 0
 		self.preview.Refresh()
@@ -499,9 +493,9 @@ class projectPlanner(wx.Frame):
 			self.listbox.SetSelection(-1)
 
 	def OnAutoPlace(self, e):
-		bestAllowedSize = int(self.machineSize.y)
+		bestAllowedSize = int(self.machineSize[1])
 		bestArea = self._doAutoPlace(bestAllowedSize)
-		for i in xrange(10, int(self.machineSize.y), 10):
+		for i in xrange(10, int(self.machineSize[1]), 10):
 			area = self._doAutoPlace(i)
 			if area < bestArea:
 				bestAllowedSize = i
@@ -516,18 +510,18 @@ class projectPlanner(wx.Frame):
 		extraSizeMax = self.headSizeMax
 		if profile.getProfileSettingFloat('skirt_line_count') > 0:
 			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
-			extraSizeMin = extraSizeMin + util3d.Vector3(skirtSize, skirtSize, 0)
-			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
+			extraSizeMin = extraSizeMin + numpy.array([skirtSize, skirtSize, 0])
+			extraSizeMax = extraSizeMax + numpy.array([skirtSize, skirtSize, 0])
 		if profile.getProfileSetting('support') != 'None':
-			extraSizeMin = extraSizeMin + util3d.Vector3(3.0, 0, 0)
-			extraSizeMax = extraSizeMax + util3d.Vector3(3.0, 0, 0)
+			extraSizeMin = extraSizeMin + numpy.array([3.0, 0, 0])
+			extraSizeMax = extraSizeMax + numpy.array([3.0, 0, 0])
 		
 		if self.printMode == 1:
-			extraSizeMin = util3d.Vector3(6.0, 6.0, 0)
-			extraSizeMax = util3d.Vector3(6.0, 6.0, 0)
+			extraSizeMin = numpy.array([6.0, 6.0, 0])
+			extraSizeMax = numpy.array([6.0, 6.0, 0])
 
-		if extraSizeMin.x > extraSizeMax.x:
-			posX = self.machineSize.x
+		if extraSizeMin[0] > extraSizeMax[0]:
+			posX = self.machineSize[0]
 			dirX = -1
 		else:
 			posX = 0
@@ -535,35 +529,35 @@ class projectPlanner(wx.Frame):
 		posY = 0
 		dirY = 1
 		
-		minX = self.machineSize.x
-		minY = self.machineSize.y
+		minX = self.machineSize[0]
+		minY = self.machineSize[1]
 		maxX = 0
 		maxY = 0
 		for item in self.list:
-			item.centerX = posX + item.getMaximum().x * item.scale * dirX
-			item.centerY = posY + item.getMaximum().y * item.scale * dirY
-			if item.centerY + item.getSize().y >= allowedSizeY:
+			item.centerX = posX + item.getMaximum()[0] * item.scale * dirX
+			item.centerY = posY + item.getMaximum()[1] * item.scale * dirY
+			if item.centerY + item.getSize()[1] >= allowedSizeY:
 				if dirX < 0:
-					posX = minX - extraSizeMax.x - 1
+					posX = minX - extraSizeMax[0] - 1
 				else:
-					posX = maxX + extraSizeMin.x + 1
+					posX = maxX + extraSizeMin[0] + 1
 				posY = 0
-				item.centerX = posX + item.getMaximum().x * item.scale * dirX
-				item.centerY = posY + item.getMaximum().y * item.scale * dirY
-			posY += item.getSize().y  * item.scale * dirY + extraSizeMin.y + 1
-			minX = min(minX, item.centerX - item.getSize().x * item.scale / 2)
-			minY = min(minY, item.centerY - item.getSize().y * item.scale / 2)
-			maxX = max(maxX, item.centerX + item.getSize().x * item.scale / 2)
-			maxY = max(maxY, item.centerY + item.getSize().y * item.scale / 2)
+				item.centerX = posX + item.getMaximum()[0] * item.scale * dirX
+				item.centerY = posY + item.getMaximum()[1] * item.scale * dirY
+			posY += item.getSize()[1]  * item.scale * dirY + extraSizeMin[1] + 1
+			minX = min(minX, item.centerX - item.getSize()[0] * item.scale / 2)
+			minY = min(minY, item.centerY - item.getSize()[1] * item.scale / 2)
+			maxX = max(maxX, item.centerX + item.getSize()[0] * item.scale / 2)
+			maxY = max(maxY, item.centerY + item.getSize()[1] * item.scale / 2)
 		
 		for item in self.list:
 			if dirX < 0:
 				item.centerX -= minX / 2
 			else:
-				item.centerX += (self.machineSize.x - maxX) / 2
-			item.centerY += (self.machineSize.y - maxY) / 2
+				item.centerX += (self.machineSize[0] - maxX) / 2
+			item.centerY += (self.machineSize[1] - maxY) / 2
 		
-		if minX < 0 or maxX > self.machineSize.x:
+		if minX < 0 or maxX > self.machineSize[0]:
 			return ((maxX - minX) + (maxY - minY)) * 100
 		
 		return (maxX - minX) + (maxY - minY)
@@ -590,8 +584,8 @@ class projectPlanner(wx.Frame):
 			for item in self.list:
 				if item.profile != None and os.path.isfile(item.profile):
 					profile.loadGlobalProfile(item.profile)
-				put('machine_center_x', item.centerX - self.extruderOffset[item.extruder].x)
-				put('machine_center_y', item.centerY - self.extruderOffset[item.extruder].y)
+				put('machine_center_x', item.centerX - self.extruderOffset[item.extruder][0])
+				put('machine_center_y', item.centerY - self.extruderOffset[item.extruder][1])
 				put('model_scale', item.scale)
 				put('flip_x', item.flipX)
 				put('flip_y', item.flipY)
@@ -607,7 +601,7 @@ class projectPlanner(wx.Frame):
 				action.temperature = profile.getProfileSettingFloat('print_temperature')
 				action.extruder = item.extruder
 				action.filename = item.filename
-				clearZ = max(clearZ, item.getMaximum().z * item.scale + 5.0)
+				clearZ = max(clearZ, item.getMaximum()[2] * item.scale + 5.0)
 				action.clearZ = clearZ
 				action.leaveResultForNextSlice = False
 				action.usePreviousSlice = False
@@ -698,7 +692,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		wx.EVT_MOUSEWHEEL(self, self.OnMouseWheel)
 		self.yaw = 30
 		self.pitch = 60
-		self.zoom = self.parent.machineSize.x / 2 + 10
+		self.zoom = self.parent.machineSize[0] / 2 + 10
 		self.offsetX = 0
 		self.offsetY = 0
 		self.view3D = False
@@ -760,32 +754,30 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glTranslate(0,0,-self.zoom)
 			glRotate(-self.pitch, 1,0,0)
 			glRotate(self.yaw, 0,0,1)
-			if False: #self.parent.triangleMesh != None:
-				glTranslate(0,0,-self.parent.triangleMesh.getMaximum().z / 2)
 		else:
 			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
 			glTranslate(self.offsetX, self.offsetY, 0.0)
-		glTranslate(-self.parent.machineSize.x/2, -self.parent.machineSize.y/2, 0)
+		glTranslate(-self.parent.machineSize[0]/2, -self.parent.machineSize[1]/2, 0)
 
 		self.OnDraw()
 		self.SwapBuffers()
 
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
-		opengl.DrawMachine(machineSize)
+		opengl.DrawMachine(util3d.Vector3(machineSize[0], machineSize[1], machineSize[2]))
 		extraSizeMin = self.parent.headSizeMin
 		extraSizeMax = self.parent.headSizeMax
 		if profile.getProfileSettingFloat('skirt_line_count') > 0:
 			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
-			extraSizeMin = extraSizeMin + util3d.Vector3(skirtSize, skirtSize, 0)
-			extraSizeMax = extraSizeMax + util3d.Vector3(skirtSize, skirtSize, 0)
+			extraSizeMin = extraSizeMin + numpy.array([skirtSize, skirtSize, 0])
+			extraSizeMax = extraSizeMax + numpy.array([skirtSize, skirtSize, 0])
 		if profile.getProfileSetting('support') != 'None':
-			extraSizeMin = extraSizeMin + util3d.Vector3(3.0, 0, 0)
-			extraSizeMax = extraSizeMax + util3d.Vector3(3.0, 0, 0)
+			extraSizeMin = extraSizeMin + numpy.array([3.0, 0, 0])
+			extraSizeMax = extraSizeMax + numpy.array([3.0, 0, 0])
 
 		if self.parent.printMode == 1:
-			extraSizeMin = util3d.Vector3(6.0, 6.0, 0)
-			extraSizeMax = util3d.Vector3(6.0, 6.0, 0)
+			extraSizeMin = numpy.array([6.0, 6.0, 0])
+			extraSizeMax = numpy.array([6.0, 6.0, 0])
 
 		for item in self.parent.list:
 			item.validPlacement = True
@@ -793,13 +785,13 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		
 		for idx1 in xrange(0, len(self.parent.list)):
 			item = self.parent.list[idx1]
-			iMin1 = item.getMinimum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) - extraSizeMin - self.parent.extruderOffset[item.extruder]
-			iMax1 = item.getMaximum() * item.scale + util3d.Vector3(item.centerX, item.centerY, 0) + extraSizeMax - self.parent.extruderOffset[item.extruder]
+			iMin1 = (item.getMinimum() * item.scale) + numpy.array([item.centerX, item.centerY, 0]) - extraSizeMin - self.parent.extruderOffset[item.extruder]
+			iMax1 = (item.getMaximum() * item.scale) + numpy.array([item.centerX, item.centerY, 0]) + extraSizeMax - self.parent.extruderOffset[item.extruder]
 			for idx2 in xrange(0, idx1):
 				item2 = self.parent.list[idx2]
-				iMin2 = item2.getMinimum() * item2.scale + util3d.Vector3(item2.centerX, item2.centerY, 0)
-				iMax2 = item2.getMaximum() * item2.scale + util3d.Vector3(item2.centerX, item2.centerY, 0)
-				if item != item2 and iMax1.x >= iMin2.x and iMin1.x <= iMax2.x and iMax1.y >= iMin2.y and iMin1.y <= iMax2.y:
+				iMin2 = (item2.getMinimum() * item2.scale) + numpy.array([item2.centerX, item2.centerY, 0])
+				iMax2 = (item2.getMaximum() * item2.scale) + numpy.array([item2.centerX, item2.centerY, 0])
+				if item != item2 and iMax1[0] >= iMin2[0] and iMin1[0] <= iMax2[0] and iMax1[1] >= iMin2[1] and iMin1[1] <= iMax2[1]:
 					item.validPlacement = False
 					item2.gotHit = True
 		
@@ -959,8 +951,8 @@ class ProjectSliceProgressWindow(wx.Frame):
 					line = p.stdout.readline()
 				self.returnCode = p.wait()
 			
-			put('machine_center_x', action.centerX - self.extruderOffset[action.extruder].x)
-			put('machine_center_y', action.centerY - self.extruderOffset[action.extruder].y)
+			put('machine_center_x', action.centerX - self.extruderOffset[action.extruder][0])
+			put('machine_center_y', action.centerY - self.extruderOffset[action.extruder][1])
 			put('clear_z', action.clearZ)
 			put('extruder', action.extruder)
 			put('print_temperature', action.temperature)
@@ -1089,8 +1081,8 @@ class preferencesDialog(configBase.configWindowBase):
 		self.Fit()
 
 	def OnClose(self, e):
-		self.parent.headSizeMin = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0)
-		self.parent.headSizeMax = util3d.Vector3(profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0)
+		self.parent.headSizeMin = numpy.array([profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0])
+		self.parent.headSizeMax = numpy.array([profile.getPreferenceFloat('extruder_head_size_max_x'), profile.getPreferenceFloat('extruder_head_size_max_y'),0])
 		self.parent.Refresh()
 
 		self.MakeModal(False)

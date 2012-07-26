@@ -180,44 +180,44 @@ def ResetMatrixRotationAndScale():
 
 def DrawBox(vMin, vMax):
 	glBegin(GL_LINE_LOOP)
-	glVertex3f(vMin.x, vMin.y, vMin.z)
-	glVertex3f(vMax.x, vMin.y, vMin.z)
-	glVertex3f(vMax.x, vMax.y, vMin.z)
-	glVertex3f(vMin.x, vMax.y, vMin.z)
+	glVertex3f(vMin[0], vMin[1], vMin[2])
+	glVertex3f(vMax[0], vMin[1], vMin[2])
+	glVertex3f(vMax[0], vMax[1], vMin[2])
+	glVertex3f(vMin[0], vMax[1], vMin[2])
 	glEnd()
 
 	glBegin(GL_LINE_LOOP)
-	glVertex3f(vMin.x, vMin.y, vMax.z)
-	glVertex3f(vMax.x, vMin.y, vMax.z)
-	glVertex3f(vMax.x, vMax.y, vMax.z)
-	glVertex3f(vMin.x, vMax.y, vMax.z)
+	glVertex3f(vMin[0], vMin[1], vMax[2])
+	glVertex3f(vMax[0], vMin[1], vMax[2])
+	glVertex3f(vMax[0], vMax[1], vMax[2])
+	glVertex3f(vMin[0], vMax[1], vMax[2])
 	glEnd()
 	glBegin(GL_LINES)
-	glVertex3f(vMin.x, vMin.y, vMin.z)
-	glVertex3f(vMin.x, vMin.y, vMax.z)
-	glVertex3f(vMax.x, vMin.y, vMin.z)
-	glVertex3f(vMax.x, vMin.y, vMax.z)
-	glVertex3f(vMax.x, vMax.y, vMin.z)
-	glVertex3f(vMax.x, vMax.y, vMax.z)
-	glVertex3f(vMin.x, vMax.y, vMin.z)
-	glVertex3f(vMin.x, vMax.y, vMax.z)
+	glVertex3f(vMin[0], vMin[1], vMin[2])
+	glVertex3f(vMin[0], vMin[1], vMax[2])
+	glVertex3f(vMax[0], vMin[1], vMin[2])
+	glVertex3f(vMax[0], vMin[1], vMax[2])
+	glVertex3f(vMax[0], vMax[1], vMin[2])
+	glVertex3f(vMax[0], vMax[1], vMax[2])
+	glVertex3f(vMin[0], vMax[1], vMin[2])
+	glVertex3f(vMin[0], vMax[1], vMax[2])
 	glEnd()
 
 def DrawSTL(mesh):
 	glEnable(GL_CULL_FACE)
-	for face in mesh.faces:
+	for i in xrange(0, mesh.vertexCount, 3):
 		glBegin(GL_TRIANGLES)
-		v1 = face.v[0]
-		v2 = face.v[1]
-		v3 = face.v[2]
-		glNormal3f(face.normal.x, face.normal.y, face.normal.z)
-		glVertex3f(v1.x, v1.y, v1.z)
-		glVertex3f(v2.x, v2.y, v2.z)
-		glVertex3f(v3.x, v3.y, v3.z)
-		glNormal3f(-face.normal.x, -face.normal.y, -face.normal.z)
-		glVertex3f(v1.x, v1.y, v1.z)
-		glVertex3f(v3.x, v3.y, v3.z)
-		glVertex3f(v2.x, v2.y, v2.z)
+		v1 = mesh.vertexes[i]
+		v2 = mesh.vertexes[i+1]
+		v3 = mesh.vertexes[i+2]
+		glNormal3f(mesh.normal[i/3][0], mesh.normal[i/3][1], mesh.normal[i/3][2])
+		glVertex3f(v1[0], v1[1], v1[2])
+		glVertex3f(v2[0], v2[1], v2[2])
+		glVertex3f(v3[0], v3[1], v3[2])
+		glNormal3f(-mesh.normal[i/3][0], -mesh.normal[i/3][1], -mesh.normal[i/3][2])
+		glVertex3f(v1[0], v1[1], v1[2])
+		glVertex3f(v2[0], v2[1], v2[2])
+		glVertex3f(v3[0], v3[1], v3[2])
 		glEnd()
 
 def DrawGCodeLayer(layer):

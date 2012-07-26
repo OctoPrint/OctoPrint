@@ -1,6 +1,5 @@
 import sys, math, re, os, struct, time
 
-import util3d
 import mesh
 
 class stlModel(mesh.mesh):
@@ -11,7 +10,7 @@ class stlModel(mesh.mesh):
 		f = open(filename, "rb")
 		if f.read(5).lower() == "solid":
 			self._loadAscii(f)
-			if not self.faces:
+			if self.vertexCount < 3:
 				f.seek(5, os.SEEK_SET)
 				self._loadBinary(f)
 		else:
@@ -25,28 +24,25 @@ class stlModel(mesh.mesh):
 		cnt = 0
 		for line in f:
 			if 'vertex' in line:
+				cnt += 1
+		self._prepareVertexCount(int(cnt))
+		f.seek(5, os.SEEK_SET)
+		cnt = 0
+		for line in f:
+			if 'vertex' in line:
 				data = line.split()
-				if cnt == 0:
-					v0 = util3d.Vector3(float(data[1]), float(data[2]), float(data[3]))
-					cnt = 1
-				elif cnt == 1:
-					v1 = util3d.Vector3(float(data[1]), float(data[2]), float(data[3]))
-					cnt = 2
-				elif cnt == 2:
-					v2 = util3d.Vector3(float(data[1]), float(data[2]), float(data[3]))
-					self.addFace(v0, v1, v2)
-					cnt = 0
+				self.addVertex(float(data[1]), float(data[2]), float(data[3]))
 
 	def _loadBinary(self, f):
 		#Skip the header
 		f.read(80-5)
 		faceCount = struct.unpack('<I', f.read(4))[0]
+		self._prepareVertexCount(faceCount * 3)
 		for idx in xrange(0, faceCount):
 			data = struct.unpack("<ffffffffffffH", f.read(50))
-			v0 = util3d.Vector3(data[3], data[4], data[5])
-			v1 = util3d.Vector3(data[6], data[7], data[8])
-			v2 = util3d.Vector3(data[9], data[10], data[11])
-			self.addFace(v0, v1, v2)
+			self.addVertex(data[3], data[4], data[5])
+			self.addVertex(data[6], data[7], data[8])
+			self.addVertex(data[9], data[10], data[11])
 
 def saveAsSTL(mesh, filename):
 	f = open(filename, 'wb')
@@ -70,8 +66,8 @@ def saveAsSTL(mesh, filename):
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:
 		m = stlModel().load(filename)
-		print("Loaded %d faces" % (len(m.faces)))
-		parts = m.splitToParts()
-		for p in parts:
-			saveAsSTL(p, "export_%i.stl" % parts.index(p))
+		print("Loaded %d faces" % (m.vertexCount / 3))
+#		parts = m.splitToParts()
+#		for p in parts:
+#			saveAsSTL(p, "export_%i.stl" % parts.index(p))
 

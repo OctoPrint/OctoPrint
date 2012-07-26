@@ -13,7 +13,7 @@ class Vector3(object):
 		return Vector3(self.x, self.y, self.z)
 
 	def __repr__(self):
-		return '[%s, %s, %s]' % ( self.x, self.y, self.z )
+		return 'V[%s, %s, %s]' % ( self.x, self.y, self.z )
 
 	def __add__(self, v):
 		return Vector3( self.x + v.x, self.y + v.y, self.z + v.z )

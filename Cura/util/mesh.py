@@ -2,41 +2,36 @@ import sys, math, re, os, struct, time
 
 import util3d
 
-class meshFace(object):
-	def __init__(self, v0, v1, v2):
-		self.v = [v0, v1, v2]
+import numpy
 
 class mesh(object):
 	def __init__(self):
-		self.faces = []
-		self.vertexes = []
+		self.vertexes = None
+		self.origonalVertexes = None
+		self.vertexCount = 0
 
-	def addFace(self, v0, v1, v2):
-		self.vertexes.append(v0)
-		self.vertexes.append(v1)
-		self.vertexes.append(v2)
-		self.faces.append(meshFace(v0, v1, v2))
+	def addVertex(self, x, y, z):
+		n = self.vertexCount
+		self.origonalVertexes[n][0] = x
+		self.origonalVertexes[n][1] = y
+		self.origonalVertexes[n][2] = z
+		self.vertexCount += 1
+	
+	def _prepareVertexCount(self, vertexNumber):
+		#Set the amount of faces before loading data in them. This way we can create the numpy arrays before we fill them.
+		self.origonalVertexes = numpy.zeros((vertexNumber, 3), float)
+		self.normal = numpy.zeros((vertexNumber / 3, 3))
+		self.vertexCount = 0
 
 	def _postProcessAfterLoad(self):
-		self.origonalVertexes = list(self.vertexes)
-		for i in xrange(0, len(self.origonalVertexes)):
-			self.origonalVertexes[i] = self.origonalVertexes[i].copy()
+		self.vertexes = self.origonalVertexes.copy()
 		self.getMinimumZ()
 
 	def getMinimumZ(self):
-		minv = self.vertexes[0].copy()
-		maxv = self.vertexes[0].copy()
-		for v in self.vertexes:
-			minv.x = min(minv.x, v.x)
-			minv.y = min(minv.y, v.y)
-			minv.z = min(minv.z, v.z)
-			maxv.x = max(maxv.x, v.x)
-			maxv.y = max(maxv.y, v.y)
-			maxv.z = max(maxv.z, v.z)
-		self.min = minv
-		self.max = maxv
-		self.size = maxv - minv
-		return self.min.z
+		self.min = self.vertexes.min(0)
+		self.max = self.vertexes.max(0)
+		self.size = self.max - self.min
+		return self.min[2]
 	
 	def getMaximum(self):
 		return self.max
@@ -62,23 +57,23 @@ class mesh(object):
 		mat11 = math.cos(rotate) * scaleY
 		
 		for i in xrange(0, len(self.origonalVertexes)):
-			x = self.origonalVertexes[i].x
-			y = self.origonalVertexes[i].y
-			z = self.origonalVertexes[i].z
+			x = self.origonalVertexes[i][0]
+			y = self.origonalVertexes[i][1]
+			z = self.origonalVertexes[i][2]
 			if swapXZ:
 				x, z = z, x
 			if swapYZ:
 				y, z = z, y
-			self.vertexes[i].x = x * mat00 + y * mat01
-			self.vertexes[i].y = x * mat10 + y * mat11
-			self.vertexes[i].z = z * scaleZ
+			self.vertexes[i][0] = x * mat00 + y * mat01
+			self.vertexes[i][1] = x * mat10 + y * mat11
+			self.vertexes[i][2] = z * scaleZ
 
-		for face in self.faces:
-			v1 = face.v[0]
-			v2 = face.v[1]
-			v3 = face.v[2]
-			face.normal = (v2 - v1).cross(v3 - v1)
-			face.normal.normalize()
+		for i in xrange(0, len(self.origonalVertexes), 3):
+			v1 = self.vertexes[i]
+			v2 = self.vertexes[i+1]
+			v3 = self.vertexes[i+2]
+			self.normal[i/3] = numpy.cross((v2 - v1), (v3 - v1))
+			self.normal[i/3] /= (self.normal[i/3] * self.normal[i/3]).sum()
 
 		self.getMinimumZ()
 
