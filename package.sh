@@ -80,6 +80,9 @@ if [ $BUILD_TARGET = "win32" ]; then
 	if [ ! -f PyOpenGL-3.0.1.win32.exe ]; then
 		curl -L -O http://sourceforge.net/projects/pyopengl/files/PyOpenGL/3.0.1/PyOpenGL-3.0.1.win32.exe
 	fi
+	if [ ! -f numpy-1.6.2-win32-superpack-python2.7.exe ]; then
+		curl -L -O http://sourceforge.net/projects/numpy/files/NumPy/1.6.2/numpy-1.6.2-win32-superpack-python2.7.exe
+	fi
 	#Get pypy
 	if [ ! -f "pypy-${PYPY_VERSION}-win32.zip" ]; then
 	#	curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
@@ -114,14 +117,19 @@ if [ $BUILD_TARGET = "win32" ]; then
 	7z x PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/Lib/site-packages
 	7z x pyserial-${WIN_PYSERIAL_VERSION}.exe PURELIB
 	7z x PyOpenGL-3.0.1.win32.exe PURELIB
+	7z x numpy-1.6.2-win32-superpack-python2.7.exe numpy-1.6.2-sse2.exe
+	7z x numpy-1.6.2-sse2.exe PLATLIB
 
 	mkdir -p ${TARGET_DIR}/python
 	mv \$_OUTDIR/App/* ${TARGET_DIR}/python
 	mv \$_OUTDIR/Lib/site-packages/wx* ${TARGET_DIR}/python/Lib/site-packages/
 	mv PURELIB/serial ${TARGET_DIR}/python/Lib
 	mv PURELIB/OpenGL ${TARGET_DIR}/python/Lib
+	mv PLATLIB/numpy ${TARGET_DIR}/python/Lib
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
+	rm -rf PLATLIB
+	rm -rf numpy-1.6.2-sse2.exe
 	
 	#Clean up portable python a bit, to keep the package size down.
 	rm -rf ${TARGET_DIR}/python/PyScripter.*
