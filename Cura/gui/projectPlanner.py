@@ -307,11 +307,16 @@ class projectPlanner(wx.Frame):
 		dlg.Destroy()
 	
 	def _saveCombinedSTL(self, filename):
-		output = mesh.mesh()
+		totalCount = 0
 		for item in self.list:
-			offset = util3d.Vector3(item.centerX, item.centerY, 0)
-			for f in item.faces:
-				output.addFace(f.v[0] * item.scale + offset, f.v[1] * item.scale + offset, f.v[2] * item.scale + offset)
+			totalCount += item.vertexCount
+		output = mesh.mesh()
+		output._prepareVertexCount(totalCount)
+		for item in self.list:
+			offset = numpy.array([item.centerX, item.centerY, 0])
+			for v in item.vertexes:
+				v0 = v * item.scale + offset
+				output.addVertex(v0[0], v0[1], v0[2])
 		stl.saveAsSTL(output, filename)
 	
 	def OnSaveProject(self, e):

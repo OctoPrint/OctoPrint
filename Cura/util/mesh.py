@@ -83,22 +83,24 @@ class mesh(object):
 		print "%f: " % (time.time() - t0), "Splitting a model with %d vertexes." % (len(self.vertexes))
 		removeDict = {}
 		tree = util3d.AABBTree()
-		off = util3d.Vector3(0.0001,0.0001,0.0001)
+		off = numpy.array([0.0001,0.0001,0.0001])
 		newVertexList = []
-		for v in self.vertexes:
+		for idx in xrange(0, self.vertexCount):
+			v = self.vertexes[idx]
 			e = util3d.AABB(v-off, v+off)
 			q = tree.query(e)
 			if len(q) < 1:
-				e.vector = v
+				e.idx = idx
 				tree.insert(e)
 				newVertexList.append(v)
 			else:
-				removeDict[v] = q[0].vector
+				removeDict[idx] = q[0].idx
 		print "%f: " % (time.time() - t0), "Marked %d duplicate vertexes for removal." % (len(removeDict))
 		
 		#Make facelists so we can quickly remove all the vertexes.
-		for v in self.vertexes:
-			v.faceList = []
+		vertexFaceList = []
+		for idx in xrange(0, self.vertexCount):
+			vertexFaceList.append([])
 		for f in self.faces:
 			f.v[0].faceList.append(f)
 			f.v[1].faceList.append(f)

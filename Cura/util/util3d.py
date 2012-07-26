@@ -1,4 +1,5 @@
 import math
+import numpy
 
 class Vector3(object):
 	def __init__(self, x=0.0, y=0.0, z=0.0):
@@ -83,15 +84,15 @@ class AABB(object):
 		self.vMax = vMax
 	
 	def getPerimeter(self):
-		return (self.vMax.x - self.vMax.x) + (self.vMax.y - self.vMax.y) + (self.vMax.z - self.vMax.z)
+		return (self.vMax[0] - self.vMax[0]) + (self.vMax[1] - self.vMax[1]) + (self.vMax[2] - self.vMax[2])
 	
 	def combine(self, aabb):
-		return AABB(self.vMin.min(aabb.vMin), self.vMax.max(aabb.vMax))
+		return AABB(numpy.minimum(self.vMin, aabb.vMin), numpy.maximum(self.vMax, aabb.vMax))
 	
 	def overlap(self, aabb):
-		if aabb.vMin.x - self.vMax.x > 0.0 or aabb.vMin.y - self.vMax.y > 0.0 or aabb.vMin.z - self.vMax.z > 0.0:
+		if aabb.vMin[0] - self.vMax[0] > 0.0 or aabb.vMin[1] - self.vMax[1] > 0.0 or aabb.vMin[2] - self.vMax[2] > 0.0:
 			return False
-		if self.vMin.x - aabb.vMax.x > 0.0 or self.vMin.y - aabb.vMax.y > 0.0 or self.vMin.z - aabb.vMax.z > 0.0:
+		if self.vMin[0] - aabb.vMax[0] > 0.0 or self.vMin[1] - aabb.vMax[1] > 0.0 or self.vMin[2] - aabb.vMax[2] > 0.0:
 			return False
 		return True
 	
@@ -308,9 +309,9 @@ class AABBTree(object):
 
 if __name__ == '__main__':
 	tree = AABBTree()
-	tree.insert(AABB(Vector3(0,0,0), Vector3(0,0,0)))
-	tree.insert(AABB(Vector3(1,1,1), Vector3(1,1,1)))
-	tree.insert(AABB(Vector3(0.5,0.5,0.5), Vector3(0.5,0.5,0.5)))
+	tree.insert(AABB(numpy.array([0,0,0]), numpy.array([0,0,0])))
+	tree.insert(AABB(numpy.array([1,1,1]), numpy.array([1,1,1])))
+	tree.insert(AABB(numpy.array([0.5,0.5,0.5]), numpy.array([0.5,0.5,0.5])))
 	print(tree)
-	print(tree.query(AABB(Vector3(0,0,0), Vector3(0,0,0))))
+	print(tree.query(AABB(numpy.array([0,0,0]), numpy.array([0,0,0]))))
 
