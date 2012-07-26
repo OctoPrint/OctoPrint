@@ -462,7 +462,7 @@ class projectPlanner(wx.Frame):
 			return
 		
 		item = self.selection.clone()
-		self.list.append(item)
+		self.list.insert(self.list.index(self.selection), item)
 		self.selection = item
 		
 		self._updateListbox()
