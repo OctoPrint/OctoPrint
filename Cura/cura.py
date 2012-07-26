@@ -46,9 +46,10 @@ def main():
 	parser = OptionParser(usage="usage: %prog [options] <filename>.stl")
 	parser.add_option("-i", "--ini", action="store", type="string", dest="profileini", help="Load settings from a profile ini file")
 	parser.add_option("-P", "--project", action="store_true", dest="openprojectplanner", help="Open the project planner")
-	parser.add_option("-F", "--flat", action="store_true", dest="openflatslicer", help="Open the 2D SVG slicer")
+	parser.add_option("-F", "--flat", action="store_true", dest="openflatslicer", help="Open the 2D SVG slicer (unfinished)")
 	parser.add_option("-r", "--print", action="store", type="string", dest="printfile", help="Open the printing interface, instead of the normal cura interface.")
 	parser.add_option("-p", "--profile", action="store", type="string", dest="profile", help="Internal option, do not use!")
+	parser.add_option("-s", "--slice", action="store_true", dest="slice", help="Slice the given files instead of opening them in Cura")
 	(options, args) = parser.parse_args()
 	if options.profile != None:
 		profile.loadGlobalProfileFromString(options.profile)
@@ -67,9 +68,11 @@ def main():
 		printWindow.startPrintInterface(options.printfile)
 		return
 
-	if len( args ) > 0:
+	if options.slice != None:
 		sliceRun.runSlice(args)
 	else:
+		if len(args) > 0:
+			profile.putPreference('lastFile', ';'.join(args))
 		from gui import mainWindow
 		mainWindow.main()
 

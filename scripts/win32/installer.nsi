@@ -37,6 +37,8 @@ SetCompressor /SOLID lzma
 !define MUI_HEADERIMAGE_RIGHT
 !define MUI_HEADERIMAGE_BITMAP "header.bmp"
 !define MUI_HEADERIMAGE_BITMAP_NOSTRETCH 
+; Don't show the component description box
+!define MUI_COMPONENTSPAGE_NODESC
 
 ;Do not leave (Un)Installer page automaticly
 !define MUI_FINISHPAGE_NOAUTOCLOSE
@@ -45,6 +47,7 @@ SetCompressor /SOLID lzma
 ; Pages
 ;!insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -63,7 +66,7 @@ ReserveFile "header.bmp"
 ;--------------------------------
 
 ; The stuff to install
-Section "Cura Installer"
+Section "Cura ${VERSION}"
 
   SectionIn RO
   
@@ -101,6 +104,13 @@ Section "Cura Installer"
   ; Give all users write permissions in the install directory, so they can read/write profile and preferences files.
   AccessControl::GrantOnFile "$INSTDIR" "(S-1-5-32-545)" "FullAccess"
   
+SectionEnd
+
+Section "Open STL files with Cura"
+	WriteRegStr HKCR .stl "" "STL file"
+	;WriteRegStr HKCR "STL file\DefaultIcon" "" "$INSTDIR\stl.ico,0"
+	WriteRegStr HKCR "STL file\shell" "" "open"
+	WriteRegStr HKCR "STL file\shell\open\command" "" '"$INSTDIR\cura.bat" "%1"'
 SectionEnd
 
 ;--------------------------------

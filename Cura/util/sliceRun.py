@@ -168,7 +168,7 @@ def getSliceCommand(filename):
 			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "cura_sf.zip"))
 		else:
 			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1]))
-		cmd = [pypyExe, mainScriptFile, '-p', profile.getGlobalProfileString()]
+		cmd = [pypyExe, mainScriptFile, '-p', profile.getGlobalProfileString(), '-s']
 		if platform.system() == "Windows":
 			try:
 				cmd.append(str(filename))
