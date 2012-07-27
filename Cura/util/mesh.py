@@ -84,7 +84,6 @@ class mesh(object):
 		removeDict = {}
 		tree = util3d.AABBTree()
 		off = numpy.array([0.0001,0.0001,0.0001])
-		newVertexList = []
 		for idx in xrange(0, self.vertexCount):
 			v = self.vertexes[idx]
 			e = util3d.AABB(v-off, v+off)
@@ -92,67 +91,71 @@ class mesh(object):
 			if len(q) < 1:
 				e.idx = idx
 				tree.insert(e)
-				newVertexList.append(v)
 			else:
 				removeDict[idx] = q[0].idx
 		print "%f: " % (time.time() - t0), "Marked %d duplicate vertexes for removal." % (len(removeDict))
+
+		faceList = []
+		for idx in xrange(0, self.vertexCount, 3):
+			f = [idx, idx + 1, idx + 2]
+			if removeDict.has_key(f[0]):
+				f[0] = removeDict[f[0]]
+			if removeDict.has_key(f[1]):
+				f[1] = removeDict[f[1]]
+			if removeDict.has_key(f[2]):
+				f[2] = removeDict[f[2]]
+			faceList.append(f)
 		
-		#Make facelists so we can quickly remove all the vertexes.
+		print "%f: " % (time.time() - t0), "Building face lists after vertex removal."
 		vertexFaceList = []
 		for idx in xrange(0, self.vertexCount):
 			vertexFaceList.append([])
-		for f in self.faces:
-			f.v[0].faceList.append(f)
-			f.v[1].faceList.append(f)
-			f.v[2].faceList.append(f)
-
-		self.vertexes = newVertexList
-		for v1 in removeDict.iterkeys():
-			v0 = removeDict[v1]
-			for f in v1.faceList:
-				if f.v[0] == v1:
-					f.v[0] = v0
-				if f.v[1] == v1:
-					f.v[1] = v0
-				if f.v[2] == v1:
-					f.v[2] = v0
-		print "%f: " % (time.time() - t0), "Building face lists after vertex removal."
-		for v in self.vertexes:
-			v.faceList = []
-		for f in self.faces:
-			f.v[0].faceList.append(f)
-			f.v[1].faceList.append(f)
-			f.v[2].faceList.append(f)
+		for idx in xrange(0, len(faceList)):
+			f = faceList[idx]
+			vertexFaceList[f[0]].append(idx)
+			vertexFaceList[f[1]].append(idx)
+			vertexFaceList[f[2]].append(idx)
 		
 		print "%f: " % (time.time() - t0), "Building parts."
+		self._vertexFaceList = vertexFaceList
+		self._faceList = faceList
 		partList = []
 		doneSet = set()
-		for f in self.faces:
-			if not f in doneSet:
-				partList.append(self._createPartFromFacewalk(f, doneSet))
+		for idx in xrange(0, len(faceList)):
+			if not idx in doneSet:
+				partList.append(self._createPartFromFacewalk(idx, doneSet))
 		print "%f: " % (time.time() - t0), "Split into %d parts" % (len(partList))
+		self._vertexFaceList = None
+		self._faceList = None
 		return partList
 
-	def _createPartFromFacewalk(self, startFace, doneSet):
+	def _createPartFromFacewalk(self, startFaceIdx, doneSet):
 		m = mesh()
-		todoList = [startFace]
-		doneSet.add(startFace)
+		m._prepareVertexCount(self.vertexCount)
+		todoList = [startFaceIdx]
+		doneSet.add(startFaceIdx)
 		while len(todoList) > 0:
-			f = todoList.pop()
-			m._partAddFacewalk(f, doneSet, todoList)
+			faceIdx = todoList.pop()
+			self._partAddFacewalk(m, faceIdx, doneSet, todoList)
 		return m
 
-	def _partAddFacewalk(self, f, doneSet, todoList):
-		self.addFace(f.v[0], f.v[1], f.v[2])
-		for f1 in f.v[0].faceList:
+	def _partAddFacewalk(self, part, faceIdx, doneSet, todoList):
+		f = self._faceList[faceIdx]
+		v0 = self.vertexes[f[0]]
+		v1 = self.vertexes[f[0]]
+		v2 = self.vertexes[f[0]]
+		part.addVertex(v0[0], v0[1], v0[2])
+		part.addVertex(v1[0], v1[1], v1[2])
+		part.addVertex(v2[0], v2[1], v2[2])
+		for f1 in self._vertexFaceList[f[0]]:
 			if f1 not in doneSet:
 				todoList.append(f1)
 				doneSet.add(f1)
-		for f1 in f.v[1].faceList:
+		for f1 in self._vertexFaceList[f[1]]:
 			if f1 not in doneSet:
 				todoList.append(f1)
 				doneSet.add(f1)
-		for f1 in f.v[2].faceList:
+		for f1 in self._vertexFaceList[f[2]]:
 			if f1 not in doneSet:
 				todoList.append(f1)
 				doneSet.add(f1)

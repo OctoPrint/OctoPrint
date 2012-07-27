@@ -82,9 +82,7 @@ class AABB(object):
 	def __init__(self, vMin, vMax):
 		self.vMin = vMin
 		self.vMax = vMax
-	
-	def getPerimeter(self):
-		return (self.vMax[0] - self.vMax[0]) + (self.vMax[1] - self.vMax[1]) + (self.vMax[2] - self.vMax[2])
+		self.perimeter = numpy.sum(self.vMax - self.vMin)
 	
 	def combine(self, aabb):
 		return AABB(numpy.minimum(self.vMin, aabb.vMin), numpy.maximum(self.vMax, aabb.vMax))
@@ -125,25 +123,25 @@ class AABBTree(object):
 			child1 = node.child1
 			child2 = node.child2
 			
-			area = node.aabb.getPerimeter()
+			area = node.aabb.perimeter
 			combinedAABB = node.aabb.combine(aabb)
-			combinedArea = combinedAABB.getPerimeter()
+			combinedArea = combinedAABB.perimeter
 			
 			cost = 2.0 * combinedArea
 			inheritanceCost = 2.0 * (combinedArea - area)
 
 			if child1.isLeaf():
-				cost1 = aabb.combine(child1.aabb).getPerimeter() + inheritanceCost
+				cost1 = aabb.combine(child1.aabb).perimeter + inheritanceCost
 			else:
-				oldArea = child1.aabb.getPerimeter()
-				newArea = aabb.combine(child1.aabb).getPerimeter()
+				oldArea = child1.aabb.perimeter
+				newArea = aabb.combine(child1.aabb).perimeter
 				cost1 = (newArea - oldArea) + inheritanceCost
 
 			if child2.isLeaf():
-				cost2 = aabb.combine(child1.aabb).getPerimeter() + inheritanceCost
+				cost2 = aabb.combine(child1.aabb).perimeter + inheritanceCost
 			else:
-				oldArea = child2.aabb.getPerimeter()
-				newArea = aabb.combine(child2.aabb).getPerimeter()
+				oldArea = child2.aabb.perimeter
+				newArea = aabb.combine(child2.aabb).perimeter
 				cost2 = (newArea - oldArea) + inheritanceCost
 
 			if cost < cost1 and cost < cost2:
@@ -230,8 +228,8 @@ class AABBTree(object):
 				A.aabb = B.aabb.combine(G.aabb)
 				C.aabb = A.aabb.combine(F.aabb)
 
-				A.height = 1 + Math.max(B.height, G.height)
-				C.height = 1 + Math.max(A.height, F.height)
+				A.height = 1 + max(B.height, G.height)
+				C.height = 1 + max(A.height, F.height)
 			else:
 				C.child2 = G
 				A.child2 = F
@@ -309,9 +307,9 @@ class AABBTree(object):
 
 if __name__ == '__main__':
 	tree = AABBTree()
-	tree.insert(AABB(numpy.array([0,0,0]), numpy.array([0,0,0])))
-	tree.insert(AABB(numpy.array([1,1,1]), numpy.array([1,1,1])))
-	tree.insert(AABB(numpy.array([0.5,0.5,0.5]), numpy.array([0.5,0.5,0.5])))
+	tree.insert(AABB(Vector3(0,0,0), Vector3(0,0,0)))
+	tree.insert(AABB(Vector3(1,1,1), Vector3(1,1,1)))
+	tree.insert(AABB(Vector3(0.5,0.5,0.5), Vector3(0.5,0.5,0.5)))
 	print(tree)
-	print(tree.query(AABB(numpy.array([0,0,0]), numpy.array([0,0,0]))))
+	print(tree.query(AABB(Vector3(0,0,0), Vector3(0,0,0))))
 

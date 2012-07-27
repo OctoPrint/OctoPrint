@@ -66,6 +66,6 @@ if __name__ == '__main__':
 		m = stlModel().load(filename)
 		print("Loaded %d faces" % (m.vertexCount / 3))
 		parts = m.splitToParts()
-#		for p in parts:
-#			saveAsSTL(p, "export_%i.stl" % parts.index(p))
+		for p in parts:
+			saveAsSTL(p, "export_%i.stl" % parts.index(p))
 
