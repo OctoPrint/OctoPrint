@@ -511,19 +511,7 @@ class projectPlanner(wx.Frame):
 		self.preview.Refresh()
 	
 	def _doAutoPlace(self, allowedSizeY):
-		extraSizeMin = self.headSizeMin
-		extraSizeMax = self.headSizeMax
-		if profile.getProfileSettingFloat('skirt_line_count') > 0:
-			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
-			extraSizeMin = extraSizeMin + numpy.array([skirtSize, skirtSize, 0])
-			extraSizeMax = extraSizeMax + numpy.array([skirtSize, skirtSize, 0])
-		if profile.getProfileSetting('support') != 'None':
-			extraSizeMin = extraSizeMin + numpy.array([3.0, 0, 0])
-			extraSizeMax = extraSizeMax + numpy.array([3.0, 0, 0])
-		
-		if self.printMode == 1:
-			extraSizeMin = numpy.array([6.0, 6.0, 0])
-			extraSizeMax = numpy.array([6.0, 6.0, 0])
+		extraSizeMin, extraSizeMax = self.getExtraHeadSize()
 
 		if extraSizeMin[0] > extraSizeMax[0]:
 			posX = self.machineSize[0]
@@ -582,8 +570,6 @@ class projectPlanner(wx.Frame):
 		put('add_start_end_gcode', 'False')
 		put('gcode_extension', 'project_tmp')
 		if self.printMode == 0:
-			put('enable_raft', 'False')
-			
 			clearZ = 0
 			actionList = []
 			for item in self.list:
@@ -683,6 +669,27 @@ class projectPlanner(wx.Frame):
 		self.selection.updateModelTransform()
 		self.preview.Refresh()
 
+	def getExtraHeadSize(self):
+		extraSizeMin = self.headSizeMin
+		extraSizeMax = self.headSizeMax
+		if profile.getProfileSettingFloat('skirt_line_count') > 0:
+			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
+			extraSizeMin = extraSizeMin + numpy.array([skirtSize, skirtSize, 0])
+			extraSizeMax = extraSizeMax + numpy.array([skirtSize, skirtSize, 0])
+		if profile.getProfileSetting('enable_raft') != 'False':
+			raftSize = profile.getProfileSettingFloat('raft_margin') * 2
+			extraSizeMin = extraSizeMin + numpy.array([raftSize, raftSize, 0])
+			extraSizeMax = extraSizeMax + numpy.array([raftSize, raftSize, 0])
+		if profile.getProfileSetting('support') != 'None':
+			extraSizeMin = extraSizeMin + numpy.array([3.0, 0, 0])
+			extraSizeMax = extraSizeMax + numpy.array([3.0, 0, 0])
+
+		if self.printMode == 1:
+			extraSizeMin = numpy.array([6.0, 6.0, 0])
+			extraSizeMax = numpy.array([6.0, 6.0, 0])
+		
+		return extraSizeMin, extraSizeMax
+
 class PreviewGLCanvas(glcanvas.GLCanvas):
 	def __init__(self, parent, projectPlannerWindow):
 		attribList = (glcanvas.WX_GL_RGBA, glcanvas.WX_GL_DOUBLEBUFFER, glcanvas.WX_GL_DEPTH_SIZE, 24, glcanvas.WX_GL_STENCIL_SIZE, 8)
@@ -770,19 +777,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
 		opengl.DrawMachine(util3d.Vector3(machineSize[0], machineSize[1], machineSize[2]))
-		extraSizeMin = self.parent.headSizeMin
-		extraSizeMax = self.parent.headSizeMax
-		if profile.getProfileSettingFloat('skirt_line_count') > 0:
-			skirtSize = profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
-			extraSizeMin = extraSizeMin + numpy.array([skirtSize, skirtSize, 0])
-			extraSizeMax = extraSizeMax + numpy.array([skirtSize, skirtSize, 0])
-		if profile.getProfileSetting('support') != 'None':
-			extraSizeMin = extraSizeMin + numpy.array([3.0, 0, 0])
-			extraSizeMax = extraSizeMax + numpy.array([3.0, 0, 0])
-
-		if self.parent.printMode == 1:
-			extraSizeMin = numpy.array([6.0, 6.0, 0])
-			extraSizeMax = numpy.array([6.0, 6.0, 0])
+		extraSizeMin, extraSizeMax = self.parent.getExtraHeadSize()
 
 		for item in self.parent.list:
 			item.validPlacement = True
