@@ -887,11 +887,11 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.progressGauge2 = wx.Gauge(self, -1)
 		self.progressGauge2.SetRange(len(self.actionList))
 		self.abortButton = wx.Button(self, -1, "Abort")
-		self.sizer.Add(self.statusText, (0,0), span=(1,4))
-		self.sizer.Add(self.progressGauge, (1, 0), span=(1,4), flag=wx.EXPAND)
-		self.sizer.Add(self.progressGauge2, (2, 0), span=(1,4), flag=wx.EXPAND)
+		self.sizer.Add(self.statusText, (0,0), span=(1,5))
+		self.sizer.Add(self.progressGauge, (1, 0), span=(1,5), flag=wx.EXPAND)
+		self.sizer.Add(self.progressGauge2, (2, 0), span=(1,5), flag=wx.EXPAND)
 
-		self.sizer.Add(self.abortButton, (3,0), span=(1,4), flag=wx.ALIGN_CENTER)
+		self.sizer.Add(self.abortButton, (3,0), span=(1,5), flag=wx.ALIGN_CENTER)
 		self.sizer.AddGrowableCol(0)
 		self.sizer.AddGrowableRow(0)
 
@@ -1037,12 +1037,22 @@ class ProjectSliceProgressWindow(wx.Frame):
 			self.openFileLocationButton = wx.Button(self, -1, "Open file location")
 			self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
 			self.sizer.Add(self.openFileLocationButton, (3,3), span=(1,1))
+		if profile.getPreference('sdpath') != '':
+			self.copyToSDButton = wx.Button(self, -1, "To SDCard")
+			self.Bind(wx.EVT_BUTTON, self.OnCopyToSD, self.copyToSDButton)
+			self.sizer.Add(self.copyToSDButton, (3,4), span=(1,1))
 		self.Bind(wx.EVT_BUTTON, self.OnAbort, self.closeButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, self.printButton)
 		self.Bind(wx.EVT_BUTTON, self.OnShowLog, self.logButton)
 		self.Layout()
 		self.Fit()
 
+	def OnCopyToSD(self, e):
+		filename = os.path.basename(self.resultFilename)
+		if profile.getPreference('sdshortnames') == 'True':
+			filename = sliceRun.getShortFilename(filename)
+		shutil.copy(self.resultFilename, os.path.join(profile.getPreference('sdpath'), filename))
+	
 	def OnOpenFileLocation(self, e):
 		exporer.openExporer(self.resultFilename)
 	
