@@ -216,8 +216,8 @@ def DrawSTL(mesh):
 		glVertex3f(v3[0], v3[1], v3[2])
 		glNormal3f(-mesh.normal[i/3][0], -mesh.normal[i/3][1], -mesh.normal[i/3][2])
 		glVertex3f(v1[0], v1[1], v1[2])
-		glVertex3f(v2[0], v2[1], v2[2])
 		glVertex3f(v3[0], v3[1], v3[2])
+		glVertex3f(v2[0], v2[1], v2[2])
 		glEnd()
 
 def DrawGCodeLayer(layer):

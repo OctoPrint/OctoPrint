@@ -177,6 +177,7 @@ preferencesDefaultSettings = {
 	'extruder_head_size_min_y': '18.0',
 	'extruder_head_size_max_x': '18.0',
 	'extruder_head_size_max_y': '35.0',
+	'extruder_head_size_height': '80.0',
 }
 
 #########################################################

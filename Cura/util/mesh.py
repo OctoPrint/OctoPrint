@@ -56,17 +56,12 @@ class mesh(object):
 		mat10 = math.sin(rotate) * scaleX
 		mat11 = math.cos(rotate) * scaleY
 		
-		for i in xrange(0, len(self.origonalVertexes)):
-			x = self.origonalVertexes[i][0]
-			y = self.origonalVertexes[i][1]
-			z = self.origonalVertexes[i][2]
-			if swapXZ:
-				x, z = z, x
-			if swapYZ:
-				y, z = z, y
-			self.vertexes[i][0] = x * mat00 + y * mat01
-			self.vertexes[i][1] = x * mat10 + y * mat11
-			self.vertexes[i][2] = z * scaleZ
+		mat = numpy.array([[mat00,mat10,0],[mat01,mat11,0],[0,0,scaleZ]])
+		if swapXZ:
+			mat = numpy.array([mat[2],mat[1],mat[0]])
+		if swapYZ:
+			mat = numpy.array([mat[0],mat[2],mat[1]])
+		self.vertexes = (numpy.matrix(self.origonalVertexes, copy = False) * numpy.matrix(mat)).getA()
 
 		for i in xrange(0, len(self.origonalVertexes), 3):
 			v1 = self.vertexes[i]

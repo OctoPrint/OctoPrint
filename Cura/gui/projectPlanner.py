@@ -1081,6 +1081,8 @@ class preferencesDialog(configBase.configWindowBase):
 		validators.validFloat(c, 0.1)
 		c = configBase.SettingRow(left, 'Head size - Y towards end (mm)', 'extruder_head_size_max_y', '0', 'Size of your printer head in the Y direction.', type = 'preference')
 		validators.validFloat(c, 0.1)
+		c = configBase.SettingRow(left, 'Head gantry height (mm)', 'extruder_head_size_height', '0', 'The tallest object height that will always fit under your printers gantry system when the printer head is at the lowest Z position.', type = 'preference')
+		validators.validFloat(c)
 		
 		self.okButton = wx.Button(left, -1, 'Ok')
 		left.GetSizer().Add(self.okButton, (left.GetSizer().GetRows(), 1))
