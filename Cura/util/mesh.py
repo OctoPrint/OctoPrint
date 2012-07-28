@@ -63,13 +63,14 @@ class mesh(object):
 			mat = numpy.array([mat[0],mat[2],mat[1]])
 		self.vertexes = (numpy.matrix(self.origonalVertexes, copy = False) * numpy.matrix(mat)).getA()
 
-		for i in xrange(0, len(self.origonalVertexes), 3):
-			v1 = self.vertexes[i]
-			v2 = self.vertexes[i+1]
-			v3 = self.vertexes[i+2]
-			self.normal[i/3] = numpy.cross((v2 - v1), (v3 - v1))
-			self.normal[i/3] /= (self.normal[i/3] * self.normal[i/3]).sum()
-
+		tris = self.vertexes.reshape(self.vertexCount / 3, 3, 3)
+		normals = numpy.cross( tris[::,1 ] - tris[::,0]  , tris[::,2 ] - tris[::,0] )
+		lens = numpy.sqrt( normals[:,0]**2 + normals[:,1]**2 + normals[:,2]**2 )
+		normals[:,0] /= lens
+		normals[:,1] /= lens
+		normals[:,2] /= lens
+		self.normal = normals
+		
 		self.getMinimumZ()
 
 	def splitToParts(self):
