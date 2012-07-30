@@ -1,4 +1,4 @@
-import math
+import math, time
 
 from util import util3d
 from util import profile
@@ -205,20 +205,20 @@ def DrawBox(vMin, vMax):
 
 def DrawSTL(mesh):
 	glEnable(GL_CULL_FACE)
-	for i in xrange(0, mesh.vertexCount, 3):
-		glBegin(GL_TRIANGLES)
-		v1 = mesh.vertexes[i]
-		v2 = mesh.vertexes[i+1]
-		v3 = mesh.vertexes[i+2]
-		glNormal3f(mesh.normal[i/3][0], mesh.normal[i/3][1], mesh.normal[i/3][2])
-		glVertex3f(v1[0], v1[1], v1[2])
-		glVertex3f(v2[0], v2[1], v2[2])
-		glVertex3f(v3[0], v3[1], v3[2])
-		glNormal3f(-mesh.normal[i/3][0], -mesh.normal[i/3][1], -mesh.normal[i/3][2])
-		glVertex3f(v1[0], v1[1], v1[2])
-		glVertex3f(v3[0], v3[1], v3[2])
-		glVertex3f(v2[0], v2[1], v2[2])
-		glEnd()
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, mesh.vertexes)
+	glNormalPointer(GL_FLOAT, 0, mesh.normal)
+	
+	glCullFace(GL_BACK)
+	glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount)
+	
+	glCullFace(GL_FRONT)
+	glNormalPointer(GL_FLOAT, 0, mesh.invNormal)
+	glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount)
+	
+	glDisableClientState(GL_VERTEX_ARRAY)
+	glDisableClientState(GL_NORMAL_ARRAY);
 
 def DrawGCodeLayer(layer):
 	filamentRadius = profile.getProfileSettingFloat('filament_diameter') / 2
