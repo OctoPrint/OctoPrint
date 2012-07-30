@@ -102,6 +102,7 @@ class SettingRow():
 		sizer = panel.GetSizer()
 		x = sizer.GetRows()
 		y = 0
+		flag = 0
 		
 		self.validators = []
 		self.validationMsg = ''
@@ -120,16 +121,22 @@ class SettingRow():
 		if isinstance(defaultValue, types.StringTypes):
 			self.ctrl = wx.TextCtrl(panel, -1, getSettingFunc(configName))
 			self.ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
+			flag = wx.EXPAND
 		elif isinstance(defaultValue, types.BooleanType):
 			self.ctrl = wx.CheckBox(panel, -1, style=wx.ALIGN_RIGHT)
 			self.SetValue(getSettingFunc(configName))
 			self.ctrl.Bind(wx.EVT_CHECKBOX, self.OnSettingChange)
+		elif isinstance(defaultValue, wx.Colour):
+			self.ctrl = wx.ColourPickerCtrl(panel, -1)
+			self.SetValue(getSettingFunc(configName))
+			self.ctrl.Bind(wx.EVT_COLOURPICKER_CHANGED, self.OnSettingChange)
 		else:
 			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 			self.ctrl.Bind(wx.EVT_COMBOBOX, self.OnSettingChange)
+			flag = wx.EXPAND
 
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
-		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|wx.EXPAND)
+		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|flag)
 		sizer.SetRows(x+1)
 
 		self.ctrl.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
@@ -172,11 +179,16 @@ class SettingRow():
 		self.panel.main.UpdatePopup(self)
 
 	def GetValue(self):
-		return str(self.ctrl.GetValue())
+		if isinstance(self.ctrl, wx.ColourPickerCtrl):
+			return str(self.ctrl.GetColour().GetAsString(wx.C2S_HTML_SYNTAX))
+		else:
+			return str(self.ctrl.GetValue())
 
 	def SetValue(self, value):
 		if isinstance(self.ctrl, wx.CheckBox):
 			self.ctrl.SetValue(str(value) == "True")
+		elif isinstance(self.ctrl, wx.ColourPickerCtrl):
+			self.ctrl.SetColour(value)
 		else:
 			self.ctrl.SetValue(value)
 

@@ -178,6 +178,8 @@ preferencesDefaultSettings = {
 	'extruder_head_size_max_x': '18.0',
 	'extruder_head_size_max_y': '35.0',
 	'extruder_head_size_height': '80.0',
+	
+	'model_colour': '#FFCC99',
 }
 
 #########################################################
@@ -310,6 +312,10 @@ def getPreferenceFloat(name):
 		return float(eval(setting, {}, {}))
 	except (ValueError, SyntaxError, TypeError):
 		return 0.0
+
+def getPreferenceColour(name):
+	colorString = getPreference(name)
+	return [float(int(colorString[1:3], 16)) / 255, float(int(colorString[3:5], 16)) / 255, float(int(colorString[5:7], 16)) / 255, 1.0]
 
 def getPreference(name):
 	if name in tempOverride:

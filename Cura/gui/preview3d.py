@@ -384,6 +384,7 @@ class previewPanel(wx.Panel):
 		self.swapXZ.SetValue(profile.getProfileSetting('swap_xz') == 'True')
 		self.swapYZ.SetValue(profile.getProfileSetting('swap_yz') == 'True')
 		self.updateModelTransform()
+		self.glCanvas.updateProfileToControls()
 
 class PreviewGLCanvas(glcanvas.GLCanvas):
 	def __init__(self, parent):
@@ -406,7 +407,11 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.gcodeDisplayListMade = None
 		self.gcodeDisplayListCount = 0
 		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
+		self.objColor[0] = profile.getPreferenceColour('model_colour')
 	
+	def updateProfileToControls(self):
+		self.objColor[0] = profile.getPreferenceColour('model_colour')
+
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():
 			if self.view3D:

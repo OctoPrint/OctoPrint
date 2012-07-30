@@ -15,6 +15,7 @@ class preferencesDialog(configBase.configWindowBase):
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		
+		self.parent = parent
 		self.oldExtruderAmount = int(profile.getPreference('extruder_amount'))
 		
 		left, right, main = self.CreateConfigPanel(self)
@@ -35,6 +36,9 @@ class preferencesDialog(configBase.configWindowBase):
 			validators.validFloat(c)
 			c = configBase.SettingRow(left, 'Offset Y', 'extruder_offset_y%d' % (i), '0.0', 'The offset of your secondary extruder compared to the primary.', type = 'preference')
 			validators.validFloat(c)
+
+		configBase.TitleRow(left, 'Colours')
+		c = configBase.SettingRow(left, 'Model colour', 'model_colour', wx.Colour(0,0,0), '', type = 'preference')
 
 		configBase.TitleRow(right, 'Filament settings')
 		c = configBase.SettingRow(right, 'Filament density (kg/m3)', 'filament_density', '1300', 'Weight of the filament per m3. Around 1300 for PLA. And around 1040 for ABS. This value is used to estimate the weight if the filament used for the print.', type = 'preference')
@@ -59,8 +63,8 @@ class preferencesDialog(configBase.configWindowBase):
 			c = configBase.SettingRow(right, 'SD card path', 'sdpath', '', 'Location of your SD card, when using the copy to SD feature.', type = 'preference')
 		c = configBase.SettingRow(right, 'Copy to SD with 8.3 names', 'sdshortnames', False, 'Save the gcode files in short filenames, so they are properly shown on the UltiController', type = 'preference')
 
-		self.okButton = wx.Button(left, -1, 'Ok')
-		left.GetSizer().Add(self.okButton, (left.GetSizer().GetRows(), 1))
+		self.okButton = wx.Button(right, -1, 'Ok')
+		right.GetSizer().Add(self.okButton, (right.GetSizer().GetRows(), 0))
 		self.okButton.Bind(wx.EVT_BUTTON, self.OnClose)
 		
 		self.MakeModal(True)
@@ -71,6 +75,7 @@ class preferencesDialog(configBase.configWindowBase):
 		if self.oldExtruderAmount != int(profile.getPreference('extruder_amount')):
 			wx.MessageBox('After changing the amount of extruders you need to restart Cura for full effect.', 'Extruder amount warning.', wx.OK | wx.ICON_INFORMATION)
 		self.MakeModal(False)
+		self.parent.updateProfileToControls()
 		self.Destroy()
 
 def getDrives():
