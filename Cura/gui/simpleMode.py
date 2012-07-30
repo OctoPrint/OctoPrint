@@ -308,3 +308,8 @@ class simpleModeWindow(configBase.configWindowBase):
 	
 	def OnClose(self, e):
 		self.Destroy()
+
+	def updateProfileToControls(self):
+		super(simpleModeWindow, self).updateProfileToControls()
+		self.preview3d.updateProfileToControls()
+
