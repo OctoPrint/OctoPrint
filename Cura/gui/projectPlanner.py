@@ -271,7 +271,9 @@ class projectPlanner(wx.Frame):
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetPath()
-			parts = stl.stlModel().load(filename).splitToParts()
+			model = stl.stlModel().load(filename)
+			pd = wx.ProgressDialog('Splitting model.', 'Splitting model into multiple parts.', model.vertexCount, self, wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME | wx.PD_SMOOTH)
+			parts = model.splitToParts(pd.Update)
 			for part in parts:
 				partFilename = filename[:filename.rfind('.')] + "_part%d.stl" % (parts.index(part))
 				stl.saveAsSTL(part, partFilename)
@@ -280,6 +282,7 @@ class projectPlanner(wx.Frame):
 				self.selection = item
 				self._updateListbox()
 				self.OnListSelect(None)
+			pd.Destroy()
 		self.preview.Refresh()
 		dlg.Destroy()
 	

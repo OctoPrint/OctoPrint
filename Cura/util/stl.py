@@ -49,7 +49,7 @@ def saveAsSTL(mesh, filename):
 	#Write the STL binary header. This can contain any info, except for "SOLID" at the start.
 	f.write(("CURA BINARY STL EXPORT. " + time.strftime('%a %d %b %Y %H:%M:%S')).ljust(80, '\000'))
 	#Next follow 4 binary bytes containing the amount of faces, and then the face information.
-	f.write(struct.pack("<I", int(mesh.vertexCount/ 3)))
+	f.write(struct.pack("<I", int(mesh.vertexCount / 3)))
 	for idx in xrange(0, mesh.vertexCount, 3):
 		v1 = mesh.origonalVertexes[idx]
 		v2 = mesh.origonalVertexes[idx+1]

@@ -79,7 +79,7 @@ class mesh(object):
 		
 		self.getMinimumZ()
 
-	def splitToParts(self):
+	def splitToParts(self, callback = None):
 		t0 = time.time()
 
 		print "%f: " % (time.time() - t0), "Splitting a model with %d vertexes." % (len(self.vertexes))
@@ -95,6 +95,8 @@ class mesh(object):
 				tree.insert(e)
 			else:
 				removeDict[idx] = q[0].idx
+			if callback != None and (idx % 100) == 0:
+				callback(idx)
 		print "%f: " % (time.time() - t0), "Marked %d duplicate vertexes for removal." % (len(removeDict))
 
 		faceList = []
@@ -144,8 +146,8 @@ class mesh(object):
 	def _partAddFacewalk(self, part, faceIdx, doneSet, todoList):
 		f = self._faceList[faceIdx]
 		v0 = self.vertexes[f[0]]
-		v1 = self.vertexes[f[0]]
-		v2 = self.vertexes[f[0]]
+		v1 = self.vertexes[f[1]]
+		v2 = self.vertexes[f[2]]
 		part.addVertex(v0[0], v0[1], v0[2])
 		part.addVertex(v1[0], v1[1], v1[2])
 		part.addVertex(v2[0], v2[1], v2[2])
