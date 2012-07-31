@@ -47,7 +47,7 @@ def InitGL(window, view3D, zoom):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
 
 def DrawMachine(machineSize):
-	glColor3f(1,1,1)
+	glColor3f(1.0,1.0,1.0)
 	glLineWidth(4)
 	glDisable(GL_LIGHTING)
 	glBegin(GL_LINE_LOOP)
@@ -56,6 +56,7 @@ def DrawMachine(machineSize):
 	glVertex3f(machineSize.x, machineSize.y, 0)
 	glVertex3f(0, machineSize.y, 0)
 	glEnd()
+	glColor3f(0.7,0.7,0.7)
 	glLineWidth(2)
 	glBegin(GL_LINES)
 	for i in xrange(0, int(machineSize.x), 10):
@@ -203,7 +204,21 @@ def DrawBox(vMin, vMax):
 	glVertex3f(vMin[0], vMax[1], vMax[2])
 	glEnd()
 
-def DrawSTL(mesh):
+def DrawMeshOutline(mesh):
+	glEnable(GL_CULL_FACE)
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, mesh.vertexes)
+	
+	glCullFace(GL_FRONT)
+	glLineWidth(3)
+	glPolygonMode(GL_BACK, GL_LINE)
+	glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount)
+	glPolygonMode(GL_BACK, GL_FILL)
+	glCullFace(GL_BACK)
+	
+	glDisableClientState(GL_VERTEX_ARRAY)
+
+def DrawMesh(mesh):
 	glEnable(GL_CULL_FACE)
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);

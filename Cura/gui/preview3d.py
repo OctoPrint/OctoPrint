@@ -76,6 +76,9 @@ class previewPanel(wx.Panel):
 		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick)
 		self.toolbar.AddSeparator()
 
+		self.showBorderButton = toolbarUtil.ToggleButton(self.toolbar, '', 'view-border-on.png', 'view-border-off.png', 'Show model borders', callback=self.OnViewChange)
+		self.toolbar.AddSeparator()
+
 		group = []
 		self.normalViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-normal-on.png', 'view-normal-off.png', 'Normal model view', callback=self.OnViewChange)
 		self.transparentViewButton = toolbarUtil.RadioButton(self.toolbar, group, 'view-transparent-on.png', 'view-transparent-off.png', 'Transparent model view', callback=self.OnViewChange)
@@ -331,6 +334,7 @@ class previewPanel(wx.Panel):
 			self.glCanvas.viewMode = "GCode"
 		elif self.mixedViewButton.GetValue():
 			self.glCanvas.viewMode = "Mixed"
+		self.glCanvas.drawBorders = self.showBorderButton.GetValue()
 		self.updateToolbar()
 		self.glCanvas.Refresh()
 	
@@ -533,7 +537,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			if obj.dirty:
 				obj.dirty = False
 				glNewList(obj.displayList, GL_COMPILE)
-				opengl.DrawSTL(obj.mesh)
+				opengl.DrawMesh(obj.mesh)
 				glEndList()
 			
 			if self.viewMode == "Transparent" or self.viewMode == "Mixed":
@@ -593,11 +597,23 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 				glDisable(GL_STENCIL_TEST)
 				glEnable(GL_DEPTH_TEST)
+				
+				if self.drawBorders:
+					#Fix the depth buffer for the outline drawing.
+					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
+					self.drawModel(obj)
+					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
 			elif self.viewMode == "Normal":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, self.objColor[self.parent.objectList.index(obj)])
 				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 5, self.objColor[self.parent.objectList.index(obj)]))
 				glEnable(GL_LIGHTING)
 				self.drawModel(obj)
+			
+			if self.drawBorders and (self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray"):
+				glEnable(GL_DEPTH_TEST)
+				glDisable(GL_LIGHTING)
+				glColor3f(1,1,1)
+				opengl.DrawMeshOutline(obj.mesh)
 		
 		glPopMatrix()	
 		if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":

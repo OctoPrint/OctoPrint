@@ -94,6 +94,8 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 
 	def OnButton(self, event):
 		self.SetBitmap(self.GetValue())
+		if self.callback != None:
+			self.callback()
 		event.Skip()
 
 	def OnButtonProfile(self, event):
@@ -103,7 +105,8 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 		else:
 			self.SetBitmap(False)
 			profile.putProfileSetting(self.profileSetting, 'False')
-		self.callback()
+		if self.callback != None:
+			self.callback()
 		event.Skip()
 
 	def OnMouseEnter(self, event):
