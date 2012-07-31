@@ -216,6 +216,7 @@ def DrawSTL(mesh):
 	glCullFace(GL_FRONT)
 	glNormalPointer(GL_FLOAT, 0, mesh.invNormal)
 	glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount)
+	glCullFace(GL_BACK)
 	
 	glDisableClientState(GL_VERTEX_ARRAY)
 	glDisableClientState(GL_NORMAL_ARRAY);

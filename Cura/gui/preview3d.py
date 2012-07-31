@@ -555,17 +555,17 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			elif self.viewMode == "X-Ray":
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				glDisable(GL_DEPTH_TEST)
-				glEnable(GL_STENCIL_TEST);
+				glEnable(GL_STENCIL_TEST)
 				glStencilFunc(GL_ALWAYS, 1, 1)
 				glStencilOp(GL_INCR, GL_INCR, GL_INCR)
 				self.drawModel(obj)
 				glStencilOp (GL_KEEP, GL_KEEP, GL_KEEP);
 				
 				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
-				glStencilFunc(GL_EQUAL, 0, 1);
+				glStencilFunc(GL_EQUAL, 0, 1)
 				glColor(1, 1, 1)
 				self.drawModel(obj)
-				glStencilFunc(GL_EQUAL, 1, 1);
+				glStencilFunc(GL_EQUAL, 1, 1)
 				glColor(1, 0, 0)
 				self.drawModel(obj)
 
@@ -591,7 +591,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glEnd()
 				glPopMatrix()
 
-				glDisable(GL_STENCIL_TEST);
+				glDisable(GL_STENCIL_TEST)
 				glEnable(GL_DEPTH_TEST)
 			elif self.viewMode == "Normal":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, self.objColor[self.parent.objectList.index(obj)])
