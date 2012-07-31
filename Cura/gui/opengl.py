@@ -208,7 +208,7 @@ def DrawMeshOutline(mesh):
 	glEnable(GL_CULL_FACE)
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, mesh.vertexes)
-	
+
 	glCullFace(GL_FRONT)
 	glLineWidth(3)
 	glPolygonMode(GL_BACK, GL_LINE)

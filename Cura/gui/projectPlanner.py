@@ -808,7 +808,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				item.modelDirty = False
 				modelSize = item.getMaximum() - item.getMinimum()
 				glNewList(item.modelDisplayList, GL_COMPILE)
-				opengl.DrawSTL(item)
+				opengl.DrawMesh(item)
 				glEndList()
 			
 			if item.validPlacement:
