@@ -407,10 +407,12 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.gcodeDisplayListMade = None
 		self.gcodeDisplayListCount = 0
 		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
-		self.objColor[0] = profile.getPreferenceColour('model_colour')
 	
 	def updateProfileToControls(self):
 		self.objColor[0] = profile.getPreferenceColour('model_colour')
+		self.objColor[1] = profile.getPreferenceColour('model_colour2')
+		self.objColor[2] = profile.getPreferenceColour('model_colour3')
+		self.objColor[3] = profile.getPreferenceColour('model_colour3')
 
 	def OnMouseMotion(self,e):
 		if e.Dragging() and e.LeftIsDown():

@@ -39,6 +39,8 @@ class preferencesDialog(configBase.configWindowBase):
 
 		configBase.TitleRow(left, 'Colours')
 		c = configBase.SettingRow(left, 'Model colour', 'model_colour', wx.Colour(0,0,0), '', type = 'preference')
+		for i in xrange(1, self.oldExtruderAmount):
+			c = configBase.SettingRow(left, 'Model colour (%d)' % (i+1), 'model_colour%d' % (i+1), wx.Colour(0,0,0), '', type = 'preference')
 
 		configBase.TitleRow(right, 'Filament settings')
 		c = configBase.SettingRow(right, 'Filament density (kg/m3)', 'filament_density', '1300', 'Weight of the filament per m3. Around 1300 for PLA. And around 1040 for ABS. This value is used to estimate the weight if the filament used for the print.', type = 'preference')
