@@ -62,7 +62,7 @@ profileDefaultSettings = {
 	'joris': 'False',
 	'enable_skin': 'False',
 	'enable_raft': 'False',
-	'cool_min_feedrate': '5',
+	'cool_min_feedrate': '10',
 	'bridge_speed': '100',
 	'raft_margin': '5',
 	'raft_base_material_amount': '100',
