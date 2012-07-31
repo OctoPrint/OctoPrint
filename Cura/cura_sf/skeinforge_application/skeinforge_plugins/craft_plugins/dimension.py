@@ -384,7 +384,7 @@ class DimensionSkein:
 		elif firstWord == '(<layer>':
 			self.layerIndex += 1
 			settings.printProgress(self.layerIndex, 'dimension')
-		elif firstWord == '(</layer>)':
+		elif firstWord == '(</layer>)' or firstWord == '(<supportLayer>)' or firstWord == '(</supportLayer>)':
 			if self.totalExtrusionDistance > 0.0 and not self.repository.relativeExtrusionDistance.value:
 				self.distanceFeedRate.addLine('G92 E0')
 				self.totalExtrusionDistance = 0.0
