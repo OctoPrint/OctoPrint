@@ -107,10 +107,10 @@ Section "Cura ${VERSION}"
 SectionEnd
 
 Section "Open STL files with Cura"
-	WriteRegStr HKCR .stl "" "STL file"
-	;WriteRegStr HKCR "STL file\DefaultIcon" "" "$INSTDIR\stl.ico,0"
-	WriteRegStr HKCR "STL file\shell" "" "open"
-	WriteRegStr HKCR "STL file\shell\open\command" "" '"$INSTDIR\python\python.exe" "$INSTDIR\Cura\cura.py" "%1"'
+	WriteRegStr HKCR .stl "" "Cura STL model file"
+	WriteRegStr HKCR "STL file\DefaultIcon" "" "$INSTDIR\stl.ico,0"
+	WriteRegStr HKCR "Cura STL model file\shell" "" "open"
+	WriteRegStr HKCR "Cura STL model file\shell\open\command" "" '"$INSTDIR\python\python.exe" "$INSTDIR\Cura\cura.py" "%1"'
 SectionEnd
 
 ;--------------------------------
