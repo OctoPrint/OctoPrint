@@ -613,7 +613,11 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glEnable(GL_DEPTH_TEST)
 				glDisable(GL_LIGHTING)
 				glColor3f(1,1,1)
+				glPushMatrix()
+				modelScale = profile.getProfileSettingFloat('model_scale')
+				glScalef(modelScale, modelScale, modelScale)
 				opengl.DrawMeshOutline(obj.mesh)
+				glPopMatrix()
 		
 		glPopMatrix()	
 		if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
