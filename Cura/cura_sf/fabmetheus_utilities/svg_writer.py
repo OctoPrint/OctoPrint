@@ -198,7 +198,7 @@ class SVGWriter:
 		self.setMetadataNoscriptElement('minZ', 'Z: ', self.cornerMinimum.z)
 		self.textHeight = float( self.sliceDictionary['textHeight'] )
 		controlTop = len(loopLayers) * (self.margin + self.extent.y * self.unitScale + self.textHeight) + self.marginTop + self.textHeight
-		self.svgElement.getFirstChildByLocalName('title').setTextContent(os.path.basename(fileName).encode("utf-8") + ' - Slice Layers')
+		self.svgElement.getFirstChildByLocalName('title').setTextContent(os.path.basename(fileName).decode("utf-8").encode('ascii', 'replace') + ' - Slice Layers')
 		svgElementDictionary['height'] = '%spx' % self.getRounded(max(controlTop, self.controlBoxHeightMargin))
 		width = max(self.extent.x * self.unitScale, svgMinWidth)
 		svgElementDictionary['width'] = '%spx' % self.getRounded( width )
