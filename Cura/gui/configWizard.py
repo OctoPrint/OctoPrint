@@ -12,46 +12,72 @@ class InfoPage(wx.wizard.WizardPageSimple):
 	def __init__(self, parent, title):
 		wx.wizard.WizardPageSimple.__init__(self, parent)
 
-		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer = wx.GridBagSizer(5, 5)
 		self.sizer = sizer
 		self.SetSizer(sizer)
+		sizer.AddGrowableCol(1)
 
 		title = wx.StaticText(self, -1, title)
 		title.SetFont(wx.Font(18, wx.SWISS, wx.NORMAL, wx.BOLD))
-		sizer.Add(title, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-		sizer.Add(wx.StaticLine(self, -1), 0, wx.EXPAND|wx.ALL, 5)
+		sizer.Add(title, pos=(0, 0), span=(1,2), flag=wx.ALIGN_CENTRE|wx.ALL)
+		sizer.Add(wx.StaticLine(self, -1), pos=(1,0), span=(1,2), flag=wx.EXPAND|wx.ALL)
+		
+		self.rowNr = 2
 	
 	def AddText(self,info):
 		text = wx.StaticText(self, -1, info)
-		self.GetSizer().Add(text, 0, wx.LEFT|wx.RIGHT, 5)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT|wx.RIGHT)
+		self.rowNr += 1
 		return text
 	
 	def AddSeperator(self):
-		self.GetSizer().Add(wx.StaticLine(self, -1), 0, wx.EXPAND|wx.ALL, 5)
+		self.GetSizer().Add(wx.StaticLine(self, -1), pos=(self.rowNr, 0), span=(1,2), flag=wx.EXPAND|wx.ALL)
+		self.rowNr += 1
 	
 	def AddHiddenSeperator(self):
 		self.AddText('')
 	
 	def AddRadioButton(self, label, style = 0):
 		radio = wx.RadioButton(self, -1, label, style=style)
-		self.GetSizer().Add(radio, 0, wx.EXPAND|wx.ALL, 5)
+		self.GetSizer().Add(radio, pos=(self.rowNr, 0), span=(1,2), flag=wx.EXPAND|wx.ALL)
+		self.rowNr += 1
 		return radio
 	
 	def AddButton(self, label):
 		button = wx.Button(self, -1, label)
-		self.GetSizer().Add(button, 0, wx.LEFT, 5)
+		self.GetSizer().Add(button, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT)
+		self.rowNr += 1
 		return button
 	
 	def AddDualButton(self, label1, label2):
-		p = wx.Panel(self)
-		p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-		button1 = wx.Button(p, -1, label1)
-		p.GetSizer().Add(button1, 0, wx.RIGHT, 8)
-		button2 = wx.Button(p, -1, label2)
-		p.GetSizer().Add(button2, 0)
-		self.GetSizer().Add(p, 0, wx.LEFT, 5)
+		button1 = wx.Button(self, -1, label1)
+		self.GetSizer().Add(button1, pos=(self.rowNr, 0), flag=wx.RIGHT)
+		button2 = wx.Button(self, -1, label2)
+		self.GetSizer().Add(button2, pos=(self.rowNr, 1))
+		self.rowNr += 1
 		return button1, button2
 	
+	def AddTextCtrl(self, value):
+		ret = wx.TextCtrl(self, -1, value)
+		self.GetSizer().Add(ret, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT)
+		self.rowNr += 1
+		return ret
+
+	def AddLabelTextCtrl(self, info, value):
+		text = wx.StaticText(self, -1, info)
+		ret = wx.TextCtrl(self, -1, value)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT)
+		self.GetSizer().Add(ret, pos=(self.rowNr, 1), span=(1,1), flag=wx.LEFT)
+		self.rowNr += 1
+		return ret
+	
+	def AddTextCtrlButton(self, value, buttonText):
+		text = wx.TextCtrl(self, -1, value)
+		button = wx.Button(self, -1, buttonText)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT)
+		self.GetSizer().Add(button, pos=(self.rowNr, 1), span=(1,1), flag=wx.LEFT)
+		return text, button
+		
 	def AllowNext(self):
 		return True
 	
@@ -72,9 +98,24 @@ class FirstInfoPage(InfoPage):
 class RepRapInfoPage(InfoPage):
 	def __init__(self, parent):
 		super(RepRapInfoPage, self).__init__(parent, "RepRap information")
-		self.AddText('Sorry, but this wizard will not help you with\nconfiguring and calibrating your RepRap.')
+		self.AddText('RepRap machines are vastly different, and there is no\ndefault configuration in Cura for any of them.')
+		self.AddText('If you like a default profile for your machine added,\nthen make an issue on github.')
 		self.AddSeperator()
-		self.AddText('You will have to manually install Marlin or Sprinter firmware\nand configure Cura.')
+		self.AddText('You will have to manually install Marlin or Sprinter firmware.')
+		self.AddSeperator()
+		self.machineWidth = self.AddLabelTextCtrl('Machine width (mm)', '80')
+		self.machineDepth = self.AddLabelTextCtrl('Machine depth (mm)', '80')
+		self.machineHeight = self.AddLabelTextCtrl('Machine height (mm)', '60')
+		self.nozzleSize = self.AddLabelTextCtrl('Nozzle size (mm)', '0.5')
+
+	def StoreData(self):
+		profile.putPreference('machine_width', self.machineWidth.GetValue())
+		profile.putPreference('machine_depth', self.machineDepth.GetValue())
+		profile.putPreference('machine_height', self.machineHeight.GetValue())
+		profile.putProfileSetting('nozzle_size', self.nozzleSize.GetValue())
+		profile.putProfileSetting('machine_center_x', profile.getPreferenceFloat('machine_width') / 2)
+		profile.putProfileSetting('machine_center_y', profile.getPreferenceFloat('machine_depth') / 2)
+		profile.putProfileSetting('wall_thickness', float(profile.getProfileSettingFloat('nozzle_size')) * 2)
 
 class MachineSelectPage(InfoPage):
 	def __init__(self, parent):
@@ -150,7 +191,7 @@ class UltimakerCheckupPage(InfoPage):
 		b1, b2 = self.AddDualButton('Run checks', 'Skip checks')
 		b1.Bind(wx.EVT_BUTTON, self.OnCheckClick)
 		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
-		self.AddSeperator();
+		self.AddSeperator()
 		self.checkPanel = None
 	
 	def AllowNext(self):
@@ -311,20 +352,19 @@ class UltimakerCalibrationPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCalibrationPage, self).__init__(parent, "Ultimaker Calibration")
 		
-		self.AddText("Your Ultimaker requires some calibration.");
-		self.AddText("This calibration is needed for a proper extrusion amount.");
+		self.AddText("Your Ultimaker requires some calibration.")
+		self.AddText("This calibration is needed for a proper extrusion amount.")
 		self.AddSeperator()
-		self.AddText("The following values are needed:");
-		self.AddText("* Diameter of filament");
-		self.AddText("* Number of steps per mm of filament extrusion");
+		self.AddText("The following values are needed:")
+		self.AddText("* Diameter of filament")
+		self.AddText("* Number of steps per mm of filament extrusion")
 		self.AddSeperator()
-		self.AddText("The better you have calibrated these values, the better your prints\nwill become.");
+		self.AddText("The better you have calibrated these values, the better your prints\nwill become.")
 		self.AddSeperator()
-		self.AddText("First we need the diameter of your filament:");
-		self.filamentDiameter = wx.TextCtrl(self, -1, profile.getProfileSetting('filament_diameter'))
-		self.GetSizer().Add(self.filamentDiameter, 0, wx.LEFT, 5)
-		self.AddText("If you do not own digital Calipers that can measure\nat least 2 digits then use 2.89mm.\nWhich is the average diameter of most filament.");
-		self.AddText("Note: This value can be changed later at any time.");
+		self.AddText("First we need the diameter of your filament:")
+		self.filamentDiameter = self.AddTextCtrl(profile.getProfileSetting('filament_diameter'))
+		self.AddText("If you do not own digital Calipers that can measure\nat least 2 digits then use 2.89mm.\nWhich is the average diameter of most filament.")
+		self.AddText("Note: This value can be changed later at any time.")
 
 	def StoreData(self):
 		profile.putProfileSetting('filament_diameter', self.filamentDiameter.GetValue())
@@ -342,16 +382,9 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.AddText("We'll push the filament 100mm")
 		self.extrudeButton = self.AddButton("Extrude 100mm filament")
 		self.AddText("Now measure the amount of extruded filament:\n(this can be more or less then 100mm)")
-		p = wx.Panel(self)
-		p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-		self.lengthInput = wx.TextCtrl(p, -1, '100')
-		p.GetSizer().Add(self.lengthInput, 0, wx.RIGHT, 8)
-		self.saveLengthButton = wx.Button(p, -1, 'Save')
-		p.GetSizer().Add(self.saveLengthButton, 0)
-		self.GetSizer().Add(p, 0, wx.LEFT, 5)
+		self.lengthInput, self.saveLengthButton = self.AddTextCtrlButton('100', 'Save')
 		self.AddText("This results in the following steps per E:")
-		self.stepsPerEInput = wx.TextCtrl(self, -1, profile.getPreference('steps_per_e'))
-		self.GetSizer().Add(self.stepsPerEInput, 0, wx.LEFT, 5)
+		self.stepsPerEInput = self.AddTextCtrl(profile.getPreference('steps_per_e'))
 		self.AddText("You can repeat these steps to get better calibration.")
 		self.AddSeperator()
 		self.AddText("If you still have filament in your printer which needs\nheat to remove, press the heat up button below:")
@@ -391,9 +424,9 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		time.sleep(3)
 		
 		self.sendGCommand('M302') #Disable cold extrusion protection
-		self.sendGCommand("M92 E%f" % (currentEValue));
-		self.sendGCommand("G92 E0");
-		self.sendGCommand("G1 E100 F600");
+		self.sendGCommand("M92 E%f" % (currentEValue))
+		self.sendGCommand("G92 E0")
+		self.sendGCommand("G1 E100 F600")
 		time.sleep(15)
 		self.comm.close()
 		self.extrudeButton.Enable()
