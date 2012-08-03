@@ -29,6 +29,7 @@ class preferencesDialog(configBase.configWindowBase):
 		c = configBase.SettingRow(left, 'Machine height (mm)', 'machine_height', '200', 'Size of the machine in mm', type = 'preference')
 		validators.validFloat(c, 10.0)
 		c = configBase.SettingRow(left, 'Extruder count', 'extruder_amount', ['1', '2', '3', '4'], 'Amount of extruders in your machine.', type = 'preference')
+		c = configBase.SettingRow(left, 'Heated bed', 'has_heated_bed', False, 'If you have an heated bed, this enabled heated bed settings', type = 'preference')
 		
 		for i in xrange(1, self.oldExtruderAmount):
 			configBase.TitleRow(left, 'Extruder %d' % (i+1))

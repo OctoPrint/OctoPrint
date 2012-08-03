@@ -24,6 +24,7 @@ profileDefaultSettings = {
 	'skirt_gap': '3.0',
 	'print_speed': '50',
 	'print_temperature': '230',
+	'print_bed_temperature': '70',
 	'support': 'None',
 	'filament_diameter': '2.89',
 	'filament_density': '1.00',
@@ -155,6 +156,7 @@ preferencesDefaultSettings = {
 	'machine_depth': '205',
 	'machine_height': '200',
 	'machine_type': 'unknown',
+	'has_heated_bed': 'False',
 	'extruder_amount': '1',
 	'extruder_offset_x1': '-22.0',
 	'extruder_offset_y1': '0.0',
@@ -486,8 +488,17 @@ def getAlterationFileContents(filename):
 		if eSteps > 0:
 			prefix += 'M92 E%f\n' % (eSteps)
 		temp = getProfileSettingFloat('print_temperature')
+		bedTemp = 0
+		if getPreference('has_heated_bed') == 'True':
+			bedTemp = getProfileSettingFloat('print_bed_temperature')
+		
+		if bedTemp > 0 and not '{print_bed_temperature}' in alterationContents:
+			prefix += 'M140 S%f\n' % (bedTemp)
 		if temp > 0 and not '{print_temperature}' in alterationContents:
 			prefix += 'M109 S%f\n' % (temp)
+		if bedTemp > 0 and not '{print_bed_temperature}' in alterationContents:
+			prefix += 'M190 S%f\n' % (bedTemp)
+			
 	elif filename == 'end.gcode':
 		#Append the profile string to the end of the GCode, so we can load it from the GCode file later.
 		postfix = ';CURA_PROFILE_STRING:%s\n' % (getGlobalProfileString())

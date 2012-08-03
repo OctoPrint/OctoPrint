@@ -144,6 +144,9 @@ class mainWindow(configBase.configWindowBase):
 		c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
 		validators.validFloat(c, 0.0, 340.0)
 		validators.warningAbove(c, 260.0, "Temperatures above 260C could damage your machine, be careful!")
+		if profile.getPreference('has_heated_bed') == 'True':
+			c = configBase.SettingRow(right, "Bed temperature", 'print_bed_temperature', '0', 'Temperature used for the heated printer bed. Set at 0 to pre-heat yourself')
+			validators.validFloat(c, 0.0, 340.0)
 		
 		configBase.TitleRow(right, "Support")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\n"Exterior only" is the most commonly used support setting.\n\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
