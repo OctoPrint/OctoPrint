@@ -42,6 +42,15 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		self.GetSizer().Add(radio, pos=(self.rowNr, 0), span=(1,2), flag=wx.EXPAND|wx.ALL)
 		self.rowNr += 1
 		return radio
+
+	def AddCheckbox(self, label, checked = False):
+		check = wx.CheckBox(self, -1)
+		text = wx.StaticText(self, -1, label)
+		check.SetValue(checked)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT|wx.RIGHT)
+		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1,2), flag=wx.ALL)
+		self.rowNr += 1
+		return check
 	
 	def AddButton(self, label):
 		button = wx.Button(self, -1, label)
@@ -107,6 +116,7 @@ class RepRapInfoPage(InfoPage):
 		self.machineDepth = self.AddLabelTextCtrl('Machine depth (mm)', '80')
 		self.machineHeight = self.AddLabelTextCtrl('Machine height (mm)', '60')
 		self.nozzleSize = self.AddLabelTextCtrl('Nozzle size (mm)', '0.5')
+		self.heatedBed = self.AddCheckbox('Heated bed')
 
 	def StoreData(self):
 		profile.putPreference('machine_width', self.machineWidth.GetValue())
@@ -116,6 +126,7 @@ class RepRapInfoPage(InfoPage):
 		profile.putProfileSetting('machine_center_x', profile.getPreferenceFloat('machine_width') / 2)
 		profile.putProfileSetting('machine_center_y', profile.getPreferenceFloat('machine_depth') / 2)
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSettingFloat('nozzle_size')) * 2)
+		profile.putPreference('has_heated_bed', str(self.heatedBed.GetValue()))
 
 class MachineSelectPage(InfoPage):
 	def __init__(self, parent):
