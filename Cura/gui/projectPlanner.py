@@ -969,7 +969,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 			else:
 				#reset the extrusion length, and move to the next object center.
 				resultFile.write(';TYPE:CUSTOM\n')
-				if prevTemp != action.temperature:
+				if prevTemp != action.temperature and action.temperature > 0:
 					resultFile.write('M104 S%d\n' % (int(action.temperature)))
 					prevTemp = action.temperature
 				resultFile.write(profile.getAlterationFileContents('nextobject.gcode'))
