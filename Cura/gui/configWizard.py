@@ -85,6 +85,7 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		button = wx.Button(self, -1, buttonText)
 		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT)
 		self.GetSizer().Add(button, pos=(self.rowNr, 1), span=(1,1), flag=wx.LEFT)
+		self.rowNr += 1
 		return text, button
 		
 	def AllowNext(self):

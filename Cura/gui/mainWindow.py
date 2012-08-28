@@ -206,8 +206,8 @@ class mainWindow(configBase.configWindowBase):
 
 		# load and slice buttons.
 		loadButton = wx.Button(self, -1, 'Load Model')
-		sliceButton = wx.Button(self, -1, 'Slice to GCode')
-		printButton = wx.Button(self, -1, 'Print GCode')
+		sliceButton = wx.Button(self, -1, 'Prepare print')
+		printButton = wx.Button(self, -1, 'Print')
 		self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(1), loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
