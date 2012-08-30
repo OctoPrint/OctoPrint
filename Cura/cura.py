@@ -73,8 +73,12 @@ def main():
 	else:
 		if len(args) > 0:
 			profile.putPreference('lastFile', ';'.join(args))
-		from gui import mainWindow
-		mainWindow.main()
+		from gui import splashScreen
+		splashScreen.showSplash(mainWindowRunCallback)
+
+def mainWindowRunCallback():
+	from gui import mainWindow
+	mainWindow.main()
 
 if __name__ == '__main__':
 	main()

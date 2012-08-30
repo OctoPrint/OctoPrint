@@ -24,7 +24,7 @@ from util import version
 from util import sliceRun
 
 def main():
-	app = wx.App(False)
+	#app = wx.App(False)
 	if profile.getPreference('wizardDone') == 'False':
 		configWizard.configWizard()
 		profile.putPreference("wizardDone", "True")
@@ -32,7 +32,7 @@ def main():
 		simpleMode.simpleModeWindow()
 	else:
 		mainWindow()
-	app.MainLoop()
+	#app.MainLoop()
 
 class mainWindow(configBase.configWindowBase):
 	"Main user interface window"
