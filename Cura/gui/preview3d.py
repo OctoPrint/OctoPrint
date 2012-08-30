@@ -269,6 +269,7 @@ class previewPanel(wx.Panel):
 				obj.dirty = False
 				obj.mesh = mesh
 				self.updateModelTransform()
+				self.glCanvas.zoom = numpy.max(self.objectsMaxV - self.objectsMinV) * 1.7
 				self.errorList = []
 				wx.CallAfter(self.updateToolbar)
 				wx.CallAfter(self.glCanvas.Refresh)
