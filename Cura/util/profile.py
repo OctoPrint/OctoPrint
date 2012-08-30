@@ -242,7 +242,7 @@ def getGlobalProfileString():
 	if globalProfileParser.has_section('profile'):
 		for key in globalProfileParser.options('profile'):
 			if key in tempOverride:
-				p.append(key + "=" + unicode(tempOverride[key]))
+				p.append(key + "=" + tempOverride[key])
 				tempDone.append(key)
 			else:
 				p.append(key + "=" + globalProfileParser.get('profile', key))
@@ -255,14 +255,14 @@ def getGlobalProfileString():
 				alt.append(key + "=" + globalProfileParser.get('alterations', key))
 	for key in tempOverride:
 		if key not in tempDone:
-			p.append(key + "=" + unicode(tempOverride[key]))
+			p.append(key + "=" + tempOverride[key])
 	ret = '\b'.join(p) + '\f' + '\b'.join(alt)
 	ret = base64.b64encode(zlib.compress(ret, 9))
 	return ret
 
 def getProfileSetting(name):
 	if name in tempOverride:
-		return unicode(tempOverride[name])
+		return unicode(tempOverride[name], "utf-8")
 	#Check if we have a configuration file loaded, else load the default.
 	if not globals().has_key('globalProfileParser'):
 		loadGlobalProfile(getDefaultProfilePath())
@@ -362,7 +362,7 @@ def isPreference(name):
 ## Temp overrides for multi-extruder slicing and the project planner.
 tempOverride = {}
 def setTempOverride(name, value):
-	tempOverride[name] = value
+	tempOverride[name] = unicode(value).encode("utf-8")
 def resetTempOverride():
 	tempOverride.clear()
 
