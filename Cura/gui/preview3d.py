@@ -486,7 +486,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
-		opengl.DrawMachine(machineSize)
 
 		if self.parent.gcode != None and self.parent.gcodeDirty:
 			if self.gcodeDisplayListCount < len(self.parent.gcode.layerList) or self.gcodeDisplayList == None:
@@ -633,6 +632,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glEnd()
 			glEnable(GL_DEPTH_TEST)
 		glFlush()
+		opengl.DrawMachine(machineSize)
 	
 	def drawModel(self, obj):
 		multiX = 1 #int(profile.getProfileSetting('model_multiply_x'))

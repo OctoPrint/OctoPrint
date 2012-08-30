@@ -779,7 +779,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 	def OnDraw(self):
 		machineSize = self.parent.machineSize
-		opengl.DrawMachine(util3d.Vector3(machineSize[0], machineSize[1], machineSize[2]))
 		extraSizeMin, extraSizeMax = self.parent.getExtraHeadSize()
 
 		for item in self.parent.list:
@@ -868,6 +867,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			
 			glPopMatrix()
 		
+		opengl.DrawMachine(util3d.Vector3(machineSize[0], machineSize[1], machineSize[2]))
 		glFlush()
 
 class ProjectSliceProgressWindow(wx.Frame):
