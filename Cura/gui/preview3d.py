@@ -269,7 +269,11 @@ class previewPanel(wx.Panel):
 				obj.dirty = False
 				obj.mesh = mesh
 				self.updateModelTransform()
-				self.glCanvas.zoom = numpy.max(self.objectsMaxV - self.objectsMinV) * 1.7
+				scale = profile.getProfileSettingFloat('model_scale')
+				size = (self.objectsMaxV - self.objectsMinV) * scale
+				if size[0] > self.machineSize.x or size[1] > self.machineSize.y or size[2] > self.machineSize.z:
+					self.OnScaleMax(None)
+				self.glCanvas.zoom = numpy.max(size) * 1.7
 				self.errorList = []
 				wx.CallAfter(self.updateToolbar)
 				wx.CallAfter(self.glCanvas.Refresh)
