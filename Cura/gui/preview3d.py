@@ -562,6 +562,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.drawModel(obj)
 			elif self.viewMode == "X-Ray":
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
+				glDisable(GL_LIGHTING)
 				glDisable(GL_DEPTH_TEST)
 				glEnable(GL_STENCIL_TEST)
 				glStencilFunc(GL_ALWAYS, 1, 1)
@@ -602,11 +603,10 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glDisable(GL_STENCIL_TEST)
 				glEnable(GL_DEPTH_TEST)
 				
-				if self.drawBorders:
-					#Fix the depth buffer for the outline drawing.
-					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
-					self.drawModel(obj)
-					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
+				#Fix the depth buffer for the outline drawing.
+				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
+				self.drawModel(obj)
+				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
 			elif self.viewMode == "Normal":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, self.objColor[self.parent.objectList.index(obj)])
 				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 5, self.objColor[self.parent.objectList.index(obj)]))
@@ -635,8 +635,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glVertex3f(err[1].x, err[1].y, err[1].z)
 			glEnd()
 			glEnable(GL_DEPTH_TEST)
-		glFlush()
 		opengl.DrawMachine(machineSize)
+		glFlush()
 	
 	def drawModel(self, obj):
 		multiX = 1 #int(profile.getProfileSetting('model_multiply_x'))
