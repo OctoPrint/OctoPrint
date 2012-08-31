@@ -5,7 +5,7 @@ import wx, os, platform, types, string
 import ConfigParser
 
 from gui import configBase
-from gui import validators
+from util import validators
 from util import machineCom
 from util import profile
 

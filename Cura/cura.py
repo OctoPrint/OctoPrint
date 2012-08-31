@@ -16,7 +16,6 @@ import platform
 from optparse import OptionParser
 
 from util import profile
-from util import sliceRun
 
 __author__ = 'Daid'
 __credits__ = """
@@ -69,6 +68,7 @@ def main():
 		return
 
 	if options.slice != None:
+		from util import sliceRun
 		sliceRun.runSlice(args)
 	else:
 		if len(args) > 0:

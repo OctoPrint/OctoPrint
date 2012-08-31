@@ -3,7 +3,7 @@ import __init__
 
 import wx, wx.lib.stattext, os, sys, platform, types
 
-from gui import validators
+from util import validators
 from util import profile
 
 def main():

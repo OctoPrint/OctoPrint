@@ -8,7 +8,7 @@ from gui import configBase
 from gui import preview3d
 from gui import sliceProgessPanel
 from gui import alterationPanel
-from gui import validators
+from util import validators
 
 class expertConfigWindow(configBase.configWindowBase):
 	"Expert configuration window"

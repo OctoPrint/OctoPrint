@@ -6,12 +6,12 @@ import wx, os, platform, types, webbrowser
 from gui import configBase
 from gui import preview3d
 from gui import sliceProgessPanel
-from gui import validators
 from gui import preferencesDialog
 from gui import configWizard
 from gui import firmwareInstall
 from gui import printWindow
 from gui import icon
+from util import validators
 from util import profile
 from util import version
 from util import sliceRun

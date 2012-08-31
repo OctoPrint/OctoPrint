@@ -20,9 +20,9 @@ from gui import opengl
 from gui import toolbarUtil
 from gui import icon
 from gui import configBase
-from gui import validators
 from gui import printWindow
 from gui import dropTarget
+from util import validators
 from util import profile
 from util import util3d
 from util import stl
