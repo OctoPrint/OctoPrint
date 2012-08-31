@@ -416,6 +416,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.gcodeDisplayListMade = None
 		self.gcodeDisplayListCount = 0
 		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
+		self.oldX = 0
+		self.oldY = 0
 	
 	def updateProfileToControls(self):
 		self.objColor[0] = profile.getPreferenceColour('model_colour')
