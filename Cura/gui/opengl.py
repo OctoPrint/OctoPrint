@@ -30,7 +30,7 @@ def InitGL(window, view3D, zoom):
 	glEnable(GL_CULL_FACE)
 	glDisable(GL_BLEND)
 
-	glClearColor(0.0, 0.0, 0.0, 1.0)
+	glClearColor(1.0, 1.0, 1.0, 1.0)
 	glClearStencil(0)
 	glClearDepth(1.0)
 
@@ -47,15 +47,6 @@ def InitGL(window, view3D, zoom):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
 
 def DrawMachine(machineSize):
-	glColor3f(1.0,1.0,1.0)
-	glLineWidth(4)
-	glDisable(GL_LIGHTING)
-	glBegin(GL_LINE_LOOP)
-	glVertex3f(0, 0, 0)
-	glVertex3f(machineSize.x, 0, 0)
-	glVertex3f(machineSize.x, machineSize.y, 0)
-	glVertex3f(0, machineSize.y, 0)
-	glEnd()
 	if False:
 		glColor3f(0.7,0.7,0.7)
 		glLineWidth(2)
@@ -68,10 +59,10 @@ def DrawMachine(machineSize):
 			glVertex3f(machineSize.x, i, 0)
 		glEnd()
 	else:
-		glColor4f(0.7,0.7,0.7,0.7)
 		glDisable(GL_CULL_FACE)
 		glEnable(GL_BLEND)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+		glColor4ub(5,171,231,127)
 		glBegin(GL_QUADS)
 		for x in xrange(0, int(machineSize.x), 20):
 			for y in xrange(0, int(machineSize.y), 20):
@@ -86,9 +77,40 @@ def DrawMachine(machineSize):
 				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
 				glVertex3f(x, min(y+10, machineSize.y), -0.01)
 		glEnd()
+		glColor4ub(5,171,231,64)
+		glBegin(GL_QUADS)
+		for x in xrange(10, int(machineSize.x), 20):
+			for y in xrange(0, int(machineSize.y), 20):
+				glVertex3f(x, y, -0.01)
+				glVertex3f(min(x+10, machineSize.x), y, -0.01)
+				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
+				glVertex3f(x, min(y+10, machineSize.y), -0.01)
+		for x in xrange(0, int(machineSize.x), 20):
+			for y in xrange(10, int(machineSize.y), 20):
+				glVertex3f(x, y, -0.01)
+				glVertex3f(min(x+10, machineSize.x), y, -0.01)
+				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
+				glVertex3f(x, min(y+10, machineSize.y), -0.01)
+		glEnd()
 		glEnable(GL_CULL_FACE)
 		glDisable(GL_BLEND)
-	glLineWidth(1)
+	
+	glEnable(GL_LINE_SMOOTH)
+	glEnable(GL_BLEND)
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+	glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
+
+	glColor3f(0.0,0.0,0.0)
+	glLineWidth(4)
+	glDisable(GL_LIGHTING)
+	glBegin(GL_LINE_LOOP)
+	glVertex3f(0, 0, 0)
+	glVertex3f(machineSize.x, 0, 0)
+	glVertex3f(machineSize.x, machineSize.y, 0)
+	glVertex3f(0, machineSize.y, 0)
+	glEnd()
+	
+	glLineWidth(2)
 	glBegin(GL_LINE_LOOP)
 	glVertex3f(0, 0, machineSize.z)
 	glVertex3f(machineSize.x, 0, machineSize.z)
