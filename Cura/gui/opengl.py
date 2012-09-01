@@ -47,6 +47,7 @@ def InitGL(window, view3D, zoom):
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
 
 def DrawMachine(machineSize):
+	glDisable(GL_LIGHTING)
 	if False:
 		glColor3f(0.7,0.7,0.7)
 		glLineWidth(2)
@@ -102,7 +103,6 @@ def DrawMachine(machineSize):
 
 	glColor3f(0.0,0.0,0.0)
 	glLineWidth(4)
-	glDisable(GL_LIGHTING)
 	glBegin(GL_LINE_LOOP)
 	glVertex3f(0, 0, 0)
 	glVertex3f(machineSize.x, 0, 0)
