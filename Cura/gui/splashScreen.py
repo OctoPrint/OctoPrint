@@ -14,8 +14,11 @@ class splashScreen(wx.SplashScreen):
 		self.callback = callback
 		bitmap = getBitmapImage("splash.png")
 		super(splashScreen, self).__init__(bitmap, wx.SPLASH_CENTRE_ON_SCREEN, 0, None)
-		wx.CallAfter(callback)
-		wx.CallAfter(self.Destroy)
+		wx.CallAfter(self.DoCallback)
+	
+	def DoCallback(self):
+		self.callback()
+		self.Destroy()
 
 def showSplash(callback):
 	app = wx.App(False)
