@@ -6,6 +6,7 @@ from wx.lib import buttons
 
 from gui import icon
 from gui import toolbarUtil
+from gui import webcam
 from util import machineCom
 from util import profile
 from util import gcodeInterpreter
@@ -17,7 +18,6 @@ def printFile(filename):
 	if printWindowMonitorHandle == None:
 		printWindowMonitorHandle = printProcessMonitor()
 	printWindowMonitorHandle.loadFile(filename)
-
 
 def startPrintInterface(filename):
 	#startPrintInterface is called from the main script when we want the printer interface to run in a seperate process.
@@ -97,6 +97,12 @@ class printWindow(wx.Frame):
 		self.pause = False
 		self.termHistory = []
 		self.termHistoryIdx = 0
+		
+		self.cam = None
+		try:
+			self.cam = webcam.webcam()
+		except:
+			pass
 
 		#self.SetIcon(icon.getMainIcon())
 		
@@ -128,7 +134,7 @@ class printWindow(wx.Frame):
 		self.sizer.Add(self.progress, pos=(5,0), span=(1,2), flag=wx.EXPAND)
 
 		nb = wx.Notebook(self.panel)
-		self.sizer.Add(nb, pos=(0,3), span=(7,4))
+		self.sizer.Add(nb, pos=(0,3), span=(7,4), flag=wx.EXPAND)
 		
 		self.temperaturePanel = wx.Panel(nb)
 		sizer = wx.GridBagSizer(2, 2)
@@ -233,9 +239,20 @@ class printWindow(wx.Frame):
 		sizer.AddGrowableRow(0)
 
 		nb.AddPage(self.termPanel, 'Term')
+		
+		if self.cam != None:
+			self.camPage = wx.Panel(nb)
+			sizer = wx.GridBagSizer(2, 2)
+			self.camPage.SetSizer(sizer)
+			
+			nb.AddPage(self.camPage, 'Camera')
+			self.camPage.timer = wx.Timer(self)
+			self.Bind(wx.EVT_TIMER, self.OnCameraTimer, self.camPage.timer)
+			self.camPage.timer.Start(500)
+			self.camPage.Bind(wx.EVT_ERASE_BACKGROUND, self.OnCameraEraseBackground)
 
 		self.sizer.AddGrowableRow(3)
-		self.sizer.AddGrowableCol(0)
+		self.sizer.AddGrowableCol(3)
 		
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
 		self.connectButton.Bind(wx.EVT_BUTTON, self.OnConnect)
@@ -261,6 +278,23 @@ class printWindow(wx.Frame):
 		self.UpdateButtonStates()
 		self.UpdateProgress()
 	
+	def OnCameraTimer(self, e):
+		if self.printIdx != None:
+			return
+		self.cam.takeNewImage()
+		self.camPage.Refresh()
+	
+	def OnCameraEraseBackground(self, e):
+		dc = e.GetDC()
+		if not dc:
+			dc = wx.ClientDC(self)
+			rect = self.GetUpdateRegion().GetBox()
+			dc.SetClippingRect(rect)
+		dc.SetBackground(wx.Brush(self.camPage.GetBackgroundColour(), wx.SOLID))
+		dc.Clear()
+		if self.cam.getLastImage() != None:
+			dc.DrawBitmap(self.cam.getLastImage(), 0, 0)
+
 	def UpdateButtonStates(self):
 		self.connectButton.Enable(not self.machineConnected)
 		#self.loadButton.Enable(self.printIdx == None)
@@ -287,6 +321,7 @@ class printWindow(wx.Frame):
 				status += 'Line: -/%d\n' % (len(self.gcodeList))
 		else:
 			status += 'Line: %d/%d\n' % (self.printIdx, len(self.gcodeList))
+			status += 'Height: %f\n' % (self.currentZ)
 			self.progress.SetValue(self.printIdx)
 		if self.temp != None:
 			status += 'Temp: %d\n' % (self.temp)
@@ -317,12 +352,17 @@ class printWindow(wx.Frame):
 			return
 		if self.printIdx != None:
 			return
+		self.currentZ = -1
+		if self.cam != None:
+			self.cam.startTimelaps(self.filename[: self.filename.rfind('.')] + ".mpg")
 		self.printIdx = 1
 		self.sendLine(0)
 		self.sendCnt = self.bufferLineCount
 		self.UpdateButtonStates()
 	
 	def OnCancel(self, e):
+		if self.cam != None:
+			self.cam.endTimelaps()
 		self.printIdx = None
 		self.pause = False
 		self.pauseButton.SetLabel('Pause')
@@ -405,6 +445,7 @@ class printWindow(wx.Frame):
 		gcode = gcodeInterpreter.gcode()
 		gcode.loadList(gcodeList)
 		print "Loaded: %s (%d)" % (filename, len(gcodeList))
+		self.filename = filename
 		self.gcode = gcode
 		self.gcodeList = gcodeList
 		self.typeList = typeList
@@ -442,6 +483,12 @@ class printWindow(wx.Frame):
 				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioFill)), line)
 			if self.typeList[lineNr] == 'SUPPORT':
 				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioSupport)), line)
+			if 'G1' in line and 'Z' in line:
+				z = float(re.search('Z([0-9\.]*)', line).group(1))
+				if self.cam != None and self.currentZ != z:
+					wx.CallAfter(self.cam.takeNewImage)
+					wx.CallAfter(self.camPage.Refresh)
+				self.currentZ = z
 		except:
 			print "Unexpected error:", sys.exc_info()
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, line)))
@@ -487,6 +534,8 @@ class printWindow(wx.Frame):
 						if self.sendLine(self.printIdx):
 							self.printIdx += 1
 						else:
+							if self.cam != None:
+								self.cam.endTimelaps()
 							self.printIdx = None
 							wx.CallAfter(self.UpdateButtonStates)
 						wx.CallAfter(self.UpdateProgress)
@@ -576,6 +625,10 @@ class temperatureGraph(wx.Panel):
 			self.points.pop(0)
 
 	def addPoint(self, temp, tempSP, bedTemp, bedTempSP):
+		if bedTemp == None:
+			bedTemp = 0
+		if bedTempSP == None:
+			bedTempSP = 0
 		self.points.append((temp, tempSP, bedTemp, bedTempSP, time.time()))
 		wx.CallAfter(self.UpdateDrawing)
 

@@ -44,7 +44,7 @@ class VirtualPrinter():
 	def write(self, data):
 		if self.readList == None:
 			return
-		print "Send: %s" % (data.rstrip())
+		#print "Send: %s" % (data.rstrip())
 		if 'M104' in data or 'M109' in data:
 			try:
 				self.targetTemp = float(data[data.find('S')+1:])
@@ -78,7 +78,7 @@ class VirtualPrinter():
 			if self.readList == None:
 				return ''
 		time.sleep(0.01)
-		print "Recv: %s" % (self.readList[0].rstrip())
+		#print "Recv: %s" % (self.readList[0].rstrip())
 		return self.readList.pop(0)
 	
 	def close(self):
