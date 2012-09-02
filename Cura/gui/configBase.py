@@ -84,6 +84,7 @@ class configWindowBase(wx.Frame):
 				setting.SetValue(profile.getProfileSetting(setting.configName))
 			else:
 				setting.SetValue(profile.getPreference(setting.configName))
+		self.Update()
 
 class TitleRow():
 	def __init__(self, panel, name):

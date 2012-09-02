@@ -327,6 +327,7 @@ class previewPanel(wx.Panel):
 		if self.gcode != None:
 			self.layerSpin.SetRange(1, len(self.gcode.layerList) - 1)
 		self.toolbar.Realize()
+		self.Update()
 	
 	def OnViewChange(self):
 		if self.normalViewButton.GetValue():

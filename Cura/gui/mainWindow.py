@@ -394,10 +394,10 @@ class mainWindow(configBase.configWindowBase):
 	
 	def OnPrint(self, e):
 		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to load a file and prepare it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
-			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to prepare a print before you can run the actual print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		printWindow.printFile(sliceRun.getExportFilename(self.filelist[0]))
 
