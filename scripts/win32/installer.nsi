@@ -88,8 +88,7 @@ Section "Cura ${VERSION}"
   
   CreateDirectory "$SMPROGRAMS\Cura ${VERSION}"
   CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Cura.lnk" "$INSTDIR\cura.bat" "" "$INSTDIR\cura.icon" 0
-  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\PrintRun.lnk" "$INSTDIR\printrun.bat" "" "$INSTDIR\cura.icon" 0
+  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Cura.lnk" "$INSTDIR\python\python.exe" "$INSTDIR\Cura\cura.py" "$INSTDIR\cura.ico" 0
 
   ; Set output path to the driver directory.
   SetOutPath "$INSTDIR\drivers\"
