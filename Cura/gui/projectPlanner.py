@@ -829,7 +829,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glEnable(GL_LIGHTING)
 			glTranslate(item.centerX, item.centerY, 0)
 			glPushMatrix()
-			glEnable(GL_NORMALIZE)
 			glScalef(item.scale, item.scale, item.scale)
 			glCallList(item.modelDisplayList)
 			glPopMatrix()

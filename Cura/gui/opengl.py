@@ -23,7 +23,7 @@ def InitGL(window, view3D, zoom):
 	glLightfv(GL_LIGHT0, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
 	glLightfv(GL_LIGHT1, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
 
-	glEnable(GL_NORMALIZE)
+	glEnable(GL_RESCALE_NORMAL)
 	glEnable(GL_LIGHTING)
 	glEnable(GL_LIGHT0)
 	glEnable(GL_DEPTH_TEST)
