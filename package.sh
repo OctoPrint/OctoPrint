@@ -16,11 +16,11 @@ BUILD_TARGET=${1:-all}
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=12.08
+BUILD_NAME=12.09
 TARGET_DIR=${BUILD_TARGET}-Cura-${BUILD_NAME}
 
 ##Which versions of external programs to use
-PYPY_VERSION=c-jit-latest
+PYPY_VERSION=1.9
 WIN_PORTABLE_PY_VERSION=2.7.2.1
 WIN_PYSERIAL_VERSION=2.5
 
@@ -83,15 +83,18 @@ if [ $BUILD_TARGET = "win32" ]; then
 	if [ ! -f numpy-1.6.2-win32-superpack-python2.7.exe ]; then
 		curl -L -O http://sourceforge.net/projects/numpy/files/NumPy/1.6.2/numpy-1.6.2-win32-superpack-python2.7.exe
 	fi
+	if [ ! -f VideoCapture-0.9-5.zip ]; then
+		curl -L -O http://videocapture.sourceforge.net/VideoCapture-0.9-5.zip
+	fi
 	#Get pypy
 	if [ ! -f "pypy-${PYPY_VERSION}-win32.zip" ]; then
-	#	curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
-		curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-win32.zip
+		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
+	#	curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-win32.zip
 	fi
 else
 	if [ ! -f "pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2" ]; then
-	#	curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
-		curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
+		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
+	#	curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
 	fi
 fi
 
@@ -119,6 +122,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	7z x PyOpenGL-3.0.1.win32.exe PURELIB
 	7z x numpy-1.6.2-win32-superpack-python2.7.exe numpy-1.6.2-sse2.exe
 	7z x numpy-1.6.2-sse2.exe PLATLIB
+	7z x VideoCapture-0.9-5.zip
 
 	mkdir -p ${TARGET_DIR}/python
 	mv \$_OUTDIR/App/* ${TARGET_DIR}/python
@@ -126,9 +130,11 @@ if [ $BUILD_TARGET = "win32" ]; then
 	mv PURELIB/serial ${TARGET_DIR}/python/Lib
 	mv PURELIB/OpenGL ${TARGET_DIR}/python/Lib
 	mv PLATLIB/numpy ${TARGET_DIR}/python/Lib
+	mv VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd ${TARGET_DIR}/python/DLLs
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
 	rm -rf PLATLIB
+	rm -rf VideoCapture-0.9-5
 	rm -rf numpy-1.6.2-sse2.exe
 	
 	#Clean up portable python a bit, to keep the package size down.
