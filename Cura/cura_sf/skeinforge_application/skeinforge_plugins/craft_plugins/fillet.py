@@ -336,7 +336,7 @@ class ArcPointSkein( ArcSegmentSkein ):
 		distance = abs( arcDistanceZ )
 		if distance <= 0.0:
 			return
-		line = self.distanceFeedRate.getFirstWordMovement( firstWord, afterPointMinusBefore ) + self.getRelativeCenter( centerMinusBeforeComplex )
+		line = self.distanceFeedRate.getFirstWordMovement( firstWord, afterPoint ) + self.getRelativeCenter( centerMinusBeforeComplex )
 		cornerFeedRate = self.getCornerFeedRate()
 		if cornerFeedRate != None:
 			line += ' F' + self.distanceFeedRate.getRounded(cornerFeedRate)
