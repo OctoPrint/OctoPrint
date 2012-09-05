@@ -85,7 +85,8 @@ class VirtualPrinter():
 		self.readList = None
 
 class MachineCom():
-	def __init__(self, port = None, baudrate = None):
+	def __init__(self, port = None, baudrate = None, logCallback = None):
+		self._logCallback = logCallback
 		if port == None:
 			port = profile.getPreference('serial_port')
 		if baudrate == None:
@@ -93,86 +94,94 @@ class MachineCom():
 				baudrate = 0
 			else:
 				baudrate = int(profile.getPreference('serial_baud'))
-		self.serial = None
+		self._serial = None
 		if port == 'AUTO':
 			programmer = stk500v2.Stk500v2()
+			self._log("Serial port list: %s" % (str(serialList())))
 			for port in serialList():
 				try:
-					print "Connecting to: %s" % (port)
+					self._log("Connecting to: %s" % (port))
 					programmer.connect(port)
-					programmer.close()
-					time.sleep(1)
-					self.serial = self._openPortWithBaudrate(port, baudrate)
+					self._serial = programmer.leaveISP()
+					self._configureSerialWithBaudrate(baudrate)
 					break
 				except ispBase.IspError as (e):
-					print "Error while connecting to %s" % (port)
-					print e
+					self._log("Error while connecting to %s: %s" % (port, str(e)))
 					pass
 				except:
-					print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
+					self._log("Unexpected error while connecting to serial port: %s %s" % (port, sys.exc_info()[0]))
 			programmer.close()
 		elif port == 'VIRTUAL':
-			self.serial = VirtualPrinter()
+			self._serial = VirtualPrinter()
 		else:
 			try:
-				self.serial = self._openPortWithBaudrate(port, baudrate)
+				self._serial = Serial(port, 115200, timeout=2)
+				self._configureSerialWithBaudrate(baudrate)
 			except:
-				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
-		print self.serial
+				self._log("Unexpected error while connecting to serial port: %s %s" % (port, sys.exc_info()[0]))
+		print self._serial
 	
 	def _openPortWithBaudrate(self, port, baudrate):
 		if baudrate != 0:
-			return Serial(port, baudrate, timeout=2)
+			self._serial.baudrate = baudrate
+			return
 		for baudrate in baudrateList():
 			try:
-				ser = Serial(port, baudrate, timeout=2)
+				self._serial.baudrate = baudrate
 			except:
-				print "Unexpected error while connecting to serial port:" + port, sys.exc_info()[0]
+				self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, sys.exc_info()[0]))
 				continue
-			ser.setDTR(1)
-			time.sleep(0.1)
-			ser.setDTR(0)
-			time.sleep(0.2)
+			time.sleep(0.5)
 			starttime = time.time()
+			self.sendCommand("\nM105")
 			for line in ser:
 				if 'start' in line:
-					ser.close()
-					ser = Serial(port, baudrate, timeout=2)
-					ser.setDTR(1)
-					time.sleep(0.1)
-					ser.setDTR(0)
-					time.sleep(0.2)
-					return ser
+					return
+				if 'ok' in line:
+					return
 				if starttime - time.time() > 10:
 					break
-			ser.close()
+		self._serial.close()
 		return None
+	
+	def _log(self, message):
+		if self._logCallback != None:
+			self._logCallback(message)
+		else:
+			print(message)
 
 	def readline(self):
-		if self.serial == None:
+		if self._serial == None:
 			return None
 		try:
-			ret = self.serial.readline()
+			ret = self._serial.readline()
 		except:
-			print "Unexpected error while reading serial port:", sys.exc_info()[0]
-			ret = ''
-		#if ret != '':
-		#	print "Recv: " + ret.rstrip()
+			self._log("Unexpected error while reading serial port: %s" % (sys.exc_info()[0]))
+			return ''
+		if ret != '':
+			self._log("Recv: %s" (ret.rstrip()))
+		else:
+			self._log("Recv: NONE")
 		return ret
 	
 	def close(self):
-		if self.serial != None:
-			self.serial.close()
-		self.serial = None
+		if self._serial != None:
+			self._serial.close()
+		self._serial = None
 	
 	def __del__(self):
 		self.close()
 	
 	def isOpen(self):
-		return self.serial != None
+		return self._serial != None
 	
 	def sendCommand(self, cmd):
-		if self.serial == None:
+		if self._serial == None:
 			return
-		#print 'Send: ' + cmd
-		self.serial.write(cmd + '\n')
+		self._log('Send: %s' % (cmd))
+		try:
+			self._serial.write(cmd)
+			self._serial.write('\n')
+		except:
+			self._log("Unexpected error while writing serial port: %s" % (sys.exc_info()[0]))
+

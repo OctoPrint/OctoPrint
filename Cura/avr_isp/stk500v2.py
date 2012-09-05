@@ -37,6 +37,17 @@ class Stk500v2(ispBase.IspBase):
 		if self.serial != None:
 			self.serial.close()
 			self.serial = None
+
+	#Leave ISP does not reset the serial port, only resets the device, and returns the serial port after disconnecting it from the programming interface.
+	#	This allows you to use the serial port without opening it again.
+	def leaveISP(self):
+		if self.serial != None:
+			if self.sendMessage([0x11]) != [0x11, 0x00]:
+				raise ispBase.IspError("Failed to leave programming mode")
+			ret = self.serial
+			self.serial = None
+			return ret
+		return None
 	
 	def isConnected(self):
 		return self.serial != None

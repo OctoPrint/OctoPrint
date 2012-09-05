@@ -615,7 +615,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 5, self.objColor[self.parent.objectList.index(obj)]))
 				glEnable(GL_LIGHTING)
 				self.drawModel(obj)
-			
+
 			if self.drawBorders and (self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray"):
 				glEnable(GL_DEPTH_TEST)
 				glDisable(GL_LIGHTING)
