@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import os, glob, sys, time, math
+import os, glob, sys, time, math, traceback
 
 from serial import Serial
 
@@ -109,7 +109,7 @@ class MachineCom():
 					self._log("Error while connecting to %s: %s" % (port, str(e)))
 					pass
 				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (port, sys.exc_info()[0]))
+					self._log("Unexpected error while connecting to serial port: %s %s" % (port, getExceptionString()))
 			programmer.close()
 		elif port == 'VIRTUAL':
 			self._serial = VirtualPrinter()
@@ -118,31 +118,35 @@ class MachineCom():
 				self._serial = Serial(port, 115200, timeout=2)
 				self._configureSerialWithBaudrate(baudrate)
 			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (port, sys.exc_info()[0]))
+				self._log("Unexpected error while connecting to serial port: %s %s" % (port, getExceptionString()))
+				print 
 		print self._serial
 	
-	def _openPortWithBaudrate(self, port, baudrate):
+	def _configureSerialWithBaudrate(self, baudrate):
 		if baudrate != 0:
 			self._serial.baudrate = baudrate
 			return
 		for baudrate in baudrateList():
 			try:
 				self._serial.baudrate = baudrate
+				self._log("Trying baudrate: %d" % (baudrate))
 			except:
-				self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, sys.exc_info()[0]))
+				self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, getExceptionString()))
 				continue
 			time.sleep(0.5)
 			starttime = time.time()
 			self.sendCommand("\nM105")
-			for line in ser:
+			for line in self._serial:
+				self._log("Recv: %s" % (unicode(line, 'utf-8', 'replace').rstrip()))
 				if 'start' in line:
 					return
 				if 'ok' in line:
 					return
-				if starttime - time.time() > 10:
+				#Timeout in case we get a lot of crap data from some random device.
+				if starttime - time.time() > 5:
 					break
 		self._serial.close()
-		return None
+		self._serial = None
 	
 	def _log(self, message):
 		if self._logCallback != None:
@@ -156,12 +160,12 @@ class MachineCom():
 		try:
 			ret = self._serial.readline()
 		except:
-			self._log("Unexpected error while reading serial port: %s" % (sys.exc_info()[0]))
+			self._log("Unexpected error while reading serial port: %s" % (getExceptionString()))
 			return ''
 		if ret != '':
-			self._log("Recv: %s" (ret.rstrip()))
+			self._log("Recv: %s" % (unicode(ret, 'utf-8', 'replace').rstrip()))
 		else:
-			self._log("Recv: NONE")
+			self._log("Recv: TIMEOUT")
 		return ret
 	
 	def close(self):
@@ -183,5 +187,9 @@ class MachineCom():
 			self._serial.write(cmd)
 			self._serial.write('\n')
 		except:
-			self._log("Unexpected error while writing serial port: %s" % (sys.exc_info()[0]))
+			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
+
+def getExceptionString():
+	locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]
+	return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
 
