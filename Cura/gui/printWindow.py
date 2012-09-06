@@ -68,11 +68,13 @@ class PrintCommandButton(buttons.GenBitmapButton):
 		self.Bind(wx.EVT_BUTTON, self.OnClick)
 
 	def OnClick(self, e):
-		if self.parent.printIdx != None:
+		if self.parent.machineCom == None or self.parent.machineCom.isPrinting():
 			return;
-		self.parent.sendCommand("G91")
-		self.parent.sendCommand(self.command)
-		self.parent.sendCommand("G90")
+		if self.command.startswith('G1'):
+			self.parent.machineCom.sendCommand("G91")
+		self.parent.machineCom.sendCommand(self.command)
+		if self.command.startswith('G1'):
+			self.parent.machineCom.sendCommand("G90")
 		e.Skip()
 
 class printWindow(wx.Frame):
@@ -80,12 +82,9 @@ class printWindow(wx.Frame):
 	def __init__(self):
 		super(printWindow, self).__init__(None, -1, title='Printing')
 		self.machineCom = None
-		self.machineConnected = False
-		self.thread = None
 		self.gcode = None
 		self.gcodeList = None
 		self.sendList = []
-		self.printIdx = None
 		self.temp = None
 		self.bedTemp = None
 		self.bufferLineCount = 4
@@ -114,7 +113,7 @@ class printWindow(wx.Frame):
 		
 		sb = wx.StaticBox(self.panel, label="Statistics")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
-		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##")
+		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##\nMachine state: Detecting baudrate")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
 		self.sizer.Add(boxsizer, pos=(0,0), span=(5,1), flag=wx.EXPAND)
@@ -276,10 +275,10 @@ class printWindow(wx.Frame):
 		self.Centre()
 
 		self.UpdateButtonStates()
-		self.UpdateProgress()
+		#self.UpdateProgress()
 	
 	def OnCameraTimer(self, e):
-		if self.printIdx != None:
+		if self.machineCom != None and not self.machineCom.isPrinting():
 			return
 		self.cam.takeNewImage()
 		self.camPage.Refresh()
@@ -296,14 +295,14 @@ class printWindow(wx.Frame):
 			dc.DrawBitmap(self.cam.getLastImage(), 0, 0)
 
 	def UpdateButtonStates(self):
-		self.connectButton.Enable(not self.machineConnected)
+		self.connectButton.Enable(self.machineCom == None or self.machineCom.isClosedOrError())
 		#self.loadButton.Enable(self.printIdx == None)
-		self.printButton.Enable(self.machineConnected and self.gcodeList != None and self.printIdx == None)
-		self.pauseButton.Enable(self.printIdx != None)
-		self.cancelButton.Enable(self.printIdx != None)
-		self.temperatureSelect.Enable(self.machineConnected)
-		self.bedTemperatureSelect.Enable(self.machineConnected)
-		self.directControlPanel.Enable(self.machineConnected)
+		self.printButton.Enable(self.machineCom != None and self.machineCom.isOperational() and not self.machineCom.isPrinting())
+		self.pauseButton.Enable(self.machineCom != None and self.machineCom.isPrinting())
+		self.cancelButton.Enable(self.machineCom != None and self.machineCom.isPrinting())
+		self.temperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
+		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
+		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational())
 	
 	def UpdateProgress(self):
 		status = ""
@@ -315,68 +314,62 @@ class printWindow(wx.Frame):
 			if cost != False:
 				status += "Filament cost: %s\n" % (cost)
 			status += "Print time: %02d:%02d\n" % (int(self.gcode.totalMoveTimeMinute / 60), int(self.gcode.totalMoveTimeMinute % 60))
-		if self.printIdx == None:
+		if self.machineCom == None or not self.machineCom.isPrinting():
 			self.progress.SetValue(0)
 			if self.gcodeList != None:
 				status += 'Line: -/%d\n' % (len(self.gcodeList))
 		else:
-			status += 'Line: %d/%d\n' % (self.printIdx, len(self.gcodeList))
+			status += 'Line: %d/%d\n' % (self.machineCom.getPrintPos(), len(self.gcodeList))
 			status += 'Height: %f\n' % (self.currentZ)
-			self.progress.SetValue(self.printIdx)
-		if self.temp != None:
-			status += 'Temp: %d\n' % (self.temp)
-		if self.bedTemp != None and self.bedTemp > 0:
-			status += 'Bed Temp: %d\n' % (self.bedTemp)
-			self.bedTemperatureLabel.Show(True)
-			self.bedTemperatureSelect.Show(True)
-			self.temperaturePanel.Layout()
+			self.progress.SetValue(self.machineCom.getPrintPos())
+		if self.machineCom != None:
+			if self.machineCom.getTemp() > 0:
+				status += 'Temp: %d\n' % (self.machineCom.getTemp())
+			if self.machineCom.getBedTemp() > 0:
+				status += 'Bed Temp: %d\n' % (self.machineCom.getBedTemp())
+				self.bedTemperatureLabel.Show(True)
+				self.bedTemperatureSelect.Show(True)
+				self.temperaturePanel.Layout()
+			status += 'Machine state: %s\n' % (self.machineCom.getStateString())
+		
 		self.statsText.SetLabel(status.strip())
-		#self.Layout()
 	
 	def OnConnect(self, e):
 		if self.machineCom != None:
 			self.machineCom.close()
-			self.thread.join()
-		self.machineCom = machineCom.MachineCom()
-		self.thread = threading.Thread(target=self.PrinterMonitor)
-		self.thread.start()
+		self.machineCom = machineCom.MachineCom(callbackObject=self)
 		self.UpdateButtonStates()
 	
 	def OnLoad(self, e):
 		pass
 	
 	def OnPrint(self, e):
-		if not self.machineConnected:
+		if self.machineCom == None or not self.machineCom.isOperational():
 			return
 		if self.gcodeList == None:
 			return
-		if self.printIdx != None:
+		if self.machineCom.isPrinting():
 			return
 		self.currentZ = -1
 		if self.cam != None:
 			self.cam.startTimelaps(self.filename[: self.filename.rfind('.')] + ".mpg")
-		self.printIdx = 1
-		self.sendLine(0)
-		self.sendCnt = self.bufferLineCount
+		self.machineCom.printGCode(self.gcodeList)
 		self.UpdateButtonStates()
 	
 	def OnCancel(self, e):
 		if self.cam != None:
 			self.cam.endTimelaps()
-		self.printIdx = None
-		self.pause = False
 		self.pauseButton.SetLabel('Pause')
-		self.sendCommand("M84")
+		self.machineCom.cancelPrint()
+		self.machineCom.sendCommand("M84")
 		self.UpdateButtonStates()
 	
 	def OnPause(self, e):
-		if self.pause:
-			self.pause = False
-			self.sendLine(self.printIdx)
-			self.printIdx += 1
+		if self.machineCom.isPaused():
+			self.machineCom.setPause(False)
 			self.pauseButton.SetLabel('Pause')
 		else:
-			self.pause = True
+			self.machineCom.setPause(True)
 			self.pauseButton.SetLabel('Resume')
 	
 	def OnClose(self, e):
@@ -384,14 +377,13 @@ class printWindow(wx.Frame):
 		printWindowHandle = None
 		if self.machineCom != None:
 			self.machineCom.close()
-			self.thread.join()
 		self.Destroy()
 
 	def OnTempChange(self, e):
-		self.sendCommand("M104 S%d" % (self.temperatureSelect.GetValue()))
+		self.machineCom.sendCommand("M104 S%d" % (self.temperatureSelect.GetValue()))
 
 	def OnBedTempChange(self, e):
-		self.sendCommand("M140 S%d" % (self.bedTemperatureSelect.GetValue()))
+		self.machineCom.sendCommand("M140 S%d" % (self.bedTemperatureSelect.GetValue()))
 	
 	def OnSpeedChange(self, e):
 		self.feedrateRatioOuterWall = self.outerWallSpeedSelect.GetValue() / 100.0
@@ -407,7 +399,7 @@ class printWindow(wx.Frame):
 		if line == '':
 			return
 		self.termLog.AppendText('>%s\n' % (line))
-		self.sendCommand(line)
+		self.machineCom.sendCommand(line)
 		self.termHistory.append(line)
 		self.termHistoryIdx = len(self.termHistory)
 		self.termInput.SetValue('')
@@ -427,7 +419,7 @@ class printWindow(wx.Frame):
 		e.Skip()
 
 	def LoadGCodeFile(self, filename):
-		if self.printIdx != None:
+		if self.machineCom != None and self.machineCom.isPrinting():
 			return
 		#Send an initial M110 to reset the line counter to zero.
 		lineType = 'CUSTOM'
@@ -454,13 +446,6 @@ class printWindow(wx.Frame):
 		wx.CallAfter(self.UpdateButtonStates)
 		wx.CallAfter(self.UpdateProgress)
 		
-	def sendCommand(self, cmd):
-		if self.machineConnected:
-			if self.printIdx == None or self.pause:
-				self.machineCom.sendCommand(cmd)
-			else:
-				self.sendList.append(cmd)
-
 	def sendLine(self, lineNr):
 		if lineNr >= len(self.gcodeList):
 			return False
@@ -495,58 +480,22 @@ class printWindow(wx.Frame):
 		self.machineCom.sendCommand("N%d%s*%d" % (lineNr, line, checksum))
 		return True
 
-	def PrinterMonitor(self):
-		while True:
-			line = self.machineCom.readline()
-			if line == None:
-				self.machineConnected = False
-				wx.CallAfter(self.UpdateButtonStates)
-				return
-			if line == '':	#When we have a communication "timeout" and we're not sending gcode, then read the temperature.
-				if self.printIdx == None or self.pause:
-					self.machineCom.sendCommand("M105")
-				else:
-					wx.CallAfter(self.AddTermLog, '!!Comm timeout, forcing next line!!\n')
-					line = 'ok'
-			if self.machineConnected:
-				while self.sendCnt > 0 and not self.pause:
-					self.sendLine(self.printIdx)
-					self.printIdx += 1
-					self.sendCnt -= 1
-			if line.startswith("start"):
-				self.machineConnected = True
-				wx.CallAfter(self.UpdateButtonStates)
-			elif 'T:' in line:
-				self.temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
-				if 'B:' in line:
-					self.bedTemp = float(re.search("[0-9\.]*", line.split('B:')[1]).group(0))
-				self.temperatureGraph.addPoint(self.temp, self.temperatureSelect.GetValue(), self.bedTemp, self.bedTemperatureSelect.GetValue())
-				wx.CallAfter(self.UpdateProgress)
-			elif line.strip() != 'ok':
-				wx.CallAfter(self.AddTermLog, line)
-			if self.printIdx != None:
-				if line.startswith("ok"):
-					if len(self.sendList) > 0:
-						self.machineCom.sendCommand(self.sendList.pop(0))
-					elif self.pause:
-						self.sendCnt += 1
-					else:
-						if self.sendLine(self.printIdx):
-							self.printIdx += 1
-						else:
-							if self.cam != None:
-								self.cam.endTimelaps()
-							self.printIdx = None
-							wx.CallAfter(self.UpdateButtonStates)
-						wx.CallAfter(self.UpdateProgress)
-				elif "resend" in line.lower() or "rs" in line:
-					try:
-						lineNr=int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
-					except:
-						if "rs" in line:
-							lineNr=int(line.split()[1])
-					self.printIdx = lineNr
-					#we should actually resend the line here, but we also get an "ok" for each error from Marlin. And thus we'll resend on the OK.
+	def mcLog(self, message):
+		#print message
+		pass
+	
+	def mcTempUpdate(self, temp, bedTemp):
+		self.temperatureGraph.addPoint(temp, self.temperatureSelect.GetValue(), bedTemp, self.bedTemperatureSelect.GetValue())
+	
+	def mcStateChange(self, state):
+		wx.CallAfter(self.UpdateButtonStates)
+		wx.CallAfter(self.UpdateProgress)
+	
+	def mcMessage(self, message):
+		wx.CallAfter(self.AddTermLog, message)
+	
+	def mcProgress(self, lineNr):
+		wx.CallAfter(self.UpdateProgress)
 
 class temperatureGraph(wx.Panel):
 	def __init__(self, parent):
