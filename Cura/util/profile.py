@@ -151,7 +151,7 @@ G92 E0
 preferencesDefaultSettings = {
 	'wizardDone': 'False',
 	'startMode': 'Simple',
-	'lastFile': '',
+	'lastFile': os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example', 'UltimakerRobotCourseMesh.stl')),
 	'machine_width': '205',
 	'machine_depth': '205',
 	'machine_height': '200',
