@@ -164,7 +164,7 @@ def DrawMachine(machineSize):
 		glDisable(GL_BLEND)
 	
 	glPushMatrix()
-	glTranslate(-5,-5,0)
+	glTranslate(5,5,2)
 	glLineWidth(2)
 	glColor3f(0.5,0,0)
 	glBegin(GL_LINES)
