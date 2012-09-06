@@ -107,9 +107,10 @@ class MachineCom(object):
 	STATE_CONNECTING = 2
 	STATE_OPERATIONAL = 3
 	STATE_PRINTING = 4
-	STATE_CLOSED = 5
-	STATE_ERROR = 6
-	STATE_CLOSED_WITH_ERROR = 7
+	STATE_PAUSED = 5
+	STATE_CLOSED = 6
+	STATE_ERROR = 7
+	STATE_CLOSED_WITH_ERROR = 8
 	
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
 		if port == None:
@@ -191,6 +192,8 @@ class MachineCom(object):
 			return "Operational"
 		if self._state == self.STATE_PRINTING:
 			return "Printing"
+		if self._state == self.STATE_PAUSED:
+			return "Paused"
 		if self._state == self.STATE_CLOSED:
 			return "Closed"
 		if self._state == self.STATE_ERROR:
@@ -203,7 +206,7 @@ class MachineCom(object):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED
 	
 	def isOperational(self):
-		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING
+		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED
 	
 	def isPrinting(self):
 		return self._state == self.STATE_PRINTING
@@ -212,7 +215,7 @@ class MachineCom(object):
 		return self._gcodePos
 	
 	def isPaused(self):
-		return False
+		return self._state == self.STATE_PAUSED
 	
 	def getTemp(self):
 		return self._temp
@@ -376,6 +379,14 @@ class MachineCom(object):
 	def cancelPrint(self):
 		if self.isOperational():
 			self._changeState(self.STATE_OPERATIONAL)
+	
+	def setPause(self, pause):
+		if not pause and self.isPaused():
+			self._changeState(self.STATE_PRINTING)
+			for i in xrange(0, 6):
+				self._sendNext()
+		if pause and self.isPrinting():
+			self._changeState(self.STATE_PAUSED)
 
 def getExceptionString():
 	locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]

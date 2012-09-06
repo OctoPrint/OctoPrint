@@ -297,9 +297,9 @@ class printWindow(wx.Frame):
 	def UpdateButtonStates(self):
 		self.connectButton.Enable(self.machineCom == None or self.machineCom.isClosedOrError())
 		#self.loadButton.Enable(self.printIdx == None)
-		self.printButton.Enable(self.machineCom != None and self.machineCom.isOperational() and not self.machineCom.isPrinting())
-		self.pauseButton.Enable(self.machineCom != None and self.machineCom.isPrinting())
-		self.cancelButton.Enable(self.machineCom != None and self.machineCom.isPrinting())
+		self.printButton.Enable(self.machineCom != None and self.machineCom.isOperational() and not (self.machineCom.isPrinting() or self.machineCome.isPaused()))
+		self.pauseButton.Enable(self.machineCom != None and (self.machineCom.isPrinting() or self.machineCome.isPaused()))
+		self.cancelButton.Enable(self.machineCom != None and (self.machineCom.isPrinting() or self.machineCome.isPaused()))
 		self.temperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational())
@@ -481,8 +481,7 @@ class printWindow(wx.Frame):
 		return True
 
 	def mcLog(self, message):
-		#print message
-		pass
+		print message
 	
 	def mcTempUpdate(self, temp, bedTemp):
 		self.temperatureGraph.addPoint(temp, self.temperatureSelect.GetValue(), bedTemp, self.bedTemperatureSelect.GetValue())
