@@ -510,6 +510,27 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			self.gcodeDisplayListMade += 1
 			self.Refresh()
 		
+		glPushMatrix()
+		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
+		for obj in self.parent.objectList:
+			if obj.mesh == None:
+				continue
+			if obj.displayList == None:
+				obj.displayList = glGenLists(1);
+			if obj.dirty:
+				obj.dirty = False
+				glNewList(obj.displayList, GL_COMPILE)
+				opengl.DrawMesh(obj.mesh)
+				glEndList()
+			
+			if self.viewMode == "Mixed":
+				glDisable(GL_BLEND)
+				glColor3f(0.0,0.0,0.0)
+				self.drawModel(obj)
+				glColor3f(1.0,1.0,1.0)
+				glClear(GL_DEPTH_BUFFER_BIT)
+		glPopMatrix()
+		
 		if self.parent.gcode != None and (self.viewMode == "GCode" or self.viewMode == "Mixed"):
 			glEnable(GL_COLOR_MATERIAL)
 			glEnable(GL_LIGHTING)
@@ -539,13 +560,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		for obj in self.parent.objectList:
 			if obj.mesh == None:
 				continue
-			if obj.displayList == None:
-				obj.displayList = glGenLists(1);
-			if obj.dirty:
-				obj.dirty = False
-				glNewList(obj.displayList, GL_COMPILE)
-				opengl.DrawMesh(obj.mesh)
-				glEndList()
 			
 			if self.viewMode == "Transparent" or self.viewMode == "Mixed":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, map(lambda x: x / 2, self.objColor[self.parent.objectList.index(obj)]))
@@ -563,6 +577,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glBlendFunc(GL_ONE, GL_ONE)
 				glEnable(GL_LIGHTING)
 				self.drawModel(obj)
+				glEnable(GL_DEPTH_TEST)
 			elif self.viewMode == "X-Ray":
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				glDisable(GL_LIGHTING)
@@ -606,7 +621,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glDisable(GL_STENCIL_TEST)
 				glEnable(GL_DEPTH_TEST)
 				
-				#Fix the depth buffer for the outline drawing.
+				#Fix the depth buffer
 				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
 				self.drawModel(obj)
 				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
