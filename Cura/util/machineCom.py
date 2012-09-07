@@ -134,6 +134,7 @@ class MachineCom(object):
 		self._gcodePos = 0
 		self._commandQueue = queue.Queue()
 		self._logQueue = queue.Queue(256)
+		self._feedRateModifier = {}
 		
 		if port == 'AUTO':
 			programmer = stk500v2.Stk500v2()
@@ -323,7 +324,7 @@ class MachineCom(object):
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').rstrip()))
+		self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
 		return ret
 	
 	def close(self, isError = False):
@@ -355,6 +356,17 @@ class MachineCom(object):
 			self._changeState(self.STATE_OPERATIONAL)
 			return
 		line = self._gcodeList[self._gcodePos]
+		if type(line) is tuple:
+			self._printSection = line[1]
+			line = line[0]
+		try:
+			if line == 'M0' or line == 'M1':
+				self.setPause(True)
+				line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+			if self._printSection in self._feedRateModifier:
+				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
+		except:
+			self._log("Unexpected error: %s" % (getExceptionString()))
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (self._gcodePos, line)))
 		self._sendCommand("N%d%s*%d" % (self._gcodePos, line, checksum))
 		self._gcodePos += 1
@@ -372,6 +384,7 @@ class MachineCom(object):
 			return
 		self._gcodeList = gcodeList
 		self._gcodePos = 0
+		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)
 		for i in xrange(0, 6):
 			self._sendNext()
@@ -387,6 +400,9 @@ class MachineCom(object):
 				self._sendNext()
 		if pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
+	
+	def setFeedrateModifier(self, type, value):
+		self._feedRateModifier[type] = value
 
 def getExceptionString():
 	locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]

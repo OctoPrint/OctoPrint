@@ -296,10 +296,14 @@ class printWindow(wx.Frame):
 
 	def UpdateButtonStates(self):
 		self.connectButton.Enable(self.machineCom == None or self.machineCom.isClosedOrError())
-		#self.loadButton.Enable(self.printIdx == None)
-		self.printButton.Enable(self.machineCom != None and self.machineCom.isOperational() and not (self.machineCom.isPrinting() or self.machineCome.isPaused()))
-		self.pauseButton.Enable(self.machineCom != None and (self.machineCom.isPrinting() or self.machineCome.isPaused()))
-		self.cancelButton.Enable(self.machineCom != None and (self.machineCom.isPrinting() or self.machineCome.isPaused()))
+		#self.loadButton.Enable(self.machineCom == None or not (self.machineCom.isPrinting() or self.machineCom.isPaused()))
+		self.printButton.Enable(self.machineCom != None and self.machineCom.isOperational() and not (self.machineCom.isPrinting() or self.machineCom.isPaused()))
+		self.pauseButton.Enable(self.machineCom != None and (self.machineCom.isPrinting() or self.machineCom.isPaused()))
+		if self.machineCom != None and self.machineCom.isPaused():
+			self.pauseButton.SetLabel('Resume')
+		else:
+			self.pauseButton.SetLabel('Pause')
+		self.cancelButton.Enable(self.machineCom != None and (self.machineCom.isPrinting() or self.machineCom.isPaused()))
 		self.temperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational())
@@ -367,10 +371,8 @@ class printWindow(wx.Frame):
 	def OnPause(self, e):
 		if self.machineCom.isPaused():
 			self.machineCom.setPause(False)
-			self.pauseButton.SetLabel('Pause')
 		else:
 			self.machineCom.setPause(True)
-			self.pauseButton.SetLabel('Resume')
 	
 	def OnClose(self, e):
 		global printWindowHandle
@@ -386,10 +388,12 @@ class printWindow(wx.Frame):
 		self.machineCom.sendCommand("M140 S%d" % (self.bedTemperatureSelect.GetValue()))
 	
 	def OnSpeedChange(self, e):
-		self.feedrateRatioOuterWall = self.outerWallSpeedSelect.GetValue() / 100.0
-		self.feedrateRatioInnerWall = self.innerWallSpeedSelect.GetValue() / 100.0
-		self.feedrateRatioFill = self.fillSpeedSelect.GetValue() / 100.0
-		self.feedrateRatioSupport = self.supportSpeedSelect.GetValue() / 100.0
+		if self.machineCom == None:
+			return
+		self.machineCom.setFeedrateModifier('WALL-OUTER', self.outerWallSpeedSelect.GetValue() / 100.0)
+		self.machineCom.setFeedrateModifier('WALL-INNER', self.innerWallSpeedSelect.GetValue() / 100.0)
+		self.machineCom.setFeedrateModifier('FILL', self.fillSpeedSelect.GetValue() / 100.0)
+		self.machineCom.setFeedrateModifier('SUPPORT', self.supportSpeedSelect.GetValue() / 100.0)
 	
 	def AddTermLog(self, line):
 		self.termLog.AppendText(unicode(line, 'utf-8', 'replace'))
@@ -422,9 +426,8 @@ class printWindow(wx.Frame):
 		if self.machineCom != None and self.machineCom.isPrinting():
 			return
 		#Send an initial M110 to reset the line counter to zero.
-		lineType = 'CUSTOM'
+		prevLineType = lineType = 'CUSTOM'
 		gcodeList = ["M110"]
-		typeList = [lineType]
 		for line in open(filename, 'r'):
 			if line.startswith(';TYPE:'):
 				lineType = line[6:].strip()
@@ -432,15 +435,17 @@ class printWindow(wx.Frame):
 				line = line[0:line.find(';')]
 			line = line.strip()
 			if len(line) > 0:
-				gcodeList.append(line)
-				typeList.append(lineType)
+				if prevLineType != lineType:
+					gcodeList.append((line, lineType, ))
+				else:
+					gcodeList.append(line)
+				prevLineType = lineType
 		gcode = gcodeInterpreter.gcode()
 		gcode.loadList(gcodeList)
 		print "Loaded: %s (%d)" % (filename, len(gcodeList))
 		self.filename = filename
 		self.gcode = gcode
 		self.gcodeList = gcodeList
-		self.typeList = typeList
 		
 		wx.CallAfter(self.progress.SetRange, len(gcodeList))
 		wx.CallAfter(self.UpdateButtonStates)

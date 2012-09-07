@@ -68,6 +68,8 @@ class gcode(object):
 		currentPath.list[0].e = totalExtrusion
 		currentLayer.append(currentPath)
 		for line in gcodeFile:
+			if type(line) is tuple:
+				line = line[0]
 			if self.progressCallback != None:
 				if filePos != gcodeFile.tell():
 					filePos = gcodeFile.tell()
