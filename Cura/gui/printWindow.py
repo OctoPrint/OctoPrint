@@ -456,29 +456,12 @@ class printWindow(wx.Frame):
 			return False
 		line = self.gcodeList[lineNr]
 		try:
-			if line == 'M0' or line == 'M1':
-				self.OnPause(None)
-				line = 'M105'
 			if ('M104' in line or 'M109' in line) and 'S' in line:
 				n = int(re.search('S([0-9]*)', line).group(1))
 				wx.CallAfter(self.temperatureSelect.SetValue, n)
 			if ('M140' in line or 'M190' in line) and 'S' in line:
 				n = int(re.search('S([0-9]*)', line).group(1))
 				wx.CallAfter(self.bedTemperatureSelect.SetValue, n)
-			if self.typeList[lineNr] == 'WALL-OUTER':
-				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioOuterWall)), line)
-			if self.typeList[lineNr] == 'WALL-INNER':
-				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioInnerWall)), line)
-			if self.typeList[lineNr] == 'FILL':
-				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioFill)), line)
-			if self.typeList[lineNr] == 'SUPPORT':
-				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self.feedrateRatioSupport)), line)
-			if 'G1' in line and 'Z' in line:
-				z = float(re.search('Z([0-9\.]*)', line).group(1))
-				if self.cam != None and self.currentZ != z:
-					wx.CallAfter(self.cam.takeNewImage)
-					wx.CallAfter(self.camPage.Refresh)
-				self.currentZ = z
 		except:
 			print "Unexpected error:", sys.exc_info()
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNr, line)))
@@ -500,6 +483,11 @@ class printWindow(wx.Frame):
 	
 	def mcProgress(self, lineNr):
 		wx.CallAfter(self.UpdateProgress)
+	
+	def mcZChange(self, newZ):
+		if self.cam != None:
+			wx.CallAfter(self.cam.takeNewImage)
+			wx.CallAfter(self.camPage.Refresh)
 
 class temperatureGraph(wx.Panel):
 	def __init__(self, parent):

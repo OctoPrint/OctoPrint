@@ -58,7 +58,7 @@ class VirtualPrinter():
 				pass
 		if 'M105' in data:
 			self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
-		else:
+		elif len(data.strip()) > 0:
 			self.readList.append("ok\n")
 
 	def readline(self):
@@ -100,6 +100,9 @@ class MachineComPrintCallback(object):
 	
 	def mcProgress(self, lineNr):
 		pass
+	
+	def mcZChange(self, newZ):
+		pass
 
 class MachineCom(object):
 	STATE_NONE = 0
@@ -135,6 +138,7 @@ class MachineCom(object):
 		self._commandQueue = queue.Queue()
 		self._logQueue = queue.Queue(256)
 		self._feedRateModifier = {}
+		self._currentZ = -1
 		
 		if port == 'AUTO':
 			programmer = stk500v2.Stk500v2()
@@ -225,7 +229,7 @@ class MachineCom(object):
 		return self._bedTemp
 	
 	def _monitor(self):
-		self._timeoutTime = time.time() + 5
+		timeout = time.time() + 5
 		while True:
 			line = self._readline()
 			if line == None:
@@ -250,7 +254,7 @@ class MachineCom(object):
 				self._callback.mcMessage(line)
 
 			if self._state == self.STATE_DETECT_BAUDRATE:
-				if line == '' or time.time() > self._timeoutTime:
+				if line == '' or time.time() > timeout:
 					if len(self._baudrateDetectList) < 1:
 						self._log("No more baudrates to test, and no suitable baudrate found.")
 						self.close()
@@ -265,7 +269,7 @@ class MachineCom(object):
 							self._serial.timeout = 0.5
 							self._log("Trying baudrate: %d" % (baudrate))
 							self._baudrateDetectRetry = 5
-							self._timeoutTime = time.time() + 5
+							timeout = time.time() + 5
 							self._serial.write('\n')
 							self._sendCommand("M105")
 						except:
@@ -278,18 +282,23 @@ class MachineCom(object):
 					self._sendCommand("M105")
 				elif 'ok' in line:
 					self._changeState(self.STATE_OPERATIONAL)
-				if time.time() > self._timeoutTime:
+				if time.time() > timeout:
 					self.close()
 			elif self._state == self.STATE_OPERATIONAL:
 				#Request the temperature on comm timeout (every 2 seconds) when we are not printing.
 				if line == '':
 					self._sendCommand("M105")
+					tempRequestTimeout = time.time() + 5
 			elif self._state == self.STATE_PRINTING:
-				if line == '' and time.time() > self._timeoutTime:
+				if line == '' and time.time() > timeout:
 					self._log("Communication timeout during printing, forcing a line")
 					line = 'ok'
+				#Even when printing request the temperture every 5 seconds.
+				if time.time() > tempRequestTimeout:
+					self._commandQueue.put("M105")
+					tempRequestTimeout = time.time() + 5
 				if 'ok' in line:
-					self._timeoutTime = time.time() + 5
+					timeout = time.time() + 5
 					if not self._commandQueue.empty():
 						self._sendCommand(self._commandQueue.get())
 					else:
@@ -365,6 +374,11 @@ class MachineCom(object):
 				line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 			if self._printSection in self._feedRateModifier:
 				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
+			if ('G0' in line or 'G1' in line) and 'Z' in line:
+				z = float(re.search('Z([0-9\.]*)', line).group(1))
+				if self._currentZ != z:
+					self._currentZ = z
+					self._callback.mcZChange(z)
 		except:
 			self._log("Unexpected error: %s" % (getExceptionString()))
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (self._gcodePos, line)))
