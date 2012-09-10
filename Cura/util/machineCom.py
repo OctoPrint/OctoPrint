@@ -18,20 +18,31 @@ except:
 	pass
 
 def serialList():
-    baselist=[]
-    if os.name=="nt":
-        try:
-            key=_winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
-            i=0
-            while(1):
-                baselist+=[_winreg.EnumValue(key,i)[1]]
-                i+=1
-        except:
-            pass
-    return baselist+glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') +glob.glob("/dev/tty.usb*")+glob.glob("/dev/cu.*")+glob.glob("/dev/rfcomm*")
+	baselist=[]
+	if os.name=="nt":
+		try:
+			key=_winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
+			i=0
+			while(1):
+				baselist+=[_winreg.EnumValue(key,i)[1]]
+				i+=1
+		except:
+			pass
+	baselist = baselist + glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') + glob.glob("/dev/tty.usb*") + glob.glob("/dev/cu.*") + glob.glob("/dev/rfcomm*")
+	prev = profile.getPreference('serial_port_auto')
+	if prev in baselist:
+		baselist.remove(prev)
+		baselist.insert(0, prev)
+	return baselist
 
 def baudrateList():
-	return [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	if profile.getPreference('serial_baud_auto') != '':
+		prev = int(profile.getPreference('serial_baud_auto'))
+		if prev in ret:
+			ret.remove(prev)
+			ret.insert(0, prev)
+	return ret
 
 class VirtualPrinter():
 	def __init__(self):
@@ -148,6 +159,7 @@ class MachineCom(object):
 					self._log("Connecting to: %s" % (port))
 					programmer.connect(port)
 					self._serial = programmer.leaveISP()
+					profile.putPreference('serial_port_auto', port)
 					break
 				except ispBase.IspError as (e):
 					self._log("Error while connecting to %s: %s" % (port, str(e)))
@@ -276,6 +288,7 @@ class MachineCom(object):
 							self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, getExceptionString()))
 				elif 'ok' in line:
 					self._serial.timeout = 2
+					profile.putPreference('serial_baud_auto', self._serial.baudrate)
 					self._changeState(self.STATE_OPERATIONAL)
 			elif self._state == self.STATE_CONNECTING:
 				if line == '':
