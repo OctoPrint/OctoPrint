@@ -179,7 +179,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('skirt_line_count', '1')
 		put('skirt_gap', '6.0')
 		put('print_speed', '50')
-		put('print_temperature', '0')
+		put('print_temperature', '230')
 		put('support', 'None')
 		#put('machine_center_x', '100')
 		#put('machine_center_y', '100')
@@ -260,6 +260,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('skirt_line_count', '0')
 			put('fan_layer', '1')
 			put('bottom_thickness', '0.0')
+			put('print_temperature', '260')
 		
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
