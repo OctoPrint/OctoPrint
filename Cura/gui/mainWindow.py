@@ -269,7 +269,7 @@ class mainWindow(configBase.configWindowBase):
 
 	def OnLoadProfileFromGcode(self, e):
 		dlg=wx.FileDialog(self, "Select gcode file to load profile from", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("gcode files (*.gcode)|*.gcode")
+		dlg.SetWildcard("gcode files (*.gcode)|*.gcode;*.g")
 		if dlg.ShowModal() == wx.ID_OK:
 			gcodeFile = dlg.GetPath()
 			f = open(gcodeFile, 'r')
