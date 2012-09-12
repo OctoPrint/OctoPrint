@@ -190,7 +190,6 @@ class DimensionSkein:
 		self.retractionRatio = 1.0
 		self.totalExtrusionDistance = 0.0
 		self.travelFeedRatePerSecond = None
-		self.zDistanceRatio = 5.0
 		self.addRetraction = True
 		self.reverseRetraction = False
 
@@ -215,8 +214,6 @@ class DimensionSkein:
 		self.flowScaleSixty = 60.0 * self.layerHeight * self.edgeWidth / filamentPackingArea
 		self.restartDistance = self.repository.retractionDistance.value + self.repository.restartExtraDistance.value
 		self.extruderRetractionSpeedMinuteString = self.distanceFeedRate.getRounded(60.0 * self.repository.extruderRetractionSpeed.value)
-		if self.maximumZFeedRatePerSecond != None and self.travelFeedRatePerSecond != None:
-			self.zDistanceRatio = self.travelFeedRatePerSecond / self.maximumZFeedRatePerSecond
 		for lineIndex in xrange(self.lineIndex, len(self.lines)):
 			self.parseLine( lineIndex )
 		return self.distanceFeedRate.output.getvalue()
@@ -264,9 +261,7 @@ class DimensionSkein:
 						if locationEnclosureIndex == self.getSmallestEnclosureIndex(self.oldLocation.dropAxis()):
 							return None
 					locationMinusOld = location - self.oldLocation
-					xyTravel = abs(locationMinusOld.dropAxis())
-					zTravelMultiplied = locationMinusOld.z * self.zDistanceRatio
-					return math.sqrt(xyTravel * xyTravel + zTravelMultiplied * zTravelMultiplied)
+					return abs(locationMinusOld)
 				location = gcodec.getLocationFromSplitLine(location, splitLine)
 			elif firstWord == 'M101':
 				isActive = True
