@@ -60,6 +60,7 @@ profileDefaultSettings = {
 	'fill_overlap': '15',
 	'support_rate': '50',
 	'support_distance': '0.5',
+	'support_dual_extrusion': 'False',
 	'joris': 'False',
 	'enable_skin': 'False',
 	'enable_raft': 'False',
@@ -365,6 +366,8 @@ def isPreference(name):
 tempOverride = {}
 def setTempOverride(name, value):
 	tempOverride[name] = unicode(value).encode("utf-8")
+def clearTempOverride(name):
+	del tempOverride[name]
 def resetTempOverride():
 	tempOverride.clear()
 
@@ -500,13 +503,22 @@ def getAlterationFileContents(filename):
 			prefix += 'M109 S%f\n' % (temp)
 		if bedTemp > 0 and not '{print_bed_temperature}' in alterationContents:
 			prefix += 'M190 S%f\n' % (bedTemp)
-			
 	elif filename == 'end.gcode':
 		#Append the profile string to the end of the GCode, so we can load it from the GCode file later.
 		postfix = ';CURA_PROFILE_STRING:%s\n' % (getGlobalProfileString())
 	elif filename == 'replace.csv':
 		#Always remove the extruder on/off M codes. These are no longer needed in 5D printing.
 		prefix = 'M101\nM103\n'
-	
+	elif filename == 'support_start.gcode' or filename == 'support_end.gcode':
+		#Add support start/end code 
+		if getProfileSetting('support_dual_extrusion') == 'True' and int(getPreference('extruder_amount')) > 1:
+			if filename == 'support_start.gcode':
+				setTempOverride('extruder', '1')
+			else:
+				setTempOverride('extruder', '0')
+			alterationContents = getAlterationFileContents('switchExtruder.gcode')
+			clearTempOverride('extruder')
+		else:
+			alterationContents = ''
 	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).encode('utf-8')
 

@@ -38,6 +38,8 @@ class mainWindow(configBase.configWindowBase):
 	"Main user interface window"
 	def __init__(self):
 		super(mainWindow, self).__init__(title='Cura - ' + version.getVersion())
+
+		extruderCount = int(profile.getPreference('extruder_amount'))
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
@@ -151,6 +153,8 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Support")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere', 'Empty Layers Only'], 'Type of support structure build.\n"Exterior only" is the most commonly used support setting.\n\nNone does not do any support.\nExterior only only creates support on the outside.\nEverywhere creates support even on the insides of the model.\nOnly on empty layers is for stacked objects.')
 		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the expert settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
+		if extruderCount > 1:
+			c = configBase.SettingRow(right, "Support dual extrusion", 'support_dual_extrusion', False, 'Print the support material with the 2nd extruder in a dual extrusion setup. The primary extruder will be used for normal material, while the second extruder is used to print support material.')
 
 		configBase.TitleRow(right, "Filament")
 		c = configBase.SettingRow(right, "Diameter (mm)", 'filament_diameter', '2.89', 'Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to callibrate it, a higher number means less extrusion, a smaller number generates more extrusion.')
@@ -212,7 +216,6 @@ class mainWindow(configBase.configWindowBase):
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
 
-		extruderCount = int(profile.getPreference('extruder_amount'))
 		if extruderCount > 1:
 			loadButton2 = wx.Button(self, -1, 'Load Dual')
 			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(2), loadButton2)

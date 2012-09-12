@@ -402,6 +402,8 @@ class RaftRepository:
 		self.executeTitle = 'Raft'
 		self.supportMargin = settings.FloatSpin().getFromValue(
 			1.0, 'Support Margin (mm):', self, 5.0, 3.0)
+		self.supportOffsetX = settings.FloatSpin().getFromValue(0.0, 'Support Offset X (mm):', self, 100.0, 0.0)
+		self.supportOffsetY = settings.FloatSpin().getFromValue(0.0, 'Support Offset Y (mm):', self, 100.0, 0.0)
 
 	def execute(self):
 		'Raft button has been clicked.'
@@ -698,8 +700,8 @@ class RaftSkein:
 
 	def addSupportLayerTemperature(self, endpoints, z):
 		'Add support layer and temperature before the object layer.'
-		self.distanceFeedRate.addLine('(<supportLayer>)')
 		self.distanceFeedRate.addLinesSetAbsoluteDistanceMode(self.supportStartLines)
+		self.distanceFeedRate.addLine('(<supportLayer>)')
 		self.addTemperatureOrbits(endpoints, self.supportedLayersTemperature, z)
 		aroundPixelTable = {}
 		aroundWidth = 0.34321 * self.interfaceStep
@@ -717,6 +719,7 @@ class RaftSkein:
 				supportFlowRateMultiplied = self.operatingFlowRate * self.objectFirstLayerFlowRateInfillMultiplier
 		self.addFlowRate(supportFlowRateMultiplied)
 		for path in paths:
+			path = map(lambda p: p + complex(self.supportOffsetX, self.supportOffsetY), path)
 			self.distanceFeedRate.addGcodeFromFeedRateThreadZ(feedRateMinuteMultiplied, path, self.travelFeedRateMinute, z)
 		self.addFlowRate(self.oldFlowRate)
 		self.addTemperatureOrbits(endpoints, self.supportLayersTemperature, z)
@@ -815,6 +818,8 @@ class RaftSkein:
 		self.minimumSupportRatio = math.tan( math.radians( repository.supportMinimumAngle.value ) )
 		self.supportEndLines = settings.getAlterationFileLines(repository.nameOfSupportEndFile.value)
 		self.supportStartLines = settings.getAlterationFileLines(repository.nameOfSupportStartFile.value)
+		self.supportOffsetX = repository.supportOffsetX.value
+		self.supportOffsetY = repository.supportOffsetY.value
 		self.lines = archive.getTextLines(gcodeText)
 		self.parseInitialization()
 		self.temperatureChangeTimeBeforeRaft = 0.0

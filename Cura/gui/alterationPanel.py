@@ -8,7 +8,7 @@ class alterationPanel(wx.Panel):
 	def __init__(self, parent):
 		wx.Panel.__init__(self, parent,-1)
 
-		self.alterationFileList = ['start.gcode', 'end.gcode', 'support_start.gcode', 'support_end.gcode', 'nextobject.gcode', 'replace.csv']
+		self.alterationFileList = ['start.gcode', 'end.gcode', 'nextobject.gcode', 'replace.csv']
 		if int(profile.getPreference('extruder_amount')) > 1:
 			self.alterationFileList.append('switchExtruder.gcode')
 		self.currentFile = None

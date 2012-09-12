@@ -25,6 +25,8 @@ def storedSettingInt(name):
 	return lambda setting: int(profile.getProfileSettingFloat(name))
 def storedPreference(name):
 	return lambda setting: profile.getPreference(name)
+def storedPreferenceFloat(name):
+	return lambda setting: profile.getPreferenceFloat(name)
 def storedSettingInvertBoolean(name):
 	return lambda setting: profile.getProfileSetting(name) == "False"
 
@@ -240,6 +242,8 @@ def getProfileInformation():
 			'Support_Material_Choice_': storedSetting('support'),
 			'Support_Minimum_Angle_degrees': DEFSET,
 			'Support_Margin_mm': '3.0',
+			'Support_Offset_X_mm': lambda setting: -profile.getPreferenceFloat('extruder_offset_x1') if profile.getProfileSetting('support_dual_extrusion') == 'True' and int(profile.getPreference('extruder_amount')) > 1 else '0',
+			'Support_Offset_Y_mm': lambda setting: -profile.getPreferenceFloat('extruder_offset_y1') if profile.getProfileSetting('support_dual_extrusion') == 'True' and int(profile.getPreference('extruder_amount')) > 1 else '0',
 		},'skirt': {
 			'Skirt_line_count': storedSetting("skirt_line_count"),
 			'Convex': "True",
