@@ -234,6 +234,16 @@ class DimensionSkein:
 			location = gcodec.getLocationFromSplitLine(self.oldLocation, splitLine)
 			if self.oldLocation != None:
 				distance = abs( location - self.oldLocation )
+				if distance > 11.0:
+					extra = ''
+					while distance > 11.0:
+						self.oldLocation.z = location.z
+						self.oldLocation += (location - self.oldLocation) / distance * 10.0
+						distance -= 10.0
+						e = self.getExtrusionDistanceString(10.0, splitLine)
+						extra += self.distanceFeedRate.getLinearGcodeMovementWithFeedRate(self.feedRateMinute, self.oldLocation.dropAxis(), self.oldLocation.z) + e + '\n'
+					print extra, line, distance
+					line = extra + line
 			self.oldLocation = location
 		else:
 			if self.oldLocation == None:
