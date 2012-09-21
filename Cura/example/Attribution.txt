@@ -1,0 +1,8 @@
+All the models in this example directory can be found on Thingiverse (www.thingiverse.com), a site for sharing digital designs for physical objects.  Sharing is fun!
+
+The below models are shared under the CC BY-NC 3.0 license (http://creativecommons.org/licenses/by-nc/3.0/), and can be shared and used freely for none-commercial purposes:
+
+* UltimakerRobotCourseMesh.stl: Ultimaker Robot Low Poly by polymaker
+  http://www.thingiverse.com/thing:14472
+    Derivative of Ultimaker Robot by Martijn: http://www.thingiverse.com/thing:11551
+
