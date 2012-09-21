@@ -1003,7 +1003,9 @@ class ProjectSliceProgressWindow(wx.Frame):
 			wx.CallAfter(self.progressGauge2.SetValue, self.actionList.index(action) + 1)
 		
 		resultFile.write(';TYPE:CUSTOM\n')
-		resultFile.write('G1 Z%f F%f\n' % (self.actionList[-1].clearZ, profile.getProfileSettingFloat('max_z_speed') * 60))
+		if len(self.actionList) > 1:
+			#only move to higher Z if we have sliced more then 1 object. This solves the "move into print after printing" problem with the print-all-at-once option.
+			resultFile.write('G1 Z%f F%f\n' % (self.actionList[-1].clearZ, profile.getProfileSettingFloat('max_z_speed') * 60))
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
 		resultFile.close()
 		
