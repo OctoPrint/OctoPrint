@@ -366,8 +366,7 @@ class MachineCom(object):
 			return
 		self._log('Send: %s' % (cmd))
 		try:
-			self._serial.write(cmd)
-			self._serial.write('\n')
+			self._serial.write(cmd + '\n')
 		except:
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 			self._errorValue = getExceptionString()
