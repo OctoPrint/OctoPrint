@@ -429,17 +429,18 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.objColor[3] = profile.getPreferenceColour('model_colour3')
 
 	def OnMouseMotion(self,e):
-		size = (self.parent.objectsMaxV - self.parent.objectsMinV)
-		sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
-		
-		p0 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 0, self.modelMatrix, self.projMatrix, self.viewport))
-		p1 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 1, self.modelMatrix, self.projMatrix, self.viewport))
-		cursorZ0 = p0 - (p1 - p0) * (p0[2] / (p1[2] - p0[2]))
-		cursorXY = math.sqrt((cursorZ0[0] * cursorZ0[0]) + (cursorZ0[1] * cursorZ0[1]))
-		if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3:
-			self.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
-		else:
-			self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+		if self.parent.objectsMaxV != None:
+			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
+			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
+			
+			p0 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 0, self.modelMatrix, self.projMatrix, self.viewport))
+			p1 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 1, self.modelMatrix, self.projMatrix, self.viewport))
+			cursorZ0 = p0 - (p1 - p0) * (p0[2] / (p1[2] - p0[2]))
+			cursorXY = math.sqrt((cursorZ0[0] * cursorZ0[0]) + (cursorZ0[1] * cursorZ0[1]))
+			if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3:
+				self.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
+			else:
+				self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
 		if e.Dragging() and e.LeftIsDown():
 			if self.dragType == '':
@@ -701,20 +702,21 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		
 		#Draw the rotate circle
-		glDisable(GL_LIGHTING)
-		glDisable(GL_CULL_FACE)
-		glEnable(GL_BLEND)
-		glBegin(GL_TRIANGLE_STRIP)
-		size = (self.parent.objectsMaxV - self.parent.objectsMinV)
-		sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
-		for i in xrange(0, 64+1):
-			f = i if i < 64/2 else 64 - i
-			glColor4ub(255,int(f*255/(64/2)),0,128)
-			glVertex3f(sizeXY * 0.7 * math.cos(i/32.0*math.pi), sizeXY * 0.7 * math.sin(i/32.0*math.pi),0.1)
-			glColor4ub(  0,128,0,128)
-			glVertex3f((sizeXY * 0.7 + 3) * math.cos(i/32.0*math.pi), (sizeXY * 0.7 + 3) * math.sin(i/32.0*math.pi),0.1)
-		glEnd()
-		glEnable(GL_CULL_FACE)
+		if self.parent.objectsMaxV != None:
+			glDisable(GL_LIGHTING)
+			glDisable(GL_CULL_FACE)
+			glEnable(GL_BLEND)
+			glBegin(GL_TRIANGLE_STRIP)
+			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
+			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
+			for i in xrange(0, 64+1):
+				f = i if i < 64/2 else 64 - i
+				glColor4ub(255,int(f*255/(64/2)),0,128)
+				glVertex3f(sizeXY * 0.7 * math.cos(i/32.0*math.pi), sizeXY * 0.7 * math.sin(i/32.0*math.pi),0.1)
+				glColor4ub(  0,128,0,128)
+				glVertex3f((sizeXY * 0.7 + 3) * math.cos(i/32.0*math.pi), (sizeXY * 0.7 + 3) * math.sin(i/32.0*math.pi),0.1)
+			glEnd()
+			glEnable(GL_CULL_FACE)
 		
 		glPopMatrix()
 		

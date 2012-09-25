@@ -242,7 +242,6 @@ class DimensionSkein:
 						distance -= 10.0
 						e = self.getExtrusionDistanceString(10.0, splitLine)
 						extra += self.distanceFeedRate.getLinearGcodeMovementWithFeedRate(self.feedRateMinute, self.oldLocation.dropAxis(), self.oldLocation.z) + e + '\n'
-					print extra, line, distance
 					line = extra + line
 			self.oldLocation = location
 		else:
