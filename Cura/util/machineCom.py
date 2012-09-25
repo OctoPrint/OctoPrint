@@ -366,6 +366,8 @@ class MachineCom(object):
 			return
 		self._log('Send: %s' % (cmd))
 		try:
+			#TODO: This can throw a write timeout exception, but we do not want timeout on writes. Find a fix for this.
+			#	Oddly enough, the write timeout is not even set and thus we should not get a write timeout.
 			self._serial.write(cmd + '\n')
 		except:
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))

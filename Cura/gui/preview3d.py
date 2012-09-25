@@ -273,7 +273,7 @@ class previewPanel(wx.Panel):
 				size = (self.objectsMaxV - self.objectsMinV) * scale
 				if size[0] > self.machineSize.x or size[1] > self.machineSize.y or size[2] > self.machineSize.z:
 					self.OnScaleMax(None)
-				self.glCanvas.zoom = numpy.max(size) * 1.7
+				self.glCanvas.zoom = numpy.max(size) * 2.5
 				self.errorList = []
 				wx.CallAfter(self.updateToolbar)
 				wx.CallAfter(self.glCanvas.Refresh)
@@ -419,6 +419,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.objColor = [[1.0, 0.8, 0.6, 1.0], [0.2, 1.0, 0.1, 1.0], [1.0, 0.2, 0.1, 1.0], [0.1, 0.2, 1.0, 1.0]]
 		self.oldX = 0
 		self.oldY = 0
+		self.dragType = ''
+		self.tempRotate = 0
 	
 	def updateProfileToControls(self):
 		self.objColor[0] = profile.getPreferenceColour('model_colour')
@@ -427,23 +429,54 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.objColor[3] = profile.getPreferenceColour('model_colour3')
 
 	def OnMouseMotion(self,e):
+		size = (self.parent.objectsMaxV - self.parent.objectsMinV)
+		sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
+		
+		p0 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 0, self.modelMatrix, self.projMatrix, self.viewport))
+		p1 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 1, self.modelMatrix, self.projMatrix, self.viewport))
+		cursorZ0 = p0 - (p1 - p0) * (p0[2] / (p1[2] - p0[2]))
+		cursorXY = math.sqrt((cursorZ0[0] * cursorZ0[0]) + (cursorZ0[1] * cursorZ0[1]))
+		if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3:
+			self.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
+		else:
+			self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+
 		if e.Dragging() and e.LeftIsDown():
-			if self.view3D:
-				self.yaw += e.GetX() - self.oldX
-				self.pitch -= e.GetY() - self.oldY
-				if self.pitch > 170:
-					self.pitch = 170
-				if self.pitch < 10:
-					self.pitch = 10
-			else:
-				self.offsetX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
-				self.offsetY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
-			
+			if self.dragType == '':
+				#Define the drag type depending on the cursor position.
+				if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3:
+					self.dragType = 'modelRotate'
+					self.dragStart = math.atan2(cursorZ0[0], cursorZ0[1])
+				else:
+					self.dragType = 'viewRotate'
+				
+			if self.dragType == 'viewRotate':
+				if self.view3D:
+					self.yaw += e.GetX() - self.oldX
+					self.pitch -= e.GetY() - self.oldY
+					if self.pitch > 170:
+						self.pitch = 170
+					if self.pitch < 10:
+						self.pitch = 10
+				else:
+					self.offsetX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
+					self.offsetY -= float(e.GetY() - self.oldY) * self.zoom / self.GetSize().GetHeight() * 2
+			elif self.dragType == 'modelRotate':
+				angle = math.atan2(cursorZ0[0], cursorZ0[1])
+				diff = self.dragStart - angle
+				self.tempRotate = diff * 180 / math.pi
 			#Workaround for buggy ATI cards.
 			size = self.GetSizeTuple()
 			self.SetSize((size[0]+1, size[1]))
 			self.SetSize((size[0], size[1]))
 			self.Refresh()
+		else:
+			if self.tempRotate != 0:
+				profile.putProfileSetting('model_rotate_base', profile.getProfileSettingFloat('model_rotate_base') + self.tempRotate)
+				self.parent.updateModelTransform()
+				self.tempRotate = 0
+				
+			self.dragType = ''
 		if e.Dragging() and e.RightIsDown():
 			self.zoom += e.GetY() - self.oldY
 			if self.zoom < 1:
@@ -451,6 +484,9 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			self.Refresh()
 		self.oldX = e.GetX()
 		self.oldY = e.GetY()
+
+		#self.Refresh()
+		
 	
 	def OnMouseWheel(self,e):
 		self.zoom *= 1.0 - float(e.GetWheelRotation() / e.GetWheelDelta()) / 10.0
@@ -482,10 +518,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					glTranslate(0,0,-self.parent.gcode.layerList[self.parent.layerSpin.GetValue()][0].list[-1].z)
 			else:
 				if self.parent.objectsMaxV != None:
-					glTranslate(0,0,-self.parent.objectsMaxV[2] * profile.getProfileSettingFloat('model_scale') / 2)
+					glTranslate(0,0,-(self.parent.objectsMaxV[2]-self.parent.objectsMinV[2]) * profile.getProfileSettingFloat('model_scale') / 2)
 		else:
 			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
 			glTranslate(self.offsetX, self.offsetY, 0.0)
+
+		self.viewport = glGetIntegerv(GL_VIEWPORT);
+		self.modelMatrix = glGetDoublev(GL_MODELVIEW_MATRIX);
+		self.projMatrix = glGetDoublev(GL_PROJECTION_MATRIX);
+
 		glTranslate(-self.parent.machineCenter.x, -self.parent.machineCenter.y, 0)
 
 		self.OnDraw()
@@ -529,6 +570,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				self.drawModel(obj)
 				glColor3f(1.0,1.0,1.0)
 				glClear(GL_DEPTH_BUFFER_BIT)
+		
 		glPopMatrix()
 		
 		if self.parent.gcode != None and (self.viewMode == "GCode" or self.viewMode == "Mixed"):
@@ -654,6 +696,28 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glEnd()
 			glEnable(GL_DEPTH_TEST)
 		opengl.DrawMachine(machineSize)
+
+		glPushMatrix()
+		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
+		
+		#Draw the rotate circle
+		glDisable(GL_LIGHTING)
+		glDisable(GL_CULL_FACE)
+		glEnable(GL_BLEND)
+		glBegin(GL_TRIANGLE_STRIP)
+		size = (self.parent.objectsMaxV - self.parent.objectsMinV)
+		sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
+		for i in xrange(0, 64+1):
+			f = i if i < 64/2 else 64 - i
+			glColor4ub(255,int(f*255/(64/2)),0,128)
+			glVertex3f(sizeXY * 0.7 * math.cos(i/32.0*math.pi), sizeXY * 0.7 * math.sin(i/32.0*math.pi),0.1)
+			glColor4ub(  0,128,0,128)
+			glVertex3f((sizeXY * 0.7 + 3) * math.cos(i/32.0*math.pi), (sizeXY * 0.7 + 3) * math.sin(i/32.0*math.pi),0.1)
+		glEnd()
+		glEnable(GL_CULL_FACE)
+		
+		glPopMatrix()
+		
 		glFlush()
 	
 	def drawModel(self, obj):
@@ -662,6 +726,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		modelScale = profile.getProfileSettingFloat('model_scale')
 		modelSize = (obj.mesh.getMaximum() - obj.mesh.getMinimum()) * modelScale
 		glPushMatrix()
+		glRotate(self.tempRotate, 0, 0, 1)
 		glTranslate(-(modelSize[0]+10)*(multiX-1)/2,-(modelSize[1]+10)*(multiY-1)/2, 0)
 		for mx in xrange(0, multiX):
 			for my in xrange(0, multiY):
