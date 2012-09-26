@@ -154,18 +154,18 @@ class MachineCom(object):
 		if port == 'AUTO':
 			programmer = stk500v2.Stk500v2()
 			self._log("Serial port list: %s" % (str(serialList())))
-			for port in serialList():
+			for p in serialList():
 				try:
-					self._log("Connecting to: %s" % (port))
-					programmer.connect(port)
+					self._log("Connecting to: %s" % (p))
+					programmer.connect(p)
 					self._serial = programmer.leaveISP()
-					profile.putPreference('serial_port_auto', port)
+					profile.putPreference('serial_port_auto', p)
 					break
 				except ispBase.IspError as (e):
-					self._log("Error while connecting to %s: %s" % (port, str(e)))
+					self._log("Error while connecting to %s: %s" % (p, str(e)))
 					pass
 				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (port, getExceptionString()))
+					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
 				programmer.close()
 		elif port == 'VIRTUAL':
 			self._serial = VirtualPrinter()
@@ -178,6 +178,11 @@ class MachineCom(object):
 					self._serial = Serial(port, baudrate, timeout=2)
 			except:
 				self._log("Unexpected error while connecting to serial port: %s %s" % (port, getExceptionString()))
+		if self._serial == None:
+			self._log("Failed to open serial port (%s)" % (port))
+			self._errorValue = 'Failed to autodetect serial port.'
+			self._changeState(self.STATE_ERROR)
+			return
 		self._log("Connected to: %s, starting monitor" % (self._serial))
 		if baudrate == 0:
 			self._changeState(self.STATE_DETECT_BAUDRATE)
