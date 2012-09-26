@@ -237,6 +237,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		elif self.printTypeJoris.GetValue():
 			put('wall_thickness', nozzle_size * 1.5)
 			put('layer_height', '0.3')
+			put('solid_layer_thickness', '0.9')
 			put('fill_density', '0')
 			put('joris', 'True')
 			put('extra_base_wall_thickness', '15.0')
