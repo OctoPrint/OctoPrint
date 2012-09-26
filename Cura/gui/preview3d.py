@@ -20,7 +20,7 @@ from gui import toolbarUtil
 
 from util import profile
 from util import gcodeInterpreter
-from util import stl
+from util import meshLoader
 from util import util3d
 from util import sliceRun
 
@@ -264,8 +264,7 @@ class previewPanel(wx.Panel):
 		for obj in self.objectList:
 			if obj.filename != None and os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
 				obj.ileTime = os.stat(obj.filename).st_mtime
-				mesh = stl.stlModel()
-				mesh.load(obj.filename)
+				mesh = meshLoader.loadMesh(obj.filename)
 				obj.dirty = False
 				obj.mesh = mesh
 				self.updateModelTransform()

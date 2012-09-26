@@ -5,6 +5,7 @@ import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, t
 
 from util import profile
 from util import sliceRun
+from util import meshLoader
 from gui import dropTarget
 
 class batchRunWindow(wx.Frame):
@@ -13,7 +14,7 @@ class batchRunWindow(wx.Frame):
 		
 		self.list = []
 		
-		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, '.stl'))
+		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		self.panel = wx.Panel(self, -1)

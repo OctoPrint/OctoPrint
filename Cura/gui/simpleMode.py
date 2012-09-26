@@ -151,7 +151,7 @@ class simpleModeWindow(configBase.configWindowBase):
 
 	def OnLoadModel(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
+		dlg.SetWildcard(meshLoader.wildcardFilter())
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filelist = [dlg.GetPath()]
 			profile.putPreference('lastFile', ';'.join(self.filelist))

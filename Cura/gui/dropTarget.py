@@ -11,8 +11,14 @@ class FileDropTarget(wx.FileDropTarget):
 		self.filenameFilter = filenameFilter
 
 	def OnDropFiles(self, x, y, filenames):
+		filteredList = []
 		if self.filenameFilter != None:
-			filenames = filter(lambda f: f.endswith(self.filenameFilter) or f.endswith(self.filenameFilter.upper()), filenames)
-		if len(filenames) > 0:
-			self.callback(filenames)
+			for f in filenames:
+				for ext in self.filenameFilter:
+					if f.endswith(ext) or f.endswith(ext.upper()):
+						filteredList.append(f)
+		else:
+			filteredList = filenames
+		if len(filteredList) > 0:
+			self.callback(filteredList)
 

@@ -22,6 +22,7 @@ from util import validators
 from util import profile
 from util import version
 from util import sliceRun
+from util import meshLoader
 
 def main():
 	#app = wx.App(False)
@@ -44,7 +45,7 @@ class mainWindow(configBase.configWindowBase):
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
 		
-		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, '.stl'))
+		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
@@ -339,7 +340,7 @@ class mainWindow(configBase.configWindowBase):
 		configWizard.configWizard()
 		self.updateProfileToControls()
 
-	def _showOpenDialog(self, title, wildcard = "STL files (*.stl)|*.stl;*.STL"):
+	def _showOpenDialog(self, title, wildcard = meshLoader.wildcardFilter()):
 		dlg=wx.FileDialog(self, title, os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard(wildcard)
 		if dlg.ShowModal() == wx.ID_OK:

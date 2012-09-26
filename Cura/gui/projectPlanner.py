@@ -25,6 +25,7 @@ from gui import dropTarget
 from util import validators
 from util import profile
 from util import util3d
+from util import meshLoader
 from util import stl
 from util import mesh
 from util import sliceRun
@@ -34,11 +35,11 @@ from util import exporer
 class Action(object):
 	pass
 
-class ProjectObject(stl.stlModel):
+class ProjectObject(object):
 	def __init__(self, parent, filename):
 		super(ProjectObject, self).__init__()
 
-		self.load(filename)
+		self.mesh = meshLoader.loadMesh(filename)
 
 		self.parent = parent
 		self.filename = filename
@@ -55,7 +56,7 @@ class ProjectObject(stl.stlModel):
 		self.modelDisplayList = None
 		self.modelDirty = False
 
-		self.getMinimumZ()
+		self.mesh.getMinimumZ()
 		
 		self.centerX = -self.getMinimum()[0] + 5
 		self.centerY = -self.getMinimum()[1] + 5
@@ -89,13 +90,20 @@ class ProjectObject(stl.stlModel):
 		return True
 
 	def updateModelTransform(self):
-		self.setRotateMirror(self.rotate, self.flipX, self.flipY, self.flipZ, self.swapXZ, self.swapYZ)
-		minZ = self.getMinimumZ()
+		self.mesh.setRotateMirror(self.rotate, self.flipX, self.flipY, self.flipZ, self.swapXZ, self.swapYZ)
+		minZ = self.mesh.getMinimumZ()
 		minV = self.getMinimum()
 		maxV = self.getMaximum()
-		self.vertexes -= numpy.array([minV[0] + (maxV[0] - minV[0]) / 2, minV[1] + (maxV[1] - minV[1]) / 2, minZ])
-		minZ = self.getMinimumZ()
+		self.mesh.vertexes -= numpy.array([minV[0] + (maxV[0] - minV[0]) / 2, minV[1] + (maxV[1] - minV[1]) / 2, minZ])
+		minZ = self.mesh.getMinimumZ()
 		self.modelDirty = True
+	
+	def getMinimum(self):
+		return self.mesh.getMinimum()
+	def getMaximum(self):
+		return self.mesh.getMaximum()
+	def getSize(self):
+		return self.mesh.getSize()
 	
 	def clone(self):
 		p = ProjectObject(self.parent, self.filename)
@@ -139,7 +147,7 @@ class projectPlanner(wx.Frame):
 		self.GetSizer().Add(self.panel, 1, flag=wx.EXPAND)
 		#self.SetIcon(icon.getMainIcon())
 		
-		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, '.stl'))
+		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 		
 		self.list = []
 		self.selection = None
@@ -268,10 +276,10 @@ class projectPlanner(wx.Frame):
 	
 	def OnCutMesh(self, e):
 		dlg=wx.FileDialog(self, "Open file to cut", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
+		dlg.SetWildcard(meshLoader.wildcardFilter())
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetPath()
-			model = stl.stlModel().load(filename)
+			model = meshLoader.loadMesh(filename)
 			pd = wx.ProgressDialog('Splitting model.', 'Splitting model into multiple parts.', model.vertexCount, self, wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME | wx.PD_SMOOTH)
 			parts = model.splitToParts(pd.Update)
 			for part in parts:
@@ -317,7 +325,7 @@ class projectPlanner(wx.Frame):
 		output._prepareVertexCount(totalCount)
 		for item in self.list:
 			offset = numpy.array([item.centerX, item.centerY, 0])
-			for v in item.vertexes:
+			for v in item.mesh.vertexes:
 				v0 = v * item.scale + offset
 				output.addVertex(v0[0], v0[1], v0[2])
 		stl.saveAsSTL(output, filename)
@@ -419,7 +427,7 @@ class projectPlanner(wx.Frame):
 	
 	def OnAddModel(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
-		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
+		dlg.SetWildcard(meshLoader.wildcardFilter())
 		if dlg.ShowModal() == wx.ID_OK:
 			for filename in dlg.GetPaths():
 				item = ProjectObject(self, filename)
@@ -807,7 +815,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				item.modelDirty = False
 				modelSize = item.getMaximum() - item.getMinimum()
 				glNewList(item.modelDisplayList, GL_COMPILE)
-				opengl.DrawMesh(item)
+				opengl.DrawMesh(item.mesh)
 				glEndList()
 			
 			if item.validPlacement:
