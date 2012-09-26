@@ -67,13 +67,6 @@ class expertConfigWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Retraction")
 		c = configBase.SettingRow(right, "Retract on jumps only", 'retract_on_jumps_only', True, 'Only retract when we are making a move that is over a hole in the model, else retract on every move. This effects print quality in different ways.')
 
-		configBase.TitleRow(right, "Dwindle")
-		c = configBase.SettingRow(right, "Enable dwindle", 'enable_dwindle', False, 'Dwindle is used to slow down near the end of a printed line, and reducing the amount of filament printed near the end. This to release the preasure on the printer head.')
-		c = configBase.SettingRow(right, "Pent up volume (mm3)", 'dwindle_pent_up_volume', '0.4', 'Amount of plastic inside the nozzle under pressure. This normally comes out as ooze after printing.')
-		validators.validFloat(c, 0.0001)
-		c = configBase.SettingRow(right, "Slow down volume (mm3)", 'dwindle_slowdown_volume', '5.0', 'Amount of printing volume that is used to slow down to release the pressure.')
-		validators.validFloat(c, 0.0001)
-
 		main.Fit()
 		self.Fit()
 
