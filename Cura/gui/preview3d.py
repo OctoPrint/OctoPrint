@@ -436,7 +436,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			p1 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 1, self.modelMatrix, self.projMatrix, self.viewport))
 			cursorZ0 = p0 - (p1 - p0) * (p0[2] / (p1[2] - p0[2]))
 			cursorXY = math.sqrt((cursorZ0[0] * cursorZ0[0]) + (cursorZ0[1] * cursorZ0[1]))
-			if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3:
+			if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3 and False:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
 			else:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
@@ -444,7 +444,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		if e.Dragging() and e.LeftIsDown():
 			if self.dragType == '':
 				#Define the drag type depending on the cursor position.
-				if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3:
+				if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3 and False:
 					self.dragType = 'modelRotate'
 					self.dragStart = math.atan2(cursorZ0[0], cursorZ0[1])
 				else:
@@ -591,6 +591,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glCallList(self.gcodeDisplayList + i)
 				if time.time() - starttime > 0.1:
 					break
+
 			glDisable(GL_LIGHTING)
 			glDisable(GL_COLOR_MATERIAL)
 			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0]);
@@ -701,7 +702,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		
 		#Draw the rotate circle
-		if self.parent.objectsMaxV != None:
+		if self.parent.objectsMaxV != None and False:
 			glDisable(GL_LIGHTING)
 			glDisable(GL_CULL_FACE)
 			glEnable(GL_BLEND)
