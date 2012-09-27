@@ -98,10 +98,8 @@ class printWindow(wx.Frame):
 		self.termHistoryIdx = 0
 		
 		self.cam = None
-		try:
+		if webcam.hasWebcamSupport():
 			self.cam = webcam.webcam()
-		except:
-			pass
 
 		#self.SetIcon(icon.getMainIcon())
 		
@@ -239,16 +237,19 @@ class printWindow(wx.Frame):
 
 		nb.AddPage(self.termPanel, 'Term')
 		
-		if self.cam != None:
+		if self.cam != None and self.cam.hasCamera():
 			self.camPage = wx.Panel(nb)
 			sizer = wx.GridBagSizer(2, 2)
 			self.camPage.SetSizer(sizer)
 			
+			self.camPreview = wx.Panel(self.camPage)
+			sizer.Add(self.camPreview, pos=(0,0), flag=wx.EXPAND)
+			
 			nb.AddPage(self.camPage, 'Camera')
-			self.camPage.timer = wx.Timer(self)
-			self.Bind(wx.EVT_TIMER, self.OnCameraTimer, self.camPage.timer)
-			self.camPage.timer.Start(500)
-			self.camPage.Bind(wx.EVT_ERASE_BACKGROUND, self.OnCameraEraseBackground)
+			self.camPreview.timer = wx.Timer(self)
+			self.Bind(wx.EVT_TIMER, self.OnCameraTimer, self.camPreview.timer)
+			self.camPreview.timer.Start(500)
+			self.camPreview.Bind(wx.EVT_ERASE_BACKGROUND, self.OnCameraEraseBackground)
 
 		self.sizer.AddGrowableRow(3)
 		self.sizer.AddGrowableCol(3)
@@ -281,7 +282,7 @@ class printWindow(wx.Frame):
 		if self.machineCom != None and not self.machineCom.isPrinting():
 			return
 		self.cam.takeNewImage()
-		self.camPage.Refresh()
+		self.camPreview.Refresh()
 	
 	def OnCameraEraseBackground(self, e):
 		dc = e.GetDC()
@@ -289,7 +290,7 @@ class printWindow(wx.Frame):
 			dc = wx.ClientDC(self)
 			rect = self.GetUpdateRegion().GetBox()
 			dc.SetClippingRect(rect)
-		dc.SetBackground(wx.Brush(self.camPage.GetBackgroundColour(), wx.SOLID))
+		dc.SetBackground(wx.Brush(self.camPreview.GetBackgroundColour(), wx.SOLID))
 		dc.Clear()
 		if self.cam.getLastImage() != None:
 			dc.DrawBitmap(self.cam.getLastImage(), 0, 0)
@@ -487,7 +488,7 @@ class printWindow(wx.Frame):
 	def mcZChange(self, newZ):
 		if self.cam != None:
 			wx.CallAfter(self.cam.takeNewImage)
-			wx.CallAfter(self.camPage.Refresh)
+			wx.CallAfter(self.camPreview.Refresh)
 
 class temperatureGraph(wx.Panel):
 	def __init__(self, parent):

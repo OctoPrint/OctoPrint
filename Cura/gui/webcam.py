@@ -1,4 +1,4 @@
-import os, glob, subprocess
+import os, glob, subprocess, platform
 import wx
 
 try:
@@ -16,21 +16,58 @@ try:
 except:
 	win32vidcap = None
 
+def hasWebcamSupport():
+	if cv == None and win32vidcap == None:
+		return False
+	if not os.path.exists(getFFMPEGpath()):
+		return False
+	return True
+
+def getFFMPEGpath():
+	if platform.system() == "Windows":
+		return os.path.normpath(os.path.join(os.path.split(__file__)[0], "../ffmpeg.exe"))
+	elif os.path.exists('/usr/bin/ffmpeg'):
+		return '/usr/bin/ffmpeg'
+	return os.path.normpath(os.path.join(os.path.split(__file__)[0], "../ffmpeg"))
+
 class webcam(object):
 	def __init__(self):
+		self._cam = None
 		if cv != None:
 			self._cam = highgui.cvCreateCameraCapture(-1)
 		elif win32vidcap != None:
-			self._cam = win32vidcap.new_Dev(0, False)
-			#self._cam.displaycapturefilterproperties()
-			#self._cam.displaycapturepinproperties()
-		else:
-			raise exception("No camera implementation available")
+			try:
+				self._cam = win32vidcap.new_Dev(0, False)
+			except:
+				pass
 		
 		self._doTimelaps = False
 		self._bitmap = None
 	
+	def hasCamera(self):
+		return self._cam != None
+	
+	def propertyPages():
+		if self._cam == None:
+			return []
+		if win32vidcap != None:
+			return ['capture properties', 'pin properties']
+		if cv != None:
+			#TODO Make an OpenCV property page
+			return []
+
+	def openPropertyPage(pageType = 0):
+		if self._cam == None:
+			return
+		if win32vidcap != None:
+			if pageType == 0:
+				self._cam.displaycapturefilterproperties()
+			else:
+				self._cam.displaycapturepinproperties()
+	
 	def takeNewImage(self):
+		if self._cam == None:
+			return
 		if cv != None:
 			frame = cv.QueryFrame(self._cam)
 			cv.CvtColor(frame, frame, cv.CV_BGR2RGB)
@@ -56,6 +93,8 @@ class webcam(object):
 		return self._bitmap
 	
 	def startTimelaps(self, filename):
+		if self._cam == None:
+			return
 		self._cleanTempDir()
 		self._timelapsFilename = filename
 		self._snapshotCount = 0
@@ -63,10 +102,7 @@ class webcam(object):
 	
 	def endTimelaps(self):
 		if self._doTimelaps:
-			if platform.system() == "Windows":
-				ffmpeg = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../ffmpeg.exe"))
-			else:
-				ffmpeg = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../ffmpeg"))
+			ffmpeg = getFFMPEGpath()
 			basePath = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap", "__tmp_snap_%04d.jpg"))
 			subprocess.call([ffmpeg, '-r', '12.5', '-i', basePath, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y', '-b:v', '1500k', '-f', 'vob', self._timelapsFilename])
 		self._doTimelaps = False
