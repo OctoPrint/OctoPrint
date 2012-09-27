@@ -603,7 +603,7 @@ class projectPlanner(wx.Frame):
 				action.temperature = profile.getProfileSettingFloat('print_temperature')
 				action.extruder = item.extruder
 				action.filename = item.filename
-				clearZ = max(clearZ, item.getMaximum()[2] * item.scale + 5.0)
+				clearZ = max(clearZ, item.getSize()[2] * item.scale + 5.0)
 				action.clearZ = clearZ
 				action.leaveResultForNextSlice = False
 				action.usePreviousSlice = False
@@ -637,6 +637,7 @@ class projectPlanner(wx.Frame):
 			action.clearZ = 0
 			action.leaveResultForNextSlice = False
 			action.usePreviousSlice = False
+
 			actionList.append(action)
 			
 		#Restore the old profile.
@@ -1011,7 +1012,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 			wx.CallAfter(self.progressGauge2.SetValue, self.actionList.index(action) + 1)
 		
 		resultFile.write(';TYPE:CUSTOM\n')
-		if len(self.actionList) > 1:
+		if len(self.actionList) > 1 and self.actionList[-1].clearZ > 1:
 			#only move to higher Z if we have sliced more then 1 object. This solves the "move into print after printing" problem with the print-all-at-once option.
 			resultFile.write('G1 Z%f F%f\n' % (self.actionList[-1].clearZ, profile.getProfileSettingFloat('max_z_speed') * 60))
 		resultFile.write(profile.getAlterationFileContents('end.gcode'))
