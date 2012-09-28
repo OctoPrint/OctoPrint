@@ -218,6 +218,10 @@ class gcode(object):
 						pass
 					elif M == 92:	#Set steps per unit
 						pass
+					elif M == 101:	#Enable extruder
+						pass
+					elif M == 103:	#Disable extruder
+						pass
 					elif M == 104:	#Set temperature, no wait
 						pass
 					elif M == 105:	#Get temperature
