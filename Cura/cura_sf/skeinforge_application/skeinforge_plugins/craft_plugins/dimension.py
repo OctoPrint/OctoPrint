@@ -192,6 +192,7 @@ class DimensionSkein:
 		self.travelFeedRatePerSecond = None
 		self.addRetraction = True
 		self.reverseRetraction = False
+		self.maxDistancePerMove = 3
 
 	def addLinearMoveExtrusionDistanceLine(self, extrusionDistance):
 		'Get the extrusion distance string from the extrusion distance.'
@@ -234,13 +235,13 @@ class DimensionSkein:
 			location = gcodec.getLocationFromSplitLine(self.oldLocation, splitLine)
 			if self.oldLocation != None:
 				distance = abs( location - self.oldLocation )
-				if distance > 11.0:
+				if distance > self.maxDistancePerMove * 1.1:
 					extra = ''
-					while distance > 11.0:
+					while distance > self.maxDistancePerMove * 1.1:
 						self.oldLocation.z = location.z
-						self.oldLocation += (location - self.oldLocation) / distance * 10.0
-						distance -= 10.0
-						e = self.getExtrusionDistanceString(10.0, splitLine)
+						self.oldLocation += (location - self.oldLocation) / distance * self.maxDistancePerMove
+						distance -= self.maxDistancePerMove
+						e = self.getExtrusionDistanceString(self.maxDistancePerMove, splitLine)
 						extra += self.distanceFeedRate.getLinearGcodeMovementWithFeedRate(self.feedRateMinute, self.oldLocation.dropAxis(), self.oldLocation.z) + e + '\n'
 					line = extra + line
 			self.oldLocation = location
