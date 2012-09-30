@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser, math, subprocess, threading, time, re
+import wx, os, platform, types, webbrowser, math, subprocess, threading, time, re, shutil
 import ConfigParser
 import numpy
 
