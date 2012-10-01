@@ -185,4 +185,4 @@ def startSliceCommandProcess(cmdList):
 		su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 		su.wShowWindow = subprocess.SW_HIDE
 		kwargs['startupinfo'] = su
-	p = subprocess.Popen(cmdList, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+	return subprocess.Popen(cmdList, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
