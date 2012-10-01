@@ -50,16 +50,18 @@ class webcam(object):
 	def propertyPages(self):
 		if self._cam == None:
 			return []
-		if win32vidcap != None:
-			return ['Image properties', 'Format properties']
 		if cv != None:
 			#TODO Make an OpenCV property page
 			return []
+		elif win32vidcap != None:
+			return ['Image properties', 'Format properties']
 
 	def openPropertyPage(self, pageType = 0):
 		if self._cam == None:
 			return
-		if win32vidcap != None:
+		if cv != None:
+			pass
+		elif win32vidcap != None:
 			if pageType == 0:
 				self._cam.displaycapturefilterproperties()
 			else:
