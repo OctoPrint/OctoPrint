@@ -130,7 +130,7 @@ class printWindow(wx.Frame):
 		self.sizer.Add(self.pauseButton, pos=(3,1))
 		self.sizer.Add(self.cancelButton, pos=(4,1))
 		self.sizer.Add(self.machineLogButton, pos=(5,1))
-		self.sizer.Add(self.progress, pos=(6,0), span=(1,2), flag=wx.EXPAND)
+		self.sizer.Add(self.progress, pos=(6,0), span=(1,7), flag=wx.EXPAND)
 
 		nb = wx.Notebook(self.panel)
 		self.sizer.Add(nb, pos=(0,3), span=(6,4), flag=wx.EXPAND)
@@ -263,7 +263,7 @@ class printWindow(wx.Frame):
 			self.camPreview.timer.Start(500)
 			self.camPreview.Bind(wx.EVT_ERASE_BACKGROUND, self.OnCameraEraseBackground)
 
-		self.sizer.AddGrowableRow(3)
+		self.sizer.AddGrowableRow(5)
 		self.sizer.AddGrowableCol(3)
 		
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -622,6 +622,6 @@ class LogWindow(wx.Frame):
 	def __init__(self, logText):
 		super(LogWindow, self).__init__(None, title="Machine log")
 		self.textBox = wx.TextCtrl(self, -1, logText, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_READONLY)
-		self.SetSize((400,300))
+		self.SetSize((500,400))
 		self.Centre()
 		self.Show(True)

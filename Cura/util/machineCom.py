@@ -280,10 +280,10 @@ class MachineCom(object):
 					line = line.rstrip() + self._readline()
 				self._errorValue = line
 				self._changeState(self.STATE_ERROR)
-			if 'T:' in line:
-				self._temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
-				if 'B:' in line:
-					self._bedTemp = float(re.search("[0-9\.]*", line.split('B:')[1]).group(0))
+			if ' T:' in line:
+				self._temp = float(re.search("[0-9\.]*", line.split(' T:')[1]).group(0))
+				if ' B:' in line:
+					self._bedTemp = float(re.search("[0-9\.]*", line.split(' B:')[1]).group(0))
 				self._callback.mcTempUpdate(self._temp, self._bedTemp)
 			elif line.strip() != 'ok':
 				self._callback.mcMessage(line)
@@ -369,8 +369,7 @@ class MachineCom(object):
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		if ret != 'ok\n':
-			self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
+		self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
 		return ret
 	
 	def close(self, isError = False):
@@ -388,8 +387,7 @@ class MachineCom(object):
 	def _sendCommand(self, cmd):
 		if self._serial == None:
 			return
-		if not cmd.startswith('N'):
-			self._log('Send: %s' % (cmd))
+		self._log('Send: %s' % (cmd))
 		try:
 			#TODO: This can throw a write timeout exception, but we do not want timeout on writes. Find a fix for this.
 			#	Oddly enough, the write timeout is not even set and thus we should not get a write timeout.
