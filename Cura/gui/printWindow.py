@@ -111,7 +111,7 @@ class printWindow(wx.Frame):
 		
 		sb = wx.StaticBox(self.panel, label="Statistics")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
-		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##\nMachine state: Detecting baudrate")
+		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##\nMachine state:\nDetecting baudrateXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
 		self.sizer.Add(boxsizer, pos=(0,0), span=(5,1), flag=wx.EXPAND)
@@ -242,8 +242,18 @@ class printWindow(wx.Frame):
 			sizer = wx.GridBagSizer(2, 2)
 			self.camPage.SetSizer(sizer)
 			
+			self.timelapsEnable = wx.CheckBox(self.camPage, -1, 'Enable timelaps')
+			sizer.Add(self.timelapsEnable, pos=(0,0), span=(1,2), flag=wx.EXPAND)
+			
+			pages = self.cam.propertyPages()
+			for page in pages:
+				button = wx.Button(self.camPage, -1, page)
+				button.index = pages.index(page)
+				sizer.Add(button, pos=(1, pages.index(page)))
+				button.Bind(wx.EVT_BUTTON, self.OnPropertyPageButton)
+			
 			self.camPreview = wx.Panel(self.camPage)
-			sizer.Add(self.camPreview, pos=(0,0), flag=wx.EXPAND)
+			sizer.Add(self.camPreview, pos=(2,0), span=(1,2), flag=wx.EXPAND)
 			
 			nb.AddPage(self.camPage, 'Camera')
 			self.camPreview.timer = wx.Timer(self)
@@ -279,7 +289,7 @@ class printWindow(wx.Frame):
 		#self.UpdateProgress()
 	
 	def OnCameraTimer(self, e):
-		if self.machineCom != None and not self.machineCom.isPrinting():
+		if self.machineCom != None and self.machineCom.isPrinting():
 			return
 		self.cam.takeNewImage()
 		self.camPreview.Refresh()
@@ -291,9 +301,15 @@ class printWindow(wx.Frame):
 			rect = self.GetUpdateRegion().GetBox()
 			dc.SetClippingRect(rect)
 		dc.SetBackground(wx.Brush(self.camPreview.GetBackgroundColour(), wx.SOLID))
-		dc.Clear()
 		if self.cam.getLastImage() != None:
+			self.camPreview.SetMinSize((self.cam.getLastImage().GetWidth(), self.cam.getLastImage().GetHeight()))
+			self.camPage.Fit()
 			dc.DrawBitmap(self.cam.getLastImage(), 0, 0)
+		else:
+			dc.Clear()
+		
+	def OnPropertyPageButton(self, e):
+		self.cam.openPropertyPage(e.GetEventObject().index)
 
 	def UpdateButtonStates(self):
 		self.connectButton.Enable(self.machineCom == None or self.machineCom.isClosedOrError())
@@ -335,7 +351,7 @@ class printWindow(wx.Frame):
 				self.bedTemperatureLabel.Show(True)
 				self.bedTemperatureSelect.Show(True)
 				self.temperaturePanel.Layout()
-			status += 'Machine state: %s\n' % (self.machineCom.getStateString())
+			status += 'Machine state:%s\n' % (self.machineCom.getStateString())
 		
 		self.statsText.SetLabel(status.strip())
 	
@@ -356,7 +372,7 @@ class printWindow(wx.Frame):
 		if self.machineCom.isPrinting():
 			return
 		self.currentZ = -1
-		if self.cam != None:
+		if self.cam != None and self.timelapsEnable.GetValue():
 			self.cam.startTimelaps(self.filename[: self.filename.rfind('.')] + ".mpg")
 		self.machineCom.printGCode(self.gcodeList)
 		self.UpdateButtonStates()
@@ -398,6 +414,8 @@ class printWindow(wx.Frame):
 	
 	def AddTermLog(self, line):
 		self.termLog.AppendText(unicode(line, 'utf-8', 'replace'))
+		l = len(self.termLog.GetValue())
+		self.termLog.SetCaret(wx.Caret(self.termLog, (l, l)))
 	
 	def OnTermEnterLine(self, e):
 		line = self.termInput.GetValue()

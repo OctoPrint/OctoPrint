@@ -86,6 +86,9 @@ if [ $BUILD_TARGET = "win32" ]; then
 	if [ ! -f VideoCapture-0.9-5.zip ]; then
 		curl -L -O http://videocapture.sourceforge.net/VideoCapture-0.9-5.zip
 	fi
+	if [ ! -f ffmpeg-20120927-git-13f0cd6-win32-static.7z ]; then
+		curl -L -O http://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-20120927-git-13f0cd6-win32-static.7z
+	fi
 	#Get pypy
 	if [ ! -f "pypy-${PYPY_VERSION}-win32.zip" ]; then
 		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
