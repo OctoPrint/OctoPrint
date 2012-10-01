@@ -36,6 +36,20 @@ function checkTool
 	fi
 }
 
+function downloadURL
+{
+	filename=`basename "$1"`
+	echo "Checking for $filename"
+	if [ ! -f "$filename" ]; then
+		echo "Downloading $1"
+		curl -L -O "$1"
+		if [ $? != 0 ]; then
+			echo "Failed to download $1"
+			exit 1
+		fi
+	fi
+}
+
 #############################
 # Actual build script
 #############################
@@ -70,32 +84,15 @@ fi
 
 if [ $BUILD_TARGET = "win32" ]; then
 	#Get portable python for windows and extract it. (Linux and Mac need to install python themselfs)
-	if [ ! -f "PortablePython_${WIN_PORTABLE_PY_VERSION}.exe" ]; then
-		curl -L -O http://ftp.nluug.nl/languages/python/portablepython/v2.7/PortablePython_${WIN_PORTABLE_PY_VERSION}.exe
-	fi
-	if [ ! -f pyserial-${WIN_PYSERIAL_VERSION}.exe ]; then
-		curl -L -O http://sourceforge.net/projects/pyserial/files/pyserial/${WIN_PYSERIAL_VERSION}/pyserial-${WIN_PYSERIAL_VERSION}.win32.exe/download
-		mv download pyserial-${WIN_PYSERIAL_VERSION}.exe
-	fi
-	if [ ! -f PyOpenGL-3.0.1.win32.exe ]; then
-		curl -L -O http://sourceforge.net/projects/pyopengl/files/PyOpenGL/3.0.1/PyOpenGL-3.0.1.win32.exe
-	fi
-	if [ ! -f numpy-1.6.2-win32-superpack-python2.7.exe ]; then
-		curl -L -O http://sourceforge.net/projects/numpy/files/NumPy/1.6.2/numpy-1.6.2-win32-superpack-python2.7.exe
-	fi
-	if [ ! -f VideoCapture-0.9-5.zip ]; then
-		curl -L -O http://videocapture.sourceforge.net/VideoCapture-0.9-5.zip
-	fi
+	downloadURL http://ftp.nluug.nl/languages/python/portablepython/v2.7/PortablePython_${WIN_PORTABLE_PY_VERSION}.exe
+	downloadURL http://sourceforge.net/projects/pyserial/files/pyserial/${WIN_PYSERIAL_VERSION}/pyserial-${WIN_PYSERIAL_VERSION}.win32.exe
+	downloadURL http://sourceforge.net/projects/pyopengl/files/PyOpenGL/3.0.1/PyOpenGL-3.0.1.win32.exe
+	downloadURL http://sourceforge.net/projects/numpy/files/NumPy/1.6.2/numpy-1.6.2-win32-superpack-python2.7.exe
+	downloadURL http://videocapture.sourceforge.net/VideoCapture-0.9-5.zip
 	#Get pypy
-	if [ ! -f "pypy-${PYPY_VERSION}-win32.zip" ]; then
-		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
-	#	curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-win32.zip
-	fi
+	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
 else
-	if [ ! -f "pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2" ]; then
-		curl -L -O https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
-	#	curl -L -O http://buildbot.pypy.org/nightly/trunk/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
-	fi
+	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
 fi
 
 #Get our own version of Printrun
@@ -156,7 +153,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 else
 	cd ${TARGET_DIR}; $TAR -xjf ../pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2; cd ..
 fi
-mv ${TARGET_DIR}/pypy-*-${BUILD_TARGET} ${TARGET_DIR}/pypy
+mv ${TARGET_DIR}/pypy-* ${TARGET_DIR}/pypy
 #Cleanup pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
@@ -180,16 +177,21 @@ fi
 #package the result
 if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 	if [ $BUILD_TARGET = "win32" ]; then
-		rm ${TARGET_DIR}.zip
-		cd ${TARGET_DIR}
-		7z a ../${TARGET_DIR}.zip *
-		cd ..
+		#rm ${TARGET_DIR}.zip
+		#cd ${TARGET_DIR}
+		#7z a ../${TARGET_DIR}.zip *
+		#cd ..
 		
 		if [ ! -z `which wine` ]; then
 			#if we have wine, try to run our nsis script.
 			rm -rf scripts/win32/dist
 			ln -sf `pwd`/${TARGET_DIR} scripts/win32/dist
 			wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe /DVERSION=${BUILD_NAME} scripts/win32/installer.nsi 
+		fi
+		if [ -f '/c/Program Files (x86)/NSIS/makensis.exe' ]; then
+			rm -rf scripts/win32/dist
+			mv `pwd`/${TARGET_DIR} scripts/win32/dist
+			'/c/Program Files (x86)/NSIS/makensis.exe' 'scripts/win32/installer.nsi' -DVERSION=${BUILD_NAME}
 		fi
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
