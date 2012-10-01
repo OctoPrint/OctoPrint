@@ -192,7 +192,7 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		if [ -f '/c/Program Files (x86)/NSIS/makensis.exe' ]; then
 			rm -rf scripts/win32/dist
 			mv `pwd`/${TARGET_DIR} scripts/win32/dist
-			'/c/Program Files (x86)/NSIS/makensis.exe' 'scripts/win32/installer.nsi' -DVERSION=${BUILD_NAME}
+			'/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi'
 		fi
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
