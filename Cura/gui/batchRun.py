@@ -187,7 +187,7 @@ class BatchSliceProgressWindow(wx.Frame):
 			self.cmdIndex += 1
 			wx.CallAfter(self.SetTitle, "Building: [%d/%d]"  % (self.sliceCmdList.index(action) + 1, len(self.sliceCmdList)))
 
-			p = subprocess.Popen(action, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			p = sliceRun.startSliceCommandProcess(action)
 			line = p.stdout.readline()
 			maxValue = 1
 			while(len(line) > 0):

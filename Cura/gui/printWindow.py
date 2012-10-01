@@ -38,7 +38,7 @@ class printProcessMonitor():
 	
 	def loadFile(self, filename):
 		if self.handle == None:
-			self.handle = subprocess.Popen([sys.executable, sys.argv[0], '-r', filename], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			self.handle = subprocess.Popen([sys.executable, sys.argv[0], '-r', filename], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			self.thread = threading.Thread(target=self.Monitor)
 			self.thread.start()
 		else:

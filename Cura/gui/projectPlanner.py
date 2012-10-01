@@ -939,7 +939,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		for action in self.actionList:
 			wx.CallAfter(self.SetTitle, "Building: [%d/%d]"  % (self.actionList.index(action) + 1, len(self.actionList)))
 			if not action.usePreviousSlice:
-				p = subprocess.Popen(action.sliceCmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+				p = sliceRun.startSliceCommandProcess(action.sliceCmd)
 				line = p.stdout.readline()
 		
 				maxValue = 1

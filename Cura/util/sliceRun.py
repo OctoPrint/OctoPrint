@@ -178,3 +178,11 @@ def getSliceCommand(filename):
 			cmd.append(filename)
 		return cmd
 
+def startSliceCommandProcess(cmdList):
+	kwargs = {} 
+	if subprocess.mswindows: 
+		su = subprocess.STARTUPINFO() 
+		su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+		su.wShowWindow = subprocess.SW_HIDE
+		kwargs['startupinfo'] = su
+	p = subprocess.Popen(cmdList, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)

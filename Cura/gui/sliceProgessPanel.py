@@ -135,14 +135,7 @@ class WorkerThread(threading.Thread):
 		self.start()
 
 	def run(self):
-		kwargs = {} 
-		if subprocess.mswindows: 
-			su = subprocess.STARTUPINFO() 
-			su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-			su.wShowWindow = subprocess.SW_HIDE
-			kwargs['startupinfo'] = su
-		print self.cmdList[self.fileIdx]
-		p = subprocess.Popen(self.cmdList[self.fileIdx], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+		p = sliceRun.startSliceCommandProcess(self.cmdList[self.fileIdx])
 		line = p.stdout.readline()
 		self.progressLog = []
 		maxValue = 1
