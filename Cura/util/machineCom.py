@@ -11,6 +11,7 @@ from avr_isp import ispBase
 from avr_isp import intelHex
 
 from util import profile
+from util import version
 
 try:
 	import _winreg
@@ -33,6 +34,8 @@ def serialList():
 	if prev in baselist:
 		baselist.remove(prev)
 		baselist.insert(0, prev)
+	if version.isDevVersion():
+		baselist.append('VIRTUAL')
 	return baselist
 
 def baudrateList():

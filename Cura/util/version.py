@@ -15,6 +15,10 @@ def getVersion():
 		return version.strip()
 	return "?"
 
+def isDevVersion():
+	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
+	return os.path.exists(gitPath)
+
 if __name__ == '__main__':
 	print(getVersion())
 
