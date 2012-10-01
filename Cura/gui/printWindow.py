@@ -48,7 +48,7 @@ class printProcessMonitor():
 		p = self.handle
 		line = p.stdout.readline()
 		while(len(line) > 0):
-			print line.rstrip()
+			#print line.rstrip()
 			line = p.stdout.readline()
 		p.wait()
 		self.handle = None
@@ -473,7 +473,7 @@ class printWindow(wx.Frame):
 				prevLineType = lineType
 		gcode = gcodeInterpreter.gcode()
 		gcode.loadList(gcodeList)
-		print "Loaded: %s (%d)" % (filename, len(gcodeList))
+		#print "Loaded: %s (%d)" % (filename, len(gcodeList))
 		self.filename = filename
 		self.gcode = gcode
 		self.gcodeList = gcodeList
@@ -500,7 +500,8 @@ class printWindow(wx.Frame):
 		return True
 
 	def mcLog(self, message):
-		print message
+		#print message
+		pass
 	
 	def mcTempUpdate(self, temp, bedTemp):
 		self.temperatureGraph.addPoint(temp, self.temperatureSelect.GetValue(), bedTemp, self.bedTemperatureSelect.GetValue())

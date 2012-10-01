@@ -135,7 +135,14 @@ class WorkerThread(threading.Thread):
 		self.start()
 
 	def run(self):
-		p = subprocess.Popen(self.cmdList[self.fileIdx], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		kwargs = {} 
+		if subprocess.mswindows: 
+			su = subprocess.STARTUPINFO() 
+			su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+			su.wShowWindow = subprocess.SW_HIDE
+			kwargs['startupinfo'] = su
+		print self.cmdList[self.fileIdx]
+		p = subprocess.Popen(self.cmdList[self.fileIdx], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
 		line = p.stdout.readline()
 		self.progressLog = []
 		maxValue = 1
@@ -147,7 +154,6 @@ class WorkerThread(threading.Thread):
 					maxValue = int(progress[2])
 				wx.CallAfter(self.notifyWindow.SetProgress, progress[0], int(progress[1]), maxValue)
 			else:
-				#print line
 				self.progressLog.append(line)
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, line)
 			if self.notifyWindow.abort:
