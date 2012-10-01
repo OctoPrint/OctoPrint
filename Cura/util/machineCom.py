@@ -239,6 +239,9 @@ class MachineCom(object):
 	def getPrintPos(self):
 		return self._gcodePos
 	
+	def getPrintTime(self):
+		return time.time() - self._printStartTime
+	
 	def isPaused(self):
 		return self._state == self.STATE_PAUSED
 	
@@ -433,6 +436,7 @@ class MachineCom(object):
 		self._gcodePos = 0
 		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)
+		self._printStartTime = time.time()
 		for i in xrange(0, 6):
 			self._sendNext()
 	

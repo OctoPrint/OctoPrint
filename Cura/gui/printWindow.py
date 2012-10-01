@@ -181,15 +181,15 @@ class printWindow(wx.Frame):
 		sizer.Add(PrintCommandButton(self, 'G1 X10 F6000', 'print-move-x10.png'), pos=(3,5))
 		sizer.Add(PrintCommandButton(self, 'G1 X100 F6000', 'print-move-x100.png'), pos=(3,6))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'print-move-z10.png'), pos=(0,7))
-		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'print-move-z1.png'), pos=(1,7))
-		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'print-move-z0.1.png'), pos=(2,7))
+		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'print-move-z10.png'), pos=(0,8))
+		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'print-move-z1.png'), pos=(1,8))
+		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'print-move-z0.1.png'), pos=(2,8))
 
-		sizer.Add(PrintCommandButton(self, 'G28 Z0', 'print-move-home.png'), pos=(3,7))
+		sizer.Add(PrintCommandButton(self, 'G28 Z0', 'print-move-home.png'), pos=(3,8))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Z-0.1 F200', 'print-move-z-0.1.png'), pos=(4,7))
-		sizer.Add(PrintCommandButton(self, 'G1 Z-1 F200', 'print-move-z-1.png'), pos=(5,7))
-		sizer.Add(PrintCommandButton(self, 'G1 Z-10 F200', 'print-move-z-10.png'), pos=(6,7))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-0.1 F200', 'print-move-z-0.1.png'), pos=(4,8))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-1 F200', 'print-move-z-1.png'), pos=(5,8))
+		sizer.Add(PrintCommandButton(self, 'G1 Z-10 F200', 'print-move-z-10.png'), pos=(6,8))
 
 		nb.AddPage(self.directControlPanel, 'Jog')
 
@@ -346,8 +346,13 @@ class printWindow(wx.Frame):
 			if self.gcodeList != None:
 				status += 'Line: -/%d\n' % (len(self.gcodeList))
 		else:
+			printTime = self.machineCom.getPrintTime() / 60
+			printTimeTotal = printTime * len(self.gcodeList) / self.machineCom.getPrintPos()
+			printTimeLeft = printTimeTotal - printTime
 			status += 'Line: %d/%d\n' % (self.machineCom.getPrintPos(), len(self.gcodeList))
 			status += 'Height: %f\n' % (self.currentZ)
+			status += 'Print time: %02d:%02d\n' % (int(printTime / 60), int(printTime % 60))
+			status += 'Print time left: %02d:%02d\n' % (int(printTimeLeft / 60), int(printTimeLeft % 60))
 			self.progress.SetValue(self.machineCom.getPrintPos())
 		if self.machineCom != None:
 			if self.machineCom.getTemp() > 0:

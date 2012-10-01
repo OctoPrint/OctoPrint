@@ -63,7 +63,11 @@ class webcam(object):
 			if pageType == 0:
 				self._cam.displaycapturefilterproperties()
 			else:
-				self._cam.displaycapturepinproperties()
+				del self._cam
+				self._cam = None
+				tmp = win32vidcap.new_Dev(0, False)
+				tmp.displaycapturepinproperties()
+				self._cam = tmp
 	
 	def takeNewImage(self):
 		if self._cam == None:
