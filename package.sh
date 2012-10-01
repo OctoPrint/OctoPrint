@@ -22,7 +22,6 @@ TARGET_DIR=${BUILD_TARGET}-Cura-${BUILD_NAME}
 ##Which versions of external programs to use
 PYPY_VERSION=1.9
 WIN_PORTABLE_PY_VERSION=2.7.2.1
-WIN_PYSERIAL_VERSION=2.5
 
 #############################
 # Support functions
@@ -48,6 +47,13 @@ function downloadURL
 			exit 1
 		fi
 	fi
+}
+
+function extract
+{
+	echo "Extracting $*"
+	echo "7z x -y $*" >> log.txt
+	7z x -y $* >> log.txt
 }
 
 #############################
@@ -85,7 +91,7 @@ fi
 if [ $BUILD_TARGET = "win32" ]; then
 	#Get portable python for windows and extract it. (Linux and Mac need to install python themselfs)
 	downloadURL http://ftp.nluug.nl/languages/python/portablepython/v2.7/PortablePython_${WIN_PORTABLE_PY_VERSION}.exe
-	downloadURL http://sourceforge.net/projects/pyserial/files/pyserial/${WIN_PYSERIAL_VERSION}/pyserial-${WIN_PYSERIAL_VERSION}.win32.exe
+	downloadURL http://sourceforge.net/projects/pyserial/files/pyserial/2.5/pyserial-2.5.win32.exe
 	downloadURL http://sourceforge.net/projects/pyopengl/files/PyOpenGL/3.0.1/PyOpenGL-3.0.1.win32.exe
 	downloadURL http://sourceforge.net/projects/numpy/files/NumPy/1.6.2/numpy-1.6.2-win32-superpack-python2.7.exe
 	downloadURL http://videocapture.sourceforge.net/VideoCapture-0.9-5.zip
@@ -112,17 +118,18 @@ fi
 rm -rf ${TARGET_DIR}
 mkdir -p ${TARGET_DIR}
 
+rm -f log.txt
 if [ $BUILD_TARGET = "win32" ]; then
 	#For windows extract portable python to include it.
-	7z x PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/App
-	7z x PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/Lib/site-packages
-	7z x pyserial-${WIN_PYSERIAL_VERSION}.exe PURELIB
-	7z x PyOpenGL-3.0.1.win32.exe PURELIB
-	7z x numpy-1.6.2-win32-superpack-python2.7.exe numpy-1.6.2-sse2.exe
-	7z x numpy-1.6.2-sse2.exe PLATLIB
-	7z x VideoCapture-0.9-5.zip VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd
-	7z x ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe
-
+	extract PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/App
+	extract PortablePython_${WIN_PORTABLE_PY_VERSION}.exe \$_OUTDIR/Lib/site-packages
+	extract pyserial-2.5.win32.exe PURELIB
+	extract PyOpenGL-3.0.1.win32.exe PURELIB
+	extract numpy-1.6.2-win32-superpack-python2.7.exe numpy-1.6.2-sse2.exe
+	extract numpy-1.6.2-sse2.exe PLATLIB
+	extract VideoCapture-0.9-5.zip VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd
+	extract ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe
+	
 	mkdir -p ${TARGET_DIR}/python
 	mkdir -p ${TARGET_DIR}/Cura/
 	mv \$_OUTDIR/App/* ${TARGET_DIR}/python
@@ -154,7 +161,7 @@ fi
 
 #Extract pypy
 if [ $BUILD_TARGET = "win32" ]; then
-	7z x pypy-${PYPY_VERSION}-win32.zip -o${TARGET_DIR}
+	extract pypy-${PYPY_VERSION}-win32.zip -o${TARGET_DIR}
 else
 	cd ${TARGET_DIR}; $TAR -xjf ../pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2; cd ..
 fi
@@ -163,7 +170,8 @@ mv ${TARGET_DIR}/pypy-* ${TARGET_DIR}/pypy
 rm -rf ${TARGET_DIR}/pypy/lib-python/2.7/test
 
 #add Cura
-cp -a Cura ${TARGET_DIR}/Cura
+mkdir -p ${TARGET_DIR}/Cura
+cp -a Cura/* ${TARGET_DIR}/Cura
 #Add cura version file
 echo $BUILD_NAME > ${TARGET_DIR}/Cura/version
 
@@ -197,7 +205,7 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		if [ -f '/c/Program Files (x86)/NSIS/makensis.exe' ]; then
 			rm -rf scripts/win32/dist
 			mv `pwd`/${TARGET_DIR} scripts/win32/dist
-			'/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi'
+			'/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi' >> log.txt
 			mv scripts/win32/Cura_${BUILD_NAME}.exe ./
 		fi
 	else

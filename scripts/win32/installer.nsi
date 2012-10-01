@@ -87,9 +87,15 @@ Section "Cura ${VERSION}"
   WriteUninstaller "uninstall.exe"
   
   CreateDirectory "$SMPROGRAMS\Cura ${VERSION}"
-  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Cura.lnk" "$INSTDIR\python\python.exe" "$INSTDIR\Cura\cura.py" "$INSTDIR\cura.ico" 0
+  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Uninstall Cura ${VERSION}.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Cura ${VERSION}.lnk" "$INSTDIR\python\pythonw.exe" '"$INSTDIR\Cura\cura.py"' "$INSTDIR\Cura\stl.ico" 0
+  
+  ; Give all users write permissions in the install directory, so they can read/write profile and preferences files.
+  AccessControl::GrantOnFile "$INSTDIR" "(S-1-5-32-545)" "FullAccess"
+  
+SectionEnd
 
+Section "Install Arduino Drivers"
   ; Set output path to the driver directory.
   SetOutPath "$INSTDIR\drivers\"
   File /r "drivers\"
@@ -99,10 +105,6 @@ Section "Cura ${VERSION}"
   ${Else}
     ExecWait '"$INSTDIR\drivers\dpinst32.exe" /lm'
   ${EndIf}
-  
-  ; Give all users write permissions in the install directory, so they can read/write profile and preferences files.
-  AccessControl::GrantOnFile "$INSTDIR" "(S-1-5-32-545)" "FullAccess"
-  
 SectionEnd
 
 Section "Open STL files with Cura"
