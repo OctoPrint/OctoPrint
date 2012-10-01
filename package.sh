@@ -120,7 +120,8 @@ if [ $BUILD_TARGET = "win32" ]; then
 	7z x PyOpenGL-3.0.1.win32.exe PURELIB
 	7z x numpy-1.6.2-win32-superpack-python2.7.exe numpy-1.6.2-sse2.exe
 	7z x numpy-1.6.2-sse2.exe PLATLIB
-	7z x VideoCapture-0.9-5.zip
+	7z x VideoCapture-0.9-5.zip VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd
+	7z x ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe
 
 	mkdir -p ${TARGET_DIR}/python
 	mv \$_OUTDIR/App/* ${TARGET_DIR}/python
@@ -129,11 +130,13 @@ if [ $BUILD_TARGET = "win32" ]; then
 	mv PURELIB/OpenGL ${TARGET_DIR}/python/Lib
 	mv PLATLIB/numpy ${TARGET_DIR}/python/Lib
 	mv VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd ${TARGET_DIR}/python/DLLs
+	mv ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe ${TARGET_DIR}/Cura
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
 	rm -rf PLATLIB
 	rm -rf VideoCapture-0.9-5
 	rm -rf numpy-1.6.2-sse2.exe
+	rm -rf ffmpeg-20120927-git-13f0cd6-win32-static
 	
 	#Clean up portable python a bit, to keep the package size down.
 	rm -rf ${TARGET_DIR}/python/PyScripter.*
@@ -188,11 +191,13 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 			rm -rf scripts/win32/dist
 			ln -sf `pwd`/${TARGET_DIR} scripts/win32/dist
 			wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe /DVERSION=${BUILD_NAME} scripts/win32/installer.nsi 
+			mv scripts/win32/Cura-${BUILD_NAME}.exe ./
 		fi
 		if [ -f '/c/Program Files (x86)/NSIS/makensis.exe' ]; then
 			rm -rf scripts/win32/dist
 			mv `pwd`/${TARGET_DIR} scripts/win32/dist
 			'/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi'
+			mv scripts/win32/Cura-${BUILD_NAME}.exe ./
 		fi
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
@@ -201,4 +206,3 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 else
 	echo "Installed into ${TARGET_DIR}"
 fi
-
