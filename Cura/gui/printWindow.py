@@ -111,7 +111,7 @@ class printWindow(wx.Frame):
 		
 		sb = wx.StaticBox(self.panel, label="Statistics")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
-		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##\nMachine state:\nDetecting baudrateXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nEstimated print time: #####:##\nMachine state:\nDetecting baudrateXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
 		self.sizer.Add(boxsizer, pos=(0,0), span=(6,1), flag=wx.EXPAND)
@@ -244,7 +244,7 @@ class printWindow(wx.Frame):
 			sizer = wx.GridBagSizer(2, 2)
 			self.camPage.SetSizer(sizer)
 			
-			self.timelapsEnable = wx.CheckBox(self.camPage, -1, 'Enable timelaps')
+			self.timelapsEnable = wx.CheckBox(self.camPage, -1, 'Enable timelaps movie recording')
 			sizer.Add(self.timelapsEnable, pos=(0,0), span=(1,2), flag=wx.EXPAND)
 			
 			pages = self.cam.propertyPages()
@@ -340,7 +340,7 @@ class printWindow(wx.Frame):
 			cost = self.gcode.calculateCost()
 			if cost != False:
 				status += "Filament cost: %s\n" % (cost)
-			status += "Print time: %02d:%02d\n" % (int(self.gcode.totalMoveTimeMinute / 60), int(self.gcode.totalMoveTimeMinute % 60))
+			status += "Estimated print time: %02d:%02d\n" % (int(self.gcode.totalMoveTimeMinute / 60), int(self.gcode.totalMoveTimeMinute % 60))
 		if self.machineCom == None or not self.machineCom.isPrinting():
 			self.progress.SetValue(0)
 			if self.gcodeList != None:
@@ -384,8 +384,6 @@ class printWindow(wx.Frame):
 		self.UpdateButtonStates()
 	
 	def OnCancel(self, e):
-		if self.cam != None:
-			self.cam.endTimelaps()
 		self.pauseButton.SetLabel('Pause')
 		self.machineCom.cancelPrint()
 		self.machineCom.sendCommand("M84")
@@ -503,6 +501,8 @@ class printWindow(wx.Frame):
 		self.temperatureGraph.addPoint(temp, self.temperatureSelect.GetValue(), bedTemp, self.bedTemperatureSelect.GetValue())
 	
 	def mcStateChange(self, state):
+		if self.machineCom != None and state == self.machineCom.STATE_OPERATIONAL and self.cam != None:
+			self.cam.endTimelaps()
 		wx.CallAfter(self.UpdateButtonStates)
 		wx.CallAfter(self.UpdateProgress)
 	
@@ -513,6 +513,7 @@ class printWindow(wx.Frame):
 		wx.CallAfter(self.UpdateProgress)
 	
 	def mcZChange(self, newZ):
+		self.currentZ = newZ
 		if self.cam != None:
 			wx.CallAfter(self.cam.takeNewImage)
 			wx.CallAfter(self.camPreview.Refresh)

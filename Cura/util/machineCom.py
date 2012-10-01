@@ -89,7 +89,7 @@ class VirtualPrinter():
 				return ''
 			if self.readList == None:
 				return ''
-		time.sleep(0.01)
+		time.sleep(0.001)
 		#print "Recv: %s" % (self.readList[0].rstrip())
 		return self.readList.pop(0)
 	
@@ -258,6 +258,7 @@ class MachineCom(object):
 	
 	def _monitor(self):
 		timeout = time.time() + 5
+		tempRequestTimeout = timeout
 		while True:
 			line = self._readline()
 			if line == None:
@@ -362,7 +363,8 @@ class MachineCom(object):
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
+		if ret != 'ok\n':
+			self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
 		return ret
 	
 	def close(self, isError = False):
@@ -380,7 +382,8 @@ class MachineCom(object):
 	def _sendCommand(self, cmd):
 		if self._serial == None:
 			return
-		self._log('Send: %s' % (cmd))
+		if not cmd.startswith('N'):
+			self._log('Send: %s' % (cmd))
 		try:
 			#TODO: This can throw a write timeout exception, but we do not want timeout on writes. Find a fix for this.
 			#	Oddly enough, the write timeout is not even set and thus we should not get a write timeout.

@@ -99,6 +99,7 @@ class webcam(object):
 		self._timelapsFilename = filename
 		self._snapshotCount = 0
 		self._doTimelaps = True
+		print "startTimelaps"
 	
 	def endTimelaps(self):
 		if self._doTimelaps:
