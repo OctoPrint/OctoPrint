@@ -226,6 +226,9 @@ class MachineCom(object):
 	
 	def isClosedOrError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED
+
+	def isError(self):
+		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR
 	
 	def isOperational(self):
 		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED
@@ -244,6 +247,14 @@ class MachineCom(object):
 	
 	def getBedTemp(self):
 		return self._bedTemp
+	
+	def getLog(self):
+		ret = []
+		while not self._logQueue.empty():
+			ret.append(self._logQueue.get())
+		for line in ret:
+			self._logQueue.put(line, False)
+		return ret
 	
 	def _monitor(self):
 		timeout = time.time() + 5

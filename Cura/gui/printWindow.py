@@ -114,13 +114,14 @@ class printWindow(wx.Frame):
 		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nPrint time: #####:##\nMachine state:\nDetecting baudrateXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
-		self.sizer.Add(boxsizer, pos=(0,0), span=(5,1), flag=wx.EXPAND)
+		self.sizer.Add(boxsizer, pos=(0,0), span=(6,1), flag=wx.EXPAND)
 		
 		self.connectButton = wx.Button(self.panel, -1, 'Connect')
 		#self.loadButton = wx.Button(self.panel, -1, 'Load GCode')
 		self.printButton = wx.Button(self.panel, -1, 'Print GCode')
 		self.pauseButton = wx.Button(self.panel, -1, 'Pause')
 		self.cancelButton = wx.Button(self.panel, -1, 'Cancel print')
+		self.machineLogButton = wx.Button(self.panel, -1, 'Error log')
 		self.progress = wx.Gauge(self.panel, -1)
 		
 		self.sizer.Add(self.connectButton, pos=(0,1))
@@ -128,10 +129,11 @@ class printWindow(wx.Frame):
 		self.sizer.Add(self.printButton, pos=(2,1))
 		self.sizer.Add(self.pauseButton, pos=(3,1))
 		self.sizer.Add(self.cancelButton, pos=(4,1))
-		self.sizer.Add(self.progress, pos=(5,0), span=(1,2), flag=wx.EXPAND)
+		self.sizer.Add(self.machineLogButton, pos=(5,1))
+		self.sizer.Add(self.progress, pos=(6,0), span=(1,2), flag=wx.EXPAND)
 
 		nb = wx.Notebook(self.panel)
-		self.sizer.Add(nb, pos=(0,3), span=(7,4), flag=wx.EXPAND)
+		self.sizer.Add(nb, pos=(0,3), span=(6,4), flag=wx.EXPAND)
 		
 		self.temperaturePanel = wx.Panel(nb)
 		sizer = wx.GridBagSizer(2, 2)
@@ -153,7 +155,7 @@ class printWindow(wx.Frame):
 		sizer.Add(self.bedTemperatureSelect, pos=(1,1))
 		sizer.Add(self.temperatureGraph, pos=(2,0), span=(1,2), flag=wx.EXPAND)
 		sizer.AddGrowableRow(2)
-		sizer.AddGrowableCol(0)
+		sizer.AddGrowableCol(1)
 
 		nb.AddPage(self.temperaturePanel, 'Temp')
 
@@ -270,6 +272,7 @@ class printWindow(wx.Frame):
 		self.printButton.Bind(wx.EVT_BUTTON, self.OnPrint)
 		self.pauseButton.Bind(wx.EVT_BUTTON, self.OnPause)
 		self.cancelButton.Bind(wx.EVT_BUTTON, self.OnCancel)
+		self.machineLogButton.Bind(wx.EVT_BUTTON, self.OnMachineLog)
 		
 		self.Bind(wx.EVT_SPINCTRL, self.OnTempChange, self.temperatureSelect)
 		self.Bind(wx.EVT_SPINCTRL, self.OnBedTempChange, self.bedTemperatureSelect)
@@ -284,6 +287,8 @@ class printWindow(wx.Frame):
 		self.Layout()
 		self.Fit()
 		self.Centre()
+		
+		self.statsText.SetMinSize(self.statsText.GetSize())
 
 		self.UpdateButtonStates()
 		#self.UpdateProgress()
@@ -324,6 +329,7 @@ class printWindow(wx.Frame):
 		self.temperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational())
+		self.machineLogButton.Show(self.machineCom != None and self.machineCom.isError())
 	
 	def UpdateProgress(self):
 		status = ""
@@ -390,6 +396,9 @@ class printWindow(wx.Frame):
 			self.machineCom.setPause(False)
 		else:
 			self.machineCom.setPause(True)
+	
+	def OnMachineLog(self, e):
+		LogWindow('\n'.join(self.machineCom.getLog()))
 	
 	def OnClose(self, e):
 		global printWindowHandle
@@ -520,6 +529,7 @@ class temperatureGraph(wx.Panel):
 		self.points = []
 		self.backBuffer = None
 		self.addPoint(0,0,0,0)
+		self.SetMinSize((320,200))
 	
 	def OnEraseBackground(self, e):
 		pass
@@ -546,12 +556,22 @@ class temperatureGraph(wx.Panel):
 		bt0 = 0
 		tSP0 = 0
 		btSP0 = 0
+		bgLinePen = wx.Pen('#A0A0A0')
 		tempPen = wx.Pen('#FF4040')
 		tempSPPen = wx.Pen('#FFA0A0')
 		tempPenBG = wx.Pen('#FFD0D0')
 		bedTempPen = wx.Pen('#4040FF')
 		bedTempSPPen = wx.Pen('#A0A0FF')
 		bedTempPenBG = wx.Pen('#D0D0FF')
+		for x in xrange(w, 0, -30):
+			dc.SetPen(bgLinePen)
+			dc.DrawLine(x, 0, x, h)
+		for y in xrange(h-1, 0, -h * 50 / 300):
+			dc.SetPen(bgLinePen)
+			dc.DrawLine(0, y, w, y)
+		dc.DrawLine(0, 0, w, 0)
+		dc.DrawLine(0, 0, 0, h)
+		
 		for temp, tempSP, bedTemp, bedTempSP, t in self.points:
 			x1 = int(w - (now - t))
 			for x in xrange(x0, x1 + 1):
@@ -592,3 +612,10 @@ class temperatureGraph(wx.Panel):
 		self.points.append((temp, tempSP, bedTemp, bedTempSP, time.time()))
 		wx.CallAfter(self.UpdateDrawing)
 
+class LogWindow(wx.Frame):
+	def __init__(self, logText):
+		super(LogWindow, self).__init__(None, title="Machine log")
+		self.textBox = wx.TextCtrl(self, -1, logText, style=wx.TE_MULTILINE|wx.TE_DONTWRAP|wx.TE_READONLY)
+		self.SetSize((400,300))
+		self.Centre()
+		self.Show(True)
