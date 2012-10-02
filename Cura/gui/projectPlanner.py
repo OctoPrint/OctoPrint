@@ -320,7 +320,7 @@ class projectPlanner(wx.Frame):
 	def _saveCombinedSTL(self, filename):
 		totalCount = 0
 		for item in self.list:
-			totalCount += item.vertexCount
+			totalCount += item.mesh.vertexCount
 		output = mesh.mesh()
 		output._prepareVertexCount(totalCount)
 		for item in self.list:

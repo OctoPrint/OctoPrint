@@ -353,7 +353,10 @@ class printWindow(wx.Frame):
 			if self.currentZ > 0:
 				status += 'Height: %0.1f\n' % (self.currentZ)
 			status += 'Print time: %02d:%02d\n' % (int(printTime / 60), int(printTime % 60))
-			status += 'Print time left: %02d:%02d\n' % (int(printTimeLeft / 60), int(printTimeLeft % 60))
+			if printTime < 1:
+				status += 'Print time left: Unknown\n'
+			else:
+				status += 'Print time left: %02d:%02d\n' % (int(printTimeLeft / 60), int(printTimeLeft % 60))
 			self.progress.SetValue(self.machineCom.getPrintPos())
 		if self.machineCom != None:
 			if self.machineCom.getTemp() > 0:

@@ -428,6 +428,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.objColor[3] = profile.getPreferenceColour('model_colour3')
 
 	def OnMouseMotion(self,e):
+		cursorXY = 100000
 		if self.parent.objectsMaxV != None:
 			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
 			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))

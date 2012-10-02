@@ -5,6 +5,7 @@ import wx, os, platform, types, webbrowser, threading, time, re
 import wx.wizard
 
 from gui import firmwareInstall
+from gui import toolbarUtil
 from util import machineCom
 from util import profile
 
@@ -87,6 +88,14 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		self.GetSizer().Add(button, pos=(self.rowNr, 1), span=(1,1), flag=wx.LEFT)
 		self.rowNr += 1
 		return text, button
+
+	def AddCheckmark(self, label, bitmap):
+		check = wx.StaticBitmap(self, -1, bitmap)
+		text = wx.StaticText(self, -1, label)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT|wx.RIGHT)
+		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1,2), flag=wx.ALL)
+		self.rowNr += 1
+		return check
 		
 	def AllowNext(self):
 		return True
@@ -102,7 +111,8 @@ class FirstInfoPage(InfoPage):
 		self.AddText('This wizard will help you with the following steps:')
 		self.AddText('* Configure Cura for your machine')
 		self.AddText('* Upgrade your firmware')
-		self.AddText('* Calibrate your machine')
+		self.AddText('* Check if your machine is working safely')
+		#self.AddText('* Calibrate your machine')
 		#self.AddText('* Do your first print')
 
 class RepRapInfoPage(InfoPage):
@@ -204,8 +214,24 @@ class UltimakerCheckupPage(InfoPage):
 		b1.Bind(wx.EVT_BUTTON, self.OnCheckClick)
 		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
 		self.AddSeperator()
-		self.checkPanel = None
-	
+		self.checkBitmap = toolbarUtil.getBitmapImage('checkmark.png')
+		self.crossBitmap = toolbarUtil.getBitmapImage('cross.png')
+		self.unknownBitmap = toolbarUtil.getBitmapImage('question.png')
+		self.commState = self.AddCheckmark('Communication:', self.unknownBitmap)
+		self.tempState = self.AddCheckmark('Temperature:', self.unknownBitmap)
+		self.stopState = self.AddCheckmark('Endstops:', self.unknownBitmap)
+		self.AddSeperator()
+		self.checkState = self.AddText('')
+		self.machineState = self.AddText('')
+		self.temperatureLabel = self.AddText('')
+		self.comm = None
+		self.xMinStop = False
+		self.xMaxStop = False
+		self.yMinStop = False
+		self.yMaxStop = False
+		self.zMinStop = False
+		self.zMaxStop = False
+
 	def AllowNext(self):
 		return False
 	
@@ -213,152 +239,89 @@ class UltimakerCheckupPage(InfoPage):
 		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
 	
 	def OnCheckClick(self, e):
-		if self.checkPanel != None:
-			self.checkPanel.Destroy()
-		self.checkPanel = wx.Panel(self)
-		self.checkPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
-		self.GetSizer().Add(self.checkPanel, 0, wx.LEFT|wx.RIGHT, 5)
-		threading.Thread(target=self.OnRun).start()
+		if self.comm != None:
+			self.comm.close()
+			del self.comm
+		wx.CallAfter(self.checkState.SetLabel, 'Connecting to machine.')
+		self.commState.SetBitmap(self.unknownBitmap)
+		self.tempState.SetBitmap(self.unknownBitmap)
+		self.stopState.SetBitmap(self.unknownBitmap)
+		self.checkupState = 0
+		self.comm = machineCom.MachineCom(callbackObject=self)
 
-	def AddProgressText(self, info):
-		text = wx.StaticText(self.checkPanel, -1, info)
-		self.checkPanel.GetSizer().Add(text, 0)
-		self.checkPanel.Layout()
-		self.Layout()
+	def mcLog(self, message):
+		print message
+
+	def mcTempUpdate(self, temp, bedTemp):
+		if self.checkupState == 0:
+			self.tempCheckTimeout = 20
+			if temp > 70:
+				self.checkupState = 1
+				wx.CallAfter(self.checkState.SetLabel, 'Cooldown before temperature check.')
+				self.comm.sendCommand('M104 S0')
+				self.comm.sendCommand('M104 S0')
+			else:
+				self.startTemp = temp
+				self.checkupState = 2
+				wx.CallAfter(self.checkState.SetLabel, 'Checking the heater and temperature sensor.')
+				self.comm.sendCommand('M104 S200')
+				self.comm.sendCommand('M104 S200')
+		elif self.checkupState == 1:
+			if temp < 60:
+				self.startTemp = temp
+				self.checkupState = 2
+				wx.CallAfter(self.checkState.SetLabel, 'Checking the heater and temperature sensor.')
+				self.comm.sendCommand('M104 S200')
+				self.comm.sendCommand('M104 S200')
+		elif self.checkupState == 2:
+			if temp > self.startTemp:# + 40:
+				self.checkupState = 3
+				wx.CallAfter(self.checkState.SetLabel, 'Testing the endstops...')
+				self.comm.sendCommand('M104 S0')
+				self.comm.sendCommand('M104 S0')
+				self.comm.sendCommand('M119')
+				self.tempState.SetBitmap(self.checkBitmap)
+			else:
+				self.tempCheckTimeout -= 1
+				if self.tempCheckTimeout < 1:
+					self.checkupState = -1
+					self.tempState.SetBitmap(self.crossBitmap)
+					wx.CallAfter(self.checkState.SetLabel, 'Temperature measurement FAILED!')
+					self.comm.sendCommand('M104 S0')
+					self.comm.sendCommand('M104 S0')
+		wx.CallAfter(self.temperatureLabel.SetLabel, 'Head temperature: %d' % (temp))
+
+	def mcStateChange(self, state):
+		if self.comm.isOperational():
+			self.commState.SetBitmap(self.checkBitmap)
+		elif self.comm.isError():
+			self.commState.SetBitmap(self.crossBitmap)
+		wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
 	
-	def OnRun(self):
-		wx.CallAfter(self.AddProgressText, "Connecting to machine...")
-		self.comm = machineCom.MachineCom()
-		
-		if not self.comm.isOpen():
-			wx.CallAfter(self.AddProgressText, "Error: Failed to open serial port to machine")
-			wx.CallAfter(self.AddProgressText, "If this keeps happening, try disconnecting and reconnecting the USB cable")
-			return
+	def mcMessage(self, message):
+		if self.checkupState >= 3 and 'x_min' in message:
+			for data in message.split(' '):
+				if ':' in data:
+					tag, value = data.split(':', 2)
+					if tag == 'x_min':
+						self.xMinStop = (value == 'H')
+					if tag == 'x_max':
+						self.xMaxStop = (value == 'H')
+					if tag == 'y_min':
+						self.yMinStop = (value == 'H')
+					if tag == 'y_max':
+						self.yMaxStop = (value == 'H')
+					if tag == 'z_min':
+						self.zMinStop = (value == 'H')
+					if tag == 'z_max':
+						self.zMaxStop = (value == 'H')
+			self.comm.sendCommand('M119')
 
-		wx.CallAfter(self.AddProgressText, "Checking start message...")
-		if self.DoCommCommandWithTimeout(None, 'start') == False:
-			wx.CallAfter(self.AddProgressText, "Error: Missing start message.")
-			self.comm.close()
-			return
-		
-		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
-		time.sleep(3)
-		
-		wx.CallAfter(self.AddProgressText, "Disabling step motors...")
-		if self.DoCommCommandWithTimeout('M84') == False:
-			wx.CallAfter(self.AddProgressText, "Error: Missing reply to Deactivate steppers (M84).")
-			self.comm.close()
-			return
-
-		if self.DoCommCommandWithTimeout("M104 S0") == False:
-			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
-			self.comm.close()
-			return
-
-		wx.MessageBox('Please move the printer head to the center of the machine\nalso move the platform so it is not at the highest or lowest position,\nand make sure the machine is powered on.', 'Machine check', wx.OK | wx.ICON_INFORMATION)
-		
-		idleTemp = self.readTemp()
-		if idleTemp > 40:
-			wx.CallAfter(self.AddProgressText, "Waiting for head to cool down before temperature test...")
-			while idleTemp > 40:
-				idleTemp = self.readTemp()
-				time.sleep(1)
-		
-		wx.CallAfter(self.AddProgressText, "Checking heater and temperature sensor...")
-		wx.CallAfter(self.AddProgressText, "(This takes about 30 seconds)")
-		if self.DoCommCommandWithTimeout("M104 S100") == False:
-			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
-			self.comm.close()
-			return
-		
-		time.sleep(25)
-		tempInc = self.readTemp() - idleTemp
-		
-		if self.DoCommCommandWithTimeout("M104 S0") == False:
-			wx.CallAfter(self.AddProgressText, "Failed to set temperature")
-			self.comm.close()
-			return
-		
-		if tempInc < 15:
-			wx.CallAfter(self.AddProgressText, "Your temperature sensor or heater is not working!")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "Heater and temperature sensor working\nWarning: head might still be hot!")
-
-		wx.CallAfter(self.AddProgressText, "Checking endstops")
-		if self.DoCommCommandWithTimeout('M119', 'x_min') != "x_min:L x_max:L y_min:L y_max:L z_min:L z_max:L":
-			wx.CallAfter(self.AddProgressText, "Error: There is a problem in your endstops!\nOne of them seems to be pressed while it shouldn't\ncheck the cable connections and the switches themselfs.")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "Please press the X end switch in the front left corner.")
-		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:H x_max:L y_min:L y_max:L z_min:L z_max:L"):
-			wx.CallAfter(self.AddProgressText, "Failed to check the x_min endstop!")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "Please press the X end switch in the front right corner.")
-		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:H y_min:L y_max:L z_min:L z_max:L"):
-			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "Please press the Y end switch in the front left corner.")
-		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:H y_max:L z_min:L z_max:L"):
-			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "Please press the Y end switch in the back left corner.")
-		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:H z_min:L z_max:L"):
-			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "Please press the Z end switch in the top.")
-		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:L z_min:H z_max:L"):
-			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "Please press the Z end switch in the bottom.")
-		if not self.DoCommCommandAndWaitForReply('M119', 'x_min', "x_min:L x_max:L y_min:L y_max:L z_min:L z_max:H"):
-			wx.CallAfter(self.AddProgressText, "Failed to check the x_max endstop!")
-			self.comm.close()
-			return
-		wx.CallAfter(self.AddProgressText, "End stops are working.")
-
-		wx.CallAfter(self.AddProgressText, "Done!")
-		wx.CallAfter(self.GetParent().FindWindowById(wx.ID_FORWARD).Enable)
-		self.comm.close()
-		
-	def readTemp(self):
-		line = self.DoCommCommandWithTimeout("M105", "ok T:")
-		if line == False:
-			return -1
-		return int(re.search('T:([0-9]*)', line).group(1))
+	def mcProgress(self, lineNr):
+		pass
 	
-	def DoCommCommandAndWaitForReply(self, cmd, replyStart, reply):
-		while True:
-			ret = self.DoCommCommandWithTimeout(cmd, replyStart)
-			if ret == reply:
-				return True
-			if ret == False:
-				return False
-			time.sleep(1)
-	
-	def DoCommCommandWithTimeout(self, cmd = None, replyStart = 'ok'):
-		if cmd != None:
-			self.comm.sendCommand(cmd)
-		t = threading.Timer(5, self.OnSerialTimeout)
-		t.start()
-		while True:
-			line = self.comm.readline()
-			if line == '' or line == None:
-				self.comm.close()
-				return False
-			print line.rstrip()
-			if replyStart in line:
-				break
-		t.cancel()
-		return line.rstrip()
-	
-	def OnSerialTimeout(self):
-		self.comm.close()
+	def mcZChange(self, newZ):
+		pass
 
 class UltimakerCalibrationPage(InfoPage):
 	def __init__(self, parent):

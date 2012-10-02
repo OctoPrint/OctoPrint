@@ -101,7 +101,7 @@ class VirtualPrinter():
 
 class MachineComPrintCallback(object):
 	def mcLog(self, message):
-		print(message)
+		pass
 	
 	def mcTempUpdate(self, temp, bedTemp):
 		pass
@@ -212,14 +212,14 @@ class MachineCom(object):
 	def isPrinting(self):
 		return self._state == self.STATE_PRINTING
 	
+	def isPaused(self):
+		return self._state == self.STATE_PAUSED
+
 	def getPrintPos(self):
 		return self._gcodePos
 	
 	def getPrintTime(self):
 		return time.time() - self._printStartTime - self._heatupWaitTimeLost
-	
-	def isPaused(self):
-		return self._state == self.STATE_PAUSED
 	
 	def getTemp(self):
 		return self._temp
@@ -306,7 +306,7 @@ class MachineCom(object):
 					t = time.time()
 					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 					self._heatupWaitStartTime = t
-			elif line.strip() != 'ok' and self.isOperational():
+			elif line.strip() != '' and line.strip() != 'ok' and self.isOperational():
 				self._callback.mcMessage(line)
 
 			if self._state == self.STATE_DETECT_BAUDRATE:
