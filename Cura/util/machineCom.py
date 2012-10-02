@@ -120,14 +120,16 @@ class MachineComPrintCallback(object):
 
 class MachineCom(object):
 	STATE_NONE = 0
-	STATE_DETECT_BAUDRATE = 1
-	STATE_CONNECTING = 2
-	STATE_OPERATIONAL = 3
-	STATE_PRINTING = 4
-	STATE_PAUSED = 5
-	STATE_CLOSED = 6
-	STATE_ERROR = 7
-	STATE_CLOSED_WITH_ERROR = 8
+	STATE_OPEN_SERIAL = 1
+	STATE_DETECT_SERIAL = 2
+	STATE_DETECT_BAUDRATE = 3
+	STATE_CONNECTING = 4
+	STATE_OPERATIONAL = 5
+	STATE_PRINTING = 6
+	STATE_PAUSED = 7
+	STATE_CLOSED = 8
+	STATE_ERROR = 9
+	STATE_CLOSED_WITH_ERROR = 10
 	
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
 		if port == None:
@@ -140,6 +142,8 @@ class MachineCom(object):
 		if callbackObject == None:
 			callbackObject = MachineComPrintCallback()
 
+		self._port = port
+		self._baudrate = baudrate
 		self._callback = callbackObject
 		self._state = self.STATE_NONE
 		self._serial = None
@@ -153,44 +157,9 @@ class MachineCom(object):
 		self._logQueue = queue.Queue(256)
 		self._feedRateModifier = {}
 		self._currentZ = -1
+		self._heatupWaitStartTime = 0
+		self._heatupWaitTimeLost = 0.0
 		
-		if port == 'AUTO':
-			programmer = stk500v2.Stk500v2()
-			self._log("Serial port list: %s" % (str(serialList())))
-			for p in serialList():
-				try:
-					self._log("Connecting to: %s" % (p))
-					programmer.connect(p)
-					self._serial = programmer.leaveISP()
-					profile.putPreference('serial_port_auto', p)
-					break
-				except ispBase.IspError as (e):
-					self._log("Error while connecting to %s: %s" % (p, str(e)))
-					pass
-				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
-				programmer.close()
-		elif port == 'VIRTUAL':
-			self._serial = VirtualPrinter()
-		else:
-			try:
-				self._log("Connecting to: %s" % (port))
-				if baudrate == 0:
-					self._serial = Serial(port, 115200, timeout=0.1)
-				else:
-					self._serial = Serial(port, baudrate, timeout=2)
-			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (port, getExceptionString()))
-		if self._serial == None:
-			self._log("Failed to open serial port (%s)" % (port))
-			self._errorValue = 'Failed to autodetect serial port.'
-			self._changeState(self.STATE_ERROR)
-			return
-		self._log("Connected to: %s, starting monitor" % (self._serial))
-		if baudrate == 0:
-			self._changeState(self.STATE_DETECT_BAUDRATE)
-		else:
-			self._changeState(self.STATE_CONNECTING)
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
@@ -209,8 +178,12 @@ class MachineCom(object):
 	def getStateString(self):
 		if self._state == self.STATE_NONE:
 			return "Offline"
+		if self._state == self.STATE_OPEN_SERIAL:
+			return "Opening serial port"
+		if self._state == self.STATE_DETECT_SERIAL:
+			return "Detecting serial port"
 		if self._state == self.STATE_DETECT_BAUDRATE:
-			return "Detect baudrate"
+			return "Detecting baudrate"
 		if self._state == self.STATE_CONNECTING:
 			return "Connecting"
 		if self._state == self.STATE_OPERATIONAL:
@@ -243,7 +216,7 @@ class MachineCom(object):
 		return self._gcodePos
 	
 	def getPrintTime(self):
-		return time.time() - self._printStartTime
+		return time.time() - self._printStartTime - self._heatupWaitTimeLost
 	
 	def isPaused(self):
 		return self._state == self.STATE_PAUSED
@@ -263,6 +236,49 @@ class MachineCom(object):
 		return ret
 	
 	def _monitor(self):
+		#Open the serial port.
+		if self._port == 'AUTO':
+			self._changeState(self.STATE_DETECT_SERIAL)
+			programmer = stk500v2.Stk500v2()
+			self._log("Serial port list: %s" % (str(serialList())))
+			for p in serialList():
+				try:
+					self._log("Connecting to: %s" % (p))
+					programmer.connect(p)
+					self._serial = programmer.leaveISP()
+					profile.putPreference('serial_port_auto', p)
+					break
+				except ispBase.IspError as (e):
+					self._log("Error while connecting to %s: %s" % (p, str(e)))
+					pass
+				except:
+					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
+				programmer.close()
+		elif self._port == 'VIRTUAL':
+			self._changeState(self.STATE_OPEN_SERIAL)
+			self._serial = VirtualPrinter()
+		else:
+			self._changeState(self.STATE_OPEN_SERIAL)
+			try:
+				self._log("Connecting to: %s" % (self._port))
+				if self._baudrate == 0:
+					self._serial = Serial(self._port, 115200, timeout=0.1, writeTimeout=10000)
+				else:
+					self._serial = Serial(self._port, self._baudrate, timeout=2, writeTimeout=10000)
+			except:
+				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
+		if self._serial == None:
+			self._log("Failed to open serial port (%s)" % (self._port))
+			self._errorValue = 'Failed to autodetect serial port.'
+			self._changeState(self.STATE_ERROR)
+			return
+		self._log("Connected to: %s, starting monitor" % (self._serial))
+		if self._baudrate == 0:
+			self._changeState(self.STATE_DETECT_BAUDRATE)
+		else:
+			self._changeState(self.STATE_CONNECTING)
+
+		#Start monitoring the serial port.
 		timeout = time.time() + 5
 		tempRequestTimeout = timeout
 		while True:
@@ -280,12 +296,17 @@ class MachineCom(object):
 					line = line.rstrip() + self._readline()
 				self._errorValue = line
 				self._changeState(self.STATE_ERROR)
-			if ' T:' in line:
-				self._temp = float(re.search("[0-9\.]*", line.split(' T:')[1]).group(0))
+			if ' T:' in line or line.startswith('T:'):
+				self._temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
 				if ' B:' in line:
 					self._bedTemp = float(re.search("[0-9\.]*", line.split(' B:')[1]).group(0))
 				self._callback.mcTempUpdate(self._temp, self._bedTemp)
-			elif line.strip() != 'ok':
+				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
+				if not 'ok' in line and self._heatupWaitStartTime != 0:
+					t = time.time()
+					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
+					self._heatupWaitStartTime = t
+			elif line.strip() != 'ok' and self.isOperational():
 				self._callback.mcMessage(line)
 
 			if self._state == self.STATE_DETECT_BAUDRATE:
@@ -387,6 +408,8 @@ class MachineCom(object):
 	def _sendCommand(self, cmd):
 		if self._serial == None:
 			return
+		if 'M109' in cmd or 'M190' in cmd:
+			self._heatupWaitStartTime = time.time()
 		self._log('Send: %s' % (cmd))
 		try:
 			#TODO: This can throw a write timeout exception, but we do not want timeout on writes. Find a fix for this.

@@ -328,7 +328,7 @@ class printWindow(wx.Frame):
 		self.cancelButton.Enable(self.machineCom != None and (self.machineCom.isPrinting() or self.machineCom.isPaused()))
 		self.temperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
-		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational())
+		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational() and not self.machineCom.isPrinting())
 		self.machineLogButton.Show(self.machineCom != None and self.machineCom.isError())
 	
 	def UpdateProgress(self):
@@ -349,8 +349,9 @@ class printWindow(wx.Frame):
 			printTime = self.machineCom.getPrintTime() / 60
 			printTimeTotal = printTime * len(self.gcodeList) / self.machineCom.getPrintPos()
 			printTimeLeft = printTimeTotal - printTime
-			status += 'Line: %d/%d\n' % (self.machineCom.getPrintPos(), len(self.gcodeList))
-			status += 'Height: %f\n' % (self.currentZ)
+			status += 'Line: %d/%d %d%%\n' % (self.machineCom.getPrintPos(), len(self.gcodeList), self.machineCom.getPrintPos() * 100 / len(self.gcodeList))
+			if self.currentZ > 0:
+				status += 'Height: %0.1f\n' % (self.currentZ)
 			status += 'Print time: %02d:%02d\n' % (int(printTime / 60), int(printTime % 60))
 			status += 'Print time left: %02d:%02d\n' % (int(printTimeLeft / 60), int(printTimeLeft % 60))
 			self.progress.SetValue(self.machineCom.getPrintPos())
@@ -558,11 +559,6 @@ class temperatureGraph(wx.Panel):
 		dc.SelectObject(self.backBuffer)
 		dc.Clear()
 		w, h = self.GetSizeTuple()
-		x0 = 0
-		t0 = 0
-		bt0 = 0
-		tSP0 = 0
-		btSP0 = 0
 		bgLinePen = wx.Pen('#A0A0A0')
 		tempPen = wx.Pen('#FF4040')
 		tempSPPen = wx.Pen('#FFA0A0')
@@ -570,6 +566,28 @@ class temperatureGraph(wx.Panel):
 		bedTempPen = wx.Pen('#4040FF')
 		bedTempSPPen = wx.Pen('#A0A0FF')
 		bedTempPenBG = wx.Pen('#D0D0FF')
+
+		x0 = 0
+		t0 = 0
+		bt0 = 0
+		tSP0 = 0
+		btSP0 = 0
+		for temp, tempSP, bedTemp, bedTempSP, t in self.points:
+			x1 = int(w - (now - t))
+			for x in xrange(x0, x1 + 1):
+				t = float(x - x0) / float(x1 - x0 + 1) * (temp - t0) + t0
+				bt = float(x - x0) / float(x1 - x0 + 1) * (bedTemp - bt0) + bt0
+				dc.SetPen(tempPenBG)
+				dc.DrawLine(x, h, x, h - (t * h / 300))
+				dc.SetPen(bedTempPenBG)
+				dc.DrawLine(x, h, x, h - (bt * h / 300))
+			t0 = temp
+			bt0 = bedTemp
+			tSP0 = tempSP
+			btSP0 = bedTempSP
+			x0 = x1 + 1
+
+		#Draw the grid
 		for x in xrange(w, 0, -30):
 			dc.SetPen(bgLinePen)
 			dc.DrawLine(x, 0, x, h)
@@ -579,6 +597,11 @@ class temperatureGraph(wx.Panel):
 		dc.DrawLine(0, 0, w, 0)
 		dc.DrawLine(0, 0, 0, h)
 		
+		x0 = 0
+		t0 = 0
+		bt0 = 0
+		tSP0 = 0
+		btSP0 = 0
 		for temp, tempSP, bedTemp, bedTempSP, t in self.points:
 			x1 = int(w - (now - t))
 			for x in xrange(x0, x1 + 1):
@@ -586,10 +609,6 @@ class temperatureGraph(wx.Panel):
 				bt = float(x - x0) / float(x1 - x0 + 1) * (bedTemp - bt0) + bt0
 				tSP = float(x - x0) / float(x1 - x0 + 1) * (tempSP - tSP0) + tSP0
 				btSP = float(x - x0) / float(x1 - x0 + 1) * (bedTempSP - btSP0) + btSP0
-				dc.SetPen(tempPenBG)
-				dc.DrawLine(x, h, x, h - (t * h / 300))
-				dc.SetPen(bedTempPenBG)
-				dc.DrawLine(x, h, x, h - (bt * h / 300))
 				dc.SetPen(tempSPPen)
 				dc.DrawPoint(x, h - (tSP * h / 300))
 				dc.SetPen(bedTempSPPen)

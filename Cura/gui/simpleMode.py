@@ -176,7 +176,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('skirt_line_count', '1')
 		put('skirt_gap', '6.0')
 		put('print_speed', '50')
-		put('print_temperature', '230')
+		put('print_temperature', '220')
 		put('support', 'None')
 		#put('machine_center_x', '100')
 		#put('machine_center_y', '100')
@@ -229,7 +229,7 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('print_speed', '80')
 			put('bottom_layer_speed', '40')
 		elif self.printTypeHigh.GetValue():
-			put('wall_thickness', nozzle_size * 3.0)
+			put('wall_thickness', nozzle_size * 2.0)
 			put('layer_height', '0.1')
 			put('fill_density', '30')
 			put('bottom_layer_speed', '15')
