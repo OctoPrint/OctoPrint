@@ -567,6 +567,7 @@ class temperatureGraph(wx.Panel):
 		bedTempSPPen = wx.Pen('#A0A0FF')
 		bedTempPenBG = wx.Pen('#D0D0FF')
 
+		#Draw the background up to the current temperatures.
 		x0 = 0
 		t0 = 0
 		bt0 = 0
@@ -597,6 +598,7 @@ class temperatureGraph(wx.Panel):
 		dc.DrawLine(0, 0, w, 0)
 		dc.DrawLine(0, 0, 0, h)
 		
+		#Draw the main lines
 		x0 = 0
 		t0 = 0
 		bt0 = 0
