@@ -159,11 +159,17 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		self.rowNr += 1
 		return text, button
 
+	def AddBitmap(self, bitmap):
+		bitmap = wx.StaticBitmap(self, -1, bitmap)
+		self.GetSizer().Add(bitmap, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT|wx.RIGHT)
+		self.rowNr += 1
+		return bitmap
+
 	def AddCheckmark(self, label, bitmap):
 		check = wx.StaticBitmap(self, -1, bitmap)
 		text = wx.StaticText(self, -1, label)
 		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT|wx.RIGHT)
-		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1,2), flag=wx.ALL)
+		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1,1), flag=wx.ALL)
 		self.rowNr += 1
 		return check
 		
@@ -279,14 +285,23 @@ class FirmwareUpgradePage(InfoPage):
 class UltimakerCheckupPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCheckupPage, self).__init__(parent, "Ultimaker Checkup")
+
+		self.checkBitmap = toolbarUtil.getBitmapImage('checkmark.png')
+		self.crossBitmap = toolbarUtil.getBitmapImage('cross.png')
+		self.unknownBitmap = toolbarUtil.getBitmapImage('question.png')
+		self.endStopNoneBitmap = toolbarUtil.getBitmapImage('endstop_none.png')
+		self.endStopXMinBitmap = toolbarUtil.getBitmapImage('endstop_xmin.png')
+		self.endStopXMaxBitmap = toolbarUtil.getBitmapImage('endstop_xmax.png')
+		self.endStopYMinBitmap = toolbarUtil.getBitmapImage('endstop_ymin.png')
+		self.endStopYMaxBitmap = toolbarUtil.getBitmapImage('endstop_ymax.png')
+		self.endStopZMinBitmap = toolbarUtil.getBitmapImage('endstop_zmin.png')
+		self.endStopZMaxBitmap = toolbarUtil.getBitmapImage('endstop_zmax.png')
+
 		self.AddText('It is a good idea to do a few sanity checks now on your Ultimaker.\nYou can skip these if you know your machine is functional.')
 		b1, b2 = self.AddDualButton('Run checks', 'Skip checks')
 		b1.Bind(wx.EVT_BUTTON, self.OnCheckClick)
 		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
 		self.AddSeperator()
-		self.checkBitmap = toolbarUtil.getBitmapImage('checkmark.png')
-		self.crossBitmap = toolbarUtil.getBitmapImage('cross.png')
-		self.unknownBitmap = toolbarUtil.getBitmapImage('question.png')
 		self.commState = self.AddCheckmark('Communication:', self.unknownBitmap)
 		self.tempState = self.AddCheckmark('Temperature:', self.unknownBitmap)
 		self.stopState = self.AddCheckmark('Endstops:', self.unknownBitmap)
@@ -295,12 +310,7 @@ class UltimakerCheckupPage(InfoPage):
 		self.machineState = self.AddText('')
 		self.temperatureLabel = self.AddText('')
 		self.AddSeperator()
-		self.xMinState = self.AddCheckmark('X stop left:', self.unknownBitmap)
-		self.xMaxState = self.AddCheckmark('X stop right:', self.unknownBitmap)
-		self.yMinState = self.AddCheckmark('Y stop front:', self.unknownBitmap)
-		self.yMaxState = self.AddCheckmark('Y stop back:', self.unknownBitmap)
-		self.zMinState = self.AddCheckmark('Z stop top:', self.unknownBitmap)
-		self.zMaxState = self.AddCheckmark('Z stop bottom:', self.unknownBitmap)
+		self.endstopBitmap = self.AddBitmap(self.endStopNoneBitmap)
 		self.comm = None
 		self.xMinStop = False
 		self.xMaxStop = False
@@ -314,6 +324,7 @@ class UltimakerCheckupPage(InfoPage):
 			self.comm.close()
 	
 	def AllowNext(self):
+		self.endstopBitmap.Show(False)
 		return False
 	
 	def OnSkipClick(self, e):
@@ -356,10 +367,12 @@ class UltimakerCheckupPage(InfoPage):
 				self.comm.sendCommand('M104 S200')
 				self.comm.sendCommand('M104 S200')
 		elif self.checkupState == 2:
-			print "WARNING, TEMPERATURE TEST DISABLED FOR TESTING!"
-			if temp > self.startTemp:# + 40:
+			#print "WARNING, TEMPERATURE TEST DISABLED FOR TESTING!"
+			if temp > self.startTemp + 40:
 				self.checkupState = 3
 				wx.CallAfter(self.infoBox.SetAttention, 'Please make sure none of the endstops are pressed.')
+				wx.CallAfter(self.endstopBitmap.Show, True)
+				wx.CallAfter(self.Layout)
 				self.comm.sendCommand('M104 S0')
 				self.comm.sendCommand('M104 S0')
 				self.comm.sendCommand('M119')
@@ -403,61 +416,43 @@ class UltimakerCheckupPage(InfoPage):
 						self.zMaxStop = (value == 'H')
 			self.comm.sendCommand('M119')
 			
-			if self.xMinStop:
-				self.xMinState.SetBitmap(self.checkBitmap)
-			else:
-				self.xMinState.SetBitmap(self.crossBitmap)
-			if self.xMaxStop:
-				self.xMaxState.SetBitmap(self.checkBitmap)
-			else:
-				self.xMaxState.SetBitmap(self.crossBitmap)
-			if self.yMinStop:
-				self.yMinState.SetBitmap(self.checkBitmap)
-			else:
-				self.yMinState.SetBitmap(self.crossBitmap)
-			if self.yMaxStop:
-				self.yMaxState.SetBitmap(self.checkBitmap)
-			else:
-				self.yMaxState.SetBitmap(self.crossBitmap)
-			if self.zMinStop:
-				self.zMinState.SetBitmap(self.checkBitmap)
-			else:
-				self.zMinState.SetBitmap(self.crossBitmap)
-			if self.zMaxStop:
-				self.zMaxState.SetBitmap(self.checkBitmap)
-			else:
-				self.zMaxState.SetBitmap(self.crossBitmap)
-			
 			if self.checkupState == 3:
 				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 4
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the left X endstop.')
+					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopXMinBitmap)
 			elif self.checkupState == 4:
 				if self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 5
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the right X endstop.')
+					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopXMaxBitmap)
 			elif self.checkupState == 5:
 				if not self.xMinStop and self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 6
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the front Y endstop.')
+					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopYMinBitmap)
 			elif self.checkupState == 6:
 				if not self.xMinStop and not self.xMaxStop and self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 7
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the back Y endstop.')
+					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopYMaxBitmap)
 			elif self.checkupState == 7:
 				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 8
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the top Z endstop.')
+					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopZMinBitmap)
 			elif self.checkupState == 8:
 				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and self.zMinStop and not self.zMaxStop:
 					self.checkupState = 9
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the bottom Z endstop.')
+					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopZMaxBitmap)
 			elif self.checkupState == 9:
 				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and self.zMaxStop:
 					self.checkupState = 10
 					self.comm.close()
 					wx.CallAfter(self.infoBox.SetInfo, 'Checkup finished')
 					wx.CallAfter(self.infoBox.SetReadyIndicator)
+					wx.CallAfter(self.endstopBitmap.Show, False)
 					wx.CallAfter(self.stopState.SetBitmap, self.checkBitmap)
 					wx.CallAfter(self.OnSkipClick, None)
 
