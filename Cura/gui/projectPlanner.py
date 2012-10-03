@@ -951,7 +951,6 @@ class ProjectSliceProgressWindow(wx.Frame):
 							maxValue = int(progress[2])
 						wx.CallAfter(self.SetProgress, progress[0], int(progress[1]), maxValue)
 					else:
-						print line
 						self.progressLog.append(line)
 						wx.CallAfter(self.statusText.SetLabel, line)
 					if self.abort:
