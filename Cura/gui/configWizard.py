@@ -9,6 +9,70 @@ from gui import toolbarUtil
 from util import machineCom
 from util import profile
 
+class InfoBox(wx.Panel):
+	def __init__(self, parent):
+		super(InfoBox, self).__init__(parent)
+		self.SetBackgroundColour('#FFFF80')
+		
+		self.sizer = wx.GridBagSizer(5, 5)
+		self.SetSizer(self.sizer)
+		
+		self.attentionBitmap = toolbarUtil.getBitmapImage('attention.png')
+		self.errorBitmap = toolbarUtil.getBitmapImage('error.png')
+		self.readyBitmap = toolbarUtil.getBitmapImage('ready.png')
+		self.busyBitmap = [toolbarUtil.getBitmapImage('busy-0.png'), toolbarUtil.getBitmapImage('busy-1.png'), toolbarUtil.getBitmapImage('busy-2.png'), toolbarUtil.getBitmapImage('busy-3.png')]
+		
+		self.bitmap = wx.StaticBitmap(self, -1, wx.EmptyBitmapRGBA(24, 24, red=255, green=255, blue=255, alpha=1))
+		self.text = wx.StaticText(self, -1, '')
+		self.sizer.Add(self.bitmap, pos=(0,0), flag=wx.ALL, border=5)
+		self.sizer.Add(self.text, pos=(0,1), flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, border=5)
+		
+		self.busyState = None
+		self.timer = wx.Timer(self)
+		self.Bind(wx.EVT_TIMER, self.doBusyUpdate, self.timer)
+		self.timer.Start(100)
+
+	def SetInfo(self, info):
+		self.SetBackgroundColour('#FFFF80')
+		self.text.SetLabel(info)
+		self.Refresh()
+
+	def SetError(self, info):
+		self.SetBackgroundColour('#FF8080')
+		self.text.SetLabel(info)
+		self.SetErrorIndicator()
+		self.Refresh()
+	
+	def SetAttention(self, info):
+		self.SetBackgroundColour('#FFFF80')
+		self.text.SetLabel(info)
+		self.SetAttentionIndicator()
+		self.Refresh()
+	
+	def SetBusyIndicator(self):
+		self.busyState = 0
+		self.bitmap.SetBitmap(self.busyBitmap[self.busyState])
+	
+	def doBusyUpdate(self, e):
+		if self.busyState == None:
+			return
+		self.busyState += 1
+		if self.busyState >= len(self.busyBitmap):
+			self.busyState = 0
+		self.bitmap.SetBitmap(self.busyBitmap[self.busyState])
+	
+	def SetReadyIndicator(self):
+		self.busyState = None
+		self.bitmap.SetBitmap(self.readyBitmap)
+	
+	def SetErrorIndicator(self):
+		self.busyState = None
+		self.bitmap.SetBitmap(self.errorBitmap)
+	
+	def SetAttentionIndicator(self):
+		self.busyState = None
+		self.bitmap.SetBitmap(self.attentionBitmap)
+
 class InfoPage(wx.wizard.WizardPageSimple):
 	def __init__(self, parent, title):
 		wx.wizard.WizardPageSimple.__init__(self, parent)
@@ -37,6 +101,12 @@ class InfoPage(wx.wizard.WizardPageSimple):
 	
 	def AddHiddenSeperator(self):
 		self.AddText('')
+
+	def AddInfoBox(self):
+		infoBox = InfoBox(self)
+		self.GetSizer().Add(infoBox, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT|wx.RIGHT|wx.EXPAND)
+		self.rowNr += 1
+		return infoBox
 	
 	def AddRadioButton(self, label, style = 0):
 		radio = wx.RadioButton(self, -1, label, style=style)
@@ -221,9 +291,16 @@ class UltimakerCheckupPage(InfoPage):
 		self.tempState = self.AddCheckmark('Temperature:', self.unknownBitmap)
 		self.stopState = self.AddCheckmark('Endstops:', self.unknownBitmap)
 		self.AddSeperator()
-		self.checkState = self.AddText('')
+		self.infoBox = self.AddInfoBox()
 		self.machineState = self.AddText('')
 		self.temperatureLabel = self.AddText('')
+		self.AddSeperator()
+		self.xMinState = self.AddCheckmark('X stop left:', self.unknownBitmap)
+		self.xMaxState = self.AddCheckmark('X stop right:', self.unknownBitmap)
+		self.yMinState = self.AddCheckmark('Y stop front:', self.unknownBitmap)
+		self.yMaxState = self.AddCheckmark('Y stop back:', self.unknownBitmap)
+		self.zMinState = self.AddCheckmark('Z stop top:', self.unknownBitmap)
+		self.zMaxState = self.AddCheckmark('Z stop bottom:', self.unknownBitmap)
 		self.comm = None
 		self.xMinStop = False
 		self.xMaxStop = False
@@ -232,6 +309,10 @@ class UltimakerCheckupPage(InfoPage):
 		self.zMinStop = False
 		self.zMaxStop = False
 
+	def __del__(self):
+		if self.comm != None:
+			self.comm.close()
+	
 	def AllowNext(self):
 		return False
 	
@@ -242,7 +323,8 @@ class UltimakerCheckupPage(InfoPage):
 		if self.comm != None:
 			self.comm.close()
 			del self.comm
-		wx.CallAfter(self.checkState.SetLabel, 'Connecting to machine.')
+		self.infoBox.SetInfo('Connecting to machine.')
+		self.infoBox.SetBusyIndicator()
 		self.commState.SetBitmap(self.unknownBitmap)
 		self.tempState.SetBitmap(self.unknownBitmap)
 		self.stopState.SetBitmap(self.unknownBitmap)
@@ -250,56 +332,60 @@ class UltimakerCheckupPage(InfoPage):
 		self.comm = machineCom.MachineCom(callbackObject=self)
 
 	def mcLog(self, message):
-		print message
+		pass
 
 	def mcTempUpdate(self, temp, bedTemp):
 		if self.checkupState == 0:
 			self.tempCheckTimeout = 20
 			if temp > 70:
 				self.checkupState = 1
-				wx.CallAfter(self.checkState.SetLabel, 'Cooldown before temperature check.')
+				wx.CallAfter(self.infoBox.SetInfo, 'Cooldown before temperature check.')
 				self.comm.sendCommand('M104 S0')
 				self.comm.sendCommand('M104 S0')
 			else:
 				self.startTemp = temp
 				self.checkupState = 2
-				wx.CallAfter(self.checkState.SetLabel, 'Checking the heater and temperature sensor.')
+				wx.CallAfter(self.infoBox.SetInfo, 'Checking the heater and temperature sensor.')
 				self.comm.sendCommand('M104 S200')
 				self.comm.sendCommand('M104 S200')
 		elif self.checkupState == 1:
 			if temp < 60:
 				self.startTemp = temp
 				self.checkupState = 2
-				wx.CallAfter(self.checkState.SetLabel, 'Checking the heater and temperature sensor.')
+				wx.CallAfter(self.infoBox.SetInfo, 'Checking the heater and temperature sensor.')
 				self.comm.sendCommand('M104 S200')
 				self.comm.sendCommand('M104 S200')
 		elif self.checkupState == 2:
+			print "WARNING, TEMPERATURE TEST DISABLED FOR TESTING!"
 			if temp > self.startTemp:# + 40:
 				self.checkupState = 3
-				wx.CallAfter(self.checkState.SetLabel, 'Testing the endstops...')
+				wx.CallAfter(self.infoBox.SetAttention, 'Please make sure none of the endstops are pressed.')
 				self.comm.sendCommand('M104 S0')
 				self.comm.sendCommand('M104 S0')
 				self.comm.sendCommand('M119')
-				self.tempState.SetBitmap(self.checkBitmap)
+				wx.CallAfter(self.tempState.SetBitmap, self.checkBitmap)
 			else:
 				self.tempCheckTimeout -= 1
 				if self.tempCheckTimeout < 1:
 					self.checkupState = -1
-					self.tempState.SetBitmap(self.crossBitmap)
-					wx.CallAfter(self.checkState.SetLabel, 'Temperature measurement FAILED!')
+					wx.CallAfter(self.tempState.SetBitmap, self.crossBitmap)
+					wx.CallAfter(self.infoBox.SetError, 'Temperature measurement FAILED!')
 					self.comm.sendCommand('M104 S0')
 					self.comm.sendCommand('M104 S0')
 		wx.CallAfter(self.temperatureLabel.SetLabel, 'Head temperature: %d' % (temp))
 
 	def mcStateChange(self, state):
+		if self.comm == None:
+			return
 		if self.comm.isOperational():
-			self.commState.SetBitmap(self.checkBitmap)
+			wx.CallAfter(self.commState.SetBitmap, self.checkBitmap)
 		elif self.comm.isError():
-			self.commState.SetBitmap(self.crossBitmap)
+			wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
+			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.')
 		wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
 	
 	def mcMessage(self, message):
-		if self.checkupState >= 3 and 'x_min' in message:
+		if self.checkupState >= 3 and self.checkupState < 10 and 'x_min' in message:
 			for data in message.split(' '):
 				if ':' in data:
 					tag, value = data.split(':', 2)
@@ -316,6 +402,64 @@ class UltimakerCheckupPage(InfoPage):
 					if tag == 'z_max':
 						self.zMaxStop = (value == 'H')
 			self.comm.sendCommand('M119')
+			
+			if self.xMinStop:
+				self.xMinState.SetBitmap(self.checkBitmap)
+			else:
+				self.xMinState.SetBitmap(self.crossBitmap)
+			if self.xMaxStop:
+				self.xMaxState.SetBitmap(self.checkBitmap)
+			else:
+				self.xMaxState.SetBitmap(self.crossBitmap)
+			if self.yMinStop:
+				self.yMinState.SetBitmap(self.checkBitmap)
+			else:
+				self.yMinState.SetBitmap(self.crossBitmap)
+			if self.yMaxStop:
+				self.yMaxState.SetBitmap(self.checkBitmap)
+			else:
+				self.yMaxState.SetBitmap(self.crossBitmap)
+			if self.zMinStop:
+				self.zMinState.SetBitmap(self.checkBitmap)
+			else:
+				self.zMinState.SetBitmap(self.crossBitmap)
+			if self.zMaxStop:
+				self.zMaxState.SetBitmap(self.checkBitmap)
+			else:
+				self.zMaxState.SetBitmap(self.crossBitmap)
+			
+			if self.checkupState == 3:
+				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
+					self.checkupState = 4
+					wx.CallAfter(self.infoBox.SetAttention, 'Please press the left X endstop.')
+			elif self.checkupState == 4:
+				if self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
+					self.checkupState = 5
+					wx.CallAfter(self.infoBox.SetAttention, 'Please press the right X endstop.')
+			elif self.checkupState == 5:
+				if not self.xMinStop and self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
+					self.checkupState = 6
+					wx.CallAfter(self.infoBox.SetAttention, 'Please press the front Y endstop.')
+			elif self.checkupState == 6:
+				if not self.xMinStop and not self.xMaxStop and self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
+					self.checkupState = 7
+					wx.CallAfter(self.infoBox.SetAttention, 'Please press the back Y endstop.')
+			elif self.checkupState == 7:
+				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and self.yMaxStop and not self.zMinStop and not self.zMaxStop:
+					self.checkupState = 8
+					wx.CallAfter(self.infoBox.SetAttention, 'Please press the top Z endstop.')
+			elif self.checkupState == 8:
+				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and self.zMinStop and not self.zMaxStop:
+					self.checkupState = 9
+					wx.CallAfter(self.infoBox.SetAttention, 'Please press the bottom Z endstop.')
+			elif self.checkupState == 9:
+				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and self.zMaxStop:
+					self.checkupState = 10
+					self.comm.close()
+					wx.CallAfter(self.infoBox.SetInfo, 'Checkup finished')
+					wx.CallAfter(self.infoBox.SetReadyIndicator)
+					wx.CallAfter(self.stopState.SetBitmap, self.checkBitmap)
+					wx.CallAfter(self.OnSkipClick, None)
 
 	def mcProgress(self, lineNr):
 		pass
