@@ -386,7 +386,7 @@ class mainWindow(configBase.configWindowBase):
 	
 	def OnSlice(self, e):
 		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file before you can slice it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to load a file before you can prepare it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
@@ -399,7 +399,7 @@ class mainWindow(configBase.configWindowBase):
 	
 	def OnPrint(self, e):
 		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file and prepare it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to load a file and prepare it before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
 			wx.MessageBox('You need to prepare a print before you can run the actual print.', 'Print error', wx.OK | wx.ICON_INFORMATION)

@@ -161,7 +161,7 @@ class simpleModeWindow(configBase.configWindowBase):
 	
 	def OnSlice(self, e):
 		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file before you can slice it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to load a file before you can prepare it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		#save the current profile so we can put it back latter
 		oldProfile = profile.getGlobalProfileString()
@@ -275,10 +275,10 @@ class simpleModeWindow(configBase.configWindowBase):
 	
 	def OnPrint(self, e):
 		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file and slice it before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to load a file and prepare it before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
-			wx.MessageBox('You need to slice the file to GCode before you can print it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox('You need to prepare the file before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
 		printWindow.printFile(sliceRun.getExportFilename(self.filelist[0]))
 
