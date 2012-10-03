@@ -334,7 +334,7 @@ class UltimakerCheckupPage(InfoPage):
 	def mcLog(self, message):
 		pass
 
-	def mcTempUpdate(self, temp, bedTemp):
+	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		if self.checkupState == 0:
 			self.tempCheckTimeout = 20
 			if temp > 70:

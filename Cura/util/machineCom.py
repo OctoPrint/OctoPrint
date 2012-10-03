@@ -62,12 +62,12 @@ class VirtualPrinter():
 		#print "Send: %s" % (data.rstrip())
 		if 'M104' in data or 'M109' in data:
 			try:
-				self.targetTemp = float(data[data.find('S')+1:])
+				self.targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 			except:
 				pass
 		if 'M140' in data or 'M190' in data:
 			try:
-				self.bedTargetTemp = float(data[data.find('S')+1:])
+				self.bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 			except:
 				pass
 		if 'M105' in data:
@@ -103,7 +103,7 @@ class MachineComPrintCallback(object):
 	def mcLog(self, message):
 		pass
 	
-	def mcTempUpdate(self, temp, bedTemp):
+	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		pass
 	
 	def mcStateChange(self, state):
@@ -151,6 +151,8 @@ class MachineCom(object):
 		self._baudrateDetectRetry = 0
 		self._temp = 0
 		self._bedTemp = 0
+		self._targetTemp = 0
+		self._bedTargetTemp = 0
 		self._gcodeList = None
 		self._gcodePos = 0
 		self._commandQueue = queue.Queue()
@@ -287,20 +289,24 @@ class MachineCom(object):
 				break
 			
 			#No matter the state, if we see an error, goto the error state and store the error for reference.
-			if line.startswith('Error: '):
+			if line.startswith('Error:'):
 				#Oh YEAH, consistency.
-				# Marlin reports an MIN/MAX temp error as "Error: x\n: Extruder switched off. MAXTEMP triggered !\n"
+				# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 				#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
 				#	So we can have an extra newline in the most common case. Awesome work people.
-				if re.match('Error: [0-9]\n', line):
+				if re.match('Error:[0-9]\n', line):
 					line = line.rstrip() + self._readline()
-				self._errorValue = line
-				self._changeState(self.STATE_ERROR)
+				#Skip the communication errors, as those get corrected.
+				if 'checksum mismatch' in line or 'Line Number is not Last Line Number' in line or 'No Line Number with checksum' in line:
+					pass
+				else:
+					self._errorValue = line[6:]
+					self._changeState(self.STATE_ERROR)
 			if ' T:' in line or line.startswith('T:'):
 				self._temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
 				if ' B:' in line:
 					self._bedTemp = float(re.search("[0-9\.]*", line.split(' B:')[1]).group(0))
-				self._callback.mcTempUpdate(self._temp, self._bedTemp)
+				self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
 				if not 'ok' in line and self._heatupWaitStartTime != 0:
 					t = time.time()
@@ -331,6 +337,7 @@ class MachineCom(object):
 						except:
 							self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, getExceptionString()))
 				elif 'ok' in line:
+					self._sendCommand("M999")
 					self._serial.timeout = 2
 					profile.putPreference('serial_baud_auto', self._serial.baudrate)
 					self._changeState(self.STATE_OPERATIONAL)
@@ -410,11 +417,27 @@ class MachineCom(object):
 			return
 		if 'M109' in cmd or 'M190' in cmd:
 			self._heatupWaitStartTime = time.time()
+		if 'M104' in cmd or 'M109' in cmd:
+			try:
+				self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+			except:
+				pass
+		if 'M140' in cmd or 'M190' in cmd:
+			try:
+				self._bedTargetTemp = float(re.search('S([0-9]+)').group(1))
+			except:
+				pass
 		self._log('Send: %s' % (cmd))
 		try:
-			#TODO: This can throw a write timeout exception, but we do not want timeout on writes. Find a fix for this.
-			#	Oddly enough, the write timeout is not even set and thus we should not get a write timeout.
 			self._serial.write(cmd + '\n')
+		except SerialTimeoutException:
+			self._log("Serial timeout while writing to serial port, trying again.")
+			try:
+				self._serial.write(cmd + '\n')
+			except:
+				self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
+				self._errorValue = getExceptionString()
+				self.close(True)
 		except:
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 			self._errorValue = getExceptionString()

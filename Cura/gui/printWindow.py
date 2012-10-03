@@ -55,11 +55,11 @@ class printProcessMonitor():
 		self.thread = None
 
 class PrintCommandButton(buttons.GenBitmapButton):
-	def __init__(self, parent, command, bitmapFilename, size=(20,20)):
+	def __init__(self, parent, commandList, bitmapFilename, size=(20,20)):
 		self.bitmap = toolbarUtil.getBitmapImage(bitmapFilename)
 		super(PrintCommandButton, self).__init__(parent.directControlPanel, -1, self.bitmap, size=size)
 
-		self.command = command
+		self.commandList = commandList
 		self.parent = parent
 
 		self.SetBezelWidth(1)
@@ -70,11 +70,8 @@ class PrintCommandButton(buttons.GenBitmapButton):
 	def OnClick(self, e):
 		if self.parent.machineCom == None or self.parent.machineCom.isPrinting():
 			return;
-		if self.command.startswith('G1'):
-			self.parent.machineCom.sendCommand("G91")
-		self.parent.machineCom.sendCommand(self.command)
-		if self.command.startswith('G1'):
-			self.parent.machineCom.sendCommand("G90")
+		for cmd in self.commandList:
+			self.parent.machineCom.sendCommand(cmd)
 		e.Skip()
 
 class printWindow(wx.Frame):
@@ -163,33 +160,36 @@ class printWindow(wx.Frame):
 		
 		sizer = wx.GridBagSizer(2, 2)
 		self.directControlPanel.SetSizer(sizer)
-		sizer.Add(PrintCommandButton(self, 'G1 Y100 F6000', 'print-move-y100.png'), pos=(0,3))
-		sizer.Add(PrintCommandButton(self, 'G1 Y10 F6000', 'print-move-y10.png'), pos=(1,3))
-		sizer.Add(PrintCommandButton(self, 'G1 Y1 F6000', 'print-move-y1.png'), pos=(2,3))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Y100 F6000', 'G90'], 'print-move-y100.png'), pos=(0,3))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Y10 F6000', 'G90'], 'print-move-y10.png'), pos=(1,3))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Y1 F6000', 'G90'], 'print-move-y1.png'), pos=(2,3))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Y-1 F6000', 'print-move-y-1.png'), pos=(4,3))
-		sizer.Add(PrintCommandButton(self, 'G1 Y-10 F6000', 'print-move-y-10.png'), pos=(5,3))
-		sizer.Add(PrintCommandButton(self, 'G1 Y-100 F6000', 'print-move-y-100.png'), pos=(6,3))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Y-1 F6000', 'G90'], 'print-move-y-1.png'), pos=(4,3))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Y-10 F6000', 'G90'], 'print-move-y-10.png'), pos=(5,3))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Y-100 F6000', 'G90'], 'print-move-y-100.png'), pos=(6,3))
 
-		sizer.Add(PrintCommandButton(self, 'G1 X-100 F6000', 'print-move-x-100.png'), pos=(3,0))
-		sizer.Add(PrintCommandButton(self, 'G1 X-10 F6000', 'print-move-x-10.png'), pos=(3,1))
-		sizer.Add(PrintCommandButton(self, 'G1 X-1 F6000', 'print-move-x-1.png'), pos=(3,2))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 X-100 F6000', 'G90'], 'print-move-x-100.png'), pos=(3,0))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 X-10 F6000', 'G90'], 'print-move-x-10.png'), pos=(3,1))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 X-1 F6000', 'G90'], 'print-move-x-1.png'), pos=(3,2))
 
-		sizer.Add(PrintCommandButton(self, 'G28 X0 Y0', 'print-move-home.png'), pos=(3,3))
+		sizer.Add(PrintCommandButton(self, ['G28 X0 Y0'], 'print-move-home.png'), pos=(3,3))
 
-		sizer.Add(PrintCommandButton(self, 'G1 X1 F6000', 'print-move-x1.png'), pos=(3,4))
-		sizer.Add(PrintCommandButton(self, 'G1 X10 F6000', 'print-move-x10.png'), pos=(3,5))
-		sizer.Add(PrintCommandButton(self, 'G1 X100 F6000', 'print-move-x100.png'), pos=(3,6))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 X1 F6000', 'G90'], 'print-move-x1.png'), pos=(3,4))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 X10 F6000', 'G90'], 'print-move-x10.png'), pos=(3,5))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 X100 F6000', 'G90'], 'print-move-x100.png'), pos=(3,6))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Z10 F200', 'print-move-z10.png'), pos=(0,8))
-		sizer.Add(PrintCommandButton(self, 'G1 Z1 F200', 'print-move-z1.png'), pos=(1,8))
-		sizer.Add(PrintCommandButton(self, 'G1 Z0.1 F200', 'print-move-z0.1.png'), pos=(2,8))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z10 F200', 'G90'], 'print-move-z10.png'), pos=(0,8))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z1 F200', 'G90'], 'print-move-z1.png'), pos=(1,8))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z0.1 F200', 'G90'], 'print-move-z0.1.png'), pos=(2,8))
 
-		sizer.Add(PrintCommandButton(self, 'G28 Z0', 'print-move-home.png'), pos=(3,8))
+		sizer.Add(PrintCommandButton(self, ['G28 Z0'], 'print-move-home.png'), pos=(3,8))
 
-		sizer.Add(PrintCommandButton(self, 'G1 Z-0.1 F200', 'print-move-z-0.1.png'), pos=(4,8))
-		sizer.Add(PrintCommandButton(self, 'G1 Z-1 F200', 'print-move-z-1.png'), pos=(5,8))
-		sizer.Add(PrintCommandButton(self, 'G1 Z-10 F200', 'print-move-z-10.png'), pos=(6,8))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z-0.1 F200', 'G90'], 'print-move-z-0.1.png'), pos=(4,8))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z-1 F200', 'G90'], 'print-move-z-1.png'), pos=(5,8))
+		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z-10 F200', 'G90'], 'print-move-z-10.png'), pos=(6,8))
+
+		sizer.Add(PrintCommandButton(self, ['G92 E0', 'G1 E2 F120'], 'question.png'), pos=(8,1))
+		sizer.Add(PrintCommandButton(self, ['G92 E0', 'G1 E-2 F120'], 'question.png'), pos=(8,2))
 
 		nb.AddPage(self.directControlPanel, 'Jog')
 
@@ -248,11 +248,13 @@ class printWindow(wx.Frame):
 			sizer.Add(self.timelapsEnable, pos=(0,0), span=(1,2), flag=wx.EXPAND)
 			
 			pages = self.cam.propertyPages()
+			self.cam.buttons = [self.timelapsEnable]
 			for page in pages:
 				button = wx.Button(self.camPage, -1, page)
 				button.index = pages.index(page)
 				sizer.Add(button, pos=(1, pages.index(page)))
 				button.Bind(wx.EVT_BUTTON, self.OnPropertyPageButton)
+				self.cam.buttons.append(button)
 			
 			self.camPreview = wx.Panel(self.camPage)
 			sizer.Add(self.camPreview, pos=(2,0), span=(1,2), flag=wx.EXPAND)
@@ -330,6 +332,9 @@ class printWindow(wx.Frame):
 		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational() and not self.machineCom.isPrinting())
 		self.machineLogButton.Show(self.machineCom != None and self.machineCom.isError())
+		if self.cam:
+			for button in self.cam.buttons:
+				button.Enable(self.machineCom == None or not self.machineCom.isPrinting())
 	
 	def UpdateProgress(self):
 		status = ""
@@ -485,6 +490,7 @@ class printWindow(wx.Frame):
 		wx.CallAfter(self.progress.SetRange, len(gcodeList))
 		wx.CallAfter(self.UpdateButtonStates)
 		wx.CallAfter(self.UpdateProgress)
+		wx.CallAfter(self.SetTitle, 'Printing: %s' % (filename))
 		
 	def sendLine(self, lineNr):
 		if lineNr >= len(self.gcodeList):
@@ -507,8 +513,12 @@ class printWindow(wx.Frame):
 		#print message
 		pass
 	
-	def mcTempUpdate(self, temp, bedTemp):
-		self.temperatureGraph.addPoint(temp, self.temperatureSelect.GetValue(), bedTemp, self.bedTemperatureSelect.GetValue())
+	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
+		self.temperatureGraph.addPoint(temp, targetTemp, bedTemp, bedTargetTemp)
+		if self.temperatureSelect.GetValue() != targetTemp:
+			wx.CallAfter(self.temperatureSelect.SetValue, targetTemp)
+		if self.bedTemperatureSelect.GetValue() != bedTargetTemp:
+			wx.CallAfter(self.bedTemperatureSelect.SetValue, bedTargetTemp)
 	
 	def mcStateChange(self, state):
 		if self.machineCom != None and state == self.machineCom.STATE_OPERATIONAL and self.cam != None:

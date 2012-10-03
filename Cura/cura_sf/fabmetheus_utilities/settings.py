@@ -384,7 +384,7 @@ def getProfileInformation():
 			'Maximum_E_Value_before_Reset_float': DEFSET,
 			'Minimum_Travel_for_Retraction_millimeters': storedSettingFloat("retraction_min_travel"),
 			'Retract_Within_Island': storedSettingInvertBoolean("retract_on_jumps_only"),
-			'Retraction_Distance_millimeters': storedSettingFloat('retraction_amount'),
+			'Retraction_Distance_millimeters': lambda setting: profile.getProfileSettingFloat('retraction_amount') if profile.getProfileSetting('retraction_enable') == 'True' else 0,
 			'Restart_Extra_Distance_millimeters': storedSettingFloat('retraction_extra'),
 		},'alteration': {
 			'Activate_Alteration': storedSetting('add_start_end_gcode'),
