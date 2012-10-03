@@ -129,6 +129,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	extract numpy-1.6.2-sse2.exe PLATLIB
 	extract VideoCapture-0.9-5.zip VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd
 	extract ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe
+	extract ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/licenses
 	
 	mkdir -p ${TARGET_DIR}/python
 	mkdir -p ${TARGET_DIR}/Cura/
@@ -139,6 +140,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	mv PLATLIB/numpy ${TARGET_DIR}/python/Lib
 	mv VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd ${TARGET_DIR}/python/DLLs
 	mv ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe ${TARGET_DIR}/Cura/
+	mv ffmpeg-20120927-git-13f0cd6-win32-static/licenses ${TARGET_DIR}/Cura/ffmpeg-licenses/
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
 	rm -rf PLATLIB
