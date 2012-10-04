@@ -112,7 +112,7 @@ Section "Open STL files with Cura"
 	DeleteRegValue HKCR .stl "Content Type"
 	WriteRegStr HKCR "Cura STL model file\DefaultIcon" "" "$INSTDIR\Cura\stl.ico,0"
 	WriteRegStr HKCR "Cura STL model file\shell" "" "open"
-	WriteRegStr HKCR "Cura STL model file\shell\open\command" "" '"$INSTDIR\python\python.exe" "$INSTDIR\Cura\cura.py" "%1"'
+	WriteRegStr HKCR "Cura STL model file\shell\open\command" "" '"$INSTDIR\python\pythonw.exe" "$INSTDIR\Cura\cura.py" "%1"'
 SectionEnd
 
 ;--------------------------------
