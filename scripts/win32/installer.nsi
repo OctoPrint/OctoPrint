@@ -26,7 +26,7 @@ SetCompressor /SOLID lzma
 !include "MUI2.nsh"
 !include Library.nsh
 
-!define MUI_ICON "cura.ico"
+!define MUI_ICON "dist/Cura/cura.ico"
 !define MUI_BGCOLOR FFFFFF
 
 ; Directory page defines
@@ -65,7 +65,6 @@ SetCompressor /SOLID lzma
 ; Reserve Files
 !insertmacro MUI_RESERVEFILE_LANGDLL
 ReserveFile '${NSISDIR}\Plugins\InstallOptions.dll'
-ReserveFile "cura.ico"
 ReserveFile "header.bmp"
 
 ;--------------------------------
@@ -93,7 +92,7 @@ Section "Cura ${VERSION}"
   
   CreateDirectory "$SMPROGRAMS\Cura ${VERSION}"
   CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Uninstall Cura ${VERSION}.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Cura ${VERSION}.lnk" "$INSTDIR\python\pythonw.exe" '"$INSTDIR\Cura\cura.py"' "$INSTDIR\Cura\stl.ico" 0
+  CreateShortCut "$SMPROGRAMS\Cura ${VERSION}\Cura ${VERSION}.lnk" "$INSTDIR\python\pythonw.exe" '"$INSTDIR\Cura\cura.py"' "$INSTDIR\Cura\cura.ico" 0
   
   ; Give all users write permissions in the install directory, so they can read/write profile and preferences files.
   AccessControl::GrantOnFile "$INSTDIR" "(S-1-5-32-545)" "FullAccess"
