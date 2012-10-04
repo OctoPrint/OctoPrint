@@ -161,6 +161,7 @@ class MachineCom(object):
 		self._currentZ = -1
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
+		self._printStartTime100 = None
 		
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
@@ -226,7 +227,15 @@ class MachineCom(object):
 		return self._gcodePos
 	
 	def getPrintTime(self):
-		return time.time() - self._printStartTime - self._heatupWaitTimeLost
+		return time.time() - self._printStartTime
+
+	def getPrintTimeRemainingEstimate(self):
+		if self._printStartTime100 == None or self.getPrintPos() < 200:
+			return None
+		printTime = (time.time() - self._printStartTime100) / 60
+		printTimeTotal = printTime * (len(self._gcodeList) - 100) / (self.getPrintPos() - 100)
+		printTimeLeft = printTimeTotal - printTime
+		return printTimeLeft
 	
 	def getTemp(self):
 		return self._temp
@@ -464,6 +473,8 @@ class MachineCom(object):
 		if self._gcodePos >= len(self._gcodeList):
 			self._changeState(self.STATE_OPERATIONAL)
 			return
+		if self._gcodePos == 100:
+			self._printStartTime100 = time.time()
 		line = self._gcodeList[self._gcodePos]
 		if type(line) is tuple:
 			self._printSection = line[1]
@@ -498,6 +509,7 @@ class MachineCom(object):
 			return
 		self._gcodeList = gcodeList
 		self._gcodePos = 0
+		self._printStartTime100 = None
 		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)
 		self._printStartTime = time.time()

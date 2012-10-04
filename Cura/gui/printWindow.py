@@ -352,13 +352,12 @@ class printWindow(wx.Frame):
 				status += 'Line: -/%d\n' % (len(self.gcodeList))
 		else:
 			printTime = self.machineCom.getPrintTime() / 60
-			printTimeTotal = printTime * len(self.gcodeList) / self.machineCom.getPrintPos()
-			printTimeLeft = printTimeTotal - printTime
+			printTimeLeft = self.machineCom.getPrintTimeRemainingEstimate()
 			status += 'Line: %d/%d %d%%\n' % (self.machineCom.getPrintPos(), len(self.gcodeList), self.machineCom.getPrintPos() * 100 / len(self.gcodeList))
 			if self.currentZ > 0:
 				status += 'Height: %0.1f\n' % (self.currentZ)
 			status += 'Print time: %02d:%02d\n' % (int(printTime / 60), int(printTime % 60))
-			if printTime < 1:
+			if printTimeLeft == None:
 				status += 'Print time left: Unknown\n'
 			else:
 				status += 'Print time left: %02d:%02d\n' % (int(printTimeLeft / 60), int(printTimeLeft % 60))
