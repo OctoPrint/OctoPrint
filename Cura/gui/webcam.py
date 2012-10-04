@@ -80,13 +80,16 @@ class webcam(object):
 			self._bitmap = wx.BitmapFromBuffer(frame.width, frame.height, frame.imageData)
 		elif win32vidcap != None:
 			buffer, width, height = self._cam.getbuffer()
-			wxImage = wx.EmptyImage(width, height)
-			wxImage.SetData(buffer[::-1])
-			if self._bitmap != None:
-				del self._bitmap
-			self._bitmap = wxImage.ConvertToBitmap()
-			del wxImage
-			del buffer
+			try:
+				wxImage = wx.EmptyImage(width, height)
+				wxImage.SetData(buffer[::-1])
+				if self._bitmap != None:
+					del self._bitmap
+				self._bitmap = wxImage.ConvertToBitmap()
+				del wxImage
+				del buffer
+			except:
+				pass
 
 		if self._doTimelaps:
 			filename = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap", "__tmp_snap_%04d.jpg" % (self._snapshotCount)))

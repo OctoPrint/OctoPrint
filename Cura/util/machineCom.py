@@ -4,7 +4,7 @@ import __init__
 import os, glob, sys, time, math, re, traceback, threading
 import Queue as queue
 
-from serial import Serial
+import serial
 
 from avr_isp import stk500v2
 from avr_isp import ispBase
@@ -197,10 +197,15 @@ class MachineCom(object):
 		if self._state == self.STATE_CLOSED:
 			return "Closed"
 		if self._state == self.STATE_ERROR:
-			return "Error: %s" % (self._errorValue)
+			return "Error: %s" % (self.getShortErrorString())
 		if self._state == self.STATE_CLOSED_WITH_ERROR:
-			return "Error: %s" % (self._errorValue)
+			return "Error: %s" % (self.getShortErrorString())
 		return "?%d?" % (self._state)
+	
+	def getShortErrorString(self):
+		if len(self._errorValue) < 20:
+			return self._errorValue
+		return self._errorValue[:20] + "..."
 	
 	def isClosedOrError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED
@@ -264,9 +269,9 @@ class MachineCom(object):
 			try:
 				self._log("Connecting to: %s" % (self._port))
 				if self._baudrate == 0:
-					self._serial = Serial(self._port, 115200, timeout=0.1, writeTimeout=10000)
+					self._serial = serial.Serial(self._port, 115200, timeout=0.1, writeTimeout=10000)
 				else:
-					self._serial = Serial(self._port, self._baudrate, timeout=2, writeTimeout=10000)
+					self._serial = serial.Serial(self._port, self._baudrate, timeout=2, writeTimeout=10000)
 			except:
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 		if self._serial == None:
@@ -299,7 +304,7 @@ class MachineCom(object):
 				#Skip the communication errors, as those get corrected.
 				if 'checksum mismatch' in line or 'Line Number is not Last Line Number' in line or 'No Line Number with checksum' in line:
 					pass
-				else:
+				elif not self.isError():
 					self._errorValue = line[6:]
 					self._changeState(self.STATE_ERROR)
 			if ' T:' in line or line.startswith('T:'):
@@ -312,18 +317,21 @@ class MachineCom(object):
 					t = time.time()
 					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 					self._heatupWaitStartTime = t
-			elif line.strip() != '' and line.strip() != 'ok' and self.isOperational():
+			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
 				self._callback.mcMessage(line)
 
 			if self._state == self.STATE_DETECT_BAUDRATE:
 				if line == '' or time.time() > timeout:
 					if len(self._baudrateDetectList) < 1:
-						self._log("No more baudrates to test, and no suitable baudrate found.")
 						self.close()
+						self._errorValue = "No more baudrates to test, and no suitable baudrate found."
+						self._changeState(self.STATE_ERROR)
 					elif self._baudrateDetectRetry > 0:
 						self._baudrateDetectRetry -= 1
 						self._serial.write('\n')
+						self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
 						self._sendCommand("M105")
+						self._testingBaudrate = True
 					else:
 						baudrate = self._baudrateDetectList.pop(0)
 						try:
@@ -331,16 +339,25 @@ class MachineCom(object):
 							self._serial.timeout = 0.5
 							self._log("Trying baudrate: %d" % (baudrate))
 							self._baudrateDetectRetry = 5
+							self._baudrateDetectTestOk = 0
 							timeout = time.time() + 5
 							self._serial.write('\n')
 							self._sendCommand("M105")
+							self._testingBaudrate = True
 						except:
 							self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, getExceptionString()))
-				elif 'ok' in line:
-					self._sendCommand("M999")
-					self._serial.timeout = 2
-					profile.putPreference('serial_baud_auto', self._serial.baudrate)
-					self._changeState(self.STATE_OPERATIONAL)
+				elif 'ok' in line and 'T:' in line:
+					self._baudrateDetectTestOk += 1
+					if self._baudrateDetectTestOk < 10:
+						self._log("Baudrate test ok: %d" % (self._baudrateDetectTestOk))
+						self._sendCommand("M105")
+					else:
+						self._sendCommand("M999")
+						self._serial.timeout = 2
+						profile.putPreference('serial_baud_auto', self._serial.baudrate)
+						self._changeState(self.STATE_OPERATIONAL)
+				else:
+					self._testingBaudrate = False
 			elif self._state == self.STATE_CONNECTING:
 				if line == '':
 					self._sendCommand("M105")
@@ -430,7 +447,7 @@ class MachineCom(object):
 		self._log('Send: %s' % (cmd))
 		try:
 			self._serial.write(cmd + '\n')
-		except SerialTimeoutException:
+		except serial.SerialTimeoutException:
 			self._log("Serial timeout while writing to serial port, trying again.")
 			try:
 				self._serial.write(cmd + '\n')
@@ -505,4 +522,3 @@ class MachineCom(object):
 def getExceptionString():
 	locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]
 	return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
-

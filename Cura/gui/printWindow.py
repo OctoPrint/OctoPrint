@@ -188,8 +188,8 @@ class printWindow(wx.Frame):
 		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z-1 F200', 'G90'], 'print-move-z-1.png'), pos=(5,8))
 		sizer.Add(PrintCommandButton(self, ['G91', 'G1 Z-10 F200', 'G90'], 'print-move-z-10.png'), pos=(6,8))
 
-		sizer.Add(PrintCommandButton(self, ['G92 E0', 'G1 E2 F120'], 'question.png'), pos=(8,1))
-		sizer.Add(PrintCommandButton(self, ['G92 E0', 'G1 E-2 F120'], 'question.png'), pos=(8,2))
+		sizer.Add(PrintCommandButton(self, ['G92 E0', 'G1 E2 F120'], 'extrude.png', size=(60,20)), pos=(1,10), span=(1,3), flag=wx.EXPAND)
+		sizer.Add(PrintCommandButton(self, ['G92 E0', 'G1 E-2 F120'], 'retract.png', size=(60,20)), pos=(2,10), span=(1,3), flag=wx.EXPAND)
 
 		nb.AddPage(self.directControlPanel, 'Jog')
 
