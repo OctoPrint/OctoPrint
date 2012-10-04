@@ -115,6 +115,14 @@ Section "Open STL files with Cura"
 	WriteRegStr HKCR "Cura STL model file\shell\open\command" "" '"$INSTDIR\python\pythonw.exe" "$INSTDIR\Cura\cura.py" "%1"'
 SectionEnd
 
+Section /o "Open OBJ files with Cura"
+	WriteRegStr HKCR .obj "" "Cura OBJ model file"
+	DeleteRegValue HKCR .obj "Content Type"
+	WriteRegStr HKCR "Cura OBJ model file\DefaultIcon" "" "$INSTDIR\Cura\stl.ico,0"
+	WriteRegStr HKCR "Cura OBJ model file\shell" "" "open"
+	WriteRegStr HKCR "Cura OBJ model file\shell\open\command" "" '"$INSTDIR\python\pythonw.exe" "$INSTDIR\Cura\cura.py" "%1"'
+SectionEnd
+
 ;--------------------------------
 
 ; Uninstaller
