@@ -21,16 +21,18 @@ class stlModel(mesh.mesh):
 	
 	def _loadAscii(self, f):
 		cnt = 0
-		for line in f:
-			if 'vertex' in line:
-				cnt += 1
+		for lines in f:
+			for line in lines.split('\r'):
+				if 'vertex' in line:
+					cnt += 1
 		self._prepareVertexCount(int(cnt))
 		f.seek(5, os.SEEK_SET)
 		cnt = 0
-		for line in f:
-			if 'vertex' in line:
-				data = line.split()
-				self.addVertex(float(data[1]), float(data[2]), float(data[3]))
+		for lines in f:
+			for line in lines.split('\r'):
+				if 'vertex' in line:
+					data = line.split()
+					self.addVertex(float(data[1]), float(data[2]), float(data[3]))
 
 	def _loadBinary(self, f):
 		#Skip the header
