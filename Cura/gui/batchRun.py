@@ -112,6 +112,8 @@ class BatchSliceProgressWindow(wx.Frame):
 			self.threadCount = 1
 		if self.threadCount < 1:
 			self.threadCount = 1
+		if self.threadCount > len(self.sliceCmdList):
+			self.threadCount = len(self.sliceCmdList)
 		self.cmdIndex = 0
 		
 		self.prevStep = []
@@ -127,12 +129,14 @@ class BatchSliceProgressWindow(wx.Frame):
 			self.statusText.append(wx.StaticText(self, -1, "Building: %d                           " % (len(self.sliceCmdList))))
 			self.progressGauge.append(wx.Gauge(self, -1))
 			self.progressGauge[i].SetRange(10000)
+		self.progressTextTotal = wx.StaticText(self, -1, "Done: 0/%d                           " % (len(self.sliceCmdList)))
 		self.progressGaugeTotal = wx.Gauge(self, -1)
 		self.progressGaugeTotal.SetRange(len(self.sliceCmdList))
 		self.abortButton = wx.Button(self, -1, "Abort")
 		for i in xrange(0, self.threadCount):
 			self.sizer.Add(self.statusText[i], (i*2,0), span=(1,4))
 			self.sizer.Add(self.progressGauge[i], (1+i*2, 0), span=(1,4), flag=wx.EXPAND)
+		self.sizer.Add(self.progressTextTotal, (self.threadCount*2,0), span=(1,4))
 		self.sizer.Add(self.progressGaugeTotal, (1+self.threadCount*2, 0), span=(1,4), flag=wx.EXPAND)
 
 		self.sizer.Add(self.abortButton, (2+self.threadCount*2,0), span=(1,4), flag=wx.ALIGN_CENTER)
@@ -175,7 +179,7 @@ class BatchSliceProgressWindow(wx.Frame):
 
 		self.abort = True
 		sliceTime = time.time() - self.sliceStartTime
-		status = "Build: %d" % (len(self.sliceCmdList))
+		status = "Build: %d models" % (len(self.sliceCmdList))
 		status += "\nSlicing took: %02d:%02d" % (sliceTime / 60, sliceTime % 60)
 
 		wx.CallAfter(self.statusText[0].SetLabel, status)
@@ -198,7 +202,6 @@ class BatchSliceProgressWindow(wx.Frame):
 						maxValue = int(progress[2])
 					wx.CallAfter(self.SetProgress, index, progress[0], int(progress[1]), maxValue)
 				else:
-					print line
 					wx.CallAfter(self.statusText[index].SetLabel, line)
 				if self.abort:
 					p.terminate()
@@ -209,6 +212,7 @@ class BatchSliceProgressWindow(wx.Frame):
 			
 			wx.CallAfter(self.progressGauge[index].SetValue, 10000)
 			self.totalDoneFactor[index] = 0.0
+			wx.CallAfter(self.progressTextTotal.SetLabel, "Done %d/%d" % (self.cmdIndex, len(self.sliceCmdList)))
 			wx.CallAfter(self.progressGaugeTotal.SetValue, self.cmdIndex)
 	
 	def OnSliceDone(self):
