@@ -19,8 +19,8 @@ class mesh(object):
 	
 	def _prepareVertexCount(self, vertexNumber):
 		#Set the amount of faces before loading data in them. This way we can create the numpy arrays before we fill them.
-		self.origonalVertexes = numpy.zeros((vertexNumber, 3), float)
-		self.normal = numpy.zeros((vertexNumber, 3), float)
+		self.origonalVertexes = numpy.zeros((vertexNumber, 3), numpy.float32)
+		self.normal = numpy.zeros((vertexNumber, 3), numpy.float32)
 		self.vertexCount = 0
 
 	def _postProcessAfterLoad(self):
@@ -56,11 +56,11 @@ class mesh(object):
 		mat10 = math.sin(rotate) * scaleX
 		mat11 = math.cos(rotate) * scaleY
 		
-		mat = numpy.array([[mat00,mat10,0],[mat01,mat11,0],[0,0,scaleZ]], float)
+		mat = numpy.array([[mat00,mat10,0],[mat01,mat11,0],[0,0,scaleZ]], numpy.float32)
 		if swapXZ:
-			mat = numpy.array([mat[2],mat[1],mat[0]], float)
+			mat = numpy.array([mat[2],mat[1],mat[0]], numpy.float32)
 		if swapYZ:
-			mat = numpy.array([mat[0],mat[2],mat[1]], float)
+			mat = numpy.array([mat[0],mat[2],mat[1]], numpy.float32)
 		self.vertexes = (numpy.matrix(self.origonalVertexes, copy = False) * numpy.matrix(mat)).getA()
 
 		tris = self.vertexes.reshape(self.vertexCount / 3, 3, 3)
@@ -70,7 +70,7 @@ class mesh(object):
 		normals[:,1] /= lens
 		normals[:,2] /= lens
 		
-		n = numpy.zeros((self.vertexCount / 3, 9), float)
+		n = numpy.zeros((self.vertexCount / 3, 9), numpy.float32)
 		n[:,0:3] = normals
 		n[:,3:6] = normals
 		n[:,6:9] = normals

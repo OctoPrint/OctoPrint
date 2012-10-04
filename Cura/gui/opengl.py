@@ -303,13 +303,24 @@ def DrawMesh(mesh):
 	glEnableClientState(GL_NORMAL_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, mesh.vertexes)
 	glNormalPointer(GL_FLOAT, 0, mesh.normal)
+
+	#Odd, drawing in batchs is a LOT faster then drawing it all at once.
+	batchSize = 999	#Warning, batchSize needs to be dividable by 3
+	extraStartPos = int(mesh.vertexCount / batchSize) * batchSize
+	extraCount = mesh.vertexCount - extraStartPos
 	
 	glCullFace(GL_BACK)
-	glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount)
+	for i in xrange(0, int(mesh.vertexCount / batchSize)):
+		glDrawArrays(GL_TRIANGLES, i*batchSize, batchSize)
+	glDrawArrays(GL_TRIANGLES, extraStartPos, extraCount)
 	
 	glCullFace(GL_FRONT)
 	glNormalPointer(GL_FLOAT, 0, mesh.invNormal)
-	glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount)
+	for i in xrange(0, int(mesh.vertexCount / batchSize)):
+		glDrawArrays(GL_TRIANGLES, i*batchSize, batchSize)
+	extraStartPos = int(mesh.vertexCount / batchSize) * batchSize
+	extraCount = mesh.vertexCount - extraStartPos
+	glDrawArrays(GL_TRIANGLES, extraStartPos, extraCount)
 	glCullFace(GL_BACK)
 	
 	glDisableClientState(GL_VERTEX_ARRAY)
