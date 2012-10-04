@@ -25,6 +25,7 @@
 * Update: Quickprint vase mode only had 2 bottom solid layers, updated to 3 to give a much bigger chance of being watertight
 * Update: Improved loading speed for complex models
 * Fixed: Loading of ascii-stl files with Mac lineends
+* Update: Adjusted the quickprint low quality profile a bit, so it produces stronger parts
 
 == Cura 12.08 ==
 * Added: Loading STL files from the commandline
