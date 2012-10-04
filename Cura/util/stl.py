@@ -16,7 +16,6 @@ class stlModel(mesh.mesh):
 		else:
 			self._loadBinary(f)
 		f.close()
-		
 		self._postProcessAfterLoad()
 		return self
 	

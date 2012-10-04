@@ -23,6 +23,7 @@
 * Fixed: Project planner bug when slicing all at once, the bug caused the printer head to move into the print.
 * Added: Default temperatures for printing in quickprint mode
 * Update: Quickprint vase mode only had 2 bottom solid layers, updated to 3 to give a much bigger chance of being watertight
+* Update: Improved loading speed for complex models
 
 == Cura 12.08 ==
 * Added: Loading STL files from the commandline
