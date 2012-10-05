@@ -255,9 +255,12 @@ class printWindow(wx.Frame):
 				sizer.Add(button, pos=(1, pages.index(page)))
 				button.Bind(wx.EVT_BUTTON, self.OnPropertyPageButton)
 				self.cam.buttons.append(button)
+
+			self.campreviewEnable = wx.CheckBox(self.camPage, -1, 'Show preview')
+			sizer.Add(self.campreviewEnable, pos=(2,0), span=(1,2), flag=wx.EXPAND)
 			
 			self.camPreview = wx.Panel(self.camPage)
-			sizer.Add(self.camPreview, pos=(2,0), span=(1,2), flag=wx.EXPAND)
+			sizer.Add(self.camPreview, pos=(3,0), span=(1,2), flag=wx.EXPAND)
 			
 			nb.AddPage(self.camPage, 'Camera')
 			self.camPreview.timer = wx.Timer(self)
@@ -296,6 +299,8 @@ class printWindow(wx.Frame):
 		#self.UpdateProgress()
 	
 	def OnCameraTimer(self, e):
+		if not self.campreviewEnable.GetValue():
+			return
 		if self.machineCom != None and self.machineCom.isPrinting():
 			return
 		self.cam.takeNewImage()
