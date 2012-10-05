@@ -131,23 +131,6 @@ class simpleModeWindow(configBase.configWindowBase):
 		prefDialog = preferencesDialog.preferencesDialog(self)
 		prefDialog.Centre()
 		prefDialog.Show(True)
-	
-	def OnDefaultMarlinFirmware(self, e):
-		firmwareInstall.InstallFirmware()
-
-	def OnCustomFirmware(self, e):
-		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
-		if dlg.ShowModal() == wx.ID_OK:
-			filename = dlg.GetPath()
-			if not(os.path.exists(filename)):
-				return
-			#For some reason my Ubuntu 10.10 crashes here.
-			firmwareInstall.InstallFirmware(filename)
-
-	def OnFirstRunWizard(self, e):
-		configWizard.configWizard()
-		self.updateProfileToControls()
 
 	def OnLoadModel(self, e):
 		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)

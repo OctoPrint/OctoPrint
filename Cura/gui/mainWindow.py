@@ -26,9 +26,8 @@ from util import meshLoader
 
 def main():
 	#app = wx.App(False)
-	if profile.getPreference('wizardDone') == 'False':
+	if profile.getPreference('machine_type') == 'unknown':
 		configWizard.configWizard()
-		profile.putPreference("wizardDone", "True")
 	if profile.getPreference('startMode') == 'Simple':
 		simpleMode.simpleModeWindow()
 	else:
@@ -85,8 +84,9 @@ class mainWindow(configBase.configWindowBase):
 		i = expertMenu.Append(-1, 'Open expert settings...')
 		self.Bind(wx.EVT_MENU, self.OnExpertOpen, i)
 		expertMenu.AppendSeparator()
-		i = expertMenu.Append(-1, 'Install default Marlin firmware')
-		self.Bind(wx.EVT_MENU, self.OnDefaultMarlinFirmware, i)
+		if firmwareInstall.getDefaultFirmware() != None:
+			i = expertMenu.Append(-1, 'Install default Marlin firmware')
+			self.Bind(wx.EVT_MENU, self.OnDefaultMarlinFirmware, i)
 		i = expertMenu.Append(-1, 'Install custom firmware')
 		self.Bind(wx.EVT_MENU, self.OnCustomFirmware, i)
 		expertMenu.AppendSeparator()

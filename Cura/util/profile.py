@@ -147,7 +147,6 @@ G92 E0
 """,
 }
 preferencesDefaultSettings = {
-	'wizardDone': 'False',
 	'startMode': 'Simple',
 	'lastFile': os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example', 'UltimakerRobot_support.stl')),
 	'machine_width': '205',
