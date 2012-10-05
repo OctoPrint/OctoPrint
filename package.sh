@@ -17,7 +17,7 @@ BUILD_TARGET=${1:-all}
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
 BUILD_NAME=12.10
-TARGET_DIR=${BUILD_TARGET}-Cura-${BUILD_NAME}
+TARGET_DIR=Cura-${BUILD_NAME}-${BUILD_TARGET}
 
 ##Which versions of external programs to use
 PYPY_VERSION=1.9

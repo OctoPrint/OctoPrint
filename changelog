@@ -26,6 +26,7 @@
 * Update: Improved loading speed for complex models
 * Fixed: Loading of ascii-stl files with Mac lineends
 * Update: Adjusted the quickprint low quality profile a bit, so it produces stronger parts
+* Added: Ultimaker 3D platform for scale reference
 
 == Cura 12.08 ==
 * Added: Loading STL files from the commandline
