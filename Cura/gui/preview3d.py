@@ -429,6 +429,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 	def OnMouseMotion(self,e):
 		cursorXY = 100000
+		sizeXY = 0
 		if self.parent.objectsMaxV != None:
 			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
 			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
@@ -697,6 +698,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glVertex3f(err[1].x, err[1].y, err[1].z)
 			glEnd()
 			glEnable(GL_DEPTH_TEST)
+
 		opengl.DrawMachine(machineSize)
 
 		glPushMatrix()

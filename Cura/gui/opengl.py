@@ -1,5 +1,6 @@
-import math, time
+import math, time, os
 
+from util import meshLoader
 from util import util3d
 from util import profile
 
@@ -46,7 +47,24 @@ def InitGL(window, view3D, zoom):
 	glLoadIdentity()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
 
+platformMesh = None
+
 def DrawMachine(machineSize):
+	if profile.getPreference('machine_type') == 'ultimaker':
+		glPushMatrix()
+		glEnable(GL_LIGHTING)
+		glTranslate(100,120,-285)
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.8,0.8,0.8])
+		glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3,0.3,0.3])
+		
+		global platformMesh
+		if platformMesh == None:
+			platformMesh = meshLoader.loadMesh(os.path.normpath(os.path.join(os.path.split(__file__)[0], "../images", 'ultimaker_platform.stl')))
+			platformMesh.setRotateMirror(0, False, True, False, False, True)
+		
+		DrawMesh(platformMesh)
+		glPopMatrix()
+
 	glDisable(GL_LIGHTING)
 	if False:
 		glColor3f(0.7,0.7,0.7)
@@ -110,7 +128,7 @@ def DrawMachine(machineSize):
 				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
 				glVertex3f(x, min(y+10, machineSize.y), -0.01)
 		glEnd()
-		glColor4ub(5,171,231,64)
+		glColor4ub(5/2,171/2,231/2,128)
 		glBegin(GL_QUADS)
 		for x in xrange(10, int(machineSize.x), 20):
 			for y in xrange(0, int(machineSize.y), 20):
