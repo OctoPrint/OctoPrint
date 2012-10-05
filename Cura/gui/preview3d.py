@@ -176,7 +176,7 @@ class previewPanel(wx.Panel):
 		vMax = self.objectsMaxV
 		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax[0] - vMin[0]) / 2)
 		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
-		scaleX2 = (self.machineCenter.x) / ((vMax[0] - vMin[1]) / 2)
+		scaleX2 = (self.machineCenter.x) / ((vMax[0] - vMin[0]) / 2)
 		scaleY2 = (self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
 		scaleZ = self.machineSize.z / (vMax[2] - vMin[2])
 		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
