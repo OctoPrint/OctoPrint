@@ -1,6 +1,9 @@
 import os, glob, subprocess, platform
 import wx
 
+from util import profile
+from gui import toolbarUtil
+
 try:
 	#Try to find the OpenCV library for video capture.
 	from opencv import cv
@@ -33,6 +36,8 @@ def getFFMPEGpath():
 class webcam(object):
 	def __init__(self):
 		self._cam = None
+		self._overlayImage = toolbarUtil.getBitmapImage("cura-overlay.png")
+		self._overlayUltimaker = toolbarUtil.getBitmapImage("ultimaker-overlay.png")
 		if cv != None:
 			self._cam = highgui.cvCreateCameraCapture(-1)
 		elif win32vidcap != None:
@@ -77,7 +82,7 @@ class webcam(object):
 		if cv != None:
 			frame = cv.QueryFrame(self._cam)
 			cv.CvtColor(frame, frame, cv.CV_BGR2RGB)
-			self._bitmap = wx.BitmapFromBuffer(frame.width, frame.height, frame.imageData)
+			bitmap = wx.BitmapFromBuffer(frame.width, frame.height, frame.imageData)
 		elif win32vidcap != None:
 			buffer, width, height = self._cam.getbuffer()
 			try:
@@ -85,16 +90,25 @@ class webcam(object):
 				wxImage.SetData(buffer[::-1])
 				if self._bitmap != None:
 					del self._bitmap
-				self._bitmap = wxImage.ConvertToBitmap()
+				bitmap = wxImage.ConvertToBitmap()
 				del wxImage
 				del buffer
 			except:
 				pass
 
+		dc = wx.MemoryDC()
+		dc.SelectObject(bitmap)
+		dc.DrawBitmap(self._overlayImage, bitmap.GetWidth() - self._overlayImage.GetWidth() - 5, 5, True)
+		if profile.getPreference('machine_type') == 'ultimaker':
+			dc.DrawBitmap(self._overlayUltimaker, (bitmap.GetWidth() - self._overlayUltimaker.GetWidth()) / 2, bitmap.GetHeight() - self._overlayUltimaker.GetHeight() - 5, True)
+		dc.SelectObject(wx.NullBitmap)
+
+		self._bitmap = bitmap
+
 		if self._doTimelaps:
 			filename = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap", "__tmp_snap_%04d.jpg" % (self._snapshotCount)))
 			self._snapshotCount += 1
-			self._bitmap.SaveFile(filename, wx.BITMAP_TYPE_JPEG)
+			bitmap.SaveFile(filename, wx.BITMAP_TYPE_JPEG)
 
 		return self._bitmap
 	
