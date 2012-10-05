@@ -15,6 +15,7 @@ from util import validators
 from util import profile
 from util import version
 from util import sliceRun
+from util import meshLoader
 
 class simpleModeWindow(configBase.configWindowBase):
 	"Main user interface window for Quickprint mode"
