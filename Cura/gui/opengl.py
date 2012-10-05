@@ -55,7 +55,9 @@ def DrawMachine(machineSize):
 		glEnable(GL_LIGHTING)
 		glTranslate(100,120,-285)
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.8,0.8,0.8])
-		glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3,0.3,0.3])
+		glLightfv(GL_LIGHT0, GL_AMBIENT, [0.5,0.5,0.5])
+		glEnable(GL_BLEND)
+		glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR)
 		
 		global platformMesh
 		if platformMesh == None:
