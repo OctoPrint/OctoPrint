@@ -2,7 +2,7 @@ All the models in this example directory can be found on Thingiverse (www.thingi
 
 The below models are shared under the CC BY-NC 3.0 license (http://creativecommons.org/licenses/by-nc/3.0/), and can be shared and used freely for none-commercial purposes as long as attribution is added:
 
-* UltimakerRobot_support.stl: Ultimaker Robot by Martijn
+* UltimakerRobot_support.stl: Ultimaker Robot by Curt Roth
   http://www.thingiverse.com/thing:11551
 
 The below models are shared under the CC BY-SA 3.0 license (http://creativecommons.org/licenses/by-sa/3.0/), and can be shared and used freely as long as attribution is added:
