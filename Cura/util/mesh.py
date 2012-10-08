@@ -82,7 +82,7 @@ class mesh(object):
 	def splitToParts(self, callback = None):
 		t0 = time.time()
 
-		print "%f: " % (time.time() - t0), "Splitting a model with %d vertexes." % (len(self.vertexes))
+		#print "%f: " % (time.time() - t0), "Splitting a model with %d vertexes." % (len(self.vertexes))
 		removeDict = {}
 		tree = util3d.AABBTree()
 		off = numpy.array([0.0001,0.0001,0.0001])
@@ -97,7 +97,7 @@ class mesh(object):
 				removeDict[idx] = q[0].idx
 			if callback != None and (idx % 100) == 0:
 				callback(idx)
-		print "%f: " % (time.time() - t0), "Marked %d duplicate vertexes for removal." % (len(removeDict))
+		#print "%f: " % (time.time() - t0), "Marked %d duplicate vertexes for removal." % (len(removeDict))
 
 		faceList = []
 		for idx in xrange(0, self.vertexCount, 3):
@@ -110,7 +110,7 @@ class mesh(object):
 				f[2] = removeDict[f[2]]
 			faceList.append(f)
 		
-		print "%f: " % (time.time() - t0), "Building face lists after vertex removal."
+		#print "%f: " % (time.time() - t0), "Building face lists after vertex removal."
 		vertexFaceList = []
 		for idx in xrange(0, self.vertexCount):
 			vertexFaceList.append([])
@@ -120,7 +120,7 @@ class mesh(object):
 			vertexFaceList[f[1]].append(idx)
 			vertexFaceList[f[2]].append(idx)
 		
-		print "%f: " % (time.time() - t0), "Building parts."
+		#print "%f: " % (time.time() - t0), "Building parts."
 		self._vertexFaceList = vertexFaceList
 		self._faceList = faceList
 		partList = []
@@ -128,7 +128,7 @@ class mesh(object):
 		for idx in xrange(0, len(faceList)):
 			if not idx in doneSet:
 				partList.append(self._createPartFromFacewalk(idx, doneSet))
-		print "%f: " % (time.time() - t0), "Split into %d parts" % (len(partList))
+		#print "%f: " % (time.time() - t0), "Split into %d parts" % (len(partList))
 		self._vertexFaceList = None
 		self._faceList = None
 		return partList
