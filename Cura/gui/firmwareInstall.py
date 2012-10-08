@@ -75,7 +75,7 @@ class InstallFirmware(wx.Dialog):
 			wx.CallAfter(self.updateLabel, "Uploading firmware...")
 			try:
 				programmer.programChip(hexFile)
-				wx.CallAfter(self.updateLabel, "Done!\nInstalled firmware: %s" % (os.path.basename(self.filename))
+				wx.CallAfter(self.updateLabel, "Done!\nInstalled firmware: %s" % (os.path.basename(self.filename)))
 			except ispBase.IspError as e:
 				wx.CallAfter(self.updateLabel, "Failed to write firmware.\n" + str(e))
 				

@@ -9,6 +9,7 @@ from gui import sliceProgessPanel
 from gui import preferencesDialog
 from gui import configWizard
 from gui import firmwareInstall
+from gui import dropTarget
 from gui import printWindow
 from gui import icon
 from util import validators
@@ -24,6 +25,8 @@ class simpleModeWindow(configBase.configWindowBase):
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
+
+		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
@@ -142,6 +145,12 @@ class simpleModeWindow(configBase.configWindowBase):
 			self.preview3d.loadModelFiles(self.filelist, True)
 			self.preview3d.setViewMode("Normal")
 		dlg.Destroy()
+
+	def OnDropFiles(self, filenames):
+		self.filelist = filenames
+		profile.putPreference('lastFile', ';'.join(self.filelist))
+		self.preview3d.loadModelFiles(self.filelist, True)
+		self.preview3d.setViewMode("Normal")
 	
 	def OnSlice(self, e):
 		if len(self.filelist) < 1:
