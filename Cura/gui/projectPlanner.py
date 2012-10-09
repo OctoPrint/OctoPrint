@@ -193,10 +193,10 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveUp, 'move-up.png', 'Move model up in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnMoveDown, 'move-down.png', 'Move model down in print list')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnCopy, 'copy.png', 'Make a copy of the current selected object')
-		toolbarUtil.NormalButton(self.toolbar2, self.OnSetCustomProfile, 'set-profile.png', 'Set a custom profile to be used to slice a specific object.')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnSetCustomProfile, 'set-profile.png', 'Set a custom profile to be used to prepare a specific object.')
 		self.toolbar2.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar2, self.OnAutoPlace, 'autoplace.png', 'Automaticly organize the objects on the platform.')
-		toolbarUtil.NormalButton(self.toolbar2, self.OnSlice, 'slice.png', 'Slice to project into a gcode file.')
+		toolbarUtil.NormalButton(self.toolbar2, self.OnSlice, 'slice.png', 'Prepare to project into a gcode file.')
 		self.toolbar2.Realize()
 
 		self.toolbar3 = toolbarUtil.Toolbar(self.panel)
@@ -216,7 +216,7 @@ class projectPlanner(wx.Frame):
 		self.listbox = wx.ListBox(self.panel, -1, choices=[])
 		self.addButton = wx.Button(self.panel, -1, "Add")
 		self.remButton = wx.Button(self.panel, -1, "Remove")
-		self.sliceButton = wx.Button(self.panel, -1, "Slice")
+		self.sliceButton = wx.Button(self.panel, -1, "Prepare")
 		self.autoPlaceButton = wx.Button(self.panel, -1, "Auto Place")
 		
 		sizer.Add(self.toolbar, (0,0), span=(1,1), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
@@ -639,7 +639,7 @@ class projectPlanner(wx.Frame):
 			action.usePreviousSlice = False
 
 			actionList.append(action)
-			
+		
 		#Restore the old profile.
 		profile.resetTempOverride()
 		

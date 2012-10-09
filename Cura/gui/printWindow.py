@@ -114,8 +114,8 @@ class printWindow(wx.Frame):
 		self.sizer.Add(boxsizer, pos=(0,0), span=(6,1), flag=wx.EXPAND)
 		
 		self.connectButton = wx.Button(self.panel, -1, 'Connect')
-		#self.loadButton = wx.Button(self.panel, -1, 'Load GCode')
-		self.printButton = wx.Button(self.panel, -1, 'Print GCode')
+		#self.loadButton = wx.Button(self.panel, -1, 'Load')
+		self.printButton = wx.Button(self.panel, -1, 'Print')
 		self.pauseButton = wx.Button(self.panel, -1, 'Pause')
 		self.cancelButton = wx.Button(self.panel, -1, 'Cancel print')
 		self.machineLogButton = wx.Button(self.panel, -1, 'Error log')
