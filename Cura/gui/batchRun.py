@@ -28,7 +28,7 @@ class batchRunWindow(wx.Frame):
 		self.listbox = wx.ListBox(self.panel, -1, choices=[])
 		self.addButton = wx.Button(self.panel, -1, "Add")
 		self.remButton = wx.Button(self.panel, -1, "Remove")
-		self.sliceButton = wx.Button(self.panel, -1, "Slice")
+		self.sliceButton = wx.Button(self.panel, -1, "Prepare all")
 
 		self.addButton.Bind(wx.EVT_BUTTON, self.OnAddModel)
 		self.remButton.Bind(wx.EVT_BUTTON, self.OnRemModel)
@@ -44,7 +44,7 @@ class batchRunWindow(wx.Frame):
 		self.sizer.AddGrowableRow(0)
 
 	def OnAddModel(self, e):
-		dlg=wx.FileDialog(self, "Open file to batch slice", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
+		dlg=wx.FileDialog(self, "Open file to batch prepare", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
 		dlg.SetWildcard("STL files (*.stl)|*.stl;*.STL")
 		if dlg.ShowModal() == wx.ID_OK:
 			for filename in dlg.GetPaths():
