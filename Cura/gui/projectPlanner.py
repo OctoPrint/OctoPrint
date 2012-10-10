@@ -22,6 +22,7 @@ from gui import icon
 from gui import configBase
 from gui import printWindow
 from gui import dropTarget
+from gui import taskbar
 from util import validators
 from util import profile
 from util import util3d
@@ -931,6 +932,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		progresValue = ((self.totalDoneFactor + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
 		self.progressGauge.SetValue(int(progresValue))
 		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
+		taskbar.setProgress(self, 10000 * self.progressGauge2.GetValue() + int(progresValue), 10000 * len(self.actionList))
 	
 	def OnRun(self):
 		resultFile = open(self.resultFilename, "w")
@@ -1058,6 +1060,7 @@ class ProjectSliceProgressWindow(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, self.OnShowLog, self.logButton)
 		self.Layout()
 		self.Fit()
+		taskbar.setBusy(self, False)
 
 	def OnCopyToSD(self, e):
 		filename = os.path.basename(self.resultFilename)

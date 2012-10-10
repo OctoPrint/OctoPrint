@@ -3,6 +3,7 @@ import __init__
 
 import wx, sys, os, shutil, math, threading, subprocess, time, re
 
+from gui import taskbar
 from util import profile
 from util import sliceRun
 from util import exporer
@@ -112,6 +113,7 @@ class sliceProgessPanel(wx.Panel):
 		self.abort = True
 		if self.mainWindow.preview3d.loadReModelFiles(self.filelist):
 			self.mainWindow.preview3d.setViewMode("GCode")
+		taskbar.setBusy(self.GetParent(), False)
 	
 	def SetProgress(self, stepName, layer, maxLayer):
 		if self.prevStep != stepName:
@@ -123,6 +125,7 @@ class sliceProgessPanel(wx.Panel):
 		
 		progresValue = ((self.totalDoneFactor + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
 		self.progressGauge.SetValue(int(progresValue))
+		taskbar.setProgress(self.GetParent(), int(progresValue), self.progressGauge.GetRange())
 		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
 
 class WorkerThread(threading.Thread):
