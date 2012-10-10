@@ -192,7 +192,7 @@ class DimensionSkein:
 		self.travelFeedRatePerSecond = None
 		self.addRetraction = True
 		self.reverseRetraction = False
-		self.maxDistancePerMove = 3
+		self.maxDistancePerMove = 30
 
 	def addLinearMoveExtrusionDistanceLine(self, extrusionDistance):
 		'Get the extrusion distance string from the extrusion distance.'
