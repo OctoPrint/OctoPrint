@@ -7,6 +7,7 @@ from wx.lib import buttons
 from gui import icon
 from gui import toolbarUtil
 from gui import webcam
+from gui import taskbar
 from util import machineCom
 from util import profile
 from util import gcodeInterpreter
@@ -367,6 +368,7 @@ class printWindow(wx.Frame):
 			else:
 				status += 'Print time left: %02d:%02d\n' % (int(printTimeLeft / 60), int(printTimeLeft % 60))
 			self.progress.SetValue(self.machineCom.getPrintPos())
+			taskbar.setProgress(self, self.machineCom.getPrintPos(), len(self.gcodeList))
 		if self.machineCom != None:
 			if self.machineCom.getTemp() > 0:
 				status += 'Temp: %d\n' % (self.machineCom.getTemp())
@@ -384,6 +386,7 @@ class printWindow(wx.Frame):
 			self.machineCom.close()
 		self.machineCom = machineCom.MachineCom(callbackObject=self)
 		self.UpdateButtonStates()
+		taskbar.setBusy(self, True)
 	
 	def OnLoad(self, e):
 		pass
@@ -525,8 +528,15 @@ class printWindow(wx.Frame):
 			wx.CallAfter(self.bedTemperatureSelect.SetValue, bedTargetTemp)
 	
 	def mcStateChange(self, state):
-		if self.machineCom != None and state == self.machineCom.STATE_OPERATIONAL and self.cam != None:
-			self.cam.endTimelaps()
+		if self.machineCom != None:
+			if state == self.machineCom.STATE_OPERATIONAL and self.cam != None:
+				self.cam.endTimelaps()
+			if state == self.machineCom.STATE_OPERATIONAL:
+				taskbar.setBusy(self, False)
+			if self.machineCom.isClosedOrError():
+				taskbar.setBusy(self, False)
+			if self.machineCom.isPaused():
+				taskbar.setPause(self, True)
 		wx.CallAfter(self.UpdateButtonStates)
 		wx.CallAfter(self.UpdateProgress)
 	

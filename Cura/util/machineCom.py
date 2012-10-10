@@ -408,7 +408,10 @@ class MachineCom(object):
 		except:
 			#If the log queue is full, remove the first message and append the new message again
 			self._logQueue.get()
-			self._logQueue.put(message, False)
+			try:
+				self._logQueue.put(message, False)
+			except:
+				pass
 
 	def _readline(self):
 		if self._serial == None:
