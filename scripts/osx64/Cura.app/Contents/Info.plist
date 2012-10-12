@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Cura</string>
+	<key>CFBundleDisplayName</key>
+	<string>Cura 12.10</string>
+	<key>CFBundleIdentifer</key>
+	<string>daid.cura</string>
+	<key>CFBundleVersion</key>
+	<string>12.10</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleExecutable</key>
+	<string>Cura</string>
+</dict>
+</plist>
