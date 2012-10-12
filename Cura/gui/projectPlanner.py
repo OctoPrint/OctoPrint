@@ -974,7 +974,9 @@ class ProjectSliceProgressWindow(wx.Frame):
 				resultFile.write('T%d\n' % (action.extruder))
 				currentExtruder = action.extruder
 				prevTemp = action.temperature
-				resultFile.write(profile.getAlterationFileContents('start.gcode'))
+				startGCode = profile.getAlterationFileContents('start.gcode')
+				startGCode = startGCode.replace('?filename?', 'Multiple files')
+				resultFile.write(startGCode)
 			else:
 				#reset the extrusion length, and move to the next object center.
 				resultFile.write(';TYPE:CUSTOM\n')

@@ -206,7 +206,7 @@ class SkirtSkein:
 		outerLoops = getOuterLoops(loops)
 		self.outsetLoops = []
 		for i in xrange(self.repository.skirtLineCount.value, 0, -1):
-			outsetLoops = intercircle.getInsetSeparateLoopsFromLoops(outerLoops, -self.skirtOutset - i * self.edgeWidth)
+			outsetLoops = intercircle.getInsetSeparateLoopsFromLoops(outerLoops, -self.skirtOutset - (i-1) * self.edgeWidth)
 			outsetLoops = getOuterLoops(outsetLoops)
 			if self.repository.convex.value:
 				outsetLoops = [euclidean.getLoopConvex(euclidean.getConcatenatedList(outsetLoops))]

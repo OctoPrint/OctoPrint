@@ -246,7 +246,7 @@ def getProfileInformation():
 			'Support_Offset_Y_mm': lambda setting: -profile.getPreferenceFloat('extruder_offset_y1') if profile.getProfileSetting('support_dual_extrusion') == 'True' and int(profile.getPreference('extruder_amount')) > 1 else '0',
 		},'skirt': {
 			'Skirt_line_count': storedSetting("skirt_line_count"),
-			'Convex': "True",
+			'Convex': lambda setting: "True" if profile.getProfileSettingFloat('skirt_gap') > 0.0 else "False",
 			'Gap_Width_mm': storedSetting("skirt_gap"),
 			'Layers_To_index': "1",
 		},'joris': {

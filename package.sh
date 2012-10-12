@@ -103,16 +103,6 @@ else
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
 fi
 
-#Get our own version of Printrun
-if [ ! -d "Printrun" ]; then
-  git clone git://github.com/daid/Printrun.git
-else
-  echo "Updating Printrun"
-  cd Printrun
-  git pull
-  cd ..
-fi
-
 #############################
 # Build the packages
 #############################
@@ -179,10 +169,6 @@ mkdir -p ${TARGET_DIR}/Cura
 cp -a Cura/* ${TARGET_DIR}/Cura
 #Add cura version file
 echo $BUILD_NAME > ${TARGET_DIR}/Cura/version
-
-#add printrun
-cp -a Printrun ${TARGET_DIR}/Printrun
-rm -rf ${TARGET_DIR}/Printrun/.git*
 
 #add script files
 if [ $BUILD_TARGET = "win32" ]; then
