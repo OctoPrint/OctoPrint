@@ -99,6 +99,13 @@ if [ $BUILD_TARGET = "win32" ]; then
 	downloadURL http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe
 	#Get pypy
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
+elif [ $BUILD_TARGET = "osx64" ]; then
+	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
+	downloadURL http://python.org/ftp/python/2.7.3/python-2.7.3-macosx10.6.dmg
+	downloadURL http://sourceforge.net/projects/numpy/files/NumPy/1.6.2/numpy-1.6.2-py2.7-python.org-macosx10.3.dmg
+	downloadURL http://pypi.python.org/packages/source/p/pyserial/pyserial-2.6.tar.gz
+	downloadURL http://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-3.0.2.tar.gz
+	downloadURL http://downloads.sourceforge.net/wxpython/wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg
 else
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
 fi
@@ -175,7 +182,6 @@ if [ $BUILD_TARGET = "win32" ]; then
     cp -a scripts/${BUILD_TARGET}/*.bat $TARGET_DIR/
 else
     cp -a scripts/${BUILD_TARGET}/*.sh $TARGET_DIR/
-    cp -a scripts/${BUILD_TARGET}/*.command $TARGET_DIR/
 fi
 
 #package the result
@@ -199,6 +205,18 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 			'/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi' >> log.txt
 			mv scripts/win32/Cura_${BUILD_NAME}.exe ./
 		fi
+	elif [ $BUILD_TARGET = "osx64" ]; then
+		echo "Building osx app"
+		mkdir -p scripts/osx64/Cura.app/Contents/Resources
+		mkdir -p scripts/osx64/Cura.app/Contents/Pkgs
+		rm -rf scripts/osx64/Cura.app/Contents/Resources/*
+		cp -a ${TARGET_DIR}/* scripts/osx64/Cura.app/Contents/Resources
+		cp python-2.7.3-macosx10.6.dmg scripts/osx64/Cura.app/Contents/Pkgs
+		cp numpy-1.6.2-py2.7-python.org-macosx10.3.dmg scripts/osx64/Cura.app/Contents/Pkgs
+		cp pyserial-2.6.tar.gz scripts/osx64/Cura.app/Contents/Pkgs
+		cp PyOpenGL-3.0.2.tar.gz scripts/osx64/Cura.app/Contents/Pkgs
+		cp wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg scripts/osx64/Cura.app/Contents/Pkgs
+		$TAR cfp - scripts/osx64/ | gzip --best -c > ${TARGET_DIR}.tar.gz
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
 		$TAR cfp - ${TARGET_DIR} | gzip --best -c > ${TARGET_DIR}.tar.gz
