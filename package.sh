@@ -216,7 +216,8 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		cp pyserial-2.6.tar.gz scripts/osx64/Cura.app/Contents/Pkgs
 		cp PyOpenGL-3.0.2.tar.gz scripts/osx64/Cura.app/Contents/Pkgs
 		cp wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg scripts/osx64/Cura.app/Contents/Pkgs
-		$TAR cfp - scripts/osx64/Cura.app | gzip --best -c > ${TARGET_DIR}.tar.gz
+		cd scripts/osx64
+		$TAR cfp - Cura.app | gzip --best -c > ../../${TARGET_DIR}.tar.gz
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
 		$TAR cfp - ${TARGET_DIR} | gzip --best -c > ${TARGET_DIR}.tar.gz
