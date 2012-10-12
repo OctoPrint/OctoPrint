@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, threading, re, subprocess, sys, os, time
+import wx, threading, re, subprocess, sys, os, time, platform
 from wx.lib import buttons
 
 from gui import icon
@@ -39,7 +39,13 @@ class printProcessMonitor():
 	
 	def loadFile(self, filename):
 		if self.handle == None:
-			self.handle = subprocess.Popen([sys.executable, sys.argv[0], '-r', filename], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			cmdList = [sys.executable, sys.argv[0], '-r', filename]
+			if platform.system() == "Darwin":
+				if platform.machine() == 'i386':
+					cmdList.insert(0, 'arch')
+					cmdList.insert(1, '-i386')
+			print cmdList
+			self.handle = subprocess.Popen(cmdList, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			self.thread = threading.Thread(target=self.Monitor)
 			self.thread.start()
 		else:
@@ -51,7 +57,7 @@ class printProcessMonitor():
 		while(len(line) > 0):
 			#print line.rstrip()
 			line = p.stdout.readline()
-		p.wait()
+		p.communicate()
 		self.handle = None
 		self.thread = None
 
