@@ -44,7 +44,6 @@ class printProcessMonitor():
 				if platform.machine() == 'i386':
 					cmdList.insert(0, 'arch')
 					cmdList.insert(1, '-i386')
-			print cmdList
 			self.handle = subprocess.Popen(cmdList, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			self.thread = threading.Thread(target=self.Monitor)
 			self.thread.start()

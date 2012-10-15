@@ -64,12 +64,8 @@ class configWindowBase(wx.Frame):
 				self.popup.text.SetLabel(setting.helpText)
 			self.popup.text.Wrap(350)
 			self.popup.Fit()
-			if sys.platform == 'darwin':
-				x, y = self.ClientToScreenXY(0, 0)
-				sx, sy = self.GetClientSizeTuple()
-			else:
-				x, y = setting.ctrl.ClientToScreenXY(0, 0)
-				sx, sy = setting.ctrl.GetSizeTuple()
+			x, y = setting.ctrl.ClientToScreenXY(0, 0)
+			sx, sy = setting.ctrl.GetSizeTuple()
 			#if platform.system() == "Windows":
 			#	for some reason, under windows, the popup is relative to the main window... in some cases. (Wierd ass bug)
 			#	wx, wy = self.ClientToScreenXY(0, 0)
@@ -93,8 +89,8 @@ class TitleRow():
 		x = sizer.GetRows()
 		self.title = wx.StaticText(panel, -1, name)
 		self.title.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-		sizer.Add(self.title, (x,0), (1,3), flag=wx.EXPAND|wx.TOP, border=10)
-		sizer.Add(wx.StaticLine(panel), (x+1,0), (1,3), flag=wx.EXPAND)
+		sizer.Add(self.title, (x,0), (1,3), flag=wx.EXPAND|wx.TOP|wx.LEFT, border=10)
+		sizer.Add(wx.StaticLine(panel), (x+1,0), (1,3), flag=wx.EXPAND|wx.LEFT,border=10)
 		sizer.SetRows(x + 2)
 
 class SettingRow():
@@ -136,7 +132,7 @@ class SettingRow():
 			self.ctrl.Bind(wx.EVT_COMBOBOX, self.OnSettingChange)
 			flag = wx.EXPAND
 
-		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL)
+		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL|wx.LEFT,border=10)
 		sizer.Add(self.ctrl, (x,y+1), flag=wx.ALIGN_BOTTOM|flag)
 		sizer.SetRows(x+1)
 

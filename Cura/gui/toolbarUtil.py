@@ -48,12 +48,8 @@ class Toolbar(wx.ToolBar):
 		popup.text.SetLabel(control.helpText)
 		popup.text.Wrap(350)
 		popup.Fit();
-		if sys.platform == 'darwin':
-			x, y = self.GetParent().ClientToScreenXY(0, 0)
-			sx, sy = self.GetParent().GetClientSizeTuple()
-		else:
-			x, y = control.ClientToScreenXY(0, 0)
-			sx, sy = control.GetSizeTuple()
+		x, y = control.ClientToScreenXY(0, 0)
+		sx, sy = control.GetSizeTuple()
 		popup.SetPosition((x, y+sy))
 
 class ToggleButton(buttons.GenBitmapToggleButton):

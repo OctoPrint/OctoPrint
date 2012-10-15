@@ -116,15 +116,18 @@ class simpleModeWindow(configBase.configWindowBase):
 		sizer.Add(self.preview3d, (0,1), span=(1,3), flag=wx.EXPAND)
 		sizer.AddGrowableCol(2)
 		sizer.AddGrowableRow(0)
-		sizer.Add(loadButton, (1,1), flag=wx.RIGHT, border=5)
-		sizer.Add(sliceButton, (1,2), flag=wx.RIGHT, border=5)
-		sizer.Add(printButton, (1,3), flag=wx.RIGHT, border=5)
+		sizer.Add(loadButton, (1,1), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(sliceButton, (1,2), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(printButton, (1,3), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		self.sizer = sizer
 
 		if len(self.filelist) > 0:
 			self.preview3d.loadModelFiles(self.filelist)
 
 		self.updateProfileToControls()
+
+		self.printTypeNormal.SetValue(True)
+		self.printMaterialPLA.SetValue(True)
 
 		self.Fit()
 		self.SetMinSize(self.GetSize())

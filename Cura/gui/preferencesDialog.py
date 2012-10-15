@@ -67,7 +67,7 @@ class preferencesDialog(configBase.configWindowBase):
 		c = configBase.SettingRow(right, 'Copy to SD with 8.3 names', 'sdshortnames', False, 'Save the gcode files in short filenames, so they are properly shown on the UltiController', type = 'preference')
 
 		self.okButton = wx.Button(right, -1, 'Ok')
-		right.GetSizer().Add(self.okButton, (right.GetSizer().GetRows(), 0))
+		right.GetSizer().Add(self.okButton, (right.GetSizer().GetRows(), 0), flag=wx.BOTTOM, border=5)
 		self.okButton.Bind(wx.EVT_BUTTON, self.OnClose)
 		
 		self.MakeModal(True)

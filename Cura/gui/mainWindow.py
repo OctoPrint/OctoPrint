@@ -238,15 +238,15 @@ class mainWindow(configBase.configWindowBase):
 		sizer.Add(self.preview3d, (0,1), span=(1,2+extruderCount), flag=wx.EXPAND)
 		sizer.AddGrowableCol(2 + extruderCount)
 		sizer.AddGrowableRow(0)
-		sizer.Add(loadButton, (1,1), flag=wx.RIGHT, border=5)
+		sizer.Add(loadButton, (1,1), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		if extruderCount > 1:
-			sizer.Add(loadButton2, (1,2), flag=wx.RIGHT, border=5)
+			sizer.Add(loadButton2, (1,2), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		if extruderCount > 2:
-			sizer.Add(loadButton3, (1,3), flag=wx.RIGHT, border=5)
+			sizer.Add(loadButton3, (1,3), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		if extruderCount > 3:
-			sizer.Add(loadButton4, (1,4), flag=wx.RIGHT, border=5)
-		sizer.Add(sliceButton, (1,1+extruderCount), flag=wx.RIGHT, border=5)
-		sizer.Add(printButton, (1,2+extruderCount), flag=wx.RIGHT, border=5)
+			sizer.Add(loadButton4, (1,4), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(sliceButton, (1,1+extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(printButton, (1,2+extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		self.sizer = sizer
 
 		if len(self.filelist) > 0:
