@@ -117,7 +117,7 @@ class printWindow(wx.Frame):
 		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nEstimated print time: #####:##\nMachine state:\nDetecting baudrateXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
-		self.sizer.Add(boxsizer, pos=(0,0), span=(6,1), flag=wx.EXPAND)
+		self.sizer.Add(boxsizer, pos=(0,0), span=(7,1), flag=wx.EXPAND)
 		
 		self.connectButton = wx.Button(self.panel, -1, 'Connect')
 		#self.loadButton = wx.Button(self.panel, -1, 'Load')
@@ -127,16 +127,16 @@ class printWindow(wx.Frame):
 		self.machineLogButton = wx.Button(self.panel, -1, 'Error log')
 		self.progress = wx.Gauge(self.panel, -1)
 		
-		self.sizer.Add(self.connectButton, pos=(0,1))
-		#self.sizer.Add(self.loadButton, pos=(1,1))
-		self.sizer.Add(self.printButton, pos=(2,1))
-		self.sizer.Add(self.pauseButton, pos=(3,1))
-		self.sizer.Add(self.cancelButton, pos=(4,1))
-		self.sizer.Add(self.machineLogButton, pos=(5,1))
-		self.sizer.Add(self.progress, pos=(6,0), span=(1,7), flag=wx.EXPAND)
+		self.sizer.Add(self.connectButton, pos=(1,1), flag=wx.EXPAND)
+		#self.sizer.Add(self.loadButton, pos=(1,1), flag=wx.EXPAND)
+		self.sizer.Add(self.printButton, pos=(2,1), flag=wx.EXPAND)
+		self.sizer.Add(self.pauseButton, pos=(3,1), flag=wx.EXPAND)
+		self.sizer.Add(self.cancelButton, pos=(4,1), flag=wx.EXPAND)
+		self.sizer.Add(self.machineLogButton, pos=(5,1), flag=wx.EXPAND)
+		self.sizer.Add(self.progress, pos=(7,0), span=(1,7), flag=wx.EXPAND)
 
 		nb = wx.Notebook(self.panel)
-		self.sizer.Add(nb, pos=(0,3), span=(6,4), flag=wx.EXPAND)
+		self.sizer.Add(nb, pos=(0,2), span=(7,4), flag=wx.EXPAND)
 		
 		self.temperaturePanel = wx.Panel(nb)
 		sizer = wx.GridBagSizer(2, 2)
