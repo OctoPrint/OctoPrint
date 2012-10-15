@@ -331,6 +331,8 @@ class mainWindow(configBase.configWindowBase):
 		firmwareInstall.InstallFirmware()
 
 	def OnCustomFirmware(self, e):
+		if profile.getPreference('machine_type') == 'ultimaker':
+			wx.MessageBox('Warning: Installing a custom firmware does not garantee that you machine will function correctly, and could damage your machine.', 'Firmware update', wx.OK | wx.ICON_EXCLAMATION)
 		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
 		if dlg.ShowModal() == wx.ID_OK:
