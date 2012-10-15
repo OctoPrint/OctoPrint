@@ -124,12 +124,15 @@ class simpleModeWindow(configBase.configWindowBase):
 		if len(self.filelist) > 0:
 			self.preview3d.loadModelFiles(self.filelist)
 
+		self.SetBackgroundColour(configPanel.GetBackgroundColour())
+
 		self.updateProfileToControls()
 
 		self.printTypeNormal.SetValue(True)
 		self.printMaterialPLA.SetValue(True)
 
 		self.Fit()
+		self.preview3d.Fit()
 		self.SetMinSize(self.GetSize())
 		self.Centre()
 		self.Show(True)
