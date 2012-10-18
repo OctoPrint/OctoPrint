@@ -19,6 +19,7 @@ from util import profile
 
 __author__ = 'Daid'
 __credits__ = """
+David Braam (daid303@gmail.com)
 Enrique Perez (perez_enrique@yahoo.com)
 Adrian Bowyer <http://forums.reprap.org/profile.php?12,13>
 Brendan Erwin <http://forums.reprap.org/profile.php?12,217>
@@ -37,6 +38,7 @@ Xsainnz <http://forums.reprap.org/profile.php?12,563>
 Zach Hoeken <http://blog.zachhoeken.com/>
 
 Organizations:
+Ultimaker <http://www.ultimaker.com>
 Art of Illusion <http://www.artofillusion.org/>"""
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
