@@ -483,6 +483,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			self.zoom += e.GetY() - self.oldY
 			if self.zoom < 1:
 				self.zoom = 1
+			if self.zoom > 500:
+				self.zoom = 500
 			self.Refresh()
 		self.oldX = e.GetX()
 		self.oldY = e.GetY()
@@ -494,6 +496,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.zoom *= 1.0 - float(e.GetWheelRotation() / e.GetWheelDelta()) / 10.0
 		if self.zoom < 1.0:
 			self.zoom = 1.0
+		if self.zoom > 500:
+			self.zoom = 500
 		self.Refresh()
 	
 	def OnEraseBackground(self,event):
