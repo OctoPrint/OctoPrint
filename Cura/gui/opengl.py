@@ -175,8 +175,8 @@ def DrawMachine(machineSize):
 		glVertex3f(0, machineSize.y, 0)
 		glVertex3f(0, machineSize.y, machineSize.z)
 
-		glVertex3f(machineSize.y, 0, 0)
-		glVertex3f(machineSize.y, 0, machineSize.z)
+		glVertex3f(machineSize.x, 0, 0)
+		glVertex3f(machineSize.x, 0, machineSize.z)
 		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
 		glVertex3f(machineSize.x, machineSize.y, 0)
 		glEnd()
