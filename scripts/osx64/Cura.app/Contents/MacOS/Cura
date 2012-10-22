@@ -2,6 +2,7 @@
 
 SCRIPTDIR=`dirname "$0"`
 RESDIR=${SCRIPTDIR}/../Resources/
+PKGDIR=${SCRIPTDIR}/../Pkgs/
 
 #run the path_helper to set the $PATH for accessing python
 if [ -x /usr/libexec/path_helper ]; then
@@ -23,7 +24,11 @@ PY="python2.7"
 $PY -c ''
 if [ $? != 0 ]; then
 	displayMessage "Python 2.7 is missing from your system. Cura requires Python2.7.\nStarting the installer" $PATH
-	#TODO: Install python2.7
+	# Install python2.7
+	hdiutil attach $PKGDIR/python-2.7.3-macosx10.6.dmg
+	open -W /Volumes/Python\ 2.7.3/Python.mpkg
+	hdiutil detach /Volumes/Python\ 2.7.3
+	# Check the installation
 	$PY -c ''
 	if [ $? != 0 ]; then
 		displayMessage "Failed to install python2.7"
@@ -38,8 +43,10 @@ if [ $? != 0 ]; then
 	$PY -c 'import numpy'
 	if [ $? != 0 ]; then
 		displayMessage "Numpy is missing from your system, this is required.\nStarting the installer"
-		#TODO: Install numpy
-		
+		# Install numpy
+		hdiutil attach $PKGDIR/numpy-1.6.2-py2.7-python.org-macosx10.3.dmg
+		open -W /Volumes/numpy/numpy-1.6.2-py2.7.mpkg
+		hdiutil detach /Volumes/numpy
 		#After installing numpy, we need to check if we need to use arch -386 again
 		PY="python2.7"
 		$PY -c 'import numpy'
@@ -58,7 +65,11 @@ fi
 $PY -c 'import wx'
 if [ $? != 0 ]; then
 	displayMessage "wxPython is missing from your system. Cura requires wxPython.\nStarting the installer"
-	#TODO: Start wxPython installer
+	# Start wxPython installer
+	hdiutil attach $PKGDIR/wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg
+	open -W /Volumes/wxPython2.9-osx-2.9.4.0-cocoa-py2.7/wxPython2.9-osx-cocoa-py2.7.pkg
+	hdiutil detach /Volumes/wxPython2.9-osx-2.9.4.0-cocoa-py2.7
+	#Check if wxPython is installed correctly
 	$PY -c 'import wx'
 	if [ $? != 0 ]; then
 		displayMessage "Failed to properly install wxPython."
@@ -69,11 +80,19 @@ fi
 #Check for PyOpenGL
 $PY -c 'import OpenGL'
 if [ $? != 0 ]; then
-	displayMessage "PyOpenGL is missing from your system. Cura requires PyOpenGL.\nStarting installation"
-	#TODO: Install PyOpenGL
+	# Unpackage PyOpenGL
+	if [ ! -d "$PKGDIR/PyOpenGL-3.0.2/build/lib" ]; then
+		cd $PKGDIR
+		tar -xzf PyOpenGL-3.0.2.tar.gz
+		cd PyOpenGL-3.0.2
+		$PY setup.py build
+	fi
+	export PYTHONPATH="$PYTHONPATH:$PKGDIR/PyOpenGL-3.0.2/build/lib"
+	# Test if the installation was succesful
+	echo $PYTHONPATH
 	$PY -c 'import OpenGL'
 	if [ $? != 0 ]; then
-		displayMessage "Failed to properly install PyOpenGL."
+		displayMessage "Failed to properly use PyOpenGL."
 		exit 1
 	fi
 fi
@@ -81,11 +100,19 @@ fi
 #Check for pyserial
 $PY -c 'import serial'
 if [ $? != 0 ]; then
-	displayMessage "PySerial is missing from your system. Cura requires PySerial.\nStarting installation"
-	#TODO: Install PySerial
+	#Unpackage PySerial
+	if [ ! -d "$PKGDIR/pyserial-2.6/build/lib" ]; then
+		cd $PKGDIR
+		tar -xzf pyserial-2.6.tar.gz
+		cd pyserial-2.6
+		$PY setup.py build
+	fi
+	export PYTHONPATH="$PYTHONPATH:$PKGDIR/pyserial-2.6/build/lib"
+
+	#Test if we have pyserial now
 	$PY -c 'import serial'
 	if [ $? != 0 ]; then
-		displayMessage "Failed to properly install PySerial."
+		displayMessage "Failed to properly use PySerial."
 		exit 1
 	fi
 fi
