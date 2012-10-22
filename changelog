@@ -27,6 +27,8 @@
 * Fixed: Loading of ascii-stl files with Mac lineends
 * Update: Adjusted the quickprint low quality profile a bit, so it produces stronger parts
 * Added: Ultimaker 3D platform for scale reference
+* Added: COLLADA .dae support, for better compatibility with SketchUp
+* Improved: MacOS .app build for easier install and start
 
 == Cura 12.08 ==
 * Added: Loading STL files from the commandline
