@@ -3,11 +3,13 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import os, traceback, math, re, zlib, base64, time, sys
+import os, traceback, math, re, zlib, base64, time, sys, platform 
 if sys.version_info[0] < 3:
 	import ConfigParser
 else:
 	import configparser as ConfigParser
+
+from util import version
 
 #########################################################
 ## Default settings when none are found.
@@ -193,11 +195,16 @@ preferencesDefaultSettings = {
 
 ## Profile functions
 def getDefaultProfilePath():
-	basePath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-	#If we have a frozen python install, we need to step out of the library.zip
-	if hasattr(sys, 'frozen'):
-		basePath = os.path.normpath(os.path.join(basePath, ".."))
-	return os.path.normpath(os.path.join(basePath, "current_profile.ini"))
+	if platform.system() == "Windows":
+		basePath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+		#If we have a frozen python install, we need to step out of the library.zip
+		if hasattr(sys, 'frozen'):
+			basePath = os.path.normpath(os.path.join(basePath, ".."))
+	else:
+		basePath = os.path.expanduser('~/.cura/%s' % version.getVersion(False))
+	if not os.path.isdir(basePath):
+		os.makedirs(basePath)
+	return os.path.join(basePath, 'current_profile.ini')
 
 def loadGlobalProfile(filename):
 	#Read a configuration file as global config
@@ -305,11 +312,16 @@ global globalPreferenceParser
 globalPreferenceParser = None
 
 def getPreferencePath():
-	basePath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-	#If we have a frozen python install, we need to step out of the library.zip
-	if hasattr(sys, 'frozen'):
-		basePath = os.path.normpath(os.path.join(basePath, ".."))
-	return os.path.normpath(os.path.join(basePath, "preferences.ini"))
+	if platform.system() == "Windows":
+		basePath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+		#If we have a frozen python install, we need to step out of the library.zip
+		if hasattr(sys, 'frozen'):
+			basePath = os.path.normpath(os.path.join(basePath, ".."))
+	else:
+		basePath = os.path.expanduser('~/.cura/%s' % version.getVersion(False))
+	if not os.path.isdir(basePath):
+		os.makedirs(basePath)
+	return os.path.join(basePath, 'preferences.ini')
 
 def getPreferenceFloat(name):
 	try:
