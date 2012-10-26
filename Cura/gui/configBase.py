@@ -130,6 +130,7 @@ class SettingRow():
 		else:
 			self.ctrl = wx.ComboBox(panel, -1, getSettingFunc(configName), choices=defaultValue, style=wx.CB_DROPDOWN|wx.CB_READONLY)
 			self.ctrl.Bind(wx.EVT_COMBOBOX, self.OnSettingChange)
+			self.ctrl.Bind(wx.EVT_LEFT_DOWN, self.OnMouseExit)
 			flag = wx.EXPAND
 
 		sizer.Add(self.label, (x,y), flag=wx.ALIGN_CENTER_VERTICAL|wx.LEFT,border=10)
@@ -148,6 +149,7 @@ class SettingRow():
 
 	def OnMouseExit(self, e):
 		self.panel.main.OnPopupHide(self)
+		e.Skip()
 
 	def OnSettingChange(self, e):
 		if self.type == 'profile':
