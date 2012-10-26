@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, string
+import wx, os, platform, types, string, glob
 import ConfigParser
 
 from gui import configBase
@@ -90,4 +90,6 @@ def getDrives():
 			if bitmask & 1:
 				drives.append(letter + ':/')
 			bitmask >>= 1
+	if platform.system() == "Darwin":
+		drives = glob.glob('/Volumes/*')
 	return drives
