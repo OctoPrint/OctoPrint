@@ -91,5 +91,9 @@ def getDrives():
 				drives.append(letter + ':/')
 			bitmask >>= 1
 	if platform.system() == "Darwin":
-		drives = glob.glob('/Volumes/*')
+		drives = []
+		for volume in glob.glob('/Volumes/*/'):
+			if volume.endswith('/Macintosh HD/'):
+				continue
+			drives.append(volume)
 	return drives
