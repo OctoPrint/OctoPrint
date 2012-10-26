@@ -273,7 +273,8 @@ class simpleModeWindow(configBase.configWindowBase):
 		self.sizer.Layout()
 		newSize = self.GetSize();
 		newSize.IncBy(0, spp.GetSize().GetHeight())
-		self.SetSize(newSize)
+		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
+			self.SetSize(newSize)
 		self.progressPanelList.append(spp)
 		
 		#Restore the old profile.
@@ -298,11 +299,12 @@ class simpleModeWindow(configBase.configWindowBase):
 		self.progressPanelList.remove(spp)
 		newSize = self.GetSize();
 		newSize.IncBy(0, -spp.GetSize().GetHeight())
-		self.SetSize(newSize)
-		self.sizer.Remove(spp)
-		spp.Destroy()
+		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
+			self.SetSize(newSize)
+		spp.Show(False)
+		self.sizer.Detach(spp)
 		for spp in self.progressPanelList:
-			self.sizer.Remove(spp)
+			self.sizer.Detach(spp)
 		i = 2
 		for spp in self.progressPanelList:
 			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)

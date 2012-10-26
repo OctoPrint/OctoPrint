@@ -399,7 +399,8 @@ class mainWindow(configBase.configWindowBase):
 		self.sizer.Layout()
 		newSize = self.GetSize();
 		newSize.IncBy(0, spp.GetSize().GetHeight())
-		self.SetSize(newSize)
+		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
+			self.SetSize(newSize)
 		self.progressPanelList.append(spp)
 	
 	def OnPrint(self, e):
@@ -430,7 +431,8 @@ class mainWindow(configBase.configWindowBase):
 		self.progressPanelList.remove(spp)
 		newSize = self.GetSize();
 		newSize.IncBy(0, -spp.GetSize().GetHeight())
-		self.SetSize(newSize)
+		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
+			self.SetSize(newSize)
 		spp.Show(False)
 		self.sizer.Detach(spp)
 		for spp in self.progressPanelList:
