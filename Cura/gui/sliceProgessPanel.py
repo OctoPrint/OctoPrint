@@ -126,7 +126,7 @@ class sliceProgessPanel(wx.Panel):
 		progresValue = ((self.totalDoneFactor + sliceRun.sliceStepTimeFactor[stepName] * layer / maxLayer) / sliceRun.totalRunTimeFactor) * 10000
 		self.progressGauge.SetValue(int(progresValue))
 		taskbar.setProgress(self.GetParent(), int(progresValue), self.progressGauge.GetRange())
-		self.statusText.SetLabel(stepName + " [" + str(layer) + "/" + str(maxLayer) + "]")
+		self.statusText.SetLabel("Preparing: processing %s [%d/%d]" % (stepName, layer, maxLayer))
 
 class WorkerThread(threading.Thread):
 	def __init__(self, notifyWindow, filelist, cmdList):

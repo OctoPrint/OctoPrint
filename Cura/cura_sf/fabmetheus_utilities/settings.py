@@ -395,7 +395,7 @@ def getProfileInformation():
 		},'export': {
 			'Activate_Export': "True",
 			'Add_Descriptive_Extension': DEFSET,
-			'Add_Export_Suffix': DEFSET,
+			'Add_Export_Suffix': "False",
 			'Add_Profile_Extension': DEFSET,
 			'Add_Timestamp_Extension': DEFSET,
 			'Also_Send_Output_To': DEFSET,

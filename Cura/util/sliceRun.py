@@ -98,7 +98,7 @@ def runSlice(fileNames):
 			subprocess.call(getSliceCommand(fileName))
 
 def getExportFilename(filename, ext = "gcode"):
-	return "%s_export.%s" % (filename[: filename.rfind('.')], ext)
+	return "%s.%s" % (filename[: filename.rfind('.')], ext)
 
 #Get a short filename in 8.3 format for proper saving on SD.
 def getShortFilename(filename):
@@ -112,7 +112,7 @@ def getSliceCommand(filename):
 		if slic3rExe == False:
 			return False
 		cmd = [slic3rExe,
-			'--output-filename-format', '[input_filename_base]_export.gcode',
+			'--output-filename-format', '[input_filename_base].gcode',
 			'--nozzle-diameter', str(profile.calculateEdgeWidth()),
 			'--print-center', '%s,%s' % (profile.getProfileSetting('machine_center_x'), profile.getProfileSetting('machine_center_y')),
 			'--z-offset', '0',

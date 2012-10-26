@@ -55,7 +55,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		
 		if profile.getPreference('lastFile') != '':
 			self.filelist = profile.getPreference('lastFile').split(';')
-			self.SetTitle(self.filelist[-1] + ' - Cura - ' + version.getVersion())
+			self.SetTitle('Cura - %s - %s' % (version.getVersion(), self.filelist[-1]))
 		else:
 			self.filelist = []
 		self.progressPanelList = []
