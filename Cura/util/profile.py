@@ -3,7 +3,7 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import os, traceback, math, re, zlib, base64, time, sys, platform 
+import os, traceback, math, re, zlib, base64, time, sys, platform, glob
 if sys.version_info[0] < 3:
 	import ConfigParser
 else:
@@ -529,5 +529,4 @@ def getAlterationFileContents(filename):
 			clearTempOverride('extruder')
 		else:
 			alterationContents = ''
-	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).encode('utf-8')
-
+	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).strip().encode('utf-8')
