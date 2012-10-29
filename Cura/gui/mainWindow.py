@@ -30,13 +30,13 @@ def main():
 		if platform.system() == "Darwin":
 			#Check if we need to copy our examples
 			exampleFile = os.path.expanduser('~/CuraExamples/UltimakerRobot_support.stl')
-			if not os.path.isfile(examplePath):
+			if not os.path.isfile(exampleFile):
 				try:
-					os.makedirs(os.path.dirname(examplePath))
+					os.makedirs(os.path.dirname(exampleFile))
 				except:
 					pass
 				for filename in glob.glob(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example'))):
-					shutil.copy(filename, os.path.join(os.path.dirname(examplePath), os.basename(filename)))
+					shutil.copy(filename, os.path.join(os.path.dirname(exampleFile), os.basename(filename)))
 				profile.putPreference('lastFile', exampleFile)
 		configWizard.configWizard()
 	if profile.getPreference('startMode') == 'Simple':
