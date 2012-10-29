@@ -24,7 +24,7 @@ from util import version
 from util import sliceRun
 from util import meshLoader
 
-def main():
+def main(splash):
 	#app = wx.App(False)
 	if profile.getPreference('machine_type') == 'unknown':
 		if platform.system() == "Darwin":
@@ -38,6 +38,7 @@ def main():
 				for filename in glob.glob(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example', '*.*'))):
 					shutil.copy(filename, os.path.join(os.path.dirname(exampleFile), os.path.basename(filename)))
 				profile.putPreference('lastFile', exampleFile)
+		splash.Show(False)
 		configWizard.configWizard()
 	if profile.getPreference('startMode') == 'Simple':
 		simpleMode.simpleModeWindow()

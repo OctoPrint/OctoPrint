@@ -17,7 +17,7 @@ class splashScreen(wx.SplashScreen):
 		wx.CallAfter(self.DoCallback)
 	
 	def DoCallback(self):
-		self.callback()
+		self.callback(self)
 		self.Destroy()
 
 def showSplash(callback):
@@ -25,7 +25,7 @@ def showSplash(callback):
 	splashScreen(callback)
 	app.MainLoop()
 
-def testCallback():
+def testCallback(splashscreen):
 	print "Callback!"
 	import time
 	time.sleep(2)

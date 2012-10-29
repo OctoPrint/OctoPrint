@@ -78,9 +78,9 @@ def main():
 		from gui import splashScreen
 		splashScreen.showSplash(mainWindowRunCallback)
 
-def mainWindowRunCallback():
+def mainWindowRunCallback(splash):
 	from gui import mainWindow
-	mainWindow.main()
+	mainWindow.main(splash)
 
 if __name__ == '__main__':
 	main()
