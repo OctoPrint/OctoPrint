@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, string, glob
+import wx, os, platform, types, string, glob, stat
 import ConfigParser
 
 from gui import configBase
@@ -92,8 +92,8 @@ def getDrives():
 			bitmask >>= 1
 	if platform.system() == "Darwin":
 		drives = []
-		for volume in glob.glob('/Volumes/*/'):
-			if volume.endswith('/Macintosh HD/'):
+		for volume in glob.glob('/Volumes/*'):
+			if stat.S_ISLNK(os.lstat(volume).st_mode):
 				continue
 			drives.append(volume)
 	return drives
