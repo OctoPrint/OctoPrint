@@ -30,8 +30,12 @@ class simpleModeWindow(configBase.configWindowBase):
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Load model file...')
+		i = fileMenu.Append(-1, 'Load model file...\tCTRL+L')
 		self.Bind(wx.EVT_MENU, self.OnLoadModel, i)
+		i = fileMenu.Append(-1, 'Prepare print...\tCTRL+R')
+		self.Bind(wx.EVT_MENU, self.OnSlice, i)
+		i = fileMenu.Append(-1, 'Print...\tCTRL+P')
+		self.Bind(wx.EVT_MENU, self.OnPrint, i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Preferences...')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
@@ -136,11 +140,6 @@ class simpleModeWindow(configBase.configWindowBase):
 
 		self.printTypeNormal.SetValue(True)
 		self.printMaterialPLA.SetValue(True)
-
-		self.SetAcceleratorTable(wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('L'), loadButton.GetId()),
-													  (wx.ACCEL_CTRL, ord('R'), sliceButton.GetId()),
-													  (wx.ACCEL_CTRL, ord('P'), printButton.GetId())
-													 ]))
 
 		self.Fit()
 		self.preview3d.Fit()

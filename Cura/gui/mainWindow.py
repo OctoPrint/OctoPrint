@@ -59,8 +59,13 @@ class mainWindow(configBase.configWindowBase):
 		
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Load model file...')
+		i = fileMenu.Append(-1, 'Load model file...\tCTRL+L')
 		self.Bind(wx.EVT_MENU, lambda e: self._showModelLoadDialog(1), i)
+		i = fileMenu.Append(-1, 'Prepare print...\tCTRL+R')
+		self.Bind(wx.EVT_MENU, self.OnSlice, i)
+		i = fileMenu.Append(-1, 'Print...\tCTRL+P')
+		self.Bind(wx.EVT_MENU, self.OnPrint, i)
+
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(-1, 'Open Profile...')
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
@@ -293,11 +298,6 @@ class mainWindow(configBase.configWindowBase):
 		self.updateProfileToControls()
 
 		self.SetBackgroundColour(nb.GetBackgroundColour())
-
-		self.SetAcceleratorTable(wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('L'), loadButton.GetId()),
-													  (wx.ACCEL_CTRL, ord('R'), sliceButton.GetId()),
-													  (wx.ACCEL_CTRL, ord('P'), printButton.GetId())
-													 ]))
 		
 		self.Fit()
 		if wx.Display().GetClientArea().GetWidth() < self.GetSize().GetWidth():
