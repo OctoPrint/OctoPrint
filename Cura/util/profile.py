@@ -530,3 +530,42 @@ def getAlterationFileContents(filename):
 		else:
 			alterationContents = ''
 	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).strip().encode('utf-8')
+
+def getEffectBasePath():
+	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'post_process'))
+
+def getEffectsList():
+	ret = []
+	for filename in glob.glob(os.path.join(getEffectBasePath(), '*.py')):
+		filename = os.path.basename(filename)
+		if filename.startswith('_'):
+			continue
+		with open(os.path.join(getEffectBasePath(), filename), "r") as f:
+			item = {'name': None, 'info': None, 'params': []}
+			for line in f:
+				line = line.strip()
+				if not line.startswith('#'):
+					break
+				line = line[1:].split(':', 1)
+				if len(line) != 2:
+					continue
+				if line[0].upper() == 'NAME':
+					item['name'] = line[1].strip()
+				elif line[0].upper() == 'INFO':
+					item['info'] = line[1].strip()
+				elif line[0].upper() == 'PARAM':
+					m = re.match('([a-zA-Z]*)\(([a-zA-Z_]*)\) +(.*)', line[1].strip())
+					if m != None:
+						item['params'].append({'name': m.group(1), 'type': m.group(2), 'description': m.group(3)})
+				else:
+					print "Unknown item in effect meta data: %s %s" % (line[0], line[1])
+			if item['name'] != None:
+				ret.append(item)
+	return ret
+
+def runPostProcessingEffects(filename):
+	pass
+	#print "runPostProcessingEffects: %s" % (filename)
+	
+	#pythonFile = os.path.join(getEffectBasePath(), 'embedImage.py')
+	#execfile(pythonFile, {'filename': filename})

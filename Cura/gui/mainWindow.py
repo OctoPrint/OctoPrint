@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import __init__
 
-import wx, os, platform, types, webbrowser
+import wx, os, platform, types, webbrowser, shutil, glob
 
 from gui import configBase
 from gui import expertConfig
@@ -27,6 +27,17 @@ from util import meshLoader
 def main():
 	#app = wx.App(False)
 	if profile.getPreference('machine_type') == 'unknown':
+		if platform.system() == "Darwin":
+			#Check if we need to copy our examples
+			exampleFile = os.path.expanduser('~/CuraExamples/UltimakerRobot_support.stl')
+			if not os.path.isfile(examplePath):
+				try:
+					os.makedirs(os.path.dirname(examplePath))
+				except:
+					pass
+				for filename in glob.glob(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example'))):
+					shutil.copy(filename, os.path.join(os.path.dirname(examplePath), os.basename(filename)))
+				profile.putPreference('lastFile', exampleFile)
 		configWizard.configWizard()
 	if profile.getPreference('startMode') == 'Simple':
 		simpleMode.simpleModeWindow()
@@ -207,13 +218,40 @@ class mainWindow(configBase.configWindowBase):
 		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 3.0 / 4.0), "A bottom layer of more then %.2fmm (3/4 nozzle size) usually give bad results and is not recommended.")
 		c = configBase.SettingRow(right, "Enable 'skin'", 'enable_skin', False, 'Skin prints the outer lines of the prints twice, each time with half the thickness. This gives the illusion of a higher print quality.')
 
+		#Effects page
+		self.effectList = profile.getEffectsList()
+		if len(self.effectList) > 0:
+			self.effectPanel = wx.Panel(nb)
+			sizer = wx.GridBagSizer(2, 2)
+			self.effectPanel.SetSizer(sizer)
+			
+			effectStringList = []
+			for effect in self.effectList:
+				effectStringList.append(effect['name'])
+				
+			self.listbox = wx.ListBox(self.effectPanel, -1, choices=effectStringList)
+			title = wx.StaticText(self.effectPanel, -1, "Effects:")
+			title.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
+			addButton = wx.Button(self.effectPanel, -1, '>', style=wx.BU_EXACTFIT)
+			remButton = wx.Button(self.effectPanel, -1, '<', style=wx.BU_EXACTFIT)
+			sizer.Add(self.listbox, (1,0), span=(2,1), border=10, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM)
+			sizer.Add(title, (0,0), border=10, flag=wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.TOP)
+			sizer.Add(addButton, (1,1), border=5, flag=wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM)
+			sizer.Add(remButton, (2,1), border=5, flag=wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_TOP)
+			
+			sizer.AddGrowableCol(2)
+			sizer.AddGrowableRow(1)
+			sizer.AddGrowableRow(2)
+			nb.AddPage(self.effectPanel, "Effects")
+
+		#Alteration page
 		self.alterationPanel = alterationPanel.alterationPanel(nb)
 		nb.AddPage(self.alterationPanel, "Start/End-GCode")
 
 		# load and slice buttons.
-		loadButton = wx.Button(self, -1, 'Load Model')
-		sliceButton = wx.Button(self, -1, 'Prepare print')
-		printButton = wx.Button(self, -1, 'Print')
+		loadButton = wx.Button(self, -1, '&Load Model')
+		sliceButton = wx.Button(self, -1, 'P&repare print')
+		printButton = wx.Button(self, -1, '&Print')
 		self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(1), loadButton)
 		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
 		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
@@ -256,6 +294,11 @@ class mainWindow(configBase.configWindowBase):
 
 		self.SetBackgroundColour(nb.GetBackgroundColour())
 
+		self.SetAcceleratorTable(wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('L'), loadButton.GetId()),
+													  (wx.ACCEL_CTRL, ord('R'), sliceButton.GetId()),
+													  (wx.ACCEL_CTRL, ord('P'), printButton.GetId())
+													 ]))
+		
 		self.Fit()
 		if wx.Display().GetClientArea().GetWidth() < self.GetSize().GetWidth():
 			f = self.GetSize().GetWidth() - wx.Display().GetClientArea().GetWidth()
