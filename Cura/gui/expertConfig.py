@@ -13,7 +13,7 @@ from util import validators
 class expertConfigWindow(configBase.configWindowBase):
 	"Expert configuration window"
 	def __init__(self):
-		super(expertConfigWindow, self).__init__(title='Expert config')
+		super(expertConfigWindow, self).__init__(title='Expert config', style=wx.DEFAULT_DIALOG_STYLE)
 
 		wx.EVT_CLOSE(self, self.OnClose)
 

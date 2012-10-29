@@ -13,8 +13,8 @@ def main():
 
 class configWindowBase(wx.Frame):
 	"A base class for configuration dialogs. Handles creation of settings, and popups"
-	def __init__(self, title):
-		super(configWindowBase, self).__init__(None, title=title)
+	def __init__(self, title, style=wx.DEFAULT_FRAME_STYLE):
+		super(configWindowBase, self).__init__(None, title=title, style=style)
 		
 		self.settingControlList = []
 		

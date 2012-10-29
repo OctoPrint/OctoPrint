@@ -11,7 +11,7 @@ from util import profile
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):
-		super(preferencesDialog, self).__init__(title="Preferences")
+		super(preferencesDialog, self).__init__(title="Preferences", style=wx.DEFAULT_DIALOG_STYLE)
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		
