@@ -16,7 +16,7 @@ BUILD_TARGET=${1:-all}
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=12.10
+BUILD_NAME=12.10_RC4
 TARGET_DIR=Cura-${BUILD_NAME}-${BUILD_TARGET}
 
 ##Which versions of external programs to use
@@ -209,7 +209,8 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		echo "Building osx app"
 		mkdir -p scripts/osx64/Cura.app/Contents/Resources
 		mkdir -p scripts/osx64/Cura.app/Contents/Pkgs
-		rm -rf scripts/osx64/Cura.app/Contents/Resources/*
+		rm -rf scripts/osx64/Cura.app/Contents/Resources/Cura
+		rm -rf scripts/osx64/Cura.app/Contents/Resources/pypy
 		cp -a ${TARGET_DIR}/* scripts/osx64/Cura.app/Contents/Resources
 		cp python-2.7.3-macosx10.6.dmg scripts/osx64/Cura.app/Contents/Pkgs
 		cp numpy-1.6.2-py2.7-python.org-macosx10.3.dmg scripts/osx64/Cura.app/Contents/Pkgs
@@ -218,6 +219,14 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		cp wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg scripts/osx64/Cura.app/Contents/Pkgs
 		cd scripts/osx64
 		$TAR cfp - Cura.app | gzip --best -c > ../../${TARGET_DIR}.tar.gz
+		hdiutil detach /Volumes/Cura\ -\ Ultimaker/
+		rm -rf Cura.dmg.sparseimage
+		hdiutil convert DmgTemplateCompressed.dmg -format UDSP -o Cura.dmg
+		hdiutil resize -size 500m Cura.dmg.sparseimage
+		hdiutil attach Cura.dmg.sparseimage
+		cp -a Cura.app /Volumes/Cura\ -\ Ultimaker/Cura/
+		hdiutil detach /Volumes/Cura\ -\ Ultimaker
+		hdiutil convert Cura.dmg.sparseimage -format UDZO -imagekey zlib-level=9 -ov -o ../../${TARGET_DIR}.dmg
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
 		$TAR cfp - ${TARGET_DIR} | gzip --best -c > ${TARGET_DIR}.tar.gz
