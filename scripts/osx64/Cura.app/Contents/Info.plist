@@ -8,6 +8,8 @@
 	<string>Cura 12.10</string>
 	<key>CFBundleIdentifer</key>
 	<string>daid.cura</string>
+	<key>CFBundleIconFile></key>
+	<string>Cura.icns</string>
 	<key>CFBundleVersion</key>
 	<string>12.10</string>
 	<key>CFBundlePackageType</key>

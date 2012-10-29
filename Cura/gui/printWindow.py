@@ -342,7 +342,7 @@ class printWindow(wx.Frame):
 		self.temperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational() and not self.machineCom.isPrinting())
-		self.machineLogButton.Show(self.machineCom != None and self.machineCom.isError())
+		self.machineLogButton.Show(self.machineCom != None and self.machineCom.isClosedOrError())
 		if self.cam:
 			for button in self.cam.buttons:
 				button.Enable(self.machineCom == None or not self.machineCom.isPrinting())
