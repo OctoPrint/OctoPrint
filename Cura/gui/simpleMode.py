@@ -37,7 +37,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		i = fileMenu.Append(-1, 'Print...\tCTRL+P')
 		self.Bind(wx.EVT_MENU, self.OnPrint, i)
 		fileMenu.AppendSeparator()
-		i = fileMenu.Append(-1, 'Preferences...')
+		i = fileMenu.Append(-1, 'Preferences...\tCTRL+,')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
 		fileMenu.AppendSeparator()
 		i = fileMenu.Append(wx.ID_EXIT, 'Quit')
