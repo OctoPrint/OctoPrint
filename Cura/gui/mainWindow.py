@@ -8,6 +8,7 @@ from gui import expertConfig
 from gui import preview3d
 from gui import sliceProgessPanel
 from gui import alterationPanel
+from gui import pluginPanel
 from gui import preferencesDialog
 from gui import configWizard
 from gui import firmwareInstall
@@ -224,31 +225,10 @@ class mainWindow(configBase.configWindowBase):
 		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 3.0 / 4.0), "A bottom layer of more then %.2fmm (3/4 nozzle size) usually give bad results and is not recommended.")
 		c = configBase.SettingRow(right, "Enable 'skin'", 'enable_skin', False, 'Skin prints the outer lines of the prints twice, each time with half the thickness. This gives the illusion of a higher print quality.')
 
-		#Effects page
-		self.effectList = profile.getEffectsList()
-		if len(self.effectList) > 0:
-			self.effectPanel = wx.Panel(nb)
-			sizer = wx.GridBagSizer(2, 2)
-			self.effectPanel.SetSizer(sizer)
-			
-			effectStringList = []
-			for effect in self.effectList:
-				effectStringList.append(effect['name'])
-				
-			self.listbox = wx.ListBox(self.effectPanel, -1, choices=effectStringList)
-			title = wx.StaticText(self.effectPanel, -1, "Effects:")
-			title.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-			addButton = wx.Button(self.effectPanel, -1, '>', style=wx.BU_EXACTFIT)
-			remButton = wx.Button(self.effectPanel, -1, '<', style=wx.BU_EXACTFIT)
-			sizer.Add(self.listbox, (1,0), span=(2,1), border=10, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM)
-			sizer.Add(title, (0,0), border=10, flag=wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.TOP)
-			sizer.Add(addButton, (1,1), border=5, flag=wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM)
-			sizer.Add(remButton, (2,1), border=5, flag=wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_TOP)
-			
-			sizer.AddGrowableCol(2)
-			sizer.AddGrowableRow(1)
-			sizer.AddGrowableRow(2)
-			nb.AddPage(self.effectPanel, "Effects")
+		#Plugin page
+		self.pluginPanel = pluginPanel.pluginPanel(nb)
+		if len(self.pluginPanel.pluginList) > 0:
+			nb.AddPage(self.pluginPanel, "Plugins")
 
 		#Alteration page
 		self.alterationPanel = alterationPanel.alterationPanel(nb)
@@ -498,3 +478,4 @@ class mainWindow(configBase.configWindowBase):
 		super(mainWindow, self).updateProfileToControls()
 		self.preview3d.updateProfileToControls()
 		self.alterationPanel.updateProfileToControls()
+		self.pluginPanel.updateProfileToControls()

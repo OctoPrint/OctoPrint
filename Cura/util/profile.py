@@ -4,6 +4,7 @@ from __future__ import division
 import __init__
 
 import os, traceback, math, re, zlib, base64, time, sys, platform, glob
+import cPickle as pickle
 if sys.version_info[0] < 3:
 	import ConfigParser
 else:
@@ -73,6 +74,7 @@ profileDefaultSettings = {
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',
 	'bottom_thickness': '0.3',
+	'plugin_config': '',
 	
 	'add_start_end_gcode': 'True',
 	'gcode_extension': 'gcode',
@@ -531,41 +533,86 @@ def getAlterationFileContents(filename):
 			alterationContents = ''
 	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).strip().encode('utf-8')
 
-def getEffectBasePath():
-	return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'post_process'))
+###### PLUGIN #####
 
-def getEffectsList():
-	ret = []
-	for filename in glob.glob(os.path.join(getEffectBasePath(), '*.py')):
-		filename = os.path.basename(filename)
-		if filename.startswith('_'):
-			continue
-		with open(os.path.join(getEffectBasePath(), filename), "r") as f:
-			item = {'name': None, 'info': None, 'params': []}
-			for line in f:
-				line = line.strip()
-				if not line.startswith('#'):
-					break
-				line = line[1:].split(':', 1)
-				if len(line) != 2:
-					continue
-				if line[0].upper() == 'NAME':
-					item['name'] = line[1].strip()
-				elif line[0].upper() == 'INFO':
-					item['info'] = line[1].strip()
-				elif line[0].upper() == 'PARAM':
-					m = re.match('([a-zA-Z]*)\(([a-zA-Z_]*)\) +(.*)', line[1].strip())
-					if m != None:
-						item['params'].append({'name': m.group(1), 'type': m.group(2), 'description': m.group(3)})
-				else:
-					print "Unknown item in effect meta data: %s %s" % (line[0], line[1])
-			if item['name'] != None:
-				ret.append(item)
+def getPluginConfig():
+	try:
+		return pickle.loads(getProfileSetting('plugin_config'))
+	except:
+		return []
+
+def setPluginConfig(config):
+	putProfileSetting('plugin_config', pickle.dumps(config))
+
+def getPluginBasePaths():
+	ret = [os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins'))]
+	if platform.system() != "Windows":
+		ret.append(os.path.expanduser('~/.cura/plugins/'))
 	return ret
 
-def runPostProcessingEffects(filename):
-	pass
-	#print "runPostProcessingEffects: %s" % (filename)
+def getPluginList():
+	ret = []
+	for basePath in getPluginBasePaths():
+		for filename in glob.glob(os.path.join(basePath, '*.py')):
+			filename = os.path.basename(filename)
+			if filename.startswith('_'):
+				continue
+			with open(os.path.join(basePath, filename), "r") as f:
+				item = {'filename': filename, 'name': None, 'info': None, 'type': None, 'params': []}
+				for line in f:
+					line = line.strip()
+					if not line.startswith('#'):
+						break
+					line = line[1:].split(':', 1)
+					if len(line) != 2:
+						continue
+					if line[0].upper() == 'NAME':
+						item['name'] = line[1].strip()
+					elif line[0].upper() == 'INFO':
+						item['info'] = line[1].strip()
+					elif line[0].upper() == 'TYPE':
+						item['type'] = line[1].strip()
+					elif line[0].upper() == 'PARAM':
+						m = re.match('([a-zA-Z]*)\(([a-zA-Z_]*)(?:\:([^\)]*))?\) +(.*)', line[1].strip())
+						if m != None:
+							item['params'].append({'name': m.group(1), 'type': m.group(2), 'default': m.group(3), 'description': m.group(4)})
+					else:
+						print "Unknown item in effect meta data: %s %s" % (line[0], line[1])
+				if item['name'] != None and item['type'] == 'postprocess':
+					ret.append(item)
+	return ret
+
+def runPostProcessingPlugins(gcodefilename):
+	pluginConfigList = getPluginConfig()
+	pluginList = getPluginList()
 	
-	#pythonFile = os.path.join(getEffectBasePath(), 'embedImage.py')
-	#execfile(pythonFile, {'filename': filename})
+	for pluginConfig in pluginConfigList:
+		plugin = None
+		for pluginTest in pluginList:
+			if pluginTest['filename'] == pluginConfig['filename']:
+				plugin = pluginTest
+		if plugin == None:
+			continue
+		
+		pythonFile = None
+		for basePath in getPluginBasePaths():
+			testFilename = os.path.join(basePath, pluginConfig['filename'])
+			if os.path.isfile(testFilename):
+				pythonFile = testFilename
+		if pythonFile == None:
+			continue
+		
+		locals = {'filename': gcodefilename}
+		for param in plugin['params']:
+			value = param['default']
+			if param['name'] in pluginConfig['params']:
+				value = pluginConfig['params'][param['name']]
+			
+			if param['type'] == 'float':
+				try:
+					value = float(value)
+				except:
+					value = 0.0
+			
+			locals[param['name']] = value
+		execfile(pythonFile, locals)
