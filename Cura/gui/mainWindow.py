@@ -229,6 +229,8 @@ class mainWindow(configBase.configWindowBase):
 		self.pluginPanel = pluginPanel.pluginPanel(nb)
 		if len(self.pluginPanel.pluginList) > 0:
 			nb.AddPage(self.pluginPanel, "Plugins")
+		else:
+			self.pluginPanel.Show(False)
 
 		#Alteration page
 		self.alterationPanel = alterationPanel.alterationPanel(nb)
