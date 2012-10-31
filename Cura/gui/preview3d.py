@@ -555,7 +555,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			opengl.DrawGCodeLayer(self.parent.gcode.layerList[self.gcodeDisplayListMade])
 			glEndList()
 			self.gcodeDisplayListMade += 1
-			self.Refresh()
+			wx.CallAfter(self.Refresh)
 		
 		glPushMatrix()
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
