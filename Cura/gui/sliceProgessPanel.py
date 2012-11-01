@@ -168,7 +168,9 @@ class WorkerThread(threading.Thread):
 				if logLine.startswith('Model error('):
 					gcodefile.write(';%s\n' % (logLine))
 			gcodefile.close()
-			profile.runPostProcessingPlugins(gcodeFilename)
+			ret = profile.runPostProcessingPlugins(gcodeFilename)
+			if ret != None:
+				self.progressLog.append(ret)
 			self.gcode = gcodeInterpreter.gcode()
 			self.gcode.load(gcodeFilename)
 			profile.replaceGCodeTags(gcodeFilename, self.gcode)

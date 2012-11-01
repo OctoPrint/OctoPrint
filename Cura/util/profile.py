@@ -612,7 +612,12 @@ def runPostProcessingPlugins(gcodefilename):
 				try:
 					value = float(value)
 				except:
-					value = 0.0
+					value = float(param['default'])
 			
 			locals[param['name']] = value
-		execfile(pythonFile, locals)
+		try:
+			execfile(pythonFile, locals)
+		except:
+			locationInfo = traceback.extract_tb(sys.exc_info()[2])[-1]
+			return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
+	return None
