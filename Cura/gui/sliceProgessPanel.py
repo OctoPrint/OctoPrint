@@ -168,6 +168,7 @@ class WorkerThread(threading.Thread):
 				if logLine.startswith('Model error('):
 					gcodefile.write(';%s\n' % (logLine))
 			gcodefile.close()
+			wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Running plugins")
 			ret = profile.runPostProcessingPlugins(gcodeFilename)
 			if ret != None:
 				self.progressLog.append(ret)
