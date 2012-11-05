@@ -14,7 +14,7 @@ def openExporer(filename):
 	if sys.platform == 'win32' or sys.platform == 'cygwin':
 		subprocess.Popen(r'explorer /select,"%s"' % (filename))
 	if sys.platform == 'darwin':
-		subprocess.Popen(['open', os.path.split(filename)[0]])
+		subprocess.Popen(['open', '-R', filename])
 	if sys.platform.startswith('linux'):
 		if os.path.isfile('/usr/bin/nautilus'):
 			subprocess.Popen(['/usr/bin/nautilus', os.path.split(filename)[0]])
