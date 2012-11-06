@@ -322,6 +322,8 @@ class previewPanel(wx.Panel):
 		else:
 			self.warningPopup.yesButton.Show(True)
 			self.warningPopup.noButton.SetLabel('no')
+		self.warningPopup.Fit()
+		self.warningPopup.Layout()
 		self.OnMove()
 		self.warningPopup.Show(True)
 		self.warningPopup.timer.Start(5000)

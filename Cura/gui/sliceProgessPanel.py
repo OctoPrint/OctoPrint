@@ -90,10 +90,17 @@ class sliceProgessPanel(wx.Panel):
 		except:
 			self.GetParent().preview3d.ShowWarningPopup("Failed to copy file to SD card.")
 			return
-		self.GetParent().preview3d.ShowWarningPopup("Copy finished, safely remove SD card?", OnSafeRemove)
+		self.GetParent().preview3d.ShowWarningPopup("Copy finished, safely remove SD card?", self.OnSafeRemove)
 	
 	def OnSafeRemove(self):
-		print "Remove!"
+		if platform.system() == "Windows":
+			cmd = "%s %s>NUL" % (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'EjectMedia.exe')), profile.getPreference('sdpath'))
+		else:
+			cmd = "umount %s > /dev/null 2>&1" % (profile.getPreference('sdpath'))
+		if os.system(cmd):
+			self.GetParent().preview3d.ShowWarningPopup("Safe remove failed.")
+		else:
+			self.GetParent().preview3d.ShowWarningPopup("You can now eject the card.")
 
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()

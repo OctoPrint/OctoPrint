@@ -97,6 +97,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	downloadURL http://videocapture.sourceforge.net/VideoCapture-0.9-5.zip
 	downloadURL http://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-20120927-git-13f0cd6-win32-static.7z
 	downloadURL http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe
+	downloadURL http://www.uwe-sieber.de/files/ejectmedia.zip
 	#Get pypy
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
 elif [ $BUILD_TARGET = "osx64" ]; then
@@ -129,6 +130,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	extract ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe
 	extract ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/licenses
 	extract comtypes-0.6.2.win32.exe
+	extract ejectmedia.zip Win32
 	
 	mkdir -p ${TARGET_DIR}/python
 	mkdir -p ${TARGET_DIR}/Cura/
@@ -141,6 +143,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	mv VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd ${TARGET_DIR}/python/DLLs
 	mv ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe ${TARGET_DIR}/Cura/
 	mv ffmpeg-20120927-git-13f0cd6-win32-static/licenses ${TARGET_DIR}/Cura/ffmpeg-licenses/
+	mv Win32/EjectMedia.exe ${TARGET_DIR}/Cura/
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
 	rm -rf PLATLIB
