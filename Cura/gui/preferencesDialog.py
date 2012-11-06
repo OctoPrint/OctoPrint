@@ -60,8 +60,8 @@ class preferencesDialog(configBase.configWindowBase):
 		c = configBase.SettingRow(right, 'Save profile on slice', 'save_profile', False, 'When slicing save the profile as [stl_file]_profile.ini next to the model.', type = 'preference')
 
 		configBase.TitleRow(right, 'SD Card settings')
-		if len(getDrives()) > 1:
-			c = configBase.SettingRow(right, 'SD card drive', 'sdpath', getDrives(), 'Location of your SD card, when using the copy to SD feature.', type = 'preference')
+		if len(profile.getSDcardDrives()) > 1:
+			c = configBase.SettingRow(right, 'SD card drive', 'sdpath', profile.getSDcardDrives(), 'Location of your SD card, when using the copy to SD feature.', type = 'preference')
 		else:
 			c = configBase.SettingRow(right, 'SD card path', 'sdpath', '', 'Location of your SD card, when using the copy to SD feature.', type = 'preference')
 		c = configBase.SettingRow(right, 'Copy to SD with 8.3 names', 'sdshortnames', False, 'Save the gcode files in short filenames, so they are properly shown on the UltiController', type = 'preference')
@@ -80,20 +80,3 @@ class preferencesDialog(configBase.configWindowBase):
 		self.MakeModal(False)
 		self.parent.updateProfileToControls()
 		self.Destroy()
-
-def getDrives():
-	drives = ['']
-	if platform.system() == "Windows":
-		from ctypes import windll
-		bitmask = windll.kernel32.GetLogicalDrives()
-		for letter in string.uppercase:
-			if bitmask & 1:
-				drives.append(letter + ':/')
-			bitmask >>= 1
-	if platform.system() == "Darwin":
-		drives = []
-		for volume in glob.glob('/Volumes/*'):
-			if stat.S_ISLNK(os.lstat(volume).st_mode):
-				continue
-			drives.append(volume)
-	return drives

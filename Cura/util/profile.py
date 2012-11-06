@@ -3,7 +3,7 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import os, traceback, math, re, zlib, base64, time, sys, platform, glob
+import os, traceback, math, re, zlib, base64, time, sys, platform, glob, string
 import cPickle as pickle
 if sys.version_info[0] < 3:
 	import ConfigParser
@@ -621,3 +621,20 @@ def runPostProcessingPlugins(gcodefilename):
 			locationInfo = traceback.extract_tb(sys.exc_info()[2])[-1]
 			return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
 	return None
+
+def getSDcardDrives():
+	drives = ['']
+	if platform.system() == "Windows":
+		from ctypes import windll
+		bitmask = windll.kernel32.GetLogicalDrives()
+		for letter in string.uppercase:
+			if bitmask & 1:
+				drives.append(letter + ':/')
+			bitmask >>= 1
+	if platform.system() == "Darwin":
+		drives = []
+		for volume in glob.glob('/Volumes/*'):
+			if stat.S_ISLNK(os.lstat(volume).st_mode):
+				continue
+			drives.append(volume)
+	return drives

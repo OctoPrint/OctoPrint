@@ -21,7 +21,7 @@ def InitGL(window, view3D, zoom):
 	size = window.GetSize()
 	glViewport(0,0, size.GetWidth(), size.GetHeight())
 	
-	glLightfv(GL_LIGHT0, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
+	glLightfv(GL_LIGHT0, GL_POSITION, [0.2, 0.2, 1.0, 0.0])
 	glLightfv(GL_LIGHT1, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
 
 	glEnable(GL_RESCALE_NORMAL)
@@ -53,7 +53,7 @@ def DrawMachine(machineSize):
 	if profile.getPreference('machine_type') == 'ultimaker':
 		glPushMatrix()
 		glEnable(GL_LIGHTING)
-		glTranslate(100,120,-285)
+		glTranslate(100,200,-5)
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.8,0.8,0.8])
 		glLightfv(GL_LIGHT0, GL_AMBIENT, [0.5,0.5,0.5])
 		glEnable(GL_BLEND)
@@ -62,7 +62,7 @@ def DrawMachine(machineSize):
 		global platformMesh
 		if platformMesh == None:
 			platformMesh = meshLoader.loadMesh(os.path.normpath(os.path.join(os.path.split(__file__)[0], "../images", 'ultimaker_platform.stl')))
-			platformMesh.setRotateMirror(0, False, True, False, False, True)
+			platformMesh.setRotateMirror(0, False, False, False, False, False)
 		
 		DrawMesh(platformMesh)
 		glPopMatrix()
@@ -130,7 +130,7 @@ def DrawMachine(machineSize):
 				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
 				glVertex3f(x, min(y+10, machineSize.y), -0.01)
 		glEnd()
-		glColor4ub(5/2,171/2,231/2,128)
+		glColor4ub(5*8/10,171*8/10,231*8/10,128)
 		glBegin(GL_QUADS)
 		for x in xrange(10, int(machineSize.x), 20):
 			for y in xrange(0, int(machineSize.y), 20):
@@ -147,7 +147,7 @@ def DrawMachine(machineSize):
 		glEnd()
 		glEnable(GL_CULL_FACE)
 
-		glColor4ub(5,171,231,128)
+		glColor4ub(5,171,231,64)
 		glBegin(GL_QUADS)
 		glVertex3f(0, 0, machineSize.z)
 		glVertex3f(0, machineSize.y, machineSize.z)
@@ -155,7 +155,7 @@ def DrawMachine(machineSize):
 		glVertex3f(machineSize.x, 0, machineSize.z)
 		glEnd()
 		
-		glColor4ub(5,171,231,192)
+		glColor4ub(5,171,231,96)
 		glBegin(GL_QUADS)
 		glVertex3f(0, 0, 0)
 		glVertex3f(0, 0, machineSize.z)
@@ -168,7 +168,7 @@ def DrawMachine(machineSize):
 		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
 		glEnd()
 
-		glColor4ub(5,171,231,255)
+		glColor4ub(5,171,231,128)
 		glBegin(GL_QUADS)
 		glVertex3f(0, 0, machineSize.z)
 		glVertex3f(0, 0, 0)
@@ -395,7 +395,7 @@ def DrawGCodeLayer(layer):
 				dist = (v0 - v1).vsize()
 				if dist > 0 and path.layerThickness > 0:
 					extrusionMMperDist = (v1.e - v0.e) / dist
-					lineWidth = extrusionMMperDist * filamentArea / path.layerThickness / 2
+					lineWidth = extrusionMMperDist * filamentArea / path.layerThickness / 2 * v1.extrudeAmountMultiply
 
 				drawLength += (v0 - v1).vsize()
 				normal = (v0 - v1).cross(util3d.Vector3(0,0,1))

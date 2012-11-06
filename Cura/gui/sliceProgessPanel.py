@@ -4,6 +4,7 @@ import __init__
 import wx, sys, os, shutil, math, threading, subprocess, time, re
 
 from gui import taskbar
+from gui import preferencesDialog
 from util import profile
 from util import sliceRun
 from util import exporer
@@ -72,6 +73,14 @@ class sliceProgessPanel(wx.Panel):
 		exporer.openExporer(sliceRun.getExportFilename(self.filelist[0]))
 	
 	def OnCopyToSD(self, e):
+		if profile.getPreference('sdpath') == '':
+			wx.MessageBox("You need to configure your SD card drive first before you can copy files to it.\nOpening the preferences now.", 'No SD card drive.', wx.OK | wx.ICON_INFORMATION)
+			prefDialog = preferencesDialog.preferencesDialog(self.GetParent())
+			prefDialog.Centre()
+			prefDialog.Show(True)
+			if profile.getPreference('sdpath') == '':
+				print "No path set"
+				return
 		exportFilename = sliceRun.getExportFilename(self.filelist[0])
 		filename = os.path.basename(exportFilename)
 		if profile.getPreference('sdshortnames') == 'True':
@@ -98,8 +107,8 @@ class sliceProgessPanel(wx.Panel):
 				self.openFileLocationButton = wx.Button(self, -1, "Open file location")
 				self.Bind(wx.EVT_BUTTON, self.OnOpenFileLocation, self.openFileLocationButton)
 				self.sizer.Add(self.openFileLocationButton, 0)
-			if profile.getPreference('sdpath') != '':
-				self.copyToSDButton = wx.Button(self, -1, "To SDCard")
+			if len(profile.getSDcardDrives()) > 0:
+				self.copyToSDButton = wx.Button(self, -1, "Copy to SDCard")
 				self.Bind(wx.EVT_BUTTON, self.OnCopyToSD, self.copyToSDButton)
 				self.sizer.Add(self.copyToSDButton, 0)
 			self.showButton = wx.Button(self, -1, "Show result")

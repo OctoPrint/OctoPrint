@@ -66,12 +66,14 @@ class pluginPanel(wx.Panel):
 		title = wx.StaticText(pluginPanel, -1, plugin['name'])
 		title.SetFont(wx.Font(wx.SystemSettings.GetFont(wx.SYS_ANSI_VAR_FONT).GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD))
 		remButton = wx.Button(pluginPanel, -1, 'X', style=wx.BU_EXACTFIT)
-		s.Add(title, pos=(0,0), span=(1,2), flag=wx.ALIGN_BOTTOM|wx.TOP|wx.LEFT|wx.RIGHT, border=5)
-		s.Add(remButton, pos=(0,2), span=(1,1), flag=wx.TOP|wx.LEFT|wx.RIGHT|wx.ALIGN_RIGHT, border=5)
-		s.Add(wx.StaticLine(pluginPanel), pos=(1,0), span=(1,3), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
+		helpButton = wx.Button(pluginPanel, -1, '?', style=wx.BU_EXACTFIT)
+		s.Add(title, pos=(0,1), span=(1,2), flag=wx.ALIGN_BOTTOM|wx.TOP|wx.LEFT|wx.RIGHT, border=5)
+		s.Add(helpButton, pos=(0,0), span=(1,1), flag=wx.TOP|wx.LEFT|wx.ALIGN_RIGHT, border=5)
+		s.Add(remButton, pos=(0,3), span=(1,1), flag=wx.TOP|wx.RIGHT|wx.ALIGN_RIGHT, border=5)
+		s.Add(wx.StaticLine(pluginPanel), pos=(1,0), span=(1,4), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
 		info = wx.StaticText(pluginPanel, -1, plugin['info'])
 		info.Wrap(300)
-		s.Add(info, pos=(2,0), span=(1,3), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
+		s.Add(info, pos=(2,0), span=(1,4), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
 		
 		pluginPanel.paramCtrls = {}
 		i = 0
@@ -81,19 +83,19 @@ class pluginPanel(wx.Panel):
 				value = pluginConfig['params'][param['name']]
 			
 			ctrl = wx.TextCtrl(pluginPanel, -1, value)
-			s.Add(wx.StaticText(pluginPanel, -1, param['description']), pos=(3+i,0), span=(1,1), flag=wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,border=3)
-			s.Add(ctrl, pos=(3+i,2), span=(1,1), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
+			s.Add(wx.StaticText(pluginPanel, -1, param['description']), pos=(3+i,0), span=(1,2), flag=wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,border=3)
+			s.Add(ctrl, pos=(3+i,2), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
 
 			ctrl.Bind(wx.EVT_TEXT, self.OnSettingChange)
 			
 			pluginPanel.paramCtrls[param['name']] = ctrl
 			
 			i += 1
-		s.Add(wx.StaticLine(pluginPanel), pos=(3+i,0), span=(1,3), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
+		s.Add(wx.StaticLine(pluginPanel), pos=(3+i,0), span=(1,4), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
 
 		self.Bind(wx.EVT_BUTTON, self.OnRem, remButton)
 
-		s.AddGrowableCol(2)
+		s.AddGrowableCol(1)
 		pluginPanel.SetBackgroundColour(self.GetParent().GetBackgroundColour())
 		self.pluginEnabledPanel.GetSizer().Add(pluginPanel, flag=wx.EXPAND)
 		self.pluginEnabledPanel.Layout()

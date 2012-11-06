@@ -64,7 +64,7 @@ class previewPanel(wx.Panel):
 		self.warningPopup.timer = wx.Timer(self)
 		self.Bind(wx.EVT_TIMER, self.OnHideWarning, self.warningPopup.timer)
 		
-		self.Bind(wx.EVT_BUTTON, self.OnResetAll, self.warningPopup.yesButton)
+		self.Bind(wx.EVT_BUTTON, self.OnWarningPopup, self.warningPopup.yesButton)
 		self.Bind(wx.EVT_BUTTON, self.OnHideWarning, self.warningPopup.noButton)
 		parent.Bind(wx.EVT_MOVE, self.OnMove)
 		parent.Bind(wx.EVT_SIZE, self.OnMove)
@@ -136,8 +136,9 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
 	
-	def OnMove(self, e):
-		e.Skip()
+	def OnMove(self, e = None):
+		if e != None:
+			e.Skip()
 		x, y = self.glCanvas.ClientToScreenXY(0, 0)
 		sx, sy = self.glCanvas.GetClientSizeTuple()
 		self.warningPopup.SetPosition((x, y+sy-self.warningPopup.GetSize().height))
@@ -249,8 +250,15 @@ class previewPanel(wx.Panel):
 		
 		if showWarning:
 			if profile.getProfileSettingFloat('model_scale') != 1.0 or profile.getProfileSettingFloat('model_rotate_base') != 0 or profile.getProfileSetting('flip_x') != 'False' or profile.getProfileSetting('flip_y') != 'False' or profile.getProfileSetting('flip_z') != 'False' or profile.getProfileSetting('swap_xz') != 'False' or profile.getProfileSetting('swap_yz') != 'False':
-				self.warningPopup.Show(True)
-				self.warningPopup.timer.Start(5000)
+				self.ShowWarningPopup('Reset scale, rotation and mirror?', self.OnResetAll)
+	
+	def ShowWarningPopup(self, text, callback):
+		self.warningPopup.text.SetLabel(text)
+		self.warningPopup.callback = callback
+		self.OnMove()
+		self.warningPopup.Show(True)
+		self.warningPopup.timer.Start(5000)
+
 	
 	def loadReModelFiles(self, filelist):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
@@ -303,7 +311,7 @@ class previewPanel(wx.Panel):
 	def loadProgress(self, progress):
 		pass
 
-	def OnResetAll(self, e):
+	def OnResetAll(self, e = None):
 		profile.putProfileSetting('model_scale', '1.0')
 		profile.putProfileSetting('model_rotate_base', '0')
 		profile.putProfileSetting('flip_x', 'False')
@@ -312,8 +320,11 @@ class previewPanel(wx.Panel):
 		profile.putProfileSetting('swap_xz', 'False')
 		profile.putProfileSetting('swap_yz', 'False')
 		self.updateProfileToControls()
+	
+	def OnWarningPopup(self, e):
 		self.warningPopup.Show(False)
 		self.warningPopup.timer.Stop()
+		self.warningPopup.callback()
 
 	def OnHideWarning(self, e):
 		self.warningPopup.Show(False)
@@ -676,7 +687,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
 			elif self.viewMode == "Normal":
 				glLightfv(GL_LIGHT0, GL_DIFFUSE, self.objColor[self.parent.objectList.index(obj)])
-				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x / 5, self.objColor[self.parent.objectList.index(obj)]))
+				glLightfv(GL_LIGHT0, GL_AMBIENT, map(lambda x: x * 0.4, self.objColor[self.parent.objectList.index(obj)]))
 				glEnable(GL_LIGHTING)
 				self.drawModel(obj)
 

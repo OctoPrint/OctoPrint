@@ -56,6 +56,7 @@ class gcode(object):
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
 		currentExtruder = 0
+		extrudeAmountMultiply = 1.0
 		totalMoveTimeMinute = 0.0
 		scale = 1.0
 		posAbs = True
@@ -66,6 +67,7 @@ class gcode(object):
 		currentLayer = []
 		currentPath = gcodePath('move', pathType, layerThickness, pos.copy())
 		currentPath.list[0].e = totalExtrusion
+		currentPath.list[0].extrudeAmountMultiply = extrudeAmountMultiply
 		currentLayer.append(currentPath)
 		for line in gcodeFile:
 			if type(line) is tuple:
@@ -141,15 +143,13 @@ class gcode(object):
 								moveType = 'extrude'
 							if e < currentE:
 								moveType = 'retract'
-							totalExtrusion += e - currentE
-							currentE = e
 						else:
 							if e > 0:
 								moveType = 'extrude'
 							if e < 0:
 								moveType = 'retract'
-							totalExtrusion += e
-							currentE += e
+						totalExtrusion += e - currentE
+						currentE = e
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
 					if moveType == 'move' and oldPos.z != pos.z:
@@ -161,6 +161,7 @@ class gcode(object):
 						currentLayer.append(currentPath)
 					newPos = pos.copy()
 					newPos.e = totalExtrusion
+					newPos.extrudeAmountMultiply = extrudeAmountMultiply
 					currentPath.list.append(newPos)
 				elif G == 4:	#Delay
 					S = self.getCodeFloat(line, 'S')
@@ -242,6 +243,10 @@ class gcode(object):
 						pass
 					elif M == 190:	#Set bed temperature & wait
 						pass
+					elif M == 221:	#Extrude amount multiplier
+						s = self.getCodeFloat(line, 'S')
+						if s != None:
+							extrudeAmountMultiply = s / 100.0
 					else:
 						print "Unknown M code:" + str(M)
 		self.layerList.append(currentLayer)
