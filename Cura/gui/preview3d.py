@@ -252,14 +252,6 @@ class previewPanel(wx.Panel):
 			if profile.getProfileSettingFloat('model_scale') != 1.0 or profile.getProfileSettingFloat('model_rotate_base') != 0 or profile.getProfileSetting('flip_x') != 'False' or profile.getProfileSetting('flip_y') != 'False' or profile.getProfileSetting('flip_z') != 'False' or profile.getProfileSetting('swap_xz') != 'False' or profile.getProfileSetting('swap_yz') != 'False':
 				self.ShowWarningPopup('Reset scale, rotation and mirror?', self.OnResetAll)
 	
-	def ShowWarningPopup(self, text, callback):
-		self.warningPopup.text.SetLabel(text)
-		self.warningPopup.callback = callback
-		self.OnMove()
-		self.warningPopup.Show(True)
-		self.warningPopup.timer.Start(5000)
-
-	
 	def loadReModelFiles(self, filelist):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
 		for idx in xrange(0, len(filelist)):
@@ -320,6 +312,19 @@ class previewPanel(wx.Panel):
 		profile.putProfileSetting('swap_xz', 'False')
 		profile.putProfileSetting('swap_yz', 'False')
 		self.updateProfileToControls()
+
+	def ShowWarningPopup(self, text, callback = None):
+		self.warningPopup.text.SetLabel(text)
+		self.warningPopup.callback = callback
+		if callback == None:
+			self.warningPopup.yesButton.Show(False)
+			self.warningPopup.noButton.SetLabel('ok')
+		else:
+			self.warningPopup.yesButton.Show(True)
+			self.warningPopup.noButton.SetLabel('no')
+		self.OnMove()
+		self.warningPopup.Show(True)
+		self.warningPopup.timer.Start(5000)
 	
 	def OnWarningPopup(self, e):
 		self.warningPopup.Show(False)

@@ -572,6 +572,8 @@ def getPluginList():
 						item['info'] = line[1].strip()
 					elif line[0].upper() == 'TYPE':
 						item['type'] = line[1].strip()
+					elif line[0].upper() == 'DEPEND':
+						pass
 					elif line[0].upper() == 'PARAM':
 						m = re.match('([a-zA-Z]*)\(([a-zA-Z_]*)(?:\:([^\)]*))?\) +(.*)', line[1].strip())
 						if m != None:

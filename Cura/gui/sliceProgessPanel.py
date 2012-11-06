@@ -85,8 +85,16 @@ class sliceProgessPanel(wx.Panel):
 		filename = os.path.basename(exportFilename)
 		if profile.getPreference('sdshortnames') == 'True':
 			filename = sliceRun.getShortFilename(filename)
-		shutil.copy(exportFilename, os.path.join(profile.getPreference('sdpath'), filename))
+		try:
+			shutil.copy(exportFilename, os.path.join(profile.getPreference('sdpath'), filename))
+		except:
+			self.GetParent().preview3d.ShowWarningPopup("Failed to copy file to SD card.")
+			return
+		self.GetParent().preview3d.ShowWarningPopup("Copy finished, safely remove SD card?", OnSafeRemove)
 	
+	def OnSafeRemove(self):
+		print "Remove!"
+
 	def OnSliceDone(self, result):
 		self.progressGauge.Destroy()
 		self.abortButton.Destroy()
