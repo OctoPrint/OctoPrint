@@ -58,15 +58,16 @@ class Stk500v2(ispBase.IspBase):
 	
 	def writeFlash(self, flashData):
 		#Set load addr to 0, in case we have more then 64k flash we need to enable the address extension
-		flashSize = self.chip['pageSize'] * 2 * self.chip['pageCount']
+		pageSize = self.chip['pageSize'] * 2
+		flashSize = pageSize * self.chip['pageCount']
 		if flashSize > 0xFFFF:
 			self.sendMessage([0x06, 0x80, 0x00, 0x00, 0x00])
 		else:
 			self.sendMessage([0x06, 0x00, 0x00, 0x00, 0x00])
 		
-		loadCount = (len(flashData) + 0xFF) / 0x100
+		loadCount = (len(flashData) + pageSize - 1) / pageSize
 		for i in xrange(0, loadCount):
-			recv = self.sendMessage([0x13, 0x01, 0x00, 0xc1, 0x0a, 0x40, 0x4c, 0x20, 0x00, 0x00] + flashData[(i * 0x100):(i * 0x100 + 0x100)])
+			recv = self.sendMessage([0x13, pageSize >> 8, pageSize & 0xFF, 0xc1, 0x0a, 0x40, 0x4c, 0x20, 0x00, 0x00] + flashData[(i * pageSize):(i * pageSize + pageSize)])
 			if self.progressCallback != None:
 				self.progressCallback(i + 1, loadCount*2)
 	
