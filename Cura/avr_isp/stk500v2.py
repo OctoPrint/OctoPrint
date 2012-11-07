@@ -11,7 +11,7 @@ class Stk500v2(ispBase.IspBase):
 		self.seq = 1
 		self.lastAddr = -1
 	
-	def connect(self, port = 'COM3', speed = 115200):
+	def connect(self, port = 'COM31', speed = 115200):
 		if self.serial != None:
 			self.close()
 		try:

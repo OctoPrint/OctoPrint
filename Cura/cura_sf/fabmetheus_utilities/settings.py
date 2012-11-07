@@ -236,7 +236,7 @@ def getProfileInformation():
 			'Operating_Nozzle_Lift_over_Layer_Thickness_ratio': DEFSET,
 			'Raft_Additional_Margin_over_Length_%': DEFSET,
 			'Raft_Margin_mm': storedSettingFloat('raft_margin'),
-			'Support_Cross_Hatch': 'False',
+			'Support_Cross_Hatch': lambda setting: 'True' if profile.getProfileSetting('support_dual_extrusion') == 'True' and int(profile.getPreference('extruder_amount')) > 1 else 'False',
 			'Support_Flow_Rate_over_Operating_Flow_Rate_ratio': storedPercentSetting('support_rate'),
 			'Support_Gap_over_Perimeter_Extrusion_Width_ratio': calcSupportDistanceRatio,
 			'Support_Material_Choice_': storedSetting('support'),
