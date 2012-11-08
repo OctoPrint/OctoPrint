@@ -95,8 +95,10 @@ class sliceProgessPanel(wx.Panel):
 	def OnSafeRemove(self):
 		if platform.system() == "Windows":
 			cmd = "%s %s>NUL" % (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'EjectMedia.exe')), profile.getPreference('sdpath'))
+		elif platform.system() == "Darwin":
+			cmd = "diskutil eject '%s' > /dev/null 2>&1" % (profile.getPreference('sdpath'))
 		else:
-			cmd = "umount %s > /dev/null 2>&1" % (profile.getPreference('sdpath'))
+			cmd = "umount '%s' > /dev/null 2>&1" % (profile.getPreference('sdpath'))
 		if os.system(cmd):
 			self.GetParent().preview3d.ShowWarningPopup("Safe remove failed.")
 		else:
