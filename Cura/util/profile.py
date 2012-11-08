@@ -3,7 +3,7 @@ from __future__ import division
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import __init__
 
-import os, traceback, math, re, zlib, base64, time, sys, platform, glob, string
+import os, traceback, math, re, zlib, base64, time, sys, platform, glob, string, stat
 import cPickle as pickle
 if sys.version_info[0] < 3:
 	import ConfigParser
