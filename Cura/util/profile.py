@@ -185,10 +185,10 @@ preferencesDefaultSettings = {
 	'extruder_head_size_max_y': '35.0',
 	'extruder_head_size_height': '80.0',
 	
-	'model_colour': '#FFCC99',
-	'model_colour2': '#33FF1A',
-	'model_colour3': '#FF331A',
-	'model_colour4': '#1A33FF',
+	'model_colour': '#72CB30',
+	'model_colour2': '#CB3030',
+	'model_colour3': '#DDD93C',
+	'model_colour4': '#4550D3',
 }
 
 #########################################################

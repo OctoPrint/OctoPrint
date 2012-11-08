@@ -443,7 +443,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.objColor[0] = profile.getPreferenceColour('model_colour')
 		self.objColor[1] = profile.getPreferenceColour('model_colour2')
 		self.objColor[2] = profile.getPreferenceColour('model_colour3')
-		self.objColor[3] = profile.getPreferenceColour('model_colour3')
+		self.objColor[3] = profile.getPreferenceColour('model_colour4')
 
 	def OnMouseMotion(self,e):
 		cursorXY = 100000
