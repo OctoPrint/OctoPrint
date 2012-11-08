@@ -1,5 +1,5 @@
-import wx,wx.stc
-import sys,math,threading,os
+import wx, wx.stc
+import sys, math, threading, os, webbrowser
 from wx.lib import scrolledpanel
 
 from util import profile
@@ -94,6 +94,7 @@ class pluginPanel(wx.Panel):
 		s.Add(wx.StaticLine(pluginPanel), pos=(3+i,0), span=(1,4), flag=wx.EXPAND|wx.LEFT|wx.RIGHT,border=3)
 
 		self.Bind(wx.EVT_BUTTON, self.OnRem, remButton)
+		self.Bind(wx.EVT_BUTTON, self.OnHelp, helpButton)
 
 		s.AddGrowableCol(1)
 		pluginPanel.SetBackgroundColour(self.GetParent().GetBackgroundColour())
@@ -140,3 +141,13 @@ class pluginPanel(wx.Panel):
 
 		self.pluginConfig.pop(idx)
 		profile.setPluginConfig(self.pluginConfig)
+
+	def OnHelp(self, e):
+		panel = e.GetEventObject().GetParent()
+		sizer = self.pluginEnabledPanel.GetSizer()
+		idx = self.panelList.index(panel)
+		
+		fname = self.pluginConfig[idx]['filename'].lower()
+		fname = fname[0].upper() + fname[1:]
+		fname = fname[:fname.rfind('.')]
+		webbrowser.open('http://wiki.ultimaker.com/CuraPlugin:_' + fname)
