@@ -544,8 +544,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				if self.parent.objectsMaxV != None:
 					glTranslate(0,0,-(self.parent.objectsMaxV[2]-self.parent.objectsMinV[2]) * profile.getProfileSettingFloat('model_scale') / 2)
 		else:
-			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
-			glTranslate(self.offsetX, self.offsetY, 0.0)
+			glTranslate(self.offsetX, self.offsetY, 0)
 
 		self.viewport = glGetIntegerv(GL_VIEWPORT);
 		self.modelMatrix = glGetDoublev(GL_MODELVIEW_MATRIX);

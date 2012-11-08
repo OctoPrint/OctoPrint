@@ -722,7 +722,9 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.offsetY = 0
 		self.view3D = False
 		self.allowDrag = False
-	
+
+		self.objColor = profile.getPreferenceColour('model_colour')
+
 	def OnMouseLeftDown(self,e):
 		self.allowDrag = True
 	
@@ -780,7 +782,6 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glRotate(-self.pitch, 1,0,0)
 			glRotate(self.yaw, 0,0,1)
 		else:
-			glScale(1.0/self.zoom, 1.0/self.zoom, 1.0)
 			glTranslate(self.offsetX, self.offsetY, 0.0)
 		glTranslate(-self.parent.machineSize[0]/2, -self.parent.machineSize[1]/2, 0)
 
@@ -822,11 +823,11 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			
 			if item.validPlacement:
 				if self.parent.selection == item:
-					glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.9, 0.7, 1.0])
-					glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.3, 0.2, 0.0])
+					glLightfv(GL_LIGHT0, GL_DIFFUSE,  map(lambda x: x + 0.2, self.objColor))
+					glLightfv(GL_LIGHT0, GL_AMBIENT,  map(lambda x: x / 2, self.objColor))
 				else:
-					glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.8, 0.6, 1.0])
-					glLightfv(GL_LIGHT0, GL_AMBIENT,  [0.2, 0.1, 0.1, 0.0])
+					glLightfv(GL_LIGHT0, GL_DIFFUSE,  self.objColor)
+					glLightfv(GL_LIGHT0, GL_AMBIENT,  map(lambda x: x / 2, self.objColor))
 			else:
 				if self.parent.selection == item:
 					glLightfv(GL_LIGHT0, GL_DIFFUSE,  [1.0, 0.0, 0.0, 0.0])

@@ -41,7 +41,7 @@ def InitGL(window, view3D, zoom):
 	if view3D:
 		gluPerspective(45.0, aspect, 1.0, 1000.0)
 	else:
-		glOrtho(-aspect, aspect, -1, 1, -1000.0, 1000.0)
+		glOrtho(-aspect * (zoom), aspect * (zoom), -1.0 * (zoom), 1.0 * (zoom), -1000.0, 1000.0)
 
 	glMatrixMode(GL_MODELVIEW)
 	glLoadIdentity()
