@@ -331,10 +331,13 @@ class UltimakerCheckupPage(InfoPage):
 	def OnSkipClick(self, e):
 		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
 	
-	def OnCheckClick(self, e):
+	def OnCheckClick(self, e = None):
 		if self.comm != None:
 			self.comm.close()
 			del self.comm
+			self.comm = None
+			wx.CallAfter(self.OnCheckClick)
+			return
 		self.infoBox.SetInfo('Connecting to machine.')
 		self.infoBox.SetBusyIndicator()
 		self.commState.SetBitmap(self.unknownBitmap)
@@ -398,6 +401,7 @@ class UltimakerCheckupPage(InfoPage):
 		elif self.comm.isError():
 			wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
 			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.')
+			wx.CallAfter(self.endstopBitmap.Show, False)
 		wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
 	
 	def mcMessage(self, message):
@@ -422,15 +426,15 @@ class UltimakerCheckupPage(InfoPage):
 			if self.checkupState == 3:
 				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 4
-					wx.CallAfter(self.infoBox.SetAttention, 'Please press the left X endstop.')
-					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopXMinBitmap)
-			elif self.checkupState == 4:
-				if self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-					self.checkupState = 5
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the right X endstop.')
 					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopXMaxBitmap)
-			elif self.checkupState == 5:
+			elif self.checkupState == 4:
 				if not self.xMinStop and self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
+					self.checkupState = 5
+					wx.CallAfter(self.infoBox.SetAttention, 'Please press the left X endstop.')
+					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopXMinBitmap)
+			elif self.checkupState == 5:
+				if self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 6
 					wx.CallAfter(self.infoBox.SetAttention, 'Please press the front Y endstop.')
 					wx.CallAfter(self.endstopBitmap.SetBitmap, self.endStopYMinBitmap)
