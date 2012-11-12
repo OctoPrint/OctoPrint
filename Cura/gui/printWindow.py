@@ -103,6 +103,8 @@ class printWindow(wx.Frame):
 		self.cam = None
 		if webcam.hasWebcamSupport():
 			self.cam = webcam.webcam()
+			if not self.cam.hasCamera():
+				self.cam = None
 
 		#self.SetIcon(icon.getMainIcon())
 		
@@ -245,7 +247,7 @@ class printWindow(wx.Frame):
 
 		nb.AddPage(self.termPanel, 'Term')
 		
-		if self.cam != None and self.cam.hasCamera():
+		if self.cam != None:
 			self.camPage = wx.Panel(nb)
 			sizer = wx.GridBagSizer(2, 2)
 			self.camPage.SetSizer(sizer)
@@ -343,7 +345,7 @@ class printWindow(wx.Frame):
 		self.bedTemperatureSelect.Enable(self.machineCom != None and self.machineCom.isOperational())
 		self.directControlPanel.Enable(self.machineCom != None and self.machineCom.isOperational() and not self.machineCom.isPrinting())
 		self.machineLogButton.Show(self.machineCom != None and self.machineCom.isClosedOrError())
-		if self.cam:
+		if self.cam != None:
 			for button in self.cam.buttons:
 				button.Enable(self.machineCom == None or not self.machineCom.isPrinting())
 	
