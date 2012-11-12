@@ -1,3 +1,6 @@
+== Cura 12.11 ==
+* Bugfix: Critical, printing window does not open without a webcam attached under windows.
+
 == Cura 12.10 ==
 * Update: Vastly updated serial port and baudrate auto-detection. No longer tries to reset the machine multiple times which improves detection success to 100%. And tries last succesful settings first.
 * Added: Loading splashscreen
@@ -29,6 +32,7 @@
 * Added: Ultimaker 3D platform for scale reference
 * Added: COLLADA .dae support, for better compatibility with SketchUp
 * Improved: MacOS .app build for easier install and start
+* Added: Postprocessing plugins
 
 == Cura 12.08 ==
 * Added: Loading STL files from the commandline
