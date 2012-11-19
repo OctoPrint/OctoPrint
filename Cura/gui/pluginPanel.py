@@ -40,6 +40,7 @@ class pluginPanel(wx.Panel):
 		self.pluginEnabledPanel.SetSizer(sizer)
 		
 		self.Bind(wx.EVT_BUTTON, self.OnAdd, addButton)
+		self.listbox.Bind(wx.EVT_LEFT_DCLICK, self.OnAdd)
 		self.panelList = []
 		self.updateProfileToControls()
 	
