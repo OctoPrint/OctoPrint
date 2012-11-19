@@ -153,6 +153,7 @@ class projectPlanner(wx.Frame):
 		self.list = []
 		self.selection = None
 		self.printMode = 0
+		self.alwaysAutoPlace = True
 
 		self.machineSize = numpy.array([profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height')])
 		self.headSizeMin = numpy.array([profile.getPreferenceFloat('extruder_head_size_min_x'), profile.getPreferenceFloat('extruder_head_size_min_y'),0])
@@ -170,8 +171,8 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar, self.OnSaveProject, 'save.png', 'Save project')
 		self.toolbar.AddSeparator()
 		group = []
-		toolbarUtil.RadioButton(self.toolbar, group, 'object-3d-on.png', 'object-3d-off.png', '3D view', callback=self.On3DClick)
-		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick).SetValue(True)
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-3d-on.png', 'object-3d-off.png', '3D view', callback=self.On3DClick).SetValue(self.alwaysAutoPlace)
+		toolbarUtil.RadioButton(self.toolbar, group, 'object-top-on.png', 'object-top-off.png', 'Topdown view', callback=self.OnTopClick).SetValue(not self.alwaysAutoPlace)
 		self.toolbar.AddSeparator()
 		toolbarUtil.NormalButton(self.toolbar, self.OnPreferences, 'preferences.png', 'Project planner preferences')
 		self.toolbar.AddSeparator()
@@ -196,7 +197,8 @@ class projectPlanner(wx.Frame):
 		toolbarUtil.NormalButton(self.toolbar2, self.OnCopy, 'copy.png', 'Make a copy of the current selected object')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnSetCustomProfile, 'set-profile.png', 'Set a custom profile to be used to prepare a specific object.')
 		self.toolbar2.AddSeparator()
-		toolbarUtil.NormalButton(self.toolbar2, self.OnAutoPlace, 'autoplace.png', 'Automaticly organize the objects on the platform.')
+		if not self.alwaysAutoPlace:
+			toolbarUtil.NormalButton(self.toolbar2, self.OnAutoPlace, 'autoplace.png', 'Automaticly organize the objects on the platform.')
 		toolbarUtil.NormalButton(self.toolbar2, self.OnSlice, 'slice.png', 'Prepare to project into a gcode file.')
 		self.toolbar2.Realize()
 
@@ -218,7 +220,8 @@ class projectPlanner(wx.Frame):
 		self.addButton = wx.Button(self.panel, -1, "Add")
 		self.remButton = wx.Button(self.panel, -1, "Remove")
 		self.sliceButton = wx.Button(self.panel, -1, "Prepare")
-		self.autoPlaceButton = wx.Button(self.panel, -1, "Auto Place")
+		if not self.alwaysAutoPlace:
+			self.autoPlaceButton = wx.Button(self.panel, -1, "Auto Place")
 		
 		sizer.Add(self.toolbar, (0,0), span=(1,1), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
 		sizer.Add(self.toolbar2, (0,1), span=(1,2), flag=wx.EXPAND|wx.LEFT|wx.RIGHT)
@@ -228,14 +231,16 @@ class projectPlanner(wx.Frame):
 		sizer.Add(self.addButton, (3,1), span=(1,1))
 		sizer.Add(self.remButton, (3,2), span=(1,1))
 		sizer.Add(self.sliceButton, (4,1), span=(1,1))
-		sizer.Add(self.autoPlaceButton, (4,2), span=(1,1))
+		if not self.alwaysAutoPlace:
+			sizer.Add(self.autoPlaceButton, (4,2), span=(1,1))
 		sizer.AddGrowableCol(0)
 		sizer.AddGrowableRow(1)
 		
 		self.addButton.Bind(wx.EVT_BUTTON, self.OnAddModel)
 		self.remButton.Bind(wx.EVT_BUTTON, self.OnRemModel)
 		self.sliceButton.Bind(wx.EVT_BUTTON, self.OnSlice)
-		self.autoPlaceButton.Bind(wx.EVT_BUTTON, self.OnAutoPlace)
+		if not self.alwaysAutoPlace:
+			self.autoPlaceButton.Bind(wx.EVT_BUTTON, self.OnAutoPlace)
 		self.listbox.Bind(wx.EVT_LISTBOX, self.OnListSelect)
 
 		panel = wx.Panel(self.panel, -1)
@@ -309,6 +314,8 @@ class projectPlanner(wx.Frame):
 		self.printMode = 0
 		if self.printAllAtOnce.GetValue():
 			self.printMode = 1
+		if self.alwaysAutoPlace:
+			self.OnAutoPlace(None)
 		self.preview.Refresh()
 	
 	def OnSaveCombinedSTL(self, e):
@@ -508,6 +515,8 @@ class projectPlanner(wx.Frame):
 		else:
 			self.selection = None
 			self.listbox.SetSelection(-1)
+		if self.alwaysAutoPlace:
+			self.OnAutoPlace(None)
 
 	def OnAutoPlace(self, e):
 		bestAllowedSize = int(self.machineSize[1])
@@ -717,17 +726,25 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		wx.EVT_MOUSEWHEEL(self, self.OnMouseWheel)
 		self.yaw = 30
 		self.pitch = 60
-		self.zoom = self.parent.machineSize[0] / 2 + 10
 		self.offsetX = 0
 		self.offsetY = 0
-		self.view3D = False
+		self.view3D = self.parent.alwaysAutoPlace
+		if self.view3D:
+			self.zoom = 300
+		else:
+			self.zoom = self.parent.machineSize[0] / 2 + 10
 		self.allowDrag = False
 
 		self.objColor = profile.getPreferenceColour('model_colour')
 
 	def OnMouseLeftDown(self,e):
 		self.allowDrag = True
-	
+		if not self.parent.alwaysAutoPlace and not self.view3D:
+			#TODO: Translate mouse X/Y to 3D X/Y/Z
+			for item in self.parent.list:
+				iMin = (item.getMinimum() * item.scale) + numpy.array([item.centerX, item.centerY, 0]) - self.parent.extruderOffset[item.extruder]
+				iMax = (item.getMaximum() * item.scale) + numpy.array([item.centerX, item.centerY, 0]) - self.parent.extruderOffset[item.extruder]
+		
 	def OnMouseMotion(self,e):
 		if self.allowDrag and e.Dragging() and e.LeftIsDown():
 			if self.view3D:
@@ -737,7 +754,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 					self.pitch = 170
 				if self.pitch < 10:
 					self.pitch = 10
-			else:
+			elif not self.parent.alwaysAutoPlace:
 				item = self.parent.selection
 				if item != None:
 					item.centerX += float(e.GetX() - self.oldX) * self.zoom / self.GetSize().GetHeight() * 2
@@ -851,29 +868,30 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 			glDisable(GL_LIGHTING)
 
-			if self.parent.selection == item:
-				if item.gotHit:
-					glColor3f(1.0,0.0,0.3)
+			if not self.parent.alwaysAutoPlace:
+				if self.parent.selection == item:
+					if item.gotHit:
+						glColor3f(1.0,0.0,0.3)
+					else:
+						glColor3f(1.0,0.0,1.0)
+					opengl.DrawBox(vMin, vMax)
+					if item.gotHit:
+						glColor3f(1.0,0.3,0.0)
+					else:
+						glColor3f(1.0,1.0,0.0)
+					opengl.DrawBox(vMinHead, vMaxHead)
+				elif seenSelected:
+					if item.gotHit:
+						glColor3f(0.5,0.0,0.1)
+					else:
+						glColor3f(0.5,0.0,0.5)
+					opengl.DrawBox(vMinHead, vMaxHead)
 				else:
-					glColor3f(1.0,0.0,1.0)
-				opengl.DrawBox(vMin, vMax)
-				if item.gotHit:
-					glColor3f(1.0,0.3,0.0)
-				else:
-					glColor3f(1.0,1.0,0.0)
-				opengl.DrawBox(vMinHead, vMaxHead)
-			elif seenSelected:
-				if item.gotHit:
-					glColor3f(0.5,0.0,0.1)
-				else:
-					glColor3f(0.5,0.0,0.5)
-				opengl.DrawBox(vMinHead, vMaxHead)
-			else:
-				if item.gotHit:
-					glColor3f(0.7,0.1,0.0)
-				else:
-					glColor3f(0.7,0.7,0.0)
-				opengl.DrawBox(vMin, vMax)
+					if item.gotHit:
+						glColor3f(0.7,0.1,0.0)
+					else:
+						glColor3f(0.7,0.7,0.0)
+					opengl.DrawBox(vMin, vMax)
 			
 			glPopMatrix()
 		
