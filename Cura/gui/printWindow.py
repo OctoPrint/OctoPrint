@@ -118,15 +118,18 @@ class printWindow(wx.Frame):
 		sb = wx.StaticBox(self.panel, label="Statistics")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
 
-		p = power.PowerManagement()
-		if p.get_providing_power_source_type() != power.POWER_TYPE_AC:
-			self.powerWarningText = wx.StaticText(parent=self.panel,
-				id=-1,
-				label="Connect your computer to AC power\nIf it shuts down during printing, the product will be lost.",
-				style=wx.ALIGN_CENTER)
-			self.powerWarningText.SetBackgroundColour('red')
-			self.powerWarningText.SetForegroundColour('white')
-			boxsizer.AddF(self.powerWarningText, flags=wx.SizerFlags().Expand().Border(wx.BOTTOM, 10))
+		self.powerWarningText = wx.StaticText(parent=self.panel,
+			id=-1,
+			label="Connect your computer to AC power\nIf it shuts down during printing, the product will be lost.",
+			style=wx.ALIGN_CENTER)
+		self.powerWarningText.SetBackgroundColour('red')
+		self.powerWarningText.SetForegroundColour('white')
+		boxsizer.AddF(self.powerWarningText, flags=wx.SizerFlags().Expand().Border(wx.BOTTOM, 10))
+		self.powerManagement = power.PowerManagement()
+		self.powerWarningTimer = wx.Timer(self)
+		self.Bind(wx.EVT_TIMER, self.OnPowerWarningChange, self.powerWarningTimer)
+		self.OnPowerWarningChange(None)
+		self.powerWarningTimer.Start(10000)
 
 		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nEstimated print time: #####:##\nMachine state:\nDetecting baudrateXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
