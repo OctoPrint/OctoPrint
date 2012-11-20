@@ -11,6 +11,7 @@ from gui import taskbar
 from util import machineCom
 from util import profile
 from util import gcodeInterpreter
+from util import power
 
 printWindowMonitorHandle = None
 
@@ -116,6 +117,20 @@ class printWindow(wx.Frame):
 		
 		sb = wx.StaticBox(self.panel, label="Statistics")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
+
+		self.powerWarningText = wx.StaticText(parent=self.panel,
+			id=-1,
+			label="Connect your computer to AC power\nIf it shuts down during printing, the product will be lost.",
+			style=wx.ALIGN_CENTER)
+		self.powerWarningText.SetBackgroundColour('red')
+		self.powerWarningText.SetForegroundColour('white')
+		boxsizer.AddF(self.powerWarningText, flags=wx.SizerFlags().Expand().Border(wx.BOTTOM, 10))
+		self.powerManagement = power.PowerManagement()
+		self.powerWarningTimer = wx.Timer(self)
+		self.Bind(wx.EVT_TIMER, self.OnPowerWarningChange, self.powerWarningTimer)
+		self.OnPowerWarningChange(None)
+		self.powerWarningTimer.Start(10000)
+
 		self.statsText = wx.StaticText(self.panel, -1, "Filament: ####.##m #.##g\nEstimated print time: #####:##\nMachine state:\nDetecting baudrateXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		boxsizer.Add(self.statsText, flag=wx.LEFT, border=5)
 		
@@ -475,6 +490,15 @@ class printWindow(wx.Frame):
 					self.termHistoryIdx = 0
 				self.termInput.SetValue(self.termHistory[self.termHistoryIdx])
 		e.Skip()
+
+	def OnPowerWarningChange(self, e):
+		type = self.powerManagement.get_providing_power_source_type()
+		if type == power.POWER_TYPE_AC and self.powerWarningText.IsShown():
+			self.powerWarningText.Hide()
+			self.Layout()
+		elif type != power.POWER_TYPE_AC and not self.powerWarningText.IsShown():
+			self.powerWarningText.Show()
+			self.Layout()
 
 	def LoadGCodeFile(self, filename):
 		if self.machineCom != None and self.machineCom.isPrinting():
