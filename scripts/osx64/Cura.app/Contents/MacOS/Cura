@@ -11,12 +11,22 @@ fi
 
 displayMessage()
 {
-	/usr/bin/osascript > /dev/null <<-EOF
+	/usr/bin/osascript > /dev/null << EOF
 tell application "System Events"
 	activate
-	display dialog "$@" buttons {"Ok"}
+  set question to display dialog "$@"
+end tell
+return button returned of question
+EOF
+  if [ $? != 0 ]; then
+    /usr/bin/osascript > /dev/null << EOF
+tell application "System Events"
+	activate
+  display dialog "User Cancelled Install" buttons {"Ok"}
 end tell
 EOF
+    exit 1
+  fi
 }
 
 #Testing for python2.7, which we need and is not always installed on MacOS 1.6
