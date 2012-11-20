@@ -491,6 +491,15 @@ class printWindow(wx.Frame):
 				self.termInput.SetValue(self.termHistory[self.termHistoryIdx])
 		e.Skip()
 
+	def OnPowerWarningChange(self, e):
+		type = self.powerManagement.get_providing_power_source_type()
+		if type == power.POWER_TYPE_AC and self.powerWarningText.IsShown():
+			self.powerWarningText.Hide()
+			self.Layout()
+		elif type != power.POWER_TYPE_AC and not self.powerWarningText.IsShown():
+			self.powerWarningText.Show()
+			self.Layout()
+
 	def LoadGCodeFile(self, filename):
 		if self.machineCom != None and self.machineCom.isPrinting():
 			return
