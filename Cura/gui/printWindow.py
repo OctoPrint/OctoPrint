@@ -291,7 +291,7 @@ class printWindow(wx.Frame):
 			self.camPreview.timer.Start(500)
 			self.camPreview.Bind(wx.EVT_ERASE_BACKGROUND, self.OnCameraEraseBackground)
 
-		self.sizer.AddGrowableRow(5)
+		self.sizer.AddGrowableRow(6)
 		self.sizer.AddGrowableCol(3)
 		
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -618,6 +618,7 @@ class temperatureGraph(wx.Panel):
 		dc = wx.MemoryDC()
 		dc.SelectObject(self.backBuffer)
 		dc.Clear()
+		dc.SetFont(wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT))
 		w, h = self.GetSizeTuple()
 		bgLinePen = wx.Pen('#A0A0A0')
 		tempPen = wx.Pen('#FF4040')
@@ -652,9 +653,12 @@ class temperatureGraph(wx.Panel):
 		for x in xrange(w, 0, -30):
 			dc.SetPen(bgLinePen)
 			dc.DrawLine(x, 0, x, h)
+		tmpNr = 0
 		for y in xrange(h-1, 0, -h * 50 / 300):
 			dc.SetPen(bgLinePen)
 			dc.DrawLine(0, y, w, y)
+			dc.DrawText(str(tmpNr), 0, y - dc.GetFont().GetPixelSize().GetHeight())
+			tmpNr += 50
 		dc.DrawLine(0, 0, w, 0)
 		dc.DrawLine(0, 0, 0, h)
 		
