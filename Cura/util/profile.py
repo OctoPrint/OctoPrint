@@ -545,9 +545,10 @@ def setPluginConfig(config):
 	putProfileSetting('plugin_config', pickle.dumps(config))
 
 def getPluginBasePaths():
-	ret = [os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins'))]
+	ret = []
 	if platform.system() != "Windows":
 		ret.append(os.path.expanduser('~/.cura/plugins/'))
+	ret.append(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins')))
 	return ret
 
 def getPluginList():

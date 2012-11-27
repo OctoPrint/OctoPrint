@@ -495,9 +495,11 @@ class printWindow(wx.Frame):
 		type = self.powerManagement.get_providing_power_source_type()
 		if type == power.POWER_TYPE_AC and self.powerWarningText.IsShown():
 			self.powerWarningText.Hide()
+			self.panel.Layout()
 			self.Layout()
 		elif type != power.POWER_TYPE_AC and not self.powerWarningText.IsShown():
 			self.powerWarningText.Show()
+			self.panel.Layout()
 			self.Layout()
 
 	def LoadGCodeFile(self, filename):

@@ -12,7 +12,7 @@ class Stk500v2(ispBase.IspBase):
 		self.lastAddr = -1
 		self.progressCallback = None
 	
-	def connect(self, port = 'COM17', speed = 115200):
+	def connect(self, port = 'COM22', speed = 115200):
 		if self.serial != None:
 			self.close()
 		try:
@@ -146,8 +146,8 @@ class Stk500v2(ispBase.IspBase):
 
 def main():
 	programmer = Stk500v2()
-	programmer.connect()
-	programmer.programChip(intelHex.readHex(sys.argv[1]))
+	programmer.connect(port = sys.argv[1])
+	programmer.programChip(intelHex.readHex(sys.argv[2]))
 	sys.exit(1)
 
 if __name__ == '__main__':

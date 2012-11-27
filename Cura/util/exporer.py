@@ -21,3 +21,14 @@ def openExporer(filename):
 		elif os.path.isfile('/usr/bin/dolphin'):
 			subprocess.Popen(['/usr/bin/dolphin', os.path.split(filename)[0]])
 
+def openExporerPath(filename):
+	if sys.platform == 'win32' or sys.platform == 'cygwin':
+		subprocess.Popen(r'explorer "%s"' % (filename))
+	if sys.platform == 'darwin':
+		subprocess.Popen(['open', filename])
+	if sys.platform.startswith('linux'):
+		if os.path.isfile('/usr/bin/nautilus'):
+			subprocess.Popen(['/usr/bin/nautilus', filename])
+		elif os.path.isfile('/usr/bin/dolphin'):
+			subprocess.Popen(['/usr/bin/dolphin', filename])
+

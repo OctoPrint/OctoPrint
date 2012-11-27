@@ -77,6 +77,7 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddSeparator()
 
 		self.showBorderButton = toolbarUtil.ToggleButton(self.toolbar, '', 'view-border-on.png', 'view-border-off.png', 'Show model borders', callback=self.OnViewChange)
+		self.showSteepOverhang = toolbarUtil.ToggleButton(self.toolbar, '', 'view-border-on.png', 'view-border-off.png', 'Show steep overhang', callback=self.OnViewChange)
 		self.toolbar.AddSeparator()
 
 		group = []
@@ -170,17 +171,22 @@ class previewPanel(wx.Panel):
 		profile.putProfileSetting('model_scale', scale)
 		self.glCanvas.Refresh()
 	
-	def OnScaleMax(self, e):
+	def OnScaleMax(self, e = None, onlyScaleDown = False):
 		if self.objectsMinV == None:
 			return
 		vMin = self.objectsMinV
 		vMax = self.objectsMaxV
-		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax[0] - vMin[0]) / 2)
-		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
-		scaleX2 = (self.machineCenter.x) / ((vMax[0] - vMin[0]) / 2)
-		scaleY2 = (self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
+		skirtSize = 3
+		if profile.getProfileSettingFloat('skirt_line_count') > 0:
+			skirtSize = 3 + profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
+		scaleX1 = (self.machineSize.x - self.machineCenter.x - skirtSize) / ((vMax[0] - vMin[0]) / 2)
+		scaleY1 = (self.machineSize.y - self.machineCenter.y - skirtSize) / ((vMax[1] - vMin[1]) / 2)
+		scaleX2 = (self.machineCenter.x - skirtSize) / ((vMax[0] - vMin[0]) / 2)
+		scaleY2 = (self.machineCenter.y - skirtSize) / ((vMax[1] - vMin[1]) / 2)
 		scaleZ = self.machineSize.z / (vMax[2] - vMin[2])
 		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
+		if scale > 1.0 and onlyScaleDown:
+			return
 		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
 		self.glCanvas.Refresh()
@@ -249,8 +255,8 @@ class previewPanel(wx.Panel):
 		self.loadThread.start()
 		
 		if showWarning:
-			if profile.getProfileSettingFloat('model_scale') != 1.0 or profile.getProfileSettingFloat('model_rotate_base') != 0 or profile.getProfileSetting('flip_x') != 'False' or profile.getProfileSetting('flip_y') != 'False' or profile.getProfileSetting('flip_z') != 'False' or profile.getProfileSetting('swap_xz') != 'False' or profile.getProfileSetting('swap_yz') != 'False':
-				self.ShowWarningPopup('Reset scale, rotation and mirror?', self.OnResetAll)
+			if profile.getProfileSettingFloat('model_scale') != 1.0 or profile.getProfileSettingFloat('model_rotate_base') != 0 or profile.getProfileSetting('flip_x') != 'False' or profile.getProfileSetting('flip_y') != 'False' or profile.getProfileSetting('flip_z') != 'False' or profile.getProfileSetting('swap_xz') != 'False' or profile.getProfileSetting('swap_yz') != 'False' or len(profile.getPluginConfig()) > 0:
+				self.ShowWarningPopup('Reset scale, rotation, mirror and plugins?', self.OnResetAll)
 	
 	def loadReModelFiles(self, filelist):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
@@ -270,8 +276,7 @@ class previewPanel(wx.Panel):
 				self.updateModelTransform()
 				scale = profile.getProfileSettingFloat('model_scale')
 				size = (self.objectsMaxV - self.objectsMinV) * scale
-				if size[0] > self.machineSize.x or size[1] > self.machineSize.y or size[2] > self.machineSize.z:
-					self.OnScaleMax(None)
+				self.OnScaleMax(None, True)
 				self.glCanvas.zoom = numpy.max(size) * 2.5
 				self.errorList = []
 				wx.CallAfter(self.updateToolbar)
@@ -311,7 +316,8 @@ class previewPanel(wx.Panel):
 		profile.putProfileSetting('flip_z', 'False')
 		profile.putProfileSetting('swap_xz', 'False')
 		profile.putProfileSetting('swap_yz', 'False')
-		self.updateProfileToControls()
+		profile.setPluginConfig([])
+		self.GetParent().updateProfileToControls()
 
 	def ShowWarningPopup(self, text, callback = None):
 		self.warningPopup.text.SetLabel(text)
@@ -358,6 +364,7 @@ class previewPanel(wx.Panel):
 		elif self.mixedViewButton.GetValue():
 			self.glCanvas.viewMode = "Mixed"
 		self.glCanvas.drawBorders = self.showBorderButton.GetValue()
+		self.glCanvas.drawSteepOverhang = self.showSteepOverhang.GetValue()
 		self.updateToolbar()
 		self.glCanvas.Refresh()
 	
@@ -580,11 +587,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			if obj.mesh == None:
 				continue
 			if obj.displayList == None:
-				obj.displayList = glGenLists(1);
+				obj.displayList = glGenLists(1)
+				obj.steepDisplayList = glGenLists(1)
 			if obj.dirty:
 				obj.dirty = False
 				glNewList(obj.displayList, GL_COMPILE)
 				opengl.DrawMesh(obj.mesh)
+				glEndList()
+				glNewList(obj.steepDisplayList, GL_COMPILE)
+				opengl.DrawMeshSteep(obj.mesh, 60)
 				glEndList()
 			
 			if self.viewMode == "Mixed":
@@ -705,6 +716,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				modelScale = profile.getProfileSettingFloat('model_scale')
 				glScalef(modelScale, modelScale, modelScale)
 				opengl.DrawMeshOutline(obj.mesh)
+				glPopMatrix()
+			
+			if self.drawSteepOverhang:
+				glDisable(GL_LIGHTING)
+				glColor3f(1,1,1)
+				glPushMatrix()
+				modelScale = profile.getProfileSettingFloat('model_scale')
+				glScalef(modelScale, modelScale, modelScale)
+				glCallList(obj.steepDisplayList)
 				glPopMatrix()
 		
 		glPopMatrix()	
