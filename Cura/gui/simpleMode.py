@@ -110,7 +110,7 @@ class simpleModeWindow(configBase.configWindowBase):
 		sizer.Add(boxsizer, (2,0), flag=wx.EXPAND)
 
 		# load and slice buttons.
-		loadButton = wx.Button(self, -1, '&Load Model')
+		loadButton = wx.Button(self, -1, '&Load model')
 		sliceButton = wx.Button(self, -1, 'P&repare print')
 		printButton = wx.Button(self, -1, '&Print')
 		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)

@@ -120,7 +120,7 @@ class printWindow(wx.Frame):
 
 		self.powerWarningText = wx.StaticText(parent=self.panel,
 			id=-1,
-			label="Connect your computer to AC power\nIf it shuts down during printing, the product will be lost.",
+			label="Your computer is running on battery power.\nConnect your computer to AC power or your print might not finish.",
 			style=wx.ALIGN_CENTER)
 		self.powerWarningText.SetBackgroundColour('red')
 		self.powerWarningText.SetForegroundColour('white')

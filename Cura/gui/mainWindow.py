@@ -114,7 +114,7 @@ class mainWindow(configBase.configWindowBase):
 		
 		helpMenu = wx.Menu()
 		i = helpMenu.Append(-1, 'Online documentation...')
-		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://daid.github.com/Cura'), i)
+		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('http://daid.github.com/Cura'), i)
 		i = helpMenu.Append(-1, 'Report a problem...')
 		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/Cura/issues'), i)
 		menubar.Append(helpMenu, 'Help')
@@ -135,7 +135,7 @@ class mainWindow(configBase.configWindowBase):
 		
 		(left, right) = self.CreateConfigTab(nb, 'Print config')
 		
-		configBase.TitleRow(left, "Accuracy")
+		configBase.TitleRow(left, "Quality")
 		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0001)
 		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 80.0 / 100.0), "Thicker layers then %.2fmm (80%% nozzle size) usually give bad results and are not recommended.")
@@ -196,7 +196,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.settingNotify(c, self.preview3d.updateCenterY)
 
 		configBase.TitleRow(left, "Retraction")
-		c = configBase.SettingRow(left, "Minimal travel (mm)", 'retraction_min_travel', '5.0', 'Minimal amount of travel needed for a retraction to happen at all. To make sure you do not get a lot of retractions in a small area')
+		c = configBase.SettingRow(left, "Minimum travel (mm)", 'retraction_min_travel', '5.0', 'Minimum amount of travel needed for a retraction to happen at all. To make sure you do not get a lot of retractions in a small area')
 		validators.validFloat(c, 0.0)
 		c = configBase.SettingRow(left, "Speed (mm/s)", 'retraction_speed', '40.0', 'Speed at which the filament is retracted, a higher retraction speed works better. But a very high retraction speed can lead to filament grinding.')
 		validators.validFloat(c, 0.1)
@@ -219,11 +219,11 @@ class mainWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0)
 		c = configBase.SettingRow(right, "Enable cooling fan", 'fan_enabled', True, 'Enable the cooling fan during the print. The extra cooling from the cooling fan is essensial during faster prints.')
 
-		configBase.TitleRow(right, "Accuracy")
+		configBase.TitleRow(right, "Quality")
 		c = configBase.SettingRow(right, "Initial layer thickness (mm)", 'bottom_thickness', '0.0', 'Layer thickness of the bottom layer. A thicker bottom layer makes sticking to the bed easier. Set to 0.0 to have the bottom layer thickness the same as the other layers.')
 		validators.validFloat(c, 0.0)
 		validators.warningAbove(c, lambda : (float(profile.getProfileSetting('nozzle_size')) * 3.0 / 4.0), "A bottom layer of more then %.2fmm (3/4 nozzle size) usually give bad results and is not recommended.")
-		c = configBase.SettingRow(right, "Enable 'skin'", 'enable_skin', False, 'Skin prints the outer lines of the prints twice, each time with half the thickness. This gives the illusion of a higher print quality.')
+		c = configBase.SettingRow(right, "Duplicate outlines", 'enable_skin', False, 'Skin prints the outer lines of the prints twice, each time with half the thickness. This gives the illusion of a higher print quality.')
 
 		#Plugin page
 		self.pluginPanel = pluginPanel.pluginPanel(nb)
@@ -237,7 +237,7 @@ class mainWindow(configBase.configWindowBase):
 		nb.AddPage(self.alterationPanel, "Start/End-GCode")
 
 		# load and slice buttons.
-		loadButton = wx.Button(self, -1, '&Load Model')
+		loadButton = wx.Button(self, -1, '&Load model')
 		sliceButton = wx.Button(self, -1, 'P&repare print')
 		printButton = wx.Button(self, -1, '&Print')
 		self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(1), loadButton)
