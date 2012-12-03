@@ -42,7 +42,7 @@ profileDefaultSettings = {
 	'travel_speed': '150',
 	'max_z_speed': '3.0',
 	'bottom_layer_speed': '20',
-	'cool_min_layer_time': '10',
+	'cool_min_layer_time': '5',
 	'fan_enabled': 'True',
 	'fan_layer': '1',
 	'fan_speed': '100',
