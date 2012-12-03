@@ -91,6 +91,9 @@ class previewPanel(wx.Panel):
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
+		self.toolbar.AddSeparator()
+		self.toolbarInfo = wx.TextCtrl(self.toolbar, -1, '', style=wx.TE_READONLY)
+		self.toolbar.AddControl(self.toolbarInfo)
 
 		self.toolbar2 = toolbarUtil.Toolbar(self)
 
@@ -170,7 +173,11 @@ class previewPanel(wx.Panel):
 			scale = self.scale.GetValue()
 		profile.putProfileSetting('model_scale', scale)
 		self.glCanvas.Refresh()
-	
+
+		if self.objectsMaxV != None:
+			size = (self.objectsMaxV - self.objectsMinV) * float(scale)
+			self.toolbarInfo.SetValue('%0.1f %0.1f %0.1f' % (size[0], size[1], size[2]))
+
 	def OnScaleMax(self, e = None, onlyScaleDown = False):
 		if self.objectsMinV == None:
 			return
@@ -274,9 +281,10 @@ class previewPanel(wx.Panel):
 				obj.dirty = False
 				obj.mesh = mesh
 				self.updateModelTransform()
+				self.OnScaleMax(None, True)
 				scale = profile.getProfileSettingFloat('model_scale')
 				size = (self.objectsMaxV - self.objectsMinV) * scale
-				self.OnScaleMax(None, True)
+				self.toolbarInfo.SetValue('%0.1f %0.1f %0.1f' % (size[0], size[1], size[2]))
 				self.glCanvas.zoom = numpy.max(size) * 2.5
 				self.errorList = []
 				wx.CallAfter(self.updateToolbar)
@@ -407,6 +415,11 @@ class previewPanel(wx.Panel):
 			#	v[1] -= minV[1] + (maxV[1] - minV[1]) / 2
 			obj.mesh.getMinimumZ()
 			obj.dirty = True
+
+		scale = profile.getProfileSettingFloat('model_scale')
+		size = (self.objectsMaxV - self.objectsMinV) * scale
+		self.toolbarInfo.SetValue('%0.1f %0.1f %0.1f' % (size[0], size[1], size[2]))
+
 		self.glCanvas.Refresh()
 	
 	def updateProfileToControls(self):
