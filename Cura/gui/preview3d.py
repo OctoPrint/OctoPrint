@@ -77,7 +77,7 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddSeparator()
 
 		self.showBorderButton = toolbarUtil.ToggleButton(self.toolbar, '', 'view-border-on.png', 'view-border-off.png', 'Show model borders', callback=self.OnViewChange)
-		self.showSteepOverhang = toolbarUtil.ToggleButton(self.toolbar, '', 'view-border-on.png', 'view-border-off.png', 'Show steep overhang', callback=self.OnViewChange)
+		self.showSteepOverhang = toolbarUtil.ToggleButton(self.toolbar, '', 'steepOverhang-on.png', 'steepOverhang-off.png', 'Show steep overhang', callback=self.OnViewChange)
 		self.toolbar.AddSeparator()
 
 		group = []
