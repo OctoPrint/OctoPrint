@@ -98,14 +98,14 @@ class previewPanel(wx.Panel):
 		self.toolbar2 = toolbarUtil.Toolbar(self)
 
 		# Mirror
-		self.mirrorX = toolbarUtil.ToggleButton(self.toolbar2, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X', callback=self.updateModelTransform)
-		self.mirrorY = toolbarUtil.ToggleButton(self.toolbar2, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y', callback=self.updateModelTransform)
-		self.mirrorZ = toolbarUtil.ToggleButton(self.toolbar2, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z', callback=self.updateModelTransform)
+		self.mirrorX = toolbarUtil.ToggleButton(self.toolbar2, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X', callback=self.returnToNormalViewAndUpdateModel)
+		self.mirrorY = toolbarUtil.ToggleButton(self.toolbar2, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y', callback=self.returnToNormalViewAndUpdateModel)
+		self.mirrorZ = toolbarUtil.ToggleButton(self.toolbar2, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z', callback=self.returnToNormalViewAndUpdateModel)
 		self.toolbar2.AddSeparator()
 
 		# Swap
-		self.swapXZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ', callback=self.updateModelTransform)
-		self.swapYZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ', callback=self.updateModelTransform)
+		self.swapXZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ', callback=self.returnToNormalViewAndUpdateModel)
+		self.swapYZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ', callback=self.returnToNormalViewAndUpdateModel)
 		self.toolbar2.AddSeparator()
 
 		# Scale
@@ -139,6 +139,10 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
+	
+	def returnToNormalViewAndUpdateModel(self):
+		self.normalViewButton.SetValue(True)
+		self.updateModelTransform()
 	
 	def OnMove(self, e = None):
 		if e != None:
