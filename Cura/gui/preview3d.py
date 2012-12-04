@@ -98,14 +98,14 @@ class previewPanel(wx.Panel):
 		self.toolbar2 = toolbarUtil.Toolbar(self)
 
 		# Mirror
-		self.mirrorX = toolbarUtil.ToggleButton(self.toolbar2, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X', callback=self.returnToNormalViewAndUpdateModel)
-		self.mirrorY = toolbarUtil.ToggleButton(self.toolbar2, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y', callback=self.returnToNormalViewAndUpdateModel)
-		self.mirrorZ = toolbarUtil.ToggleButton(self.toolbar2, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z', callback=self.returnToNormalViewAndUpdateModel)
+		self.mirrorX = toolbarUtil.ToggleButton(self.toolbar2, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X', callback=self.returnToModelViewAndUpdateModel)
+		self.mirrorY = toolbarUtil.ToggleButton(self.toolbar2, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y', callback=self.returnToModelViewAndUpdateModel)
+		self.mirrorZ = toolbarUtil.ToggleButton(self.toolbar2, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z', callback=self.returnToModelViewAndUpdateModel)
 		self.toolbar2.AddSeparator()
 
 		# Swap
-		self.swapXZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ', callback=self.returnToNormalViewAndUpdateModel)
-		self.swapYZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ', callback=self.returnToNormalViewAndUpdateModel)
+		self.swapXZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ', callback=self.returnToModelViewAndUpdateModel)
+		self.swapYZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ', callback=self.returnToModelViewAndUpdateModel)
 		self.toolbar2.AddSeparator()
 
 		# Scale
@@ -140,8 +140,9 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
 	
-	def returnToNormalViewAndUpdateModel(self):
-		self.normalViewButton.SetValue(True)
+	def returnToModelViewAndUpdateModel(self):
+		if self.glCanvas.viewMode == 'GCode' or self.glCanvas.viewMode == 'Mixed':
+			self.setViewMode('Normal')
 		self.updateModelTransform()
 	
 	def OnMove(self, e = None):
@@ -176,6 +177,8 @@ class previewPanel(wx.Panel):
 		if self.scale.GetValue() != '':
 			scale = self.scale.GetValue()
 		profile.putProfileSetting('model_scale', scale)
+		if self.glCanvas.viewMode == 'GCode' or self.glCanvas.viewMode == 'Mixed':
+			self.setViewMode('Normal')
 		self.glCanvas.Refresh()
 
 		if self.objectsMaxV != None:
@@ -200,6 +203,8 @@ class previewPanel(wx.Panel):
 			return
 		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
+		if self.glCanvas.viewMode == 'GCode' or self.glCanvas.viewMode == 'Mixed':
+			self.setViewMode('Normal')
 		self.glCanvas.Refresh()
 
 	def OnRotateReset(self, e):
@@ -208,7 +213,7 @@ class previewPanel(wx.Panel):
 
 	def OnRotate(self, e):
 		profile.putProfileSetting('model_rotate_base', self.rotate.GetValue())
-		self.updateModelTransform()
+		self.returnToModelViewAndUpdateModel()
 
 	def On3DClick(self):
 		self.glCanvas.yaw = 30
