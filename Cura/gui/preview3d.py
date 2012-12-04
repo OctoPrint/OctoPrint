@@ -45,7 +45,7 @@ class previewPanel(wx.Panel):
 		self.objectsMaxV = None
 		self.loadThread = None
 		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
-		self.machineCenter = util3d.Vector3(float(profile.getProfileSetting('machine_center_x')), float(profile.getProfileSetting('machine_center_y')), 0)
+		self.machineCenter = util3d.Vector3(self.machineSize.x / 2, self.machineSize.y / 2, 0)
 
 		self.glCanvas = PreviewGLCanvas(self)
 		#Create the popup window
@@ -230,14 +230,6 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 
 	def OnLayerNrChange(self, e):
-		self.glCanvas.Refresh()
-
-	def updateCenterX(self):
-		self.machineCenter.x = profile.getProfileSettingFloat('machine_center_x')
-		self.glCanvas.Refresh()
-
-	def updateCenterY(self):
-		self.machineCenter.y = profile.getProfileSettingFloat('machine_center_y')
 		self.glCanvas.Refresh()
 	
 	def setViewMode(self, mode):

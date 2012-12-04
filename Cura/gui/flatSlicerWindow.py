@@ -84,7 +84,7 @@ class flatSlicerWindow(wx.Frame):
 		if dlg.ShowModal() == wx.ID_OK:
 			self.filename = dlg.GetPath()
 			self.svg = svg.SVG(self.filename)
-			self.svg.center(complex(profile.getProfileSettingFloat('machine_center_x'), profile.getProfileSettingFloat('machine_center_y')))
+			self.svg.center(complex(profile.getPreferenceFloat('machine_width')/2, profile.getPreferenceFloat('machine_depth')/2))
 			self.preview.Refresh()
 		dlg.Destroy()
 

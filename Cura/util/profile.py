@@ -31,8 +31,6 @@ profileDefaultSettings = {
 	'support': 'None',
 	'filament_diameter': '2.89',
 	'filament_density': '1.00',
-	'machine_center_x': '100',
-	'machine_center_y': '100',
 	'retraction_min_travel': '5.0',
 	'retraction_enable': 'False',
 	'retraction_speed': '40.0',
@@ -102,9 +100,6 @@ G1 Z15.0 F{max_z_speed} ;move the platform down 15mm
 G92 E0                  ;zero the extruded length
 G1 F200 E3              ;extrude 3mm of feed stock
 G92 E0                  ;zero the extruded length again
-
-;go to the middle of the platform (disabled, as there is no need to go to the center)
-;G1 X{machine_center_x} Y{machine_center_y} F{travel_speed}
 G1 F{travel_speed}
 """,
 #######################################################################################
@@ -137,7 +132,7 @@ G90                                    ;absolute positioning
 
 G1 Z{clear_z} F{max_z_speed}
 G92 E0
-G1 X{machine_center_x} Y{machine_center_y} F{travel_speed}
+G1 X{object_center_x} Y{object_center_x} F{travel_speed}
 G1 F200 E6
 G92 E0
 """,
@@ -218,6 +213,9 @@ def resetGlobalProfile():
 	#Read a configuration file as global config
 	global globalProfileParser
 	globalProfileParser = ConfigParser.ConfigParser()
+
+	if getPreference('machine_type') == 'reprap':
+		putProfileSetting('nozzle_size', '0.5')
 
 def saveGlobalProfile(filename):
 	#Save the current profile to an ini file

@@ -115,7 +115,7 @@ def getSliceCommand(filename):
 		cmd = [slic3rExe,
 			'--output-filename-format', '[input_filename_base].gcode',
 			'--nozzle-diameter', str(profile.calculateEdgeWidth()),
-			'--print-center', '%s,%s' % (profile.getProfileSetting('machine_center_x'), profile.getProfileSetting('machine_center_y')),
+			'--print-center', '%s,%s' % (profile.getPreferenceFloat('machine_width') / 2, profile.getPreferenceFloat('machine_depth') / 2),
 			'--z-offset', '0',
 			'--gcode-flavor', 'reprap',
 			'--gcode-comments',

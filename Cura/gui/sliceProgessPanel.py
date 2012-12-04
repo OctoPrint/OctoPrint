@@ -46,8 +46,8 @@ class sliceProgessPanel(wx.Panel):
 			if idx > 0:
 				profile.setTempOverride('fan_enabled', 'False')
 				profile.setTempOverride('skirt_line_count', '0')
-				profile.setTempOverride('machine_center_x', profile.getProfileSettingFloat('machine_center_x') - profile.getPreferenceFloat('extruder_offset_x%d' % (idx)))
-				profile.setTempOverride('machine_center_y', profile.getProfileSettingFloat('machine_center_y') - profile.getPreferenceFloat('extruder_offset_y%d' % (idx)))
+				profile.setTempOverride('object_center_x', profile.getPreferenceFloat('machine_width') / 2 - profile.getPreferenceFloat('extruder_offset_x%d' % (idx)))
+				profile.setTempOverride('object_center_y', profile.getPreferenceFloat('machine_depth') / 2 - profile.getPreferenceFloat('extruder_offset_y%d' % (idx)))
 				profile.setTempOverride('alternative_center', self.filelist[0])
 			if len(self.filelist) > 1:
 				profile.setTempOverride('add_start_end_gcode', 'False')

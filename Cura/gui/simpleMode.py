@@ -187,8 +187,6 @@ class simpleModeWindow(configBase.configWindowBase):
 		put('print_speed', '50')
 		put('print_temperature', '220')
 		put('support', 'None')
-		#put('machine_center_x', '100')
-		#put('machine_center_y', '100')
 		put('retraction_enable', 'False')
 		put('retraction_min_travel', '5.0')
 		put('retraction_speed', '40.0')

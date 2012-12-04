@@ -226,8 +226,6 @@ class RepRapInfoPage(InfoPage):
 		profile.putPreference('machine_depth', self.machineDepth.GetValue())
 		profile.putPreference('machine_height', self.machineHeight.GetValue())
 		profile.putProfileSetting('nozzle_size', self.nozzleSize.GetValue())
-		profile.putProfileSetting('machine_center_x', profile.getPreferenceFloat('machine_width') / 2)
-		profile.putProfileSetting('machine_center_y', profile.getPreferenceFloat('machine_depth') / 2)
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSettingFloat('nozzle_size')) * 2)
 		profile.putPreference('has_heated_bed', str(self.heatedBed.GetValue()))
 
@@ -255,8 +253,6 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_height', '200')
 			profile.putPreference('machine_type', 'ultimaker')
 			profile.putProfileSetting('nozzle_size', '0.4')
-			profile.putProfileSetting('machine_center_x', '100')
-			profile.putProfileSetting('machine_center_y', '100')
 		else:
 			profile.putPreference('machine_width', '80')
 			profile.putPreference('machine_depth', '80')
@@ -264,8 +260,6 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_type', 'reprap')
 			profile.putPreference('startMode', 'Normal')
 			profile.putProfileSetting('nozzle_size', '0.5')
-			profile.putProfileSetting('machine_center_x', '40')
-			profile.putProfileSetting('machine_center_y', '40')
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSetting('nozzle_size')) * 2)
 
 class FirmwareUpgradePage(InfoPage):

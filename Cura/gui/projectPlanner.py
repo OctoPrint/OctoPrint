@@ -596,8 +596,8 @@ class projectPlanner(wx.Frame):
 			for item in self.list:
 				if item.profile != None and os.path.isfile(item.profile):
 					profile.loadGlobalProfile(item.profile)
-				put('machine_center_x', item.centerX - self.extruderOffset[item.extruder][0])
-				put('machine_center_y', item.centerY - self.extruderOffset[item.extruder][1])
+				put('object_center_x', item.centerX - self.extruderOffset[item.extruder][0])
+				put('object_center_y', item.centerY - self.extruderOffset[item.extruder][1])
 				put('model_scale', item.scale)
 				put('flip_x', item.flipX)
 				put('flip_y', item.flipY)
@@ -639,8 +639,8 @@ class projectPlanner(wx.Frame):
 			
 			action = Action()
 			action.sliceCmd = sliceRun.getSliceCommand(resultFilename + "_temp_.stl")
-			action.centerX = profile.getProfileSettingFloat('machine_center_x')
-			action.centerY = profile.getProfileSettingFloat('machine_center_y')
+			action.centerX = profile.getPreferenceFloat('machine_width') / 2
+			action.centerY = profile.getPreferenceFloat('machine_depth') / 2
 			action.temperature = profile.getProfileSettingFloat('print_temperature')
 			action.extruder = 0
 			action.filename = resultFilename + "_temp_.stl"
@@ -672,6 +672,8 @@ class projectPlanner(wx.Frame):
 			return
 		self.selection.rotate = float(self.rotateCtrl.GetValue())
 		self.selection.updateModelTransform()
+		if self.alwaysAutoPlace:
+			self.OnAutoPlace(None)
 		self.preview.Refresh()
 
 	def OnExtruderChange(self, e):
@@ -689,6 +691,8 @@ class projectPlanner(wx.Frame):
 		self.selection.swapXZ = self.swapXZ.GetValue()
 		self.selection.swapYZ = self.swapYZ.GetValue()
 		self.selection.updateModelTransform()
+		if self.alwaysAutoPlace:
+			self.OnAutoPlace(None)
 		self.preview.Refresh()
 
 	def getExtraHeadSize(self):
@@ -982,8 +986,8 @@ class ProjectSliceProgressWindow(wx.Frame):
 					line = p.stdout.readline()
 				self.returnCode = p.wait()
 			
-			put('machine_center_x', action.centerX - self.extruderOffset[action.extruder][0])
-			put('machine_center_y', action.centerY - self.extruderOffset[action.extruder][1])
+			put('object_center_x', action.centerX - self.extruderOffset[action.extruder][0])
+			put('object_center_y', action.centerY - self.extruderOffset[action.extruder][1])
 			put('clear_z', action.clearZ)
 			put('extruder', action.extruder)
 			put('print_temperature', action.temperature)
