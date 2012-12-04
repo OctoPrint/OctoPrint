@@ -26,6 +26,7 @@ sliceStepTimeFactor = {
 	'dwindle': 1.0,
 	'comb': 23.7805759907,
 	'cool': 27.148763895,
+	'hop': 1.0,
 	'dimension': 90.4914340973
 }
 

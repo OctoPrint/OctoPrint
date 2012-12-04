@@ -225,9 +225,11 @@ class WorkerThread(threading.Thread):
 		resultFile.write('T%d\n' % (currentExtruder))
 		layerNr = -1
 		hasLine = True
+		filesOrder = files[:]
 		while hasLine:
 			hasLine = False
-			for f in files:
+			filesOrder.reverse()
+			for f in filesOrder:
 				layerHasLine = False
 				for line in f:
 					hasLine = True
@@ -242,7 +244,7 @@ class WorkerThread(threading.Thread):
 						if nextExtruder != currentExtruder:
 							resultFile.write(';TYPE:CUSTOM\n')
 							profile.setTempOverride('extruder', nextExtruder)
-							resultFile.write(profile.getAlterationFileContents('switchExtruder.gcode'))
+							resultFile.write(profile.getAlterationFileContents('switchExtruder.gcode') + '\n')
 							profile.resetTempOverride()
 							currentExtruder = nextExtruder
 						layerHasLine = True
