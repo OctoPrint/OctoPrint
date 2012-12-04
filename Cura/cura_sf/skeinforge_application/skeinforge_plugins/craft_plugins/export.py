@@ -266,7 +266,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	repository = ExportRepository()
 	settings.getReadRepository(repository)
 	startTime = time.time()
-	print('File ' + archive.getSummarizedFileName(fileName) + ' is being chain exported.')
+	print('File ' + archive.getSummarizedFileName(fileName.encode('ascii', 'replace')) + ' is being chain exported.')
 	fileNameSuffix = fileName[: fileName.rfind('.')]
 	if repository.addExportSuffix.value:
 		fileNameSuffix += '_export'

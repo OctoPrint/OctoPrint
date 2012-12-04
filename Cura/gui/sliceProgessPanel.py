@@ -183,6 +183,11 @@ class WorkerThread(threading.Thread):
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Aborted by user.")
 				return
 			line = p.stdout.readline()
+		line = p.stderr.readline()
+		while(len(line) > 0):
+			line = line.rstrip()
+			self.progressLog.append(line)
+			line = p.stderr.readline()
 		self.returnCode = p.wait()
 		self.fileIdx += 1
 		if self.fileIdx == len(self.cmdList):
