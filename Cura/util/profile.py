@@ -72,6 +72,7 @@ profileDefaultSettings = {
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',
 	'bottom_thickness': '0.3',
+	'hop_on_move': 'False',
 	'plugin_config': '',
 	
 	'add_start_end_gcode': 'True',

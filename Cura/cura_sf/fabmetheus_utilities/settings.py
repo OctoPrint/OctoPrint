@@ -311,8 +311,8 @@ def getProfileInformation():
 			'Fan_speed_min_%': storedSettingInt('fan_speed'),
 			'Fan_speed_max_%': storedSettingInt('fan_speed_max'),
 		},'hop': {
-			'Activate_Hop': "False",
-			'Hop_Over_Layer_Thickness_ratio': DEFSET,
+			'Activate_Hop': storedSetting('hop_on_move'),
+			'Hop_Over_Layer_Thickness_ratio': lambda setting: 0.2 / profile.getProfileSettingFloat('layer_height'),
 			'Minimum_Hop_Angle_degrees': DEFSET,
 		},'wipe': {
 			'Activate_Wipe': "False",
