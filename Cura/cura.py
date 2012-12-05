@@ -10,7 +10,11 @@ The slicing code is the same as Skeinforge. But the UI has been revamped to be..
 """
 from __future__ import absolute_import
 
+import sys
+import warnings
 from optparse import OptionParser
+
+import wx._core
 
 from util import profile
 
@@ -41,6 +45,14 @@ Art of Illusion <http://www.artofillusion.org/>"""
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+
+class CuraApp(wx.App):
+	def MacOpenFile(self, path):
+		try:
+			pass
+		except Exception as e:
+			warnings.warn("File at {p} cannot be read: {e}".format(p=path, e=str(e)))
+
 def main():
 	parser = OptionParser(usage="usage: %prog [options] <filename>.stl")
 	parser.add_option("-i", "--ini", action="store", type="string", dest="profileini",
@@ -56,42 +68,43 @@ def main():
 	parser.add_option("-s", "--slice", action="store_true", dest="slice",
 		help="Slice the given files instead of opening them in Cura")
 	(options, args) = parser.parse_args()
-	if options.profile != None:
+
+	if options.profile is not None:
 		profile.loadGlobalProfileFromString(options.profile)
-	if options.profileini != None:
+	if options.profileini is not None:
 		profile.loadGlobalProfile(options.profileini)
-	if options.openprojectplanner != None:
+
+	if options.openprojectplanner is not None:
 		from gui import projectPlanner
-
 		projectPlanner.main()
-		return
-	if options.openflatslicer != None:
+	elif options.openflatslicer is not None:
 		from gui import flatSlicerWindow
-
 		flatSlicerWindow.main()
-		return
-	if options.printfile != None:
+	elif options.printfile is not None:
 		from gui import printWindow
-
 		printWindow.startPrintInterface(options.printfile)
-		return
-
-	if options.slice != None:
+	elif options.slice is not None:
 		from util import sliceRun
-
 		sliceRun.runSlice(args)
 	else:
 		if len(args) > 0:
 			profile.putPreference('lastFile', ';'.join(args))
+
 		from gui import splashScreen
 
-		splashScreen.showSplash(mainWindowRunCallback)
+		def mainWindowRunCallback(splash):
+			from gui import mainWindow
+			if splash is not None:
+				splash.Show(False)
+			mainWindow.main()
 
-
-def mainWindowRunCallback(splash):
-	from gui import mainWindow
-
-	mainWindow.main(splash)
+		app = CuraApp(False)
+		# Apple discurage usage of splash screens on a mac.
+		if sys.platform.startswith('darwin'):
+			mainWindowRunCallback(None)
+		else:
+			splashScreen.splashScreen(mainWindowRunCallback)
+		app.MainLoop()
 
 if __name__ == '__main__':
 	main()

@@ -25,7 +25,7 @@ from util import version
 from util import sliceRun
 from util import meshLoader
 
-def main(splash):
+def main():
 	#app = wx.App(False)
 	if profile.getPreference('machine_type') == 'unknown':
 		if platform.system() == "Darwin":
@@ -39,7 +39,6 @@ def main(splash):
 				for filename in glob.glob(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example', '*.*'))):
 					shutil.copy(filename, os.path.join(os.path.dirname(exampleFile), os.path.basename(filename)))
 				profile.putPreference('lastFile', exampleFile)
-		splash.Show(False)
 		configWizard.configWizard()
 	if profile.getPreference('startMode') == 'Simple':
 		simpleMode.simpleModeWindow()
@@ -53,12 +52,12 @@ class mainWindow(configBase.configWindowBase):
 		super(mainWindow, self).__init__(title='Cura - ' + version.getVersion())
 
 		extruderCount = int(profile.getPreference('extruder_amount'))
-		
+
 		wx.EVT_CLOSE(self, self.OnClose)
 		#self.SetIcon(icon.getMainIcon())
-		
+
 		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
-		
+
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
 		i = fileMenu.Append(-1, 'Load model file...\tCTRL+L')
@@ -97,7 +96,7 @@ class mainWindow(configBase.configWindowBase):
 #		i = toolsMenu.Append(-1, 'Open SVG (2D) slicer...')
 #		self.Bind(wx.EVT_MENU, self.OnSVGSlicerOpen, i)
 		menubar.Append(toolsMenu, 'Tools')
-		
+
 		expertMenu = wx.Menu()
 		i = expertMenu.Append(-1, 'Open expert settings...')
 		self.Bind(wx.EVT_MENU, self.OnExpertOpen, i)
@@ -111,7 +110,7 @@ class mainWindow(configBase.configWindowBase):
 		i = expertMenu.Append(-1, 'ReRun first run wizard...')
 		self.Bind(wx.EVT_MENU, self.OnFirstRunWizard, i)
 		menubar.Append(expertMenu, 'Expert')
-		
+
 		helpMenu = wx.Menu()
 		i = helpMenu.Append(-1, 'Online documentation...')
 		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://daid.github.com/Cura'), i)
@@ -119,7 +118,7 @@ class mainWindow(configBase.configWindowBase):
 		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/Cura/issues'), i)
 		menubar.Append(helpMenu, 'Help')
 		self.SetMenuBar(menubar)
-		
+
 		if profile.getPreference('lastFile') != '':
 			self.filelist = profile.getPreference('lastFile').split(';')
 			self.SetTitle('Cura - %s - %s' % (version.getVersion(), self.filelist[-1]))
@@ -132,9 +131,9 @@ class mainWindow(configBase.configWindowBase):
 
 		#Main tabs
 		nb = wx.Notebook(self)
-		
+
 		(left, right) = self.CreateConfigTab(nb, 'Print config')
-		
+
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Layer height (mm)", 'layer_height', '0.2', 'Layer height in millimeters.\n0.2 is a good value for quick prints.\n0.1 gives high quality prints.')
 		validators.validFloat(c, 0.0001)
@@ -143,13 +142,13 @@ class mainWindow(configBase.configWindowBase):
 		validators.validFloat(c, 0.0001)
 		validators.wallThicknessValidator(c)
 		c = configBase.SettingRow(left, "Enable retraction", 'retraction_enable', False, 'Retract the filament when the nozzle is moving over a none-printed area. Details about the retraction can be configured in the advanced tab.')
-		
+
 		configBase.TitleRow(left, "Fill")
 		c = configBase.SettingRow(left, "Bottom/Top thickness (mm)", 'solid_layer_thickness', '0.6', 'This controls the thickness of the bottom and top layers, the amount of solid layers put down is calculated by the layer thickness and this value.\nHaving this value a multiply of the layer thickness makes sense. And keep it near your wall thickness to make an evenly strong part.')
 		validators.validFloat(c, 0.0)
 		c = configBase.SettingRow(left, "Fill Density (%)", 'fill_density', '20', 'This controls how densily filled the insides of your print will be. For a solid part use 100%, for an empty part use 0%. A value around 20% is usually enough')
 		validators.validFloat(c, 0.0, 100.0)
-		
+
 		configBase.TitleRow(left, "Skirt")
 		c = configBase.SettingRow(left, "Line count", 'skirt_line_count', '1', 'The skirt is a line drawn around the object at the first layer. This helps to prime your extruder, and to see if the object fits on your platform.\nSetting this to 0 will disable the skirt. Multiple skirt lines can help priming your extruder better for small objects.')
 		validators.validInt(c, 0, 10)
@@ -161,7 +160,7 @@ class mainWindow(configBase.configWindowBase):
 		validators.validFloat(c, 1.0)
 		validators.warningAbove(c, 150.0, "It is highly unlikely that your machine can achieve a printing speed above 150mm/s")
 		validators.printSpeedValidator(c)
-		
+
 		#configBase.TitleRow(right, "Temperature")
 		c = configBase.SettingRow(right, "Printing temperature", 'print_temperature', '0', 'Temperature used for printing. Set at 0 to pre-heat yourself')
 		validators.validFloat(c, 0.0, 340.0)
@@ -169,7 +168,7 @@ class mainWindow(configBase.configWindowBase):
 		if profile.getPreference('has_heated_bed') == 'True':
 			c = configBase.SettingRow(right, "Bed temperature", 'print_bed_temperature', '0', 'Temperature used for the heated printer bed. Set at 0 to pre-heat yourself')
 			validators.validFloat(c, 0.0, 340.0)
-		
+
 		configBase.TitleRow(right, "Support structure")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere'], 'Type of support structure build.\n"Exterior only" is the most commonly used support setting.\n\nNone does not do any support.\nExterior only only creates support where the support structure will touch the build platform.\nEverywhere creates support even on the insides of the model.')
 		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the expert settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
@@ -182,9 +181,9 @@ class mainWindow(configBase.configWindowBase):
 		validators.warningAbove(c, 3.5, "Are you sure your filament is that thick? Normal filament is around 3mm or 1.75mm.")
 		c = configBase.SettingRow(right, "Packing Density", 'filament_density', '1.00', 'Packing density of your filament. This should be 1.00 for PLA and 0.85 for ABS')
 		validators.validFloat(c, 0.5, 1.5)
-		
+
 		(left, right) = self.CreateConfigTab(nb, 'Advanced config')
-		
+
 		configBase.TitleRow(left, "Machine size")
 		c = configBase.SettingRow(left, "Nozzle size (mm)", 'nozzle_size', '0.4', 'The nozzle size is very important, this is used to calculate the line width of the infill, and used to calculate the amount of outside wall lines and thickness for the wall thickness you entered in the print settings.')
 		validators.validFloat(c, 0.1, 10.0)
@@ -281,7 +280,7 @@ class mainWindow(configBase.configWindowBase):
 		self.updateProfileToControls()
 
 		self.SetBackgroundColour(nb.GetBackgroundColour())
-		
+
 		self.Fit()
 		if wx.Display().GetClientArea().GetWidth() < self.GetSize().GetWidth():
 			f = self.GetSize().GetWidth() - wx.Display().GetClientArea().GetWidth()
@@ -291,7 +290,7 @@ class mainWindow(configBase.configWindowBase):
 		self.SetMinSize(self.GetSize())
 		self.Centre()
 		self.Show(True)
-	
+
 	def OnLoadProfile(self, e):
 		dlg=wx.FileDialog(self, "Select profile file to load", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
@@ -317,7 +316,7 @@ class mainWindow(configBase.configWindowBase):
 			else:
 				wx.MessageBox('No profile found in GCode file.\nThis feature only works with GCode files made by Cura 12.07 or newer.', 'Profile load error', wx.OK | wx.ICON_INFORMATION)
 		dlg.Destroy()
-	
+
 	def OnSaveProfile(self, e):
 		dlg=wx.FileDialog(self, "Select profile file to save", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
 		dlg.SetWildcard("ini files (*.ini)|*.ini")
@@ -325,7 +324,7 @@ class mainWindow(configBase.configWindowBase):
 			profileFile = dlg.GetPath()
 			profile.saveGlobalProfile(profileFile)
 		dlg.Destroy()
-	
+
 	def OnResetProfile(self, e):
 		dlg = wx.MessageDialog(self, 'This will reset all profile settings to defaults.\nUnless you have saved your current profile, all settings will be lost!\nDo you really want to reset?', 'Profile reset', wx.YES_NO | wx.ICON_QUESTION)
 		result = dlg.ShowModal() == wx.ID_YES
@@ -337,22 +336,22 @@ class mainWindow(configBase.configWindowBase):
 				profile.putProfileSetting('machine_center_x', '40')
 				profile.putProfileSetting('machine_center_y', '40')
 			self.updateProfileToControls()
-	
+
 	def OnBatchRun(self, e):
 		br = batchRun.batchRunWindow(self)
 		br.Centre()
 		br.Show(True)
-	
+
 	def OnPreferences(self, e):
 		prefDialog = preferencesDialog.preferencesDialog(self)
 		prefDialog.Centre()
 		prefDialog.Show(True)
-	
+
 	def OnSimpleSwitch(self, e):
 		profile.putPreference('startMode', 'Simple')
 		simpleMode.simpleModeWindow()
 		self.Close()
-	
+
 	def OnDefaultMarlinFirmware(self, e):
 		firmwareInstall.InstallFirmware()
 
@@ -392,7 +391,7 @@ class mainWindow(configBase.configWindowBase):
 			if filelist[-1] == False:
 				return
 		self._loadModels(filelist)
-	
+
 	def _loadModels(self, filelist):
 		self.filelist = filelist
 		self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
@@ -405,7 +404,7 @@ class mainWindow(configBase.configWindowBase):
 
 	def OnLoadModel(self, e):
 		self._showModelLoadDialog(1)
-	
+
 	def OnLoadModel2(self, e):
 		self._showModelLoadDialog(2)
 
@@ -414,7 +413,7 @@ class mainWindow(configBase.configWindowBase):
 
 	def OnLoadModel4(self, e):
 		self._showModelLoadDialog(4)
-	
+
 	def OnSlice(self, e):
 		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file before you can prepare it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
@@ -428,7 +427,7 @@ class mainWindow(configBase.configWindowBase):
 		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
 			self.SetSize(newSize)
 		self.progressPanelList.append(spp)
-	
+
 	def OnPrint(self, e):
 		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file and prepare it before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
@@ -442,7 +441,7 @@ class mainWindow(configBase.configWindowBase):
 		ecw = expertConfig.expertConfigWindow()
 		ecw.Centre()
 		ecw.Show(True)
-	
+
 	def OnProjectPlanner(self, e):
 		pp = projectPlanner.projectPlanner()
 		pp.Centre()
@@ -471,7 +470,7 @@ class mainWindow(configBase.configWindowBase):
 
 	def OnQuit(self, e):
 		self.Close()
-	
+
 	def OnClose(self, e):
 		profile.saveGlobalProfile(profile.getDefaultProfilePath())
 		self.Destroy()

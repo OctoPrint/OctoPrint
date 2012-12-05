@@ -19,7 +19,8 @@ class splashScreen(wx.SplashScreen):
 
 
 def showSplash(callback):
-	app = wx.App(False)
+	from Cura.cura import CuraApp
+	app = CuraApp(False)
 	splashScreen(callback)
 	app.MainLoop()
 
