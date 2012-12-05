@@ -43,6 +43,7 @@ class previewPanel(wx.Panel):
 		self.gcode = None
 		self.objectsMinV = None
 		self.objectsMaxV = None
+		self.objectsBounderyCircleSize = None
 		self.loadThread = None
 		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
 		self.machineCenter = util3d.Vector3(self.machineSize.x / 2, self.machineSize.y / 2, 0)
@@ -395,6 +396,7 @@ class previewPanel(wx.Panel):
 		
 		minV = self.objectList[0].mesh.getMinimum()
 		maxV = self.objectList[0].mesh.getMaximum()
+		objectsBounderyCircleSize = self.objectList[0].mesh.bounderyCircleSize
 		for obj in self.objectList:
 			if obj.mesh == None:
 				continue
@@ -402,9 +404,11 @@ class previewPanel(wx.Panel):
 			obj.mesh.getMinimumZ()
 			minV = numpy.minimum(minV, obj.mesh.getMinimum())
 			maxV = numpy.maximum(maxV, obj.mesh.getMaximum())
+			objectsBounderyCircleSize = max(objectsBounderyCircleSize, obj.mesh.bounderyCircleSize)
 
 		self.objectsMaxV = maxV
 		self.objectsMinV = minV
+		self.objectsBounderyCircleSize = objectsBounderyCircleSize
 		for obj in self.objectList:
 			if obj.mesh == None:
 				continue
@@ -468,16 +472,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 	def OnMouseMotion(self,e):
 		cursorXY = 100000
-		sizeXY = 0
+		radius = 0
 		if self.parent.objectsMaxV != None:
-			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
-			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
+			radius = self.parent.objectsBounderyCircleSize * profile.getProfileSettingFloat('model_scale')
 			
 			p0 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 0, self.modelMatrix, self.projMatrix, self.viewport))
 			p1 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 1, self.modelMatrix, self.projMatrix, self.viewport))
 			cursorZ0 = p0 - (p1 - p0) * (p0[2] / (p1[2] - p0[2]))
 			cursorXY = math.sqrt((cursorZ0[0] * cursorZ0[0]) + (cursorZ0[1] * cursorZ0[1]))
-			if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3 and False:
+			if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
 			else:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
@@ -485,7 +488,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		if e.Dragging() and e.LeftIsDown():
 			if self.dragType == '':
 				#Define the drag type depending on the cursor position.
-				if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3 and False:
+				if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3:
 					self.dragType = 'modelRotate'
 					self.dragStart = math.atan2(cursorZ0[0], cursorZ0[1])
 				else:
@@ -506,6 +509,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				angle = math.atan2(cursorZ0[0], cursorZ0[1])
 				diff = self.dragStart - angle
 				self.tempRotate = diff * 180 / math.pi
+				rot = profile.getProfileSettingFloat('model_rotate_base')
+				self.tempRotate = round((self.tempRotate + rot) / 15) * 15 - rot
 			#Workaround for buggy ATI cards.
 			size = self.GetSizeTuple()
 			self.SetSize((size[0]+1, size[1]))
@@ -513,7 +518,13 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			self.Refresh()
 		else:
 			if self.tempRotate != 0:
-				profile.putProfileSetting('model_rotate_base', profile.getProfileSettingFloat('model_rotate_base') + self.tempRotate)
+				newRotation = profile.getProfileSettingFloat('model_rotate_base') + self.tempRotate
+				while newRotation >= 360:
+					newRotation -= 360
+				while newRotation < 0:
+					newRotation += 360
+				profile.putProfileSetting('model_rotate_base', newRotation)
+				self.parent.rotate.SetValue(newRotation)
 				self.parent.updateModelTransform()
 				self.tempRotate = 0
 				
@@ -754,29 +765,36 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glEnd()
 			glEnable(GL_DEPTH_TEST)
 
-		opengl.DrawMachine(machineSize)
-
 		glPushMatrix()
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		
 		#Draw the rotate circle
-		if self.parent.objectsMaxV != None and False:
+		if self.parent.objectsMaxV != None:
 			glDisable(GL_LIGHTING)
 			glDisable(GL_CULL_FACE)
 			glEnable(GL_BLEND)
+			glRotate(self.tempRotate + profile.getProfileSettingFloat('model_rotate_base'), 0, 0, 1)
+			radius = self.parent.objectsBounderyCircleSize * profile.getProfileSettingFloat('model_scale')
+			glScalef(radius, radius, 1)
 			glBegin(GL_TRIANGLE_STRIP)
-			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
-			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
 			for i in xrange(0, 64+1):
 				f = i if i < 64/2 else 64 - i
-				glColor4ub(255,int(f*255/(64/2)),0,128)
-				glVertex3f(sizeXY * 0.7 * math.cos(i/32.0*math.pi), sizeXY * 0.7 * math.sin(i/32.0*math.pi),0.1)
-				glColor4ub(  0,128,0,128)
-				glVertex3f((sizeXY * 0.7 + 3) * math.cos(i/32.0*math.pi), (sizeXY * 0.7 + 3) * math.sin(i/32.0*math.pi),0.1)
+				glColor4ub(255,int(f*255/(64/2)),0,255)
+				glVertex3f(1.1 * math.cos(i/32.0*math.pi), 1.1 * math.sin(i/32.0*math.pi),0.1)
+				glColor4ub(  0,128,0,255)
+				glVertex3f(1.3 * math.cos(i/32.0*math.pi), 1.3 * math.sin(i/32.0*math.pi),0.1)
+			glEnd()
+			glBegin(GL_TRIANGLES)
+			glColor4ub(0,0,0,192)
+			glVertex3f(1, 0.1,0.15)
+			glVertex3f(1,-0.1,0.15)
+			glVertex3f(1.4,0,0.15)
 			glEnd()
 			glEnable(GL_CULL_FACE)
 		
 		glPopMatrix()
+
+		opengl.DrawMachine(machineSize)
 		
 		glFlush()
 	
