@@ -43,9 +43,10 @@ class previewPanel(wx.Panel):
 		self.gcode = None
 		self.objectsMinV = None
 		self.objectsMaxV = None
+		self.objectsBounderyCircleSize = None
 		self.loadThread = None
 		self.machineSize = util3d.Vector3(profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth'), profile.getPreferenceFloat('machine_height'))
-		self.machineCenter = util3d.Vector3(float(profile.getProfileSetting('machine_center_x')), float(profile.getProfileSetting('machine_center_y')), 0)
+		self.machineCenter = util3d.Vector3(self.machineSize.x / 2, self.machineSize.y / 2, 0)
 
 		self.glCanvas = PreviewGLCanvas(self)
 		#Create the popup window
@@ -77,6 +78,7 @@ class previewPanel(wx.Panel):
 		self.toolbar.AddSeparator()
 
 		self.showBorderButton = toolbarUtil.ToggleButton(self.toolbar, '', 'view-border-on.png', 'view-border-off.png', 'Show model borders', callback=self.OnViewChange)
+		self.showSteepOverhang = toolbarUtil.ToggleButton(self.toolbar, '', 'steepOverhang-on.png', 'steepOverhang-off.png', 'Show steep overhang', callback=self.OnViewChange)
 		self.toolbar.AddSeparator()
 
 		group = []
@@ -90,18 +92,21 @@ class previewPanel(wx.Panel):
 		self.layerSpin = wx.SpinCtrl(self.toolbar, -1, '', size=(21*4,21), style=wx.SP_ARROW_KEYS)
 		self.toolbar.AddControl(self.layerSpin)
 		self.Bind(wx.EVT_SPINCTRL, self.OnLayerNrChange, self.layerSpin)
+		self.toolbar.AddSeparator()
+		self.toolbarInfo = wx.TextCtrl(self.toolbar, -1, '', style=wx.TE_READONLY)
+		self.toolbar.AddControl(self.toolbarInfo)
 
 		self.toolbar2 = toolbarUtil.Toolbar(self)
 
 		# Mirror
-		self.mirrorX = toolbarUtil.ToggleButton(self.toolbar2, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X', callback=self.updateModelTransform)
-		self.mirrorY = toolbarUtil.ToggleButton(self.toolbar2, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y', callback=self.updateModelTransform)
-		self.mirrorZ = toolbarUtil.ToggleButton(self.toolbar2, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z', callback=self.updateModelTransform)
+		self.mirrorX = toolbarUtil.ToggleButton(self.toolbar2, 'flip_x', 'object-mirror-x-on.png', 'object-mirror-x-off.png', 'Mirror X', callback=self.returnToModelViewAndUpdateModel)
+		self.mirrorY = toolbarUtil.ToggleButton(self.toolbar2, 'flip_y', 'object-mirror-y-on.png', 'object-mirror-y-off.png', 'Mirror Y', callback=self.returnToModelViewAndUpdateModel)
+		self.mirrorZ = toolbarUtil.ToggleButton(self.toolbar2, 'flip_z', 'object-mirror-z-on.png', 'object-mirror-z-off.png', 'Mirror Z', callback=self.returnToModelViewAndUpdateModel)
 		self.toolbar2.AddSeparator()
 
 		# Swap
-		self.swapXZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ', callback=self.updateModelTransform)
-		self.swapYZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ', callback=self.updateModelTransform)
+		self.swapXZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_xz', 'object-swap-xz-on.png', 'object-swap-xz-off.png', 'Swap XZ', callback=self.returnToModelViewAndUpdateModel)
+		self.swapYZ = toolbarUtil.ToggleButton(self.toolbar2, 'swap_yz', 'object-swap-yz-on.png', 'object-swap-yz-off.png', 'Swap YZ', callback=self.returnToModelViewAndUpdateModel)
 		self.toolbar2.AddSeparator()
 
 		# Scale
@@ -136,6 +141,11 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
 	
+	def returnToModelViewAndUpdateModel(self):
+		if self.glCanvas.viewMode == 'GCode' or self.glCanvas.viewMode == 'Mixed':
+			self.setViewMode('Normal')
+		self.updateModelTransform()
+	
 	def OnMove(self, e = None):
 		if e != None:
 			e.Skip()
@@ -168,21 +178,34 @@ class previewPanel(wx.Panel):
 		if self.scale.GetValue() != '':
 			scale = self.scale.GetValue()
 		profile.putProfileSetting('model_scale', scale)
+		if self.glCanvas.viewMode == 'GCode' or self.glCanvas.viewMode == 'Mixed':
+			self.setViewMode('Normal')
 		self.glCanvas.Refresh()
-	
-	def OnScaleMax(self, e):
+
+		if self.objectsMaxV != None:
+			size = (self.objectsMaxV - self.objectsMinV) * float(scale)
+			self.toolbarInfo.SetValue('%0.1f %0.1f %0.1f' % (size[0], size[1], size[2]))
+
+	def OnScaleMax(self, e = None, onlyScaleDown = False):
 		if self.objectsMinV == None:
 			return
 		vMin = self.objectsMinV
 		vMax = self.objectsMaxV
-		scaleX1 = (self.machineSize.x - self.machineCenter.x) / ((vMax[0] - vMin[0]) / 2)
-		scaleY1 = (self.machineSize.y - self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
-		scaleX2 = (self.machineCenter.x) / ((vMax[0] - vMin[0]) / 2)
-		scaleY2 = (self.machineCenter.y) / ((vMax[1] - vMin[1]) / 2)
+		skirtSize = 3
+		if profile.getProfileSettingFloat('skirt_line_count') > 0:
+			skirtSize = 3 + profile.getProfileSettingFloat('skirt_line_count') * profile.calculateEdgeWidth() + profile.getProfileSettingFloat('skirt_gap')
+		scaleX1 = (self.machineSize.x - self.machineCenter.x - skirtSize) / ((vMax[0] - vMin[0]) / 2)
+		scaleY1 = (self.machineSize.y - self.machineCenter.y - skirtSize) / ((vMax[1] - vMin[1]) / 2)
+		scaleX2 = (self.machineCenter.x - skirtSize) / ((vMax[0] - vMin[0]) / 2)
+		scaleY2 = (self.machineCenter.y - skirtSize) / ((vMax[1] - vMin[1]) / 2)
 		scaleZ = self.machineSize.z / (vMax[2] - vMin[2])
 		scale = min(scaleX1, scaleY1, scaleX2, scaleY2, scaleZ)
+		if scale > 1.0 and onlyScaleDown:
+			return
 		self.scale.SetValue(str(scale))
 		profile.putProfileSetting('model_scale', self.scale.GetValue())
+		if self.glCanvas.viewMode == 'GCode' or self.glCanvas.viewMode == 'Mixed':
+			self.setViewMode('Normal')
 		self.glCanvas.Refresh()
 
 	def OnRotateReset(self, e):
@@ -191,7 +214,7 @@ class previewPanel(wx.Panel):
 
 	def OnRotate(self, e):
 		profile.putProfileSetting('model_rotate_base', self.rotate.GetValue())
-		self.updateModelTransform()
+		self.returnToModelViewAndUpdateModel()
 
 	def On3DClick(self):
 		self.glCanvas.yaw = 30
@@ -208,14 +231,6 @@ class previewPanel(wx.Panel):
 		self.glCanvas.Refresh()
 
 	def OnLayerNrChange(self, e):
-		self.glCanvas.Refresh()
-
-	def updateCenterX(self):
-		self.machineCenter.x = profile.getProfileSettingFloat('machine_center_x')
-		self.glCanvas.Refresh()
-
-	def updateCenterY(self):
-		self.machineCenter.y = profile.getProfileSettingFloat('machine_center_y')
 		self.glCanvas.Refresh()
 	
 	def setViewMode(self, mode):
@@ -249,8 +264,8 @@ class previewPanel(wx.Panel):
 		self.loadThread.start()
 		
 		if showWarning:
-			if profile.getProfileSettingFloat('model_scale') != 1.0 or profile.getProfileSettingFloat('model_rotate_base') != 0 or profile.getProfileSetting('flip_x') != 'False' or profile.getProfileSetting('flip_y') != 'False' or profile.getProfileSetting('flip_z') != 'False' or profile.getProfileSetting('swap_xz') != 'False' or profile.getProfileSetting('swap_yz') != 'False':
-				self.ShowWarningPopup('Reset scale, rotation and mirror?', self.OnResetAll)
+			if profile.getProfileSettingFloat('model_scale') != 1.0 or profile.getProfileSettingFloat('model_rotate_base') != 0 or profile.getProfileSetting('flip_x') != 'False' or profile.getProfileSetting('flip_y') != 'False' or profile.getProfileSetting('flip_z') != 'False' or profile.getProfileSetting('swap_xz') != 'False' or profile.getProfileSetting('swap_yz') != 'False' or len(profile.getPluginConfig()) > 0:
+				self.ShowWarningPopup('Reset scale, rotation, mirror and plugins?', self.OnResetAll)
 	
 	def loadReModelFiles(self, filelist):
 		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
@@ -268,10 +283,10 @@ class previewPanel(wx.Panel):
 				obj.dirty = False
 				obj.mesh = mesh
 				self.updateModelTransform()
+				self.OnScaleMax(None, True)
 				scale = profile.getProfileSettingFloat('model_scale')
 				size = (self.objectsMaxV - self.objectsMinV) * scale
-				if size[0] > self.machineSize.x or size[1] > self.machineSize.y or size[2] > self.machineSize.z:
-					self.OnScaleMax(None)
+				self.toolbarInfo.SetValue('%0.1f %0.1f %0.1f' % (size[0], size[1], size[2]))
 				self.glCanvas.zoom = numpy.max(size) * 2.5
 				self.errorList = []
 				wx.CallAfter(self.updateToolbar)
@@ -311,7 +326,8 @@ class previewPanel(wx.Panel):
 		profile.putProfileSetting('flip_z', 'False')
 		profile.putProfileSetting('swap_xz', 'False')
 		profile.putProfileSetting('swap_yz', 'False')
-		self.updateProfileToControls()
+		profile.setPluginConfig([])
+		self.GetParent().updateProfileToControls()
 
 	def ShowWarningPopup(self, text, callback = None):
 		self.warningPopup.text.SetLabel(text)
@@ -358,6 +374,7 @@ class previewPanel(wx.Panel):
 		elif self.mixedViewButton.GetValue():
 			self.glCanvas.viewMode = "Mixed"
 		self.glCanvas.drawBorders = self.showBorderButton.GetValue()
+		self.glCanvas.drawSteepOverhang = self.showSteepOverhang.GetValue()
 		self.updateToolbar()
 		self.glCanvas.Refresh()
 	
@@ -379,6 +396,7 @@ class previewPanel(wx.Panel):
 		
 		minV = self.objectList[0].mesh.getMinimum()
 		maxV = self.objectList[0].mesh.getMaximum()
+		objectsBounderyCircleSize = self.objectList[0].mesh.bounderyCircleSize
 		for obj in self.objectList:
 			if obj.mesh == None:
 				continue
@@ -386,9 +404,11 @@ class previewPanel(wx.Panel):
 			obj.mesh.getMinimumZ()
 			minV = numpy.minimum(minV, obj.mesh.getMinimum())
 			maxV = numpy.maximum(maxV, obj.mesh.getMaximum())
+			objectsBounderyCircleSize = max(objectsBounderyCircleSize, obj.mesh.bounderyCircleSize)
 
 		self.objectsMaxV = maxV
 		self.objectsMinV = minV
+		self.objectsBounderyCircleSize = objectsBounderyCircleSize
 		for obj in self.objectList:
 			if obj.mesh == None:
 				continue
@@ -400,6 +420,11 @@ class previewPanel(wx.Panel):
 			#	v[1] -= minV[1] + (maxV[1] - minV[1]) / 2
 			obj.mesh.getMinimumZ()
 			obj.dirty = True
+
+		scale = profile.getProfileSettingFloat('model_scale')
+		size = (self.objectsMaxV - self.objectsMinV) * scale
+		self.toolbarInfo.SetValue('%0.1f %0.1f %0.1f' % (size[0], size[1], size[2]))
+
 		self.glCanvas.Refresh()
 	
 	def updateProfileToControls(self):
@@ -447,16 +472,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 
 	def OnMouseMotion(self,e):
 		cursorXY = 100000
-		sizeXY = 0
+		radius = 0
 		if self.parent.objectsMaxV != None:
-			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
-			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
+			radius = self.parent.objectsBounderyCircleSize * profile.getProfileSettingFloat('model_scale')
 			
 			p0 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 0, self.modelMatrix, self.projMatrix, self.viewport))
 			p1 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 1, self.modelMatrix, self.projMatrix, self.viewport))
 			cursorZ0 = p0 - (p1 - p0) * (p0[2] / (p1[2] - p0[2]))
 			cursorXY = math.sqrt((cursorZ0[0] * cursorZ0[0]) + (cursorZ0[1] * cursorZ0[1]))
-			if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3 and False:
+			if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
 			else:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
@@ -464,7 +488,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		if e.Dragging() and e.LeftIsDown():
 			if self.dragType == '':
 				#Define the drag type depending on the cursor position.
-				if cursorXY >= sizeXY * 0.7 and cursorXY <= sizeXY * 0.7 + 3 and False:
+				if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3:
 					self.dragType = 'modelRotate'
 					self.dragStart = math.atan2(cursorZ0[0], cursorZ0[1])
 				else:
@@ -485,6 +509,8 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				angle = math.atan2(cursorZ0[0], cursorZ0[1])
 				diff = self.dragStart - angle
 				self.tempRotate = diff * 180 / math.pi
+				rot = profile.getProfileSettingFloat('model_rotate_base')
+				self.tempRotate = round((self.tempRotate + rot) / 15) * 15 - rot
 			#Workaround for buggy ATI cards.
 			size = self.GetSizeTuple()
 			self.SetSize((size[0]+1, size[1]))
@@ -492,7 +518,13 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			self.Refresh()
 		else:
 			if self.tempRotate != 0:
-				profile.putProfileSetting('model_rotate_base', profile.getProfileSettingFloat('model_rotate_base') + self.tempRotate)
+				newRotation = profile.getProfileSettingFloat('model_rotate_base') + self.tempRotate
+				while newRotation >= 360:
+					newRotation -= 360
+				while newRotation < 0:
+					newRotation += 360
+				profile.putProfileSetting('model_rotate_base', newRotation)
+				self.parent.rotate.SetValue(newRotation)
 				self.parent.updateModelTransform()
 				self.tempRotate = 0
 				
@@ -580,11 +612,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			if obj.mesh == None:
 				continue
 			if obj.displayList == None:
-				obj.displayList = glGenLists(1);
+				obj.displayList = glGenLists(1)
+				obj.steepDisplayList = glGenLists(1)
 			if obj.dirty:
 				obj.dirty = False
 				glNewList(obj.displayList, GL_COMPILE)
 				opengl.DrawMesh(obj.mesh)
+				glEndList()
+				glNewList(obj.steepDisplayList, GL_COMPILE)
+				opengl.DrawMeshSteep(obj.mesh, 60)
 				glEndList()
 			
 			if self.viewMode == "Mixed":
@@ -706,6 +742,15 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glScalef(modelScale, modelScale, modelScale)
 				opengl.DrawMeshOutline(obj.mesh)
 				glPopMatrix()
+			
+			if self.drawSteepOverhang:
+				glDisable(GL_LIGHTING)
+				glColor3f(1,1,1)
+				glPushMatrix()
+				modelScale = profile.getProfileSettingFloat('model_scale')
+				glScalef(modelScale, modelScale, modelScale)
+				glCallList(obj.steepDisplayList)
+				glPopMatrix()
 		
 		glPopMatrix()	
 		if self.viewMode == "Normal" or self.viewMode == "Transparent" or self.viewMode == "X-Ray":
@@ -720,29 +765,36 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			glEnd()
 			glEnable(GL_DEPTH_TEST)
 
-		opengl.DrawMachine(machineSize)
-
 		glPushMatrix()
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		
 		#Draw the rotate circle
-		if self.parent.objectsMaxV != None and False:
+		if self.parent.objectsMaxV != None:
 			glDisable(GL_LIGHTING)
 			glDisable(GL_CULL_FACE)
 			glEnable(GL_BLEND)
+			glRotate(self.tempRotate + profile.getProfileSettingFloat('model_rotate_base'), 0, 0, 1)
+			radius = self.parent.objectsBounderyCircleSize * profile.getProfileSettingFloat('model_scale')
+			glScalef(radius, radius, 1)
 			glBegin(GL_TRIANGLE_STRIP)
-			size = (self.parent.objectsMaxV - self.parent.objectsMinV)
-			sizeXY = math.sqrt((size[0] * size[0]) + (size[1] * size[1]))
 			for i in xrange(0, 64+1):
 				f = i if i < 64/2 else 64 - i
-				glColor4ub(255,int(f*255/(64/2)),0,128)
-				glVertex3f(sizeXY * 0.7 * math.cos(i/32.0*math.pi), sizeXY * 0.7 * math.sin(i/32.0*math.pi),0.1)
-				glColor4ub(  0,128,0,128)
-				glVertex3f((sizeXY * 0.7 + 3) * math.cos(i/32.0*math.pi), (sizeXY * 0.7 + 3) * math.sin(i/32.0*math.pi),0.1)
+				glColor4ub(255,int(f*255/(64/2)),0,255)
+				glVertex3f(1.1 * math.cos(i/32.0*math.pi), 1.1 * math.sin(i/32.0*math.pi),0.1)
+				glColor4ub(  0,128,0,255)
+				glVertex3f(1.3 * math.cos(i/32.0*math.pi), 1.3 * math.sin(i/32.0*math.pi),0.1)
+			glEnd()
+			glBegin(GL_TRIANGLES)
+			glColor4ub(0,0,0,192)
+			glVertex3f(1, 0.1,0.15)
+			glVertex3f(1,-0.1,0.15)
+			glVertex3f(1.4,0,0.15)
 			glEnd()
 			glEnable(GL_CULL_FACE)
 		
 		glPopMatrix()
+
+		opengl.DrawMachine(machineSize)
 		
 		glFlush()
 	

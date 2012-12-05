@@ -10,6 +10,7 @@ import wx.wizard
 
 from gui import firmwareInstall
 from gui import toolbarUtil
+from gui import printWindow
 from util import machineCom
 from util import profile
 from util.resources import getPathForImage
@@ -34,34 +35,49 @@ class InfoBox(wx.Panel):
 
 		self.bitmap = wx.StaticBitmap(self, -1, wx.EmptyBitmapRGBA(24, 24, red=255, green=255, blue=255, alpha=1))
 		self.text = wx.StaticText(self, -1, '')
+		self.extraInfoButton = wx.Button(self, -1, 'i', style=wx.BU_EXACTFIT)
 		self.sizer.Add(self.bitmap, pos=(0, 0), flag=wx.ALL, border=5)
 		self.sizer.Add(self.text, pos=(0, 1), flag=wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, border=5)
+		self.sizer.Add(self.extraInfoButton, pos=(0,2), flag=wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+		self.sizer.AddGrowableCol(1)
 
+		self.extraInfoButton.Show(False)
+
+		self.extraInfoUrl = ''
 		self.busyState = None
 		self.timer = wx.Timer(self)
 		self.Bind(wx.EVT_TIMER, self.doBusyUpdate, self.timer)
+		self.Bind(wx.EVT_BUTTON, self.doExtraInfo, self.extraInfoButton)
 		self.timer.Start(100)
 
 	def SetInfo(self, info):
 		self.SetBackgroundColour('#FFFF80')
 		self.text.SetLabel(info)
+		self.extraInfoButton.Show(False)
 		self.Refresh()
 
-	def SetError(self, info):
+	def SetError(self, info, extraInfoUrl):
+		self.extraInfoUrl = extraInfoUrl
 		self.SetBackgroundColour('#FF8080')
 		self.text.SetLabel(info)
+		self.extraInfoButton.Show(True)
+		self.Layout()
 		self.SetErrorIndicator()
 		self.Refresh()
 
 	def SetAttention(self, info):
 		self.SetBackgroundColour('#FFFF80')
 		self.text.SetLabel(info)
+		self.extraInfoButton.Show(False)
 		self.SetAttentionIndicator()
 		self.Refresh()
 
 	def SetBusyIndicator(self):
 		self.busyState = 0
 		self.bitmap.SetBitmap(self.busyBitmap[self.busyState])
+
+	def doExtraInfo(self, e):
+		webbrowser.open(self.extraInfoUrl)
 
 	def doBusyUpdate(self, e):
 		if self.busyState == None:
@@ -225,8 +241,6 @@ class RepRapInfoPage(InfoPage):
 		profile.putPreference('machine_depth', self.machineDepth.GetValue())
 		profile.putPreference('machine_height', self.machineHeight.GetValue())
 		profile.putProfileSetting('nozzle_size', self.nozzleSize.GetValue())
-		profile.putProfileSetting('machine_center_x', profile.getPreferenceFloat('machine_width') / 2)
-		profile.putProfileSetting('machine_center_y', profile.getPreferenceFloat('machine_depth') / 2)
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSettingFloat('nozzle_size')) * 2)
 		profile.putPreference('has_heated_bed', str(self.heatedBed.GetValue()))
 
@@ -255,8 +269,6 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_height', '200')
 			profile.putPreference('machine_type', 'ultimaker')
 			profile.putProfileSetting('nozzle_size', '0.4')
-			profile.putProfileSetting('machine_center_x', '100')
-			profile.putProfileSetting('machine_center_y', '100')
 		else:
 			profile.putPreference('machine_width', '80')
 			profile.putPreference('machine_depth', '80')
@@ -264,9 +276,29 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('machine_type', 'reprap')
 			profile.putPreference('startMode', 'Normal')
 			profile.putProfileSetting('nozzle_size', '0.5')
-			profile.putProfileSetting('machine_center_x', '40')
-			profile.putProfileSetting('machine_center_y', '40')
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSetting('nozzle_size')) * 2)
+
+
+class SelectParts(InfoPage):
+	def __init__(self, parent):
+		super(SelectParts, self).__init__(parent, "Select upgraded parts you have")
+		self.AddText('To assist you in having better default settings for your Ultimaker\nCura would like to know which upgrades you have in your machine.')
+		self.AddSeperator()
+		self.springExtruder = self.AddCheckbox('Extruder drive upgrade')
+		self.heatedBed = self.AddCheckbox('Heated printer bed (self build)')
+		self.dualExtrusion = self.AddCheckbox('Dual extrusion (experimental)')
+		self.AddSeperator()
+		self.AddText('If you have an Ultimaker bought after october 2012 you will have the\nExtruder drive upgrade. If you do not have this upgrade,\nit is highly recommended to improve reliablity.')
+		self.AddText('This upgrade can be bought from the Ultimaker webshop shop\nor found on thingiverse as thing:26094')
+		self.springExtruder.SetValue(True)
+
+	def StoreData(self):
+		profile.putPreference('ultimaker_extruder_upgrade', str(self.springExtruder.GetValue()))
+		profile.putPreference('has_heated_bed', str(self.heatedBed.GetValue()))
+		if self.dualExtrusion.GetValue():
+			profile.putPreference('extruder_amount', '2')
+		if getPreference('ultimaker_extruder_upgrade') == 'True':
+			putProfileSetting('retraction_enable', 'True')
 
 
 class FirmwareUpgradePage(InfoPage):
@@ -332,6 +364,8 @@ class UltimakerCheckupPage(InfoPage):
 		self.infoBox = self.AddInfoBox()
 		self.machineState = self.AddText('')
 		self.temperatureLabel = self.AddText('')
+		self.errorLogButton = self.AddButton('Show error log')
+		self.errorLogButton.Show(False)
 		self.AddSeperator()
 		self.endstopBitmap = self.AddBitmap(self.endStopNoneBitmap)
 		self.comm = None
@@ -341,6 +375,8 @@ class UltimakerCheckupPage(InfoPage):
 		self.yMaxStop = False
 		self.zMinStop = False
 		self.zMaxStop = False
+
+		self.Bind(wx.EVT_BUTTON, self.OnErrorLog, self.errorLogButton)
 
 	def __del__(self):
 		if self.comm != None:
@@ -354,6 +390,7 @@ class UltimakerCheckupPage(InfoPage):
 		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
 
 	def OnCheckClick(self, e=None):
+		self.errorLogButton.Show(False)
 		if self.comm != None:
 			self.comm.close()
 			del self.comm
@@ -367,6 +404,9 @@ class UltimakerCheckupPage(InfoPage):
 		self.stopState.SetBitmap(self.unknownBitmap)
 		self.checkupState = 0
 		self.comm = machineCom.MachineCom(callbackObject=self)
+
+	def OnErrorLog(self, e):
+		printWindow.LogWindow('\n'.join(self.comm.getLog()))
 
 	def mcLog(self, message):
 		pass
@@ -410,7 +450,7 @@ class UltimakerCheckupPage(InfoPage):
 				if self.tempCheckTimeout < 1:
 					self.checkupState = -1
 					wx.CallAfter(self.tempState.SetBitmap, self.crossBitmap)
-					wx.CallAfter(self.infoBox.SetError, 'Temperature measurement FAILED!')
+					wx.CallAfter(self.infoBox.SetError, 'Temperature measurement FAILED!', 'http://wiki.ultimaker.com/Cura/Temperature_measurement_problems')
 					self.comm.sendCommand('M104 S0')
 					self.comm.sendCommand('M104 S0')
 		wx.CallAfter(self.temperatureLabel.SetLabel, 'Head temperature: %d' % (temp))
@@ -420,11 +460,16 @@ class UltimakerCheckupPage(InfoPage):
 			return
 		if self.comm.isOperational():
 			wx.CallAfter(self.commState.SetBitmap, self.checkBitmap)
+			wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
 		elif self.comm.isError():
 			wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.')
+			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.', 'http://wiki.ultimaker.com/Cura/Connection_problems')
 			wx.CallAfter(self.endstopBitmap.Show, False)
-		wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
+			wx.CallAfter(self.machineState.SetLabel, '%s' % (self.comm.getErrorString()))
+			wx.CallAfter(self.errorLogButton.Show, True)
+			wx.CallAfter(self.Layout)
+		else:
+			wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
 
 	def mcMessage(self, message):
 		if self.checkupState >= 3 and self.checkupState < 10 and 'x_min' in message:
@@ -638,6 +683,7 @@ class configWizard(wx.wizard.Wizard):
 
 		self.firstInfoPage = FirstInfoPage(self)
 		self.machineSelectPage = MachineSelectPage(self)
+		self.ultimakerSelectParts = SelectParts(self)
 		self.ultimakerFirmwareUpgradePage = FirmwareUpgradePage(self)
 		self.ultimakerCheckupPage = UltimakerCheckupPage(self)
 		self.ultimakerCalibrationPage = UltimakerCalibrationPage(self)
@@ -645,7 +691,8 @@ class configWizard(wx.wizard.Wizard):
 		self.repRapInfoPage = RepRapInfoPage(self)
 
 		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.machineSelectPage)
-		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerFirmwareUpgradePage)
+		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerSelectParts)
+		wx.wizard.WizardPageSimple.Chain(self.ultimakerSelectParts, self.ultimakerFirmwareUpgradePage)
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerFirmwareUpgradePage, self.ultimakerCheckupPage)
 		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCheckupPage, self.ultimakerCalibrationPage)
 		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCalibrationPage, self.ultimakerCalibrateStepsPerEPage)

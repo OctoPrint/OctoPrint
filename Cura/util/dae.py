@@ -27,6 +27,9 @@ class daeModel(mesh.mesh):
 		for instance_visual_scene in self._base['collada'][0]['scene'][0]['instance_visual_scene']:
 			for node in self._idMap[instance_visual_scene['_url']]['node']:
 				self._ProcessNode2(node)
+
+		scale = float(self._base['collada'][0]['asset'][0]['unit'][0]['_meter']) * 1000
+		self.origonalVertexes *= scale
 		
 		self._base = None
 		self._cur = None

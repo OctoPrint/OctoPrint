@@ -134,7 +134,7 @@ class printWindow(wx.Frame):
 
 		self.powerWarningText = wx.StaticText(parent=self.panel,
 			id=-1,
-			label="Connect your computer to AC power\nIf it shuts down during printing, the product will be lost.",
+			label="Your computer is running on battery power.\nConnect your computer to AC power or your print might not finish.",
 			style=wx.ALIGN_CENTER)
 		self.powerWarningText.SetBackgroundColour('red')
 		self.powerWarningText.SetForegroundColour('white')
@@ -309,7 +309,7 @@ class printWindow(wx.Frame):
 			self.camPreview.timer.Start(500)
 			self.camPreview.Bind(wx.EVT_ERASE_BACKGROUND, self.OnCameraEraseBackground)
 
-		self.sizer.AddGrowableRow(5)
+		self.sizer.AddGrowableRow(6)
 		self.sizer.AddGrowableCol(3)
 
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -521,9 +521,11 @@ class printWindow(wx.Frame):
 		type = self.powerManagement.get_providing_power_source_type()
 		if type == power.POWER_TYPE_AC and self.powerWarningText.IsShown():
 			self.powerWarningText.Hide()
+			self.panel.Layout()
 			self.Layout()
 		elif type != power.POWER_TYPE_AC and not self.powerWarningText.IsShown():
 			self.powerWarningText.Show()
+			self.panel.Layout()
 			self.Layout()
 
 	def LoadGCodeFile(self, filename):
@@ -579,10 +581,11 @@ class printWindow(wx.Frame):
 
 	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		self.temperatureGraph.addPoint(temp, targetTemp, bedTemp, bedTargetTemp)
-		if self.temperatureSelect.GetValue() != targetTemp:
-			wx.CallAfter(self.temperatureSelect.SetValue, targetTemp)
-		if self.bedTemperatureSelect.GetValue() != bedTargetTemp:
-			wx.CallAfter(self.bedTemperatureSelect.SetValue, bedTargetTemp)
+#		ToFix, this causes problems with setting the temperature with the keyboard
+#		if self.temperatureSelect.GetValue() != targetTemp:
+#			wx.CallAfter(self.temperatureSelect.SetValue, targetTemp)
+#		if self.bedTemperatureSelect.GetValue() != bedTargetTemp:
+#			wx.CallAfter(self.bedTemperatureSelect.SetValue, bedTargetTemp)
 
 	def mcStateChange(self, state):
 		if self.machineCom != None:
@@ -643,6 +646,7 @@ class temperatureGraph(wx.Panel):
 		dc = wx.MemoryDC()
 		dc.SelectObject(self.backBuffer)
 		dc.Clear()
+		dc.SetFont(wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT))
 		w, h = self.GetSizeTuple()
 		bgLinePen = wx.Pen('#A0A0A0')
 		tempPen = wx.Pen('#FF4040')
@@ -677,9 +681,12 @@ class temperatureGraph(wx.Panel):
 		for x in xrange(w, 0, -30):
 			dc.SetPen(bgLinePen)
 			dc.DrawLine(x, 0, x, h)
+		tmpNr = 0
 		for y in xrange(h - 1, 0, -h * 50 / 300):
 			dc.SetPen(bgLinePen)
 			dc.DrawLine(0, y, w, y)
+			dc.DrawText(str(tmpNr), 0, y - dc.GetFont().GetPixelSize().GetHeight())
+			tmpNr += 50
 		dc.DrawLine(0, 0, w, 0)
 		dc.DrawLine(0, 0, 0, h)
 

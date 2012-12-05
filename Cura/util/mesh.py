@@ -41,6 +41,7 @@ class mesh(object):
 		return self.size
 
 	def setRotateMirror(self, rotate, mirrorX, mirrorY, mirrorZ, swapXZ, swapYZ):
+		#Modify the vertexes with the rotation/mirror
 		rotate = rotate / 180.0 * math.pi
 		scaleX = 1.0
 		scaleY = 1.0
@@ -62,7 +63,14 @@ class mesh(object):
 		if swapYZ:
 			mat = numpy.array([mat[0],mat[2],mat[1]], numpy.float32)
 		self.vertexes = (numpy.matrix(self.origonalVertexes, copy = False) * numpy.matrix(mat)).getA()
-
+		
+		#Calculate the boundery box of the object
+		self.getMinimumZ()
+		#Calculate the boundery circle
+		center = (self.max + self.min) / 2.0
+		self.bounderyCircleSize = round(math.sqrt(numpy.max(((self.vertexes[::,0] - center[0]) * (self.vertexes[::,0] - center[0])) + ((self.vertexes[::,1] - center[1]) * (self.vertexes[::,1] - center[1])))), 3)
+		
+		#Calculate the normals
 		tris = self.vertexes.reshape(self.vertexCount / 3, 3, 3)
 		normals = numpy.cross( tris[::,1 ] - tris[::,0]  , tris[::,2 ] - tris[::,0] )
 		lens = numpy.sqrt( normals[:,0]**2 + normals[:,1]**2 + normals[:,2]**2 )
@@ -76,8 +84,6 @@ class mesh(object):
 		n[:,6:9] = normals
 		self.normal = n.reshape(self.vertexCount, 3)
 		self.invNormal = -self.normal
-		
-		self.getMinimumZ()
 
 	def splitToParts(self, callback = None):
 		t0 = time.time()

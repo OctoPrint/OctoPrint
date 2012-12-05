@@ -67,6 +67,9 @@ class expertConfigWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Retraction")
 		c = configBase.SettingRow(right, "Retract on jumps only", 'retract_on_jumps_only', True, 'Only retract when we are making a move that is over a hole in the model, else retract on every move. This effects print quality in different ways.')
 
+		configBase.TitleRow(right, "Hop")
+		c = configBase.SettingRow(right, "Enable hop on move", 'hop_on_move', False, 'When moving from print position to print position, raise the printer head 0.2mm so it does not knock off the print (experimental).')
+
 		main.Fit()
 		self.Fit()
 

@@ -31,8 +31,6 @@ profileDefaultSettings = {
 	'support': 'None',
 	'filament_diameter': '2.89',
 	'filament_density': '1.00',
-	'machine_center_x': '100',
-	'machine_center_y': '100',
 	'retraction_min_travel': '5.0',
 	'retraction_enable': 'False',
 	'retraction_speed': '40.0',
@@ -42,7 +40,7 @@ profileDefaultSettings = {
 	'travel_speed': '150',
 	'max_z_speed': '3.0',
 	'bottom_layer_speed': '20',
-	'cool_min_layer_time': '10',
+	'cool_min_layer_time': '5',
 	'fan_enabled': 'True',
 	'fan_layer': '1',
 	'fan_speed': '100',
@@ -74,6 +72,7 @@ profileDefaultSettings = {
 	'raft_base_material_amount': '100',
 	'raft_interface_material_amount': '100',
 	'bottom_thickness': '0.3',
+	'hop_on_move': 'False',
 	'plugin_config': '',
 	
 	'add_start_end_gcode': 'True',
@@ -102,9 +101,6 @@ G1 Z15.0 F{max_z_speed} ;move the platform down 15mm
 G92 E0                  ;zero the extruded length
 G1 F200 E3              ;extrude 3mm of feed stock
 G92 E0                  ;zero the extruded length again
-
-;go to the middle of the platform (disabled, as there is no need to go to the center)
-;G1 X{machine_center_x} Y{machine_center_y} F{travel_speed}
 G1 F{travel_speed}
 """,
 #######################################################################################
@@ -137,7 +133,7 @@ G90                                    ;absolute positioning
 
 G1 Z{clear_z} F{max_z_speed}
 G92 E0
-G1 X{machine_center_x} Y{machine_center_y} F{travel_speed}
+G1 X{object_center_x} Y{object_center_x} F{travel_speed}
 G1 F200 E6
 G92 E0
 """,
@@ -158,6 +154,7 @@ preferencesDefaultSettings = {
 	'machine_depth': '205',
 	'machine_height': '200',
 	'machine_type': 'unknown',
+	'ultimaker_extruder_upgrade': 'False',
 	'has_heated_bed': 'False',
 	'extruder_amount': '1',
 	'extruder_offset_x1': '-22.0',
@@ -218,6 +215,13 @@ def resetGlobalProfile():
 	#Read a configuration file as global config
 	global globalProfileParser
 	globalProfileParser = ConfigParser.ConfigParser()
+
+	if getPreference('machine_type') == 'ultimaker':
+		putProfileSetting('nozzle_size', '0.4')
+		if getPreference('ultimaker_extruder_upgrade') == 'True':
+			putProfileSetting('retraction_enable', 'True')
+	else:
+		putProfileSetting('nozzle_size', '0.5')
 
 def saveGlobalProfile(filename):
 	#Save the current profile to an ini file
@@ -545,9 +549,10 @@ def setPluginConfig(config):
 	putProfileSetting('plugin_config', pickle.dumps(config))
 
 def getPluginBasePaths():
-	ret = [os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins'))]
+	ret = []
 	if platform.system() != "Windows":
 		ret.append(os.path.expanduser('~/.cura/plugins/'))
+	ret.append(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins')))
 	return ret
 
 def getPluginList():

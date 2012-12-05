@@ -46,8 +46,8 @@ class sliceProgessPanel(wx.Panel):
 			if idx > 0:
 				profile.setTempOverride('fan_enabled', 'False')
 				profile.setTempOverride('skirt_line_count', '0')
-				profile.setTempOverride('machine_center_x', profile.getProfileSettingFloat('machine_center_x') - profile.getPreferenceFloat('extruder_offset_x%d' % (idx)))
-				profile.setTempOverride('machine_center_y', profile.getProfileSettingFloat('machine_center_y') - profile.getPreferenceFloat('extruder_offset_y%d' % (idx)))
+				profile.setTempOverride('object_center_x', profile.getPreferenceFloat('machine_width') / 2 - profile.getPreferenceFloat('extruder_offset_x%d' % (idx)))
+				profile.setTempOverride('object_center_y', profile.getPreferenceFloat('machine_depth') / 2 - profile.getPreferenceFloat('extruder_offset_y%d' % (idx)))
 				profile.setTempOverride('alternative_center', self.filelist[0])
 			if len(self.filelist) > 1:
 				profile.setTempOverride('add_start_end_gcode', 'False')
@@ -183,6 +183,11 @@ class WorkerThread(threading.Thread):
 				wx.CallAfter(self.notifyWindow.statusText.SetLabel, "Aborted by user.")
 				return
 			line = p.stdout.readline()
+		line = p.stderr.readline()
+		while(len(line) > 0):
+			line = line.rstrip()
+			self.progressLog.append(line)
+			line = p.stderr.readline()
 		self.returnCode = p.wait()
 		self.fileIdx += 1
 		if self.fileIdx == len(self.cmdList):
@@ -220,9 +225,11 @@ class WorkerThread(threading.Thread):
 		resultFile.write('T%d\n' % (currentExtruder))
 		layerNr = -1
 		hasLine = True
+		filesOrder = files[:]
 		while hasLine:
 			hasLine = False
-			for f in files:
+			filesOrder.reverse()
+			for f in filesOrder:
 				layerHasLine = False
 				for line in f:
 					hasLine = True
@@ -237,7 +244,7 @@ class WorkerThread(threading.Thread):
 						if nextExtruder != currentExtruder:
 							resultFile.write(';TYPE:CUSTOM\n')
 							profile.setTempOverride('extruder', nextExtruder)
-							resultFile.write(profile.getAlterationFileContents('switchExtruder.gcode'))
+							resultFile.write(profile.getAlterationFileContents('switchExtruder.gcode') + '\n')
 							profile.resetTempOverride()
 							currentExtruder = nextExtruder
 						layerHasLine = True

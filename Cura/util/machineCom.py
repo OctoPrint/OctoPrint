@@ -207,6 +207,9 @@ class MachineCom(object):
 		if len(self._errorValue) < 20:
 			return self._errorValue
 		return self._errorValue[:20] + "..."
+
+	def getErrorString(self):
+		return self._errorValue
 	
 	def isClosedOrError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED

@@ -27,6 +27,8 @@ class daeModel(triangle_mesh.TriangleMesh):
 		self._idMap = {}
 		self._geometryList = []
 		r.ParseFile(open(filename, "r"))
+
+		self._scale = float(self._base['collada'][0]['asset'][0]['unit'][0]['_meter']) * 1000
 		
 		for instance_visual_scene in self._base['collada'][0]['scene'][0]['instance_visual_scene']:
 			for node in self._idMap[instance_visual_scene['_url']]['node']:
@@ -81,9 +83,9 @@ class daeModel(triangle_mesh.TriangleMesh):
 
 						startIndex = len(self.vertexes)
 						for idx in xrange(0, len(positionList)/3):
-							x = positionList[idx*3]
-							y = positionList[idx*3+1]
-							z = positionList[idx*3+2]
+							x = positionList[idx*3] * self._scale
+							y = positionList[idx*3+1] * self._scale
+							z = positionList[idx*3+2] * self._scale
 							if matrix != None:
 								self.vertexes.append(Vector3(x * matrix[0] + y * matrix[1] + z * matrix[2] + matrix[3], x * matrix[4] + y * matrix[5] + z * matrix[6] + matrix[7], x * matrix[8] + y * matrix[9] + z * matrix[10] + matrix[11]))
 							else:

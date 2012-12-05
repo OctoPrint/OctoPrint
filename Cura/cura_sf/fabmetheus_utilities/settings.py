@@ -114,8 +114,8 @@ def getProfileInformation():
 			'SwapYZ': storedSetting("swap_yz"),
 			'Scale': storedSettingFloat("model_scale"),
 			'Rotate': storedSettingFloat("model_rotate_base"),
-			'CenterX': storedSettingFloat("machine_center_x"),
-			'CenterY': storedSettingFloat("machine_center_y"),
+			'CenterX': lambda setting: profile.getProfileSettingFloat('object_center_x') if profile.getProfileSettingFloat('object_center_x') > 0 else profile.getPreferenceFloat("machine_width") / 2,
+			'CenterY': lambda setting: profile.getProfileSettingFloat('object_center_y') if profile.getProfileSettingFloat('object_center_y') > 0 else profile.getPreferenceFloat("machine_depth") / 2,
 			'AlternativeCenterFile': storedSetting("alternative_center"),
 		},'scale': {
 			'Activate_Scale': "False",
@@ -176,8 +176,8 @@ def getProfileInformation():
 			'Thread_Sequence_Choice': storedSetting('sequence'),
 		},'multiply': {
 			'Activate_Multiply': "False",
-			'Center_X_mm': storedSettingFloat("machine_center_x"),
-			'Center_Y_mm': storedSettingFloat("machine_center_y"),
+			'Center_X_mm': lambda setting: profile.getProfileSettingFloat('object_center_x') if profile.getProfileSettingFloat('object_center_x') > 0 else profile.getPreferenceFloat("machine_width") / 2,
+			'Center_Y_mm': lambda setting: profile.getProfileSettingFloat('object_center_y') if profile.getProfileSettingFloat('object_center_y') > 0 else profile.getPreferenceFloat("machine_depth") / 2,
 			'Number_of_Columns_integer': storedSetting('model_multiply_x'),
 			'Number_of_Rows_integer': storedSetting('model_multiply_y'),
 			'Reverse_Sequence_every_Odd_Layer': DEFSET,
@@ -311,8 +311,8 @@ def getProfileInformation():
 			'Fan_speed_min_%': storedSettingInt('fan_speed'),
 			'Fan_speed_max_%': storedSettingInt('fan_speed_max'),
 		},'hop': {
-			'Activate_Hop': "False",
-			'Hop_Over_Layer_Thickness_ratio': DEFSET,
+			'Activate_Hop': storedSetting('hop_on_move'),
+			'Hop_Over_Layer_Thickness_ratio': lambda setting: 0.2 / profile.getProfileSettingFloat('layer_height'),
 			'Minimum_Hop_Angle_degrees': DEFSET,
 		},'wipe': {
 			'Activate_Wipe': "False",
