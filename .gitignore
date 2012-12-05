@@ -18,3 +18,5 @@ printrun.bat
 cura.bat
 object-mirror.png
 object.png
+build/*
+dist/*
