@@ -154,6 +154,7 @@ preferencesDefaultSettings = {
 	'machine_depth': '205',
 	'machine_height': '200',
 	'machine_type': 'unknown',
+	'ultimaker_extruder_upgrade': 'False',
 	'has_heated_bed': 'False',
 	'extruder_amount': '1',
 	'extruder_offset_x1': '-22.0',
@@ -215,7 +216,11 @@ def resetGlobalProfile():
 	global globalProfileParser
 	globalProfileParser = ConfigParser.ConfigParser()
 
-	if getPreference('machine_type') == 'reprap':
+	if getPreference('machine_type') == 'ultimaker':
+		putProfileSetting('nozzle_size', '0.4')
+		if getPreference('ultimaker_extruder_upgrade') == 'True':
+			putProfileSetting('retraction_enable', 'True')
+	else:
 		putProfileSetting('nozzle_size', '0.5')
 
 def saveGlobalProfile(filename):

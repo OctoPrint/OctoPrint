@@ -262,6 +262,27 @@ class MachineSelectPage(InfoPage):
 			profile.putProfileSetting('nozzle_size', '0.5')
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSetting('nozzle_size')) * 2)
 
+class SelectParts(InfoPage):
+	def __init__(self, parent):
+		super(SelectParts, self).__init__(parent, "Select upgraded parts you have")
+		self.AddText('To assist you in having better default settings for your Ultimaker\nCura would like to know which upgrades you have in your machine.')
+		self.AddSeperator()
+		self.springExtruder = self.AddCheckbox('Extruder drive upgrade')
+		self.heatedBed = self.AddCheckbox('Heated printer bed (self build)')
+		self.dualExtrusion = self.AddCheckbox('Dual extrusion (experimental)')
+		self.AddSeperator()
+		self.AddText('If you have an Ultimaker bought after october 2012 you will have the\nExtruder drive upgrade. If you do not have this upgrade,\nit is highly recommended to improve reliablity.')
+		self.AddText('This upgrade can be bought from the Ultimaker webshop shop\nor found on thingiverse as thing:26094')
+		self.springExtruder.SetValue(True)
+
+	def StoreData(self):
+		profile.putPreference('ultimaker_extruder_upgrade', str(self.springExtruder.GetValue()))
+		profile.putPreference('has_heated_bed', str(self.heatedBed.GetValue()))
+		if self.dualExtrusion.GetValue():
+			profile.putPreference('extruder_amount', '2')
+		if getPreference('ultimaker_extruder_upgrade') == 'True':
+			putProfileSetting('retraction_enable', 'True')
+
 class FirmwareUpgradePage(InfoPage):
 	def __init__(self, parent):
 		super(FirmwareUpgradePage, self).__init__(parent, "Upgrade Ultimaker Firmware")
@@ -628,6 +649,7 @@ class configWizard(wx.wizard.Wizard):
 
 		self.firstInfoPage = FirstInfoPage(self)
 		self.machineSelectPage = MachineSelectPage(self)
+		self.ultimakerSelectParts = SelectParts(self)
 		self.ultimakerFirmwareUpgradePage = FirmwareUpgradePage(self)
 		self.ultimakerCheckupPage = UltimakerCheckupPage(self)
 		self.ultimakerCalibrationPage = UltimakerCalibrationPage(self)
@@ -635,7 +657,8 @@ class configWizard(wx.wizard.Wizard):
 		self.repRapInfoPage = RepRapInfoPage(self)
 
 		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.machineSelectPage)
-		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerFirmwareUpgradePage)
+		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerSelectParts)
+		wx.wizard.WizardPageSimple.Chain(self.ultimakerSelectParts, self.ultimakerFirmwareUpgradePage)
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerFirmwareUpgradePage, self.ultimakerCheckupPage)
 		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCheckupPage, self.ultimakerCalibrationPage)
 		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCalibrationPage, self.ultimakerCalibrateStepsPerEPage)

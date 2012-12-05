@@ -555,10 +555,11 @@ class printWindow(wx.Frame):
 	
 	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		self.temperatureGraph.addPoint(temp, targetTemp, bedTemp, bedTargetTemp)
-		if self.temperatureSelect.GetValue() != targetTemp:
-			wx.CallAfter(self.temperatureSelect.SetValue, targetTemp)
-		if self.bedTemperatureSelect.GetValue() != bedTargetTemp:
-			wx.CallAfter(self.bedTemperatureSelect.SetValue, bedTargetTemp)
+		#ToFix, this causes problems with setting the temperature with the keyboard
+		#if self.temperatureSelect.GetValue() != targetTemp:
+		#	wx.CallAfter(self.temperatureSelect.SetValue, targetTemp)
+		#if self.bedTemperatureSelect.GetValue() != bedTargetTemp:
+		#	wx.CallAfter(self.bedTemperatureSelect.SetValue, bedTargetTemp)
 	
 	def mcStateChange(self, state):
 		if self.machineCom != None:
