@@ -20,8 +20,8 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from Cura.gui import opengl
-from Cura.gui import toolbarUtil
+from Cura.gui.util import opengl
+from Cura.gui.util import toolbarUtil
 
 from Cura.util import profile
 from Cura.util import gcodeInterpreter

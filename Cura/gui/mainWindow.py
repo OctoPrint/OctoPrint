@@ -21,7 +21,7 @@ from Cura.gui import simpleMode
 from Cura.gui import projectPlanner
 from Cura.gui import batchRun
 from Cura.gui import flatSlicerWindow
-from Cura.gui import dropTarget
+from Cura.gui.util import dropTarget
 from Cura.util import validators
 from Cura.util import profile
 from Cura.util import version
@@ -57,7 +57,6 @@ class mainWindow(configBase.configWindowBase):
 		extruderCount = int(profile.getPreference('extruder_amount'))
 
 		wx.EVT_CLOSE(self, self.OnClose)
-		#self.SetIcon(icon.getMainIcon())
 
 		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 

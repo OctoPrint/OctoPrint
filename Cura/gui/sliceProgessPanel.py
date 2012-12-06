@@ -8,8 +8,8 @@ import time
 import re
 import platform
 
-from Cura.gui import taskbar
 from Cura.gui import preferencesDialog
+from Cura.gui.util import taskbar
 from Cura.util import profile
 from Cura.util import sliceRun
 from Cura.util import exporer

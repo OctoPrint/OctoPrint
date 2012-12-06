@@ -20,12 +20,12 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from Cura.gui import opengl
-from Cura.gui import toolbarUtil
+from Cura.gui.util import opengl
+from Cura.gui.util import toolbarUtil
 from Cura.gui import configBase
 from Cura.gui import printWindow
-from Cura.gui import dropTarget
-from Cura.gui import taskbar
+from Cura.gui.util import dropTarget
+from Cura.gui.util import taskbar
 from Cura.util import validators
 from Cura.util import profile
 from Cura.util import util3d
@@ -149,8 +149,7 @@ class projectPlanner(wx.Frame):
 		self.panel = wx.Panel(self, -1)
 		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.GetSizer().Add(self.panel, 1, flag=wx.EXPAND)
-		#self.SetIcon(icon.getMainIcon())
-		
+
 		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 		
 		self.list = []

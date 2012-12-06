@@ -11,8 +11,8 @@ import platform
 import wx
 from wx.lib import buttons
 
-from Cura.gui import webcam
-from Cura.gui import taskbar
+from Cura.gui.util import webcam
+from Cura.gui.util import taskbar
 from Cura.util import machineCom
 from Cura.util import gcodeInterpreter
 from Cura.util import power
@@ -117,8 +117,6 @@ class printWindow(wx.Frame):
 			self.cam = webcam.webcam()
 			if not self.cam.hasCamera():
 				self.cam = None
-
-		#self.SetIcon(icon.getMainIcon())
 
 		self.SetSizer(wx.BoxSizer())
 		self.panel = wx.Panel(self)

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import wx, wx.stc
 
-from Cura.gui import gcodeTextArea
+from Cura.gui.util import gcodeTextArea
 from Cura.util import profile
 
 class alterationPanel(wx.Panel):
