@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, threading, time, re, shutil
+import wx, os, multiprocessing, threading, time, shutil
 
 from Cura.util import profile
 from Cura.util import sliceRun

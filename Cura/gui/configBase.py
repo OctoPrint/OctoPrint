@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import wx, wx.lib.stattext, os, sys, platform, types
+import wx, wx.lib.stattext, types
 
 from Cura.util import validators
 from Cura.util import profile

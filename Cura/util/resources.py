@@ -9,28 +9,26 @@ __all__ = ['getPathForResource', 'getPathForImage', 'getPathForMesh']
 if sys.platform.startswith('darwin'):
 	if hasattr(sys, 'frozen'):
 		from Foundation import *
-		imagesPath = os.path.join(NSBundle.mainBundle().resourcePath(), 'images')
-		meshesPath = os.path.join(NSBundle.mainBundle().resourcePath(), 'images')
+		resourceBasePath = NSBundle.mainBundle().resourcePath()
 	else:
-		imagesPath = os.path.join(os.path.dirname(__file__), "../images")
-		meshesPath = os.path.join(os.path.dirname(__file__), "../images")
+		resourceBasePath = os.path.join(os.path.dirname(__file__), "../resources")
 else:
 	if hasattr(sys, 'frozen'):
-		imagesPath = os.path.join(os.path.dirname(__file__), "../../images")
-		meshesPath = os.path.join(os.path.dirname(__file__), "../../images")
+		resourceBasePath = os.path.join(os.path.dirname(__file__), "../../resources")
 	else:
-		imagesPath = os.path.join(os.path.dirname(__file__), "../images")
-		meshesPath = os.path.join(os.path.dirname(__file__), "../images")
+		resourceBasePath = os.path.join(os.path.dirname(__file__), "../resources")
 
-
-def getPathForResource(dir, resource_name):
+def getPathForResource(dir, subdir, resource_name):
 	assert os.path.isdir(dir), "{p} is not a directory".format(p=dir)
-	path = os.path.normpath(os.path.join(dir, resource_name))
+	path = os.path.normpath(os.path.join(dir, subdir, resource_name))
 	assert os.path.isfile(path), "{p} is not a file.".format(p=path)
 	return path
 
 def getPathForImage(name):
-	return getPathForResource(imagesPath, name)
+	return getPathForResource(resourceBasePath, 'images', name)
 
 def getPathForMesh(name):
-	return getPathForResource(meshesPath, name)
+	return getPathForResource(resourceBasePath, 'meshes', name)
+
+def getPathForFirmware(name):
+	return getPathForResource(resourceBasePath, 'firmware', name)

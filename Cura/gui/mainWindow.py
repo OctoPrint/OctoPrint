@@ -21,7 +21,6 @@ from Cura.gui import simpleMode
 from Cura.gui import projectPlanner
 from Cura.gui import batchRun
 from Cura.gui import flatSlicerWindow
-from Cura.gui import icon
 from Cura.gui import dropTarget
 from Cura.util import validators
 from Cura.util import profile
