@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-import __init__
 
 import wx
 
@@ -12,7 +11,7 @@ class FileDropTarget(wx.FileDropTarget):
 
 	def OnDropFiles(self, x, y, filenames):
 		filteredList = []
-		if self.filenameFilter != None:
+		if self.filenameFilter is not None:
 			for f in filenames:
 				for ext in self.filenameFilter:
 					if f.endswith(ext) or f.endswith(ext.upper()):

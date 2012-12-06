@@ -1,14 +1,19 @@
 from __future__ import absolute_import
-import __init__
 
-import wx, sys, os, shutil, math, threading, subprocess, time, re, platform
+import wx
+import os
+import shutil
+import threading
+import time
+import re
+import platform
 
-from gui import taskbar
-from gui import preferencesDialog
-from util import profile
-from util import sliceRun
-from util import exporer
-from util import gcodeInterpreter
+from Cura.gui import taskbar
+from Cura.gui import preferencesDialog
+from Cura.util import profile
+from Cura.util import sliceRun
+from Cura.util import exporer
+from Cura.util import gcodeInterpreter
 
 class sliceProgessPanel(wx.Panel):
 	def __init__(self, mainWindow, parent, filelist):

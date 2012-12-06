@@ -8,12 +8,11 @@ import time
 import wx
 import wx.wizard
 
-from gui import firmwareInstall
-from gui import toolbarUtil
-from gui import printWindow
-from util import machineCom
-from util import profile
-from util.resources import getPathForImage
+from Cura.gui import firmwareInstall
+from Cura.gui import printWindow
+from Cura.util import machineCom
+from Cura.util import profile
+from Cura.util.resources import getPathForImage
 
 class InfoBox(wx.Panel):
 	def __init__(self, parent):
@@ -297,8 +296,8 @@ class SelectParts(InfoPage):
 		profile.putPreference('has_heated_bed', str(self.heatedBed.GetValue()))
 		if self.dualExtrusion.GetValue():
 			profile.putPreference('extruder_amount', '2')
-		if getPreference('ultimaker_extruder_upgrade') == 'True':
-			putProfileSetting('retraction_enable', 'True')
+		if profile.getPreference('ultimaker_extruder_upgrade') == 'True':
+			profile.putProfileSetting('retraction_enable', 'True')
 
 
 class FirmwareUpgradePage(InfoPage):

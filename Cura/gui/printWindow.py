@@ -11,15 +11,12 @@ import platform
 import wx
 from wx.lib import buttons
 
-from gui import icon
-from gui import toolbarUtil
-from gui import webcam
-from gui import taskbar
-from util import machineCom
-from util import profile
-from util import gcodeInterpreter
-from util import power
-from util.resources import getPathForImage
+from Cura.gui import webcam
+from Cura.gui import taskbar
+from Cura.util import machineCom
+from Cura.util import gcodeInterpreter
+from Cura.util import power
+from Cura.util.resources import getPathForImage
 
 printWindowMonitorHandle = None
 

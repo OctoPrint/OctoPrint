@@ -1,4 +1,8 @@
-import sys, os, subprocess
+from __future__ import absolute_import
+
+import sys
+import os
+import subprocess
 
 def hasExporer():
 	if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'darwin':

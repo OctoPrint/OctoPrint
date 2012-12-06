@@ -1,7 +1,11 @@
 from __future__ import absolute_import
-import __init__
 
-import wx, os, platform, types, webbrowser, math, subprocess, threading, time, re, shutil
+import wx
+import os
+import threading
+import time
+import re
+import shutil
 import ConfigParser
 import numpy
 
@@ -16,22 +20,21 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from gui import opengl
-from gui import toolbarUtil
-from gui import icon
-from gui import configBase
-from gui import printWindow
-from gui import dropTarget
-from gui import taskbar
-from util import validators
-from util import profile
-from util import util3d
-from util import meshLoader
-from util import stl
-from util import mesh
-from util import sliceRun
-from util import gcodeInterpreter
-from util import exporer
+from Cura.gui import opengl
+from Cura.gui import toolbarUtil
+from Cura.gui import configBase
+from Cura.gui import printWindow
+from Cura.gui import dropTarget
+from Cura.gui import taskbar
+from Cura.util import validators
+from Cura.util import profile
+from Cura.util import util3d
+from Cura.util import meshLoader
+from Cura.util import stl
+from Cura.util import mesh
+from Cura.util import sliceRun
+from Cura.util import gcodeInterpreter
+from Cura.util import exporer
 
 class Action(object):
 	pass

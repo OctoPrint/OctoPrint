@@ -1,11 +1,10 @@
 from __future__ import absolute_import
 from __future__ import division
-import __init__
 
 import types
 import math
 
-from util import profile
+from Cura.util import profile
 
 SUCCESS = 0
 WARNING = 1

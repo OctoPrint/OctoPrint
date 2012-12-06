@@ -1,8 +1,9 @@
-import wx,wx.stc
-import sys,math,threading,os
+from __future__ import absolute_import
 
-from gui import gcodeTextArea
-from util import profile
+import wx, wx.stc
+
+from Cura.gui import gcodeTextArea
+from Cura.util import profile
 
 class alterationPanel(wx.Panel):
 	def __init__(self, parent):

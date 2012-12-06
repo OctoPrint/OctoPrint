@@ -1,13 +1,11 @@
 from __future__ import absolute_import
-import __init__
 
-import wx, os, platform, types, string, glob, stat
-import ConfigParser
+import wx
 
-from gui import configBase
-from util import validators
-from util import machineCom
-from util import profile
+from Cura.gui import configBase
+from Cura.util import validators
+from Cura.util import machineCom
+from Cura.util import profile
 
 class preferencesDialog(configBase.configWindowBase):
 	def __init__(self, parent):

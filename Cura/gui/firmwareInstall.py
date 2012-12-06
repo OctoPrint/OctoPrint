@@ -1,16 +1,13 @@
 from __future__ import absolute_import
-import __init__
 
-import os, glob, wx, threading, sys, time
+import os, wx, threading, sys
 
-from serial import Serial
+from Cura.avr_isp import stk500v2
+from Cura.avr_isp import ispBase
+from Cura.avr_isp import intelHex
 
-from avr_isp import stk500v2
-from avr_isp import ispBase
-from avr_isp import intelHex
-
-from util import machineCom
-from util import profile
+from Cura.util import machineCom
+from Cura.util import profile
 
 def getDefaultFirmware():
 	if profile.getPreference('machine_type') == 'ultimaker':

@@ -8,9 +8,8 @@ import platform
 
 import wx
 
-from util import profile
-from util.resources import getPathForImage
-from gui import toolbarUtil
+from Cura.util import profile
+from Cura.util.resources import getPathForImage
 
 try:
 	#Try to find the OpenCV library for video capture.

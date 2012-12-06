@@ -1,22 +1,19 @@
 from __future__ import absolute_import
-import __init__
 
-import wx, os, platform, types, webbrowser
+import wx
+import os
+import webbrowser
 
-from gui import configBase
-from gui import preview3d
-from gui import sliceProgessPanel
-from gui import preferencesDialog
-from gui import configWizard
-from gui import firmwareInstall
-from gui import dropTarget
-from gui import printWindow
-from gui import icon
-from util import validators
-from util import profile
-from util import version
-from util import sliceRun
-from util import meshLoader
+from Cura.gui import configBase
+from Cura.gui import preview3d
+from Cura.gui import sliceProgessPanel
+from Cura.gui import preferencesDialog
+from Cura.gui import dropTarget
+from Cura.gui import printWindow
+from Cura.util import profile
+from Cura.util import version
+from Cura.util import sliceRun
+from Cura.util import meshLoader
 
 class simpleModeWindow(configBase.configWindowBase):
 	"Main user interface window for Quickprint mode"

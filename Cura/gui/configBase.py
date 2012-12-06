@@ -1,15 +1,9 @@
 from __future__ import absolute_import
-import __init__
 
 import wx, wx.lib.stattext, os, sys, platform, types
 
-from util import validators
-from util import profile
-
-def main():
-	app = wx.App(False)
-	mainWindow()
-	app.MainLoop()
+from Cura.util import validators
+from Cura.util import profile
 
 class configWindowBase(wx.Frame):
 	"A base class for configuration dialogs. Handles creation of settings, and popups"

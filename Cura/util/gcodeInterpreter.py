@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 import sys
 import math
 import re
 import os
 
-import util3d
-import profile
+from Cura.util import util3d
+from Cura.util import profile
 
 class gcodePath(object):
 	def __init__(self, newType, pathType, layerThickness, startPoint):

@@ -1,29 +1,33 @@
 from __future__ import absolute_import
-import __init__
 
-import wx, os, platform, types, webbrowser, shutil, glob
+import wx
+import os
+import platform
+import webbrowser
+import shutil
+import glob
 
-from gui import configBase
-from gui import expertConfig
-from gui import preview3d
-from gui import sliceProgessPanel
-from gui import alterationPanel
-from gui import pluginPanel
-from gui import preferencesDialog
-from gui import configWizard
-from gui import firmwareInstall
-from gui import printWindow
-from gui import simpleMode
-from gui import projectPlanner
-from gui import batchRun
-from gui import flatSlicerWindow
-from gui import icon
-from gui import dropTarget
-from util import validators
-from util import profile
-from util import version
-from util import sliceRun
-from util import meshLoader
+from Cura.gui import configBase
+from Cura.gui import expertConfig
+from Cura.gui import preview3d
+from Cura.gui import sliceProgessPanel
+from Cura.gui import alterationPanel
+from Cura.gui import pluginPanel
+from Cura.gui import preferencesDialog
+from Cura.gui import configWizard
+from Cura.gui import firmwareInstall
+from Cura.gui import printWindow
+from Cura.gui import simpleMode
+from Cura.gui import projectPlanner
+from Cura.gui import batchRun
+from Cura.gui import flatSlicerWindow
+from Cura.gui import icon
+from Cura.gui import dropTarget
+from Cura.util import validators
+from Cura.util import profile
+from Cura.util import version
+from Cura.util import sliceRun
+from Cura.util import meshLoader
 
 def main():
 	#app = wx.App(False)

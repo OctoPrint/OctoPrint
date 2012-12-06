@@ -5,14 +5,14 @@ Settings is a collection of utilities to display, read & write the settings and 
 
 from __future__ import absolute_import
 from __future__ import division
+
 #Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
-import __init__
+import sys
+import types
+import math
 
-import os, sys
-import types, math
-
-from util import profile
-from fabmetheus_utilities import archive
+from Cura.util import profile
+from Cura.cura_sf.fabmetheus_utilities import archive
 
 def DEFSET(setting):
 	return setting.value

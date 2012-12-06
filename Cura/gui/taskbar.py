@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 try:
 	import comtypes.client as cc
 	cc.GetModule('taskbarlib.tlb')

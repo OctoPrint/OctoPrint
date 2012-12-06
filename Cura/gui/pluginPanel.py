@@ -1,9 +1,11 @@
-import wx, wx.stc
-import sys, math, threading, os, webbrowser
+from __future__ import absolute_import
+
+import wx
+import webbrowser
 from wx.lib import scrolledpanel
 
-from util import profile
-from util import exporer
+from Cura.util import profile
+from Cura.util import exporer
 
 class pluginPanel(wx.Panel):
 	def __init__(self, parent):

@@ -1,7 +1,8 @@
-import sys, math, re, os, struct, time
+from __future__ import absolute_import
+
 from  xml.parsers.expat import ParserCreate
 
-import mesh
+from Cura.util import mesh
 
 class daeModel(mesh.mesh):
 	def __init__(self):

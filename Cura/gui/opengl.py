@@ -3,10 +3,10 @@ from __future__ import absolute_import
 
 import math
 
-from util import meshLoader
-from util import util3d
-from util import profile
-from util.resources import getPathForMesh
+from Cura.util import meshLoader
+from Cura.util import util3d
+from Cura.util import profile
+from Cura.util.resources import getPathForMesh
 
 try:
 	import OpenGL

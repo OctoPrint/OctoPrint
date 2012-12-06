@@ -1,6 +1,11 @@
+from __future__ import absolute_import
 from __future__ import division
 
-import sys, math, threading, re, time, os
+import math
+import threading
+import re
+import time
+import os
 import numpy
 
 from wx import glcanvas
@@ -15,14 +20,14 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from gui import opengl
-from gui import toolbarUtil
+from Cura.gui import opengl
+from Cura.gui import toolbarUtil
 
-from util import profile
-from util import gcodeInterpreter
-from util import meshLoader
-from util import util3d
-from util import sliceRun
+from Cura.util import profile
+from Cura.util import gcodeInterpreter
+from Cura.util import meshLoader
+from Cura.util import util3d
+from Cura.util import sliceRun
 
 class previewObject():
 	def __init__(self):

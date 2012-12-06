@@ -1,7 +1,10 @@
-import wx, os, platform, types, webbrowser
+from __future__ import absolute_import
+
+import wx
+import os
 
 from wx import glcanvas
-import wx
+
 try:
 	import OpenGL
 	OpenGL.ERROR_CHECKING = False
@@ -12,12 +15,12 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from gui import toolbarUtil
-from gui import opengl
-from util import util3d
-from util import svg
-from util import profile
-from util import version
+from Cura.gui import toolbarUtil
+from Cura.gui import opengl
+from Cura.util import util3d
+from Cura.util import svg
+from Cura.util import profile
+from Cura.util import version
 
 class flatSlicerWindow(wx.Frame):
 	"Cura 2D SVG slicer"

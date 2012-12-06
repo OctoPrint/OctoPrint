@@ -1,6 +1,11 @@
-import sys, math, re, os, struct, time
+from __future__ import absolute_import
 
-import mesh
+import sys
+import os
+import struct
+import time
+
+from Cura.util import mesh
 
 class stlModel(mesh.mesh):
 	def __init__(self):

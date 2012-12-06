@@ -1,7 +1,10 @@
-import wx, wx.stc
-import sys,math,os
+from __future__ import absolute_import
 
-from util import profile
+import wx
+import wx.stc
+import sys
+
+from Cura.util import profile
 
 class GcodeTextArea(wx.stc.StyledTextCtrl):
 	def __init__(self, parent):

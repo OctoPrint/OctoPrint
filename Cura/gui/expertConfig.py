@@ -1,14 +1,9 @@
 from __future__ import absolute_import
-import __init__
 
-import wx, os, platform, types
-import ConfigParser
+import wx
 
-from gui import configBase
-from gui import preview3d
-from gui import sliceProgessPanel
-from gui import alterationPanel
-from util import validators
+from Cura.gui import configBase
+from Cura.util import validators
 
 class expertConfigWindow(configBase.configWindowBase):
 	"Expert configuration window"

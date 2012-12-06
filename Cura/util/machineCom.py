@@ -1,17 +1,22 @@
 from __future__ import absolute_import
-import __init__
 
-import os, glob, sys, time, math, re, traceback, threading
+import os
+import glob
+import sys
+import time
+import math
+import re
+import traceback
+import threading
 import Queue as queue
 
 import serial
 
-from avr_isp import stk500v2
-from avr_isp import ispBase
-from avr_isp import intelHex
+from Cura.avr_isp import stk500v2
+from Cura.avr_isp import ispBase
 
-from util import profile
-from util import version
+from Cura.util import profile
+from Cura.util import version
 
 try:
 	import _winreg

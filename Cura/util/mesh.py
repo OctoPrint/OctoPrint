@@ -1,8 +1,11 @@
-import sys, math, re, os, struct, time
+from __future__ import absolute_import
 
-import util3d
+import time
+import math
 
 import numpy
+
+from Cura.util import util3d
 
 class mesh(object):
 	def __init__(self):

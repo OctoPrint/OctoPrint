@@ -1,12 +1,11 @@
 from __future__ import absolute_import
-import __init__
 
 import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, threading, time, re, shutil
 
-from util import profile
-from util import sliceRun
-from util import meshLoader
-from gui import dropTarget
+from Cura.util import profile
+from Cura.util import sliceRun
+from Cura.util import meshLoader
+from Cura.gui import dropTarget
 
 class batchRunWindow(wx.Frame):
 	def __init__(self, parent):

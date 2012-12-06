@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 
-import stl
-import obj
-import dae
+from Cura.util import stl
+from Cura.util import obj
+from Cura.util import dae
 
 def supportedExtensions():
 	return ['.stl', '.obj', '.dae']

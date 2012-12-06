@@ -1,4 +1,6 @@
-import sys, math, re, os, struct, time
+from __future__ import absolute_import
+
+import math
 from xml.etree import ElementTree
 
 import profile

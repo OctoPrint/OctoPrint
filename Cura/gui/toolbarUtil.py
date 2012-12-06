@@ -5,8 +5,8 @@ from __future__ import division
 import wx
 from wx.lib import buttons
 
-from util import profile
-from util.resources import getPathForImage
+from Cura.util import profile
+from Cura.util.resources import getPathForImage
 
 
 #######################################################

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 import wx._core #We only need the core here, which speeds up the import. As we want to show the splashscreen ASAP.
 
-from util.resources import getPathForImage
+from Cura.util.resources import getPathForImage
 
 
 class splashScreen(wx.SplashScreen):

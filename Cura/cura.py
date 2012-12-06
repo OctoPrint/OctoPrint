@@ -16,7 +16,7 @@ from optparse import OptionParser
 
 import wx._core
 
-from util import profile
+from Cura.util import profile
 
 __author__ = 'Daid'
 __credits__ = """
@@ -75,25 +75,25 @@ def main():
 		profile.loadGlobalProfile(options.profileini)
 
 	if options.openprojectplanner is not None:
-		from gui import projectPlanner
+		from Cura.gui import projectPlanner
 		projectPlanner.main()
 	elif options.openflatslicer is not None:
-		from gui import flatSlicerWindow
+		from Cura.gui import flatSlicerWindow
 		flatSlicerWindow.main()
 	elif options.printfile is not None:
-		from gui import printWindow
+		from Cura.gui import printWindow
 		printWindow.startPrintInterface(options.printfile)
 	elif options.slice is not None:
-		from util import sliceRun
+		from Cura.util import sliceRun
 		sliceRun.runSlice(args)
 	else:
 		if len(args) > 0:
 			profile.putPreference('lastFile', ';'.join(args))
 
-		from gui import splashScreen
+		from Cura.gui import splashScreen
 
 		def mainWindowRunCallback(splash):
-			from gui import mainWindow
+			from Cura.gui import mainWindow
 			if splash is not None:
 				splash.Show(False)
 			mainWindow.main()
