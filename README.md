@@ -9,6 +9,14 @@ Development
 Cura is developed in Python. Getting Cura up and running for development is not very difficult. If you copy the python and pypy from a release into your Cura development checkout then you can use Cura right away, just like you would with a release.
 For development with git, check the help on github. Pull requests is the fastest way to get changes into Cura.
 
+
+Packaging
+---------
+
+Cura development comes with a script "package.sh", this script has been designed to run under unix like OSes (Linux, MacOS). Running it from sygwin is not a priority.
+The "package.sh" script generates a final release package. You should not need it during development, unless you are changing the release process. If you want to distribute your own version of Cura, then the package.sh script will allow you to do that.
+
+
 Mac OS X
 --------
 The following section describes how to prepare environment for developing and packaing for Mac OS X.
@@ -24,38 +32,54 @@ You'll need non-system, framework-based, universal with min deployment target se
 
 **deployment target set to 10.6**: Output of ``otool -l `which python` `` should contain *"cmd LC_VERSION_MIN_MACOSX ... version 10.6"*
 
-The easiest way to install it is via [Homebrew](http://mxcl.github.com/homebrew/): `brew install --fresh osx_python_cura.rb --universal` (TODO: upload the formula). Note you'll need to uninstall Python if you already have it installed
+The easiest way to install it is via [Homebrew](http://mxcl.github.com/homebrew/): `brew install --fresh osx_python_cura.rb --universal` (TODO: upload the formula). Note you'll need to uninstall Python if you already have it installed via Homebrew.
 
-###virtualenv
+###Virtualenv
 You may skip this step if you don't bother to use [virtualenv](http://pypi.python.org/pypi/virtualenv). It's not a requirement.
 
-The main problem with virtualenv is that wxWidgets cannot be installed via pip. We'll have to build it manually from source by specifing prefix to our virtualenv. Assume you have virtualenv at *~/.virtualenvs/Cura*.
+The main problem with virtualenv is that wxWidgets cannot be installed via pip. We'll have to build it manually from source by specifing prefix to our virtualenv.
 
-1. Download [the sources](http://sourceforge.net/projects/wxpython/files/wxPython/2.9.4.0/wxPython-src-2.9.4.0.tar.bz2)
-2. Configure project with the following flags: `./configure
+Assuming you have virtualenv at *~/.virtualenvs/Cura*:
+
+1. Download [wxPython sources](http://sourceforge.net/projects/wxpython/files/wxPython/2.9.4.0/wxPython-src-2.9.4.0.tar.bz2)
+2. Configure project with the following flags: `./configure --prefix=$HOME/.virtualenvs/Cura/ --enable-optimise --with-libjpeg=builtin --with-libpng=builtin --with-libtiff=builtin --with-zlib=builtin --enable-monolithic --with-macosx-version-min=10.6 --disable-debug --enable-unicode --enable-std_string --enable-display --with-opengl --with-osx_cocoa --enable-dnd --enable-clipboard --enable-webkit --enable-svg --with-expat --enable-universal_binary=i386,x86_64`
 3. `make install`
 4. cd into the *wxPython* directory
-5. Build extension:
-6. Install Python bindings to wxWidgets
+5. Build wxPython modules: `python setup.py build_ext WXPORT=osx_cocoa WX_CONFIG=$HOME/.virtualenvs/Cura/bin/wx-config UNICODE=1 INSTALL_MULTIVERSION=0 BUILD_GLCANVAS=1 BUILD_GIZMOS=1 BUILD_STC=1` (Note that python is the python of your virtualenv)
+6. Install wxPython and modules: `python setup.py install --prefix=$HOME/.virtualenvs/Cura/ WXPORT=osx_cocoa WX_CONFIG=$HOME/virtualenvs/Cura/bin/wx-config UNICODE=1 INSTALL_MULTIVERSION=0 BUILD_GLCANVAS=1 BUILD_GIZMOS=1 BUILD_STC=1` (Note that python is the python of your virtualenv)
 
-Another problem is that with current installation you'll be only able to package the app, but not test it. The problem is that Mac OS X requires to bundle GUI code.
-The workaround is to add another executable which we will use only for debugging. Add the following script to *~/.virtualenvs/Cura/bin*:
+Another problem is that python in virtualenv is not suitable for running GUI code. Mac OS X requires python to be inside the bundle. To workaround this issue, we will add the following script to the ~/.virtualenvs/Cura/bin:
 
     #!/bin/bash
-    ENV=`python -c "import sys; print sys.prefix"
-    PYTHON=`python -c "import sys; print sys.real_prefix`/bin/python
+    ENV=`python -c "import sys; print sys.prefix"`
+    PYTHON=`python -c "import sys; print sys.real_prefix"`/bin/python
     export PYTHONHOME=$ENV
     exec $PYTHON "$@"
 
-Then to pacakge the app use the default virtualenv python and this script if you want to debug your code.
+I typically name this script `pythonw`.
 
-###requirements
+At this point virtualenv is configured for wxPython development. Remember to use `python` to pacakge the app and `pythonw` to run app without packaging (e.g. for debugging).
 
+###Requirements
+Following packages are required for development:
 
+    PyOpenGL>=3.0.2
+    numpy>=1.6.2
+    pyserial>=2.6
+    pyobjc>=2.5
 
+Following packages are required for packaging Cura into app:
 
-Packaging
----------
+    py2app>=0.7.2
 
-Cura development comes with a script "package.sh", this script has been designed to run under unix like OSes (Linux, MacOS). Running it from sygwin is not a priority.
-The "package.sh" script generates a final release package. You should not need it during development, unless you are changing the release process. If you want to distribute your own version of Cura, then the package.sh script will allow you to do that.
+The easiest way to install all this packages is to use virtualenv's pip: `pip install requirements_darwin.txt`
+
+####PyObjC
+At time of writing, pyobjc 2.5 is not available at pypi. You have to clone repo and install it manually:
+
+    hg clone https://bitbucket.org/ronaldoussoren/pyobjc
+    hg checkout c42c98d6e941 # last tested commit
+    python install.py
+
+###Packaging
+To package Cura into application bundle simply do `python setup.py py2app`. Resulting bundle is self-contained -- it includes Python and all needed packages.
