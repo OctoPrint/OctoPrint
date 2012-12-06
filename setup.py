@@ -1,5 +1,4 @@
 # coding=utf-8
-
 import sys
 import os
 
@@ -27,23 +26,9 @@ if sys.platform.startswith('darwin'):
                 u'LSHandlerRank': u'Alternate'
             },
             {
-                u'CFBundleTypeName': u'Stereo Lithography 3D Object',
-                u'CFBundleTypeExtensions': [u'stl'],
-                u'CFBundleTypeMIMETypes': [u'text/plain'],
-                u'CFBundleTypeRole': u'Viewer',
-                u'LSHandlerRank': u'Alternate'
-            },
-            {
                 u'CFBundleTypeName': u'Wavefront 3D Object',
                 u'CFBundleTypeExtensions': [u'obj'],
                 u'CFBundleTypeMIMETypes': [u'application/obj-3d'],
-                u'CFBundleTypeRole': u'Viewer',
-                u'LSHandlerRank': u'Alternate'
-            },
-            {
-                u'CFBundleTypeName': u'Digital Asset Exchange (DAE)',
-                u'CFBundleTypeExtensions': [u'dae'],
-                u'CFBundleTypeMIMETypes': [u'model/vnd.collada+xml'],
                 u'CFBundleTypeRole': u'Viewer',
                 u'LSHandlerRank': u'Alternate'
             }
@@ -54,13 +39,13 @@ if sys.platform.startswith('darwin'):
                 u'UTTypeConformsTo': [u'public.data'],
                 u'UTTypeDescription': u'Stereo Lithography 3D object',
                 u'UTTypeReferenceURL': u'http://en.wikipedia.org/wiki/STL_(file_format)',
-                u'UTTypeTagSpecification:': {u'public.filename-extension': [u'stl']}
+                u'UTTypeTagSpecification': {u'public.filename-extension': [u'stl'], u'public.mime-type': [u'text/plain']}
             },
             {
                 u'UTTypeIdentifier': u'org.khronos.collada.digital-asset-exchange',
                 u'UTTypeConformsTo': [u'public.xml', u'public.audiovisual-content'],
                 u'UTTypeDescription': u'Digital Asset Exchange (DAE)',
-                u'UTTypeTagSpecification': {u'public.filename-extension': [u'dae']}
+                u'UTTypeTagSpecification': {u'public.filename-extension': [u'dae'], u'public.mime-type': [u'model/vnd.collada+xml']}
             }
         ]
     }
@@ -70,7 +55,9 @@ if sys.platform.startswith('darwin'):
         'includes': ['objc', 'Foundation'],
         'resources': DATA_FILES,
         'optimize': '2',
-        'plist': PLIST
+        'plist': PLIST,
+        'bdist_base': 'scripts/darwin/build',
+        'dist_dir': 'scripts/darwin/dist'
     }
 
     setup(
@@ -78,7 +65,7 @@ if sys.platform.startswith('darwin'):
         app=APP,
         data_files=DATA_FILES,
         options={'py2app': OPTIONS},
-        setup_requires=['py2app'],
+        setup_requires=['py2app']
     )
 else:
     import zipfile
