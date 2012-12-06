@@ -46,7 +46,7 @@ Assuming you have virtualenv at *~/.virtualenvs/Cura*:
 3. `make install`
 4. cd into the *wxPython* directory
 5. Build wxPython modules: `python setup.py build_ext WXPORT=osx_cocoa WX_CONFIG=$HOME/.virtualenvs/Cura/bin/wx-config UNICODE=1 INSTALL_MULTIVERSION=0 BUILD_GLCANVAS=1 BUILD_GIZMOS=1 BUILD_STC=1` (Note that python is the python of your virtualenv)
-6. Install wxPython and modules: `python setup.py install --prefix=$HOME/.virtualenvs/Cura/ WXPORT=osx_cocoa WX_CONFIG=$HOME/virtualenvs/Cura/bin/wx-config UNICODE=1 INSTALL_MULTIVERSION=0 BUILD_GLCANVAS=1 BUILD_GIZMOS=1 BUILD_STC=1` (Note that python is the python of your virtualenv)
+6. Install wxPython and modules: `python setup.py install --prefix=$HOME/.virtualenvs/Cura/ WXPORT=osx_cocoa WX_CONFIG=$HOME/.virtualenvs/Cura/bin/wx-config UNICODE=1 INSTALL_MULTIVERSION=0 BUILD_GLCANVAS=1 BUILD_GIZMOS=1 BUILD_STC=1` (Note that python is the python of your virtualenv)
 
 Another problem is that python in virtualenv is not suitable for running GUI code. Mac OS X requires python to be inside the bundle. To workaround this issue, we will add the following script to the ~/.virtualenvs/Cura/bin:
 
