@@ -14,8 +14,6 @@ import sys
 import warnings
 from optparse import OptionParser
 
-import wx._core
-
 from Cura.util import profile
 
 __author__ = 'Daid'
@@ -45,13 +43,6 @@ Art of Illusion <http://www.artofillusion.org/>"""
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-
-class CuraApp(wx.App):
-	def MacOpenFile(self, path):
-		try:
-			pass
-		except Exception as e:
-			warnings.warn("File at {p} cannot be read: {e}".format(p=path, e=str(e)))
 
 def main():
 	parser = OptionParser(usage="usage: %prog [options] <filename>.stl")
@@ -90,7 +81,15 @@ def main():
 		if len(args) > 0:
 			profile.putPreference('lastFile', ';'.join(args))
 
+		import wx._core
 		from Cura.gui import splashScreen
+
+		class CuraApp(wx.App):
+			def MacOpenFile(self, path):
+				try:
+					pass
+				except Exception as e:
+					warnings.warn("File at {p} cannot be read: {e}".format(p=path, e=str(e)))
 
 		def mainWindowRunCallback(splash):
 			from Cura.gui import mainWindow
