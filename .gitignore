@@ -3,7 +3,7 @@
 *.pyc
 *.zip
 *.exe
-osx64-Cura-*
+darwin-Cura-*
 win32-Cura-*
 linux-Cura-*
 Printrun
@@ -18,3 +18,4 @@ printrun.bat
 cura.bat
 object-mirror.png
 object.png
+*darwin.dmg

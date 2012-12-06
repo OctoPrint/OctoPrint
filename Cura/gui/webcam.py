@@ -1,7 +1,15 @@
-import os, glob, subprocess, platform
+# coding=utf-8
+from __future__ import absolute_import
+
+import os
+import glob
+import subprocess
+import platform
+
 import wx
 
 from util import profile
+from util.resources import getPathForImage
 from gui import toolbarUtil
 
 try:
@@ -26,6 +34,7 @@ def hasWebcamSupport():
 		return False
 	return True
 
+
 def getFFMPEGpath():
 	if platform.system() == "Windows":
 		return os.path.normpath(os.path.join(os.path.split(__file__)[0], "../ffmpeg.exe"))
@@ -33,11 +42,12 @@ def getFFMPEGpath():
 		return '/usr/bin/ffmpeg'
 	return os.path.normpath(os.path.join(os.path.split(__file__)[0], "../ffmpeg"))
 
+
 class webcam(object):
 	def __init__(self):
 		self._cam = None
-		self._overlayImage = toolbarUtil.getBitmapImage("cura-overlay.png")
-		self._overlayUltimaker = toolbarUtil.getBitmapImage("ultimaker-overlay.png")
+		self._overlayImage = wx.Bitmap(getPathForImage('cura-overlay.png'))
+		self._overlayUltimaker = wx.Bitmap(getPathForImage('ultimaker-overlay.png'))
 		if cv != None:
 			self._cam = highgui.cvCreateCameraCapture(-1)
 		elif win32vidcap != None:
@@ -45,13 +55,13 @@ class webcam(object):
 				self._cam = win32vidcap.new_Dev(0, False)
 			except:
 				pass
-		
+
 		self._doTimelaps = False
 		self._bitmap = None
-	
+
 	def hasCamera(self):
 		return self._cam != None
-	
+
 	def propertyPages(self):
 		if self._cam == None:
 			return []
@@ -61,7 +71,7 @@ class webcam(object):
 		elif win32vidcap != None:
 			return ['Image properties', 'Format properties']
 
-	def openPropertyPage(self, pageType = 0):
+	def openPropertyPage(self, pageType=0):
 		if self._cam == None:
 			return
 		if cv != None:
@@ -75,7 +85,7 @@ class webcam(object):
 				tmp = win32vidcap.new_Dev(0, False)
 				tmp.displaycapturepinproperties()
 				self._cam = tmp
-	
+
 	def takeNewImage(self):
 		if self._cam == None:
 			return
@@ -100,21 +110,23 @@ class webcam(object):
 		dc.SelectObject(bitmap)
 		dc.DrawBitmap(self._overlayImage, bitmap.GetWidth() - self._overlayImage.GetWidth() - 5, 5, True)
 		if profile.getPreference('machine_type') == 'ultimaker':
-			dc.DrawBitmap(self._overlayUltimaker, (bitmap.GetWidth() - self._overlayUltimaker.GetWidth()) / 2, bitmap.GetHeight() - self._overlayUltimaker.GetHeight() - 5, True)
+			dc.DrawBitmap(self._overlayUltimaker, (bitmap.GetWidth() - self._overlayUltimaker.GetWidth()) / 2,
+				bitmap.GetHeight() - self._overlayUltimaker.GetHeight() - 5, True)
 		dc.SelectObject(wx.NullBitmap)
 
 		self._bitmap = bitmap
 
 		if self._doTimelaps:
-			filename = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap", "__tmp_snap_%04d.jpg" % (self._snapshotCount)))
+			filename = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap",
+				"__tmp_snap_%04d.jpg" % (self._snapshotCount)))
 			self._snapshotCount += 1
 			bitmap.SaveFile(filename, wx.BITMAP_TYPE_JPEG)
 
 		return self._bitmap
-	
+
 	def getLastImage(self):
 		return self._bitmap
-	
+
 	def startTimelaps(self, filename):
 		if self._cam == None:
 			return
@@ -123,14 +135,17 @@ class webcam(object):
 		self._snapshotCount = 0
 		self._doTimelaps = True
 		print "startTimelaps"
-	
+
 	def endTimelaps(self):
 		if self._doTimelaps:
 			ffmpeg = getFFMPEGpath()
-			basePath = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap", "__tmp_snap_%04d.jpg"))
-			subprocess.call([ffmpeg, '-r', '12.5', '-i', basePath, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y', '-b:v', '1500k', '-f', 'vob', self._timelapsFilename])
+			basePath = os.path.normpath(
+				os.path.join(os.path.split(__file__)[0], "../__tmp_snap", "__tmp_snap_%04d.jpg"))
+			subprocess.call(
+				[ffmpeg, '-r', '12.5', '-i', basePath, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y',
+				 '-b:v', '1500k', '-f', 'vob', self._timelapsFilename])
 		self._doTimelaps = False
-	
+
 	def _cleanTempDir(self):
 		basePath = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap"))
 		try:

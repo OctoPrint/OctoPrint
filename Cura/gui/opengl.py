@@ -1,14 +1,20 @@
-import math, time, os
+# coding=utf-8
+from __future__ import absolute_import
+
+import math
 
 from util import meshLoader
 from util import util3d
 from util import profile
+from util.resources import getPathForMesh
 
 try:
 	import OpenGL
+
 	OpenGL.ERROR_CHECKING = False
 	from OpenGL.GLU import *
 	from OpenGL.GL import *
+
 	hasOpenGLlibs = True
 except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
@@ -19,8 +25,8 @@ def InitGL(window, view3D, zoom):
 	glMatrixMode(GL_MODELVIEW)
 	glLoadIdentity()
 	size = window.GetSize()
-	glViewport(0,0, size.GetWidth(), size.GetHeight())
-	
+	glViewport(0, 0, size.GetWidth(), size.GetHeight())
+
 	glLightfv(GL_LIGHT0, GL_POSITION, [0.2, 0.2, 1.0, 0.0])
 	glLightfv(GL_LIGHT1, GL_POSITION, [1.0, 1.0, 1.0, 0.0])
 
@@ -53,23 +59,23 @@ def DrawMachine(machineSize):
 	if profile.getPreference('machine_type') == 'ultimaker':
 		glPushMatrix()
 		glEnable(GL_LIGHTING)
-		glTranslate(100,200,-5)
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.8,0.8,0.8])
-		glLightfv(GL_LIGHT0, GL_AMBIENT, [0.5,0.5,0.5])
+		glTranslate(100, 200, -5)
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.8, 0.8, 0.8])
+		glLightfv(GL_LIGHT0, GL_AMBIENT, [0.5, 0.5, 0.5])
 		glEnable(GL_BLEND)
 		glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR)
-		
+
 		global platformMesh
 		if platformMesh == None:
-			platformMesh = meshLoader.loadMesh(os.path.normpath(os.path.join(os.path.split(__file__)[0], "../images", 'ultimaker_platform.stl')))
+			platformMesh = meshLoader.loadMesh(getPathForMesh('ultimaker_platform.stl'))
 			platformMesh.setRotateMirror(0, False, False, False, False, False)
-		
+
 		DrawMesh(platformMesh)
 		glPopMatrix()
 
 	glDisable(GL_LIGHTING)
 	if False:
-		glColor3f(0.7,0.7,0.7)
+		glColor3f(0.7, 0.7, 0.7)
 		glLineWidth(2)
 		glBegin(GL_LINES)
 		for i in xrange(0, int(machineSize.x), 10):
@@ -79,13 +85,13 @@ def DrawMachine(machineSize):
 			glVertex3f(0, i, 0)
 			glVertex3f(machineSize.x, i, 0)
 		glEnd()
-		
+
 		glEnable(GL_LINE_SMOOTH)
 		glEnable(GL_BLEND)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 		glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
 
-		glColor3f(0.0,0.0,0.0)
+		glColor3f(0.0, 0.0, 0.0)
 		glLineWidth(4)
 		glBegin(GL_LINE_LOOP)
 		glVertex3f(0, 0, 0)
@@ -93,7 +99,7 @@ def DrawMachine(machineSize):
 		glVertex3f(machineSize.x, machineSize.y, 0)
 		glVertex3f(0, machineSize.y, 0)
 		glEnd()
-		
+
 		glLineWidth(2)
 		glBegin(GL_LINE_LOOP)
 		glVertex3f(0, 0, machineSize.z)
@@ -115,47 +121,47 @@ def DrawMachine(machineSize):
 		glDisable(GL_CULL_FACE)
 		glEnable(GL_BLEND)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-		glColor4ub(5,171,231,127)
+		glColor4ub(5, 171, 231, 127)
 		glBegin(GL_QUADS)
 		for x in xrange(0, int(machineSize.x), 20):
 			for y in xrange(0, int(machineSize.y), 20):
 				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
-				glVertex3f(x, min(y+10, machineSize.y), -0.01)
+				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
+				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
+				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
 		for x in xrange(10, int(machineSize.x), 20):
 			for y in xrange(10, int(machineSize.y), 20):
 				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
-				glVertex3f(x, min(y+10, machineSize.y), -0.01)
+				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
+				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
+				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
 		glEnd()
-		glColor4ub(5*8/10,171*8/10,231*8/10,128)
+		glColor4ub(5 * 8 / 10, 171 * 8 / 10, 231 * 8 / 10, 128)
 		glBegin(GL_QUADS)
 		for x in xrange(10, int(machineSize.x), 20):
 			for y in xrange(0, int(machineSize.y), 20):
 				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
-				glVertex3f(x, min(y+10, machineSize.y), -0.01)
+				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
+				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
+				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
 		for x in xrange(0, int(machineSize.x), 20):
 			for y in xrange(10, int(machineSize.y), 20):
 				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), y, -0.01)
-				glVertex3f(min(x+10, machineSize.x), min(y+10, machineSize.y), -0.01)
-				glVertex3f(x, min(y+10, machineSize.y), -0.01)
+				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
+				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
+				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
 		glEnd()
 		glEnable(GL_CULL_FACE)
 
-		glColor4ub(5,171,231,64)
+		glColor4ub(5, 171, 231, 64)
 		glBegin(GL_QUADS)
 		glVertex3f(0, 0, machineSize.z)
 		glVertex3f(0, machineSize.y, machineSize.z)
 		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
 		glVertex3f(machineSize.x, 0, machineSize.z)
 		glEnd()
-		
-		glColor4ub(5,171,231,96)
+
+		glColor4ub(5, 171, 231, 96)
 		glBegin(GL_QUADS)
 		glVertex3f(0, 0, 0)
 		glVertex3f(0, 0, machineSize.z)
@@ -168,7 +174,7 @@ def DrawMachine(machineSize):
 		glVertex3f(machineSize.x, machineSize.y, machineSize.z)
 		glEnd()
 
-		glColor4ub(5,171,231,128)
+		glColor4ub(5, 171, 231, 128)
 		glBegin(GL_QUADS)
 		glVertex3f(0, 0, machineSize.z)
 		glVertex3f(0, 0, 0)
@@ -182,72 +188,73 @@ def DrawMachine(machineSize):
 		glEnd()
 
 		glDisable(GL_BLEND)
-	
+
 	glPushMatrix()
-	glTranslate(5,5,2)
+	glTranslate(5, 5, 2)
 	glLineWidth(2)
-	glColor3f(0.5,0,0)
+	glColor3f(0.5, 0, 0)
 	glBegin(GL_LINES)
-	glVertex3f(0,0,0)
-	glVertex3f(20,0,0)
+	glVertex3f(0, 0, 0)
+	glVertex3f(20, 0, 0)
 	glEnd()
-	glColor3f(0,0.5,0)
+	glColor3f(0, 0.5, 0)
 	glBegin(GL_LINES)
-	glVertex3f(0,0,0)
-	glVertex3f(0,20,0)
+	glVertex3f(0, 0, 0)
+	glVertex3f(0, 20, 0)
 	glEnd()
-	glColor3f(0,0,0.5)
+	glColor3f(0, 0, 0.5)
 	glBegin(GL_LINES)
-	glVertex3f(0,0,0)
-	glVertex3f(0,0,20)
+	glVertex3f(0, 0, 0)
+	glVertex3f(0, 0, 20)
 	glEnd()
 
 	glDisable(GL_DEPTH_TEST)
 	#X
-	glColor3f(1,0,0)
+	glColor3f(1, 0, 0)
 	glPushMatrix()
-	glTranslate(23,0,0)
+	glTranslate(23, 0, 0)
 	noZ = ResetMatrixRotationAndScale()
 	glBegin(GL_LINES)
-	glVertex3f(-0.8,1,0)
-	glVertex3f(0.8,-1,0)
-	glVertex3f(0.8,1,0)
-	glVertex3f(-0.8,-1,0)
+	glVertex3f(-0.8, 1, 0)
+	glVertex3f(0.8, -1, 0)
+	glVertex3f(0.8, 1, 0)
+	glVertex3f(-0.8, -1, 0)
 	glEnd()
 	glPopMatrix()
 
 	#Y
-	glColor3f(0,1,0)
+	glColor3f(0, 1, 0)
 	glPushMatrix()
-	glTranslate(0,23,0)
+	glTranslate(0, 23, 0)
 	ResetMatrixRotationAndScale()
 	glBegin(GL_LINES)
-	glVertex3f(-0.8, 1,0)
-	glVertex3f( 0.0, 0,0)
-	glVertex3f( 0.8, 1,0)
-	glVertex3f(-0.8,-1,0)
+	glVertex3f(-0.8, 1, 0)
+	glVertex3f(0.0, 0, 0)
+	glVertex3f(0.8, 1, 0)
+	glVertex3f(-0.8, -1, 0)
 	glEnd()
 	glPopMatrix()
 
 	#Z
 	if not noZ:
-		glColor3f(0,0,1)
+		glColor3f(0, 0, 1)
 		glPushMatrix()
-		glTranslate(0,0,23)
+		glTranslate(0, 0, 23)
 		ResetMatrixRotationAndScale()
 		glBegin(GL_LINES)
-		glVertex3f(-0.8, 1,0)
-		glVertex3f( 0.8, 1,0)
-		glVertex3f( 0.8, 1,0)
-		glVertex3f(-0.8,-1,0)
-		glVertex3f(-0.8,-1,0)
-		glVertex3f( 0.8,-1,0)
+		glVertex3f(-0.8, 1, 0)
+		glVertex3f(0.8, 1, 0)
+		glVertex3f(0.8, 1, 0)
+		glVertex3f(-0.8, -1, 0)
+		glVertex3f(-0.8, -1, 0)
+		glVertex3f(0.8, -1, 0)
 		glEnd()
 		glPopMatrix()
 
 	glPopMatrix()
 	glEnable(GL_DEPTH_TEST)
-	
+
+
 def ResetMatrixRotationAndScale():
 	matrix = glGetFloatv(GL_MODELVIEW_MATRIX)
 	noZ = False
@@ -263,7 +270,7 @@ def ResetMatrixRotationAndScale():
 	matrix[0][2] = 0.0
 	matrix[1][2] = 0.0
 	matrix[2][2] = 1.0
-	
+
 	if matrix[3][2] != 0.0:
 		matrix[3][0] = matrix[3][0] / (-matrix[3][2] / 100)
 		matrix[3][1] = matrix[3][1] / (-matrix[3][2] / 100)
@@ -274,9 +281,10 @@ def ResetMatrixRotationAndScale():
 		matrix[2][2] = scale2D
 		matrix[3][2] = -100
 		noZ = True
-	
+
 	glLoadMatrixf(matrix)
 	return noZ
+
 
 def DrawBox(vMin, vMax):
 	glBegin(GL_LINE_LOOP)
@@ -303,6 +311,7 @@ def DrawBox(vMin, vMax):
 	glVertex3f(vMin[0], vMax[1], vMax[2])
 	glEnd()
 
+
 def DrawMeshOutline(mesh):
 	glEnable(GL_CULL_FACE)
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -314,8 +323,9 @@ def DrawMeshOutline(mesh):
 	glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount)
 	glPolygonMode(GL_BACK, GL_FILL)
 	glCullFace(GL_BACK)
-	
+
 	glDisableClientState(GL_VERTEX_ARRAY)
+
 
 def DrawMesh(mesh):
 	glEnable(GL_CULL_FACE)
@@ -325,26 +335,27 @@ def DrawMesh(mesh):
 	glNormalPointer(GL_FLOAT, 0, mesh.normal)
 
 	#Odd, drawing in batchs is a LOT faster then drawing it all at once.
-	batchSize = 999	#Warning, batchSize needs to be dividable by 3
+	batchSize = 999    #Warning, batchSize needs to be dividable by 3
 	extraStartPos = int(mesh.vertexCount / batchSize) * batchSize
 	extraCount = mesh.vertexCount - extraStartPos
-	
+
 	glCullFace(GL_BACK)
 	for i in xrange(0, int(mesh.vertexCount / batchSize)):
-		glDrawArrays(GL_TRIANGLES, i*batchSize, batchSize)
+		glDrawArrays(GL_TRIANGLES, i * batchSize, batchSize)
 	glDrawArrays(GL_TRIANGLES, extraStartPos, extraCount)
-	
+
 	glCullFace(GL_FRONT)
 	glNormalPointer(GL_FLOAT, 0, mesh.invNormal)
 	for i in xrange(0, int(mesh.vertexCount / batchSize)):
-		glDrawArrays(GL_TRIANGLES, i*batchSize, batchSize)
+		glDrawArrays(GL_TRIANGLES, i * batchSize, batchSize)
 	extraStartPos = int(mesh.vertexCount / batchSize) * batchSize
 	extraCount = mesh.vertexCount - extraStartPos
 	glDrawArrays(GL_TRIANGLES, extraStartPos, extraCount)
 	glCullFace(GL_BACK)
-	
+
 	glDisableClientState(GL_VERTEX_ARRAY)
 	glDisableClientState(GL_NORMAL_ARRAY);
+
 
 def DrawMeshSteep(mesh, angle):
 	cosAngle = math.sin(angle / 180.0 * math.pi)
@@ -352,52 +363,53 @@ def DrawMeshSteep(mesh, angle):
 	glDepthFunc(GL_EQUAL)
 	for i in xrange(0, int(mesh.vertexCount), 3):
 		if mesh.normal[i][2] < -0.999999:
-			if mesh.vertexes[i+0][2] > 0.01:
-				glColor3f(0.5,0,0)
+			if mesh.vertexes[i + 0][2] > 0.01:
+				glColor3f(0.5, 0, 0)
 				glBegin(GL_TRIANGLES)
-				glVertex3f(mesh.vertexes[i+0][0], mesh.vertexes[i+0][1], mesh.vertexes[i+0][2])
-				glVertex3f(mesh.vertexes[i+1][0], mesh.vertexes[i+1][1], mesh.vertexes[i+1][2])
-				glVertex3f(mesh.vertexes[i+2][0], mesh.vertexes[i+2][1], mesh.vertexes[i+2][2])
+				glVertex3f(mesh.vertexes[i + 0][0], mesh.vertexes[i + 0][1], mesh.vertexes[i + 0][2])
+				glVertex3f(mesh.vertexes[i + 1][0], mesh.vertexes[i + 1][1], mesh.vertexes[i + 1][2])
+				glVertex3f(mesh.vertexes[i + 2][0], mesh.vertexes[i + 2][1], mesh.vertexes[i + 2][2])
 				glEnd()
 		elif mesh.normal[i][2] < -cosAngle:
-			glColor3f(-mesh.normal[i][2],0,0)
+			glColor3f(-mesh.normal[i][2], 0, 0)
 			glBegin(GL_TRIANGLES)
-			glVertex3f(mesh.vertexes[i+0][0], mesh.vertexes[i+0][1], mesh.vertexes[i+0][2])
-			glVertex3f(mesh.vertexes[i+1][0], mesh.vertexes[i+1][1], mesh.vertexes[i+1][2])
-			glVertex3f(mesh.vertexes[i+2][0], mesh.vertexes[i+2][1], mesh.vertexes[i+2][2])
+			glVertex3f(mesh.vertexes[i + 0][0], mesh.vertexes[i + 0][1], mesh.vertexes[i + 0][2])
+			glVertex3f(mesh.vertexes[i + 1][0], mesh.vertexes[i + 1][1], mesh.vertexes[i + 1][2])
+			glVertex3f(mesh.vertexes[i + 2][0], mesh.vertexes[i + 2][1], mesh.vertexes[i + 2][2])
 			glEnd()
 		elif mesh.normal[i][2] > 0.999999:
-			if mesh.vertexes[i+0][2] > 0.01:
-				glColor3f(0.5,0,0)
+			if mesh.vertexes[i + 0][2] > 0.01:
+				glColor3f(0.5, 0, 0)
 				glBegin(GL_TRIANGLES)
-				glVertex3f(mesh.vertexes[i+0][0], mesh.vertexes[i+0][1], mesh.vertexes[i+0][2])
-				glVertex3f(mesh.vertexes[i+2][0], mesh.vertexes[i+2][1], mesh.vertexes[i+2][2])
-				glVertex3f(mesh.vertexes[i+1][0], mesh.vertexes[i+1][1], mesh.vertexes[i+1][2])
+				glVertex3f(mesh.vertexes[i + 0][0], mesh.vertexes[i + 0][1], mesh.vertexes[i + 0][2])
+				glVertex3f(mesh.vertexes[i + 2][0], mesh.vertexes[i + 2][1], mesh.vertexes[i + 2][2])
+				glVertex3f(mesh.vertexes[i + 1][0], mesh.vertexes[i + 1][1], mesh.vertexes[i + 1][2])
 				glEnd()
 		elif mesh.normal[i][2] > cosAngle:
-			glColor3f(mesh.normal[i][2],0,0)
+			glColor3f(mesh.normal[i][2], 0, 0)
 			glBegin(GL_TRIANGLES)
-			glVertex3f(mesh.vertexes[i+0][0], mesh.vertexes[i+0][1], mesh.vertexes[i+0][2])
-			glVertex3f(mesh.vertexes[i+2][0], mesh.vertexes[i+2][1], mesh.vertexes[i+2][2])
-			glVertex3f(mesh.vertexes[i+1][0], mesh.vertexes[i+1][1], mesh.vertexes[i+1][2])
+			glVertex3f(mesh.vertexes[i + 0][0], mesh.vertexes[i + 0][1], mesh.vertexes[i + 0][2])
+			glVertex3f(mesh.vertexes[i + 2][0], mesh.vertexes[i + 2][1], mesh.vertexes[i + 2][2])
+			glVertex3f(mesh.vertexes[i + 1][0], mesh.vertexes[i + 1][1], mesh.vertexes[i + 1][2])
 			glEnd()
 	glDepthFunc(GL_LESS)
+
 
 def DrawGCodeLayer(layer):
 	filamentRadius = profile.getProfileSettingFloat('filament_diameter') / 2
 	filamentArea = math.pi * filamentRadius * filamentRadius
 	lineWidth = profile.getProfileSettingFloat('nozzle_size') / 2 / 10
-	
+
 	fillCycle = 0
-	fillColorCycle = [[0.5,0.5,0.0],[0.0,0.5,0.5],[0.5,0.0,0.5]]
-	moveColor = [0,0,1]
-	retractColor = [1,0,0.5]
-	supportColor = [0,1,1]
-	extrudeColor = [1,0,0]
-	innerWallColor = [0,1,0]
-	skirtColor = [0,0.5,0.5]
+	fillColorCycle = [[0.5, 0.5, 0.0], [0.0, 0.5, 0.5], [0.5, 0.0, 0.5]]
+	moveColor = [0, 0, 1]
+	retractColor = [1, 0, 0.5]
+	supportColor = [0, 1, 1]
+	extrudeColor = [1, 0, 0]
+	innerWallColor = [0, 1, 0]
+	skirtColor = [0, 0.5, 0.5]
 	prevPathWasRetract = False
-	
+
 	glDisable(GL_CULL_FACE)
 	for path in layer:
 		if path.type == 'move':
@@ -420,13 +432,13 @@ def DrawGCodeLayer(layer):
 			else:
 				c = extrudeColor
 		if path.type == 'retract':
-			c = [0,1,1]
+			c = [0, 1, 1]
 		if path.type == 'extrude':
 			drawLength = 0.0
 			prevNormal = None
-			for i in xrange(0, len(path.list)-1):
+			for i in xrange(0, len(path.list) - 1):
 				v0 = path.list[i]
-				v1 = path.list[i+1]
+				v1 = path.list[i + 1]
 
 				# Calculate line width from ePerDistance (needs layer thickness and filament diameter)
 				dist = (v0 - v1).vsize()
@@ -435,7 +447,7 @@ def DrawGCodeLayer(layer):
 					lineWidth = extrusionMMperDist * filamentArea / path.layerThickness / 2 * v1.extrudeAmountMultiply
 
 				drawLength += (v0 - v1).vsize()
-				normal = (v0 - v1).cross(util3d.Vector3(0,0,1))
+				normal = (v0 - v1).cross(util3d.Vector3(0, 0, 1))
 				normal.normalize()
 
 				vv2 = v0 + normal * lineWidth
@@ -461,13 +473,13 @@ def DrawGCodeLayer(layer):
 					glVertex3f(vv4.x, vv4.y, vv4.z - zOffset)
 					glVertex3f(prevVv3.x, prevVv3.y, prevVv3.z - zOffset)
 					glVertex3f(v0.x, v0.y, v0.z - zOffset)
-					
+
 					glVertex3f(vv0.x, vv0.y, vv0.z - zOffset)
 					glVertex3f(vv5.x, vv5.y, vv5.z - zOffset)
 					glVertex3f(prevVv1.x, prevVv1.y, prevVv1.z - zOffset)
 					glVertex3f(v0.x, v0.y, v0.z - zOffset)
 					glEnd()
-					
+
 				prevNormal = normal
 				prevVv1 = vv1
 				prevVv3 = vv3

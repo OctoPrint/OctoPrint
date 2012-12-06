@@ -1,28 +1,23 @@
+# coding=utf-8
+from __future__ import absolute_import
 from __future__ import division
-
-import os, sys
 
 import wx
 from wx.lib import buttons
 
 from util import profile
+from util.resources import getPathForImage
+
 
 #######################################################
 # toolbarUtil contains help classes and functions for
 # toolbar buttons.
 #######################################################
 
-def getBitmapImage(filename):
-	#The frozen executable has the script files in a zip, so we need to exit another level to get to our images.
-	if hasattr(sys, 'frozen'):
-		return wx.Bitmap(os.path.normpath(os.path.join(os.path.split(__file__)[0], "../../images", filename)))
-	else:
-		return wx.Bitmap(os.path.normpath(os.path.join(os.path.split(__file__)[0], "../images", filename)))
-
 class Toolbar(wx.ToolBar):
 	def __init__(self, parent):
 		super(Toolbar, self).__init__(parent, -1, style=wx.TB_HORIZONTAL | wx.NO_BORDER)
-		self.SetToolBitmapSize( ( 21, 21 ) )
+		self.SetToolBitmapSize(( 21, 21 ))
 
 		if not hasattr(parent, 'popup'):
 			# Create popup window
@@ -30,14 +25,14 @@ class Toolbar(wx.ToolBar):
 			parent.popup.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
 			parent.popup.text = wx.StaticText(parent.popup, -1, '')
 			parent.popup.sizer = wx.BoxSizer()
-			parent.popup.sizer.Add(parent.popup.text, flag=wx.EXPAND|wx.ALL, border=1)
+			parent.popup.sizer.Add(parent.popup.text, flag=wx.EXPAND | wx.ALL, border=1)
 			parent.popup.SetSizer(parent.popup.sizer)
 			parent.popup.owner = None
 
 	def OnPopupDisplay(self, e):
 		self.UpdatePopup(e.GetEventObject())
 		self.GetParent().popup.Show(True)
-	
+
 	def OnPopupHide(self, e):
 		if self.GetParent().popup.owner == e.GetEventObject():
 			self.GetParent().popup.Show(False)
@@ -50,13 +45,14 @@ class Toolbar(wx.ToolBar):
 		popup.Fit();
 		x, y = control.ClientToScreenXY(0, 0)
 		sx, sy = control.GetSizeTuple()
-		popup.SetPosition((x, y+sy))
+		popup.SetPosition((x, y + sy))
+
 
 class ToggleButton(buttons.GenBitmapToggleButton):
 	def __init__(self, parent, profileSetting, bitmapFilenameOn, bitmapFilenameOff,
-				 helpText='', id=-1, callback=None, size=(20,20)):
-		self.bitmapOn = getBitmapImage(bitmapFilenameOn)
-		self.bitmapOff = getBitmapImage(bitmapFilenameOff)
+	             helpText='', id=-1, callback=None, size=(20, 20)):
+		self.bitmapOn = wx.Bitmap(getPathForImage(bitmapFilenameOn))
+		self.bitmapOff = wx.Bitmap(getPathForImage(bitmapFilenameOff))
 
 		super(ToggleButton, self).__init__(parent, id, self.bitmapOff, size=size)
 
@@ -75,7 +71,7 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
-		
+
 		parent.AddControl(self)
 
 	def SetBitmap(self, boolValue):
@@ -117,11 +113,12 @@ class ToggleButton(buttons.GenBitmapToggleButton):
 		self.Refresh()
 		event.Skip()
 
+
 class RadioButton(buttons.GenBitmapButton):
 	def __init__(self, parent, group, bitmapFilenameOn, bitmapFilenameOff,
-				 helpText='', id=-1, callback=None, size=(20,20)):
-		self.bitmapOn = getBitmapImage(bitmapFilenameOn)
-		self.bitmapOff = getBitmapImage(bitmapFilenameOff)
+	             helpText='', id=-1, callback=None, size=(20, 20)):
+		self.bitmapOn = wx.Bitmap(getPathForImage(bitmapFilenameOn))
+		self.bitmapOff = wx.Bitmap(getPathForImage(bitmapFilenameOff))
 
 		super(RadioButton, self).__init__(parent, id, self.bitmapOff, size=size)
 
@@ -138,10 +135,10 @@ class RadioButton(buttons.GenBitmapButton):
 
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
-		
+
 		if len(group) == 1:
 			self.SetValue(True)
-		
+
 		parent.AddControl(self)
 
 	def SetBitmap(self, boolValue):
@@ -158,7 +155,7 @@ class RadioButton(buttons.GenBitmapButton):
 			for other in self.group:
 				if other != self:
 					other.SetValue(False)
-	
+
 	def GetValue(self):
 		return self._value
 
@@ -179,10 +176,11 @@ class RadioButton(buttons.GenBitmapButton):
 		self.Refresh()
 		event.Skip()
 
+
 class NormalButton(buttons.GenBitmapButton):
 	def __init__(self, parent, callback, bitmapFilename,
-				 helpText='', id=-1, size=(20,20)):
-		self.bitmap = getBitmapImage(bitmapFilename)
+	             helpText='', id=-1, size=(20, 20)):
+		self.bitmap = wx.Bitmap(getPathForImage(bitmapFilename))
 		super(NormalButton, self).__init__(parent, id, self.bitmap, size=size)
 
 		self.helpText = helpText
@@ -193,9 +191,9 @@ class NormalButton(buttons.GenBitmapButton):
 
 		self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
-		
+
 		self.Bind(wx.EVT_BUTTON, self.OnButton)
-		
+
 		parent.AddControl(self)
 
 	def OnButton(self, event):

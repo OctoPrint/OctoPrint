@@ -1,7 +1,11 @@
+# coding=utf-8
 from __future__ import absolute_import
-import __init__
 
-import wx, os, platform, types, webbrowser, threading, time, re
+import webbrowser
+import threading
+import time
+
+import wx
 import wx.wizard
 
 from gui import firmwareInstall
@@ -9,30 +13,36 @@ from gui import toolbarUtil
 from gui import printWindow
 from util import machineCom
 from util import profile
+from util.resources import getPathForImage
 
 class InfoBox(wx.Panel):
 	def __init__(self, parent):
 		super(InfoBox, self).__init__(parent)
 		self.SetBackgroundColour('#FFFF80')
-		
+
 		self.sizer = wx.GridBagSizer(5, 5)
 		self.SetSizer(self.sizer)
-		
-		self.attentionBitmap = toolbarUtil.getBitmapImage('attention.png')
-		self.errorBitmap = toolbarUtil.getBitmapImage('error.png')
-		self.readyBitmap = toolbarUtil.getBitmapImage('ready.png')
-		self.busyBitmap = [toolbarUtil.getBitmapImage('busy-0.png'), toolbarUtil.getBitmapImage('busy-1.png'), toolbarUtil.getBitmapImage('busy-2.png'), toolbarUtil.getBitmapImage('busy-3.png')]
-		
+
+		self.attentionBitmap = wx.Bitmap(getPathForImage('attention.png'))
+		self.errorBitmap = wx.Bitmap(getPathForImage('error.png'))
+		self.readyBitmap = wx.Bitmap(getPathForImage('ready.png'))
+		self.busyBitmap = [
+			wx.Bitmap(getPathForImage('busy-0.png')),
+			wx.Bitmap(getPathForImage('busy-1.png')),
+			wx.Bitmap(getPathForImage('busy-2.png')),
+			wx.Bitmap(getPathForImage('busy-3.png'))
+		]
+
 		self.bitmap = wx.StaticBitmap(self, -1, wx.EmptyBitmapRGBA(24, 24, red=255, green=255, blue=255, alpha=1))
 		self.text = wx.StaticText(self, -1, '')
 		self.extraInfoButton = wx.Button(self, -1, 'i', style=wx.BU_EXACTFIT)
-		self.sizer.Add(self.bitmap, pos=(0,0), flag=wx.ALL, border=5)
-		self.sizer.Add(self.text, pos=(0,1), flag=wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, border=5)
+		self.sizer.Add(self.bitmap, pos=(0, 0), flag=wx.ALL, border=5)
+		self.sizer.Add(self.text, pos=(0, 1), flag=wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, border=5)
 		self.sizer.Add(self.extraInfoButton, pos=(0,2), flag=wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 		self.sizer.AddGrowableCol(1)
-		
+
 		self.extraInfoButton.Show(False)
-		
+
 		self.extraInfoUrl = ''
 		self.busyState = None
 		self.timer = wx.Timer(self)
@@ -54,18 +64,21 @@ class InfoBox(wx.Panel):
 		self.Layout()
 		self.SetErrorIndicator()
 		self.Refresh()
-	
+
 	def SetAttention(self, info):
 		self.SetBackgroundColour('#FFFF80')
 		self.text.SetLabel(info)
 		self.extraInfoButton.Show(False)
 		self.SetAttentionIndicator()
 		self.Refresh()
-	
+
 	def SetBusyIndicator(self):
 		self.busyState = 0
 		self.bitmap.SetBitmap(self.busyBitmap[self.busyState])
-	
+
+	def doExtraInfo(self, e):
+		webbrowser.open(self.extraInfoUrl)
+
 	def doBusyUpdate(self, e):
 		if self.busyState == None:
 			return
@@ -73,21 +86,19 @@ class InfoBox(wx.Panel):
 		if self.busyState >= len(self.busyBitmap):
 			self.busyState = 0
 		self.bitmap.SetBitmap(self.busyBitmap[self.busyState])
-	
-	def doExtraInfo(self, e):
-		webbrowser.open(self.extraInfoUrl)
-	
+
 	def SetReadyIndicator(self):
 		self.busyState = None
 		self.bitmap.SetBitmap(self.readyBitmap)
-	
+
 	def SetErrorIndicator(self):
 		self.busyState = None
 		self.bitmap.SetBitmap(self.errorBitmap)
-	
+
 	def SetAttentionIndicator(self):
 		self.busyState = None
 		self.bitmap.SetBitmap(self.attentionBitmap)
+
 
 class InfoPage(wx.wizard.WizardPageSimple):
 	def __init__(self, parent, title):
@@ -99,52 +110,52 @@ class InfoPage(wx.wizard.WizardPageSimple):
 
 		title = wx.StaticText(self, -1, title)
 		title.SetFont(wx.Font(18, wx.SWISS, wx.NORMAL, wx.BOLD))
-		sizer.Add(title, pos=(0, 0), span=(1,2), flag=wx.ALIGN_CENTRE|wx.ALL)
-		sizer.Add(wx.StaticLine(self, -1), pos=(1,0), span=(1,2), flag=wx.EXPAND|wx.ALL)
+		sizer.Add(title, pos=(0, 0), span=(1, 2), flag=wx.ALIGN_CENTRE | wx.ALL)
+		sizer.Add(wx.StaticLine(self, -1), pos=(1, 0), span=(1, 2), flag=wx.EXPAND | wx.ALL)
 		sizer.AddGrowableCol(1)
-		
+
 		self.rowNr = 2
-	
-	def AddText(self,info):
+
+	def AddText(self, info):
 		text = wx.StaticText(self, -1, info)
-		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT|wx.RIGHT)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1, 2), flag=wx.LEFT | wx.RIGHT)
 		self.rowNr += 1
 		return text
-	
+
 	def AddSeperator(self):
-		self.GetSizer().Add(wx.StaticLine(self, -1), pos=(self.rowNr, 0), span=(1,2), flag=wx.EXPAND|wx.ALL)
+		self.GetSizer().Add(wx.StaticLine(self, -1), pos=(self.rowNr, 0), span=(1, 2), flag=wx.EXPAND | wx.ALL)
 		self.rowNr += 1
-	
+
 	def AddHiddenSeperator(self):
 		self.AddText('')
 
 	def AddInfoBox(self):
 		infoBox = InfoBox(self)
-		self.GetSizer().Add(infoBox, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT|wx.RIGHT|wx.EXPAND)
+		self.GetSizer().Add(infoBox, pos=(self.rowNr, 0), span=(1, 2), flag=wx.LEFT | wx.RIGHT | wx.EXPAND)
 		self.rowNr += 1
 		return infoBox
-	
-	def AddRadioButton(self, label, style = 0):
+
+	def AddRadioButton(self, label, style=0):
 		radio = wx.RadioButton(self, -1, label, style=style)
-		self.GetSizer().Add(radio, pos=(self.rowNr, 0), span=(1,2), flag=wx.EXPAND|wx.ALL)
+		self.GetSizer().Add(radio, pos=(self.rowNr, 0), span=(1, 2), flag=wx.EXPAND | wx.ALL)
 		self.rowNr += 1
 		return radio
 
-	def AddCheckbox(self, label, checked = False):
+	def AddCheckbox(self, label, checked=False):
 		check = wx.CheckBox(self, -1)
 		text = wx.StaticText(self, -1, label)
 		check.SetValue(checked)
-		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT|wx.RIGHT)
-		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1,2), flag=wx.ALL)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1, 1), flag=wx.LEFT | wx.RIGHT)
+		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1, 2), flag=wx.ALL)
 		self.rowNr += 1
 		return check
-	
+
 	def AddButton(self, label):
 		button = wx.Button(self, -1, label)
-		self.GetSizer().Add(button, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT)
+		self.GetSizer().Add(button, pos=(self.rowNr, 0), span=(1, 2), flag=wx.LEFT)
 		self.rowNr += 1
 		return button
-	
+
 	def AddDualButton(self, label1, label2):
 		button1 = wx.Button(self, -1, label1)
 		self.GetSizer().Add(button1, pos=(self.rowNr, 0), flag=wx.RIGHT)
@@ -152,48 +163,49 @@ class InfoPage(wx.wizard.WizardPageSimple):
 		self.GetSizer().Add(button2, pos=(self.rowNr, 1))
 		self.rowNr += 1
 		return button1, button2
-	
+
 	def AddTextCtrl(self, value):
 		ret = wx.TextCtrl(self, -1, value)
-		self.GetSizer().Add(ret, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT)
+		self.GetSizer().Add(ret, pos=(self.rowNr, 0), span=(1, 2), flag=wx.LEFT)
 		self.rowNr += 1
 		return ret
 
 	def AddLabelTextCtrl(self, info, value):
 		text = wx.StaticText(self, -1, info)
 		ret = wx.TextCtrl(self, -1, value)
-		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT)
-		self.GetSizer().Add(ret, pos=(self.rowNr, 1), span=(1,1), flag=wx.LEFT)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1, 1), flag=wx.LEFT)
+		self.GetSizer().Add(ret, pos=(self.rowNr, 1), span=(1, 1), flag=wx.LEFT)
 		self.rowNr += 1
 		return ret
-	
+
 	def AddTextCtrlButton(self, value, buttonText):
 		text = wx.TextCtrl(self, -1, value)
 		button = wx.Button(self, -1, buttonText)
-		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT)
-		self.GetSizer().Add(button, pos=(self.rowNr, 1), span=(1,1), flag=wx.LEFT)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1, 1), flag=wx.LEFT)
+		self.GetSizer().Add(button, pos=(self.rowNr, 1), span=(1, 1), flag=wx.LEFT)
 		self.rowNr += 1
 		return text, button
 
 	def AddBitmap(self, bitmap):
 		bitmap = wx.StaticBitmap(self, -1, bitmap)
-		self.GetSizer().Add(bitmap, pos=(self.rowNr, 0), span=(1,2), flag=wx.LEFT|wx.RIGHT)
+		self.GetSizer().Add(bitmap, pos=(self.rowNr, 0), span=(1, 2), flag=wx.LEFT | wx.RIGHT)
 		self.rowNr += 1
 		return bitmap
 
 	def AddCheckmark(self, label, bitmap):
 		check = wx.StaticBitmap(self, -1, bitmap)
 		text = wx.StaticText(self, -1, label)
-		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1,1), flag=wx.LEFT|wx.RIGHT)
-		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1,1), flag=wx.ALL)
+		self.GetSizer().Add(text, pos=(self.rowNr, 0), span=(1, 1), flag=wx.LEFT | wx.RIGHT)
+		self.GetSizer().Add(check, pos=(self.rowNr, 1), span=(1, 1), flag=wx.ALL)
 		self.rowNr += 1
 		return check
-		
+
 	def AllowNext(self):
 		return True
-	
+
 	def StoreData(self):
 		pass
+
 
 class FirstInfoPage(InfoPage):
 	def __init__(self, parent):
@@ -204,13 +216,16 @@ class FirstInfoPage(InfoPage):
 		self.AddText('* Configure Cura for your machine')
 		self.AddText('* Upgrade your firmware')
 		self.AddText('* Check if your machine is working safely')
+
 		#self.AddText('* Calibrate your machine')
 		#self.AddText('* Do your first print')
+
 
 class RepRapInfoPage(InfoPage):
 	def __init__(self, parent):
 		super(RepRapInfoPage, self).__init__(parent, "RepRap information")
-		self.AddText('RepRap machines are vastly different, and there is no\ndefault configuration in Cura for any of them.')
+		self.AddText(
+			'RepRap machines are vastly different, and there is no\ndefault configuration in Cura for any of them.')
 		self.AddText('If you like a default profile for your machine added,\nthen make an issue on github.')
 		self.AddSeperator()
 		self.AddText('You will have to manually install Marlin or Sprinter firmware.')
@@ -229,6 +244,7 @@ class RepRapInfoPage(InfoPage):
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSettingFloat('nozzle_size')) * 2)
 		profile.putPreference('has_heated_bed', str(self.heatedBed.GetValue()))
 
+
 class MachineSelectPage(InfoPage):
 	def __init__(self, parent):
 		super(MachineSelectPage, self).__init__(parent, "Select your machine")
@@ -239,13 +255,13 @@ class MachineSelectPage(InfoPage):
 		self.UltimakerRadio.Bind(wx.EVT_RADIOBUTTON, self.OnUltimakerSelect)
 		self.OtherRadio = self.AddRadioButton("Other (Ex: RepRap)")
 		self.OtherRadio.Bind(wx.EVT_RADIOBUTTON, self.OnOtherSelect)
-		
+
 	def OnUltimakerSelect(self, e):
 		wx.wizard.WizardPageSimple.Chain(self, self.GetParent().ultimakerFirmwareUpgradePage)
-		
+
 	def OnOtherSelect(self, e):
 		wx.wizard.WizardPageSimple.Chain(self, self.GetParent().repRapInfoPage)
-	
+
 	def StoreData(self):
 		if self.UltimakerRadio.GetValue():
 			profile.putPreference('machine_width', '205')
@@ -261,6 +277,7 @@ class MachineSelectPage(InfoPage):
 			profile.putPreference('startMode', 'Normal')
 			profile.putProfileSetting('nozzle_size', '0.5')
 		profile.putProfileSetting('wall_thickness', float(profile.getProfileSetting('nozzle_size')) * 2)
+
 
 class SelectParts(InfoPage):
 	def __init__(self, parent):
@@ -283,14 +300,18 @@ class SelectParts(InfoPage):
 		if getPreference('ultimaker_extruder_upgrade') == 'True':
 			putProfileSetting('retraction_enable', 'True')
 
+
 class FirmwareUpgradePage(InfoPage):
 	def __init__(self, parent):
 		super(FirmwareUpgradePage, self).__init__(parent, "Upgrade Ultimaker Firmware")
-		self.AddText('Firmware is the piece of software running directly on your 3D printer.\nThis firmware controls the step motors, regulates the temperature\nand ultimately makes your printer work.')
+		self.AddText(
+			'Firmware is the piece of software running directly on your 3D printer.\nThis firmware controls the step motors, regulates the temperature\nand ultimately makes your printer work.')
 		self.AddHiddenSeperator()
-		self.AddText('The firmware shipping with new Ultimakers works, but upgrades\nhave been made to make better prints, and make calibration easier.')
+		self.AddText(
+			'The firmware shipping with new Ultimakers works, but upgrades\nhave been made to make better prints, and make calibration easier.')
 		self.AddHiddenSeperator()
-		self.AddText('Cura requires these new features and thus\nyour firmware will most likely need to be upgraded.\nYou will get the chance to do so now.')
+		self.AddText(
+			'Cura requires these new features and thus\nyour firmware will most likely need to be upgraded.\nYou will get the chance to do so now.')
 		upgradeButton, skipUpgradeButton = self.AddDualButton('Upgrade to Marlin firmware', 'Skip upgrade')
 		upgradeButton.Bind(wx.EVT_BUTTON, self.OnUpgradeClick)
 		skipUpgradeButton.Bind(wx.EVT_BUTTON, self.OnSkipClick)
@@ -300,36 +321,38 @@ class FirmwareUpgradePage(InfoPage):
 		self.AddText('* Have other changes in the firmware')
 		button = self.AddButton('Goto this page for a custom firmware')
 		button.Bind(wx.EVT_BUTTON, self.OnUrlClick)
-	
+
 	def AllowNext(self):
 		return False
-	
+
 	def OnUpgradeClick(self, e):
 		if firmwareInstall.InstallFirmware():
 			self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
-		
+
 	def OnSkipClick(self, e):
 		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
-	
+
 	def OnUrlClick(self, e):
 		webbrowser.open('http://daid.mine.nu/~daid/marlin_build/')
+
 
 class UltimakerCheckupPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCheckupPage, self).__init__(parent, "Ultimaker Checkup")
 
-		self.checkBitmap = toolbarUtil.getBitmapImage('checkmark.png')
-		self.crossBitmap = toolbarUtil.getBitmapImage('cross.png')
-		self.unknownBitmap = toolbarUtil.getBitmapImage('question.png')
-		self.endStopNoneBitmap = toolbarUtil.getBitmapImage('endstop_none.png')
-		self.endStopXMinBitmap = toolbarUtil.getBitmapImage('endstop_xmin.png')
-		self.endStopXMaxBitmap = toolbarUtil.getBitmapImage('endstop_xmax.png')
-		self.endStopYMinBitmap = toolbarUtil.getBitmapImage('endstop_ymin.png')
-		self.endStopYMaxBitmap = toolbarUtil.getBitmapImage('endstop_ymax.png')
-		self.endStopZMinBitmap = toolbarUtil.getBitmapImage('endstop_zmin.png')
-		self.endStopZMaxBitmap = toolbarUtil.getBitmapImage('endstop_zmax.png')
+		self.checkBitmap = wx.Bitmap(getPathForImage('checkmark.png'))
+		self.crossBitmap = wx.Bitmap(getPathForImage('cross.png'))
+		self.unknownBitmap = wx.Bitmap(getPathForImage('question.png'))
+		self.endStopNoneBitmap = wx.Bitmap(getPathForImage('endstop_none.png'))
+		self.endStopXMinBitmap = wx.Bitmap(getPathForImage('endstop_xmin.png'))
+		self.endStopXMaxBitmap = wx.Bitmap(getPathForImage('endstop_xmax.png'))
+		self.endStopYMinBitmap = wx.Bitmap(getPathForImage('endstop_ymin.png'))
+		self.endStopYMaxBitmap = wx.Bitmap(getPathForImage('endstop_ymax.png'))
+		self.endStopZMinBitmap = wx.Bitmap(getPathForImage('endstop_zmin.png'))
+		self.endStopZMaxBitmap = wx.Bitmap(getPathForImage('endstop_zmax.png'))
 
-		self.AddText('It is a good idea to do a few sanity checks now on your Ultimaker.\nYou can skip these if you know your machine is functional.')
+		self.AddText(
+			'It is a good idea to do a few sanity checks now on your Ultimaker.\nYou can skip these if you know your machine is functional.')
 		b1, b2 = self.AddDualButton('Run checks', 'Skip checks')
 		b1.Bind(wx.EVT_BUTTON, self.OnCheckClick)
 		b2.Bind(wx.EVT_BUTTON, self.OnSkipClick)
@@ -352,21 +375,21 @@ class UltimakerCheckupPage(InfoPage):
 		self.yMaxStop = False
 		self.zMinStop = False
 		self.zMaxStop = False
-		
+
 		self.Bind(wx.EVT_BUTTON, self.OnErrorLog, self.errorLogButton)
 
 	def __del__(self):
 		if self.comm != None:
 			self.comm.close()
-	
+
 	def AllowNext(self):
 		self.endstopBitmap.Show(False)
 		return False
-	
+
 	def OnSkipClick(self, e):
 		self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
-	
-	def OnCheckClick(self, e = None):
+
+	def OnCheckClick(self, e=None):
 		self.errorLogButton.Show(False)
 		if self.comm != None:
 			self.comm.close()
@@ -381,7 +404,7 @@ class UltimakerCheckupPage(InfoPage):
 		self.stopState.SetBitmap(self.unknownBitmap)
 		self.checkupState = 0
 		self.comm = machineCom.MachineCom(callbackObject=self)
-	
+
 	def OnErrorLog(self, e):
 		printWindow.LogWindow('\n'.join(self.comm.getLog()))
 
@@ -447,7 +470,7 @@ class UltimakerCheckupPage(InfoPage):
 			wx.CallAfter(self.Layout)
 		else:
 			wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
-	
+
 	def mcMessage(self, message):
 		if self.checkupState >= 3 and self.checkupState < 10 and 'x_min' in message:
 			for data in message.split(' '):
@@ -466,7 +489,7 @@ class UltimakerCheckupPage(InfoPage):
 					if tag == 'z_max':
 						self.zMaxStop = (value == 'H')
 			self.comm.sendCommand('M119')
-			
+
 			if self.checkupState == 3:
 				if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
 					self.checkupState = 4
@@ -509,14 +532,15 @@ class UltimakerCheckupPage(InfoPage):
 
 	def mcProgress(self, lineNr):
 		pass
-	
+
 	def mcZChange(self, newZ):
 		pass
+
 
 class UltimakerCalibrationPage(InfoPage):
 	def __init__(self, parent):
 		super(UltimakerCalibrationPage, self).__init__(parent, "Ultimaker Calibration")
-		
+
 		self.AddText("Your Ultimaker requires some calibration.")
 		self.AddText("This calibration is needed for a proper extrusion amount.")
 		self.AddSeperator()
@@ -528,11 +552,13 @@ class UltimakerCalibrationPage(InfoPage):
 		self.AddSeperator()
 		self.AddText("First we need the diameter of your filament:")
 		self.filamentDiameter = self.AddTextCtrl(profile.getProfileSetting('filament_diameter'))
-		self.AddText("If you do not own digital Calipers that can measure\nat least 2 digits then use 2.89mm.\nWhich is the average diameter of most filament.")
+		self.AddText(
+			"If you do not own digital Calipers that can measure\nat least 2 digits then use 2.89mm.\nWhich is the average diameter of most filament.")
 		self.AddText("Note: This value can be changed later at any time.")
 
 	def StoreData(self):
 		profile.putProfileSetting('filament_diameter', self.filamentDiameter.GetValue())
+
 
 class UltimakerCalibrateStepsPerEPage(InfoPage):
 	def __init__(self, parent):
@@ -540,7 +566,7 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 
 		if profile.getPreference('steps_per_e') == '0':
 			profile.putPreference('steps_per_e', '865.888')
-		
+
 		self.AddText("Calibrating the Steps Per E requires some manual actions.")
 		self.AddText("First remove any filament from your machine.")
 		self.AddText("Next put in your filament so the tip is aligned with the\ntop of the extruder drive.")
@@ -552,20 +578,21 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		self.stepsPerEInput = self.AddTextCtrl(profile.getPreference('steps_per_e'))
 		self.AddText("You can repeat these steps to get better calibration.")
 		self.AddSeperator()
-		self.AddText("If you still have filament in your printer which needs\nheat to remove, press the heat up button below:")
+		self.AddText(
+			"If you still have filament in your printer which needs\nheat to remove, press the heat up button below:")
 		self.heatButton = self.AddButton("Heatup for filament removal")
-		
+
 		self.saveLengthButton.Bind(wx.EVT_BUTTON, self.OnSaveLengthClick)
 		self.extrudeButton.Bind(wx.EVT_BUTTON, self.OnExtrudeClick)
 		self.heatButton.Bind(wx.EVT_BUTTON, self.OnHeatClick)
-	
+
 	def OnSaveLengthClick(self, e):
 		currentEValue = float(self.stepsPerEInput.GetValue())
 		realExtrudeLength = float(self.lengthInput.GetValue())
 		newEValue = currentEValue * 100 / realExtrudeLength
 		self.stepsPerEInput.SetValue(str(newEValue))
 		self.lengthInput.SetValue("100")
-	
+
 	def OnExtrudeClick(self, e):
 		threading.Thread(target=self.OnExtrudeRun).start()
 
@@ -575,7 +602,9 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 		currentEValue = float(self.stepsPerEInput.GetValue())
 		self.comm = machineCom.MachineCom()
 		if not self.comm.isOpen():
-			wx.MessageBox("Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable", 'Printer error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox(
+				"Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable",
+				'Printer error', wx.OK | wx.ICON_INFORMATION)
 			self.heatButton.Enable(True)
 			self.extrudeButton.Enable(True)
 			return
@@ -585,9 +614,9 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 				return
 			if 'start' in line:
 				break
-		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+			#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
 		time.sleep(3)
-		
+
 		self.sendGCommand('M302') #Disable cold extrusion protection
 		self.sendGCommand("M92 E%f" % (currentEValue))
 		self.sendGCommand("G92 E0")
@@ -599,13 +628,15 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 
 	def OnHeatClick(self, e):
 		threading.Thread(target=self.OnHeatRun).start()
-	
+
 	def OnHeatRun(self):
 		self.heatButton.Enable(False)
 		self.extrudeButton.Enable(False)
 		self.comm = machineCom.MachineCom()
 		if not self.comm.isOpen():
-			wx.MessageBox("Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable", 'Printer error', wx.OK | wx.ICON_INFORMATION)
+			wx.MessageBox(
+				"Error: Failed to open serial port to machine\nIf this keeps happening, try disconnecting and reconnecting the USB cable",
+				'Printer error', wx.OK | wx.ICON_INFORMATION)
 			self.heatButton.Enable(True)
 			self.extrudeButton.Enable(True)
 			return
@@ -617,17 +648,19 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 				return
 			if 'start' in line:
 				break
-		#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
+			#Wait 3 seconds for the SD card init to timeout if we have SD in our firmware but there is no SD card found.
 		time.sleep(3)
-		
+
 		self.sendGCommand('M104 S200') #Set the temperature to 200C, should be enough to get PLA and ABS out.
-		wx.MessageBox('Wait till you can remove the filament from the machine, and press OK.\n(Temperature is set to 200C)', 'Machine heatup', wx.OK | wx.ICON_INFORMATION)
+		wx.MessageBox(
+			'Wait till you can remove the filament from the machine, and press OK.\n(Temperature is set to 200C)',
+			'Machine heatup', wx.OK | wx.ICON_INFORMATION)
 		self.sendGCommand('M104 S0')
 		time.sleep(1)
 		self.comm.close()
 		self.heatButton.Enable(True)
 		self.extrudeButton.Enable(True)
-	
+
 	def sendGCommand(self, cmd):
 		self.comm.sendCommand(cmd) #Disable cold extrusion protection
 		while True:
@@ -636,14 +669,15 @@ class UltimakerCalibrateStepsPerEPage(InfoPage):
 				return
 			if line.startswith('ok'):
 				break
-	
+
 	def StoreData(self):
 		profile.putPreference('steps_per_e', self.stepsPerEInput.GetValue())
+
 
 class configWizard(wx.wizard.Wizard):
 	def __init__(self):
 		super(configWizard, self).__init__(None, -1, "Configuration Wizard")
-		
+
 		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGED, self.OnPageChanged)
 		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.OnPageChanging)
 
@@ -662,10 +696,10 @@ class configWizard(wx.wizard.Wizard):
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerFirmwareUpgradePage, self.ultimakerCheckupPage)
 		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCheckupPage, self.ultimakerCalibrationPage)
 		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCalibrationPage, self.ultimakerCalibrateStepsPerEPage)
-		
+
 		self.FitToPage(self.firstInfoPage)
 		self.GetPageAreaSizer().Add(self.firstInfoPage)
-		
+
 		self.RunWizard(self.firstInfoPage)
 		self.Destroy()
 
@@ -674,7 +708,7 @@ class configWizard(wx.wizard.Wizard):
 
 	def OnPageChanged(self, e):
 		if e.GetPage().AllowNext():
-			self.FindWindowById(wx.ID_FORWARD).Enable() 
+			self.FindWindowById(wx.ID_FORWARD).Enable()
 		else:
-			self.FindWindowById(wx.ID_FORWARD).Disable() 
-		self.FindWindowById(wx.ID_BACKWARD).Disable() 
+			self.FindWindowById(wx.ID_FORWARD).Disable()
+		self.FindWindowById(wx.ID_BACKWARD).Disable()

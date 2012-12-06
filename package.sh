@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# This script is to package the Cura package for Windows/Linux and OSx
-# This script should run under Linux and OSx, as well as Windows with Cygwin.
+# This script is to package the Cura package for Windows/Linux and Mac OS X
+# This script should run under Linux and Mac OS X, as well as Windows with Cygwin.
 
 #############################
 # CONFIGURATION
 #############################
 
 ##Select the build target
-BUILD_TARGET=${1:-all}
+# BUILD_TARGET=${1:-all}
 #BUILD_TARGET=win32
 #BUILD_TARGET=linux
-#BUILD_TARGET=osx64
+BUILD_TARGET=darwin
 
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
@@ -62,9 +62,49 @@ function extract
 if [ "$BUILD_TARGET" = "all" ]; then
 	$0 win32
 	$0 linux
-	$0 osx64
+	$0 darwin
 	exit
 fi
+
+#############################
+# Darwin
+#############################
+
+if [ "$BUILD_TARGET" = "darwin" ]; then
+	rm -rf scripts/darwin/build
+	rm -rf scripts/darwin/dist
+
+	python setup.py py2app
+	rc=$?
+	if [[ $rc != 0 ]]; then
+		echo "Cannot build app."
+		exit 1
+	fi
+
+	cd scripts/darwin
+
+	# Install QuickLook plugin
+	mkdir -p dist/Cura.app/Contents/Library/QuickLook
+	cp STLQuickLook.qlgenerator dist/Cura.app/Contents/Library/QuickLook/
+
+	# Archive app
+	$TAR cfp - dist/Cura.app | gzip --best -c > ../../${TARGET_DIR}.tar.gz
+
+	# Create sparse image for distribution
+	hdiutil detach /Volumes/Cura\ -\ Ultimaker/
+	rm -rf Cura.dmg.sparseimage
+	hdiutil convert DmgTemplateCompressed.dmg -format UDSP -o Cura.dmg
+	hdiutil resize -size 500m Cura.dmg.sparseimage
+	hdiutil attach Cura.dmg.sparseimage
+	cp -a dist/Cura.app /Volumes/Cura\ -\ Ultimaker/Cura/
+	hdiutil detach /Volumes/Cura\ -\ Ultimaker
+	hdiutil convert Cura.dmg.sparseimage -format UDZO -imagekey zlib-level=9 -ov -o ../../${TARGET_DIR}.dmg
+	exit
+fi
+
+#############################
+# Rest
+#############################
 
 # Change working directory to the directory the script is in
 # http://stackoverflow.com/a/246128
@@ -100,13 +140,6 @@ if [ $BUILD_TARGET = "win32" ]; then
 	downloadURL http://www.uwe-sieber.de/files/ejectmedia.zip
 	#Get pypy
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
-elif [ $BUILD_TARGET = "osx64" ]; then
-	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
-	downloadURL http://python.org/ftp/python/2.7.3/python-2.7.3-macosx10.6.dmg
-	downloadURL http://sourceforge.net/projects/numpy/files/NumPy/1.6.2/numpy-1.6.2-py2.7-python.org-macosx10.3.dmg
-	downloadURL http://pypi.python.org/packages/source/p/pyserial/pyserial-2.6.tar.gz
-	downloadURL http://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-3.0.2.tar.gz
-	downloadURL http://downloads.sourceforge.net/wxpython/wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg
 else
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
 fi
@@ -131,7 +164,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	extract ffmpeg-20120927-git-13f0cd6-win32-static.7z ffmpeg-20120927-git-13f0cd6-win32-static/licenses
 	extract comtypes-0.6.2.win32.exe
 	extract ejectmedia.zip Win32
-	
+
 	mkdir -p ${TARGET_DIR}/python
 	mkdir -p ${TARGET_DIR}/Cura/
 	mv \$_OUTDIR/App/* ${TARGET_DIR}/python
@@ -150,7 +183,7 @@ if [ $BUILD_TARGET = "win32" ]; then
 	rm -rf VideoCapture-0.9-5
 	rm -rf numpy-1.6.2-sse2.exe
 	rm -rf ffmpeg-20120927-git-13f0cd6-win32-static
-	
+
 	#Clean up portable python a bit, to keep the package size down.
 	rm -rf ${TARGET_DIR}/python/PyScripter.*
 	rm -rf ${TARGET_DIR}/python/Doc
@@ -194,12 +227,12 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 		#cd ${TARGET_DIR}
 		#7z a ../${TARGET_DIR}.zip *
 		#cd ..
-		
+
 		if [ ! -z `which wine` ]; then
 			#if we have wine, try to run our nsis script.
 			rm -rf scripts/win32/dist
 			ln -sf `pwd`/${TARGET_DIR} scripts/win32/dist
-			wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe /DVERSION=${BUILD_NAME} scripts/win32/installer.nsi 
+			wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe /DVERSION=${BUILD_NAME} scripts/win32/installer.nsi
 			mv scripts/win32/Cura_${BUILD_NAME}.exe ./
 		fi
 		if [ -f '/c/Program Files (x86)/NSIS/makensis.exe' ]; then
@@ -208,28 +241,6 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 			'/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi' >> log.txt
 			mv scripts/win32/Cura_${BUILD_NAME}.exe ./
 		fi
-	elif [ $BUILD_TARGET = "osx64" ]; then
-		echo "Building osx app"
-		mkdir -p scripts/osx64/Cura.app/Contents/Resources
-		mkdir -p scripts/osx64/Cura.app/Contents/Pkgs
-		rm -rf scripts/osx64/Cura.app/Contents/Resources/Cura
-		rm -rf scripts/osx64/Cura.app/Contents/Resources/pypy
-		cp -a ${TARGET_DIR}/* scripts/osx64/Cura.app/Contents/Resources
-		cp python-2.7.3-macosx10.6.dmg scripts/osx64/Cura.app/Contents/Pkgs
-		cp numpy-1.6.2-py2.7-python.org-macosx10.3.dmg scripts/osx64/Cura.app/Contents/Pkgs
-		cp pyserial-2.6.tar.gz scripts/osx64/Cura.app/Contents/Pkgs
-		cp PyOpenGL-3.0.2.tar.gz scripts/osx64/Cura.app/Contents/Pkgs
-		cp wxPython2.9-osx-2.9.4.0-cocoa-py2.7.dmg scripts/osx64/Cura.app/Contents/Pkgs
-		cd scripts/osx64
-		$TAR cfp - Cura.app | gzip --best -c > ../../${TARGET_DIR}.tar.gz
-		hdiutil detach /Volumes/Cura\ -\ Ultimaker/
-		rm -rf Cura.dmg.sparseimage
-		hdiutil convert DmgTemplateCompressed.dmg -format UDSP -o Cura.dmg
-		hdiutil resize -size 500m Cura.dmg.sparseimage
-		hdiutil attach Cura.dmg.sparseimage
-		cp -a Cura.app /Volumes/Cura\ -\ Ultimaker/Cura/
-		hdiutil detach /Volumes/Cura\ -\ Ultimaker
-		hdiutil convert Cura.dmg.sparseimage -format UDZO -imagekey zlib-level=9 -ov -o ../../${TARGET_DIR}.dmg
 	else
 		echo "Archiving to ${TARGET_DIR}.tar.gz"
 		$TAR cfp - ${TARGET_DIR} | gzip --best -c > ${TARGET_DIR}.tar.gz
