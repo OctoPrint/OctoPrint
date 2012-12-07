@@ -19,3 +19,6 @@ cura.bat
 object-mirror.png
 object.png
 *darwin.dmg
+scripts/darwin/dist/*
+scripts/darwin/build/*
+scripts/darwin/Cura.dmg.sparseimage
