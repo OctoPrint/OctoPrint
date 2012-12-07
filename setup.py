@@ -6,7 +6,7 @@ if sys.platform.startswith('darwin'):
     from setuptools import setup
 
     APP = ['Cura/cura.py']
-    DATA_FILES = ['Cura/images', 'Cura/LICENSE', 'Cura/stl.ico']
+    DATA_FILES = ['Cura/LICENSE', 'Cura/resources/images', 'Cura/resources/meshes', 'Cura/resources/example/', 'Cura/resources/firmware/']
     PLIST = {
         u'CFBundleName': u'Cura',
         u'CFBundleShortVersionString': u'12.11',
@@ -51,7 +51,7 @@ if sys.platform.startswith('darwin'):
     }
     OPTIONS = {
         'argv_emulation': True,
-        'iconfile': 'Cura/Cura.icns',
+        'iconfile': 'Cura/resources/Cura.icns',
         'includes': ['objc', 'Foundation'],
         'resources': DATA_FILES,
         'optimize': '2',
