@@ -72,7 +72,7 @@ Following packages are required for packaging Cura into app:
 
     py2app>=0.7.2
 
-The easiest way to install all this packages is to use virtualenv's pip: `pip install requirements_darwin.txt`
+The easiest way to install all this packages is to use virtualenv's pip: `pip install -r requirements_darwin.txt`
 
 ####PyObjC
 At time of writing, pyobjc 2.5 is not available at pypi. You have to clone repo and install it manually:
