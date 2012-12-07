@@ -32,7 +32,7 @@ You'll need non-system, framework-based, universal with min deployment target se
 
 **deployment target set to 10.6**: Output of ``otool -l `which python` `` should contain *"cmd LC_VERSION_MIN_MACOSX ... version 10.6"*
 
-The easiest way to install it is via [Homebrew](http://mxcl.github.com/homebrew/): `brew install --fresh osx_python_cura.rb --universal` (TODO: upload the formula). Note you'll need to uninstall Python if you already have it installed via Homebrew.
+The easiest way to install it is via [Homebrew](http://mxcl.github.com/homebrew/): `brew install --fresh https://github.com/downloads/GreatFruitOmsk/Cura/python.rb --universal`. Note you'll need to uninstall Python if you already have it installed via Homebrew.
 
 ###Virtualenv
 You may skip this step if you don't bother to use [virtualenv](http://pypi.python.org/pypi/virtualenv). It's not a requirement.
