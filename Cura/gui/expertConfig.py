@@ -5,14 +5,15 @@ import wx
 from Cura.gui import configBase
 from Cura.util import validators
 
-class expertConfigWindow(configBase.configWindowBase):
+class expertConfigWindow(wx.Frame):
 	"Expert configuration window"
 	def __init__(self):
-		super(expertConfigWindow, self).__init__(title='Expert config', style=wx.DEFAULT_DIALOG_STYLE)
+		super(expertConfigWindow, self).__init__(None, title='Expert config', style=wx.DEFAULT_DIALOG_STYLE)
 
 		wx.EVT_CLOSE(self, self.OnClose)
+		self.panel = configBase.configPanelBase(self)
 
-		left, right, main = self.CreateConfigPanel(self)
+		left, right, main = self.panel.CreateConfigPanel(self)
 		
 		configBase.TitleRow(left, "Accuracy")
 		c = configBase.SettingRow(left, "Extra Wall thickness for bottom/top (mm)", 'extra_base_wall_thickness', '0.0', 'Additional wall thickness of the bottom and top layers.')

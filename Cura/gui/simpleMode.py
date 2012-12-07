@@ -1,84 +1,34 @@
 from __future__ import absolute_import
 
 import wx
-import os
-import webbrowser
 
-from Cura.gui import configBase
-from Cura.gui import preview3d
-from Cura.gui import sliceProgessPanel
-from Cura.gui import preferencesDialog
-from Cura.gui.util import dropTarget
-from Cura.gui import printWindow
 from Cura.util import profile
-from Cura.util import version
-from Cura.util import sliceRun
-from Cura.util import meshLoader
 
-class simpleModeWindow(configBase.configWindowBase):
+class simpleModePanel(wx.Panel):
 	"Main user interface window for Quickprint mode"
-	def __init__(self):
-		super(simpleModeWindow, self).__init__(title='Cura - Quickprint - ' + version.getVersion())
+	def __init__(self, parent):
+		super(simpleModePanel, self).__init__(parent)
 		
-		wx.EVT_CLOSE(self, self.OnClose)
+		#toolsMenu = wx.Menu()
+		#i = toolsMenu.Append(-1, 'Switch to Normal mode...')
+		#self.Bind(wx.EVT_MENU, self.OnNormalSwitch, i)
+		#self.menubar.Insert(1, toolsMenu, 'Normal mode')
 
-		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
-		
-		menubar = wx.MenuBar()
-		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Load model file...\tCTRL+L')
-		self.Bind(wx.EVT_MENU, self.OnLoadModel, i)
-		i = fileMenu.Append(-1, 'Prepare print...\tCTRL+R')
-		self.Bind(wx.EVT_MENU, self.OnSlice, i)
-		i = fileMenu.Append(-1, 'Print...\tCTRL+P')
-		self.Bind(wx.EVT_MENU, self.OnPrint, i)
-		fileMenu.AppendSeparator()
-		i = fileMenu.Append(-1, 'Preferences...\tCTRL+,')
-		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
-		fileMenu.AppendSeparator()
-		i = fileMenu.Append(wx.ID_EXIT, 'Quit')
-		self.Bind(wx.EVT_MENU, self.OnQuit, i)
-		menubar.Append(fileMenu, '&File')
-		
-		toolsMenu = wx.Menu()
-		i = toolsMenu.Append(-1, 'Switch to Normal mode...')
-		self.Bind(wx.EVT_MENU, self.OnNormalSwitch, i)
-		menubar.Append(toolsMenu, 'Normal mode')
-		
-		helpMenu = wx.Menu()
-		i = helpMenu.Append(-1, 'Online documentation...')
-		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://daid.github.com/Cura'), i)
-		i = helpMenu.Append(-1, 'Report a problem...')
-		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/Cura/issues'), i)
-		menubar.Append(helpMenu, 'Help')
-		self.SetMenuBar(menubar)
-		
-		if profile.getPreference('lastFile') != '':
-			self.filelist = profile.getPreference('lastFile').split(';')
-			self.SetTitle('Cura - %s - %s' % (version.getVersion(), self.filelist[-1]))
-		else:
-			self.filelist = []
-		self.progressPanelList = []
-
-		#Preview window
-		self.preview3d = preview3d.previewPanel(self)
-
-		configPanel = wx.Panel(self)
-		printTypePanel = wx.Panel(configPanel)
+		printTypePanel = wx.Panel(self)
 		self.printTypeNormal = wx.RadioButton(printTypePanel, -1, 'Normal quality print', style=wx.RB_GROUP)
 		self.printTypeLow = wx.RadioButton(printTypePanel, -1, 'Fast low quality print')
 		self.printTypeHigh = wx.RadioButton(printTypePanel, -1, 'High quality print')
 		self.printTypeJoris = wx.RadioButton(printTypePanel, -1, 'Thin walled cup or vase')
 
-		printMaterialPanel = wx.Panel(configPanel)
+		printMaterialPanel = wx.Panel(self)
 		self.printMaterialPLA = wx.RadioButton(printMaterialPanel, -1, 'PLA', style=wx.RB_GROUP)
 		self.printMaterialABS = wx.RadioButton(printMaterialPanel, -1, 'ABS')
 		self.printMaterialDiameter = wx.TextCtrl(printMaterialPanel, -1, profile.getProfileSetting('filament_diameter'))
 		
-		self.printSupport = wx.CheckBox(configPanel, -1, 'Print support structure')
+		self.printSupport = wx.CheckBox(self, -1, 'Print support structure')
 		
 		sizer = wx.GridBagSizer()
-		configPanel.SetSizer(sizer)
+		self.SetSizer(sizer)
 
 		sb = wx.StaticBox(printTypePanel, label="Select a print type:")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
@@ -100,74 +50,15 @@ class simpleModeWindow(configBase.configWindowBase):
 		printMaterialPanel.GetSizer().Add(boxsizer, flag=wx.EXPAND)
 		sizer.Add(printMaterialPanel, (1,0), flag=wx.EXPAND)
 
-		sb = wx.StaticBox(configPanel, label="Other:")
+		sb = wx.StaticBox(self, label="Other:")
 		boxsizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
 		boxsizer.Add(self.printSupport)
 		sizer.Add(boxsizer, (2,0), flag=wx.EXPAND)
 
-		# load and slice buttons.
-		loadButton = wx.Button(self, -1, '&Load model')
-		sliceButton = wx.Button(self, -1, 'P&repare print')
-		printButton = wx.Button(self, -1, '&Print')
-		self.Bind(wx.EVT_BUTTON, self.OnLoadModel, loadButton)
-		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
-		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
-		#Also bind double clicking the 3D preview to load an STL file.
-		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, self.OnLoadModel, self.preview3d.glCanvas)
-
-		#Main sizer, to position the preview window, buttons and tab control
-		sizer = wx.GridBagSizer()
-		self.SetSizer(sizer)
-		sizer.Add(configPanel, (0,0), span=(1,1), flag=wx.EXPAND)
-		sizer.Add(self.preview3d, (0,1), span=(1,3), flag=wx.EXPAND)
-		sizer.AddGrowableCol(2)
-		sizer.AddGrowableRow(0)
-		sizer.Add(loadButton, (1,1), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		sizer.Add(sliceButton, (1,2), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		sizer.Add(printButton, (1,3), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		self.sizer = sizer
-
-		if len(self.filelist) > 0:
-			self.preview3d.loadModelFiles(self.filelist)
-
-		self.SetBackgroundColour(configPanel.GetBackgroundColour())
-
-		self.updateProfileToControls()
-
 		self.printTypeNormal.SetValue(True)
 		self.printMaterialPLA.SetValue(True)
 
-		self.Fit()
-		self.preview3d.Fit()
-		self.SetMinSize(self.GetSize())
-		self.Centre()
-		self.Show(True)
-	
-	def OnPreferences(self, e):
-		prefDialog = preferencesDialog.preferencesDialog(self)
-		prefDialog.Centre()
-		prefDialog.Show(True)
-
-	def OnLoadModel(self, e):
-		dlg=wx.FileDialog(self, "Open file to print", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard(meshLoader.wildcardFilter())
-		if dlg.ShowModal() == wx.ID_OK:
-			self.filelist = [dlg.GetPath()]
-			profile.putPreference('lastFile', ';'.join(self.filelist))
-			self.preview3d.loadModelFiles(self.filelist, True)
-			self.preview3d.setViewMode("Normal")
-		dlg.Destroy()
-
-	def OnDropFiles(self, filenames):
-		self.filelist = filenames
-		profile.putPreference('lastFile', ';'.join(self.filelist))
-		self.preview3d.loadModelFiles(self.filelist, True)
-		self.preview3d.setViewMode("Normal")
-	
-	def OnSlice(self, e):
-		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file before you can prepare it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
-			return
+	def setupSlice(self):
 		#save the current profile so we can put it back latter
 		oldProfile = profile.getGlobalProfileString()
 		
@@ -264,58 +155,12 @@ class simpleModeWindow(configBase.configWindowBase):
 			put('fan_layer', '1')
 			put('bottom_thickness', '0.0')
 			put('print_temperature', '260')
-		
-		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
-		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
-		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
-		self.sizer.Layout()
-		newSize = self.GetSize();
-		newSize.IncBy(0, spp.GetSize().GetHeight())
-		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
-			self.SetSize(newSize)
-		self.progressPanelList.append(spp)
-		
-		#Restore the old profile.
-		profile.loadGlobalProfileFromString(oldProfile)
-	
-	def OnPrint(self, e):
-		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file and prepare it before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
-			return
-		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
-			wx.MessageBox('You need to prepare the file before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
-			return
-		printWindow.printFile(sliceRun.getExportFilename(self.filelist[0]))
-
-	def OnNormalSwitch(self, e):
-		from gui import mainWindow
-		profile.putPreference('startMode', 'Normal')
-		mainWindow.mainWindow()
-		self.Close()
-
-	def removeSliceProgress(self, spp):
-		self.progressPanelList.remove(spp)
-		newSize = self.GetSize();
-		newSize.IncBy(0, -spp.GetSize().GetHeight())
-		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
-			self.SetSize(newSize)
-		spp.Show(False)
-		self.sizer.Detach(spp)
-		for spp in self.progressPanelList:
-			self.sizer.Detach(spp)
-		i = 2
-		for spp in self.progressPanelList:
-			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
-			i += 1
-		self.sizer.Layout()
-
-	def OnQuit(self, e):
-		self.Close()
-	
-	def OnClose(self, e):
-		self.Destroy()
+		put('plugin_config', '')
 
 	def updateProfileToControls(self):
-		super(simpleModeWindow, self).updateProfileToControls()
-		self.preview3d.updateProfileToControls()
+		pass
 
+#	def OnNormalSwitch(self, e):
+#		profile.putPreference('startMode', 'Normal')
+#		mainWindow.mainWindow()
+#		self.Close()

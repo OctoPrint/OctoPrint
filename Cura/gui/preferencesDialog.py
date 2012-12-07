@@ -7,16 +7,18 @@ from Cura.util import validators
 from Cura.util import machineCom
 from Cura.util import profile
 
-class preferencesDialog(configBase.configWindowBase):
+class preferencesDialog(wx.Frame):
 	def __init__(self, parent):
-		super(preferencesDialog, self).__init__(title="Preferences", style=wx.DEFAULT_DIALOG_STYLE)
+		super(preferencesDialog, self).__init__(None, title="Preferences", style=wx.DEFAULT_DIALOG_STYLE)
 		
 		wx.EVT_CLOSE(self, self.OnClose)
 		
 		self.parent = parent
 		self.oldExtruderAmount = int(profile.getPreference('extruder_amount'))
+
+		self.panel = configBase.configPanelBase(self)
 		
-		left, right, main = self.CreateConfigPanel(self)
+		left, right, main = self.panel.CreateConfigPanel(self)
 		configBase.TitleRow(left, 'Machine settings')
 		c = configBase.SettingRow(left, 'Steps per E', 'steps_per_e', '0', 'Amount of steps per mm filament extrusion', type = 'preference')
 		validators.validFloat(c, 0.1)

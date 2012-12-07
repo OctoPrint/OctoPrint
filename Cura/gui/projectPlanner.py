@@ -1104,16 +1104,17 @@ class ProjectSliceProgressWindow(wx.Frame):
 	def OnShowLog(self, e):
 		LogWindow('\n'.join(self.progressLog))
 
-class preferencesDialog(configBase.configWindowBase):
+class preferencesDialog(wx.Frame):
 	def __init__(self, parent):
-		super(preferencesDialog, self).__init__(title="Project Planner Preferences")
+		super(preferencesDialog, self).__init__(None, title="Project Planner Preferences", style=wx.DEFAULT_DIALOG_STYLE)
 		
 		self.parent = parent
 		wx.EVT_CLOSE(self, self.OnClose)
-		
+
+		self.panel = configBase.configPanelBase(self)
 		extruderAmount = int(profile.getPreference('extruder_amount'))
 		
-		left, right, main = self.CreateConfigPanel(self)
+		left, right, main = self.panel.CreateConfigPanel(self)
 		configBase.TitleRow(left, 'Machine head size')
 		c = configBase.SettingRow(left, 'Head size - X towards home (mm)', 'extruder_head_size_min_x', '0', 'Size of your printer head in the X direction, on the Ultimaker your fan is in this direction.', type = 'preference')
 		validators.validFloat(c, 0.1)

@@ -98,7 +98,7 @@ def main():
 			mainWindow.main()
 
 		app = CuraApp(False)
-		# Apple discurage usage of splash screens on a mac.
+		# Apple discourages usage of splash screens on a mac.
 		if sys.platform.startswith('darwin'):
 			mainWindowRunCallback(None)
 		else:

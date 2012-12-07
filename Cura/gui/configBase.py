@@ -5,10 +5,10 @@ import wx, wx.lib.stattext, types
 from Cura.util import validators
 from Cura.util import profile
 
-class configWindowBase(wx.Frame):
+class configPanelBase(wx.Panel):
 	"A base class for configuration dialogs. Handles creation of settings, and popups"
-	def __init__(self, title, style=wx.DEFAULT_FRAME_STYLE):
-		super(configWindowBase, self).__init__(None, title=title, style=style)
+	def __init__(self, parent):
+		super(configPanelBase, self).__init__(parent)
 		
 		self.settingControlList = []
 		

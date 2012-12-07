@@ -29,7 +29,6 @@ from Cura.util import sliceRun
 from Cura.util import meshLoader
 
 def main():
-	#app = wx.App(False)
 	if profile.getPreference('machine_type') == 'unknown':
 		if platform.system() == "Darwin":
 			#Check if we need to copy our examples
@@ -43,67 +42,72 @@ def main():
 					shutil.copy(filename, os.path.join(os.path.dirname(exampleFile), os.path.basename(filename)))
 				profile.putPreference('lastFile', exampleFile)
 		configWizard.configWizard()
-	if profile.getPreference('startMode') == 'Simple':
-		simpleMode.simpleModeWindow()
-	else:
-		mainWindow()
-	#app.MainLoop()
+	mainWindow()
 
-class mainWindow(configBase.configWindowBase):
-	"Main user interface window"
+class mainWindow(wx.Frame):
 	def __init__(self):
-		super(mainWindow, self).__init__(title='Cura - ' + version.getVersion())
+		super(mainWindow, self).__init__(None, title='Cura - ' + version.getVersion())
 
-		extruderCount = int(profile.getPreference('extruder_amount'))
+		self.extruderCount = int(profile.getPreference('extruder_amount'))
 
 		wx.EVT_CLOSE(self, self.OnClose)
 
 		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 
-		menubar = wx.MenuBar()
-		fileMenu = wx.Menu()
-		i = fileMenu.Append(-1, 'Load model file...\tCTRL+L')
+		self.normalModeOnlyItems = []
+
+		self.menubar = wx.MenuBar()
+		self.fileMenu = wx.Menu()
+		i = self.fileMenu.Append(-1, 'Load model file...\tCTRL+L')
 		self.Bind(wx.EVT_MENU, lambda e: self._showModelLoadDialog(1), i)
-		i = fileMenu.Append(-1, 'Prepare print...\tCTRL+R')
+		i = self.fileMenu.Append(-1, 'Prepare print...\tCTRL+R')
 		self.Bind(wx.EVT_MENU, self.OnSlice, i)
-		i = fileMenu.Append(-1, 'Print...\tCTRL+P')
+		i = self.fileMenu.Append(-1, 'Print...\tCTRL+P')
 		self.Bind(wx.EVT_MENU, self.OnPrint, i)
 
-		fileMenu.AppendSeparator()
-		i = fileMenu.Append(-1, 'Open Profile...')
+		self.fileMenu.AppendSeparator()
+		i = self.fileMenu.Append(-1, 'Open Profile...')
+		self.normalModeOnlyItems.append(i)
 		self.Bind(wx.EVT_MENU, self.OnLoadProfile, i)
-		i = fileMenu.Append(-1, 'Save Profile...')
+		i = self.fileMenu.Append(-1, 'Save Profile...')
+		self.normalModeOnlyItems.append(i)
 		self.Bind(wx.EVT_MENU, self.OnSaveProfile, i)
-		i = fileMenu.Append(-1, 'Load Profile from GCode...')
+		i = self.fileMenu.Append(-1, 'Load Profile from GCode...')
+		self.normalModeOnlyItems.append(i)
 		self.Bind(wx.EVT_MENU, self.OnLoadProfileFromGcode, i)
-		fileMenu.AppendSeparator()
-		i = fileMenu.Append(-1, 'Reset Profile to default')
+		self.fileMenu.AppendSeparator()
+		i = self.fileMenu.Append(-1, 'Reset Profile to default')
+		self.normalModeOnlyItems.append(i)
 		self.Bind(wx.EVT_MENU, self.OnResetProfile, i)
-		fileMenu.AppendSeparator()
-		i = fileMenu.Append(-1, 'Preferences...\tCTRL+,')
+
+		self.fileMenu.AppendSeparator()
+		i = self.fileMenu.Append(-1, 'Preferences...\tCTRL+,')
 		self.Bind(wx.EVT_MENU, self.OnPreferences, i)
-		fileMenu.AppendSeparator()
-		i = fileMenu.Append(wx.ID_EXIT, 'Quit')
+		self.fileMenu.AppendSeparator()
+		i = self.fileMenu.Append(wx.ID_EXIT, 'Quit')
 		self.Bind(wx.EVT_MENU, self.OnQuit, i)
-		menubar.Append(fileMenu, '&File')
+		self.menubar.Append(self.fileMenu, '&File')
 
 		toolsMenu = wx.Menu()
-		i = toolsMenu.Append(-1, 'Switch to Quickprint...')
+		i = toolsMenu.Append(-1, 'Switch to quickprint...')
 		self.Bind(wx.EVT_MENU, self.OnSimpleSwitch, i)
+		i = toolsMenu.Append(-1, 'Switch to full settings...')
+		self.Bind(wx.EVT_MENU, self.OnNormalSwitch, i)
 		toolsMenu.AppendSeparator()
 		i = toolsMenu.Append(-1, 'Batch run...')
 		self.Bind(wx.EVT_MENU, self.OnBatchRun, i)
 		i = toolsMenu.Append(-1, 'Project planner...')
 		self.Bind(wx.EVT_MENU, self.OnProjectPlanner, i)
-#		i = toolsMenu.Append(-1, 'Open SVG (2D) slicer...')
-#		self.Bind(wx.EVT_MENU, self.OnSVGSlicerOpen, i)
-		menubar.Append(toolsMenu, 'Tools')
+		#		i = toolsMenu.Append(-1, 'Open SVG (2D) slicer...')
+		#		self.Bind(wx.EVT_MENU, self.OnSVGSlicerOpen, i)
+		self.menubar.Append(toolsMenu, 'Tools')
 
 		expertMenu = wx.Menu()
 		i = expertMenu.Append(-1, 'Open expert settings...')
+		self.normalModeOnlyItems.append(i)
 		self.Bind(wx.EVT_MENU, self.OnExpertOpen, i)
 		expertMenu.AppendSeparator()
-		if firmwareInstall.getDefaultFirmware() != None:
+		if firmwareInstall.getDefaultFirmware() is not None:
 			i = expertMenu.Append(-1, 'Install default Marlin firmware')
 			self.Bind(wx.EVT_MENU, self.OnDefaultMarlinFirmware, i)
 		i = expertMenu.Append(-1, 'Install custom firmware')
@@ -111,15 +115,15 @@ class mainWindow(configBase.configWindowBase):
 		expertMenu.AppendSeparator()
 		i = expertMenu.Append(-1, 'ReRun first run wizard...')
 		self.Bind(wx.EVT_MENU, self.OnFirstRunWizard, i)
-		menubar.Append(expertMenu, 'Expert')
+		self.menubar.Append(expertMenu, 'Expert')
 
 		helpMenu = wx.Menu()
 		i = helpMenu.Append(-1, 'Online documentation...')
 		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('http://daid.github.com/Cura'), i)
 		i = helpMenu.Append(-1, 'Report a problem...')
 		self.Bind(wx.EVT_MENU, lambda e: webbrowser.open('https://github.com/daid/Cura/issues'), i)
-		menubar.Append(helpMenu, 'Help')
-		self.SetMenuBar(menubar)
+		self.menubar.Append(helpMenu, 'Help')
+		self.SetMenuBar(self.menubar)
 
 		if profile.getPreference('lastFile') != '':
 			self.filelist = profile.getPreference('lastFile').split(';')
@@ -128,11 +132,287 @@ class mainWindow(configBase.configWindowBase):
 			self.filelist = []
 		self.progressPanelList = []
 
+		##Gui components##
+		self.simpleSettingsPanel = simpleMode.simpleModePanel(self)
+		self.normalSettingsPanel = normalSettingsPanel(self)
+
 		#Preview window
 		self.preview3d = preview3d.previewPanel(self)
 
+		# load and slice buttons.
+		loadButton = wx.Button(self, -1, '&Load model')
+		sliceButton = wx.Button(self, -1, 'P&repare print')
+		printButton = wx.Button(self, -1, '&Print')
+		self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(1), loadButton)
+		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
+		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
+
+		if self.extruderCount > 1:
+			loadButton2 = wx.Button(self, -1, 'Load Dual')
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(2), loadButton2)
+		if self.extruderCount > 2:
+			loadButton3 = wx.Button(self, -1, 'Load Triple')
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(3), loadButton3)
+		if self.extruderCount > 3:
+			loadButton4 = wx.Button(self, -1, 'Load Quad')
+			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(4), loadButton4)
+
+		#Also bind double clicking the 3D preview to load an STL file.
+		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, lambda e: self._showModelLoadDialog(1), self.preview3d.glCanvas)
+
+		#Main sizer, to position the preview window, buttons and tab control
+		sizer = wx.GridBagSizer()
+		self.SetSizer(sizer)
+		sizer.Add(self.simpleSettingsPanel, (0,0), span=(1,1), flag=wx.EXPAND|wx.TOP|wx.LEFT, border=6)
+		sizer.Add(self.normalSettingsPanel, (0,1), span=(1,1), flag=wx.EXPAND|wx.TOP|wx.RIGHT, border=6)
+		sizer.Add(self.preview3d, (0,2), span=(1,2+self.extruderCount), flag=wx.EXPAND)
+		sizer.AddGrowableCol(2 + self.extruderCount)
+		sizer.AddGrowableRow(0)
+		sizer.Add(loadButton, (1,2), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		if self.extruderCount > 1:
+			sizer.Add(loadButton2, (1,3), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		if self.extruderCount > 2:
+			sizer.Add(loadButton3, (1,4), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		if self.extruderCount > 3:
+			sizer.Add(loadButton4, (1,5), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(sliceButton, (1,2+self.extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(printButton, (1,3+self.extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		self.sizer = sizer
+
+		if len(self.filelist) > 0:
+			self.preview3d.loadModelFiles(self.filelist)
+
+		self.updateProfileToControls()
+
+		self.SetBackgroundColour(self.normalSettingsPanel.GetBackgroundColour())
+
+		self.updateSliceMode(True)
+
+		if wx.Display().GetClientArea().GetWidth() < self.GetSize().GetWidth():
+			f = self.GetSize().GetWidth() - wx.Display().GetClientArea().GetWidth()
+			self.preview3d.SetMinSize(self.preview3d.GetMinSize().DecBy(f, 0))
+			self.Fit()
+		self.preview3d.Fit()
+		self.SetMinSize(self.GetSize())
+
+		self.Centre()
+		self.Show(True)
+
+		self.updateSliceMode()
+		self.Centre()
+
+	def updateSliceMode(self, forceSimple = False):
+		if forceSimple:
+			isSimple = True
+		else:
+			isSimple = profile.getPreference('startMode') == 'Simple'
+		self.normalSettingsPanel.Show(not isSimple)
+		self.simpleSettingsPanel.Show(isSimple)
+		for i in self.normalModeOnlyItems:
+			i.Enable(not isSimple)
+
+		self.normalSettingsPanel.Layout()
+		self.simpleSettingsPanel.Layout()
+		self.Fit()
+		self.Refresh()
+
+	def OnPreferences(self, e):
+		prefDialog = preferencesDialog.preferencesDialog(self)
+		prefDialog.Centre()
+		prefDialog.Show(True)
+
+	def _showOpenDialog(self, title, wildcard = meshLoader.wildcardFilter()):
+		dlg=wx.FileDialog(self, title, os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard(wildcard)
+		if dlg.ShowModal() == wx.ID_OK:
+			filename = dlg.GetPath()
+			dlg.Destroy()
+			if not(os.path.exists(filename)):
+				return False
+			profile.putPreference('lastFile', filename)
+			return filename
+		dlg.Destroy()
+		return False
+
+	def _showModelLoadDialog(self, amount):
+		filelist = []
+		for i in xrange(0, amount):
+			filelist.append(self._showOpenDialog("Open file to print"))
+			if filelist[-1] == False:
+				return
+		self._loadModels(filelist)
+
+	def _loadModels(self, filelist):
+		self.filelist = filelist
+		self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
+		profile.putPreference('lastFile', ';'.join(self.filelist))
+		self.preview3d.loadModelFiles(self.filelist, True)
+		self.preview3d.setViewMode("Normal")
+
+	def OnDropFiles(self, files):
+		self._loadModels(files)
+
+	def OnLoadModel(self, e):
+		self._showModelLoadDialog(1)
+
+	def OnLoadModel2(self, e):
+		self._showModelLoadDialog(2)
+
+	def OnLoadModel3(self, e):
+		self._showModelLoadDialog(3)
+
+	def OnLoadModel4(self, e):
+		self._showModelLoadDialog(4)
+
+	def OnSlice(self, e):
+		if len(self.filelist) < 1:
+			wx.MessageBox('You need to load a file before you can prepare it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			return
+		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
+		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
+		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1, 4 + self.extruderCount), flag=wx.EXPAND)
+		self.sizer.Layout()
+		newSize = self.GetSize();
+		newSize.IncBy(0, spp.GetSize().GetHeight())
+		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
+			self.SetSize(newSize)
+		self.progressPanelList.append(spp)
+
+	def OnPrint(self, e):
+		if len(self.filelist) < 1:
+			wx.MessageBox('You need to load a file and prepare it before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			return
+		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
+			wx.MessageBox('You need to prepare a print before you can run the actual print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
+			return
+		printWindow.printFile(sliceRun.getExportFilename(self.filelist[0]))
+
+	def removeSliceProgress(self, spp):
+		self.progressPanelList.remove(spp)
+		newSize = self.GetSize();
+		newSize.IncBy(0, -spp.GetSize().GetHeight())
+		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
+			self.SetSize(newSize)
+		spp.Show(False)
+		self.sizer.Detach(spp)
+		for spp in self.progressPanelList:
+			self.sizer.Detach(spp)
+		i = 2
+		for spp in self.progressPanelList:
+			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
+			i += 1
+		self.sizer.Layout()
+
+	def updateProfileToControls(self):
+		self.preview3d.updateProfileToControls()
+		self.normalSettingsPanel.updateProfileToControls()
+		self.simpleSettingsPanel.updateProfileToControls()
+
+	def OnLoadProfile(self, e):
+		dlg=wx.FileDialog(self, "Select profile file to load", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("ini files (*.ini)|*.ini")
+		if dlg.ShowModal() == wx.ID_OK:
+			profileFile = dlg.GetPath()
+			profile.loadGlobalProfile(profileFile)
+			self.updateProfileToControls()
+		dlg.Destroy()
+
+	def OnLoadProfileFromGcode(self, e):
+		dlg=wx.FileDialog(self, "Select gcode file to load profile from", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("gcode files (*.gcode)|*.gcode;*.g")
+		if dlg.ShowModal() == wx.ID_OK:
+			gcodeFile = dlg.GetPath()
+			f = open(gcodeFile, 'r')
+			hasProfile = False
+			for line in f:
+				if line.startswith(';CURA_PROFILE_STRING:'):
+					profile.loadGlobalProfileFromString(line[line.find(':')+1:].strip())
+					hasProfile = True
+			if hasProfile:
+				self.updateProfileToControls()
+			else:
+				wx.MessageBox('No profile found in GCode file.\nThis feature only works with GCode files made by Cura 12.07 or newer.', 'Profile load error', wx.OK | wx.ICON_INFORMATION)
+		dlg.Destroy()
+
+	def OnSaveProfile(self, e):
+		dlg=wx.FileDialog(self, "Select profile file to save", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
+		dlg.SetWildcard("ini files (*.ini)|*.ini")
+		if dlg.ShowModal() == wx.ID_OK:
+			profileFile = dlg.GetPath()
+			profile.saveGlobalProfile(profileFile)
+		dlg.Destroy()
+
+	def OnResetProfile(self, e):
+		dlg = wx.MessageDialog(self, 'This will reset all profile settings to defaults.\nUnless you have saved your current profile, all settings will be lost!\nDo you really want to reset?', 'Profile reset', wx.YES_NO | wx.ICON_QUESTION)
+		result = dlg.ShowModal() == wx.ID_YES
+		dlg.Destroy()
+		if result:
+			profile.resetGlobalProfile()
+			self.updateProfileToControls()
+
+	def OnBatchRun(self, e):
+		br = batchRun.batchRunWindow(self)
+		br.Centre()
+		br.Show(True)
+
+	def OnSimpleSwitch(self, e):
+		profile.putPreference('startMode', 'Simple')
+		self.updateSliceMode()
+
+	def OnNormalSwitch(self, e):
+		profile.putPreference('startMode', 'Normal')
+		self.updateSliceMode()
+
+	def OnDefaultMarlinFirmware(self, e):
+		firmwareInstall.InstallFirmware()
+
+	def OnCustomFirmware(self, e):
+		if profile.getPreference('machine_type') == 'ultimaker':
+			wx.MessageBox('Warning: Installing a custom firmware does not garantee that you machine will function correctly, and could damage your machine.', 'Firmware update', wx.OK | wx.ICON_EXCLAMATION)
+		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
+		if dlg.ShowModal() == wx.ID_OK:
+			filename = dlg.GetPath()
+			if not(os.path.exists(filename)):
+				return
+			#For some reason my Ubuntu 10.10 crashes here.
+			firmwareInstall.InstallFirmware(filename)
+
+	def OnFirstRunWizard(self, e):
+		configWizard.configWizard()
+		self.updateProfileToControls()
+
+	def OnExpertOpen(self, e):
+		ecw = expertConfig.expertConfigWindow()
+		ecw.Centre()
+		ecw.Show(True)
+
+	def OnProjectPlanner(self, e):
+		pp = projectPlanner.projectPlanner()
+		pp.Centre()
+		pp.Show(True)
+
+	def OnSVGSlicerOpen(self, e):
+		svgSlicer = flatSlicerWindow.flatSlicerWindow()
+		svgSlicer.Centre()
+		svgSlicer.Show(True)
+
+	def OnClose(self, e):
+		profile.saveGlobalProfile(profile.getDefaultProfilePath())
+		self.Destroy()
+
+	def OnQuit(self, e):
+		self.Close()
+
+class normalSettingsPanel(configBase.configPanelBase):
+	"Main user interface window"
+	def __init__(self, parent):
+		super(normalSettingsPanel, self).__init__(parent)
+
 		#Main tabs
 		nb = wx.Notebook(self)
+		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
+		self.GetSizer().Add(nb, 1)
 
 		(left, right) = self.CreateConfigTab(nb, 'Print config')
 
@@ -168,7 +448,7 @@ class mainWindow(configBase.configWindowBase):
 		configBase.TitleRow(right, "Support structure")
 		c = configBase.SettingRow(right, "Support type", 'support', ['None', 'Exterior Only', 'Everywhere'], 'Type of support structure build.\n"Exterior only" is the most commonly used support setting.\n\nNone does not do any support.\nExterior only only creates support where the support structure will touch the build platform.\nEverywhere creates support even on the insides of the model.')
 		c = configBase.SettingRow(right, "Add raft", 'enable_raft', False, 'A raft is a few layers of lines below the bottom of the object. It prevents warping. Full raft settings can be found in the expert settings.\nFor PLA this is usually not required. But if you print with ABS it is almost required.')
-		if extruderCount > 1:
+		if int(profile.getPreference('extruder_amount')) > 1:
 			c = configBase.SettingRow(right, "Support dual extrusion", 'support_dual_extrusion', False, 'Print the support material with the 2nd extruder in a dual extrusion setup. The primary extruder will be used for normal material, while the second extruder is used to print support material.')
 
 		configBase.TitleRow(right, "Filament")
@@ -231,244 +511,7 @@ class mainWindow(configBase.configWindowBase):
 		self.alterationPanel = alterationPanel.alterationPanel(nb)
 		nb.AddPage(self.alterationPanel, "Start/End-GCode")
 
-		# load and slice buttons.
-		loadButton = wx.Button(self, -1, '&Load model')
-		sliceButton = wx.Button(self, -1, 'P&repare print')
-		printButton = wx.Button(self, -1, '&Print')
-		self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(1), loadButton)
-		self.Bind(wx.EVT_BUTTON, self.OnSlice, sliceButton)
-		self.Bind(wx.EVT_BUTTON, self.OnPrint, printButton)
-
-		if extruderCount > 1:
-			loadButton2 = wx.Button(self, -1, 'Load Dual')
-			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(2), loadButton2)
-		if extruderCount > 2:
-			loadButton3 = wx.Button(self, -1, 'Load Triple')
-			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(3), loadButton3)
-		if extruderCount > 3:
-			loadButton4 = wx.Button(self, -1, 'Load Quad')
-			self.Bind(wx.EVT_BUTTON, lambda e: self._showModelLoadDialog(4), loadButton4)
-
-		#Also bind double clicking the 3D preview to load an STL file.
-		self.preview3d.glCanvas.Bind(wx.EVT_LEFT_DCLICK, lambda e: self._showModelLoadDialog(1), self.preview3d.glCanvas)
-
-		#Main sizer, to position the preview window, buttons and tab control
-		sizer = wx.GridBagSizer()
-		self.SetSizer(sizer)
-		sizer.Add(nb, (0,0), span=(1,1), flag=wx.EXPAND)
-		sizer.Add(self.preview3d, (0,1), span=(1,2+extruderCount), flag=wx.EXPAND)
-		sizer.AddGrowableCol(2 + extruderCount)
-		sizer.AddGrowableRow(0)
-		sizer.Add(loadButton, (1,1), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		if extruderCount > 1:
-			sizer.Add(loadButton2, (1,2), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		if extruderCount > 2:
-			sizer.Add(loadButton3, (1,3), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		if extruderCount > 3:
-			sizer.Add(loadButton4, (1,4), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		sizer.Add(sliceButton, (1,1+extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		sizer.Add(printButton, (1,2+extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		self.sizer = sizer
-
-		if len(self.filelist) > 0:
-			self.preview3d.loadModelFiles(self.filelist)
-
-		self.updateProfileToControls()
-
-		self.SetBackgroundColour(nb.GetBackgroundColour())
-
-		self.Fit()
-		if wx.Display().GetClientArea().GetWidth() < self.GetSize().GetWidth():
-			f = self.GetSize().GetWidth() - wx.Display().GetClientArea().GetWidth()
-			self.preview3d.SetMinSize(self.preview3d.GetMinSize().DecBy(f, 0))
-			self.Fit()
-		self.preview3d.Fit()
-		self.SetMinSize(self.GetSize())
-		self.Centre()
-		self.Show(True)
-
-	def OnLoadProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to load", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("ini files (*.ini)|*.ini")
-		if dlg.ShowModal() == wx.ID_OK:
-			profileFile = dlg.GetPath()
-			profile.loadGlobalProfile(profileFile)
-			self.updateProfileToControls()
-		dlg.Destroy()
-
-	def OnLoadProfileFromGcode(self, e):
-		dlg=wx.FileDialog(self, "Select gcode file to load profile from", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("gcode files (*.gcode)|*.gcode;*.g")
-		if dlg.ShowModal() == wx.ID_OK:
-			gcodeFile = dlg.GetPath()
-			f = open(gcodeFile, 'r')
-			hasProfile = False
-			for line in f:
-				if line.startswith(';CURA_PROFILE_STRING:'):
-					profile.loadGlobalProfileFromString(line[line.find(':')+1:].strip())
-					hasProfile = True
-			if hasProfile:
-				self.updateProfileToControls()
-			else:
-				wx.MessageBox('No profile found in GCode file.\nThis feature only works with GCode files made by Cura 12.07 or newer.', 'Profile load error', wx.OK | wx.ICON_INFORMATION)
-		dlg.Destroy()
-
-	def OnSaveProfile(self, e):
-		dlg=wx.FileDialog(self, "Select profile file to save", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_SAVE)
-		dlg.SetWildcard("ini files (*.ini)|*.ini")
-		if dlg.ShowModal() == wx.ID_OK:
-			profileFile = dlg.GetPath()
-			profile.saveGlobalProfile(profileFile)
-		dlg.Destroy()
-
-	def OnResetProfile(self, e):
-		dlg = wx.MessageDialog(self, 'This will reset all profile settings to defaults.\nUnless you have saved your current profile, all settings will be lost!\nDo you really want to reset?', 'Profile reset', wx.YES_NO | wx.ICON_QUESTION)
-		result = dlg.ShowModal() == wx.ID_YES
-		dlg.Destroy()
-		if result:
-			profile.resetGlobalProfile()
-			self.updateProfileToControls()
-
-	def OnBatchRun(self, e):
-		br = batchRun.batchRunWindow(self)
-		br.Centre()
-		br.Show(True)
-
-	def OnPreferences(self, e):
-		prefDialog = preferencesDialog.preferencesDialog(self)
-		prefDialog.Centre()
-		prefDialog.Show(True)
-
-	def OnSimpleSwitch(self, e):
-		profile.putPreference('startMode', 'Simple')
-		simpleMode.simpleModeWindow()
-		self.Close()
-
-	def OnDefaultMarlinFirmware(self, e):
-		firmwareInstall.InstallFirmware()
-
-	def OnCustomFirmware(self, e):
-		if profile.getPreference('machine_type') == 'ultimaker':
-			wx.MessageBox('Warning: Installing a custom firmware does not garantee that you machine will function correctly, and could damage your machine.', 'Firmware update', wx.OK | wx.ICON_EXCLAMATION)
-		dlg=wx.FileDialog(self, "Open firmware to upload", os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
-		if dlg.ShowModal() == wx.ID_OK:
-			filename = dlg.GetPath()
-			if not(os.path.exists(filename)):
-				return
-			#For some reason my Ubuntu 10.10 crashes here.
-			firmwareInstall.InstallFirmware(filename)
-
-	def OnFirstRunWizard(self, e):
-		configWizard.configWizard()
-		self.updateProfileToControls()
-
-	def _showOpenDialog(self, title, wildcard = meshLoader.wildcardFilter()):
-		dlg=wx.FileDialog(self, title, os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-		dlg.SetWildcard(wildcard)
-		if dlg.ShowModal() == wx.ID_OK:
-			filename = dlg.GetPath()
-			dlg.Destroy()
-			if not(os.path.exists(filename)):
-				return False
-			profile.putPreference('lastFile', filename)
-			return filename
-		dlg.Destroy()
-		return False
-
-	def _showModelLoadDialog(self, amount):
-		filelist = []
-		for i in xrange(0, amount):
-			filelist.append(self._showOpenDialog("Open file to print"))
-			if filelist[-1] == False:
-				return
-		self._loadModels(filelist)
-
-	def _loadModels(self, filelist):
-		self.filelist = filelist
-		self.SetTitle(filelist[-1] + ' - Cura - ' + version.getVersion())
-		profile.putPreference('lastFile', ';'.join(self.filelist))
-		self.preview3d.loadModelFiles(self.filelist, True)
-		self.preview3d.setViewMode("Normal")
-
-	def OnDropFiles(self, filenames):
-		self._loadModels(filenames)
-
-	def OnLoadModel(self, e):
-		self._showModelLoadDialog(1)
-
-	def OnLoadModel2(self, e):
-		self._showModelLoadDialog(2)
-
-	def OnLoadModel3(self, e):
-		self._showModelLoadDialog(3)
-
-	def OnLoadModel4(self, e):
-		self._showModelLoadDialog(4)
-
-	def OnSlice(self, e):
-		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file before you can prepare it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
-			return
-		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
-		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
-		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1,4), flag=wx.EXPAND)
-		self.sizer.Layout()
-		newSize = self.GetSize();
-		newSize.IncBy(0, spp.GetSize().GetHeight())
-		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
-			self.SetSize(newSize)
-		self.progressPanelList.append(spp)
-
-	def OnPrint(self, e):
-		if len(self.filelist) < 1:
-			wx.MessageBox('You need to load a file and prepare it before you can print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
-			return
-		if not os.path.exists(sliceRun.getExportFilename(self.filelist[0])):
-			wx.MessageBox('You need to prepare a print before you can run the actual print.', 'Print error', wx.OK | wx.ICON_INFORMATION)
-			return
-		printWindow.printFile(sliceRun.getExportFilename(self.filelist[0]))
-
-	def OnExpertOpen(self, e):
-		ecw = expertConfig.expertConfigWindow()
-		ecw.Centre()
-		ecw.Show(True)
-
-	def OnProjectPlanner(self, e):
-		pp = projectPlanner.projectPlanner()
-		pp.Centre()
-		pp.Show(True)
-
-	def OnSVGSlicerOpen(self, e):
-		svgSlicer = flatSlicerWindow.flatSlicerWindow()
-		svgSlicer.Centre()
-		svgSlicer.Show(True)
-
-	def removeSliceProgress(self, spp):
-		self.progressPanelList.remove(spp)
-		newSize = self.GetSize();
-		newSize.IncBy(0, -spp.GetSize().GetHeight())
-		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
-			self.SetSize(newSize)
-		spp.Show(False)
-		self.sizer.Detach(spp)
-		for spp in self.progressPanelList:
-			self.sizer.Detach(spp)
-		i = 2
-		for spp in self.progressPanelList:
-			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
-			i += 1
-		self.sizer.Layout()
-
-	def OnQuit(self, e):
-		self.Close()
-
-	def OnClose(self, e):
-		profile.saveGlobalProfile(profile.getDefaultProfilePath())
-		self.Destroy()
-
 	def updateProfileToControls(self):
-		super(mainWindow, self).updateProfileToControls()
-		self.preview3d.updateProfileToControls()
+		super(normalSettingsPanel, self).updateProfileToControls()
 		self.alterationPanel.updateProfileToControls()
 		self.pluginPanel.updateProfileToControls()
