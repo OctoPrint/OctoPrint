@@ -1,4 +1,2 @@
-PyOpenGL>=3.0.2
-numpy>=1.6.2
-pyserial>=2.6
+-r requirements.txt
 py2app>=0.7.2

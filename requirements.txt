@@ -1,0 +1,4 @@
+PyOpenGL>=3.0.2
+numpy>=1.6.2
+pyserial>=2.6
+-e git+git://github.com/GreatFruitOmsk/Power.git#egg=Power
