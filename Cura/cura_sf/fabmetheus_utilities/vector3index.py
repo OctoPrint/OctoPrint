@@ -23,13 +23,6 @@ Below are examples of Vector3 use.
 """
 
 from __future__ import absolute_import
-try:
-	import psyco
-	psyco.full()
-except:
-	pass
-#Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
-import __init__
 
 from fabmetheus_utilities import xml_simple_writer
 import math

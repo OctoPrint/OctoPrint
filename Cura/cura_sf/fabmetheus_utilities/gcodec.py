@@ -15,19 +15,14 @@ many lines of text
 ..
 
 """
-
 from __future__ import absolute_import
-#Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
-import __init__
 
 from fabmetheus_utilities.vector3 import Vector3
 from fabmetheus_utilities import archive
 from fabmetheus_utilities import euclidean
 
 import math
-import os
 import sys
-import traceback
 
 if sys.version_info[0] < 3:
 	import cStringIO

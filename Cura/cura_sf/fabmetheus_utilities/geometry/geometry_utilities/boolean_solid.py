@@ -12,19 +12,13 @@ An xml file can be exported from Art of Illusion by going to the "File" menu, th
 
 
 from __future__ import absolute_import
-#Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
-import __init__
 
 from fabmetheus_utilities.geometry.geometry_utilities.evaluate_elements import setting
 from fabmetheus_utilities.geometry.geometry_utilities import evaluate
 from fabmetheus_utilities.geometry.solids import group
 from fabmetheus_utilities.geometry.solids import triangle_mesh
-from fabmetheus_utilities.vector3 import Vector3
 from fabmetheus_utilities import euclidean
-from fabmetheus_utilities import gcodec
 from fabmetheus_utilities import intercircle
-import math
-
 
 __author__ = 'Enrique Perez (perez_enrique@yahoo.com)'
 __credits__ = 'Nophead <http://hydraraptor.blogspot.com/>\nArt of Illusion <http://www.artofillusion.org/>'

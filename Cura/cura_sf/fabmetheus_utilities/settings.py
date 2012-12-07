@@ -6,7 +6,6 @@ Settings is a collection of utilities to display, read & write the settings and 
 from __future__ import absolute_import
 from __future__ import division
 
-#Init has to be imported first because it has code to workaround the python bug where relative imports don't work if the module is imported as a main module.
 import sys
 import types
 import math

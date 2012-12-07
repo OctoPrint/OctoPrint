@@ -73,16 +73,13 @@ Defines the Z axis step length.
 
 
 from __future__ import absolute_import
-import __init__
+
 from fabmetheus_utilities import archive
 from fabmetheus_utilities import gcodec
 from fabmetheus_utilities import settings
-from fabmetheus_utilities.fabmetheus_tools import fabmetheus_interpret
 from skeinforge_application.skeinforge_utilities import skeinforge_polyfile
 from skeinforge_application.skeinforge_utilities import skeinforge_profile
-from struct import Struct
 import cStringIO
-import os
 import sys
 
 
