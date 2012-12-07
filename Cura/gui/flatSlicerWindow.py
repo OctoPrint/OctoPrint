@@ -15,8 +15,8 @@ except:
 	print "Failed to find PyOpenGL: http://pyopengl.sourceforge.net/"
 	hasOpenGLlibs = False
 
-from Cura.gui import toolbarUtil
-from Cura.gui import opengl
+from Cura.gui.util import toolbarUtil
+from Cura.gui.util import opengl
 from Cura.util import util3d
 from Cura.util import svg
 from Cura.util import profile
@@ -35,7 +35,6 @@ class flatSlicerWindow(wx.Frame):
 		self.panel = wx.Panel(self, -1)
 		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.GetSizer().Add(self.panel, 1, flag=wx.EXPAND)
-		#self.SetIcon(icon.getMainIcon())
 
 		self.toolbar = toolbarUtil.Toolbar(self.panel)
 

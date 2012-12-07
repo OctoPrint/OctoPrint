@@ -8,13 +8,14 @@ from Cura.avr_isp import intelHex
 
 from Cura.util import machineCom
 from Cura.util import profile
+from Cura.util import resources
 
 def getDefaultFirmware():
 	if profile.getPreference('machine_type') == 'ultimaker':
 		if sys.platform.startswith('linux'):
-			return os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/ultimaker_115200.hex")
+			return resources.getPathForFirmware("ultimaker_115200.hex")
 		else:
-			return os.path.join(os.path.dirname(os.path.abspath(__file__)), "../firmware/ultimaker_250000.hex")
+			return resources.getPathForFirmware("ultimaker_250000.hex")
 	return None
 
 class InstallFirmware(wx.Dialog):

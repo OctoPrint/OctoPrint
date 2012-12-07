@@ -1,11 +1,11 @@
 from __future__ import absolute_import
 
-import wx, os, platform, types, webbrowser, math, subprocess, multiprocessing, threading, time, re, shutil
+import wx, os, multiprocessing, threading, time, shutil
 
 from Cura.util import profile
 from Cura.util import sliceRun
 from Cura.util import meshLoader
-from Cura.gui import dropTarget
+from Cura.gui.util import dropTarget
 
 class batchRunWindow(wx.Frame):
 	def __init__(self, parent):
@@ -19,7 +19,6 @@ class batchRunWindow(wx.Frame):
 		self.panel = wx.Panel(self, -1)
 		self.SetSizer(wx.BoxSizer(wx.VERTICAL))
 		self.GetSizer().Add(self.panel, 1, flag=wx.EXPAND)
-		#self.SetIcon(icon.getMainIcon())
 
 		self.sizer = wx.GridBagSizer(2,2)
 		self.panel.SetSizer(self.sizer)
@@ -61,7 +60,7 @@ class batchRunWindow(wx.Frame):
 			self._updateListbox()
 
 	def OnRemModel(self, e):
-		if self.selection == None:
+		if self.selection is None:
 			return
 		self.list.remove(self.selection)
 		self._updateListbox()

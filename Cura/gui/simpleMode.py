@@ -8,7 +8,7 @@ from Cura.gui import configBase
 from Cura.gui import preview3d
 from Cura.gui import sliceProgessPanel
 from Cura.gui import preferencesDialog
-from Cura.gui import dropTarget
+from Cura.gui.util import dropTarget
 from Cura.gui import printWindow
 from Cura.util import profile
 from Cura.util import version
@@ -21,7 +21,6 @@ class simpleModeWindow(configBase.configWindowBase):
 		super(simpleModeWindow, self).__init__(title='Cura - Quickprint - ' + version.getVersion())
 		
 		wx.EVT_CLOSE(self, self.OnClose)
-		#self.SetIcon(icon.getMainIcon())
 
 		self.SetDropTarget(dropTarget.FileDropTarget(self.OnDropFiles, meshLoader.supportedExtensions()))
 		
