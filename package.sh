@@ -85,7 +85,7 @@ if [ "$BUILD_TARGET" = "darwin" ]; then
 
 	# Install QuickLook plugin
 	mkdir -p dist/Cura.app/Contents/Library/QuickLook
-	cp STLQuickLook.qlgenerator dist/Cura.app/Contents/Library/QuickLook/
+	cp -a STLQuickLook.qlgenerator dist/Cura.app/Contents/Library/QuickLook/
 
 	# Archive app
 	$TAR cfp - dist/Cura.app | gzip --best -c > ../../${TARGET_DIR}.tar.gz

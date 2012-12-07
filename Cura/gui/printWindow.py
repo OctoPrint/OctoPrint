@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import platform
+import power
 
 import wx
 from wx.lib import buttons
@@ -15,7 +16,6 @@ from Cura.gui.util import webcam
 from Cura.gui.util import taskbar
 from Cura.util import machineCom
 from Cura.util import gcodeInterpreter
-from Cura.util import power
 from Cura.util.resources import getPathForImage
 
 printWindowMonitorHandle = None
