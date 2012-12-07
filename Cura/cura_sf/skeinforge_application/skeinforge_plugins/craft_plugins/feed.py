@@ -81,8 +81,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	"Feed a gcode linear move file."
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'feed', shouldAnalyze)
 
-
-class FeedRepository:
+class FeedRepository(object):
 	"A class to handle the feed settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -102,7 +101,7 @@ class FeedRepository:
 			writeOutput(fileName)
 
 
-class FeedSkein:
+class FeedSkein(object):
 	"A class to feed a skein of cuttings."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

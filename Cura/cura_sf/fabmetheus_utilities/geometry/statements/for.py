@@ -46,7 +46,7 @@ def processElementNode(elementNode):
 			processChildNodesByIndexValue( elementNode, function, inKey, elementNode.xmlObject, inValue[ inKey ] )
 
 
-class IndexValue:
+class IndexValue(object):
 	"Class to get the in attribute, the index name and the value name."
 	def __init__(self, elementNode):
 		"Initialize."

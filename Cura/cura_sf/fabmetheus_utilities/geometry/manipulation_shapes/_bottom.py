@@ -89,7 +89,7 @@ def processElementNodeByDerivation(derivation, elementNode):
 		bottomElementNode(derivation, target)
 
 
-class BottomDerivation:
+class BottomDerivation(object):
 	"Class to hold bottom variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'

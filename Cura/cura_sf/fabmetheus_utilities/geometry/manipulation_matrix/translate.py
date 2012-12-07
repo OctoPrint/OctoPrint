@@ -59,7 +59,7 @@ def translatePoints(elementNode, points, prefix):
 		euclidean.translateVector3Path(points, translateVector3)
 
 
-class TranslateDerivation:
+class TranslateDerivation(object):
 	"Class to hold translate variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

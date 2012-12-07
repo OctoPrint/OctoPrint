@@ -28,7 +28,7 @@ def getPluginsDirectoryPath():
 	return archive.getSkeinforgePluginsPath('meta_plugins')
 
 
-class MetaRepository:
+class MetaRepository(object):
 	"A class to handle the meta settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

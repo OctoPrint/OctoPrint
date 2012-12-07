@@ -42,7 +42,7 @@ def processElementNode(elementNode):
 	lineation.processElementNodeByFunction(elementNode, getManipulatedPaths)
 
 
-class OutlineDerivation:
+class OutlineDerivation(object):
 	"Class to hold outline variables."
 	def __init__(self, elementNode, prefix, sideLength):
 		'Set defaults.'

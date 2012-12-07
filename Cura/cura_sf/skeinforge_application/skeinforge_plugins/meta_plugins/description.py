@@ -32,7 +32,7 @@ def getNewRepository():
 	return DescriptionRepository()
 
 
-class DescriptionRepository:
+class DescriptionRepository(object):
 	"A class to handle the description settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

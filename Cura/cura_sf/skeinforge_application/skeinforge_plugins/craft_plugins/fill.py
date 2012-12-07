@@ -761,7 +761,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'fill', shouldAnalyze)
 
 
-class FillRepository:
+class FillRepository(object):
 	'A class to handle the fill settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -823,7 +823,7 @@ class FillRepository:
 			writeOutput(fileName)
 
 
-class FillSkein:
+class FillSkein(object):
 	'A class to fill a skein of extrusions.'
 	def __init__(self):
 		'Initialize.'
@@ -1334,7 +1334,7 @@ class FillSkein:
 			self.gridJunctionMiddle = halfGridMinusWidth * repository.gridJunctionSeparationOverOctogonRadiusAtMiddle.value
 
 
-class RotatedLayer:
+class RotatedLayer(object):
 	'A rotated layer.'
 	def __init__( self, z ):
 		'Initialize.'
@@ -1348,7 +1348,7 @@ class RotatedLayer:
 		return '%s, %s, %s' % ( self.z, self.rotation, self.nestedRings )
 
 
-class YIntersectionPath:
+class YIntersectionPath(object):
 	'A class to hold the y intersection position, the loop which it intersected and the point index of the loop which it intersected.'
 	def __init__( self, pathIndex, pointIndex, y ):
 		'Initialize from the path, point index, and y.'

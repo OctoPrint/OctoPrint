@@ -108,7 +108,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'stretch', shouldAnalyze)
 
 
-class LineIteratorBackward:
+class LineIteratorBackward(object):
 	"Backward line iterator class."
 	def __init__( self, isLoop, lineIndex, lines ):
 		self.firstLineIndex = None
@@ -172,7 +172,7 @@ class LineIteratorBackward:
 		return False
 
 
-class LineIteratorForward:
+class LineIteratorForward(object):
 	"Forward line iterator class."
 	def __init__( self, isLoop, lineIndex, lines ):
 		self.firstLineIndex = None
@@ -213,7 +213,7 @@ class LineIteratorForward:
 		raise StopIteration, "You've reached the end of the line."
 
 
-class StretchRepository:
+class StretchRepository(object):
 	"A class to handle the stretch settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -239,7 +239,7 @@ class StretchRepository:
 			writeOutput(fileName)
 
 
-class StretchSkein:
+class StretchSkein(object):
 	"A class to stretch a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

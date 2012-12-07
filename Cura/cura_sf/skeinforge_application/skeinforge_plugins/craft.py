@@ -61,7 +61,7 @@ def writeOutput(fileName):
 	return skeinforge_craft.writeOutput(fileName)
 
 
-class CraftMenuSaveListener:
+class CraftMenuSaveListener(object):
 	"A class to update a craft menu."
 	def __init__( self, menu, window ):
 		"Set the menu."
@@ -75,7 +75,7 @@ class CraftMenuSaveListener:
 		addToCraftMenu( self.menu )
 
 
-class CraftRadioButtonsSaveListener:
+class CraftRadioButtonsSaveListener(object):
 	"A class to update the craft radio buttons."
 	def addToDialog( self, gridPosition ):
 		"Add this to the dialog."

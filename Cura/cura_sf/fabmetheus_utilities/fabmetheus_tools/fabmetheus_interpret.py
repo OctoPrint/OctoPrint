@@ -110,7 +110,7 @@ def getWindowAnalyzeFile(fileName):
 		print('Open office writer can then be started from the command line with the command "soffice -writer".')
 
 
-class InterpretRepository:
+class InterpretRepository(object):
 	"A class to handle the interpret settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

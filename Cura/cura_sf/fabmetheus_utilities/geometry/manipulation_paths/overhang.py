@@ -137,7 +137,7 @@ def processElementNode(elementNode):
 	lineation.processElementNodeByFunction(elementNode, getManipulatedPaths)
 
 
-class AlongAway:
+class AlongAway(object):
 	"Class to derive the path along the point and away from the point."
 	def __init__( self, loop, overhangPlaneAngle ):
 		"Initialize."
@@ -211,7 +211,7 @@ class AlongAway:
 		return self.getIsPointSupportedBySegment( self.pointIndex + 1 )
 
 
-class OverhangClockwise:
+class OverhangClockwise(object):
 	"Class to get the intersection up from the point."
 	def __init__( self, alongAway ):
 		"Initialize."
@@ -269,7 +269,7 @@ class OverhangClockwise:
 		self.alongAway.loop[ unsupportedBeginIndex : endIndex ] = supportPoints
 
 
-class OverhangDerivation:
+class OverhangDerivation(object):
 	"Class to hold overhang variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'
@@ -277,7 +277,7 @@ class OverhangDerivation:
 		self.overhangInclinationRadians = math.radians(evaluate.getEvaluatedFloat(0.0, elementNode,  prefix + 'inclination'))
 
 
-class OverhangWiddershinsLeft:
+class OverhangWiddershinsLeft(object):
 	"Class to get the intersection from the point down to the left."
 	def __init__( self, alongAway ):
 		"Initialize."

@@ -154,7 +154,7 @@ def writeSVGTextWithNounMessage(fileName, repository, shouldAnalyze=True):
 		settings.openSVGPage(fileNameSuffix, repository.svgViewer.value)
 
 
-class CraftRadioButtonsSaveListener:
+class CraftRadioButtonsSaveListener(object):
 	"A class to update the craft radio buttons."
 	def addToDialog( self, gridPosition ):
 		"Add this to the dialog."
@@ -198,7 +198,7 @@ class CraftRadioButtonsSaveListener:
 		self.repository.pluginFrame.update()
 
 
-class CraftRepository:
+class CraftRepository(object):
 	"A class to handle the craft settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

@@ -111,7 +111,7 @@ def processElementNodeByDerivation(derivation, elementNode):
 	elementNode.getXMLProcessor().processElementNode(elementNode)
 
 
-class ArrayDerivation:
+class ArrayDerivation(object):
 	"Class to hold array variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

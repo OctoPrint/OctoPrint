@@ -48,7 +48,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class PolygonDerivation:
+class PolygonDerivation(object):
 	"Class to hold polygon variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

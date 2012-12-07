@@ -94,7 +94,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'preface', shouldAnalyze)
 
 
-class PrefaceRepository:
+class PrefaceRepository(object):
 	"A class to handle the preface settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -118,7 +118,7 @@ class PrefaceRepository:
 			writeOutput(fileName)
 
 
-class PrefaceSkein:
+class PrefaceSkein(object):
 	"A class to preface a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

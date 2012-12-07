@@ -114,7 +114,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'temperature', shouldAnalyze)
 
 
-class TemperatureRepository:
+class TemperatureRepository(object):
 	"A class to handle the temperature settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -144,7 +144,7 @@ class TemperatureRepository:
 			writeOutput(fileName)
 
 
-class TemperatureSkein:
+class TemperatureSkein(object):
 	"A class to temperature a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

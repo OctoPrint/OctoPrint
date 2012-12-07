@@ -64,7 +64,7 @@ def getNewDerivation(elementNode, prefix, sideLength):
 	return EquationDerivation(elementNode, prefix)
 
 
-class EquationDerivation:
+class EquationDerivation(object):
 	"Class to hold equation variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'
@@ -81,7 +81,7 @@ class EquationDerivation:
 			self.equationResults.append(EquationResult(elementNode, equationFunction, prefixedEquationName))
 
 
-class EquationResult:
+class EquationResult(object):
 	"Class to get equation results."
 	def __init__(self, elementNode, equationFunction, key):
 		"Initialize."

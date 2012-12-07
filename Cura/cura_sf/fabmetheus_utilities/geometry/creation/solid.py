@@ -167,7 +167,7 @@ def processTargetByFunctionPair(geometryFunction, pathFunction, target):
 	target.getXMLProcessor().convertElementNode(target, geometryOutput)
 
 
-class SolidDerivation:
+class SolidDerivation(object):
 	'Class to hold solid variables.'
 	def __init__(self, elementNode):
 		'Set defaults.'

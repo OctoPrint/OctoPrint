@@ -67,7 +67,7 @@ def getVector3Index(index=0, x=0.0, y=0.0, z=0.0):
 	return Vector3Index(index, x, y, z)
 
 
-class NestedVectorTestExample:
+class NestedVectorTestExample(object):
 	'Class to test local attribute.'
 	def __init__(self, vector3):
 		'Get the accessible attribute.'

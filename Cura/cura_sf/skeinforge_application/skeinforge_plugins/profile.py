@@ -58,7 +58,7 @@ def getNewRepository():
 	return skeinforge_profile.ProfileRepository()
 
 
-class ProfileMenuRadio:
+class ProfileMenuRadio(object):
 	"A class to display a profile menu radio button."
 	def __init__( self, profilePluginFileName, menu, name, radioVar, value ):
 		"Create a profile menu radio."
@@ -92,7 +92,7 @@ class ProfileMenuRadio:
 		skeinforge_profile.updateProfileSaveListeners()
 
 
-class ProfileMenuSaveListener:
+class ProfileMenuSaveListener(object):
 	"A class to update a profile menu."
 	def __init__( self, menu, window ):
 		"Set the menu."

@@ -137,7 +137,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'dimension', shouldAnalyze)
 
 
-class DimensionRepository:
+class DimensionRepository(object):
 	'A class to handle the dimension settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -169,7 +169,7 @@ class DimensionRepository:
 			writeOutput(fileName)
 
 
-class DimensionSkein:
+class DimensionSkein(object):
 	'A class to dimension a skein of extrusions.'
 	def __init__(self):
 		'Initialize.'

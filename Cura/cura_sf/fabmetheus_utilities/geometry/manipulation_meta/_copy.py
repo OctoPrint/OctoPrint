@@ -63,7 +63,7 @@ def processElementNodeByDerivation(derivation, elementNode):
 	elementNode.getXMLProcessor().convertElementNode(elementNode, geometryOutput)
 
 
-class CopyDerivation:
+class CopyDerivation(object):
 	"Class to hold copy variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

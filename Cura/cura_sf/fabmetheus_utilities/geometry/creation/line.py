@@ -88,7 +88,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class LineDerivation:
+class LineDerivation(object):
 	"Class to hold line variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

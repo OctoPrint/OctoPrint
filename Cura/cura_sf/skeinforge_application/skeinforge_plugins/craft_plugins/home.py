@@ -71,7 +71,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'home', shouldAnalyze)
 
 
-class HomeRepository:
+class HomeRepository(object):
 	"A class to handle the home settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -89,7 +89,7 @@ class HomeRepository:
 			writeOutput(fileName)
 
 
-class HomeSkein:
+class HomeSkein(object):
 	"A class to home a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

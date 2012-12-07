@@ -78,7 +78,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'lash', shouldAnalyze)
 
 
-class LashRepository:
+class LashRepository(object):
 	"A class to handle the lash settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -97,7 +97,7 @@ class LashRepository:
 			writeOutput(fileName)
 
 
-class LashSkein:
+class LashSkein(object):
 	"A class to lash a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

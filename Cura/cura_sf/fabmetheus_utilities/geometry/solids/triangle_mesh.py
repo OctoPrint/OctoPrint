@@ -724,7 +724,7 @@ def sortLoopsInOrderOfArea(isDescending, loops):
 	loops.sort(key=euclidean.getAreaLoopAbsolute, reverse=isDescending)
 
 
-class EdgePair:
+class EdgePair(object):
 	def __init__(self):
 		'Pair of edges on a face.'
 		self.edgeIndexes = []
@@ -743,7 +743,7 @@ class EdgePair:
 		return self
 
 
-class FaceGenerator:
+class FaceGenerator(object):
 	'A face generator.'
 	def __init__(self, faces, indexedLoopBottom, indexedLoopTop):
 		'Initialize.'
@@ -922,7 +922,7 @@ class TriangleMesh( group.Group ):
 			face.setEdgeIndexesToVertexIndexes( self.edges, edgeTable )
 
 
-class ZoneArrangement:
+class ZoneArrangement(object):
 	'A zone arrangement.'
 	def __init__(self, layerHeight, vertexes):
 		'Initialize the zone interval and the zZone table.'

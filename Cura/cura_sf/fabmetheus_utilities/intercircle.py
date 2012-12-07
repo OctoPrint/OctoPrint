@@ -548,7 +548,7 @@ def removeIntersection( loop ):
 					return
 
 
-class BoundingLoop:
+class BoundingLoop(object):
 	'A class to hold a bounding loop composed of a minimum complex, a maximum complex and an outset loop.'
 	def __eq__(self, other):
 		'Determine whether this bounding loop is identical to other one.'
@@ -614,7 +614,7 @@ class BoundingLoop:
 		return self.minimum.imag > anotherBoundingLoop.maximum.imag or self.minimum.real > anotherBoundingLoop.maximum.real
 
 
-class CenterOutset:
+class CenterOutset(object):
 	'A class to hold a center and an outset.'
 	def __init__(self, center, outset):
 		'Set the center and outset.'
@@ -626,7 +626,7 @@ class CenterOutset:
 		return '%s\n%s' % (self.center, self.outset)
 
 
-class CircleIntersection:
+class CircleIntersection(object):
 	'An intersection of two complex circles.'
 	def __init__( self, circleNodeAhead, index, circleNodeBehind ):
 		self.aheadMinusBehind = 0.5 * ( circleNodeAhead.dividedPoint - circleNodeBehind.dividedPoint )
@@ -695,7 +695,7 @@ class CircleIntersection:
 		return False
 
 
-class CircleNode:
+class CircleNode(object):
 	'A complex node of complex circle intersections.'
 	def __init__(self, oneOverRadius, point):
 		self.actualPoint = point

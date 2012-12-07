@@ -155,7 +155,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByGeometry(elementNode, getGeometryOutput(elementNode))
 
 
-class CellExistence:
+class CellExistence(object):
 	'Class to determine if a cell exists.'
 	def __init__(self, columns, rows, value):
 		'Initialize.'
@@ -184,7 +184,7 @@ class CellExistence:
 		return (columnIndex, rowIndex) in self.existenceSet
 
 
-class HollowPegSocket:
+class HollowPegSocket(object):
 	'Class to hold hollow peg socket variables.'
 	def __init__(self, center):
 		'Initialize.'
@@ -197,7 +197,7 @@ class HollowPegSocket:
 		return euclidean.getDictionaryString(self.__dict__)
 
 
-class MechaslabDerivation:
+class MechaslabDerivation(object):
 	'Class to hold mechaslab variables.'
 	def __init__(self, elementNode):
 		'Set defaults.'

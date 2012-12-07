@@ -71,7 +71,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'limit', shouldAnalyze)
 
 
-class LimitRepository:
+class LimitRepository(object):
 	'A class to handle the limit settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -89,7 +89,7 @@ class LimitRepository:
 			writeOutput(fileName)
 
 
-class LimitSkein:
+class LimitSkein(object):
 	'A class to limit a skein of extrusions.'
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

@@ -55,7 +55,7 @@ def rotatePoints(elementNode, points, prefix):
 	matrix.transformVector3sByMatrix(derivation.rotateTetragrid, points)
 
 
-class RotateDerivation:
+class RotateDerivation(object):
 	"Class to hold rotate variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'

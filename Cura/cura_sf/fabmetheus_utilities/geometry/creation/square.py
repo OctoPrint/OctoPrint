@@ -64,7 +64,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class SquareDerivation:
+class SquareDerivation(object):
 	"Class to hold square variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

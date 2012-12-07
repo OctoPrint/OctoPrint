@@ -275,7 +275,7 @@ def setOffsetByMultiplier(begin, end, multiplier, offset):
 	offset.setToVector3(offset + delta)
 
 
-class ExtrudeDerivation:
+class ExtrudeDerivation(object):
 	'Class to hold extrude variables.'
 	def __init__(self, elementNode):
 		'Initialize.'
@@ -303,7 +303,7 @@ class ExtrudeDerivation:
 		insertTwistPortions(self, elementNode)
 
 
-class Interpolation:
+class Interpolation(object):
 	'Class to interpolate a path.'
 	def __init__(self):
 		'Set index.'
@@ -426,7 +426,7 @@ class Interpolation:
 		self.endVertex = self.path[ self.interpolationIndex + 1 ]
 
 
-class PortionDirection:
+class PortionDirection(object):
 	'Class to hold a portion and direction.'
 	def __init__( self, portion ):
 		'Initialize.'

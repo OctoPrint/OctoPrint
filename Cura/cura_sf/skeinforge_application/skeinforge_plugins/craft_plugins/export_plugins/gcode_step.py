@@ -132,7 +132,7 @@ def writeOutput( fileName, gcodeText = ''):
 	print('The converted file is saved as ' + archive.getSummarizedFileName(suffixFileName))
 
 
-class GcodeStepRepository:
+class GcodeStepRepository(object):
 	'A class to handle the export settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -163,7 +163,7 @@ class GcodeStepRepository:
 			writeOutput(fileName)
 
 
-class GcodeStepSkein:
+class GcodeStepSkein(object):
 	'A class to convert gcode into 16 byte binary segments.'
 	def __init__(self):
 		self.oldFeedRateString = None

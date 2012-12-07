@@ -83,7 +83,7 @@ def processElementNodeByDerivation(derivation, elementNode):
 			path.convertElementNode(pathElement, vector3Loops)
 
 
-class CarveDerivation:
+class CarveDerivation(object):
 	"Class to hold carve variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

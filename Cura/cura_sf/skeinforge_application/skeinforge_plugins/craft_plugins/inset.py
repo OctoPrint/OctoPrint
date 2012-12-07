@@ -280,7 +280,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'inset', shouldAnalyze)
 
 
-class InsetRepository:
+class InsetRepository(object):
 	"A class to handle the inset settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -308,7 +308,7 @@ class InsetRepository:
 			writeOutput(fileName)
 
 
-class InsetSkein:
+class InsetSkein(object):
 	"A class to inset a skein of extrusions."
 	def __init__(self):
 		'Initialize.'

@@ -106,7 +106,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'jitter', shouldAnalyze)
 
 
-class JitterRepository:
+class JitterRepository(object):
 	'A class to handle the jitter settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -124,7 +124,7 @@ class JitterRepository:
 			writeOutput(fileName)
 
 
-class JitterSkein:
+class JitterSkein(object):
 	'A class to jitter a skein of extrusions.'
 	def __init__(self):
 		'Initialize.'

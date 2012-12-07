@@ -74,7 +74,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByFunctionPair(elementNode, getManipulatedGeometryOutput, getManipulatedPaths)
 
 
-class InsetDerivation:
+class InsetDerivation(object):
 	"Class to hold inset variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'

@@ -34,7 +34,7 @@ def processElementNode(elementNode):
 	lineation.processElementNodeByFunction(elementNode, getManipulatedPaths)
 
 
-class WedgeDerivation:
+class WedgeDerivation(object):
 	"Class to hold wedge variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'

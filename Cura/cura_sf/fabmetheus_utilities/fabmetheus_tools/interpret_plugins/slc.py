@@ -54,7 +54,7 @@ def readHeader( file ):
 		pass
 
 
-class SampleTableEntry:
+class SampleTableEntry(object):
 	"Sample table entry."
 	def __init__( self, file ):
 		"Read in the sampling table section. It contains a table length (byte) and the table entries."
@@ -68,7 +68,7 @@ class SampleTableEntry:
 		return '%s, %s, %s' % ( self.min_z_level, self.layer_thickness, self.beam_comp )
 
 
-class SLCCarving:
+class SLCCarving(object):
 	"An slc carving."
 	def __init__(self):
 		"Add empty lists."

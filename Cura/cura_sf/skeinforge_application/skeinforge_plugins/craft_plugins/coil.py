@@ -70,7 +70,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'coil', shouldAnalyze)
 
 
-class CoilRepository:
+class CoilRepository(object):
 	"A class to handle the coil settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -88,7 +88,7 @@ class CoilRepository:
 
 
 
-class CoilSkein:
+class CoilSkein(object):
 	"A class to coil a skein of extrusions."
 	def __init__(self):
 		self.boundaryLayers = []

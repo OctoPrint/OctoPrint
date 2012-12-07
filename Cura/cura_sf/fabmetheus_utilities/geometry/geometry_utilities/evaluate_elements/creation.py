@@ -32,7 +32,7 @@ def _getAccessibleAttribute(attributeName, elementNode):
 	return Creation(elementNode, pluginModule).getCreation
 
 
-class Creation:
+class Creation(object):
 	'Class to handle a creation.'
 	def __init__(self, elementNode, pluginModule):
 		'Initialize.'

@@ -146,7 +146,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(elementNode))
 
 
-class GridDerivation:
+class GridDerivation(object):
 	'Class to hold grid variables.'
 	def __init__(self, elementNode):
 		'Set defaults.'

@@ -24,7 +24,7 @@ def _getAccessibleAttribute(attributeName, listObject):
 	return None
 
 
-class ListAttribute:
+class ListAttribute(object):
 	'Class to handle a list.'
 	def __init__(self, listObject):
 		'Initialize.'

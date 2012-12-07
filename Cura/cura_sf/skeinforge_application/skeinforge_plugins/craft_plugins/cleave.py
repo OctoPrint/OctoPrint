@@ -130,7 +130,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 		settings.openSVGPage( suffixFileName, repository.svgViewer.value )
 
 
-class CleaveRepository:
+class CleaveRepository(object):
 	"A class to handle the cleave settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -158,7 +158,7 @@ class CleaveRepository:
 			writeOutput(fileName)
 
 
-class CleaveSkein:
+class CleaveSkein(object):
 	"A class to cleave a carving."
 	def getCarvedSVG( self, carving, fileName, repository ):
 		"Parse gnu triangulated surface text and store the cleaved gcode."

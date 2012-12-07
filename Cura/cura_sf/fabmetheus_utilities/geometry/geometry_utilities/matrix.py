@@ -427,7 +427,7 @@ def transformVector3sByMatrix(tetragrid, vector3s):
 		transformVector3Blindly(tetragrid, vector3)
 
 
-class Matrix:
+class Matrix(object):
 	'A four by four matrix.'
 	def __init__(self, tetragrid=None):
 		'Add empty lists.'

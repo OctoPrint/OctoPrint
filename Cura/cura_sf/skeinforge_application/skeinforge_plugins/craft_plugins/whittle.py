@@ -67,7 +67,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'whittle', shouldAnalyze)
 
 
-class WhittleRepository:
+class WhittleRepository(object):
 	"A class to handle the whittle settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -84,7 +84,7 @@ class WhittleRepository:
 			writeOutput(fileName)
 
 
-class WhittleSkein:
+class WhittleSkein(object):
 	"A class to whittle a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

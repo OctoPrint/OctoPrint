@@ -99,7 +99,7 @@ class Cylinder( cube.Cube ):
 		solid.processArchiveRemoveSolid(elementNode, self.getGeometryOutput())
 
 
-class CylinderDerivation:
+class CylinderDerivation(object):
 	"Class to hold cylinder variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

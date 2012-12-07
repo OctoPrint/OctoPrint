@@ -82,7 +82,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'clip', shouldAnalyze)
 
 
-class ClipRepository:
+class ClipRepository(object):
 	"A class to handle the clip settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -101,7 +101,7 @@ class ClipRepository:
 			writeOutput(fileName)
 
 
-class ClipSkein:
+class ClipSkein(object):
 	"A class to clip a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

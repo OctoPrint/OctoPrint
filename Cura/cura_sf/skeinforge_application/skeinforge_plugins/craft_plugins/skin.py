@@ -110,7 +110,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'skin', shouldAnalyze)
 
 
-class SkinRepository:
+class SkinRepository(object):
 	'A class to handle the skin settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -135,7 +135,7 @@ class SkinRepository:
 			writeOutput(fileName)
 
 
-class SkinSkein:
+class SkinSkein(object):
 	'A class to skin a skein of extrusions.'
 	def __init__(self):
 		'Initialize.'

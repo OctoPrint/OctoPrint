@@ -35,7 +35,7 @@ def getNewRepository():
 	return MillingRepository()
 
 
-class MillingRepository:
+class MillingRepository(object):
 	"A class to handle the milling settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

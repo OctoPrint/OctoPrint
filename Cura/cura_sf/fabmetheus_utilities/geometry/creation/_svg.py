@@ -50,7 +50,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class SVGDerivation:
+class SVGDerivation(object):
 	"Class to hold svg variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

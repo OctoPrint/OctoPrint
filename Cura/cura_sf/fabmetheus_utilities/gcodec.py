@@ -224,7 +224,7 @@ def isThereAFirstWord(firstWord, lines, startIndex):
 	return False
 
 
-class BoundingRectangle:
+class BoundingRectangle(object):
 	'A class to get the corners of a gcode text.'
 	def getFromGcodeLines(self, lines, radius):
 		'Parse gcode text and get the minimum and maximum corners.'
@@ -256,7 +256,7 @@ class BoundingRectangle:
 			self.oldLocation = location
 
 
-class DistanceFeedRate:
+class DistanceFeedRate(object):
 	'A class to limit the z feed rate and round values.'
 	def __init__(self):
 		'Initialize.'

@@ -93,7 +93,7 @@ def getFileText(fileName, printWarning=True, readMode='r'):
 	return ''
 
 
-class CDATASectionMonad:
+class CDATASectionMonad(object):
 	'A monad to handle a CDATASection node.'
 	def __init__(self, input, parentNode):
 		'Initialize.'
@@ -112,7 +112,7 @@ class CDATASectionMonad:
 		return self
 
 
-class CDATASectionNode:
+class CDATASectionNode(object):
 	'A CDATASection node.'
 	def __init__(self, parentNode, textContent=''):
 		'Initialize.'
@@ -228,7 +228,7 @@ class CommentNode(CDATASectionNode):
 	nodeType = property(getNodeType)
 
 
-class DocumentNode:
+class DocumentNode(object):
 	'A class to parse an xml text and store the elements.'
 	def __init__(self, fileName, xmlText):
 		'Initialize.'
@@ -337,7 +337,7 @@ class DocumentTypeNode(CDATASectionNode):
 	nodeType = property(getNodeType)
 
 
-class ElementEndMonad:
+class ElementEndMonad(object):
 	'A monad to look for the end of an ElementNode tag.'
 	def __init__(self, parentNode):
 		'Initialize.'
@@ -350,7 +350,7 @@ class ElementEndMonad:
 		return self
 
 
-class ElementLocalNameMonad:
+class ElementLocalNameMonad(object):
 	'A monad to set the local name of an ElementNode.'
 	def __init__(self, character, parentNode):
 		'Initialize.'
@@ -388,7 +388,7 @@ class ElementLocalNameMonad:
 		self.elementNode.localName = self.input.getvalue().lower().strip()
 
 
-class ElementNode:
+class ElementNode(object):
 	'An xml element.'
 	def __init__(self, parentNode=None):
 		'Initialize.'
@@ -725,7 +725,7 @@ class ElementNode:
 	textContent = property(getTextContent)
 
 
-class ElementReadMonad:
+class ElementReadMonad(object):
 	'A monad to read the attributes of the ElementNode tag.'
 	def __init__(self, elementNode):
 		'Initialize.'
@@ -744,7 +744,7 @@ class ElementReadMonad:
 		return KeyMonad(character, self.elementNode)
 
 
-class KeyMonad:
+class KeyMonad(object):
 	'A monad to set the key of an attribute of an ElementNode.'
 	def __init__(self, character, elementNode):
 		'Initialize.'
@@ -784,7 +784,7 @@ class OpenMonad(ElementEndMonad):
 		return self
 
 
-class TextMonad:
+class TextMonad(object):
 	'A monad to handle the open tag character and set the text.'
 	def __init__(self, parentNode):
 		'Initialize.'
@@ -824,7 +824,7 @@ class TextNode(CDATASectionNode):
 	nodeType = property(getNodeType)
 
 
-class ValueMonad:
+class ValueMonad(object):
 	'A monad to set the value of an attribute of an ElementNode.'
 	def __init__(self, elementNode, key):
 		'Initialize.'

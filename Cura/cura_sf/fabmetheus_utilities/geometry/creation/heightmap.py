@@ -187,7 +187,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByGeometry(elementNode, getGeometryOutput(elementNode))
 
 
-class HeightmapDerivation:
+class HeightmapDerivation(object):
 	'Class to hold heightmap variables.'
 	def __init__(self, elementNode):
 		'Set defaults.'

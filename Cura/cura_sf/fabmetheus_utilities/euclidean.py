@@ -2065,7 +2065,7 @@ def unbuckleBasis( basis, maximumUnbuckling, normal ):
 	basis.setToVector3( basis * unbuckling )
 
 
-class DistanceIndex:
+class DistanceIndex(object):
 	'A class to hold the distance and the index of the loop.'
 	def __init__(self, distance, index):
 		'Initialize.'
@@ -2077,7 +2077,7 @@ class DistanceIndex:
 		return '%s, %s' % (self.distance, self.index)
 
 
-class Endpoint:
+class Endpoint(object):
 	'The endpoint of a segment.'
 	def __repr__(self):
 		'Get the string representation of this Endpoint.'
@@ -2180,7 +2180,7 @@ class Endpoint:
 		return self
 
 
-class LoopLayer:
+class LoopLayer(object):
 	'Loops with a z.'
 	def __init__(self, z):
 		'Initialize.'
@@ -2192,7 +2192,7 @@ class LoopLayer:
 		return '%s, %s' % (self.z, self.loops)
 
 
-class NestedRing:
+class NestedRing(object):
 	'A nested ring.'
 	def __init__(self):
 		'Initialize.'
@@ -2345,7 +2345,7 @@ class NestedBand(NestedRing):
 		self.infillPaths = getTransferredPaths(paths, self.boundary)
 
 
-class PathZ:
+class PathZ(object):
 	'Complex path with a z.'
 	def __init__( self, z ):
 		self.path = []
@@ -2356,7 +2356,7 @@ class PathZ:
 		return '%s, %s' % ( self.z, self.path )
 
 
-class ProjectiveSpace:
+class ProjectiveSpace(object):
 	'Class to define a projective space.'
 	def __init__( self, basisX = Vector3(1.0, 0.0, 0.0), basisY = Vector3( 0.0, 1.0, 0.0 ), basisZ = Vector3(0.0, 0.0, 1.0) ):
 		'Initialize the basis vectors.'
@@ -2466,7 +2466,7 @@ class ProjectiveSpace:
 		unbuckleBasis( self.basisY, maximumUnbuckling, normal )
 
 
-class XIntersectionIndex:
+class XIntersectionIndex(object):
 	'A class to hold the x intersection position and the index of the loop which intersected.'
 	def __init__( self, index, x ):
 		'Initialize.'

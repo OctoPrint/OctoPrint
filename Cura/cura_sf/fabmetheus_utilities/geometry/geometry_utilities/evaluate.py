@@ -939,7 +939,7 @@ def setLocalAttribute(elementNode):
 	elementNode.xmlObject = KeyValue()
 
 
-class BaseFunction:
+class BaseFunction(object):
 	'Class to get equation results.'
 	def __init__(self, elementNode):
 		'Initialize.'
@@ -981,7 +981,7 @@ class ClassFunction(BaseFunction):
 		return self.returnValue
 
 
-class ClassObject:
+class ClassObject(object):
 	'Class to hold class attributes and functions.'
 	def __init__(self, elementNode):
 		'Initialize.'
@@ -1010,14 +1010,14 @@ class ClassObject:
 			self.selfDictionary[attributeName] = value
 
 
-class EmptyObject:
+class EmptyObject(object):
 	'An empty object.'
 	def __init__(self):
 		'Do nothing.'
 		pass
 
 
-class Evaluator:
+class Evaluator(object):
 	'Base evaluator class.'
 	def __init__(self, elementNode, word):
 		'Set value to none.'
@@ -1790,7 +1790,7 @@ class Function(BaseFunction):
 		return self.returnValue
 
 
-class FunctionVariable:
+class FunctionVariable(object):
 	'Class to hold class functions and variable set.'
 	def __init__(self, elementNode):
 		'Initialize.'
@@ -1834,7 +1834,7 @@ class FunctionVariable:
 			self.processStatement(childNode)
 
 
-class KeyValue:
+class KeyValue(object):
 	'Class to hold a key value.'
 	def __init__(self, key=None, value=None):
 		'Get key value.'
@@ -1865,7 +1865,7 @@ class KeyValue:
 		return self.getByCharacter('=', line )
 
 
-class ModuleElementNode:
+class ModuleElementNode(object):
 	'Class to get the in attribute, the index name and the value name.'
 	def __init__( self, elementNode):
 		'Initialize.'

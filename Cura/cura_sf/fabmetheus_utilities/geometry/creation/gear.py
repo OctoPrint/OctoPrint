@@ -1027,7 +1027,7 @@ def processElementNode(elementNode):
 		solid.processElementNodeByGeometry(elementNode, geometryOutput)
 
 
-class GearDerivation:
+class GearDerivation(object):
 	"Class to hold gear variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

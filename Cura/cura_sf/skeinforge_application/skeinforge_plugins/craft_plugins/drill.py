@@ -80,7 +80,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'drill', shouldAnalyze)
 
 
-class ThreadLayer:
+class ThreadLayer(object):
 	"A layer of loops and paths."
 	def __init__( self, z ):
 		"Thread layer constructor."
@@ -92,7 +92,7 @@ class ThreadLayer:
 		return '%s, %s' % ( self.z, self.points )
 
 
-class DrillRepository:
+class DrillRepository(object):
 	"A class to handle the drill settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -110,7 +110,7 @@ class DrillRepository:
 			writeOutput(fileName)
 
 
-class DrillSkein:
+class DrillSkein(object):
 	"A class to drill a skein of extrusions."
 	def __init__(self):
 		self.boundary = None

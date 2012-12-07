@@ -83,7 +83,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeSVGTextWithNounMessage(fileName, BottomRepository(), shouldAnalyze)
 
 
-class BottomRepository:
+class BottomRepository(object):
 	"A class to handle the bottom settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -106,7 +106,7 @@ class BottomRepository:
 			writeOutput(fileName)
 
 
-class BottomSkein:
+class BottomSkein(object):
 	"A class to bottom a skein of extrusions."
 	def getCraftedGcode(self, fileName, repository, svgText):
 		"Parse svgText and store the bottom svgText."

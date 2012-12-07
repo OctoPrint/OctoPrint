@@ -63,7 +63,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class ShaftDerivation:
+class ShaftDerivation(object):
 	"Class to hold shaft variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

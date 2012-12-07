@@ -61,7 +61,7 @@ def processElementNode(elementNode):
 	lineation.processElementNodeByFunction(elementNode, getManipulatedPaths)
 
 
-class BevelDerivation:
+class BevelDerivation(object):
 	"Class to hold bevel variables."
 	def __init__(self, elementNode, prefix, sideLength):
 		'Set defaults.'

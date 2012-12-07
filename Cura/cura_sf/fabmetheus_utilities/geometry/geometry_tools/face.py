@@ -67,7 +67,7 @@ def processElementNode(elementNode):
 	elementNode.parentNode.xmlObject.faces.append(face)
 
 
-class Edge:
+class Edge(object):
 	"An edge of a triangle mesh."
 	def __init__(self):
 		"Set the face indexes to None."
@@ -92,7 +92,7 @@ class Edge:
 		return self
 
 
-class Face:
+class Face(object):
 	"A face of a triangle mesh."
 	def __init__(self):
 		"Initialize."

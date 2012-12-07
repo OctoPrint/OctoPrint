@@ -81,7 +81,7 @@ def processElementNodeByDerivation(derivation, elementNode):
 	evaluate.processArchivable(group.Group, elementNode)
 
 
-class ImportDerivation:
+class ImportDerivation(object):
 	"Class to hold import variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

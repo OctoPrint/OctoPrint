@@ -33,7 +33,7 @@ def getCarving(fileName=''):
 	return carving
 
 
-class SVGCarving:
+class SVGCarving(object):
 	'An svg carving.'
 	def __init__(self):
 		'Add empty lists.'

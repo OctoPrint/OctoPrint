@@ -222,14 +222,14 @@ def setClosedAttribute(elementNode, revolutions):
 	elementNode.attributes['closed'] = str(closedBoolean).lower()
 
 
-class LineationDerivation:
+class LineationDerivation(object):
 	'Class to hold lineation variables.'
 	def __init__(self, elementNode):
 		'Set defaults.'
 		self.target = evaluate.getTransformedPathsByKey([], elementNode, 'target')
 
 
-class SideLoop:
+class SideLoop(object):
 	'Class to handle loop, side angle and side length.'
 	def __init__(self, loop, sideAngle=None, sideLength=None):
 		'Initialize.'
@@ -282,7 +282,7 @@ class SideLoop:
 				self.loop.reverse()
 
 
-class Spiral:
+class Spiral(object):
 	'Class to add a spiral.'
 	def __init__(self, spiral, stepRatio):
 		'Initialize.'

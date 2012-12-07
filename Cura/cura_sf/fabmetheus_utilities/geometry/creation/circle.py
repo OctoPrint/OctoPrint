@@ -56,7 +56,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class CircleDerivation:
+class CircleDerivation(object):
 	"Class to hold circle variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

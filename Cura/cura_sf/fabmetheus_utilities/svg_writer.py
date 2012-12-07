@@ -92,7 +92,7 @@ def setSVGCarvingCorners(cornerMaximum, cornerMinimum, layerHeight, loopLayers):
 	cornerMinimum.z -= halfLayerThickness
 
 
-class SVGWriter:
+class SVGWriter(object):
 	'A base class to get an svg skein from a carving.'
 	def __init__(self,
 			addLayerTemplateToSVG,

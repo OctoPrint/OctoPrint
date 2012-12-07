@@ -93,7 +93,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeSVGTextWithNounMessage(fileName, ScaleRepository(), shouldAnalyze)
 
 
-class ScaleRepository:
+class ScaleRepository(object):
 	"A class to handle the scale settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -113,7 +113,7 @@ class ScaleRepository:
 			writeOutput(fileName)
 
 
-class ScaleSkein:
+class ScaleSkein(object):
 	"A class to scale a skein of extrusions."
 	def getCraftedGcode(self, fileName, repository, svgText):
 		"Parse svgText and store the scale svgText."

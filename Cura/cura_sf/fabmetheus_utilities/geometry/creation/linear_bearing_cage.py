@@ -165,7 +165,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByGeometry(elementNode, getGeometryOutput(elementNode))
 
 
-class LinearBearingCageDerivation:
+class LinearBearingCageDerivation(object):
 	'Class to hold linear bearing cage variables.'
 	def __init__(self, elementNode):
 		'Set defaults.'

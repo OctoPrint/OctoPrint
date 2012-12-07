@@ -48,7 +48,7 @@ def processElementNode(elementNode):
 	evaluate.processArchivable( Dictionary, elementNode)
 
 
-class Dictionary:
+class Dictionary(object):
 	'A dictionary object.'
 	def __init__(self):
 		'Add empty lists.'

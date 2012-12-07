@@ -43,7 +43,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class ConcatenateDerivation:
+class ConcatenateDerivation(object):
 	'Class to hold concatenate variables.'
 	def __init__(self, elementNode):
 		'Initialize.'

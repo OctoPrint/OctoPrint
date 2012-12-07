@@ -51,7 +51,7 @@ def writeOutput(fileName, fileNamePenultimate, fileNameSuffix, filePenultimateWr
 	return window
 
 
-class AnalyzeRepository:
+class AnalyzeRepository(object):
 	"A class to handle the analyze settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

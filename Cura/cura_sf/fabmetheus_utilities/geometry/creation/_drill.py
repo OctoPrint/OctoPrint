@@ -40,7 +40,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByGeometry(elementNode, getGeometryOutput(None, elementNode))
 
 
-class DrillDerivation:
+class DrillDerivation(object):
 	"Class to hold drill variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

@@ -107,7 +107,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'oozebane', shouldAnalyze)
 
 
-class OozebaneRepository:
+class OozebaneRepository(object):
 	"A class to handle the oozebane settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -132,7 +132,7 @@ class OozebaneRepository:
 			writeOutput(fileName)
 
 
-class OozebaneSkein:
+class OozebaneSkein(object):
 	"A class to oozebane a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

@@ -77,7 +77,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class SpongeCircle:
+class SpongeCircle(object):
 	"Class to hold sponge circle."
 	def __init__(self, center, radius=0.0):
 		'Initialize.'
@@ -120,7 +120,7 @@ class SpongeCircle:
 		self.radius = greatestRadius
 
 
-class SpongeSliceDerivation:
+class SpongeSliceDerivation(object):
 	"Class to hold sponge slice variables."
 	def __init__(self, elementNode):
 		'Initialize.'

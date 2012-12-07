@@ -70,7 +70,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'lift', shouldAnalyze)
 
 
-class LiftRepository:
+class LiftRepository(object):
 	"A class to handle the lift settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -88,7 +88,7 @@ class LiftRepository:
 			writeOutput(fileName)
 
 
-class LiftSkein:
+class LiftSkein(object):
 	"A class to lift a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

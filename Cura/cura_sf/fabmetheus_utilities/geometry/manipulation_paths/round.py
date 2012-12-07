@@ -85,7 +85,7 @@ def processElementNode(elementNode):
 	lineation.processElementNodeByFunction(elementNode, getManipulatedPaths)
 
 
-class RoundDerivation:
+class RoundDerivation(object):
 	"Class to hold round variables."
 	def __init__(self, elementNode, prefix, sideLength):
 		'Set defaults.'

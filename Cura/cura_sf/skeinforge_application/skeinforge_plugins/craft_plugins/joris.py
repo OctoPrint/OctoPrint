@@ -62,7 +62,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'joris', shouldAnalyze)
 
 
-class JorisRepository:
+class JorisRepository(object):
 	'A class to handle the Joris settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -81,7 +81,7 @@ class JorisRepository:
 			writeOutput(fileName)
 
 
-class JorisSkein:
+class JorisSkein(object):
 	'A class to Joris a skein of extrusions.'
 	def __init__(self):
 		'Initialize.'

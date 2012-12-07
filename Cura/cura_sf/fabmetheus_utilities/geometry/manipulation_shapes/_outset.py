@@ -66,7 +66,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByFunctionPair(elementNode, getManipulatedGeometryOutput, getManipulatedPaths)
 
 
-class OutsetDerivation:
+class OutsetDerivation(object):
 	"Class to hold outset variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'

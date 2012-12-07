@@ -79,7 +79,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'smooth', shouldAnalyze)
 
 
-class SmoothRepository:
+class SmoothRepository(object):
 	'A class to handle the smooth settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -98,7 +98,7 @@ class SmoothRepository:
 			writeOutput(fileName)
 
 
-class SmoothSkein:
+class SmoothSkein(object):
 	'A class to smooth a skein of extrusions.'
 	def __init__(self):
 		'Initialize.'

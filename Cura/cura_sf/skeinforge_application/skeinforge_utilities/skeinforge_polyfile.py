@@ -57,7 +57,7 @@ def isEmptyOrCancelled( fileName, wasCancelled ):
 	return str(fileName) == '' or str(fileName) == '()' or wasCancelled
 
 
-class PolyfileRepository:
+class PolyfileRepository(object):
 	"A class to handle the polyfile settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

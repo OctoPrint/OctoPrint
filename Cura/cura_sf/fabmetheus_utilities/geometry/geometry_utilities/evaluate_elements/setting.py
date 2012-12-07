@@ -109,7 +109,7 @@ def getTwistPrecisionRadians(elementNode):
 	return math.radians(getTwistPrecision(elementNode))
 
 
-class Setting:
+class Setting(object):
 	'Class to get handle elementNodes in a setting.'
 	def __init__(self, elementNode):
 		'Initialize.'

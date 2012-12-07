@@ -24,7 +24,7 @@ def _getAccessibleAttribute(attributeName, dictionaryObject):
 	return None
 
 
-class DictionaryAttribute:
+class DictionaryAttribute(object):
 	'Class to handle a dictionary.'
 	def __init__(self, dictionaryObject):
 		'Initialize.'

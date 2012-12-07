@@ -198,7 +198,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'chamber', shouldAnalyze)
 
 
-class ChamberRepository:
+class ChamberRepository(object):
 	"A class to handle the chamber settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -225,7 +225,7 @@ class ChamberRepository:
 
 
 
-class ChamberSkein:
+class ChamberSkein(object):
 	"A class to chamber a skein of extrusions."
 	def __init__(self):
 		'Initialize.'

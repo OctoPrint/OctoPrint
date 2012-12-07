@@ -68,7 +68,7 @@ class Cube(triangle_mesh.TriangleMesh):
 		solid.processArchiveRemoveSolid(elementNode, self.getGeometryOutput())
 
 
-class CubeDerivation:
+class CubeDerivation(object):
 	"Class to hold cube variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

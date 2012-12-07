@@ -24,7 +24,7 @@ def _getAccessibleAttribute(attributeName, stringObject):
 	return None
 
 
-class StringAttribute:
+class StringAttribute(object):
 	'Class to handle a string.'
 	def __init__(self, stringObject):
 		'Initialize.'

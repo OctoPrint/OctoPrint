@@ -73,7 +73,7 @@ class Sphere(cube.Cube):
 		solid.processArchiveRemoveSolid(elementNode, self.getGeometryOutput())
 
 
-class SphereDerivation:
+class SphereDerivation(object):
 	"Class to hold sphere variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

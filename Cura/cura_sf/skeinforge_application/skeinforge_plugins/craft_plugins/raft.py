@@ -330,7 +330,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'raft', shouldAnalyze)
 
 
-class RaftRepository:
+class RaftRepository(object):
 	'A class to handle the raft settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -410,7 +410,7 @@ class RaftRepository:
 			writeOutput(fileName)
 
 
-class RaftSkein:
+class RaftSkein(object):
 	'A class to raft a skein of extrusions.'
 	def __init__(self):
 		self.addLineLayerStart = True
@@ -1094,7 +1094,7 @@ class RaftSkein:
 		self.supportLayers = []
 
 
-class SupportLayer:
+class SupportLayer(object):
 	'Support loops with segment tables.'
 	def __init__( self, supportLoops ):
 		self.supportLoops = supportLoops

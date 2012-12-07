@@ -135,7 +135,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 		settings.openSVGPage( suffixFileName, repository.svgViewer.value )
 
 
-class ChopRepository:
+class ChopRepository(object):
 	"A class to handle the chop settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -164,7 +164,7 @@ class ChopRepository:
 			writeOutput(fileName)
 
 
-class ChopSkein:
+class ChopSkein(object):
 	"A class to chop a carving."
 	def addExtraTopLayerIfNecessary( self, carving, layerHeight, loopLayers ):
 		"Add extra top layer if necessary."

@@ -82,7 +82,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'unpause', shouldAnalyze)
 
 
-class UnpauseRepository:
+class UnpauseRepository(object):
 	"A class to handle the unpause settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -101,7 +101,7 @@ class UnpauseRepository:
 			writeOutput(fileName)
 
 
-class UnpauseSkein:
+class UnpauseSkein(object):
 	"A class to unpause a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

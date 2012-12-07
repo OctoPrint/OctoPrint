@@ -67,7 +67,7 @@ def getMinimumZ(geometryObject):
 	return min(archivableMinimumZ, geometryMinimumZ)
 
 
-class BooleanGeometry:
+class BooleanGeometry(object):
 	'A boolean geometry scene.'
 	def __init__(self):
 		'Add empty lists.'

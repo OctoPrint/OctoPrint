@@ -117,7 +117,7 @@ def writeOutput( fileName, gcodeText = ''):
 	print('The converted file is saved as ' + archive.getSummarizedFileName(suffixFileName) )
 
 
-class GcodeTimeSegmentRepository:
+class GcodeTimeSegmentRepository(object):
 	"A class to handle the export settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -147,7 +147,7 @@ class GcodeTimeSegmentRepository:
 			writeOutput(fileName)
 
 
-class GcodeTimeSegmentSkein:
+class GcodeTimeSegmentSkein(object):
 	"A class to convert gcode into time segments."
 	def __init__(self):
 		'Initialize.'

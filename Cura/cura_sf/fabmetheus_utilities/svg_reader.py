@@ -485,7 +485,7 @@ def processSVGElementtext(elementNode, svgReader):
 		loopLayer.loops.append(matrixSVG.getTransformedPath(translatedLoop))
 
 
-class FontReader:
+class FontReader(object):
 	"Class to read a font in the fonts folder."
 	def __init__(self, fontFamily):
 		"Initialize."
@@ -514,7 +514,7 @@ class FontReader:
 		return self.glyphDictionary[character]
 
 
-class Glyph:
+class Glyph(object):
 	"Class to handle a glyph."
 	def __init__(self, elementNode, unitsPerEM, yAxisPointingUpward):
 		"Initialize."
@@ -541,7 +541,7 @@ class Glyph:
 		return sizedLoops
 
 
-class MatrixSVG:
+class MatrixSVG(object):
 	"Two by three svg matrix."
 	def __init__(self, tricomplex=None):
 		"Initialize."
@@ -591,7 +591,7 @@ class MatrixSVG:
 		return transformedPaths
 
 
-class PathReader:
+class PathReader(object):
 	"Class to read svg path."
 	def __init__(self, elementNode, loops, yAxisPointingUpward):
 		"Add to path string to loops."
@@ -837,7 +837,7 @@ class PathReader:
 		self.processPathWordZ()
 
 
-class SVGReader:
+class SVGReader(object):
 	"An svg carving."
 	def __init__(self):
 		"Add empty lists."

@@ -72,6 +72,8 @@ profileDefaultSettings = {
 	'bottom_thickness': '0.3',
 	'hop_on_move': 'False',
 	'plugin_config': '',
+	'object_center_x': '-1',
+	'object_center_y': '-1',
 	
 	'add_start_end_gcode': 'True',
 	'gcode_extension': 'gcode',
@@ -596,7 +598,7 @@ def runPostProcessingPlugins(gcodefilename):
 		for pluginTest in pluginList:
 			if pluginTest['filename'] == pluginConfig['filename']:
 				plugin = pluginTest
-		if plugin == None:
+		if plugin is None:
 			continue
 		
 		pythonFile = None
@@ -604,7 +606,7 @@ def runPostProcessingPlugins(gcodefilename):
 			testFilename = os.path.join(basePath, pluginConfig['filename'])
 			if os.path.isfile(testFilename):
 				pythonFile = testFilename
-		if pythonFile == None:
+		if pythonFile is None:
 			continue
 		
 		locals = {'filename': gcodefilename}

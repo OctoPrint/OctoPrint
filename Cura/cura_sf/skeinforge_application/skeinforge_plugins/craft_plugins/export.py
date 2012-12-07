@@ -310,7 +310,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	return window
 
 
-class ExportRepository:
+class ExportRepository(object):
 	'A class to handle the export settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -363,7 +363,7 @@ class ExportRepository:
 			writeOutput(fileName)
 
 
-class ExportSkein:
+class ExportSkein(object):
 	'A class to export a skein of extrusions.'
 	def __init__(self):
 		self.crafting = False

@@ -140,7 +140,7 @@ def processElementNode(elementNode):
 	lineation.processElementNodeByFunction(elementNode, getManipulatedPaths)
 
 
-class SegmentDerivation:
+class SegmentDerivation(object):
 	"Class to hold segment variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'
@@ -148,7 +148,7 @@ class SegmentDerivation:
 		self.path = evaluate.getPathByPrefix(elementNode, getSegmentPathDefault(), prefix)
 
 
-class StartEnd:
+class StartEnd(object):
 	'Class to get a start through end range.'
 	def __init__(self, elementNode, modulo, prefix):
 		"Initialize."

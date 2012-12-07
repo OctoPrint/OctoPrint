@@ -123,7 +123,7 @@ class Path(dictionary.Dictionary):
 		return dictionary.getAllTransformedPaths([], self)
 
 
-class SVGFabricationCarving:
+class SVGFabricationCarving(object):
 	'An svg carving.'
 	def __init__(self, addLayerTemplate, elementNode):
 		'Add empty lists.'

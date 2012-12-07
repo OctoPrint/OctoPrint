@@ -458,7 +458,7 @@ def getAlterationFile(fileName):
 ## Configuration settings classes ##
 ####################################
 
-class GeneralSetting:
+class GeneralSetting(object):
 	"Just a basic setting subclass"
 	def getFromValue( self, name, repository, value ):
 		#print('GeneralSetting:', name, repository, value )
@@ -477,7 +477,7 @@ class BooleanSetting( GeneralSetting ):
 	def setValueToString(self, value):
 		self.value = str(value) == "True"
 
-class LatentStringVar:
+class LatentStringVar(object):
 	"This is actually used as 'group' object for Radio buttons. (Did I mention the code is a mess?)"
 	"This class doesn't have a name, and isn't really used for anything. It doesn't even know which repository it belongs to"
 
@@ -505,7 +505,7 @@ class RadioCapitalizedButton( Radio ):
 		repository.preferences.append(self)
 		return self
 		
-class FileNameInput(StringSetting ):
+class FileNameInput(StringSetting):
 	"A class to display, read & write a fileName."
 	def getFromFileName( self, fileTypes, name, repository, value ):
 		#print('FileNameInput:getFromFileName:', self, fileTypes, name, repository, value )
@@ -513,12 +513,12 @@ class FileNameInput(StringSetting ):
 		self.value = value
 		return self
 
-class HelpPage:
+class HelpPage(object):
 	"A class to open a help page."
 	def getOpenFromAbsolute( self, hypertextAddress ):
 		return self
 
-class MenuButtonDisplay:
+class MenuButtonDisplay(object):
 	"A class to add a combo box selection."
 	def getFromName( self, name, repository ):
 		#print('MenuButtonDisplay->getFromName:', name, repository )
@@ -553,7 +553,7 @@ class MenuRadio( BooleanSetting ):
 		menuButtonDisplay.addRadio(self, value)
 		return self
 
-class LabelDisplay:
+class LabelDisplay(object):
 	"A class to add a label."
 	def getFromName( self, name, repository ):
 		"Initialize."
@@ -574,7 +574,7 @@ class FloatSpin( FloatSetting ):
 			repository.preferences.append(self)
 		return self
 
-class LabelSeparator:
+class LabelSeparator(object):
 	"A class to add a label and menu separator."
 	def getFromRepository( self, repository ):
 		"Initialize."
@@ -596,7 +596,7 @@ class IntSpin(FloatSpin):
 # Helper classes
 ##########################
 
-class LayerCount:
+class LayerCount(object):
 	'A class to handle the layerIndex.'
 	def __init__(self):
 		'Initialize.'

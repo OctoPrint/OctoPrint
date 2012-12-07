@@ -93,7 +93,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class TeardropDerivation:
+class TeardropDerivation(object):
 	"Class to hold teardrop variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

@@ -35,7 +35,7 @@ def getNewRepository():
 	return CuttingRepository()
 
 
-class CuttingRepository:
+class CuttingRepository(object):
 	"A class to handle the cutting settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

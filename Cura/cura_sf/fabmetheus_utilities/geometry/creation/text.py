@@ -49,7 +49,7 @@ def processElementNode(elementNode):
 	path.convertElementNode(elementNode, getGeometryOutput(None, elementNode))
 
 
-class TextDerivation:
+class TextDerivation(object):
 	"Class to hold text variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

@@ -82,7 +82,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByFunctionPair(elementNode, getManipulatedGeometryOutput, getManipulatedPaths)
 
 
-class FlipDerivation:
+class FlipDerivation(object):
 	"Class to hold flip variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'

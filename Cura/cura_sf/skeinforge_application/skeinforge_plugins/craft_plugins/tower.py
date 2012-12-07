@@ -82,7 +82,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'tower', shouldAnalyze)
 
 
-class Island:
+class Island(object):
 	"A class to hold the boundary and lines."
 	def __init__(self):
 		self.boundary = []
@@ -102,7 +102,7 @@ class Island:
 			self.boundingLoop = intercircle.BoundingLoop().getFromLoop( self.boundary )
 
 
-class ThreadLayer:
+class ThreadLayer(object):
 	"A layer of loops and paths."
 	def __init__(self):
 		"Thread layer constructor."
@@ -115,7 +115,7 @@ class ThreadLayer:
 		return '%s' % self.islands
 
 
-class TowerRepository:
+class TowerRepository(object):
 	"A class to handle the tower settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -135,7 +135,7 @@ class TowerRepository:
 			writeOutput(fileName)
 
 
-class TowerSkein:
+class TowerSkein(object):
 	"A class to tower a skein of extrusions."
 	def __init__(self):
 		self.afterExtrusionLines = []

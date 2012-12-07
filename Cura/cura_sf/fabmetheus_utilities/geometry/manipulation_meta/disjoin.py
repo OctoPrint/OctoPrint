@@ -101,7 +101,7 @@ def processElementNodeByDerivation(derivation, elementNode):
 	difference.processElementNode(differenceElement)
 
 
-class DisjoinDerivation:
+class DisjoinDerivation(object):
 	"Class to hold disjoin variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

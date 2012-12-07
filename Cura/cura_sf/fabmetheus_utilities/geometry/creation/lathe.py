@@ -118,7 +118,7 @@ def processElementNode(elementNode):
 	solid.processElementNodeByGeometry(elementNode, getGeometryOutput(None, elementNode))
 
 
-class LatheDerivation:
+class LatheDerivation(object):
 	"Class to hold lathe variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

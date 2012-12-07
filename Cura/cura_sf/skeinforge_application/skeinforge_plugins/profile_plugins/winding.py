@@ -35,7 +35,7 @@ def getNewRepository():
 	return WindingRepository()
 
 
-class WindingRepository:
+class WindingRepository(object):
 	"A class to handle the winding settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

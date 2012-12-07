@@ -82,7 +82,7 @@ def setTopOverBottomByRadius(derivation, endZ, radius, startZ):
 		derivation.topOverBottom = cylinder.getTopOverBottom(math.radians(angleDegrees), endZ, complex(radius, radius), startZ)
 
 
-class PegDerivation:
+class PegDerivation(object):
 	'Class to hold peg variables.'
 	def __init__(self, elementNode):
 		'Set defaults.'

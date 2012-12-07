@@ -121,7 +121,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'wipe', shouldAnalyze)
 
 
-class WipeRepository:
+class WipeRepository(object):
 	"A class to handle the wipe settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -155,7 +155,7 @@ class WipeRepository:
 			writeOutput(fileName)
 
 
-class WipeSkein:
+class WipeSkein(object):
 	"A class to wipe a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()

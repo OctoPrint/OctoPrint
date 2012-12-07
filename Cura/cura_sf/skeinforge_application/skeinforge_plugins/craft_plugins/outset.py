@@ -63,7 +63,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'outset', shouldAnalyze)
 
 
-class OutsetRepository:
+class OutsetRepository(object):
 	'A class to handle the outset settings.'
 	def __init__(self):
 		'Set the default settings, execute title & settings fileName.'
@@ -79,7 +79,7 @@ class OutsetRepository:
 			writeOutput(fileName)
 
 
-class OutsetSkein:
+class OutsetSkein(object):
 	'A class to outset a skein of extrusions.'
 	def __init__(self):
 		self.boundary = None

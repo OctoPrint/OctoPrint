@@ -19,7 +19,7 @@ def _getAccessibleAttribute(attributeName, elementNode):
 	return None
 
 
-class Document:
+class Document(object):
 	'Class to handle elementNodes in a document.'
 	def __init__(self, elementNode):
 		'Initialize.'

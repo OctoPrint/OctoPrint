@@ -81,7 +81,7 @@ def writeXMLObject(absoluteFolderDirectory, derivation, fileNames, target, xmlOb
 	archive.writeFileText(absoluteFileName, xmlObject.getFabricationText(derivation.addLayerTemplate))
 
 
-class WriteDerivation:
+class WriteDerivation(object):
 	"Class to hold write variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

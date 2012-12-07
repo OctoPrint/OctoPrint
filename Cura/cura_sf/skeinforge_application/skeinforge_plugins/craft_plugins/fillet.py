@@ -109,7 +109,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'fillet', shouldAnalyze)
 
 
-class BevelSkein:
+class BevelSkein(object):
 	"A class to bevel a skein of extrusions."
 	def __init__(self):
 		self.distanceFeedRate = gcodec.DistanceFeedRate()
@@ -352,7 +352,7 @@ class ArcRadiusSkein( ArcPointSkein ):
 		return ' R' + ( self.distanceFeedRate.getRounded(radius) )
 
 
-class FilletRepository:
+class FilletRepository(object):
 	"A class to handle the fillet settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."

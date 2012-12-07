@@ -136,7 +136,7 @@ def writeOutput(fileName, shouldAnalyze=True):
 	skeinforge_craft.writeChainTextWithNounMessage(fileName, 'alteration', shouldAnalyze)
 
 
-class AlterationRepository:
+class AlterationRepository(object):
 	"A class to handle the alteration settings."
 	def __init__(self):
 		"Set the default settings, execute title & settings fileName."
@@ -158,7 +158,7 @@ class AlterationRepository:
 			writeOutput(fileName)
 
 
-class AlterationSkein:
+class AlterationSkein(object):
 	"A class to alteration a skein of extrusions."
 	def __init__(self):
 		'Initialize.'

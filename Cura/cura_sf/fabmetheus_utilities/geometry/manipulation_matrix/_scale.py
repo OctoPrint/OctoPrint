@@ -58,7 +58,7 @@ def scalePoints(elementNode, points, prefix):
 		point.z *= scaleVector3.z
 
 
-class ScaleDerivation:
+class ScaleDerivation(object):
 	"Class to hold scale variables."
 	def __init__(self, elementNode):
 		'Set defaults.'

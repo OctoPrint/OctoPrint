@@ -55,7 +55,7 @@ def transformPoints(elementNode, points, prefix):
 	matrix.transformVector3sByMatrix(derivation.transformTetragrid, points)
 
 
-class TransformDerivation:
+class TransformDerivation(object):
 	"Class to hold transform variables."
 	def __init__(self, elementNode, prefix):
 		'Set defaults.'
