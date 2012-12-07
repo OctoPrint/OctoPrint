@@ -468,6 +468,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		self.oldY = 0
 		self.dragType = ''
 		self.tempRotate = 0
+		self.viewport = None
 	
 	def updateProfileToControls(self):
 		self.objColor[0] = profile.getPreferenceColour('model_colour')
@@ -478,7 +479,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 	def OnMouseMotion(self,e):
 		cursorXY = 100000
 		radius = 0
-		if self.parent.objectsMaxV != None:
+		if self.parent.objectsMaxV is not None and self.viewport is not None:
 			radius = self.parent.objectsBounderyCircleSize * profile.getProfileSettingFloat('model_scale')
 			
 			p0 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 0, self.modelMatrix, self.projMatrix, self.viewport))

@@ -578,8 +578,8 @@ def getPluginList():
 					elif line[0].upper() == 'DEPEND':
 						pass
 					elif line[0].upper() == 'PARAM':
-						m = re.match('([a-zA-Z]*)\(([a-zA-Z_]*)(?:\:([^\)]*))?\) +(.*)', line[1].strip())
-						if m != None:
+						m = re.match('([a-zA-Z]*)\(([a-zA-Z_]*)(?::([^\)]*))?\) +(.*)', line[1].strip())
+						if m is not None:
 							item['params'].append({'name': m.group(1), 'type': m.group(2), 'default': m.group(3), 'description': m.group(4)})
 					else:
 						print "Unknown item in effect meta data: %s %s" % (line[0], line[1])

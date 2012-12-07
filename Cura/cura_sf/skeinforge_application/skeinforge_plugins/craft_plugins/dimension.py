@@ -242,7 +242,7 @@ class DimensionSkein:
 					line = extra + line
 			self.oldLocation = location
 		else:
-			if self.oldLocation == None:
+			if self.oldLocation is None:
 				print('Warning: There was no absolute location when the G91 command was parsed, so the absolute location will be set to the origin.')
 				self.oldLocation = Vector3()
 			location = gcodec.getLocationFromSplitLine(None, splitLine)

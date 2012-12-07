@@ -514,9 +514,9 @@ class FileNameInput(StringSetting ):
 		return self
 
 class HelpPage:
-    "A class to open a help page."
-    def getOpenFromAbsolute( self, hypertextAddress ):
-        return self
+	"A class to open a help page."
+	def getOpenFromAbsolute( self, hypertextAddress ):
+		return self
 
 class MenuButtonDisplay:
 	"A class to add a combo box selection."
