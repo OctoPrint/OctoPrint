@@ -140,10 +140,10 @@ G92 E0
 #######################################################################################
 	'switchExtruder.gcode': """;Switch between the current extruder and the next extruder, when printing with multiple extruders.
 G92 E0
-G1 E-5 F5000
+G1 E-15 F5000
 G92 E0
 T{extruder}
-G1 E5 F5000
+G1 E15 F5000
 G92 E0
 """,
 }
