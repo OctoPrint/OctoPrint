@@ -70,6 +70,7 @@ def main():
 		if len(args) > 0:
 			profile.putPreference('lastFile', ';'.join(args))
 
+		#Do not import anything from Cura.gui before this spot, as the above code also needs to run in pypy.
 		from Cura.gui import app
 		app.CuraApp().MainLoop()
 
