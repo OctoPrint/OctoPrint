@@ -55,7 +55,7 @@ class webcam(object):
 			except:
 				pass
 
-		self._doTimelaps = False
+		self._doTimelapse = False
 		self._bitmap = None
 
 	def hasCamera(self):
@@ -115,7 +115,7 @@ class webcam(object):
 
 		self._bitmap = bitmap
 
-		if self._doTimelaps:
+		if self._doTimelapse:
 			filename = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap",
 				"__tmp_snap_%04d.jpg" % (self._snapshotCount)))
 			self._snapshotCount += 1
@@ -126,24 +126,24 @@ class webcam(object):
 	def getLastImage(self):
 		return self._bitmap
 
-	def startTimelaps(self, filename):
+	def startTimelapse(self, filename):
 		if self._cam == None:
 			return
 		self._cleanTempDir()
-		self._timelapsFilename = filename
+		self._timelapseFilename = filename
 		self._snapshotCount = 0
-		self._doTimelaps = True
-		print "startTimelaps"
+		self._doTimelapse = True
+		print "startTimelapse"
 
-	def endTimelaps(self):
-		if self._doTimelaps:
+	def endTimelapse(self):
+		if self._doTimelapse:
 			ffmpeg = getFFMPEGpath()
 			basePath = os.path.normpath(
 				os.path.join(os.path.split(__file__)[0], "../__tmp_snap", "__tmp_snap_%04d.jpg"))
 			subprocess.call(
 				[ffmpeg, '-r', '12.5', '-i', basePath, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y',
-				 '-b:v', '1500k', '-f', 'vob', self._timelapsFilename])
-		self._doTimelaps = False
+				 '-b:v', '1500k', '-f', 'vob', self._timelapseFilename])
+		self._doTimelapse = False
 
 	def _cleanTempDir(self):
 		basePath = os.path.normpath(os.path.join(os.path.split(__file__)[0], "../__tmp_snap"))
