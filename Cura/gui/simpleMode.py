@@ -59,9 +59,6 @@ class simpleModePanel(wx.Panel):
 		self.printMaterialPLA.SetValue(True)
 
 	def setupSlice(self):
-		#save the current profile so we can put it back latter
-		oldProfile = profile.getGlobalProfileString()
-		
 		put = profile.putProfileSetting
 		get = profile.getProfileSetting
 
@@ -159,8 +156,3 @@ class simpleModePanel(wx.Panel):
 
 	def updateProfileToControls(self):
 		pass
-
-#	def OnNormalSwitch(self, e):
-#		profile.putPreference('startMode', 'Normal')
-#		mainWindow.mainWindow()
-#		self.Close()

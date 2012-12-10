@@ -262,6 +262,11 @@ class mainWindow(wx.Frame):
 		if len(self.filelist) < 1:
 			wx.MessageBox('You need to load a file before you can prepare it.', 'Print error', wx.OK | wx.ICON_INFORMATION)
 			return
+		isSimple = profile.getPreference('startMode') == 'Simple'
+		if isSimple:
+			#save the current profile so we can put it back latter
+			oldProfile = profile.getGlobalProfileString()
+			self.simpleSettingsPanel.setupSlice()
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1, 4 + self.extruderCount), flag=wx.EXPAND)
@@ -271,6 +276,8 @@ class mainWindow(wx.Frame):
 		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
 			self.SetSize(newSize)
 		self.progressPanelList.append(spp)
+		if isSimple:
+			profile.loadGlobalProfileFromString(oldProfile)
 
 	def OnPrint(self, e):
 		if len(self.filelist) < 1:
