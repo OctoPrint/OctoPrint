@@ -1150,11 +1150,3 @@ class LogWindow(wx.Frame):
 		self.SetSize((400,300))
 		self.Centre()
 		self.Show(True)
-
-def main():
-	app = wx.App(False)
-	projectPlanner().Show(True)
-	app.MainLoop()
-
-if __name__ == '__main__':
-	main()

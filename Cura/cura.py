@@ -10,8 +10,6 @@ The slicing code is the same as Skeinforge. But the UI has been revamped to be..
 """
 from __future__ import absolute_import
 
-import sys
-import warnings
 from optparse import OptionParser
 
 from Cura.util import profile
@@ -48,10 +46,6 @@ def main():
 	parser = OptionParser(usage="usage: %prog [options] <filename>.stl")
 	parser.add_option("-i", "--ini", action="store", type="string", dest="profileini",
 		help="Load settings from a profile ini file")
-	parser.add_option("-P", "--project", action="store_true", dest="openprojectplanner",
-		help="Open the project planner")
-	parser.add_option("-F", "--flat", action="store_true", dest="openflatslicer",
-		help="Open the 2D SVG slicer (unfinished)")
 	parser.add_option("-r", "--print", action="store", type="string", dest="printfile",
 		help="Open the printing interface, instead of the normal cura interface.")
 	parser.add_option("-p", "--profile", action="store", type="string", dest="profile",
@@ -65,45 +59,19 @@ def main():
 	if options.profileini is not None:
 		profile.loadGlobalProfile(options.profileini)
 
-	if options.openprojectplanner is not None:
-		from Cura.gui import projectPlanner
-		projectPlanner.main()
-	elif options.openflatslicer is not None:
-		from Cura.gui import flatSlicerWindow
-		flatSlicerWindow.main()
-	elif options.printfile is not None:
+	if options.printfile is not None:
 		from Cura.gui import printWindow
 		printWindow.startPrintInterface(options.printfile)
 	elif options.slice is not None:
 		from Cura.util import sliceRun
 		sliceRun.runSlice(args)
 	else:
+		#Place any unused arguments as last file, so Cura starts with opening those files.
 		if len(args) > 0:
 			profile.putPreference('lastFile', ';'.join(args))
 
-		import wx._core
-		from Cura.gui import splashScreen
-
-		class CuraApp(wx.App):
-			def MacOpenFile(self, path):
-				try:
-					pass
-				except Exception as e:
-					warnings.warn("File at {p} cannot be read: {e}".format(p=path, e=str(e)))
-
-		def mainWindowRunCallback(splash):
-			from Cura.gui import mainWindow
-			if splash is not None:
-				splash.Show(False)
-			mainWindow.main()
-
-		app = CuraApp(False)
-		# Apple discourages usage of splash screens on a mac.
-		if sys.platform.startswith('darwin'):
-			mainWindowRunCallback(None)
-		else:
-			splashScreen.splashScreen(mainWindowRunCallback)
-		app.MainLoop()
+		from Cura.gui import app
+		app.CuraApp().MainLoop()
 
 if __name__ == '__main__':
 	main()

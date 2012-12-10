@@ -28,22 +28,6 @@ from Cura.util import version
 from Cura.util import sliceRun
 from Cura.util import meshLoader
 
-def main():
-	if profile.getPreference('machine_type') == 'unknown':
-		if platform.system() == "Darwin":
-			#Check if we need to copy our examples
-			exampleFile = os.path.expanduser('~/CuraExamples/UltimakerRobot_support.stl')
-			if not os.path.isfile(exampleFile):
-				try:
-					os.makedirs(os.path.dirname(exampleFile))
-				except:
-					pass
-				for filename in glob.glob(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example', '*.*'))):
-					shutil.copy(filename, os.path.join(os.path.dirname(exampleFile), os.path.basename(filename)))
-				profile.putPreference('lastFile', exampleFile)
-		configWizard.configWizard()
-	mainWindow()
-
 class mainWindow(wx.Frame):
 	def __init__(self):
 		super(mainWindow, self).__init__(None, title='Cura - ' + version.getVersion())

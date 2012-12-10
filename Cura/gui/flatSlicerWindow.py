@@ -186,12 +186,3 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 				glEnd()
 		
 		glFlush()
-
-def main():
-	app = wx.App(False)
-	flatSlicerWindow().Show(True)
-	app.MainLoop()
-
-if __name__ == '__main__':
-	main()
-
