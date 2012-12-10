@@ -20,5 +20,5 @@ if [ $? != 0 ]; then
 fi
 
 SCRIPT_DIR=`dirname $0`
-python ${SCRIPT_DIR}/Cura/cura.py $@
-
+cd $SCRIPT_DIR
+python -m Cura.cura $@

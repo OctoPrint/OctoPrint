@@ -168,11 +168,11 @@ def getSliceCommand(filename):
 			pypyExe = sys.executable
 		
 		#In case we have a frozen exe, then argv[0] points to the executable, but we want to give pypy a real script file.
-		if hasattr(sys, 'frozen'):
-			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "cura_sf.zip"))
-		else:
-			mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1]))
-		cmd = [pypyExe, mainScriptFile, '-p', profile.getGlobalProfileString(), '-s']
+		#if hasattr(sys, 'frozen'):
+		#	mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "cura_sf.zip"))
+		#else:
+		#	mainScriptFile = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", os.path.split(sys.argv[0])[1]))
+		cmd = [pypyExe, '-m', 'Cura.cura', '-p', profile.getGlobalProfileString(), '-s']
 		if platform.system() == "Windows":
 			try:
 				cmd.append(str(filename))
