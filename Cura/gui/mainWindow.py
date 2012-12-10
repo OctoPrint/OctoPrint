@@ -74,8 +74,10 @@ class mainWindow(wx.Frame):
 
 		toolsMenu = wx.Menu()
 		i = toolsMenu.Append(-1, 'Switch to quickprint...')
+		self.switchToQuickprintMenuItem = i
 		self.Bind(wx.EVT_MENU, self.OnSimpleSwitch, i)
 		i = toolsMenu.Append(-1, 'Switch to full settings...')
+		self.switchToNormalMenuItem = i
 		self.Bind(wx.EVT_MENU, self.OnNormalSwitch, i)
 		toolsMenu.AppendSeparator()
 		i = toolsMenu.Append(-1, 'Batch run...')
@@ -147,20 +149,18 @@ class mainWindow(wx.Frame):
 		#Main sizer, to position the preview window, buttons and tab control
 		sizer = wx.GridBagSizer()
 		self.SetSizer(sizer)
-		sizer.Add(self.simpleSettingsPanel, (0,0), span=(1,1), flag=wx.EXPAND|wx.TOP|wx.LEFT, border=6)
-		sizer.Add(self.normalSettingsPanel, (0,1), span=(1,1), flag=wx.EXPAND|wx.TOP|wx.RIGHT, border=6)
-		sizer.Add(self.preview3d, (0,2), span=(1,2+self.extruderCount), flag=wx.EXPAND)
+		sizer.Add(self.preview3d, (0,1), span=(1,2+self.extruderCount), flag=wx.EXPAND)
 		sizer.AddGrowableCol(2 + self.extruderCount)
 		sizer.AddGrowableRow(0)
-		sizer.Add(loadButton, (1,2), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(loadButton, (1,1), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		if self.extruderCount > 1:
-			sizer.Add(loadButton2, (1,3), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+			sizer.Add(loadButton2, (1,2), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		if self.extruderCount > 2:
-			sizer.Add(loadButton3, (1,4), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+			sizer.Add(loadButton3, (1,3), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		if self.extruderCount > 3:
-			sizer.Add(loadButton4, (1,5), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		sizer.Add(sliceButton, (1,2+self.extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
-		sizer.Add(printButton, (1,3+self.extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+			sizer.Add(loadButton4, (1,4), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(sliceButton, (1,1+self.extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
+		sizer.Add(printButton, (1,2+self.extruderCount), flag=wx.RIGHT|wx.BOTTOM|wx.TOP, border=5)
 		self.sizer = sizer
 
 		if len(self.filelist) > 0:
@@ -170,33 +170,43 @@ class mainWindow(wx.Frame):
 
 		self.SetBackgroundColour(self.normalSettingsPanel.GetBackgroundColour())
 
-		self.updateSliceMode(True)
+		self.simpleSettingsPanel.Show(False)
+		self.normalSettingsPanel.Show(False)
+		self.updateSliceMode()
 
 		if wx.Display().GetClientArea().GetWidth() < self.GetSize().GetWidth():
 			f = self.GetSize().GetWidth() - wx.Display().GetClientArea().GetWidth()
 			self.preview3d.SetMinSize(self.preview3d.GetMinSize().DecBy(f, 0))
 			self.Fit()
 		self.preview3d.Fit()
-		self.SetMinSize(self.GetSize())
+		#self.SetMinSize(self.GetSize())
 
 		self.Centre()
 		self.Show(True)
 
-		self.updateSliceMode()
 		self.Centre()
 
-	def updateSliceMode(self, forceSimple = False):
-		if forceSimple:
-			isSimple = True
-		else:
-			isSimple = profile.getPreference('startMode') == 'Simple'
+	def updateSliceMode(self):
+		isSimple = profile.getPreference('startMode') == 'Simple'
+
 		self.normalSettingsPanel.Show(not isSimple)
 		self.simpleSettingsPanel.Show(isSimple)
+
+		self.GetSizer().Detach(self.simpleSettingsPanel)
+		self.GetSizer().Detach(self.normalSettingsPanel)
+		if isSimple:
+			self.GetSizer().Add(self.simpleSettingsPanel, (0,0), span=(1,1), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=6)
+		else:
+			self.GetSizer().Add(self.normalSettingsPanel, (0,0), span=(1,1), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=6)
+
 		for i in self.normalModeOnlyItems:
 			i.Enable(not isSimple)
+		self.switchToQuickprintMenuItem.Enable(not isSimple)
+		self.switchToNormalMenuItem.Enable(isSimple)
 
 		self.normalSettingsPanel.Layout()
 		self.simpleSettingsPanel.Layout()
+		self.GetSizer().Layout()
 		self.Fit()
 		self.Refresh()
 
