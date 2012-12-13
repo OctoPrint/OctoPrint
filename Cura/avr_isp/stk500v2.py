@@ -16,7 +16,7 @@ class Stk500v2(ispBase.IspBase):
 		if self.serial != None:
 			self.close()
 		try:
-			self.serial = Serial(port, speed, timeout=1, writeTimeout=10000)
+			self.serial = Serial(str(port), speed, timeout=1, writeTimeout=10000)
 		except SerialException as e:
 			raise ispBase.IspError("Failed to open serial port")
 		except:

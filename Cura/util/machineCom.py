@@ -286,9 +286,9 @@ class MachineCom(object):
 			try:
 				self._log("Connecting to: %s" % (self._port))
 				if self._baudrate == 0:
-					self._serial = serial.Serial(self._port, 115200, timeout=0.1, writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
 				else:
-					self._serial = serial.Serial(self._port, self._baudrate, timeout=2, writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=2, writeTimeout=10000)
 			except:
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 		if self._serial == None:
