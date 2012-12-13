@@ -66,6 +66,25 @@ if [ "$BUILD_TARGET" = "all" ]; then
 	exit
 fi
 
+# Change working directory to the directory the script is in
+# http://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $SCRIPT_DIR
+
+checkTool git "git: http://git-scm.com/"
+checkTool curl "curl: http://curl.haxx.se/"
+if [ $BUILD_TARGET = "win32" ]; then
+	#Check if we have 7zip, needed to extract and packup a bunch of packages for windows.
+	checkTool 7z "7zip: http://www.7-zip.org/"
+fi
+#For building under MacOS we need gnutar instead of tar
+if [ -z `which gnutar` ]; then
+	TAR=tar
+else
+	TAR=gnutar
+fi
+
+
 #############################
 # Darwin
 #############################
@@ -88,7 +107,9 @@ if [ "$BUILD_TARGET" = "darwin" ]; then
 	cp -a STLQuickLook.qlgenerator dist/Cura.app/Contents/Library/QuickLook/
 
 	# Archive app
-	$TAR cfp - dist/Cura.app | gzip --best -c > ../../${TARGET_DIR}.tar.gz
+	cd dist
+	$TAR cfp - Cura.app | gzip --best -c > ../../../${TARGET_DIR}.tar.gz
+	cd ..
 
 	# Create sparse image for distribution
 	hdiutil detach /Volumes/Cura\ -\ Ultimaker/
@@ -102,27 +123,10 @@ if [ "$BUILD_TARGET" = "darwin" ]; then
 	exit
 fi
 
+
 #############################
 # Rest
 #############################
-
-# Change working directory to the directory the script is in
-# http://stackoverflow.com/a/246128
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $SCRIPT_DIR
-
-checkTool git "git: http://git-scm.com/"
-checkTool curl "curl: http://curl.haxx.se/"
-if [ $BUILD_TARGET = "win32" ]; then
-	#Check if we have 7zip, needed to extract and packup a bunch of packages for windows.
-	checkTool 7z "7zip: http://www.7-zip.org/"
-fi
-#For building under MacOS we need gnutar instead of tar
-if [ -z `which gnutar` ]; then
-	TAR=tar
-else
-	TAR=gnutar
-fi
 
 #############################
 # Download all needed files.
