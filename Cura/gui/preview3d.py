@@ -145,6 +145,10 @@ class previewPanel(wx.Panel):
 		sizer.Add(self.glCanvas, 1, flag=wx.EXPAND)
 		sizer.Add(self.toolbar2, 0, flag=wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=1)
 		self.SetSizer(sizer)
+		
+		self.checkReloadFileTimer = wx.Timer(self)
+		self.Bind(wx.EVT_TIMER, self.OnCheckReloadFile, self.checkReloadFileTimer)
+		self.checkReloadFileTimer.Start(1000)
 	
 	def returnToModelViewAndUpdateModel(self):
 		if self.glCanvas.viewMode == 'GCode' or self.glCanvas.viewMode == 'Mixed':
@@ -272,18 +276,32 @@ class previewPanel(wx.Panel):
 			if profile.getProfileSettingFloat('model_scale') != 1.0 or profile.getProfileSettingFloat('model_rotate_base') != 0 or profile.getProfileSetting('flip_x') != 'False' or profile.getProfileSetting('flip_y') != 'False' or profile.getProfileSetting('flip_z') != 'False' or profile.getProfileSetting('swap_xz') != 'False' or profile.getProfileSetting('swap_yz') != 'False' or len(profile.getPluginConfig()) > 0:
 				self.ShowWarningPopup('Reset scale, rotation, mirror and plugins?', self.OnResetAll)
 	
-	def loadReModelFiles(self, filelist):
-		#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
-		for idx in xrange(0, len(filelist)):
-			if self.objectList[idx].filename != filelist[idx]:
-				return False
+	def OnCheckReloadFile(self, e):
+		#Only show the reload popup when the window has focus, because the popup goes over other programs.
+		if self.GetParent().FindFocus() is None:
+			return
+		for obj in self.objectList:
+			if obj.filename != None and os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
+				self.checkReloadFileTimer.Stop()
+				self.ShowWarningPopup('File changed, reload?', self.reloadModelFiles)
+	
+	def reloadModelFiles(self, filelist = None):
+		if filelist is not None:
+			#Only load this again if the filename matches the file we have already loaded (for auto loading GCode after slicing)
+			for idx in xrange(0, len(filelist)):
+				if self.objectList[idx].filename != filelist[idx]:
+					return False
+		else:
+			filelist = []
+			for idx in xrange(0, len(self.objectList)):
+				filelist.append(self.objectList[idx].filename)
 		self.loadModelFiles(filelist)
 		return True
 	
 	def doFileLoadThread(self):
 		for obj in self.objectList:
 			if obj.filename != None and os.path.isfile(obj.filename) and obj.fileTime != os.stat(obj.filename).st_mtime:
-				obj.ileTime = os.stat(obj.filename).st_mtime
+				obj.fileTime = os.stat(obj.filename).st_mtime
 				mesh = meshLoader.loadMesh(obj.filename)
 				obj.dirty = False
 				obj.mesh = mesh
@@ -319,6 +337,7 @@ class previewPanel(wx.Panel):
 			wx.CallAfter(self.glCanvas.Refresh)
 		elif not os.path.isfile(self.gcodeFilename):
 			self.gcode = None
+		wx.CallAfter(self.checkReloadFileTimer.Start, 1000)
 	
 	def loadProgress(self, progress):
 		pass

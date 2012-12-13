@@ -142,7 +142,7 @@ class sliceProgessPanel(wx.Panel):
 		self.sizer.Layout()
 		self.Layout()
 		self.abort = True
-		if self.mainWindow.preview3d.loadReModelFiles(self.filelist):
+		if self.mainWindow.preview3d.reloadModelFiles(self.filelist):
 			self.mainWindow.preview3d.setViewMode("GCode")
 		taskbar.setBusy(self.GetParent(), False)
 	
