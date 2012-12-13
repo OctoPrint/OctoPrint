@@ -513,7 +513,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		if e.Dragging() and e.LeftIsDown():
 			if self.dragType == '':
 				#Define the drag type depending on the cursor position.
-				if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3:
+				if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3 and self.viewMode != 'GCode' and self.viewMode == 'Mixed':
 					self.dragType = 'modelRotate'
 					self.dragStart = math.atan2(cursorZ0[0], cursorZ0[1])
 				else:
@@ -794,7 +794,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		
 		#Draw the rotate circle
-		if self.parent.objectsMaxV != None:
+		if self.parent.objectsMaxV != None and self.viewMode != 'GCode' and self.viewMode == 'Mixed':
 			glDisable(GL_LIGHTING)
 			glDisable(GL_CULL_FACE)
 			glEnable(GL_BLEND)
