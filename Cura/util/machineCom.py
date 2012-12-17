@@ -62,17 +62,17 @@ class VirtualPrinter():
 		self.bedTargetTemp = 1.0
 	
 	def write(self, data):
-		if self.readList == None:
+		if self.readList is None:
 			return
 		#print "Send: %s" % (data.rstrip())
 		if 'M104' in data or 'M109' in data:
 			try:
-				self.targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+				self.targetTemp = float(re.search('S([0-9]+)', data).group(1))
 			except:
 				pass
 		if 'M140' in data or 'M190' in data:
 			try:
-				self.bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+				self.bedTargetTemp = float(re.search('S([0-9]+)', data).group(1))
 			except:
 				pass
 		if 'M105' in data:
@@ -81,21 +81,21 @@ class VirtualPrinter():
 			self.readList.append("ok\n")
 
 	def readline(self):
-		if self.readList == None:
+		if self.readList is None:
 			return ''
 		n = 0
 		timeDiff = self.lastTempAt - time.time()
 		self.lastTempAt = time.time()
 		if abs(self.temp - self.targetTemp) > 1:
-			self.temp += math.copysign(timeDiff, self.targetTemp - self.temp)
+			self.temp += math.copysign(timeDiff * 10, self.targetTemp - self.temp)
 		if abs(self.bedTemp - self.bedTargetTemp) > 1:
-			self.bedTemp += math.copysign(timeDiff, self.bedTargetTemp - self.bedTemp)
+			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
 		while len(self.readList) < 1:
 			time.sleep(0.1)
 			n += 1
 			if n == 20:
 				return ''
-			if self.readList == None:
+			if self.readList is None:
 				return ''
 		time.sleep(0.001)
 		#print "Recv: %s" % (self.readList[0].rstrip())
@@ -450,7 +450,7 @@ class MachineCom(object):
 		self.close()
 	
 	def _sendCommand(self, cmd):
-		if self._serial == None:
+		if self._serial is None:
 			return
 		if 'M109' in cmd or 'M190' in cmd:
 			self._heatupWaitStartTime = time.time()

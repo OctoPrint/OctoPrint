@@ -99,8 +99,10 @@ class mainWindow(wx.Frame):
 		i = expertMenu.Append(-1, 'Install custom firmware')
 		self.Bind(wx.EVT_MENU, self.OnCustomFirmware, i)
 		expertMenu.AppendSeparator()
-		i = expertMenu.Append(-1, 'ReRun first run wizard...')
+		i = expertMenu.Append(-1, 'Run first run wizard...')
 		self.Bind(wx.EVT_MENU, self.OnFirstRunWizard, i)
+		i = expertMenu.Append(-1, 'Run bed leveling wizard...')
+		self.Bind(wx.EVT_MENU, self.OnBedLevelWizard, i)
 		self.menubar.Append(expertMenu, 'Expert')
 
 		helpMenu = wx.Menu()
@@ -382,6 +384,9 @@ class mainWindow(wx.Frame):
 	def OnFirstRunWizard(self, e):
 		configWizard.configWizard()
 		self.updateProfileToControls()
+
+	def OnBedLevelWizard(self, e):
+		configWizard.bedLevelWizard()
 
 	def OnExpertOpen(self, e):
 		ecw = expertConfig.expertConfigWindow()

@@ -15,7 +15,7 @@ from Cura.util import profile
 
 class CuraApp(wx.App):
 	def __init__(self):
-		if platform.system() == "Windows":
+		if platform.system() == "Windows" and not 'PYCHARM_HOSTED' in os.environ:
 			super(CuraApp, self).__init__(redirect = True, filename = 'output.txt')
 		else:
 			super(CuraApp, self).__init__(redirect = False)

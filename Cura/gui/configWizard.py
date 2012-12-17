@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import webbrowser
 import threading
 import time
+import math
 
 import wx
 import wx.wizard
@@ -69,7 +70,12 @@ class InfoBox(wx.Panel):
 		self.text.SetLabel(info)
 		self.extraInfoButton.Show(False)
 		self.SetAttentionIndicator()
+		self.Layout()
 		self.Refresh()
+
+	def SetBusy(self, info):
+		self.SetInfo(info)
+		self.SetBusyIndicator()
 
 	def SetBusyIndicator(self):
 		self.busyState = 0
@@ -79,7 +85,7 @@ class InfoBox(wx.Panel):
 		webbrowser.open(self.extraInfoUrl)
 
 	def doBusyUpdate(self, e):
-		if self.busyState == None:
+		if self.busyState is None:
 			return
 		self.busyState += 1
 		if self.busyState >= len(self.busyBitmap):
@@ -215,6 +221,7 @@ class FirstInfoPage(InfoPage):
 		self.AddText('* Configure Cura for your machine')
 		self.AddText('* Upgrade your firmware')
 		self.AddText('* Check if your machine is working safely')
+		self.AddText('* Level your printer bed')
 
 		#self.AddText('* Calibrate your machine')
 		#self.AddText('* Do your first print')
@@ -390,14 +397,13 @@ class UltimakerCheckupPage(InfoPage):
 
 	def OnCheckClick(self, e=None):
 		self.errorLogButton.Show(False)
-		if self.comm != None:
+		if self.comm is not None:
 			self.comm.close()
 			del self.comm
 			self.comm = None
 			wx.CallAfter(self.OnCheckClick)
 			return
-		self.infoBox.SetInfo('Connecting to machine.')
-		self.infoBox.SetBusyIndicator()
+		self.infoBox.SetBusy('Connecting to machine.')
 		self.commState.SetBitmap(self.unknownBitmap)
 		self.tempState.SetBitmap(self.unknownBitmap)
 		self.stopState.SetBitmap(self.unknownBitmap)
@@ -449,20 +455,20 @@ class UltimakerCheckupPage(InfoPage):
 				if self.tempCheckTimeout < 1:
 					self.checkupState = -1
 					wx.CallAfter(self.tempState.SetBitmap, self.crossBitmap)
-					wx.CallAfter(self.infoBox.SetError, 'Temperature measurement FAILED!', 'http://wiki.ultimaker.com/Cura/Temperature_measurement_problems')
+					wx.CallAfter(self.infoBox.SetError, 'Temperature measurement FAILED!', 'http://wiki.ultimaker.com/Cura:_Temperature_measurement_problems')
 					self.comm.sendCommand('M104 S0')
 					self.comm.sendCommand('M104 S0')
 		wx.CallAfter(self.temperatureLabel.SetLabel, 'Head temperature: %d' % (temp))
 
 	def mcStateChange(self, state):
-		if self.comm == None:
+		if self.comm is None:
 			return
 		if self.comm.isOperational():
 			wx.CallAfter(self.commState.SetBitmap, self.checkBitmap)
 			wx.CallAfter(self.machineState.SetLabel, 'Communication State: %s' % (self.comm.getStateString()))
 		elif self.comm.isError():
 			wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.', 'http://wiki.ultimaker.com/Cura/Connection_problems')
+			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.', 'http://wiki.ultimaker.com/Cura:_Connection_problems')
 			wx.CallAfter(self.endstopBitmap.Show, False)
 			wx.CallAfter(self.machineState.SetLabel, '%s' % (self.comm.getErrorString()))
 			wx.CallAfter(self.errorLogButton.Show, True)
@@ -687,14 +693,202 @@ class configWizard(wx.wizard.Wizard):
 		self.ultimakerCheckupPage = UltimakerCheckupPage(self)
 		self.ultimakerCalibrationPage = UltimakerCalibrationPage(self)
 		self.ultimakerCalibrateStepsPerEPage = UltimakerCalibrateStepsPerEPage(self)
+		self.bedLevelPage = bedLevelWizardMain(self)
 		self.repRapInfoPage = RepRapInfoPage(self)
 
 		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.machineSelectPage)
 		wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.ultimakerSelectParts)
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerSelectParts, self.ultimakerFirmwareUpgradePage)
 		wx.wizard.WizardPageSimple.Chain(self.ultimakerFirmwareUpgradePage, self.ultimakerCheckupPage)
-		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCheckupPage, self.ultimakerCalibrationPage)
+		wx.wizard.WizardPageSimple.Chain(self.ultimakerCheckupPage, self.bedLevelPage)
 		#wx.wizard.WizardPageSimple.Chain(self.ultimakerCalibrationPage, self.ultimakerCalibrateStepsPerEPage)
+
+		self.FitToPage(self.firstInfoPage)
+		self.GetPageAreaSizer().Add(self.firstInfoPage)
+
+		self.RunWizard(self.firstInfoPage)
+		self.Destroy()
+
+	def OnPageChanging(self, e):
+		e.GetPage().StoreData()
+
+	def OnPageChanged(self, e):
+		if e.GetPage().AllowNext():
+			self.FindWindowById(wx.ID_FORWARD).Enable()
+		else:
+			self.FindWindowById(wx.ID_FORWARD).Disable()
+		self.FindWindowById(wx.ID_BACKWARD).Disable()
+
+class bedLevelFirstPage(InfoPage):
+	def __init__(self, parent):
+		super(bedLevelFirstPage, self).__init__(parent, "Bed leveling wizard")
+		self.AddText('This wizard will help you in leveling your printer bed')
+		self.AddSeperator()
+		self.AddText('It will do the following steps')
+		self.AddText('* Move the printer head to each corner')
+		self.AddText('  and let you adjust the height of the bed to the nozzle')
+		self.AddText('* Print a line around the bed to check if it is level')
+
+class bedLevelWizardMain(InfoPage):
+	def __init__(self, parent):
+		super(bedLevelWizardMain, self).__init__(parent, "Bed leveling wizard")
+
+		self.connectButton = self.AddButton('Connect to printer')
+		self.comm = None
+
+		self.infoBox = self.AddInfoBox()
+		self.resumeButton = self.AddButton('Resume')
+		self.resumeButton.Enable(False)
+
+		self.Bind(wx.EVT_BUTTON, self.OnConnect, self.connectButton)
+		self.Bind(wx.EVT_BUTTON, self.OnResume, self.resumeButton)
+
+	def OnConnect(self, e = None):
+		if self.comm is not None:
+			self.comm.close()
+			del self.comm
+			self.comm = None
+			wx.CallAfter(self.OnConnect)
+			return
+		self.connectButton.Enable(False)
+		self.comm = machineCom.MachineCom(callbackObject=self)
+		self.infoBox.SetBusy('Connecting to machine.')
+		self._wizardState = 0
+
+	def AllowNext(self):
+		return False
+
+	def OnResume(self, e):
+		feedZ = profile.getProfileSettingFloat('max_z_speed') * 60
+		feedTravel = profile.getProfileSettingFloat('travel_speed') * 60
+		if self._wizardState == 2:
+			wx.CallAfter(self.infoBox.SetBusy, 'Moving head to back left corner...')
+			self.comm.sendCommand('G1 Z3 F%d' % (feedZ))
+			self.comm.sendCommand('G1 X%d Y%d F%d' % (0, profile.getPreferenceFloat('machine_depth'), feedTravel))
+			self.comm.sendCommand('G1 Z0 F%d' % (feedZ))
+			self.comm.sendCommand('M400')
+			self._wizardState = 3
+		elif self._wizardState == 4:
+			wx.CallAfter(self.infoBox.SetBusy, 'Moving head to back right corner...')
+			self.comm.sendCommand('G1 Z3 F%d' % (feedZ))
+			self.comm.sendCommand('G1 X%d Y%d F%d' % (profile.getPreferenceFloat('machine_width'), profile.getPreferenceFloat('machine_depth') - 20, feedTravel))
+			self.comm.sendCommand('G1 Z0 F%d' % (feedZ))
+			self.comm.sendCommand('M400')
+			self._wizardState = 5
+		elif self._wizardState == 6:
+			wx.CallAfter(self.infoBox.SetBusy, 'Moving head to front right corner...')
+			self.comm.sendCommand('G1 Z3 F%d' % (feedZ))
+			self.comm.sendCommand('G1 X%d Y%d F%d' % (profile.getPreferenceFloat('machine_width'), 20, feedTravel))
+			self.comm.sendCommand('G1 Z0 F%d' % (feedZ))
+			self.comm.sendCommand('M400')
+			self._wizardState = 7
+		elif self._wizardState == 8:
+			wx.CallAfter(self.infoBox.SetBusy, 'Heating up printer...')
+			self.comm.sendCommand('G1 Z15 F%d' % (feedZ))
+			self.comm.sendCommand('M104 S%d' % (profile.getProfileSettingFloat('print_temperature')))
+			self.comm.sendCommand('G1 X%d Y%d F%d' % (0, 0, feedTravel))
+			self._wizardState = 9
+		self.resumeButton.Enable(False)
+
+	def mcLog(self, message):
+		print 'Log:', message
+
+	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
+		if self._wizardState == 1:
+			self._wizardState = 2
+			wx.CallAfter(self.infoBox.SetAttention, 'Adjust the front left screw of your printer bed\nSo the nozzle just hits the bed.')
+			wx.CallAfter(self.resumeButton.Enable, True)
+		elif self._wizardState == 3:
+			self._wizardState = 4
+			wx.CallAfter(self.infoBox.SetAttention, 'Adjust the back left screw of your printer bed\nSo the nozzle just hits the bed.')
+			wx.CallAfter(self.resumeButton.Enable, True)
+		elif self._wizardState == 5:
+			self._wizardState = 6
+			wx.CallAfter(self.infoBox.SetAttention, 'Adjust the back right screw of your printer bed\nSo the nozzle just hits the bed.')
+			wx.CallAfter(self.resumeButton.Enable, True)
+		elif self._wizardState == 7:
+			self._wizardState = 8
+			wx.CallAfter(self.infoBox.SetAttention, 'Adjust the front right screw of your printer bed\nSo the nozzle just hits the bed.')
+			wx.CallAfter(self.resumeButton.Enable, True)
+		elif self._wizardState == 9:
+			if temp < profile.getProfileSettingFloat('print_temperature') - 5:
+				wx.CallAfter(self.infoBox.SetInfo, 'Heating up printer: %d/%d' % (temp, profile.getProfileSettingFloat('print_temperature')))
+			else:
+				self._wizardState = 10
+				wx.CallAfter(self.infoBox.SetInfo, 'Printing a square on the printer bed at 0.3mm height.')
+				feedZ = profile.getProfileSettingFloat('max_z_speed') * 60
+				feedPrint = profile.getProfileSettingFloat('print_speed') * 60
+				feedTravel = profile.getProfileSettingFloat('travel_speed') * 60
+				w = profile.getPreferenceFloat('machine_width')
+				d = profile.getPreferenceFloat('machine_depth')
+				filamentRadius = profile.getProfileSettingFloat('filament_diameter') / 2
+				filamentArea = math.pi * filamentRadius * filamentRadius
+				ePerMM = (profile.calculateEdgeWidth() * 0.3) / filamentArea
+				eValue = 0.0
+
+				gcodeList = [
+					'G1 Z2 F%d' % (feedZ),
+					'G92 E0',
+					'G1 X%d Y%d F%d' % (5, 5, feedTravel),
+					'G1 Z0.3 F%d' % (feedZ)]
+				eValue += (d - 10) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (5, d - 5, eValue, feedPrint))
+				eValue += (w - 10) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5, d - 5, eValue, feedPrint))
+				eValue += (d - 10) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5, 5, eValue, feedPrint))
+				eValue += (w - 10) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (5, 5, eValue, feedPrint))
+
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (5.4, 5.4, eValue, feedTravel))
+				eValue += (d - 10.8) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (5.4, d - 5.4, eValue, feedPrint))
+				eValue += (w - 10.8) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5.4, d - 5.4, eValue, feedPrint))
+				eValue += (d - 10.8) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5.4, 5.4, eValue, feedPrint))
+				eValue += (w - 10.8) * ePerMM
+				gcodeList.append('G1 X%d Y%d E%f F%d' % (5.4, 5.4, eValue, feedPrint))
+				self.comm.printGCode(gcodeList)
+
+	def mcStateChange(self, state):
+		if self.comm is None:
+			return
+		if self.comm.isOperational():
+			if self._wizardState == 0:
+				wx.CallAfter(self.infoBox.SetInfo, 'Homing printer...')
+				self.comm.sendCommand('G28')
+				self._wizardState = 1
+			elif self._wizardState == 10 and not self.comm.isPrinting():
+				self.comm.sendCommand('G1 Z15 F%d' % (profile.getProfileSettingFloat('max_z_speed') * 60))
+				self.comm.sendCommand('M104 S0')
+				wx.CallAfter(self.infoBox.SetInfo, 'Calibration finished.\nThe two squares on the bed should slightly touch each other.')
+				wx.CallAfter(self.infoBox.SetReadyIndicator)
+				wx.CallAfter(self.GetParent().FindWindowById(wx.ID_FORWARD).Enable)
+				self._wizardState = 11
+		elif self.comm.isError():
+			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.', 'http://wiki.ultimaker.com/Cura:_Connection_problems')
+
+	def mcMessage(self, message):
+		pass
+
+	def mcProgress(self, lineNr):
+		pass
+
+	def mcZChange(self, newZ):
+		pass
+
+class bedLevelWizard(wx.wizard.Wizard):
+	def __init__(self):
+		super(bedLevelWizard, self).__init__(None, -1, "Bed leveling wizard")
+
+		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGED, self.OnPageChanged)
+		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.OnPageChanging)
+
+		self.firstInfoPage = bedLevelFirstPage(self)
+		self.mainPage = bedLevelWizardMain(self)
+
+		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.mainPage)
 
 		self.FitToPage(self.firstInfoPage)
 		self.GetPageAreaSizer().Add(self.firstInfoPage)
