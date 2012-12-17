@@ -10,7 +10,6 @@ import warnings
 #Only import the _core to save import time
 import wx._core
 
-from Cura.gui import splashScreen
 from Cura.util import profile
 
 class CuraApp(wx.App):
@@ -27,6 +26,7 @@ class CuraApp(wx.App):
 			#Do not show a splashscreen on OSX, as by Apple guidelines
 			self.afterSplashCallback()
 		else:
+			from Cura.gui import splashScreen
 			self.splash = splashScreen.splashScreen(self.afterSplashCallback)
 
 	def MacOpenFile(self, path):

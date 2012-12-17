@@ -18,19 +18,19 @@ if sys.platform.startswith('darwin'):
             {
                 u'CFBundleTypeRole': u'Viewer',
                 u'LSItemContentTypes': [u'com.pleasantsoftware.uti.stl'],
-                u'LSHandlerRank': u'Alternate',
+                u'LSHandlerRank': u'Owner',
                 },
             {
                 u'CFBundleTypeRole': u'Viewer',
                 u'LSItemContentTypes': [u'org.khronos.collada.digital-asset-exchange'],
-                u'LSHandlerRank': u'Alternate'
+                u'LSHandlerRank': u'Owner'
             },
             {
                 u'CFBundleTypeName': u'Wavefront 3D Object',
                 u'CFBundleTypeExtensions': [u'obj'],
                 u'CFBundleTypeMIMETypes': [u'application/obj-3d'],
                 u'CFBundleTypeRole': u'Viewer',
-                u'LSHandlerRank': u'Alternate'
+                u'LSHandlerRank': u'Owner'
             }
         ],
         u'UTImportedTypeDeclarations': [
