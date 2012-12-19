@@ -8,10 +8,10 @@
 #############################
 
 ##Select the build target
-# BUILD_TARGET=${1:-all}
+BUILD_TARGET=${1:-all}
 #BUILD_TARGET=win32
 #BUILD_TARGET=linux
-BUILD_TARGET=darwin
+#BUILD_TARGET=darwin
 
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1

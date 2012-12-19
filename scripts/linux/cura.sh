@@ -19,6 +19,18 @@ if [ $? != 0 ]; then
 	exit 1
 fi
 
+python -c 'import numpy'
+if [ $? != 0 ]; then
+	echo "Requires numpy."
+	exit 1
+fi
+
+python -c 'import power'
+if [ $? != 0 ]; then
+	echo "Requires power module from https://github.com/GreatFruitOmsk/Power."
+	exit 1
+fi
+
 SCRIPT_DIR=`dirname $0`
 cd $SCRIPT_DIR
 python -m Cura.cura $@
