@@ -719,19 +719,17 @@ class configWizard(wx.wizard.Wizard):
 			self.FindWindowById(wx.ID_FORWARD).Disable()
 		self.FindWindowById(wx.ID_BACKWARD).Disable()
 
-class bedLevelFirstPage(InfoPage):
+class bedLevelWizardMain(InfoPage):
 	def __init__(self, parent):
-		super(bedLevelFirstPage, self).__init__(parent, "Bed leveling wizard")
+		super(bedLevelWizardMain, self).__init__(parent, "Bed leveling wizard")
+
 		self.AddText('This wizard will help you in leveling your printer bed')
 		self.AddSeperator()
 		self.AddText('It will do the following steps')
 		self.AddText('* Move the printer head to each corner')
 		self.AddText('  and let you adjust the height of the bed to the nozzle')
 		self.AddText('* Print a line around the bed to check if it is level')
-
-class bedLevelWizardMain(InfoPage):
-	def __init__(self, parent):
-		super(bedLevelWizardMain, self).__init__(parent, "Bed leveling wizard")
+		self.AddSeperator()
 
 		self.connectButton = self.AddButton('Connect to printer')
 		self.comm = None
@@ -831,24 +829,21 @@ class bedLevelWizardMain(InfoPage):
 					'G92 E0',
 					'G1 X%d Y%d F%d' % (5, 5, feedTravel),
 					'G1 Z0.3 F%d' % (feedZ)]
-				eValue += (d - 10) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (5, d - 5, eValue, feedPrint))
-				eValue += (w - 10) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5, d - 5, eValue, feedPrint))
-				eValue += (d - 10) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5, 5, eValue, feedPrint))
-				eValue += (w - 10) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (5, 5, eValue, feedPrint))
+				eValue += 5;
+				gcodeList.append('G1 E%f F%d' % (eValue, profile.getProfileSettingFloat('retraction_speed') * 60))
 
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (5.4, 5.4, eValue, feedTravel))
-				eValue += (d - 10.8) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (5.4, d - 5.4, eValue, feedPrint))
-				eValue += (w - 10.8) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5.4, d - 5.4, eValue, feedPrint))
-				eValue += (d - 10.8) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (w - 5.4, 5.4, eValue, feedPrint))
-				eValue += (w - 10.8) * ePerMM
-				gcodeList.append('G1 X%d Y%d E%f F%d' % (5.4, 5.4, eValue, feedPrint))
+				for i in xrange(0, 3):
+					dist = 5.0 + 0.4 * i
+					eValue += (d - 2*dist) * ePerMM
+					gcodeList.append('G1 X%d Y%d E%f F%d' % (dist, d - dist, eValue, feedPrint))
+					eValue += (w - 2*dist) * ePerMM
+					gcodeList.append('G1 X%d Y%d E%f F%d' % (w - dist, d - dist, eValue, feedPrint))
+					eValue += (d - 2*dist) * ePerMM
+					gcodeList.append('G1 X%d Y%d E%f F%d' % (w - dist, dist, eValue, feedPrint))
+					eValue += (w - 2*dist) * ePerMM
+					gcodeList.append('G1 X%d Y%d E%f F%d' % (dist, dist, eValue, feedPrint))
+
+				gcodeList.append('M400')
 				self.comm.printGCode(gcodeList)
 
 	def mcStateChange(self, state):
@@ -861,10 +856,13 @@ class bedLevelWizardMain(InfoPage):
 				self._wizardState = 1
 			elif self._wizardState == 10 and not self.comm.isPrinting():
 				self.comm.sendCommand('G1 Z15 F%d' % (profile.getProfileSettingFloat('max_z_speed') * 60))
+				self.comm.sendCommand('G92 E0')
+				self.comm.sendCommand('G1 E-10 F%d' % (profile.getProfileSettingFloat('retraction_speed') * 60))
 				self.comm.sendCommand('M104 S0')
-				wx.CallAfter(self.infoBox.SetInfo, 'Calibration finished.\nThe two squares on the bed should slightly touch each other.')
+				wx.CallAfter(self.infoBox.SetInfo, 'Calibration finished.\nThe squares on the bed should slightly touch each other.')
 				wx.CallAfter(self.infoBox.SetReadyIndicator)
 				wx.CallAfter(self.GetParent().FindWindowById(wx.ID_FORWARD).Enable)
+				wx.CallAfter(self.connectButton.Enable, True)
 				self._wizardState = 11
 		elif self.comm.isError():
 			wx.CallAfter(self.infoBox.SetError, 'Failed to establish connection with the printer.', 'http://wiki.ultimaker.com/Cura:_Connection_problems')
@@ -885,15 +883,12 @@ class bedLevelWizard(wx.wizard.Wizard):
 		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGED, self.OnPageChanged)
 		self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.OnPageChanging)
 
-		self.firstInfoPage = bedLevelFirstPage(self)
 		self.mainPage = bedLevelWizardMain(self)
 
-		wx.wizard.WizardPageSimple.Chain(self.firstInfoPage, self.mainPage)
+		self.FitToPage(self.mainPage)
+		self.GetPageAreaSizer().Add(self.mainPage)
 
-		self.FitToPage(self.firstInfoPage)
-		self.GetPageAreaSizer().Add(self.firstInfoPage)
-
-		self.RunWizard(self.firstInfoPage)
+		self.RunWizard(self.mainPage)
 		self.Destroy()
 
 	def OnPageChanging(self, e):
