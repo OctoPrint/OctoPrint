@@ -121,36 +121,30 @@ def DrawMachine(machineSize):
 		glDisable(GL_CULL_FACE)
 		glEnable(GL_BLEND)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-		glColor4ub(5, 171, 231, 127)
-		glBegin(GL_QUADS)
-		for x in xrange(0, int(machineSize.x), 20):
-			for y in xrange(0, int(machineSize.y), 20):
-				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
-				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
-		for x in xrange(10, int(machineSize.x), 20):
-			for y in xrange(10, int(machineSize.y), 20):
-				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
-				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
-		glEnd()
-		glColor4ub(5 * 8 / 10, 171 * 8 / 10, 231 * 8 / 10, 128)
-		glBegin(GL_QUADS)
-		for x in xrange(10, int(machineSize.x), 20):
-			for y in xrange(0, int(machineSize.y), 20):
-				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
-				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
-		for x in xrange(0, int(machineSize.x), 20):
-			for y in xrange(10, int(machineSize.y), 20):
-				glVertex3f(x, y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), y, -0.01)
-				glVertex3f(min(x + 10, machineSize.x), min(y + 10, machineSize.y), -0.01)
-				glVertex3f(x, min(y + 10, machineSize.y), -0.01)
-		glEnd()
+
+		sx = machineSize.x
+		sy = machineSize.y
+		for x in xrange(-int(sx/20)-1, int(sx / 20) + 1):
+			for y in xrange(-int(sx/20)-1, int(sy / 20) + 1):
+				x1 = sx/2+x * 10
+				x2 = x1 + 10
+				y1 = sx/2+y * 10
+				y2 = y1 + 10
+				x1 = max(min(x1, sx), 0)
+				y1 = max(min(y1, sy), 0)
+				x2 = max(min(x2, sx), 0)
+				y2 = max(min(y2, sy), 0)
+				if (x & 1) == (y & 1):
+					glColor4ub(5, 171, 231, 127)
+				else:
+					glColor4ub(5 * 8 / 10, 171 * 8 / 10, 231 * 8 / 10, 128)
+				glBegin(GL_QUADS)
+				glVertex3f(x1, y1, -0.01)
+				glVertex3f(x2, y1, -0.01)
+				glVertex3f(x2, y2, -0.01)
+				glVertex3f(x1, y2, -0.01)
+				glEnd()
+
 		glEnable(GL_CULL_FACE)
 
 		glColor4ub(5, 171, 231, 64)
