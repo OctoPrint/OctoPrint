@@ -45,6 +45,8 @@ with open(filename, "w") as f:
 					f.write("G1 E-%f F6000\n" % (retractAmount))
 					#Move the head away
 					f.write("G1 X%f Y%f F9000\n" % (parkX, parkY))
+					if z < 15:
+						f.write("G1 Z15 F300\n")
 					#Wait till the user continues printing
 					f.write("M0\n")
 					#Move the head back

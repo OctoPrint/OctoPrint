@@ -12,6 +12,10 @@ from Cura.util import resources
 
 def getDefaultFirmware():
 	if profile.getPreference('machine_type') == 'ultimaker':
+		if profile.getPreferenceFloat('extruder_amount') > 1:
+			return None
+		if profile.getPreference('has_heated_bed') == 'True':
+			return None
 		if sys.platform.startswith('linux'):
 			return resources.getPathForFirmware("ultimaker_115200.hex")
 		else:
@@ -21,12 +25,12 @@ def getDefaultFirmware():
 class InstallFirmware(wx.Dialog):
 	def __init__(self, filename = None, port = None):
 		super(InstallFirmware, self).__init__(parent=None, title="Firmware install", size=(250, 100))
-		if port == None:
+		if port is None:
 			port = profile.getPreference('serial_port')
-		if filename == None:
+		if filename is None:
 			filename = getDefaultFirmware()
-		if filename == None:
-			wx.MessageBox('Cura does not ship with a default firmware for your machine.', 'Firmware update', wx.OK | wx.ICON_ERROR)
+		if filename is None:
+			wx.MessageBox('I am sorry, but Cura does not ship with a default firmware for your machine configuration.', 'Firmware update', wx.OK | wx.ICON_ERROR)
 			self.Destroy()
 			return
 

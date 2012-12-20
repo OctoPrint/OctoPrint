@@ -505,7 +505,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 			p1 = numpy.array(gluUnProject(e.GetX(), self.viewport[1] + self.viewport[3] - e.GetY(), 1, self.modelMatrix, self.projMatrix, self.viewport))
 			cursorZ0 = p0 - (p1 - p0) * (p0[2] / (p1[2] - p0[2]))
 			cursorXY = math.sqrt((cursorZ0[0] * cursorZ0[0]) + (cursorZ0[1] * cursorZ0[1]))
-			if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3:
+			if radius * 1.1 <= cursorXY <= radius * 1.3:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
 			else:
 				self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
@@ -513,7 +513,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		if e.Dragging() and e.LeftIsDown():
 			if self.dragType == '':
 				#Define the drag type depending on the cursor position.
-				if cursorXY >= radius * 1.1 and cursorXY <= radius * 1.3 and self.viewMode != 'GCode' and self.viewMode == 'Mixed':
+				if radius * 1.1 <= cursorXY <= radius * 1.3 and self.viewMode != 'GCode' and self.viewMode != 'Mixed':
 					self.dragType = 'modelRotate'
 					self.dragStart = math.atan2(cursorZ0[0], cursorZ0[1])
 				else:
@@ -794,7 +794,7 @@ class PreviewGLCanvas(glcanvas.GLCanvas):
 		glTranslate(self.parent.machineCenter.x, self.parent.machineCenter.y, 0)
 		
 		#Draw the rotate circle
-		if self.parent.objectsMaxV != None and self.viewMode != 'GCode' and self.viewMode == 'Mixed':
+		if self.parent.objectsMaxV is not None and self.viewMode != 'GCode' and self.viewMode != 'Mixed':
 			glDisable(GL_LIGHTING)
 			glDisable(GL_CULL_FACE)
 			glEnable(GL_BLEND)
