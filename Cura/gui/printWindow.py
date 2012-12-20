@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import platform
+import os
 import power
 
 import wx
@@ -47,7 +48,12 @@ class printProcessMonitor():
 
 	def loadFile(self, filename):
 		if self.handle == None:
-			cmdList = [sys.executable, sys.argv[0], '-r', filename]
+			if platform.system() == "Darwin" and hasattr(sys, 'frozen'):
+				cmdList = [os.path.join(os.path.dirname(sys.executable), 'Cura')] 
+			else:
+				cmdList = [sys.executable, sys.argv[0]]
+			cmdList.append('-r')
+			cmdList.append(filename)
 			if platform.system() == "Darwin":
 				if platform.machine() == 'i386':
 					cmdList.insert(0, 'arch')
