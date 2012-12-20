@@ -11,6 +11,7 @@ if not hasattr(sys, 'frozen'):
 		sys.path.append(cura_sf_path)
 	from Cura.cura_sf.skeinforge_application.skeinforge_utilities import skeinforge_craft
 
+from Cura.util import resources
 from Cura.util import profile
 
 #How long does each step take compared to the others. This is used to make a better scaled progress bar, and guess time left.
@@ -44,7 +45,10 @@ def getPyPyExe():
 		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/pypy.exe"))
 	else:
 		exeName = "pypy"
-		pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/bin/pypy"))
+		if hasattr(sys, 'frozen'):
+			pypyExe = os.path.normpath(os.path.join(resources.resourceBasePath, "pypy/bin/pypy"))
+		else:
+			pypyExe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pypy/bin/pypy"))
 	if os.path.exists(pypyExe):
 		return pypyExe
 
