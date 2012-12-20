@@ -302,7 +302,7 @@ class mainWindow(wx.Frame):
 			self.sizer.Detach(spp)
 		i = 2
 		for spp in self.progressPanelList:
-			self.sizer.Add(spp, (i,0), span=(1,4), flag=wx.EXPAND)
+			self.sizer.Add(spp, (i,0), span=(1,4 + self.extruderCount), flag=wx.EXPAND)
 			i += 1
 		self.sizer.Layout()
 
