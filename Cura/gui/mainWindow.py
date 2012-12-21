@@ -271,7 +271,7 @@ class mainWindow(wx.Frame):
 			self.simpleSettingsPanel.setupSlice()
 		#Create a progress panel and add it to the window. The progress panel will start the Skein operation.
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
-		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1, 4 + self.extruderCount), flag=wx.EXPAND)
+		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1, 3 + self.extruderCount), flag=wx.EXPAND)
 		self.sizer.Layout()
 		newSize = self.GetSize();
 		newSize.IncBy(0, spp.GetSize().GetHeight())
@@ -302,7 +302,7 @@ class mainWindow(wx.Frame):
 			self.sizer.Detach(spp)
 		i = 2
 		for spp in self.progressPanelList:
-			self.sizer.Add(spp, (i,0), span=(1,4 + self.extruderCount), flag=wx.EXPAND)
+			self.sizer.Add(spp, (i,0), span=(1,3 + self.extruderCount), flag=wx.EXPAND)
 			i += 1
 		self.sizer.Layout()
 
