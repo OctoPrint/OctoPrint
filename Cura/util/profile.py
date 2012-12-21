@@ -8,6 +8,7 @@ if sys.version_info[0] < 3:
 else:
 	import configparser as ConfigParser
 
+from Cura.util import resources
 from Cura.util import version
 
 #########################################################
@@ -552,7 +553,10 @@ def getPluginBasePaths():
 	ret = []
 	if platform.system() != "Windows":
 		ret.append(os.path.expanduser('~/.cura/plugins/'))
-	ret.append(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins')))
+	if platform.system() == "Darwin" and hasattr(sys, 'frozen'):
+		ret.append(os.path.normpath(os.path.join(resources.resourceBasePath, "Cura/plugins")))
+	else:
+		ret.append(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins')))
 	return ret
 
 def getPluginList():
