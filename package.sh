@@ -100,6 +100,12 @@ if [ "$BUILD_TARGET" = "darwin" ]; then
 		exit 1
 	fi
 
+	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-osx64.tar.bz2
+	$TAR -xjf pypy-${PYPY_VERSION}-osx64.tar.bz2
+	mv pypy-${PYPY_VERSION} scripts/darwin/dist/Cura.app/Contents/Resources/pypy
+	#For now, just copy all of Cura so pypy can find it
+	cp -a Cura scripts/darwin/dist/Cura.app/Contents/Resources/
+
 	cd scripts/darwin
 
 	# Install QuickLook plugin
