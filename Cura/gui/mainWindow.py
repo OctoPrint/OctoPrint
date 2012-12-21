@@ -273,7 +273,7 @@ class mainWindow(wx.Frame):
 		spp = sliceProgessPanel.sliceProgessPanel(self, self, self.filelist)
 		self.sizer.Add(spp, (len(self.progressPanelList)+2,0), span=(1, 3 + self.extruderCount), flag=wx.EXPAND)
 		self.sizer.Layout()
-		newSize = self.GetSize();
+		newSize = self.GetSize()
 		newSize.IncBy(0, spp.GetSize().GetHeight())
 		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
 			self.SetSize(newSize)
@@ -292,7 +292,7 @@ class mainWindow(wx.Frame):
 
 	def removeSliceProgress(self, spp):
 		self.progressPanelList.remove(spp)
-		newSize = self.GetSize();
+		newSize = self.GetSize()
 		newSize.IncBy(0, -spp.GetSize().GetHeight())
 		if newSize.GetWidth() < wx.GetDisplaySize()[0]:
 			self.SetSize(newSize)
