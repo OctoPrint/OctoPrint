@@ -11,6 +11,7 @@ import warnings
 import wx._core
 
 from Cura.util import profile
+from Cura.util import resources
 
 class CuraApp(wx.App):
 	def __init__(self):
@@ -50,7 +51,7 @@ class CuraApp(wx.App):
 						os.makedirs(os.path.dirname(exampleFile))
 					except:
 						pass
-					for filename in glob.glob(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example', '*.*'))):
+					for filename in glob.glob(os.path.normpath(os.path.join(resources.resourceBasePath, 'example', '*.*'))):
 						shutil.copy(filename, os.path.join(os.path.dirname(exampleFile), os.path.basename(filename)))
 					profile.putPreference('lastFile', exampleFile)
 			configWizard.configWizard()
