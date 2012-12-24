@@ -397,7 +397,7 @@ def calculateEdgeWidth():
 	if wallThickness < nozzleSize:
 		return wallThickness
 
-	lineCount = int(wallThickness / nozzleSize)
+	lineCount = int(wallThickness / nozzleSize + 0.0001)
 	lineWidth = wallThickness / lineCount
 	lineWidthAlt = wallThickness / (lineCount + 1)
 	if lineWidth > nozzleSize * 1.5:
