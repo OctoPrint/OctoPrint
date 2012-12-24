@@ -1,2 +1,2 @@
-@python\python.exe Cura\cura.py %*
+@python\python.exe -m Cura.cura %*
 
