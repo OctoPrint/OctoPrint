@@ -1,10 +1,15 @@
 from __future__ import absolute_import
 
 import os
+import sys
+from Cura.util import resources
 
 def getVersion(getGitVersion = True):
 	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
-	versionFile = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../version"))
+	if hasattr(sys, 'frozen'):
+		versionFile = os.path.normpath(os.path.join(resources.resourceBasePath, "version"))
+	else:
+		versionFile = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../version"))
 	if os.path.exists(gitPath):
 		if not getGitVersion:
 			return "dev"
