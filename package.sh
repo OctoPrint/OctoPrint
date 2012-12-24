@@ -106,6 +106,9 @@ if [ "$BUILD_TARGET" = "darwin" ]; then
 	#For now, just copy all of Cura so pypy can find it
 	cp -a Cura scripts/darwin/dist/Cura.app/Contents/Resources/
 
+    #Add cura version file (should read the version from the bundle with pyobjc, but will figure that out later)
+    echo $BUILD_NAME > scripts/darwin/dist/Cura.app/Contents/Resources/version
+
 	cd scripts/darwin
 
 	# Install QuickLook plugin

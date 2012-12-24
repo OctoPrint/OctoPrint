@@ -150,7 +150,7 @@ G92 E0
 }
 preferencesDefaultSettings = {
 	'startMode': 'Simple',
-	'lastFile': os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'example', 'UltimakerRobot_support.stl')),
+	'lastFile': os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'resources', 'example', 'UltimakerRobot_support.stl')),
 	'machine_width': '205',
 	'machine_depth': '205',
 	'machine_height': '200',
