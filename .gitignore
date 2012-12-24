@@ -1,5 +1,6 @@
 *.tar.bz2
 *.tar.gz
+*.7z
 *.pyc
 *.zip
 *.exe
@@ -22,3 +23,5 @@ object.png
 scripts/darwin/dist/*
 scripts/darwin/build/*
 scripts/darwin/Cura.dmg.sparseimage
+scripts/win32/dist/*
+log.txt
