@@ -88,8 +88,12 @@ class VirtualPrinter():
 		self.lastTempAt = time.time()
 		if abs(self.temp - self.targetTemp) > 1:
 			self.temp += math.copysign(timeDiff * 10, self.targetTemp - self.temp)
+			if self.temp < 0:
+				self.temp = 0
 		if abs(self.bedTemp - self.bedTargetTemp) > 1:
 			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
+			if self.bedTemp < 0:
+				self.bedTemp = 0
 		while len(self.readList) < 1:
 			time.sleep(0.1)
 			n += 1
