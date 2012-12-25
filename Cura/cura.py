@@ -52,6 +52,8 @@ def main():
 		help="Internal option, do not use!")
 	parser.add_option("-s", "--slice", action="store_true", dest="slice",
 		help="Slice the given files instead of opening them in Cura")
+	parser.add_option("-w", "--web", action="store_true", dest="webui",
+		help="Start the webui instead of the normal Cura UI")
 	(options, args) = parser.parse_args()
 
 	if options.profile is not None:
@@ -65,6 +67,9 @@ def main():
 	elif options.slice is not None:
 		from Cura.util import sliceRun
 		sliceRun.runSlice(args)
+	elif options.webui:
+		import Cura.webui as webapp
+		webapp.run()
 	else:
 		#Place any unused arguments as last file, so Cura starts with opening those files.
 		if len(args) > 0:

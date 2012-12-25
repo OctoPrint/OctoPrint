@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bootstrap 101 Template</title>
+        <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
+        <script src="http://code.jquery.com/jquery-latest.js"></script>
+        <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <h1>Cura WebUI</h1>
+            </div>
+
+            <div class="row-fluid">
+                <div class="span3">
+                    <h2>Printer</h2>
+                    Machine State: <strong id="printer_state"></strong><br>
+                    <button class="btn" id="printer_connect">Connect</button>
+
+                    <h2>Job</h2>
+                    Filament: <strong id="job_filament"></strong><br>
+                    Estimated Print Time: <strong id="job_estimatedPrintTime"></strong><br>
+                    Line: <strong id="job_line"></strong><br>
+                    Height: <strong id="job_currentZ"></strong><br>
+                    Print Time: <strong id="job_printTime"></strong><br>
+                    Print Time Left: <strong id="job_printTimeLeft"></strong><br>
+
+                    <div class="progress">
+                        <div class="bar" id="job_progressBar" style="width: 30%;"></div>
+                    </div>
+
+                    <button class="btn" id="job_print">Print</button>
+                    <button class="btn" id="job_pause">Pause</button>
+                    <button class="btn" id="job_cancel">Cancel</button>
+
+                    <form action="/api/printer/gcode" method="post" enctype="multipart/form-data">
+                        <input type="file" name="gcode_file">
+                        <button class="btn" type="submit">Load</button>
+                    </form>
+                </div>
+                <div class="span9 tabbable tabs-left">
+
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a href="#temp" data-toggle="tab">Temp</a></li>
+                        <li><a href="#jog" data-toggle="tab">Jog</a></li>
+                        <li><a href="#speed" data-toggle="tab">Speed</a></li>
+                        <li><a href="#term" data-toggle="tab">Term</a></li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="temp">
+                            <div id="temperature-graph" class="span6 " style="height: 350px"></div>
+                            <div class="span3">
+                                Temp: <strong id="printer_temp"></strong><br>
+                                Bed Temp: <strong id="printer_bedTemp"></strong><br>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="jog">
+                            <div class="span9">
+                                <div class="row">
+                                    <div class="span1 offset1 btn-group btn-group-vertical">
+                                        <button class="btn btn-block btn-large" type="button"><i class="icon-chevron-up"></i></button>
+                                        <button class="btn btn-block" type="button"><i class="icon-chevron-up"></i></button>
+                                        <button class="btn btn-block btn-small" type="button"><i class="icon-chevron-up"></i></button>
+                                    </div>
+                                    <div class="span1 offset1 btn-group btn-group-vertical">
+                                        <button class="btn btn-block btn-large" type="button"><i class="icon-chevron-up"></i></button>
+                                        <button class="btn btn-block" type="button"><i class="icon-chevron-up"></i></button>
+                                        <button class="btn btn-block btn-small" type="button"><i class="icon-chevron-up"></i></button>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="span1 btn-group btn-group">
+                                        <button class="btn" type="button"><i class="icon-chevron-left"></i></button>
+                                        <button class="btn" type="button"><i class="icon-chevron-left"></i></button>
+                                        <button class="btn" type="button"><i class="icon-chevron-left"></i></button>
+                                    </div>
+                                    <div class="span1">
+                                        <button class="btn btn-block" type="button"><i class="icon-home"></i></button>
+                                    </div>
+                                    <div class="span1 btn-group btn-group">
+                                        <button class="btn" type="button"><i class="icon-chevron-right"></i></button>
+                                        <button class="btn" type="button"><i class="icon-chevron-right"></i></button>
+                                        <button class="btn" type="button"><i class="icon-chevron-right"></i></button>
+                                    </div>
+                                    <div class="span1">
+                                        <button class="btn btn-block" type="button"><i class="icon-home"></i></button>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="span1 offset1 btn-group btn-group-vertical">
+                                        <button class="btn btn-block btn-small" type="button"><i class="icon-chevron-down"></i></button>
+                                        <button class="btn btn-block" type="button"><i class="icon-chevron-down"></i></button>
+                                        <button class="btn btn-block btn-large" type="button"><i class="icon-chevron-down"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="speed">
+                            Here be speed settings
+                        </div>
+                        <div class="tab-pane" id="term">
+                            <pre id="terminal-output" class="pre-scrollable"></pre>
+                            <div class="input-append">
+                                <input type="text" class="span9" id="terminal-command">
+                                <button class="btn" type="button" id="terminal-send">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Here be scripts -->
+        <script src="{{ url_for('static', filename='js/printerstate.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/temperaturegraph.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/terminaloutput.js') }}"></script>
+    </body>
+</html>
