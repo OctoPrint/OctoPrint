@@ -87,11 +87,11 @@ class Printer():
 		if self.gcode != None:
 			formattedPrintTime = None
 			if (self.printTime):
-				"%02d:%02d" % (int(self.printTime / 60), int(self.printTime % 60))
+				formattedPrintTime = "%02d:%02d" % (int(self.printTime / 60), int(self.printTime % 60))
 
 			formattedPrintTimeLeft = None
 			if (self.printTimeLeft):
-				"%02d:%02d" % (int(self.printTimeLeft / 60), int(self.printTimeLeft % 60))
+				formattedPrintTimeLeft = "%02d:%02d" % (int(self.printTimeLeft / 60), int(self.printTimeLeft % 60))
 
 			data = {
 				'currentZ': self.currentZ,
@@ -128,10 +128,6 @@ class Printer():
 		if self.comm != None and self.comm.isPrinting():
 			return
 
-		# delete old temporary file
-		if self.filename != None:
-			os.remove(self.filename)
-
 		#Send an initial M110 to reset the line counter to zero.
 		prevLineType = lineType = 'CUSTOM'
 		gcodeList = ["M110"]
@@ -153,6 +149,10 @@ class Printer():
 		self.filename = file
 		self.gcode = gcode
 		self.gcodeList = gcodeList
+		self.currentZ = None
+		self.progress = None
+		self.printTime = None
+		self.printTimeLeft = None
 
 	def startPrint(self):
 		if self.comm == None or not self.comm.isOperational():
@@ -174,35 +174,4 @@ class Printer():
 			return
 		self.comm.cancelPrint()
 		self.comm.sendCommand("M84")
-
-class Temperature():
-	def __init__(self, actual=None, target=None):
-		self._actual = actual
-		self._target = target
-
-	def actual(self):
-		return self._actual
-
-	def target(self):
-		return self._target
-
-	def asDict(self):
-		return {'actual': self._actual, 'target': self._target}
-
-class Position():
-	def __init__(self, x=None, y=None, z=None):
-		self._x = x
-		self._y = y
-		self._z = z
-
-	def update(self, x=None, y=None, z=None):
-		if x != None:
-			self._x = x
-		if y != None:
-			self._y = y
-		if z != None:
-			self._z = z
-
-	def get(self):
-		return {'x': self._x, 'y': self._y, 'z': self._z}
 
