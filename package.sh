@@ -16,7 +16,7 @@ BUILD_TARGET=${1:-all}
 ##Do we need to create the final archive
 ARCHIVE_FOR_DISTRIBUTION=1
 ##Which version name are we appending to the final archive
-BUILD_NAME=12.12
+BUILD_NAME=12.12_webui
 TARGET_DIR=Cura-${BUILD_NAME}-${BUILD_TARGET}
 
 ##Which versions of external programs to use
@@ -41,7 +41,7 @@ function downloadURL
 	echo "Checking for $filename"
 	if [ ! -f "$filename" ]; then
 		echo "Downloading $1"
-		curl -L -O "$1"
+		curl --insecure -L -O "$1"
 		if [ $? != 0 ]; then
 			echo "Failed to download $1"
 			exit 1
@@ -155,7 +155,13 @@ if [ $BUILD_TARGET = "win32" ]; then
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-win32.zip
 	#Get the power module for python
 	rm -rf Power
-	git clone https://github.com/GreatFruitOmsk/Power
+	git clone git://github.com/GreatFruitOmsk/Power.git
+	#Get modules needed for webui: flask, werkzeug, jinja2, itsdangerous
+	rm -rf flask werkzeug jinja2 itsdangerous
+	git clone git://github.com/mitsuhiko/flask.git
+	git clone git://github.com/mitsuhiko/werkzeug.git
+	git clone git://github.com/mitsuhiko/jinja2.git
+	git clone git://github.com/mitsuhiko/itsdangerous.git
 else
 	downloadURL https://bitbucket.org/pypy/pypy/downloads/pypy-${PYPY_VERSION}-${BUILD_TARGET}.tar.bz2
 fi
@@ -190,12 +196,23 @@ if [ $BUILD_TARGET = "win32" ]; then
 	mv PURELIB/comtypes ${TARGET_DIR}/python/Lib
 	mv PLATLIB/numpy ${TARGET_DIR}/python/Lib
 	mv Power/power ${TARGET_DIR}/python/Lib
+	mv flask/flask ${TARGET_DIR}/python/Lib
+	mv werkzeug/werkzeug ${TARGET_DIR}/python/Lib
+	mv jinja2/jinja2 ${TARGET_DIR}/python/Lib
+	mv itsdangerous/itsdangerous.py ${TARGET_DIR}/python/Lib
 	mv VideoCapture-0.9-5/Python27/DLLs/vidcap.pyd ${TARGET_DIR}/python/DLLs
 	mv ffmpeg-20120927-git-13f0cd6-win32-static/bin/ffmpeg.exe ${TARGET_DIR}/Cura/
 	mv ffmpeg-20120927-git-13f0cd6-win32-static/licenses ${TARGET_DIR}/Cura/ffmpeg-licenses/
 	mv Win32/EjectMedia.exe ${TARGET_DIR}/Cura/
 	
+	# fix the broken email.mime module of portable python
+	touch ${TARGET_DIR}/python/Lib/email/mime/__init__.py
+	
 	rm -rf Power/
+	rm -rf flask/
+	rm -rf werkzeug/
+	rm -rf jinja2/
+	rm -rf itsdangerous/
 	rm -rf \$_OUTDIR
 	rm -rf PURELIB
 	rm -rf PLATLIB
@@ -254,10 +271,10 @@ if (( ${ARCHIVE_FOR_DISTRIBUTION} )); then
 			wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe /DVERSION=${BUILD_NAME} scripts/win32/installer.nsi
 			mv scripts/win32/Cura_${BUILD_NAME}.exe ./
 		fi
-		if [ -f '/c/Program Files (x86)/NSIS/makensis.exe' ]; then
+		if [ -f '/cygdrive/c/Program Files (x86)/NSIS/makensis.exe' ]; then
 			rm -rf scripts/win32/dist
 			mv `pwd`/${TARGET_DIR} scripts/win32/dist
-			'/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi' >> log.txt
+			'/cygdrive/c/Program Files (x86)/NSIS/makensis.exe' -DVERSION=${BUILD_NAME} 'scripts/win32/installer.nsi' >> log.txt
 			mv scripts/win32/Cura_${BUILD_NAME}.exe ./
 		fi
 	else
