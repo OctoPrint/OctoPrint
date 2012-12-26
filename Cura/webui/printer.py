@@ -25,6 +25,8 @@ class Printer():
 		self.printTimeLeft = None
 		self.currentTemp = None
 		self.currentBedTemp = None
+		self.currentTargetTemp = None
+		self.currentBedTargetTemp = None
 
 		self.gcode = None
 		self.gcodeList = None
@@ -36,7 +38,7 @@ class Printer():
 	def connect(self):
 		if self.comm != None:
 			self.comm.close()
-		self.comm = machineCom.MachineCom(port='VIRTUAL', callbackObject=self)
+		self.comm = machineCom.MachineCom(port="COM4", baudrate=115200, callbackObject=self)
 
 	def disconnect(self):
 		if self.comm != None:
@@ -44,14 +46,18 @@ class Printer():
 		self.comm = None
 
 	def command(self, command):
-		self.comm.sendCommand(command)
+		self.commands([command])
+
+	def commands(self, commands):
+		for command in commands:
+			self.comm.sendCommand(command)
 
 	def mcLog(self, message):
 		self.log.append(message)
 		self.log = self.log[-300:]
 
 	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		currentTime = time.time()
+		currentTime = int(time.time() * 1000)
 
 		self.temps['actual'].append((currentTime, temp))
 		self.temps['actual'] = self.temps['actual'][-300:]
@@ -66,14 +72,16 @@ class Printer():
 		self.temps['targetBed'] = self.temps['targetBed'][-300:]
 
 		self.currentTemp = temp
+		self.currentTargetTemp = targetTemp
 		self.currentBedTemp = bedTemp
+		self.currentBedTargetTemp = bedTargetTemp
 
 	def mcStateChange(self, state):
 		self.state = state
 
 	def mcMessage(self, message):
 		self.messages.append(message)
-		self.messages = self.message[-300:]
+		self.messages = self.messages[-300:]
 
 	def mcProgress(self, lineNr):
 		self.printTime = self.comm.getPrintTime()
@@ -123,6 +131,18 @@ class Printer():
 
 	def isOperational(self):
 		return self.comm != None and self.comm.isOperational()
+
+	def isPrinting(self):
+		return self.comm != None and self.comm.isPrinting()
+
+	def isPaused(self):
+		return self.comm != None and self.comm.isPaused()
+
+	def isError(self):
+		return self.comm != None and self.comm.isError()
+
+	def isReady(self):
+		return self.gcodeList and len(self.gcodeList) > 0
 
 	def loadGcode(self, file):
 		if self.comm != None and self.comm.isPrinting():

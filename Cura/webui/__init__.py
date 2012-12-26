@@ -26,14 +26,22 @@ def index():
 def printerState():
 	temp = printer.currentTemp
 	bedTemp = printer.currentBedTemp
+	targetTemp = printer.currentTargetTemp
+	bedTargetTemp = printer.currentBedTargetTemp
 	jobData = printer.jobData()
 
 	result = {
-	'state': printer.getStateString(),
-	'temp': temp,
-	'bedTemp': bedTemp,
-	'operational': printer.isOperational(),
-	'closedOrError': printer.isClosedOrError()
+		'state': printer.getStateString(),
+		'temp': temp,
+		'bedTemp': bedTemp,
+		'targetTemp': targetTemp,
+		'targetBedTemp': bedTargetTemp,
+		'operational': printer.isOperational(),
+		'closedOrError': printer.isClosedOrError(),
+		'error': printer.isError(),
+		'printing': printer.isPrinting(),
+		'paused': printer.isPaused(),
+		'ready': printer.isReady()
 	}
 
 	if (jobData != None):
@@ -95,6 +103,50 @@ def cancelPrint():
 	printer.cancelPrint()
 	return jsonify(SUCCESS)
 
+@app.route(BASEURL + 'control/temperature', methods=['POST'])
+def setTargetTemperature():
+	if not printer.isOperational():
+		return jsonify(SUCCESS)
+
+	if request.values.has_key("temp"):
+		# set target temperature
+		temp = request.values["temp"];
+		printer.command("M104 S" + temp)
+
+	if request.values.has_key("bedTemp"):
+		# set target bed temperature
+		bedTemp = request.values["bedTemp"]
+		printer.command("M140 S" + bedTemp)
+
+	return jsonify(SUCCESS)
+
+@app.route(BASEURL + "control/jog", methods=["POST"])
+def jog():
+	if not printer.isOperational() or printer.isPrinting():
+		# do not jog when a print job is running or we don't have a connection
+		return jsonify(SUCCESS)
+
+	if request.values.has_key("x"):
+		# jog x
+		x = request.values["x"]
+		printer.commands(["G91", "G1 X" + x + " F6000", "G90"])
+	if request.values.has_key("y"):
+		# jog y
+		y = request.values["y"]
+		printer.commands(["G91", "G1 Y" + y + " F6000", "G90"])
+	if request.values.has_key("z"):
+		# jog z
+		z = request.values["z"]
+		printer.commands(["G91", "G1 Z" + z + " F200", "G90"])
+	if request.values.has_key("homeXY"):
+		# home x/y
+		printer.command("G28 X0 Y0")
+	if request.values.has_key("homeZ"):
+		# home z
+		printer.command("G28 Z0")
+
+	return jsonify(SUCCESS)
+
 #~~ GCODE file handling
 
 @app.route(BASEURL + 'gcodefiles', methods=['GET'])
@@ -141,4 +193,4 @@ def sizeof_fmt(num):
 
 def run():
 	app.debug = True
-	app.run()
+	app.run(host="0.0.0.0")

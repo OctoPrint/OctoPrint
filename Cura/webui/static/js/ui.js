@@ -4,6 +4,10 @@ function PrinterStateViewModel() {
     self.stateString = ko.observable(undefined);
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
 
     self.filament = ko.observable(undefined);
     self.estimatedPrintTime = ko.observable(undefined);
@@ -18,11 +22,17 @@ function PrinterStateViewModel() {
             return "-";
         var currentLine = self.currentLine() ? self.currentLine() : "-";
         return currentLine + " / " + self.totalLines();
-    })
+    });
     self.progress = ko.computed(function() {
         if (!self.currentLine() || !self.totalLines())
             return 0;
         return Math.round(self.currentLine() * 100 / self.totalLines());
+    });
+    self.pauseString = ko.computed(function() {
+        if (self.isPaused())
+            return "Continue";
+        else
+            return "Pause";
     });
 
     self.connect = function() {
@@ -37,6 +47,10 @@ function PrinterStateViewModel() {
         self.stateString(response.state);
         self.isErrorOrClosed(response.closedOrError);
         self.isOperational(response.operational);
+        self.isPaused(response.paused);
+        self.isPrinting(response.printing);
+        self.isError(response.error);
+        self.isReady(response.ready);
 
         if (response.job) {
             self.filament(response.job.filament);
@@ -63,6 +77,35 @@ function TemperatureViewModel() {
 
     self.temp = ko.observable(undefined);
     self.bedTemp = ko.observable(undefined);
+    self.targetTemp = ko.observable(undefined);
+    self.bedTargetTemp = ko.observable(undefined);
+    self.isErrorOrClosed = ko.observable(undefined);
+    self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
+
+    self.tempString = ko.computed(function() {
+        if (!self.temp())
+            return "-";
+        return self.temp() + " °C";
+    });
+    self.bedTempString = ko.computed(function() {
+        if (!self.bedTemp())
+            return "-";
+        return self.bedTemp() + " °C";
+    });
+    self.targetTempString = ko.computed(function() {
+        if (!self.targetTemp())
+            return "-";
+        return self.targetTemp() + " °C";
+    });
+    self.bedTargetTempString = ko.computed(function() {
+        if (!self.bedTargetTemp())
+            return "-";
+        return self.bedTargetTemp() + " °C";
+    });
 
     self.temperatures = [];
     self.plotOptions = {
@@ -72,7 +115,18 @@ function TemperatureViewModel() {
             ticks: 10
         },
         xaxis: {
-            mode: "time"
+            mode: "time",
+            timeformat: "%H:%M:%S",
+            minTickSize: [2, "minute"],
+            tickFormatter: function(val, axis) {
+                var now = new Date();
+                var diff = now.getTime() - val;
+                var diffInMins = Math.round(diff / (60000));
+                if (diffInMins == 0)
+                    return "just now";
+                else
+                    return "- " + diffInMins + " min";
+            }
         },
         legend: {
             noColumns: 4
@@ -80,9 +134,18 @@ function TemperatureViewModel() {
     }
 
     self.fromResponse = function(response) {
-        self.temp(response.currentTemp);
-        self.bedTemp(response.currentBedTemp);
+        self.temp(response.temp);
+        self.bedTemp(response.bedTemp);
+        self.targetTemp(response.targetTemp);
+        self.bedTargetTemp(response.bedTargetTemp);
         self.temperatures = (response.temperatures);
+
+        self.isErrorOrClosed(response.closedOrError);
+        self.isOperational(response.operational);
+        self.isPaused(response.paused);
+        self.isPrinting(response.printing);
+        self.isError(response.error);
+        self.isReady(response.ready);
 
         self.updatePlot();
     }
@@ -113,13 +176,13 @@ function TerminalViewModel() {
     self.updateOutput = function() {
         var output = '';
         for (var i = 0; i < self.log.length; i++) {
-            output += self.log[i] + '<br>';
+            output += self.log[i] + '\n';
         }
 
         var container = $("#terminal-output");
         var autoscroll = (container.scrollTop() == container[0].scrollHeight - container.height);
 
-        container.html(output);
+        container.text(output);
 
         if (autoscroll) {
             container.scrollTop(container[0].scrollHeight - container.height())
@@ -215,11 +278,11 @@ $(function() {
             })
         })
         $("#job_pause").click(function() {
+            $("#job_pause").button('toggle');
             $.ajax({
                 url: AJAX_BASEURL + "control/pause",
                 type: 'POST',
                 dataType: 'json',
-                success: function(){}
             })
         })
         $("#job_cancel").click(function() {
@@ -227,9 +290,54 @@ $(function() {
                 url: AJAX_BASEURL + "control/cancel",
                 type: 'POST',
                 dataType: 'json',
-                success: function(){}
             })
         })
+
+        $("#temp_newTemp_set").click(function() {
+            var newTemp = $("#temp_newTemp").val();
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { temp: newTemp },
+                success: function() {$("#temp_newTemp").val("")}
+            })
+        })
+        $("#temp_newBedTemp_set").click(function() {
+            var newBedTemp = $("#temp_newBedTemp").val();
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { bedTemp: newBedTemp },
+                success: function() {$("#temp_newBedTemp").val("")}
+            })
+        })
+
+        function jogCommand(axis, distance) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/jog",
+                type: "POST",
+                dataType: "json",
+                data: axis + "=" + distance
+            })
+        }
+        function homeCommand(axis) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/jog",
+                type: "POST",
+                dataType: "json",
+                data: "home" + axis
+            })
+        }
+        $("#jog_x_inc").click(function() {jogCommand("x", "10")});
+        $("#jog_x_dec").click(function() {jogCommand("x", "-10")});
+        $("#jog_y_inc").click(function() {jogCommand("y", "10")});
+        $("#jog_y_dec").click(function() {jogCommand("y", "-10")});
+        $("#jog_z_inc").click(function() {jogCommand("z", "10")});
+        $("#jog_z_dec").click(function() {jogCommand("z", "-10")});
+        $("#jog_xy_home").click(function() {homeCommand("XY")});
+        $("#jog_z_home").click(function() {homeCommand("Z")});
 
         $("#terminal-send").click(function () {
             var command = $("#terminal-command").val();
@@ -238,9 +346,6 @@ $(function() {
                 type: 'POST',
                 dataType: 'json',
                 data: 'command=' + command,
-                success: function(response) {
-                    // do nothing
-                }
             })
         })
 
@@ -249,7 +354,6 @@ $(function() {
             done: function (e, data) {
                 gcodeFilesViewModel.fromResponse(data.result);
             },
-            acceptFileTypes: /(\.|\/)gcode$/i,
             progressall: function (e, data) {
                 var progress = parseInt(data.loaded / data.total * 100, 10);
                 $('#gcode_upload_progress .bar').css(
@@ -260,9 +364,10 @@ $(function() {
         });
 
         ko.applyBindings(printerStateViewModel, document.getElementById("state"));
-        ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-        ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
+        ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
+        ko.applyBindings(printerStateViewModel, document.getElementById("jog"));
+        ko.applyBindings(terminalViewModel, document.getElementById("term"));
 
         dataUpdater.requestData();
         $.ajax({
