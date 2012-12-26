@@ -38,7 +38,7 @@ class Printer():
 	def connect(self):
 		if self.comm != None:
 			self.comm.close()
-		self.comm = machineCom.MachineCom(port="COM4", baudrate=115200, callbackObject=self)
+		self.comm = machineCom.MachineCom(callbackObject=self)
 
 	def disconnect(self):
 		if self.comm != None:
@@ -193,5 +193,5 @@ class Printer():
 		if self.comm == None:
 			return
 		self.comm.cancelPrint()
-		self.comm.sendCommand("M84")
+		self.comm.sendCommands(["M84", "M104 S0", "M140 S0"]) # disable motors, switch off heaters
 

@@ -83,3 +83,14 @@ At time of writing, pyobjc 2.5 is not available at pypi. You have to clone repo 
 
 ###Packaging
 To package Cura into application bundle simply do `python setup.py py2app`. Resulting bundle is self-contained -- it includes Python and all needed packages.
+
+WebUI
+=====
+
+This fork of Cura includes a WebUI for remote printing via the browser. It depends on the Python module "flask" and
+its dependencies "werkzeug", "jinja2" and "itsdangerous", so you'll need those in order to run the WebUI. A simple
+`pip install -r requirements.txt` or `pip install flask` should take care of that.
+
+Once installed, you can startup the WebUI instead of the regular Cura UI via the command-line option `--web` or `-w`. The
+web interface will then be available on port 5000. If you want to change that (or the IP address the server binds to,
+which currently is `0.0.0.0`), please take a look at the source code of `Cura/webui/__init__.py`.

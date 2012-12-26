@@ -2,16 +2,36 @@
 # coding=utf-8
 __author__ = 'Gina Häußge <osd@foosel.net>'
 
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, make_response
+from werkzeug import secure_filename
 
 from printer import Printer
 
+import sys
 import os
 import fnmatch
 
-BASEURL='/ajax/'
+APPNAME="Cura"
+BASEURL="/ajax/"
 SUCCESS={}
-UPLOAD_FOLDER="uploads"
+
+# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
+if sys.platform == 'darwin':
+	from AppKit import NSSearchPathForDirectoriesInDomains
+	# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
+	# NSApplicationSupportDirectory = 14
+	# NSUserDomainMask = 1
+	# True for expanding the tilde into a fully qualified path
+	appdata = os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME)
+elif sys.platform == 'win32':
+	appdata = os.path.join(os.environ['APPDATA'], APPNAME)
+else:
+	appdata = os.path.expanduser(os.path.join("~", "." + APPNAME.lower()))
+
+UPLOAD_FOLDER = appdata + os.sep + "uploads"
+if not os.path.isdir(UPLOAD_FOLDER):
+	os.makedirs(UPLOAD_FOLDER)
+ALLOWED_EXTENSIONS = set(["gcode"])
 
 app = Flask("Cura.webui")
 printer = Printer()
@@ -63,7 +83,7 @@ def printerMessages():
 	return jsonify(messages=printer.messages)
 
 @app.route(BASEURL + 'state/log', methods=['GET'])
-def printerMessages():
+def printerLogs():
 	return jsonify(log=printer.log)
 
 @app.route(BASEURL + 'state/temperatures', methods=['GET'])
@@ -164,8 +184,9 @@ def readGcodeFiles():
 @app.route(BASEURL + 'gcodefiles/upload', methods=['POST'])
 def uploadGcodeFile():
 	file = request.files['gcode_file']
-	if file != None:
-		filename = UPLOAD_FOLDER + os.sep + file.filename
+	if file and allowed_file(file.filename):
+		secure = secure_filename(file.filename)
+		filename = os.path.join(UPLOAD_FOLDER, secure)
 		file.save(filename)
 	return readGcodeFiles()
 
@@ -177,8 +198,12 @@ def loadGcodeFile():
 
 @app.route(BASEURL + 'gcodefiles/delete', methods=['POST'])
 def deleteGcodeFile():
-	filename = request.values["filename"]
-	os.remove(UPLOAD_FOLDER + os.sep + filename)
+	if request.values.has_key("filename"):
+		filename = request.values["filename"]
+		if allowed_file(filename):
+			secure = UPLOAD_FOLDER + os.sep + secure_filename(filename)
+			if os.path.exists(secure):
+				os.remove(secure)
 	return readGcodeFiles()
 
 def sizeof_fmt(num):
@@ -191,6 +216,8 @@ def sizeof_fmt(num):
 		num /= 1024.0
 	return "%3.1f%s" % (num, 'TB')
 
+def allowed_file(filename):
+	return "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
+
 def run():
-	app.debug = True
-	app.run(host="0.0.0.0")
+	app.run(host="0.0.0.0", port=5000)
