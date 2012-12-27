@@ -661,16 +661,18 @@ class projectPlanner(wx.Frame):
 		pspw.Show(True)
 	
 	def OnScaleChange(self, e):
-		if self.selection == None:
+		if self.selection is None:
 			return
 		try:
 			self.selection.scale = float(self.scaleCtrl.GetValue())
 		except ValueError:
 			self.selection.scale = 1.0
+		if self.alwaysAutoPlace:
+			self.OnAutoPlace(None)
 		self.preview.Refresh()
 	
 	def OnRotateChange(self, e):
-		if self.selection == None:
+		if self.selection is None:
 			return
 		self.selection.rotate = float(self.rotateCtrl.GetValue())
 		self.selection.updateModelTransform()

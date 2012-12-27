@@ -23,7 +23,7 @@ printWindowMonitorHandle = None
 
 def printFile(filename):
 	global printWindowMonitorHandle
-	if printWindowMonitorHandle == None:
+	if printWindowMonitorHandle is None:
 		printWindowMonitorHandle = printProcessMonitor()
 	printWindowMonitorHandle.loadFile(filename)
 
@@ -47,11 +47,11 @@ class printProcessMonitor():
 		self.handle = None
 
 	def loadFile(self, filename):
-		if self.handle == None:
+		if self.handle is None:
 			if platform.system() == "Darwin" and hasattr(sys, 'frozen'):
 				cmdList = [os.path.join(os.path.dirname(sys.executable), 'Cura')] 
 			else:
-				cmdList = [sys.executable, sys.argv[0]]
+				cmdList = [sys.executable, '-m', 'Cura.cura']
 			cmdList.append('-r')
 			cmdList.append(filename)
 			if platform.system() == "Darwin":
@@ -68,8 +68,8 @@ class printProcessMonitor():
 	def Monitor(self):
 		p = self.handle
 		line = p.stdout.readline()
-		while(len(line) > 0):
-			#print line.rstrip()
+		while len(line) > 0:
+			print line.rstrip()
 			line = p.stdout.readline()
 		p.communicate()
 		self.handle = None
@@ -90,7 +90,7 @@ class PrintCommandButton(buttons.GenBitmapButton):
 		self.Bind(wx.EVT_BUTTON, self.OnClick)
 
 	def OnClick(self, e):
-		if self.parent.machineCom == None or self.parent.machineCom.isPrinting():
+		if self.parent.machineCom is None or self.parent.machineCom.isPrinting():
 			return;
 		for cmd in self.commandList:
 			self.parent.machineCom.sendCommand(cmd)

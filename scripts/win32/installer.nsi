@@ -121,7 +121,7 @@ Section "Open STL files with Cura"
 	DeleteRegValue HKCR .stl "Content Type"
 	WriteRegStr HKCR "Cura STL model file\DefaultIcon" "" "$INSTDIR\Cura\resources\stl.ico,0"
 	WriteRegStr HKCR "Cura STL model file\shell" "" "open"
-	WriteRegStr HKCR "Cura STL model file\shell\open\command" "" '"$INSTDIR\python\pythonw.exe" "$INSTDIR\Cura\cura.py" "%1"'
+	WriteRegStr HKCR "Cura STL model file\shell\open\command" "" '"$INSTDIR\python\pythonw.exe" -c "import os; os.chdir(\"$INSTDIR\"); import Cura.cura; Cura.cura.main()" "%1"'
 SectionEnd
 
 Section /o "Open OBJ files with Cura"
@@ -129,7 +129,7 @@ Section /o "Open OBJ files with Cura"
 	DeleteRegValue HKCR .obj "Content Type"
 	WriteRegStr HKCR "Cura OBJ model file\DefaultIcon" "" "$INSTDIR\Cura\resources\stl.ico,0"
 	WriteRegStr HKCR "Cura OBJ model file\shell" "" "open"
-	WriteRegStr HKCR "Cura OBJ model file\shell\open\command" "" '"$INSTDIR\python\pythonw.exe" "$INSTDIR\Cura\cura.py" "%1"'
+	WriteRegStr HKCR "Cura OBJ model file\shell\open\command" "" '"$INSTDIR\python\pythonw.exe" -c "import os; os.chdir(\"$INSTDIR\"); import Cura.cura; Cura.cura.main()" "%1"'
 SectionEnd
 
 ;--------------------------------
