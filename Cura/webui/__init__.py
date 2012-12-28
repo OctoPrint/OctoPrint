@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # coding=utf-8
-__author__ = 'Gina Häußge <osd@foosel.net>'
+__author__ = "Gina Häußge <osd@foosel.net>"
 
 from flask import Flask, request, render_template, jsonify, make_response
 from werkzeug import secure_filename
 
-from printer import Printer
+from printer import Printer, getConnectionOptions
 
 import sys
 import os
@@ -16,15 +16,15 @@ BASEURL="/ajax/"
 SUCCESS={}
 
 # taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
-if sys.platform == 'darwin':
+if sys.platform == "darwin":
 	from AppKit import NSSearchPathForDirectoriesInDomains
 	# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
 	# NSApplicationSupportDirectory = 14
 	# NSUserDomainMask = 1
 	# True for expanding the tilde into a fully qualified path
 	appdata = os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME)
-elif sys.platform == 'win32':
-	appdata = os.path.join(os.environ['APPDATA'], APPNAME)
+elif sys.platform == "win32":
+	appdata = os.path.join(os.environ["APPDATA"], APPNAME)
 else:
 	appdata = os.path.expanduser(os.path.join("~", "." + APPNAME.lower()))
 
@@ -36,94 +36,111 @@ ALLOWED_EXTENSIONS = set(["gcode"])
 app = Flask("Cura.webui")
 printer = Printer()
 
-@app.route('/')
+@app.route("/")
 def index():
-	return render_template('index.html')
+	return render_template("index.html")
 
 #~~ Printer state
 
-@app.route(BASEURL + 'state', methods=['GET'])
+@app.route(BASEURL + "state", methods=["GET"])
 def printerState():
 	temp = printer.currentTemp
 	bedTemp = printer.currentBedTemp
 	targetTemp = printer.currentTargetTemp
 	bedTargetTemp = printer.currentBedTargetTemp
 	jobData = printer.jobData()
+	gcodeState = printer.gcodeState()
 
 	result = {
-		'state': printer.getStateString(),
-		'temp': temp,
-		'bedTemp': bedTemp,
-		'targetTemp': targetTemp,
-		'targetBedTemp': bedTargetTemp,
-		'operational': printer.isOperational(),
-		'closedOrError': printer.isClosedOrError(),
-		'error': printer.isError(),
-		'printing': printer.isPrinting(),
-		'paused': printer.isPaused(),
-		'ready': printer.isReady()
+		"state": printer.getStateString(),
+		"temp": temp,
+		"bedTemp": bedTemp,
+		"targetTemp": targetTemp,
+		"targetBedTemp": bedTargetTemp,
+		"operational": printer.isOperational(),
+		"closedOrError": printer.isClosedOrError(),
+		"error": printer.isError(),
+		"printing": printer.isPrinting(),
+		"paused": printer.isPaused(),
+		"ready": printer.isReady(),
+		"loading": printer.isLoading()
 	}
 
-	if (jobData != None):
-		result['job'] = jobData
+	if jobData is not None:
+		jobData["filename"] = jobData["filename"].replace(UPLOAD_FOLDER + os.sep, "")
+		result["job"] = jobData
 
-	if (request.values.has_key('temperatures')):
-		result['temperatures'] = printer.temps
+	if gcodeState is not None:
+		gcodeState["filename"] = gcodeState["filename"].replace(UPLOAD_FOLDER + os.sep, "")
+		result["gcode"] = gcodeState
 
-	if (request.values.has_key('log')):
-		result['log'] = printer.log
+	if request.values.has_key("temperatures"):
+		result["temperatures"] = printer.temps
 
-	if (request.values.has_key('messages')):
-		result['messages'] = printer.messages
+	if request.values.has_key("log"):
+		result["log"] = printer.log
+
+	if request.values.has_key("messages"):
+		result["messages"] = printer.messages
 
 	return jsonify(result)
 
-@app.route(BASEURL + 'state/messages', methods=['GET'])
+@app.route(BASEURL + "state/messages", methods=["GET"])
 def printerMessages():
 	return jsonify(messages=printer.messages)
 
-@app.route(BASEURL + 'state/log', methods=['GET'])
+@app.route(BASEURL + "state/log", methods=["GET"])
 def printerLogs():
 	return jsonify(log=printer.log)
 
-@app.route(BASEURL + 'state/temperatures', methods=['GET'])
+@app.route(BASEURL + "state/temperatures", methods=["GET"])
 def printerTemperatures():
 	return jsonify(temperatures = printer.temps)
 
 #~~ Printer control
 
-@app.route(BASEURL + 'control/connect', methods=['POST'])
-def connect():
-	printer.connect()
-	return jsonify(state='Connecting')
+@app.route(BASEURL + "control/connectionOptions", methods=["GET"])
+def connectionOptions():
+	return jsonify(getConnectionOptions())
 
-@app.route(BASEURL + 'control/disconnect', methods=['POST'])
+@app.route(BASEURL + "control/connect", methods=["POST"])
+def connect():
+	port = None
+	baudrate = None
+	if request.values.has_key("port"):
+		port = request.values["port"]
+	if request.values.has_key("baudrate"):
+		baudrate = request.values["baudrate"]
+	printer.connect(port=port, baudrate=baudrate)
+	return jsonify(state="Connecting")
+
+@app.route(BASEURL + "control/disconnect", methods=["POST"])
 def disconnect():
 	printer.disconnect()
-	return jsonify(state='Offline')
+	return jsonify(state="Offline")
 
-@app.route(BASEURL + 'control/command', methods=['POST'])
+@app.route(BASEURL + "control/command", methods=["POST"])
 def printerCommand():
-	command = request.form['command']
+	command = request.form["command"]
 	printer.command(command)
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + 'control/print', methods=['POST'])
+@app.route(BASEURL + "control/print", methods=["POST"])
 def printGcode():
 	printer.startPrint()
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + 'control/pause', methods=['POST'])
+@app.route(BASEURL + "control/pause", methods=["POST"])
 def pausePrint():
 	printer.togglePausePrint()
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + 'control/cancel', methods=['POST'])
+@app.route(BASEURL + "control/cancel", methods=["POST"])
 def cancelPrint():
 	printer.cancelPrint()
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + 'control/temperature', methods=['POST'])
+@app.route(BASEURL + "control/temperature", methods=["POST"])
 def setTargetTemperature():
 	if not printer.isOperational():
 		return jsonify(SUCCESS)
@@ -143,7 +160,7 @@ def setTargetTemperature():
 @app.route(BASEURL + "control/jog", methods=["POST"])
 def jog():
 	if not printer.isOperational() or printer.isPrinting():
-		# do not jog when a print job is running or we don't have a connection
+		# do not jog when a print job is running or we don"t have a connection
 		return jsonify(SUCCESS)
 
 	if request.values.has_key("x"):
@@ -169,7 +186,7 @@ def jog():
 
 #~~ GCODE file handling
 
-@app.route(BASEURL + 'gcodefiles', methods=['GET'])
+@app.route(BASEURL + "gcodefiles", methods=["GET"])
 def readGcodeFiles():
 	files = []
 	for osFile in os.listdir(UPLOAD_FOLDER):
@@ -181,22 +198,22 @@ def readGcodeFiles():
 		})
 	return jsonify(files=files)
 
-@app.route(BASEURL + 'gcodefiles/upload', methods=['POST'])
+@app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():
-	file = request.files['gcode_file']
+	file = request.files["gcode_file"]
 	if file and allowed_file(file.filename):
 		secure = secure_filename(file.filename)
 		filename = os.path.join(UPLOAD_FOLDER, secure)
 		file.save(filename)
 	return readGcodeFiles()
 
-@app.route(BASEURL + 'gcodefiles/load', methods=['POST'])
+@app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 def loadGcodeFile():
 	filename = request.values["filename"]
 	printer.loadGcode(UPLOAD_FOLDER + os.sep + filename)
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + 'gcodefiles/delete', methods=['POST'])
+@app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
 def deleteGcodeFile():
 	if request.values.has_key("filename"):
 		filename = request.values["filename"]
@@ -210,14 +227,15 @@ def sizeof_fmt(num):
 	"""
 	 Taken from http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
 	"""
-	for x in ['bytes','KB','MB','GB']:
+	for x in ["bytes","KB","MB","GB"]:
 		if num < 1024.0:
 			return "%3.1f%s" % (num, x)
 		num /= 1024.0
-	return "%3.1f%s" % (num, 'TB')
+	return "%3.1f%s" % (num, "TB")
 
 def allowed_file(filename):
 	return "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
 
 def run():
+	app.debug = True
 	app.run(host="0.0.0.0", port=5000)

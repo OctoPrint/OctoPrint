@@ -1,3 +1,65 @@
+function ConnectionViewModel() {
+    var self = this;
+
+    self.portOptions = ko.observableArray(undefined);
+    self.baudrateOptions = ko.observableArray(undefined);
+    self.selectedPort = ko.observable(undefined);
+    self.selectedBaudrate = ko.observable(undefined);
+
+    self.isErrorOrClosed = ko.observable(undefined);
+    self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
+
+    self.buttonText = ko.computed(function() {
+        if (self.isErrorOrClosed())
+            return "Connect";
+        else
+            return "Disconnect";
+    })
+
+    self.fromResponse = function(response) {
+        self.portOptions(response.ports);
+        self.baudrateOptions(response.baudrates);
+
+        if (!self.selectedPort() && response.ports && response.ports.indexOf(response.portPreference) >= 0)
+            self.selectedPort(response.portPreference);
+        if (!self.selectedBaudrate() && response.baudrates && response.baudrates.indexOf(response.baudratePreference) >= 0)
+            self.selectedBaudrate(response.baudratePreference);
+    }
+
+    self.fromStateResponse = function(response) {
+        self.isErrorOrClosed(response.closedOrError);
+        self.isOperational(response.operational);
+        self.isPaused(response.paused);
+        self.isPrinting(response.printing);
+        self.isError(response.error);
+        self.isReady(response.ready);
+        self.isLoading(response.loading);
+    }
+
+    self.connect = function() {
+        if (self.isErrorOrClosed()) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/connect",
+                type: "POST",
+                dataType: "json",
+                data: { "port": self.selectedPort(), "baudrate": self.selectedBaudrate() }
+            })
+        } else {
+            $.ajax({
+                url: AJAX_BASEURL + "control/disconnect",
+                type: "POST",
+                dataType: "json"
+            })
+        }
+    }
+}
+var connectionViewModel = new ConnectionViewModel();
+
 function PrinterStateViewModel() {
     var self = this;
 
@@ -8,7 +70,9 @@ function PrinterStateViewModel() {
     self.isPaused = ko.observable(undefined);
     self.isError = ko.observable(undefined);
     self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
 
+    self.filename = ko.observable(undefined);
     self.filament = ko.observable(undefined);
     self.estimatedPrintTime = ko.observable(undefined);
     self.printTime = ko.observable(undefined);
@@ -35,14 +99,6 @@ function PrinterStateViewModel() {
             return "Pause";
     });
 
-    self.connect = function() {
-        $.ajax({
-            url: AJAX_BASEURL + "control/connect",
-            type: 'POST',
-            dataType: 'json'
-        })
-    }
-
     self.fromResponse = function(response) {
         self.stateString(response.state);
         self.isErrorOrClosed(response.closedOrError);
@@ -51,8 +107,10 @@ function PrinterStateViewModel() {
         self.isPrinting(response.printing);
         self.isError(response.error);
         self.isReady(response.ready);
+        self.isLoading(response.loading);
 
         if (response.job) {
+            self.filename(response.job.filename);
             self.filament(response.job.filament);
             self.estimatedPrintTime(response.job.estimatedPrintTime);
             self.printTime(response.job.printTime);
@@ -61,11 +119,17 @@ function PrinterStateViewModel() {
             self.totalLines(response.job.totalLines ? response.job.totalLines : 0);
             self.currentHeight(response.job.currentZ);
         } else {
+            if (response.loading && response.gcode) {
+                self.filename("Loading... (" + Math.round(response.gcode.progress * 100) + "%)");
+            } else {
+                self.filename(undefined);
+            }
             self.filament(undefined);
             self.estimatedPrintTime(undefined);
             self.printTime(undefined);
             self.printTimeLeft(undefined);
             self.currentLine(undefined);
+            self.totalLines(undefined);
             self.currentHeight(undefined);
         }
     }
@@ -79,12 +143,14 @@ function TemperatureViewModel() {
     self.bedTemp = ko.observable(undefined);
     self.targetTemp = ko.observable(undefined);
     self.bedTargetTemp = ko.observable(undefined);
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
     self.isPaused = ko.observable(undefined);
     self.isError = ko.observable(undefined);
     self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
 
     self.tempString = ko.computed(function() {
         if (!self.temp())
@@ -116,7 +182,6 @@ function TemperatureViewModel() {
         },
         xaxis: {
             mode: "time",
-            timeformat: "%H:%M:%S",
             minTickSize: [2, "minute"],
             tickFormatter: function(val, axis) {
                 var now = new Date();
@@ -146,6 +211,7 @@ function TemperatureViewModel() {
         self.isPrinting(response.printing);
         self.isError(response.error);
         self.isReady(response.ready);
+        self.isLoading(response.loading);
 
         self.updatePlot();
     }
@@ -174,9 +240,9 @@ function TerminalViewModel() {
     }
 
     self.updateOutput = function() {
-        var output = '';
+        var output = "";
         for (var i = 0; i < self.log.length; i++) {
-            output += self.log[i] + '\n';
+            output += self.log[i] + "\n";
         }
 
         var container = $("#terminal-output");
@@ -227,13 +293,14 @@ function GcodeFilesViewModel() {
 }
 var gcodeFilesViewModel = new GcodeFilesViewModel();
 
-function DataUpdater(printerStateViewModel, temperatureViewModel, terminalViewModel) {
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, terminalViewModel) {
     var self = this;
 
     self.updateInterval = 500;
     self.includeTemperatures = true;
     self.includeLogs = true;
 
+    self.connectionViewModel = connectionViewModel;
     self.printerStateViewModel = printerStateViewModel;
     self.temperatureViewModel = temperatureViewModel;
     self.terminalViewModel = terminalViewModel;
@@ -248,48 +315,51 @@ function DataUpdater(printerStateViewModel, temperatureViewModel, terminalViewMo
 
         $.ajax({
             url: AJAX_BASEURL + "state",
-            type: 'GET',
-            dataType: 'json',
+            type: "GET",
+            dataType: "json",
             data: parameters,
             success: function(response) {
                 self.printerStateViewModel.fromResponse(response);
+                self.connectionViewModel.fromStateResponse(response);
 
                 if (response.temperatures)
                     self.temperatureViewModel.fromResponse(response);
 
                 if (response.log)
                     self.terminalViewModel.fromResponse(response);
+            },
+            error: function(jqXHR, textState, errorThrows) {
+                //alert(textState);
             }
         });
 
         setTimeout(self.requestData, self.updateInterval);
     }
 }
-var dataUpdater = new DataUpdater(printerStateViewModel, temperatureViewModel, terminalViewModel);
+var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, terminalViewModel);
 
 $(function() {
-        $("#printer_connect").click(printerStateViewModel.connect);
         $("#job_print").click(function() {
             $.ajax({
                 url: AJAX_BASEURL + "control/print",
-                type: 'POST',
-                dataType: 'json',
+                type: "POST",
+                dataType: "json",
                 success: function(){}
             })
         })
         $("#job_pause").click(function() {
-            $("#job_pause").button('toggle');
+            $("#job_pause").button("toggle");
             $.ajax({
                 url: AJAX_BASEURL + "control/pause",
-                type: 'POST',
-                dataType: 'json',
+                type: "POST",
+                dataType: "json"
             })
         })
         $("#job_cancel").click(function() {
             $.ajax({
                 url: AJAX_BASEURL + "control/cancel",
-                type: 'POST',
-                dataType: 'json',
+                type: "POST",
+                dataType: "json"
             })
         })
 
@@ -343,26 +413,24 @@ $(function() {
             var command = $("#terminal-command").val();
             $.ajax({
                 url: AJAX_BASEURL + "control/command",
-                type: 'POST',
-                dataType: 'json',
-                data: 'command=' + command,
+                type: "POST",
+                dataType: "json",
+                data: "command=" + command
             })
         })
 
-        $('#gcode_upload').fileupload({
-            dataType: 'json',
+        $("#gcode_upload").fileupload({
+            dataType: "json",
             done: function (e, data) {
                 gcodeFilesViewModel.fromResponse(data.result);
             },
             progressall: function (e, data) {
                 var progress = parseInt(data.loaded / data.total * 100, 10);
-                $('#gcode_upload_progress .bar').css(
-                    'width',
-                    progress + '%'
-                );
+                $("#gcode_upload_progress .bar").css("width", progress + "%");
             }
         });
 
+        ko.applyBindings(connectionViewModel, document.getElementById("connection"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
@@ -372,12 +440,20 @@ $(function() {
         dataUpdater.requestData();
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles",
-            method: 'GET',
-            dataType: 'json',
+            method: "GET",
+            dataType: "json",
             success: function(response) {
                 self.gcodeFilesViewModel.fromResponse(response);
             }
         });
+        $.ajax({
+            url: AJAX_BASEURL + "control/connectionOptions",
+            method: "GET",
+            dataType: "json",
+            success: function(response) {
+                connectionViewModel.fromResponse(response);
+            }
+        })
     }
 );
 

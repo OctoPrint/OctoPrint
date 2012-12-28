@@ -51,3 +51,7 @@ table th.gcode_files_action, table td.gcode_files_action {
 #temp_newTemp {
     text-align: right;
 }
+
+#connection_ports, #connection_baudrates {
+    width: 100%;
+}
