@@ -75,10 +75,12 @@ class gcode(object):
 			if type(line) is tuple:
 				line = line[0]
 			if self.progressCallback != None:
-				if filePos != gcodeFile.tell():
-					filePos = gcodeFile.tell()
+				if isinstance(gcodeFile, (file)):
 					self.progressCallback(float(filePos) / float(self._fileSize))
-			
+				elif isinstance(gcodeFile, (list)):
+					self.progressCallback(float(filePos) / float(len(gcodeFile)))
+					filePos += 1
+
 			#Parse Cura_SF comments
 			if line.startswith(';TYPE:'):
 				pathType = line[6:].strip()
