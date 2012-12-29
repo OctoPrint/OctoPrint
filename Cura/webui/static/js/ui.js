@@ -21,6 +21,8 @@ function ConnectionViewModel() {
             return "Disconnect";
     })
 
+    self.previousIsOperational = undefined;
+
     self.fromResponse = function(response) {
         self.portOptions(response.ports);
         self.baudrateOptions(response.baudrates);
@@ -32,6 +34,8 @@ function ConnectionViewModel() {
     }
 
     self.fromStateResponse = function(response) {
+        self.previousIsOperational = self.isOperational();
+
         self.isErrorOrClosed(response.closedOrError);
         self.isOperational(response.operational);
         self.isPaused(response.paused);
@@ -39,6 +43,17 @@ function ConnectionViewModel() {
         self.isError(response.error);
         self.isReady(response.ready);
         self.isLoading(response.loading);
+
+        var connectionTab = $("#connection");
+        if (self.previousIsOperational != self.isOperational()) {
+            if (self.isOperational() && connectionTab.hasClass("in")) {
+                // connection just got established, close connection tab for now
+                connectionTab.collapse("hide");
+            } else if (!connectionTab.hasClass("in")) {
+                // connection just dropped, make sure connection tab is open
+                connectionTab.collapse("show");
+            }
+        }
     }
 
     self.connect = function() {
