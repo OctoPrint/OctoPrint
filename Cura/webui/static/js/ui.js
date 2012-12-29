@@ -228,6 +228,46 @@ function TemperatureViewModel() {
 }
 var temperatureViewModel = new TemperatureViewModel();
 
+function SpeedViewModel() {
+    var self = this;
+
+    self.outerWall = ko.observable(undefined);
+    self.innerWall = ko.observable(undefined);
+    self.fill = ko.observable(undefined);
+    self.support = ko.observable(undefined);
+
+    self.isErrorOrClosed = ko.observable(undefined);
+    self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
+
+    self.fromResponse = function(response) {
+        self.isErrorOrClosed(response.closedOrError);
+        self.isOperational(response.operational);
+        self.isPaused(response.paused);
+        self.isPrinting(response.printing);
+        self.isError(response.error);
+        self.isReady(response.ready);
+        self.isLoading(response.loading);
+
+        if (response.feedrate) {
+            self.outerWall(response.feedrate.outerWall);
+            self.innerWall(response.feedrate.innerWall);
+            self.fill(response.feedrate.fill);
+            self.support(response.feedrate.support);
+        } else {
+            self.outerWall(undefined);
+            self.innerWall(undefined);
+            self.fill(undefined);
+            self.support(undefined);
+        }
+    }
+}
+var speedViewModel = new SpeedViewModel();
+
 function TerminalViewModel() {
     var self = this;
 
@@ -293,7 +333,7 @@ function GcodeFilesViewModel() {
 }
 var gcodeFilesViewModel = new GcodeFilesViewModel();
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, terminalViewModel) {
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel) {
     var self = this;
 
     self.updateInterval = 500;
@@ -304,6 +344,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     self.printerStateViewModel = printerStateViewModel;
     self.temperatureViewModel = temperatureViewModel;
     self.terminalViewModel = terminalViewModel;
+    self.speedViewModel = speedViewModel;
 
     self.requestData = function() {
         var parameters = {};
@@ -321,6 +362,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
             success: function(response) {
                 self.printerStateViewModel.fromResponse(response);
                 self.connectionViewModel.fromStateResponse(response);
+                self.speedViewModel.fromResponse(response);
 
                 if (response.temperatures)
                     self.temperatureViewModel.fromResponse(response);
@@ -336,9 +378,12 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         setTimeout(self.requestData, self.updateInterval);
     }
 }
-var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, terminalViewModel);
+var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel);
 
 $(function() {
+
+        //~~ Print job control
+
         $("#job_print").click(function() {
             $.ajax({
                 url: AJAX_BASEURL + "control/print",
@@ -363,6 +408,8 @@ $(function() {
             })
         })
 
+        //~~ Temperature control
+
         $("#temp_newTemp_set").click(function() {
             var newTemp = $("#temp_newTemp").val();
             $.ajax({
@@ -383,6 +430,8 @@ $(function() {
                 success: function() {$("#temp_newBedTemp").val("")}
             })
         })
+
+        //~~ Jog controls
 
         function jogCommand(axis, distance) {
             $.ajax({
@@ -409,15 +458,43 @@ $(function() {
         $("#jog_xy_home").click(function() {homeCommand("XY")});
         $("#jog_z_home").click(function() {homeCommand("Z")});
 
+        //~~ Speed controls
+
+        function speedCommand(structure) {
+            var speedSetting = $("#speed_" + structure).val();
+            if (speedSetting) {
+                $.ajax({
+                    url: AJAX_BASEURL + "control/speed",
+                    type: "POST",
+                    dataType: "json",
+                    data: structure + "=" + speedSetting,
+                    success: function(response) {
+                        $("#speed_" + structure).val("")
+                        speedViewModel.fromResponse(response);
+                    }
+                })
+            }
+        }
+        $("#speed_outerWall_set").click(function() {speedCommand("outerWall")});
+        $("#speed_innerWall_set").click(function() {speedCommand("innerWall")});
+        $("#speed_support_set").click(function() {speedCommand("support")});
+        $("#speed_fill_set").click(function() {speedCommand("fill")});
+
+        //~~ Terminal
+
         $("#terminal-send").click(function () {
             var command = $("#terminal-command").val();
-            $.ajax({
-                url: AJAX_BASEURL + "control/command",
-                type: "POST",
-                dataType: "json",
-                data: "command=" + command
-            })
+            if (command) {
+                $.ajax({
+                    url: AJAX_BASEURL + "control/command",
+                    type: "POST",
+                    dataType: "json",
+                    data: "command=" + command
+                })
+            }
         })
+
+        //~~ Gcode upload
 
         $("#gcode_upload").fileupload({
             dataType: "json",
@@ -430,12 +507,17 @@ $(function() {
             }
         });
 
+        //~~ knockout.js bindings
+
         ko.applyBindings(connectionViewModel, document.getElementById("connection"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
         ko.applyBindings(printerStateViewModel, document.getElementById("jog"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
+        ko.applyBindings(speedViewModel, document.getElementById("speed"));
+
+        //~~ startup commands
 
         dataUpdater.requestData();
         $.ajax({

@@ -175,7 +175,35 @@
                             </div>
                         </div>
                         <div class="tab-pane" id="speed">
-                            Here be speed settings
+                            <div class="form-horizontal" style="margin-bottom: 20px">
+                                <label for="speed_outerWall">Outer Wall</label>
+                                <div class="input-append">
+                                    <input type="text" id="speed_outerWall" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: outerWall}">
+                                    <span class="add-on">%</span>
+                                    <button type="submit" class="btn" id="speed_outerWall_set" data-bind="enable: isOperational()">Set</button>
+                                </div>
+
+                                <label for="speed_innerWall">Inner Wall</label>
+                                <div class="input-append">
+                                    <input type="text" id="speed_innerWall" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: innerWall}">
+                                    <span class="add-on">%</span>
+                                    <button type="submit" class="btn" id="speed_innerWall_set" data-bind="enable: isOperational()">Set</button>
+                                </div>
+
+                                <label for="speed_fill">Fill</label>
+                                <div class="input-append">
+                                    <input type="text" id="speed_fill" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: fill}">
+                                    <span class="add-on">%</span>
+                                    <button type="submit" class="btn" id="speed_fill_set" data-bind="enable: isOperational()">Set</button>
+                                </div>
+
+                                <label for="speed_support">Support</label>
+                                <div class="input-append">
+                                    <input type="text" id="speed_support" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: support}">
+                                    <span class="add-on">%</span>
+                                    <button type="submit" class="btn" id="speed_support_set" data-bind="enable: isOperational()">Set</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="tab-pane" id="term">
                             <pre id="terminal-output" class="pre-scrollable"></pre>

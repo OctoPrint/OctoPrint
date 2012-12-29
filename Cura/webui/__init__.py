@@ -50,6 +50,7 @@ def printerState():
 	bedTargetTemp = printer.currentBedTargetTemp
 	jobData = printer.jobData()
 	gcodeState = printer.gcodeState()
+	feedrateState = printer.feedrateState()
 
 	result = {
 		"state": printer.getStateString(),
@@ -73,6 +74,9 @@ def printerState():
 	if gcodeState is not None:
 		gcodeState["filename"] = gcodeState["filename"].replace(UPLOAD_FOLDER + os.sep, "")
 		result["gcode"] = gcodeState
+
+	if feedrateState is not None:
+		result["feedrate"] = feedrateState
 
 	if request.values.has_key("temperatures"):
 		result["temperatures"] = printer.temps
@@ -184,6 +188,18 @@ def jog():
 
 	return jsonify(SUCCESS)
 
+@app.route(BASEURL + "control/speed", methods=["POST"])
+def speed():
+	if not printer.isOperational():
+		return jsonify(SUCCESS)
+
+	for key in ["outerWall", "innerWall", "fill", "support"]:
+		if request.values.has_key(key):
+			value = int(request.values[key])
+			printer.setFeedrateModifier(key, value)
+
+	return jsonify(feedrate = printer.feedrateState())
+
 #~~ GCODE file handling
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])
@@ -194,7 +210,7 @@ def readGcodeFiles():
 			continue
 		files.append({
 			"name": osFile,
-			"size": sizeof_fmt(os.stat(UPLOAD_FOLDER + os.sep + osFile).st_size)
+			"size": sizeof_fmt(os.stat(os.path.join(UPLOAD_FOLDER, osFile)).st_size)
 		})
 	return jsonify(files=files)
 
@@ -210,7 +226,7 @@ def uploadGcodeFile():
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 def loadGcodeFile():
 	filename = request.values["filename"]
-	printer.loadGcode(UPLOAD_FOLDER + os.sep + filename)
+	printer.loadGcode(os.path.join(UPLOAD_FOLDER, filename))
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -218,7 +234,7 @@ def deleteGcodeFile():
 	if request.values.has_key("filename"):
 		filename = request.values["filename"]
 		if allowed_file(filename):
-			secure = UPLOAD_FOLDER + os.sep + secure_filename(filename)
+			secure = os.path.join(UPLOAD_FOLDER, secure_filename(filename))
 			if os.path.exists(secure):
 				os.remove(secure)
 	return readGcodeFiles()

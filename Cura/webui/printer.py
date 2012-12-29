@@ -13,11 +13,17 @@ def getConnectionOptions():
 	"""
 	 Retrieves the available ports, baudrates, prefered port and baudrate for connecting to the printer.
 	"""
+	baudratePref = None
+	try:
+		baudratePref = int(profile.getPreference('serial_baud_auto'))
+	except ValueError:
+		pass
+
 	return {
-		"ports": sorted(machineCom.serialList(), key=str.lower),
-		"baudrates": sorted(machineCom.baudrateList(), key=int, reverse=True),
+		"ports": machineCom.serialList(),
+		"baudrates": machineCom.baudrateList(),
 		"portPreference": profile.getPreference('serial_port_auto'),
-		"baudratePreference": int(profile.getPreference('serial_baud_auto'))
+		"baudratePreference": baudratePref
 	}
 
 class Printer():
@@ -46,6 +52,8 @@ class Printer():
 		self.filename = None
 
 		self.gcodeLoader = None
+
+		self.feedrateModifierMapping = {"outerWall": "WALL-OUTER", "innerWall": "WALL_INNER", "fill": "FILL", "support": "SUPPORT"}
 
 		# comm
 		self.comm = None
@@ -79,6 +87,12 @@ class Printer():
 		"""
 		for command in commands:
 			self.comm.sendCommand(command)
+
+	def setFeedrateModifier(self, structure, percentage):
+		if (not self.feedrateModifierMapping.has_key(structure)) or percentage < 0:
+			return
+
+		self.comm.setFeedrateModifier(self.feedrateModifierMapping[structure], percentage / 100.0)
 
 	def mcLog(self, message):
 		"""
@@ -197,6 +211,19 @@ class Printer():
 				"filename": self.gcodeLoader.filename,
 				"progress": self.gcodeLoader.progress
 			}
+		else:
+			return None
+
+	def feedrateState(self):
+		if self.comm is not None:
+			feedrateModifiers = self.comm.getFeedrateModifiers()
+			result = {}
+			for structure in self.feedrateModifierMapping.keys():
+				if (feedrateModifiers.has_key(self.feedrateModifierMapping[structure])):
+					result[structure] = int(round(feedrateModifiers[self.feedrateModifierMapping[structure]] * 100))
+				else:
+					result[structure] = 100
+			return result
 		else:
 			return None
 
