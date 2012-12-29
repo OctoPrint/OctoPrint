@@ -4,6 +4,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 import time
 import os
 from threading import Thread
+import datetime
 
 import Cura.util.machineCom as machineCom
 from Cura.util import gcodeInterpreter
@@ -25,6 +26,12 @@ def getConnectionOptions():
 		"portPreference": profile.getPreference('serial_port_auto'),
 		"baudratePreference": baudratePref
 	}
+
+def _getFormattedTimeDelta(d):
+	hours = d.seconds // 3600
+	minutes = (d.seconds % 3600) // 60
+	seconds = d.seconds % 60
+	return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
 class Printer():
 	def __init__(self):
@@ -179,27 +186,33 @@ class Printer():
 		if self.gcode is not None:
 			formattedPrintTime = None
 			if (self.printTime):
-				formattedPrintTime = "%02d:%02d" % (int(self.printTime / 60), int(self.printTime % 60))
+				formattedPrintTime = _getFormattedTimeDelta(datetime.timedelta(seconds=self.printTime))
 
 			formattedPrintTimeLeft = None
 			if (self.printTimeLeft):
-				formattedPrintTimeLeft = "%02d:%02d" % (int(self.printTimeLeft / 60), int(self.printTimeLeft % 60))
+				formattedPrintTimeLeft = _getFormattedTimeDelta(datetime.timedelta(minutes=self.printTimeLeft))
+
+			formattedPrintTimeEstimation = None
+			formattedFilament = None
+			if self.gcode:
+				if self.gcode.totalMoveTimeMinute:
+					formattedPrintTimeEstimation = _getFormattedTimeDelta(datetime.timedelta(minutes=self.gcode.totalMoveTimeMinute))
+				if self.gcode.extrusionAmount:
+					formattedFilament = "%.2fm %.2fg" % (self.gcode.extrusionAmount / 1000, self.gcode.calculateWeight() * 1000)
+
+			formattedCurrentZ = None
+			if self.currentZ:
+				formattedCurrentZ = "%.2f mm" % (self.currentZ)
 
 			data = {
 				"filename": self.filename,
-				"currentZ": self.currentZ,
+				"currentZ": formattedCurrentZ,
 				"line": self.progress,
 				"totalLines": len(self.gcodeList),
 				"printTime": formattedPrintTime,
 				"printTimeLeft": formattedPrintTimeLeft,
-				"filament": "%.2fm %.2fg" % (
-					self.gcode.extrusionAmount / 1000,
-					self.gcode.calculateWeight() * 1000
-				),
-				"estimatedPrintTime": "%02d:%02d" % (
-					int(self.gcode.totalMoveTimeMinute / 60),
-					int(self.gcode.totalMoveTimeMinute % 60)
-				)
+				"filament": formattedFilament,
+				"estimatedPrintTime": formattedPrintTimeEstimation
 			}
 		else:
 			data = None
