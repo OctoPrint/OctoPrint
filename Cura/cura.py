@@ -54,6 +54,12 @@ def main():
 		help="Slice the given files instead of opening them in Cura")
 	parser.add_option("-w", "--web", action="store_true", dest="webui",
 		help="Start the webui instead of the normal Cura UI")
+	parser.add_option("-d", "--debug", action="store_true", dest="debug",
+		help="Enable debug mode, currently only used by the webui")
+	parser.add_option("--web-host", action="store", type="string", default="0.0.0.0", dest="webHost",
+		help="Specify the host on which to bind the webui, defaults to 0.0.0.0 (all interfaces) if not set")
+	parser.add_option("--web-port", action="store", type="int", default=5000, dest="webPort",
+		help="Specify the port on which to bind the webui, defaults to 5000 if not set")
 	(options, args) = parser.parse_args()
 
 	if options.profile is not None:
@@ -69,7 +75,7 @@ def main():
 		sliceRun.runSlice(args)
 	elif options.webui:
 		import Cura.webui as webapp
-		webapp.run()
+		webapp.run(host=options.webHost, port=options.webPort, debug=options.debug)
 	else:
 		#Place any unused arguments as last file, so Cura starts with opening those files.
 		if len(args) > 0:

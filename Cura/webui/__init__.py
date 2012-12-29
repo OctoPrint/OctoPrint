@@ -236,5 +236,6 @@ def sizeof_fmt(num):
 def allowed_file(filename):
 	return "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
 
-def run():
-	app.run(host="0.0.0.0", port=5000)
+def run(host = "0.0.0.0", port = 5000, debug = False):
+	app.debug = debug
+	app.run(host=host, port=port, use_reloader=False)

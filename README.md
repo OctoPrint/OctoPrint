@@ -91,6 +91,8 @@ This fork of Cura includes a WebUI for remote printing via the browser. It depen
 its dependencies "werkzeug", "jinja2" and "itsdangerous", so you'll need those in order to run the WebUI. A simple
 `pip install -r requirements.txt` or `pip install flask` should take care of that.
 
-Once installed, you can startup the WebUI instead of the regular Cura UI via the command-line option `--web` or `-w`. The
-web interface will then be available on port 5000. If you want to change that (or the IP address the server binds to,
-which currently is `0.0.0.0`), please take a look at the source code of `Cura/webui/__init__.py`.
+Once installed, you can startup the WebUI instead of the regular Cura UI via the command-line option `--web` or `-w`. By
+default the web interface will bind to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
+will do the trick). If you want to change that, use the additional command line parameters `web-host` and `web-port`,
+which accept the host ip to bind to and the numeric port number respectively. If for example you want to the server
+to only listen on the local interface on port 8080, the command line would be `--web --web-host=127.0.0.1 --web-port=8080`.
