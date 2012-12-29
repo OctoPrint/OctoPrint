@@ -48,9 +48,10 @@ table th.gcode_files_action, table td.gcode_files_action {
     overflow: hidden;
 }
 
-#temp_newTemp {
+#temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support {
     text-align: right;
 }
+
 
 #connection_ports, #connection_baudrates {
     width: 100%;
