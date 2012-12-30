@@ -352,6 +352,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     var self = this;
 
     self.updateInterval = 500;
+    self.updateIntervalOnError = 10000;
     self.includeTemperatures = true;
     self.includeLogs = true;
 
@@ -375,6 +376,9 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
             dataType: "json",
             data: parameters,
             success: function(response) {
+                if ($("#offline_overlay").is(":visible"))
+                    $("#offline_overlay").hide();
+
                 self.printerStateViewModel.fromResponse(response);
                 self.connectionViewModel.fromStateResponse(response);
                 self.speedViewModel.fromResponse(response);
@@ -384,13 +388,16 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
 
                 if (response.log)
                     self.terminalViewModel.fromResponse(response);
+
+                setTimeout(self.requestData, self.updateInterval);
             },
             error: function(jqXHR, textState, errorThrows) {
-                //alert(textState);
+                // if the updated fails to communicate with the backend, we interpret this as a missing backend
+                if (!$("#offline_overlay").is(":visible"))
+                    $("#offline_overlay").show();
+                setTimeout(self.requestData, self.updateIntervalOnError);
             }
         });
-
-        setTimeout(self.requestData, self.updateInterval);
     }
 }
 var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel);
@@ -521,6 +528,9 @@ $(function() {
                 $("#gcode_upload_progress .bar").css("width", progress + "%");
             }
         });
+
+        //~~ Offline overlay
+        $("#offline_overlay_reconnect").click(function() {dataUpdater.requestData()});
 
         //~~ knockout.js bindings
 

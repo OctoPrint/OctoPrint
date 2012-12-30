@@ -212,6 +212,27 @@
                                 <button class="btn" type="button" id="terminal-send">Send</button>
                             </div>
                         </div>
+                        <div class="tab-pane" id="webcam">
+                            Here be webcam stuff
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="offline_overlay">
+            <div id="offline_overlay_background"></div>
+            <div id="offline_overlay_wrapper">
+                <div class="container">
+                    <div class="hero-unit">
+                        <h1>Server is offline</h1>
+                        <p>
+                            The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect
+                            automatically <strong>every 10 seconds</strong>, however you are welcome to try a manual reconnect
+                            anytime using the button below.
+                        </p>
+                        <p>
+                            <a class="btn btn-primary btn-large" id="offline_overlay_reconnect">Attempt to reconnect</a>
+                        </p>
                     </div>
                 </div>
             </div>
