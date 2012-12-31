@@ -1,98 +1,55 @@
-Cura
-====
+Printer WebUI
+=============
 
-If you are reading this, then you are looking at the *development* version of Cura. If you just want to use Cura look at the following location: https://github.com/daid/Cura/wiki
+The Printer WebUI provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It currently
+allows
 
-Development
-===========
+* uploading .gcode files to the server and managing them via the UI
+* selecting a file for printing, getting the usual stats regarding filament length etc
+* starting, pausing and canceling a print job
+* while connected to the printer, gaining information regarding the current temperature of both head and bed (if available) in a nice shiny javascript-y temperature graph
+* while printing, gaining information regarding the current progress of the print job (height, percentage etc)
+* reading the communication log and send arbitrary codes to be executed by the printer
+* moving the X, Y and Z axis (jog controls, although very ugly ones right now)
+* changing the speed modifiers for inner & outer wall, fill and support
 
-Cura is developed in Python. Getting Cura up and running for development is not very difficult. If you copy the python and pypy from a release into your Cura development checkout then you can use Cura right away, just like you would with a release.
-For development with git, check the help on github. Pull requests is the fastest way to get changes into Cura.
+The intended usecase is to run the Printer WebUI on a single-board computer like the Raspberry Pi and a WiFi module,
+connect the printer to the server and therefore create a WiFi-enabled 3D printer.
 
+Dependencies
+------------
 
-Packaging
----------
+Printer WebUI depends on a couple of python modules to do its job. Those are listed in requirements.txt and can be
+installed using `pip`:
 
-Cura development comes with a script "package.sh", this script has been designed to run under unix like OSes (Linux, MacOS). Running it from sygwin is not a priority.
-The "package.sh" script generates a final release package. You should not need it during development, unless you are changing the release process. If you want to distribute your own version of Cura, then the package.sh script will allow you to do that.
+    pip install -r requirements.txt
 
+Usage
+-----
 
-Mac OS X
---------
-The following section describes how to prepare environment for developing and packaing for Mac OS X.
+Just start the server via
 
-###Python
-You'll need non-system, framework-based, universal with min deployment target set to 10.6 build of Python 2.7
+    python -m printer_webui.server
 
-**non-system**: it was not bundeled with distribution of Mac OS X. You can check this by `python -c "import sys; print sys.prefix"`. Output should *not* start with *"/System/Library/Frameworks/Python.framework/"*
-
-**framework-based**: Output of `python -c "import distutils.sysconfig as c; print(c.get_config_var('PYTHONFRAMEWORK'))"` should be non-empty string
-
-**universal**: output of ``lipo -info `which python` `` include both i386 and x86_64. E.g *"Architectures in the fat file: /usr/local/bin/python are: i386 x86_64"*
-
-**deployment target set to 10.6**: Output of ``otool -l `which python` `` should contain *"cmd LC_VERSION_MIN_MACOSX ... version 10.6"*
-
-The easiest way to install it is via [Homebrew](http://mxcl.github.com/homebrew/): `brew install --fresh https://github.com/downloads/GreatFruitOmsk/Cura/python.rb --universal`. Note you'll need to uninstall Python if you already have it installed via Homebrew.
-
-###Virtualenv
-You may skip this step if you don't bother to use [virtualenv](http://pypi.python.org/pypi/virtualenv). It's not a requirement.
-
-The main problem with virtualenv is that wxWidgets cannot be installed via pip. We'll have to build it manually from source by specifing prefix to our virtualenv.
-
-Assuming you have virtualenv at *~/.virtualenvs/Cura*:
-
-1. Download [wxPython sources](http://sourceforge.net/projects/wxpython/files/wxPython/2.9.4.0/wxPython-src-2.9.4.0.tar.bz2)
-2. Configure project with the following flags: `./configure --prefix=$HOME/.virtualenvs/Cura/ --enable-optimise --with-libjpeg=builtin --with-libpng=builtin --with-libtiff=builtin --with-zlib=builtin --enable-monolithic --with-macosx-version-min=10.6 --disable-debug --enable-unicode --enable-std_string --enable-display --with-opengl --with-osx_cocoa --enable-dnd --enable-clipboard --enable-webkit --enable-svg --with-expat --enable-universal_binary=i386,x86_64`
-3. `make install`
-4. cd into the *wxPython* directory
-5. Build wxPython modules: `python setup.py build_ext WXPORT=osx_cocoa WX_CONFIG=$HOME/.virtualenvs/Cura/bin/wx-config UNICODE=1 INSTALL_MULTIVERSION=0 BUILD_GLCANVAS=1 BUILD_GIZMOS=1 BUILD_STC=1` (Note that python is the python of your virtualenv)
-6. Install wxPython and modules: `python setup.py install --prefix=$HOME/.virtualenvs/Cura/ WXPORT=osx_cocoa WX_CONFIG=$HOME/.virtualenvs/Cura/bin/wx-config UNICODE=1 INSTALL_MULTIVERSION=0 BUILD_GLCANVAS=1 BUILD_GIZMOS=1 BUILD_STC=1` (Note that python is the python of your virtualenv)
-
-Another problem is that python in virtualenv is not suitable for running GUI code. Mac OS X requires python to be inside the bundle. To workaround this issue, we will add the following script to the ~/.virtualenvs/Cura/bin:
-
-    #!/bin/bash
-    ENV=`python -c "import sys; print sys.prefix"`
-    PYTHON=`python -c "import sys; print sys.real_prefix"`/bin/python
-    export PYTHONHOME=$ENV
-    exec $PYTHON "$@"
-
-I typically name this script `pythonw`.
-
-At this point virtualenv is configured for wxPython development. Remember to use `python` to pacakge the app and `pythonw` to run app without packaging (e.g. for debugging).
-
-###Requirements
-Following packages are required for development:
-
-    PyOpenGL>=3.0.2
-    numpy>=1.6.2
-    pyserial>=2.6
-    pyobjc>=2.5
-
-Following packages are required for packaging Cura into app:
-
-    py2app>=0.7.2
-
-The easiest way to install all this packages is to use virtualenv's pip: `pip install -r requirements_darwin.txt`
-
-####PyObjC
-At time of writing, pyobjc 2.5 is not available at pypi. You have to clone repo and install it manually:
-
-    hg clone https://bitbucket.org/ronaldoussoren/pyobjc
-    hg checkout c42c98d6e941 # last tested commit
-    python install.py
-
-###Packaging
-To package Cura into application bundle simply do `python setup.py py2app`. Resulting bundle is self-contained -- it includes Python and all needed packages.
-
-WebUI
-=====
-
-This fork of Cura includes a WebUI for remote printing via the browser. It depends on the Python module "flask" and
-its dependencies "werkzeug", "jinja2" and "itsdangerous", so you'll need those in order to run the WebUI. A simple
-`pip install -r requirements.txt` or `pip install flask` should take care of that.
-
-Once installed, you can startup the WebUI instead of the regular Cura UI via the command-line option `--web` or `-w`. By
-default the web interface will bind to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
-will do the trick). If you want to change that, use the additional command line parameters `web-host` and `web-port`,
+By default it binds to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
+will do the trick). If you want to change that, use the additional command line parameters `host` and `port`,
 which accept the host ip to bind to and the numeric port number respectively. If for example you want to the server
-to only listen on the local interface on port 8080, the command line would be `--web --web-host=127.0.0.1 --web-port=8080`.
+to only listen on the local interface on port 8080, the command line would be
+
+    python -m printer_webui.server --host=127.0.0.1 --port=8080
+
+Credits
+-------
+
+The Printer WebUI started out as a fork of Cura (https://github.com/daid/Cura) for adding a web interface to its
+printing functionality. It still uses Cura's communication code for talking to the printer, but has been reorganized to
+only include those parts of Cura necessary for its targeted usecase.
+
+It also uses the following libraries and frameworks for backend and frontend:
+
+* Flask: http://flask.pocoo.org/
+* jQuery: http://jquery.com/
+* Bootstrap: http://twitter.github.com/bootstrap/
+* Knockout.js: http://knockoutjs.com/
+* Flot: http://www.flotcharts.org/
+* jQuery File Upload: http://blueimp.github.com/jQuery-File-Upload/

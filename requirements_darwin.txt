@@ -1,2 +1,0 @@
--r requirements.txt
-py2app>=0.7.2
