@@ -24,6 +24,8 @@ installed using `pip`:
 
     pip install -r requirements.txt
 
+Printer WebUI currently only supports Python 2.7.
+
 Usage
 -----
 
@@ -37,6 +39,27 @@ which accept the host ip to bind to and the numeric port number respectively. If
 to only listen on the local interface on port 8080, the command line would be
 
     python -m printer_webui.server --host=127.0.0.1 --port=8080
+
+Alternatively, the host and port on which to bind can be defined via the configuration.
+
+Configuration
+-------------
+
+The config-file for Printer WebUI is expected at `~/.printerwebui/config.ini` for Linux, at `%APPDATA%/PrinterWebUI/config.ini`
+for Windows and at `~/Library/Application Support/config.ini` for MacOS X.
+The following example config should explain the available options:
+
+    [serial]
+    # use the following option to define the default serial port, defaults to unset (= AUTO)
+    port = /dev/ttyACM0
+    # use the following option to define the default baudrate, defaults to unset (= AUTO)
+    baudrate = 115200
+
+    [server]
+    # use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
+    host = 0.0.0.0
+    # use this option to define the port to which to bind the server, defaults to 5000
+    port = 5000
 
 Credits
 -------

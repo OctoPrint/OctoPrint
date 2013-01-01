@@ -6,7 +6,21 @@ import re
 import os
 
 from printer_webui.util import util3d
-from printer_webui.util import profile
+
+preferences = {
+	"extruder_offset_x1": -22.0,
+	"extruder_offset_y1": 0.0,
+	"extruder_offset_x2": 0.0,
+	"extruder_offset_y2": 0.0,
+	"extruder_offset_x3": 0.0,
+	"extruder_offset_y3": 0.0,
+}
+
+def getPreference(key, default=None):
+	if preferences.has_key(key):
+		return preferences[key]
+	else:
+		return default
 
 class gcodePath(object):
 	def __init__(self, newType, pathType, layerThickness, startPoint):
@@ -32,23 +46,6 @@ class gcode(object):
 	
 	def loadList(self, l):
 		self._load(l)
-	
-	def calculateWeight(self):
-		#Calculates the weight of the filament in kg
-		radius = float(profile.getProfileSetting('filament_diameter')) / 2
-		volumeM3 = (self.extrusionAmount * (math.pi * radius * radius)) / (1000*1000*1000)
-		return volumeM3 * profile.getPreferenceFloat('filament_density')
-	
-	def calculateCost(self):
-		cost_kg = profile.getPreferenceFloat('filament_cost_kg')
-		cost_meter = profile.getPreferenceFloat('filament_cost_meter')
-		if cost_kg > 0.0 and cost_meter > 0.0:
-			return "%.2f / %.2f" % (self.calculateWeight() * cost_kg, self.extrusionAmount / 1000 * cost_meter)
-		elif cost_kg > 0.0:
-			return "%.2f" % (self.calculateWeight() * cost_kg)
-		elif cost_meter > 0.0:
-			return "%.2f" % (self.extrusionAmount / 1000 * cost_meter)
-		return False
 	
 	def _load(self, gcodeFile):
 		filePos = 0
@@ -105,12 +102,12 @@ class gcode(object):
 			T = self.getCodeInt(line, 'T')
 			if T is not None:
 				if currentExtruder > 0:
-					posOffset.x -= profile.getPreferenceFloat('extruder_offset_x%d' % (currentExtruder))
-					posOffset.y -= profile.getPreferenceFloat('extruder_offset_y%d' % (currentExtruder))
+					posOffset.x -= getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
+					posOffset.y -= getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
 				currentExtruder = T
 				if currentExtruder > 0:
-					posOffset.x += profile.getPreferenceFloat('extruder_offset_x%d' % (currentExtruder))
-					posOffset.y += profile.getPreferenceFloat('extruder_offset_y%d' % (currentExtruder))
+					posOffset.x += getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
+					posOffset.y += getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
 			
 			G = self.getCodeInt(line, 'G')
 			if G is not None:

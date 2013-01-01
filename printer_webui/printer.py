@@ -1,5 +1,6 @@
 # coding=utf-8
 __author__ = "Gina Häußge <osd@foosel.net>"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import time
 import os
@@ -8,23 +9,18 @@ import datetime
 
 import printer_webui.util.comm as comm
 from printer_webui.util import gcodeInterpreter
-from printer_webui.util import profile
+
+from printer_webui.settings import settings
 
 def getConnectionOptions():
 	"""
 	 Retrieves the available ports, baudrates, prefered port and baudrate for connecting to the printer.
 	"""
-	baudratePref = None
-	try:
-		baudratePref = int(profile.getPreference('serial_baud_auto'))
-	except ValueError:
-		pass
-
 	return {
 		"ports": comm.serialList(),
 		"baudrates": comm.baudrateList(),
-		"portPreference": profile.getPreference('serial_port_auto'),
-		"baudratePreference": baudratePref
+		"portPreference": settings().get("serial", "port"),
+		"baudratePreference": settings().getInt("serial", "baudrate")
 	}
 
 def _getFormattedTimeDelta(d):
@@ -198,7 +194,7 @@ class Printer():
 				if self.gcode.totalMoveTimeMinute:
 					formattedPrintTimeEstimation = _getFormattedTimeDelta(datetime.timedelta(minutes=self.gcode.totalMoveTimeMinute))
 				if self.gcode.extrusionAmount:
-					formattedFilament = "%.2fm %.2fg" % (self.gcode.extrusionAmount / 1000, self.gcode.calculateWeight() * 1000)
+					formattedFilament = "%.2fm" % (self.gcode.extrusionAmount / 1000)
 
 			formattedCurrentZ = None
 			if self.currentZ:

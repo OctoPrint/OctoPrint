@@ -5,6 +5,7 @@ function ConnectionViewModel() {
     self.baudrateOptions = ko.observableArray(undefined);
     self.selectedPort = ko.observable(undefined);
     self.selectedBaudrate = ko.observable(undefined);
+    self.saveSettings = ko.observable(undefined);
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -23,6 +24,17 @@ function ConnectionViewModel() {
 
     self.previousIsOperational = undefined;
 
+    self.requestData = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "control/connectionOptions",
+            method: "GET",
+            dataType: "json",
+            success: function(response) {
+                self.fromResponse(response);
+            }
+        })
+    }
+
     self.fromResponse = function(response) {
         self.portOptions(response.ports);
         self.baudrateOptions(response.baudrates);
@@ -31,6 +43,8 @@ function ConnectionViewModel() {
             self.selectedPort(response.portPreference);
         if (!self.selectedBaudrate() && response.baudrates && response.baudrates.indexOf(response.baudratePreference) >= 0)
             self.selectedBaudrate(response.baudratePreference);
+
+        self.saveSettings(false);
     }
 
     self.fromStateResponse = function(response) {
@@ -58,13 +72,22 @@ function ConnectionViewModel() {
 
     self.connect = function() {
         if (self.isErrorOrClosed()) {
+            var data = {
+                "port": self.selectedPort(),
+                "baudrate": self.selectedBaudrate()
+            };
+
+            if (self.saveSettings())
+                data["save"] = true;
+
             $.ajax({
                 url: AJAX_BASEURL + "control/connect",
                 type: "POST",
                 dataType: "json",
-                data: { "port": self.selectedPort(), "baudrate": self.selectedBaudrate() }
+                data: data
             })
         } else {
+            self.requestData();
             $.ajax({
                 url: AJAX_BASEURL + "control/disconnect",
                 type: "POST",
@@ -321,6 +344,17 @@ function GcodeFilesViewModel() {
 
     self.files = ko.observableArray([]);
 
+    self.requestData = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "gcodefiles",
+            method: "GET",
+            dataType: "json",
+            success: function(response) {
+                self.fromResponse(response);
+            }
+        });
+    }
+
     self.fromResponse = function(response) {
         self.files(response.files);
     }
@@ -545,22 +579,9 @@ $(function() {
         //~~ startup commands
 
         dataUpdater.requestData();
-        $.ajax({
-            url: AJAX_BASEURL + "gcodefiles",
-            method: "GET",
-            dataType: "json",
-            success: function(response) {
-                self.gcodeFilesViewModel.fromResponse(response);
-            }
-        });
-        $.ajax({
-            url: AJAX_BASEURL + "control/connectionOptions",
-            method: "GET",
-            dataType: "json",
-            success: function(response) {
-                connectionViewModel.fromResponse(response);
-            }
-        })
+        connectionViewModel.requestData();
+        gcodeFilesViewModel.requestData();
+
     }
 );
 

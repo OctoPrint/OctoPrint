@@ -1,4 +1,3 @@
 flask>=0.9
 numpy>=1.6.2
 pyserial>=2.6
--e git+git://github.com/GreatFruitOmsk/Power.git#egg=Power

@@ -5,30 +5,17 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 from flask import Flask, request, render_template, jsonify, make_response
 from werkzeug import secure_filename
 
-from printer import Printer, getConnectionOptions
+from printer_webui.printer import Printer, getConnectionOptions
+from printer_webui.settings import settings
 
 import sys
 import os
 import fnmatch
 
-APPNAME="PrinterWebUI"
 BASEURL="/ajax/"
 SUCCESS={}
 
-# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
-if sys.platform == "darwin":
-	from AppKit import NSSearchPathForDirectoriesInDomains
-	# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
-	# NSApplicationSupportDirectory = 14
-	# NSUserDomainMask = 1
-	# True for expanding the tilde into a fully qualified path
-	appdata = os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME)
-elif sys.platform == "win32":
-	appdata = os.path.join(os.environ["APPDATA"], APPNAME)
-else:
-	appdata = os.path.expanduser(os.path.join("~", "." + APPNAME.lower()))
-
-UPLOAD_FOLDER = appdata + os.sep + "uploads"
+UPLOAD_FOLDER = os.path.join(settings().settings_dir, "uploads")
 if not os.path.isdir(UPLOAD_FOLDER):
 	os.makedirs(UPLOAD_FOLDER)
 ALLOWED_EXTENSIONS = set(["gcode"])
@@ -115,6 +102,10 @@ def connect():
 		port = request.values["port"]
 	if request.values.has_key("baudrate"):
 		baudrate = request.values["baudrate"]
+	if request.values.has_key("save"):
+		settings().set("serial", "port", port)
+		settings().set("serial", "baudrate", baudrate)
+		settings().save()
 	printer.connect(port=port, baudrate=baudrate)
 	return jsonify(state="Connecting")
 
@@ -239,6 +230,29 @@ def deleteGcodeFile():
 				os.remove(secure)
 	return readGcodeFiles()
 
+#~~ settings
+
+@app.route(BASEURL + "settings", methods=["GET"])
+def getSettings():
+	s = settings()
+	return jsonify({
+		"serial_port": s.get("serial", "port"),
+		"serial_baudrate": s.get("serial", "baudrate")
+	})
+
+@app.route(BASEURL + "settings", methods=["POST"])
+def setSettings():
+	s = settings()
+	if request.values.has_key("serial_port"):
+		s.set("serial", "port", request.values["serial_port"])
+	if request.values.has_key("serial_baudrate"):
+		s.set("serial", "baudrate", request.values["serial_baudrate"])
+
+	s.save()
+	return getSettings()
+
+#~~ helper functions
+
 def sizeof_fmt(num):
 	"""
 	 Taken from http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
@@ -252,6 +266,8 @@ def sizeof_fmt(num):
 def allowed_file(filename):
 	return "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
 
+#~~ startup code
+
 def run(host = "0.0.0.0", port = 5000, debug = False):
 	app.debug = debug
 	app.run(host=host, port=port, use_reloader=False)
@@ -259,13 +275,16 @@ def run(host = "0.0.0.0", port = 5000, debug = False):
 def main():
 	from optparse import OptionParser
 
+	defaultHost = settings().get("server", "host")
+	defaultPort = settings().get("server", "port")
+
 	parser = OptionParser(usage="usage: %prog [options]")
 	parser.add_option("-d", "--debug", action="store_true", dest="debug",
 		help="Enable debug mode")
-	parser.add_option("--host", action="store", type="string", default="0.0.0.0", dest="host",
-		help="Specify the host on which to bind the server, defaults to 0.0.0.0 (all interfaces) if not set")
-	parser.add_option("--port", action="store", type="int", default=5000, dest="port",
-		help="Specify the port on which to bind the server, defaults to 5000 if not set")
+	parser.add_option("--host", action="store", type="string", default=defaultHost, dest="host",
+		help="Specify the host on which to bind the server, defaults to %s if not set" % (defaultHost))
+	parser.add_option("--port", action="store", type="int", default=defaultPort, dest="port",
+		help="Specify the port on which to bind the server, defaults to %s if not set" % (defaultPort))
 	(options, args) = parser.parse_args()
 
 	run(host=options.host, port=options.port, debug=options.debug)
