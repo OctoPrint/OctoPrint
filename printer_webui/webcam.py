@@ -4,8 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 try:
 	#Try to find the OpenCV library for video capture.
-	from opencv import cv
-	from opencv import highgui
+	import cv
 except:
 	cv = None
 
@@ -23,7 +22,7 @@ class Webcam(object):
 	def __init__(self):
 		self._cam = None
 		if cv != None:
-			self._cam = highgui.cvCreateCameraCapture(-1)
+			self._cam = cv.CreateCameraCapture(-1)
 		elif win32vidcap != None:
 			try:
 				self._cam = win32vidcap.Device()
