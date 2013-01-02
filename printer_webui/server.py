@@ -2,7 +2,7 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import Flask, request, render_template, jsonify, send_from_directory, abort
+from flask import Flask, request, render_template, jsonify, send_file, abort
 from werkzeug import secure_filename
 
 from printer_webui.printer import Printer, getConnectionOptions
@@ -12,6 +12,7 @@ from printer_webui.webcam import hasWebcamSupport, Webcam
 import sys
 import os
 import fnmatch
+import StringIO
 
 BASEURL="/ajax/"
 SUCCESS={}
@@ -267,9 +268,11 @@ def getImage():
 	if webcam is None:
 		abort(404)
 
-	filename = "current.jpg"
-	webcam.save(os.path.join(WEBCAM_FOLDER, filename))
-	return send_from_directory(WEBCAM_FOLDER, filename)
+	image = webcam.get()
+	strIO = StringIO.StringIO()
+	image.save(strIO, "JPEG", quality=80)
+	strIO.seek(0)
+	return send_file(strIO, mimetype="image/jpeg")
 
 #~~ helper functions
 

@@ -13,6 +13,8 @@ try:
 except:
 	win32vidcap = None
 
+import PIL
+
 def hasWebcamSupport():
 	if cv == None and win32vidcap == None:
 		return False
@@ -29,6 +31,20 @@ class Webcam(object):
 				self._cam.setResolution(640, 480)
 			except:
 				pass
+
+	def get(self):
+		if self._cam is None:
+			return None
+
+		if cv is not None:
+			frame = cv.QueryFrame(self._cam)
+			image = PIL.Image.fromstring("L", frame.GetSize(), frame.tostring())
+			return image
+		elif win32vidcap is not None:
+			image = self._cam.getImage()
+			return image
+		else:
+			return None
 
 	def save(self, filename):
 		if self._cam is None:
