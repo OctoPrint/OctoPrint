@@ -115,7 +115,7 @@
                         <li><a href="#jog" data-toggle="tab">Jog</a></li>
                         <li><a href="#speed" data-toggle="tab">Speed</a></li>
                         <li><a href="#term" data-toggle="tab">Term</a></li>
-                        <li><a href="#webcam" data-toggle="tab">Webcam</a></li>
+                        {% if webcamStream %}<li><a href="#webcam" data-toggle="tab">Webcam</a></li>{% endif %}
                     </ul>
 
                     <div class="tab-content">
@@ -216,15 +216,13 @@
                                 <button class="btn" type="button" id="terminal-send">Send</button>
                             </div>
                         </div>
+                        {% if webcamStream %}
                         <div class="tab-pane" id="webcam">
-                            <label class="checkbox">
-                                <input type="checkbox" id="webcam_enable" data-bind="checked: enabled"> Enable webcam
-                            </label>
                             <div id="webcam_container">
-                                <img id="webcam_image" data-bind="attr: { src: url }, visible: enabled()">
-                                <div id="webcam_placeholder" data-bind="visible: !enabled()">Offline</div>
+                                <img id="webcam_image" src="{{ webcamStream }}">
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

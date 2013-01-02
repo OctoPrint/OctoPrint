@@ -7,7 +7,6 @@ from werkzeug import secure_filename
 
 from printer_webui.printer import Printer, getConnectionOptions
 from printer_webui.settings import settings
-from printer_webui.webcam import hasWebcamSupport, Webcam
 
 import sys
 import os
@@ -28,14 +27,10 @@ if not os.path.isdir(WEBCAM_FOLDER):
 
 app = Flask("printer_webui")
 printer = Printer()
-if hasWebcamSupport():
-	webcam = Webcam()
-else:
-	webcam = None
 
 @app.route("/")
 def index():
-	return render_template("index.html")
+	return render_template("index.html", webcamStream = settings().get("webcam", "stream"))
 
 #~~ Printer state
 
@@ -260,19 +255,6 @@ def setSettings():
 
 	s.save()
 	return getSettings()
-
-#~~ webcam
-
-@app.route(BASEURL + "webcam/image", methods=["GET"])
-def getImage():
-	if webcam is None:
-		abort(404)
-
-	image = webcam.get()
-	strIO = StringIO.StringIO()
-	image.save(strIO, "JPEG", quality=80)
-	strIO.seek(0)
-	return send_file(strIO, mimetype="image/jpeg")
 
 #~~ helper functions
 

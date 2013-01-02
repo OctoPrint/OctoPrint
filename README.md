@@ -12,6 +12,7 @@ allows
 * reading the communication log and send arbitrary codes to be executed by the printer
 * moving the X, Y and Z axis (jog controls, although very ugly ones right now)
 * changing the speed modifiers for inner & outer wall, fill and support
+* optional: visual monitoring of the printer via webcam stream integrated into the UI (using MJPG-Streamer)
 
 The intended usecase is to run the Printer WebUI on a single-board computer like the Raspberry Pi and a WiFi module,
 connect the printer to the server and therefore create a WiFi-enabled 3D printer.
@@ -61,6 +62,60 @@ The following example config should explain the available options:
     # use this option to define the port to which to bind the server, defaults to 5000
     port = 5000
 
+    [webcam]
+    # use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer
+    stream = http://10.0.0.2:8080/?action=stream
+
+Setup on a Raspberry Pi running Raspbian
+----------------------------------------
+
+I currently run the Printer WebUI on a Raspberry Pi running Raspbian (http://www.raspbian.org/). For the basic
+package you'll need Python 2.7 (should be installed by default), pip and flask:
+
+    cd ~
+    sudo apt-get install python-pip git
+    git clone https://github.com/foosel/PrinterWebUI.git
+    cd PrinterWebUI
+    pip install -r requirements.txt
+
+You should then be able to start the WebUI server:
+
+    pi@raspberrypi ~/PrinterWebUI $ python -m printer_webui.server
+     * Running on http://0.0.0.0:5000/
+
+If you also want webcam support, you'll need to download and compile MJPG-Streamer:
+
+    cd ~
+    sudo apt-get install libjpeg8-dev imagemagick
+    wget -Omjpg-streamer.tar.gz http://mjpg-streamer.svn.sourceforge.net/viewvc/mjpg-streamer/mjpg-streamer/?view=tar
+    tar xfz mjpg-streamer.tar.gz
+    cd mjpg-streamer
+    make
+
+This should hopefully run through without any compilation errors. You should then be able to start the webcam server:
+
+    pi@raspberrypi ~/mjpg-streamer $ ./mjpg_streamer -i "./input_uvc.so" -o "./output_http.so"
+    MJPG Streamer Version: svn rev:
+     i: Using V4L2 device.: /dev/video0
+     i: Desired Resolution: 640 x 480
+     i: Frames Per Second.: 5
+     i: Format............: MJPEG
+    [...]
+     o: www-folder-path...: disabled
+     o: HTTP TCP port.....: 8080
+     o: username:password.: disabled
+     o: commands..........: enabled
+
+If you now point your browser to http://<your Raspi's IP>:8080/?action=stream, you should see a moving picture at 5fps.
+Open `~/.printerwebui/config.ini` and add the following lines to it:
+
+    [webcam]
+    stream = http://<your Raspi's IP>:8080/?action=stream
+
+Restart the WebUI server and reload its frontend. You should now see a Webcam tab with content.
+
+If everything works, add the startup commands to `/etc/rc.local`.
+
 Credits
 -------
 
@@ -76,3 +131,7 @@ It also uses the following libraries and frameworks for backend and frontend:
 * Knockout.js: http://knockoutjs.com/
 * Flot: http://www.flotcharts.org/
 * jQuery File Upload: http://blueimp.github.com/jQuery-File-Upload/
+
+And this for Webcam support:
+
+* MJPG-Streamer: http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page
