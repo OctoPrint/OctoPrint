@@ -2,11 +2,12 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import Flask, request, render_template, jsonify, make_response
+from flask import Flask, request, render_template, jsonify, send_from_directory, abort
 from werkzeug import secure_filename
 
 from printer_webui.printer import Printer, getConnectionOptions
 from printer_webui.settings import settings
+from printer_webui.webcam import hasWebcamSupport, Webcam
 
 import sys
 import os
@@ -20,8 +21,16 @@ if not os.path.isdir(UPLOAD_FOLDER):
 	os.makedirs(UPLOAD_FOLDER)
 ALLOWED_EXTENSIONS = set(["gcode"])
 
+WEBCAM_FOLDER = os.path.join(settings().settings_dir, "webcam")
+if not os.path.isdir(WEBCAM_FOLDER):
+	os.makedirs(WEBCAM_FOLDER)
+
 app = Flask("printer_webui")
 printer = Printer()
+if hasWebcamSupport():
+	webcam = Webcam()
+else:
+	webcam = None
 
 @app.route("/")
 def index():
@@ -250,6 +259,17 @@ def setSettings():
 
 	s.save()
 	return getSettings()
+
+#~~ webcam
+
+@app.route(BASEURL + "webcam/image", methods=["GET"])
+def getImage():
+	if webcam is None:
+		abort(404)
+
+	filename = "current.jpg"
+	webcam.save(os.path.join(WEBCAM_FOLDER, filename))
+	return send_from_directory(WEBCAM_FOLDER, filename)
 
 #~~ helper functions
 

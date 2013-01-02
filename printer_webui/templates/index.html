@@ -217,7 +217,13 @@
                             </div>
                         </div>
                         <div class="tab-pane" id="webcam">
-                            Here be webcam stuff
+                            <label class="checkbox">
+                                <input type="checkbox" id="webcam_enable" data-bind="checked: enabled"> Enable webcam
+                            </label>
+                            <div id="webcam_container">
+                                <img id="webcam_image" data-bind="attr: { src: url }, visible: enabled()">
+                                <div id="webcam_placeholder" data-bind="visible: !enabled()">Offline</div>
+                            </div>
                         </div>
                     </div>
                 </div>

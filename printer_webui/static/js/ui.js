@@ -1,3 +1,5 @@
+//~~ View models
+
 function ConnectionViewModel() {
     var self = this;
 
@@ -436,6 +438,32 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
 }
 var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel);
 
+function WebcamViewModel() {
+    var self = this;
+
+    self.webcamUpdateInterval = 5000;
+    self.offlineUrl = "/static/img/webcam-offline.png";
+
+    self.url = ko.observable(undefined);
+    self.enabled = ko.observable(undefined);
+
+    self.enabled.subscribe(function(newValue) {
+        if (newValue) {
+            self.requestData();
+        } else {
+            $("#webcam_image")
+        }
+    });
+
+    self.requestData = function() {
+        if (!self.enabled())
+            return;
+        self.url(AJAX_BASEURL + "webcam/image?" + (new Date()).getTime());
+        setTimeout(self.requestData, self.webcamUpdateInterval);
+    }
+}
+var webcamViewModel = new WebcamViewModel();
+
 $(function() {
 
         //~~ Print job control
@@ -575,6 +603,7 @@ $(function() {
         ko.applyBindings(printerStateViewModel, document.getElementById("jog"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
+        ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
 
         //~~ startup commands
 

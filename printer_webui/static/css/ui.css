@@ -93,3 +93,16 @@ table th.gcode_files_action, table td.gcode_files_action {
 #offline_overlay_wrapper .container {
     margin: auto;
 }
+
+#webcam_container {
+    height: 440px;
+    background-color: #000000;
+}
+
+#webcam_placeholder {
+    height: 440px;
+    line-height: 440px;
+    text-align: center;
+    color: #ffffff;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
