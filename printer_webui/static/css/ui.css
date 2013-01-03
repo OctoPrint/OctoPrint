@@ -97,4 +97,5 @@ table th.gcode_files_action, table td.gcode_files_action {
 #webcam_container {
     height: 440px;
     background-color: #000000;
+    margin-bottom: 20px;
 }

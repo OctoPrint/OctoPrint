@@ -384,7 +384,78 @@ function GcodeFilesViewModel() {
 }
 var gcodeFilesViewModel = new GcodeFilesViewModel();
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel) {
+function WebcamViewModel() {
+    var self = this;
+
+    self.timelapseType = ko.observable(undefined);
+    self.timelapseTimedInterval = ko.observable(undefined);
+
+    self.isErrorOrClosed = ko.observable(undefined);
+    self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
+
+    self.intervalInputEnabled = ko.computed(function() {
+        return ("timed" == self.timelapseType());
+    })
+
+    self.isOperational.subscribe(function(newValue) {
+        self.requestData();
+    })
+
+    self.requestData = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "timelapse",
+            type: "GET",
+            dataType: "json",
+            success: self.fromResponse
+        })
+    }
+
+    self.fromResponse = function(response) {
+        self.timelapseType(response.type)
+
+        if (response.type == "timed" && response.config && response.config.interval) {
+            self.timelapseTimedInterval(response.config.interval)
+        } else {
+            self.timelapseTimedInterval(undefined)
+        }
+    }
+
+    self.fromStateResponse = function(response) {
+        self.isErrorOrClosed(response.closedOrError);
+        self.isOperational(response.operational);
+        self.isPaused(response.paused);
+        self.isPrinting(response.printing);
+        self.isError(response.error);
+        self.isReady(response.ready);
+        self.isLoading(response.loading);
+    }
+
+    self.save = function() {
+        var data = {
+            "type": self.timelapseType()
+        }
+
+        if (self.timelapseType() == "timed") {
+            data["interval"] = self.timelapseTimedInterval();
+        }
+
+        $.ajax({
+            url: AJAX_BASEURL + "timelapse",
+            type: "POST",
+            dataType: "json",
+            data: data,
+            success: self.fromResponse
+        })
+    }
+}
+var webcamViewModel = new WebcamViewModel();
+
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel) {
     var self = this;
 
     self.updateInterval = 500;
@@ -397,6 +468,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     self.temperatureViewModel = temperatureViewModel;
     self.terminalViewModel = terminalViewModel;
     self.speedViewModel = speedViewModel;
+    self.webcamViewModel = webcamViewModel;
 
     self.requestData = function() {
         var parameters = {};
@@ -418,6 +490,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
                 self.printerStateViewModel.fromResponse(response);
                 self.connectionViewModel.fromStateResponse(response);
                 self.speedViewModel.fromResponse(response);
+                self.webcamViewModel.fromStateResponse(response);
 
                 if (response.temperatures)
                     self.temperatureViewModel.fromResponse(response);
@@ -436,7 +509,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         });
     }
 }
-var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel);
+var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel);
 
 $(function() {
 
@@ -578,11 +651,17 @@ $(function() {
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
 
+        var webcamElement = document.getElementById("webcam");
+        if (webcamElement) {
+            ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
+        }
+
         //~~ startup commands
 
         dataUpdater.requestData();
         connectionViewModel.requestData();
         gcodeFilesViewModel.requestData();
+        webcamViewModel.requestData();
 
     }
 );

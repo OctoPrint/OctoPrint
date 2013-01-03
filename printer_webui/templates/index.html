@@ -221,6 +221,26 @@
                             <div id="webcam_container">
                                 <img id="webcam_image" src="{{ webcamStream }}">
                             </div>
+
+                            <fieldset>
+                                <legend>Timelapse</legend>
+
+                                <label for="webcam_timelapse_mode">Timelapse Mode</label>
+                                <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting()">
+                                    <option value="off">Off</option>
+                                    <option value="zchange">On Z Change</option>
+                                    <option value="timed">Timed</option>
+                                </select>
+
+                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
+                                    <label for="webcam_timelapse_interval">Interval</label>
+                                    <input type="text" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting()">
+                                </div>
+
+                                <div>
+                                    <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting()">Save Settings</button>
+                                </div>
+                            </fieldset>
                         </div>
                         {% endif %}
                     </div>

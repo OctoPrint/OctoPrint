@@ -3,7 +3,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import time
-import os
 from threading import Thread
 import datetime
 
@@ -58,6 +57,8 @@ class Printer():
 
 		self.feedrateModifierMapping = {"outerWall": "WALL-OUTER", "innerWall": "WALL_INNER", "fill": "FILL", "support": "SUPPORT"}
 
+		self.timelapse = None
+
 		# comm
 		self.comm = None
 
@@ -97,6 +98,15 @@ class Printer():
 
 		self.comm.setFeedrateModifier(self.feedrateModifierMapping[structure], percentage / 100.0)
 
+	def setTimelapse(self, timelapse):
+		if self.timelapse is not None and self.isPrinting():
+			self.timelapse.onPrintjobStopped()
+			del self.timelapse
+		self.timelapse = timelapse
+
+	def getTimelapse(self):
+		return self.timelapse
+
 	def mcLog(self, message):
 		"""
 		 Callback method for the comm object, called upon log output.
@@ -135,7 +145,14 @@ class Printer():
 		 Callback method for the comm object, called if the connection state changes.
 		 New state is stored for retrieval by the frontend.
 		"""
+		oldState = self.state
 		self.state = state
+
+		if self.timelapse is not None:
+			if oldState == self.comm.STATE_PRINTING:
+				self.timelapse.onPrintjobStopped()
+			elif state == self.comm.STATE_PRINTING:
+				self.timelapse.onPrintjobStarted()
 
 	def mcMessage(self, message):
 		"""
@@ -152,13 +169,19 @@ class Printer():
 		"""
 		self.printTime = self.comm.getPrintTime()
 		self.printTimeLeft = self.comm.getPrintTimeRemainingEstimate()
+		oldProgress = self.progress;
 		self.progress = self.comm.getPrintPos()
+		if self.timelapse is not None:
+			self.timelapse.onPrintjobProgress(oldProgress, self.progress, int(round(self.progress * 100 / len(self.gcodeList))))
 
 	def mcZChange(self, newZ):
 		"""
 		 Callback method for the comm object, called upon change of the z-layer.
 		"""
+		oldZ = self.currentZ
 		self.currentZ = newZ
+		if self.timelapse is not None:
+			self.timelapse.onZChange(oldZ, self.currentZ)
 
 	def onGcodeLoaded(self, gcodeLoader):
 		"""

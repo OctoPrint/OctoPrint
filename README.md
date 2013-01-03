@@ -12,7 +12,8 @@ allows
 * reading the communication log and send arbitrary codes to be executed by the printer
 * moving the X, Y and Z axis (jog controls, although very ugly ones right now)
 * changing the speed modifiers for inner & outer wall, fill and support
-* optional: visual monitoring of the printer via webcam stream integrated into the UI (using MJPG-Streamer)
+* optional: visual monitoring of the printer via webcam stream integrated into the UI (using e.g. MJPG-Streamer)
+* optional: creation of timelapse recordings of the printjob via webcam stream (using e.g. MJPG-Streamer) -- currently two timelaspe methods are implemented, triggering a shot on z-layer change or every "n" seconds
 
 The intended usecase is to run the Printer WebUI on a single-board computer like the Raspberry Pi and a WiFi module,
 connect the printer to the server and therefore create a WiFi-enabled 3D printer.
@@ -65,6 +66,8 @@ The following example config should explain the available options:
     [webcam]
     # use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer
     stream = http://10.0.0.2:8080/?action=stream
+    # use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer
+    snapshot = http://10.0.0.1:8080/?action=snapshot
 
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
@@ -132,6 +135,6 @@ It also uses the following libraries and frameworks for backend and frontend:
 * Flot: http://www.flotcharts.org/
 * jQuery File Upload: http://blueimp.github.com/jQuery-File-Upload/
 
-And this for Webcam support:
+The following software is recommended for Webcam support on the Raspberry Pi:
 
 * MJPG-Streamer: http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page

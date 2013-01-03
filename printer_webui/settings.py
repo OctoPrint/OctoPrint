@@ -26,7 +26,12 @@ default_settings = {
 		"port": 5000
 	},
 	"webcam": {
-		"stream": None
+		"stream": None,
+		"snapshot": None
+	},
+	"folder": {
+		"uploads": None,
+		"timelapse": None
 	}
 }
 
@@ -74,6 +79,7 @@ class Settings(object):
 		with open(os.path.join(self.settings_dir, "config.ini"), "wb") as configFile:
 			self._config.write(configFile)
 			self._changes = None
+		self.load()
 
 	def get(self, section, key):
 		if section not in default_settings.keys():
@@ -99,6 +105,19 @@ class Settings(object):
 			return int(value)
 		except ValueError:
 			return None
+
+	def getBaseFolder(self, type):
+		if type not in default_settings["folder"].keys():
+			return None
+
+		folder = self.get("folder", type)
+		if folder is None:
+			folder = os.path.join(self.settings_dir, type)
+
+		if not os.path.isdir(folder):
+			os.makedirs(folder)
+
+		return folder
 
 	def set(self, section, key, value):
 		if section not in default_settings.keys():

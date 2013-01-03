@@ -2,28 +2,21 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import Flask, request, render_template, jsonify, send_file, abort
+from flask import Flask, request, render_template, jsonify
 from werkzeug import secure_filename
 
 from printer_webui.printer import Printer, getConnectionOptions
 from printer_webui.settings import settings
+from printer_webui.timelapse import ZTimelapse, TimedTimelapse
 
-import sys
 import os
 import fnmatch
-import StringIO
 
 BASEURL="/ajax/"
 SUCCESS={}
 
-UPLOAD_FOLDER = os.path.join(settings().settings_dir, "uploads")
-if not os.path.isdir(UPLOAD_FOLDER):
-	os.makedirs(UPLOAD_FOLDER)
+UPLOAD_FOLDER = settings().getBaseFolder("uploads")
 ALLOWED_EXTENSIONS = set(["gcode"])
-
-WEBCAM_FOLDER = os.path.join(settings().settings_dir, "webcam")
-if not os.path.isdir(WEBCAM_FOLDER):
-	os.makedirs(WEBCAM_FOLDER)
 
 app = Flask("printer_webui")
 printer = Printer()
@@ -234,6 +227,48 @@ def deleteGcodeFile():
 			if os.path.exists(secure):
 				os.remove(secure)
 	return readGcodeFiles()
+
+#~~ timelapse configuration
+
+@app.route(BASEURL + "timelapse", methods=["GET"])
+def getTimelapseConfig():
+	timelapse = printer.getTimelapse()
+
+	type = "off"
+	additionalConfig = {}
+	if timelapse is not None and isinstance(timelapse, ZTimelapse):
+		type = "zchange"
+	elif timelapse is not None and isinstance(timelapse, TimedTimelapse):
+		type = "timed"
+		additionalConfig = {
+			"interval": timelapse.interval
+		}
+
+	return jsonify({
+		"type": type,
+		"config": additionalConfig
+	})
+
+@app.route(BASEURL + "timelapse", methods=["POST"])
+def setTimelapseConfig():
+	if not request.values.has_key("type"):
+		return getTimelapseConfig()
+
+	type = request.values["type"]
+	timelapse = None
+	if "zchange" == type:
+		timelapse = ZTimelapse()
+	elif "timed" == type:
+		interval = 10
+		if request.values.has_key("interval"):
+			try:
+				interval = int(request.values["interval"])
+			except ValueError:
+				pass
+		timelapse = TimedTimelapse(interval)
+
+	printer.setTimelapse(timelapse)
+	return getTimelapseConfig()
 
 #~~ settings
 
