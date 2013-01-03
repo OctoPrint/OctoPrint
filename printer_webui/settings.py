@@ -27,7 +27,8 @@ default_settings = {
 	},
 	"webcam": {
 		"stream": None,
-		"snapshot": None
+		"snapshot": None,
+		"ffmpeg": None
 	},
 	"folder": {
 		"uploads": None,

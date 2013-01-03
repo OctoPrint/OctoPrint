@@ -69,6 +69,12 @@ The following example config should explain the available options:
     # use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer
     snapshot = http://10.0.0.1:8080/?action=snapshot
 
+    [folder]
+    # absolute path where to store gcode uploads. Defaults to the uploads folder in the Printer WebUI settings dir
+    uploads = /path/to/upload/folder
+    # absolute path where to store gcode uploads. Defaults to the timelapse folder in the Printer WebUI settings dir
+    timelapse = /path/to/timelapse/folder
+
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
 

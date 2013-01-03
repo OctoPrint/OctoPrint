@@ -152,7 +152,7 @@ class Printer():
 			if oldState == self.comm.STATE_PRINTING:
 				self.timelapse.onPrintjobStopped()
 			elif state == self.comm.STATE_PRINTING:
-				self.timelapse.onPrintjobStarted()
+				self.timelapse.onPrintjobStarted(self.filename)
 
 	def mcMessage(self, message):
 		"""
