@@ -32,7 +32,8 @@ default_settings = {
 	},
 	"folder": {
 		"uploads": None,
-		"timelapse": None
+		"timelapse": None,
+		"timelapse_tmp": None
 	}
 }
 
@@ -113,7 +114,7 @@ class Settings(object):
 
 		folder = self.get("folder", type)
 		if folder is None:
-			folder = os.path.join(self.settings_dir, type)
+			folder = os.path.join(self.settings_dir, type.replace("_", os.path.sep))
 
 		if not os.path.isdir(folder):
 			os.makedirs(folder)

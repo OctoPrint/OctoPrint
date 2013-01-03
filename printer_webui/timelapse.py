@@ -8,6 +8,8 @@ import os
 import threading
 import urllib
 import time
+import subprocess
+import glob
 
 class Timelapse(object):
 	def __init__(self):
@@ -15,7 +17,8 @@ class Timelapse(object):
 		self.inTimelapse = False
 		self.gcodeFile = None
 
-		self.captureDir = settings().getBaseFolder("timelapse")
+		self.captureDir = settings().getBaseFolder("timelapse_tmp")
+		self.movieDir = settings().getBaseFolder("timelapse")
 		self.snapshotUrl = settings().get("webcam", "snapshot")
 
 	def onPrintjobStarted(self, gcodeFile):
@@ -31,11 +34,15 @@ class Timelapse(object):
 		pass
 
 	def startTimelapse(self, gcodeFile):
+		self.cleanCaptureDir()
+
 		self.imageNumber = 0
 		self.inTimelapse = True
 		self.gcodeFile = os.path.basename(gcodeFile)
 
 	def stopTimelapse(self):
+		self.createMovie()
+
 		self.imageNumber = None
 		self.inTimelapse = False
 
@@ -43,7 +50,7 @@ class Timelapse(object):
 		if self.captureDir is None:
 			return
 
-		filename = os.path.join(self.captureDir, "tmp_%i.jpg" % (self.imageNumber))
+		filename = os.path.join(self.captureDir, "tmp_%05d.jpg" % (self.imageNumber))
 		self.imageNumber += 1;
 
 		captureThread = threading.Thread(target=self.captureWorker, kwargs={"filename": filename})
@@ -51,6 +58,25 @@ class Timelapse(object):
 
 	def captureWorker(self, filename):
 		urllib.urlretrieve(self.snapshotUrl, filename)
+
+	def createMovie(self):
+		ffmpeg = settings().get("webcam", "ffmpeg")
+		if ffmpeg is None:
+			return
+
+		input = os.path.join(self.captureDir, "tmp_%05d.jpg")
+		output = os.path.join(self.movieDir, "%s_%s.mpg" % (os.path.splitext(self.gcodeFile)[0], time.strftime("%Y%m%d%H%M%S")))
+		subprocess.call([
+			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y',
+			 '-b:v', '1500k', '-f', 'vob', output
+		])
+
+	def cleanCaptureDir(self):
+		if not os.path.isdir(self.captureDir):
+			return
+
+		for filename in glob.glob(os.path.join(self.captureDir, "*.jpg")):
+			os.remove(filename)
 
 class ZTimelapse(Timelapse):
 	def __init__(self):
