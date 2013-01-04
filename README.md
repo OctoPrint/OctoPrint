@@ -47,8 +47,9 @@ Alternatively, the host and port on which to bind can be defined via the configu
 Configuration
 -------------
 
-The config-file for Printer WebUI is expected at `~/.printerwebui/config.ini` for Linux, at `%APPDATA%/PrinterWebUI/config.ini`
-for Windows and at `~/Library/Application Support/config.ini` for MacOS X.
+The config-file `config.ini` for Printer WebUI is expected at `~/.printerwebui` for Linux, at `%APPDATA%/PrinterWebUI`
+for Windows and at `~/Library/Application Support` for MacOS X.
+
 The following example config should explain the available options:
 
     [serial]
@@ -64,16 +65,23 @@ The following example config should explain the available options:
     port = 5000
 
     [webcam]
-    # use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer
-    stream = http://10.0.0.2:8080/?action=stream
-    # use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer
-    snapshot = http://10.0.0.1:8080/?action=snapshot
+    # use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer.
+    # Webcam support will be disabled if not set
+    stream = http://<stream host>:<stream port>/?action=stream
+    # use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer.
+    # Timelapse support will be disabled if not set
+    snapshot = http://<stream host>:<stream port>/?action=snapshot
+    # path to ffmpeg binary to use for creating timelapse recordings.
+    # Timelapse support will be disabled if not set
+    ffmpeg = /path/to/ffmpeg
 
     [folder]
     # absolute path where to store gcode uploads. Defaults to the uploads folder in the Printer WebUI settings dir
     uploads = /path/to/upload/folder
-    # absolute path where to store gcode uploads. Defaults to the timelapse folder in the Printer WebUI settings dir
+    # absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the Printer WebUI settings dir
     timelapse = /path/to/timelapse/folder
+    # absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the Printer WebUI settings dir
+    timelapse_tmp = /path/timelapse/tmp/folder
 
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
@@ -95,7 +103,7 @@ You should then be able to start the WebUI server:
 If you also want webcam support, you'll need to download and compile MJPG-Streamer:
 
     cd ~
-    sudo apt-get install libjpeg8-dev imagemagick
+    sudo apt-get install libjpeg8-dev imagemagick ffmpeg
     wget -Omjpg-streamer.tar.gz http://mjpg-streamer.svn.sourceforge.net/viewvc/mjpg-streamer/mjpg-streamer/?view=tar
     tar xfz mjpg-streamer.tar.gz
     cd mjpg-streamer
@@ -120,6 +128,8 @@ Open `~/.printerwebui/config.ini` and add the following lines to it:
 
     [webcam]
     stream = http://<your Raspi's IP>:8080/?action=stream
+    snapshot = http://127.0.0.1:8080/?action=snapshot
+    ffmpeg = /usr/bin/ffmpeg
 
 Restart the WebUI server and reload its frontend. You should now see a Webcam tab with content.
 

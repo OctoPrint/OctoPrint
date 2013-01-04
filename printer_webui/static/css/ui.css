@@ -61,7 +61,7 @@ table th.gcode_files_action, table td.gcode_files_action {
     overflow: hidden;
 }
 
-#temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support {
+#temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support, #webcam_timelapse_interval {
     text-align: right;
 }
 
@@ -105,12 +105,6 @@ table th.gcode_files_action, table td.gcode_files_action {
 
 #offline_overlay_wrapper .container {
     margin: auto;
-}
-
-#webcam_container {
-    height: 440px;
-    background-color: #000000;
-    margin-bottom: 20px;
 }
 
 table th.timelapse_files_name, table td.timelapse_files_name {

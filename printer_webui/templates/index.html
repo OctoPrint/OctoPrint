@@ -218,6 +218,7 @@
                                 <img id="webcam_image" src="{{ webcamStream }}">
                             </div>
 
+                            {% if enableTimelapse %}
                             <h1>Timelapse Configuration</h1>
 
                             <label for="webcam_timelapse_mode">Timelapse Mode</label>
@@ -229,7 +230,10 @@
 
                             <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
                                 <label for="webcam_timelapse_interval">Interval</label>
-                                <input type="text" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting()">
+                                <div class="input-append">
+                                    <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting()">
+                                    <span class="add-on">sec</span>
+                                </div>
                             </div>
 
                             <div>
@@ -254,6 +258,7 @@
                                 </tr>
                                 </tbody>
                             </table>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>

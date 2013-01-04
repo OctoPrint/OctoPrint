@@ -12,8 +12,8 @@ import timelapse
 import os
 import fnmatch
 
-BASEURL="/ajax/"
-SUCCESS={}
+BASEURL = "/ajax/"
+SUCCESS = {}
 
 UPLOAD_FOLDER = settings().getBaseFolder("uploads")
 
@@ -22,7 +22,11 @@ printer = Printer()
 
 @app.route("/")
 def index():
-	return render_template("index.html", webcamStream = settings().get("webcam", "stream"))
+	return render_template(
+		"index.html",
+		webcamStream=settings().get("webcam", "stream"),
+		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None)
+	)
 
 #~~ Printer state
 
