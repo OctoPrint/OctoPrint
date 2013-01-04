@@ -242,7 +242,10 @@ class MachineCom(object):
 		return self._gcodePos
 	
 	def getPrintTime(self):
-		return time.time() - self._printStartTime100
+		if self._printStartTime100 == None:
+			return 0
+		else:
+			return time.time() - self._printStartTime100
 
 	def getPrintTimeRemainingEstimate(self):
 		if self._printStartTime100 == None or self.getPrintPos() < 200:

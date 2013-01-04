@@ -95,8 +95,8 @@ class TimedTimelapse(Timelapse):
 
 		self.timerThread = None
 
-	def onPrintjobStarted(self):
-		Timelapse.onPrintjobStarted(self)
+	def onPrintjobStarted(self, filename):
+		Timelapse.onPrintjobStarted(self, filename)
 		if self.timerThread is not None:
 			return
 
