@@ -100,10 +100,10 @@ You should then be able to start the WebUI server:
     pi@raspberrypi ~/PrinterWebUI $ python -m printer_webui.server
      * Running on http://0.0.0.0:5000/
 
-If you also want webcam support, you'll need to download and compile MJPG-Streamer:
+If you also want webcam and timelapse support, you'll need to download and compile MJPG-Streamer:
 
     cd ~
-    sudo apt-get install libjpeg8-dev imagemagick ffmpeg
+    sudo apt-get install libjpeg8-dev imagemagick libav-tools
     wget -Omjpg-streamer.tar.gz http://mjpg-streamer.svn.sourceforge.net/viewvc/mjpg-streamer/mjpg-streamer/?view=tar
     tar xfz mjpg-streamer.tar.gz
     cd mjpg-streamer
@@ -129,7 +129,7 @@ Open `~/.printerwebui/config.ini` and add the following lines to it:
     [webcam]
     stream = http://<your Raspi's IP>:8080/?action=stream
     snapshot = http://127.0.0.1:8080/?action=snapshot
-    ffmpeg = /usr/bin/ffmpeg
+    ffmpeg = /usr/bin/avconv
 
 Restart the WebUI server and reload its frontend. You should now see a Webcam tab with content.
 
