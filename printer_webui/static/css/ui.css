@@ -20,6 +20,19 @@ body {
     margin-bottom: 0px;
 }
 
+.tab-content h1 {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 20px;
+    font-size: 21px;
+    line-height: 40px;
+    color: #333;
+    border: 0;
+    border-bottom: 1px solid #E5E5E5;
+    font-weight: normal;
+}
+
 table {
     table-layout: fixed;
 }
@@ -98,4 +111,20 @@ table th.gcode_files_action, table td.gcode_files_action {
     height: 440px;
     background-color: #000000;
     margin-bottom: 20px;
+}
+
+table th.timelapse_files_name, table td.timelapse_files_name {
+    text-overflow: ellipsis;
+    text-align: left;
+    width: 55%;
+}
+
+table th.timelapse_files_size, table td.timelapse_files_size {
+    text-align: right;
+    width: 25%;
+}
+
+table th.timelapse_files_action, table td.timelapse_files_action {
+    text-align: center;
+    width: 20%;
 }

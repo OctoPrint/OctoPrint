@@ -125,36 +125,32 @@
                             </div>
                             <div>
                                 <div class="form-horizontal" style="width: 49%; float: left; margin-bottom: 20px;">
-                                    <fieldset>
-                                        <legend>Temperature</legend>
+                                    <h1>Temperature</h1>
 
-                                        <label>Current: <strong data-bind="text: tempString"></strong></label>
+                                    <label>Current: <strong data-bind="text: tempString"></strong></label>
 
-                                        <label>Target: <strong data-bind="text: targetTempString"></strong></label>
+                                    <label>Target: <strong data-bind="text: targetTempString"></strong></label>
 
-                                        <label for="temp_newTemp">New Target</label>
-                                        <div class="input-append">
-                                            <input class="span1" type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}">
-                                            <span class="add-on">°C</span>
-                                        </div>
-                                        <button type="submit" class="btn" id="temp_newTemp_set">Set</button>
-                                    </fieldset>
+                                    <label for="temp_newTemp">New Target</label>
+                                    <div class="input-append">
+                                        <input class="span1" type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}">
+                                        <span class="add-on">°C</span>
+                                    </div>
+                                    <button type="submit" class="btn" id="temp_newTemp_set">Set</button>
                                 </div>
                                 <div class="form-horizontal" style="width: 49%; margin-left: 2%; float: left; margin-bottom: 20px;">
-                                    <fieldset>
-                                        <legend>Bed Temperature</legend>
+                                    <h1>Bed Temperature</h1>
 
-                                        <label>Current: <strong data-bind="text: bedTempString"></strong></label>
+                                    <label>Current: <strong data-bind="text: bedTempString"></strong></label>
 
-                                        <label>Target: <strong data-bind="text: bedTargetTempString"></strong></label>
+                                    <label>Target: <strong data-bind="text: bedTargetTempString"></strong></label>
 
-                                        <label for="temp_newBedTemp">New Target</label>
-                                        <div class="input-append">
-                                            <input class="span1" type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}">
-                                            <span class="add-on">°C</span>
-                                        </div>
-                                        <button type="submit" class="btn" id="temp_newBedTemp_set">Set</button>
-                                    </fieldset>
+                                    <label for="temp_newBedTemp">New Target</label>
+                                    <div class="input-append">
+                                        <input class="span1" type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}">
+                                        <span class="add-on">°C</span>
+                                    </div>
+                                    <button type="submit" class="btn" id="temp_newBedTemp_set">Set</button>
                                 </div>
                             </div>
                         </div>
@@ -222,25 +218,42 @@
                                 <img id="webcam_image" src="{{ webcamStream }}">
                             </div>
 
-                            <fieldset>
-                                <legend>Timelapse</legend>
+                            <h1>Timelapse Configuration</h1>
 
-                                <label for="webcam_timelapse_mode">Timelapse Mode</label>
-                                <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting()">
-                                    <option value="off">Off</option>
-                                    <option value="zchange">On Z Change</option>
-                                    <option value="timed">Timed</option>
-                                </select>
+                            <label for="webcam_timelapse_mode">Timelapse Mode</label>
+                            <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting()">
+                                <option value="off">Off</option>
+                                <option value="zchange">On Z Change</option>
+                                <option value="timed">Timed</option>
+                            </select>
 
-                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
-                                    <label for="webcam_timelapse_interval">Interval</label>
-                                    <input type="text" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting()">
-                                </div>
+                            <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
+                                <label for="webcam_timelapse_interval">Interval</label>
+                                <input type="text" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting()">
+                            </div>
 
-                                <div>
-                                    <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting()">Save Settings</button>
-                                </div>
-                            </fieldset>
+                            <div>
+                                <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting()">Save Settings</button>
+                            </div>
+
+                            <h1>Finished Timelapses</h1>
+
+                            <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
+                                <thead>
+                                <tr>
+                                    <th class="timelapse_files_name">Name</th>
+                                    <th class="timelapse_files_size">Size</th>
+                                    <th class="timelapse_files_action">Action</th>
+                                </tr>
+                                </thead>
+                                <tbody data-bind="foreach: files">
+                                <tr data-bind="attr: {title: name}">
+                                    <td class="timelapse_files_name" data-bind="text: name"></td>
+                                    <td class="timelapse_files_size" data-bind="text: size"></td>
+                                    <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: $parent.removeFile"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                         {% endif %}
                     </div>

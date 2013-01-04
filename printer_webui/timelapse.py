@@ -9,7 +9,19 @@ import threading
 import urllib
 import time
 import subprocess
-import glob
+import fnmatch
+
+def getFinishedTimelapses():
+	files = []
+	basedir = settings().getBaseFolder("timelapse")
+	for osFile in os.listdir(basedir):
+		if not fnmatch.fnmatch(osFile, "*.mpg"):
+			continue
+		files.append({
+			"name": osFile,
+			"size": os.stat(os.path.join(basedir, osFile)).st_size
+		})
+	return files
 
 class Timelapse(object):
 	def __init__(self):
@@ -75,8 +87,10 @@ class Timelapse(object):
 		if not os.path.isdir(self.captureDir):
 			return
 
-		for filename in glob.glob(os.path.join(self.captureDir, "*.jpg")):
-			os.remove(filename)
+		for filename in os.listdir(self.captureDir):
+			if not fnmatch.fnmatch(filename, "*.jpg"):
+				continue
+			os.remove(os.path.join(self.captureDir, filename))
 
 class ZTimelapse(Timelapse):
 	def __init__(self):

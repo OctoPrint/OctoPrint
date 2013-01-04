@@ -2,12 +2,12 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, send_from_directory, abort, url_for
 from werkzeug import secure_filename
 
 from printer_webui.printer import Printer, getConnectionOptions
 from printer_webui.settings import settings
-from printer_webui.timelapse import ZTimelapse, TimedTimelapse
+import timelapse
 
 import os
 import fnmatch
@@ -16,7 +16,6 @@ BASEURL="/ajax/"
 SUCCESS={}
 
 UPLOAD_FOLDER = settings().getBaseFolder("uploads")
-ALLOWED_EXTENSIONS = set(["gcode"])
 
 app = Flask("printer_webui")
 printer = Printer()
@@ -205,70 +204,89 @@ def readGcodeFiles():
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():
-	file = request.files["gcode_file"]
-	if file and allowed_file(file.filename):
-		secure = secure_filename(file.filename)
-		filename = os.path.join(UPLOAD_FOLDER, secure)
-		file.save(filename)
+	if request.files.has_key("gcode_file"):
+		file = request.files["gcode_file"]
+		if file and allowed_file(file.filename, set(["gcode"])):
+			secure = secure_filename(file.filename)
+			filename = os.path.join(UPLOAD_FOLDER, secure)
+			file.save(filename)
 	return readGcodeFiles()
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 def loadGcodeFile():
-	filename = request.values["filename"]
-	printer.loadGcode(os.path.join(UPLOAD_FOLDER, filename))
+	if request.values.has_key("filename"):
+		filename = request.values["filename"]
+		printer.loadGcode(os.path.join(UPLOAD_FOLDER, filename))
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
 def deleteGcodeFile():
 	if request.values.has_key("filename"):
 		filename = request.values["filename"]
-		if allowed_file(filename):
+		if allowed_file(filename, set(["gcode"])):
 			secure = os.path.join(UPLOAD_FOLDER, secure_filename(filename))
 			if os.path.exists(secure):
 				os.remove(secure)
 	return readGcodeFiles()
 
-#~~ timelapse configuration
+#~~ timelapse handling
 
 @app.route(BASEURL + "timelapse", methods=["GET"])
-def getTimelapseConfig():
-	timelapse = printer.getTimelapse()
+def getTimelapseData():
+	lapse = printer.getTimelapse()
 
 	type = "off"
 	additionalConfig = {}
-	if timelapse is not None and isinstance(timelapse, ZTimelapse):
+	if lapse is not None and isinstance(lapse, timelapse.ZTimelapse):
 		type = "zchange"
-	elif timelapse is not None and isinstance(timelapse, TimedTimelapse):
+	elif lapse is not None and isinstance(lapse, timelapse.TimedTimelapse):
 		type = "timed"
 		additionalConfig = {
-			"interval": timelapse.interval
+			"interval": lapse.interval
 		}
 
+	files = timelapse.getFinishedTimelapses()
+	for file in files:
+		file["size"] = sizeof_fmt(file["size"])
+		file["url"] = url_for("downloadTimelapse", filename=file["name"])
+
 	return jsonify({
-		"type": type,
-		"config": additionalConfig
+	"type": type,
+	"config": additionalConfig,
+	"files": files
 	})
 
-@app.route(BASEURL + "timelapse", methods=["POST"])
+@app.route(BASEURL + "timelapse/<filename>", methods=["GET"])
+def downloadTimelapse(filename):
+	if allowed_file(filename, set(["mpg"])):
+		return send_from_directory(settings().getBaseFolder("timelapse"), filename, as_attachment=True)
+
+@app.route(BASEURL + "timelapse/<filename>", methods=["DELETE"])
+def deleteTimelapse(filename):
+	if allowed_file(filename, set(["mpg"])):
+		secure = os.path.join(settings().getBaseFolder("timelapse"), secure_filename(filename))
+		if os.path.exists(secure):
+			os.remove(secure)
+	return getTimelapseData()
+
+@app.route(BASEURL + "timelapse/config", methods=["POST"])
 def setTimelapseConfig():
-	if not request.values.has_key("type"):
-		return getTimelapseConfig()
+	if request.values.has_key("type"):
+		type = request.values["type"]
+		lapse = None
+		if "zchange" == type:
+			lapse = timelapse.ZTimelapse()
+		elif "timed" == type:
+			interval = 10
+			if request.values.has_key("interval"):
+				try:
+					interval = int(request.values["interval"])
+				except ValueError:
+					pass
+			lapse = timelapse.TimedTimelapse(interval)
+		printer.setTimelapse(lapse)
 
-	type = request.values["type"]
-	timelapse = None
-	if "zchange" == type:
-		timelapse = ZTimelapse()
-	elif "timed" == type:
-		interval = 10
-		if request.values.has_key("interval"):
-			try:
-				interval = int(request.values["interval"])
-			except ValueError:
-				pass
-		timelapse = TimedTimelapse(interval)
-
-	printer.setTimelapse(timelapse)
-	return getTimelapseConfig()
+	return getTimelapseData()
 
 #~~ settings
 
@@ -303,8 +321,8 @@ def sizeof_fmt(num):
 		num /= 1024.0
 	return "%3.1f%s" % (num, "TB")
 
-def allowed_file(filename):
-	return "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
+def allowed_file(filename, extensions):
+	return "." in filename and filename.rsplit(".", 1)[1] in extensions
 
 #~~ startup code
 

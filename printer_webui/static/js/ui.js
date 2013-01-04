@@ -389,6 +389,7 @@ function WebcamViewModel() {
 
     self.timelapseType = ko.observable(undefined);
     self.timelapseTimedInterval = ko.observable(undefined);
+    self.files = ko.observableArray([]);
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -417,6 +418,7 @@ function WebcamViewModel() {
 
     self.fromResponse = function(response) {
         self.timelapseType(response.type)
+        self.files(response.files)
 
         if (response.type == "timed" && response.config && response.config.interval) {
             self.timelapseTimedInterval(response.config.interval)
@@ -435,6 +437,16 @@ function WebcamViewModel() {
         self.isLoading(response.loading);
     }
 
+    self.removeFile = function() {
+        var filename = this.name;
+        $.ajax({
+            url: AJAX_BASEURL + "timelapse/" + filename,
+            type: "DELETE",
+            dataType: "json",
+            success: self.requestData
+        })
+    }
+
     self.save = function() {
         var data = {
             "type": self.timelapseType()
@@ -445,7 +457,7 @@ function WebcamViewModel() {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "timelapse",
+            url: AJAX_BASEURL + "timelapse/config",
             type: "POST",
             dataType: "json",
             data: data,
