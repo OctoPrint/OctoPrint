@@ -361,7 +361,7 @@ function TerminalViewModel() {
     self.fromLogEvent = function(data) {
         if (!self.log)
             self.log = []
-        self.log.push(data.log)
+        self.log.push(data.line)
         self.updateOutput();
     }
 
@@ -528,7 +528,17 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     self.webcamViewModel = webcamViewModel;
 
     self.socket = io.connect();
-
+    self.socket.on("connect", function() {
+        if ($("#offline_overlay").is(":visible")) {
+            $("#offline_overlay").hide();
+            self.webcamViewModel.requestData();
+        }
+    })
+    self.socket.on("disconnect", function() {
+        // if the updated fails to communicate with the backend, we interpret this as a missing backend
+        if (!$("#offline_overlay").is(":visible"))
+            $("#offline_overlay").show();
+    })
     self.socket.on("state", function(data) {
         self.printerStateViewModel.fromStateEvent(data);
         self.connectionViewModel.fromStateEvent(data);
@@ -556,47 +566,6 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.temperatureViewModel.fromHistoryEvent(data.temperature)
         self.terminalViewModel.fromHistoryEvent(data.log)
     })
-
-    self.requestData = function() {
-        var parameters = {};
-
-        if (self.includeTemperatures)
-            parameters.temperatures = true;
-        if (self.includeLogs)
-            parameters.log = true;
-
-        $.ajax({
-            url: AJAX_BASEURL + "state",
-            type: "GET",
-            dataType: "json",
-            data: parameters,
-            success: function(response) {
-                if ($("#offline_overlay").is(":visible")) {
-                    $("#offline_overlay").hide();
-                    self.webcamViewModel.requestData();
-                }
-
-                self.printerStateViewModel.fromResponse(response);
-                self.connectionViewModel.fromStateResponse(response);
-                self.speedViewModel.fromResponse(response);
-                self.webcamViewModel.fromStateResponse(response);
-
-                if (response.temperatures)
-                    self.temperatureViewModel.fromResponse(response);
-
-                if (response.log)
-                    self.terminalViewModel.fromResponse(response);
-
-                setTimeout(self.requestData, self.updateInterval);
-            },
-            error: function(jqXHR, textState, errorThrows) {
-                // if the updated fails to communicate with the backend, we interpret this as a missing backend
-                if (!$("#offline_overlay").is(":visible"))
-                    $("#offline_overlay").show();
-                setTimeout(self.requestData, self.updateIntervalOnError);
-            }
-        });
-    }
 }
 var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel);
 

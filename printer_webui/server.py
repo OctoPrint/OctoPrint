@@ -41,6 +41,9 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 		print("Closed socket")
 		printer.unregisterCallback(self)
 
+	def on_message(self, message):
+		pass
+
 	def zChangeCB(self, currentZ):
 		formattedCurrentZ = None
 		if currentZ:
