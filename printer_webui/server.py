@@ -4,13 +4,16 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 from flask import Flask, request, render_template, jsonify, send_from_directory, abort, url_for
 from werkzeug import secure_filename
-
-from printer_webui.printer import Printer, getConnectionOptions
-from printer_webui.settings import settings
-import timelapse
+import tornadio2
 
 import os
 import fnmatch
+import datetime
+import time
+
+from printer_webui.printer import Printer, getConnectionOptions, PrinterCallback
+from printer_webui.settings import settings
+import printer_webui.timelapse as timelapse
 
 BASEURL = "/ajax/"
 SUCCESS = {}
@@ -30,64 +33,78 @@ def index():
 
 #~~ Printer state
 
-@app.route(BASEURL + "state", methods=["GET"])
-def printerState():
-	temp = printer.currentTemp
-	bedTemp = printer.currentBedTemp
-	targetTemp = printer.currentTargetTemp
-	bedTargetTemp = printer.currentBedTargetTemp
-	jobData = printer.jobData()
-	gcodeState = printer.gcodeState()
-	feedrateState = printer.feedrateState()
+class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
+	def __init__(self, session, endpoint=None):
+		tornadio2.SocketConnection.__init__(self, session, endpoint)
+		self._lastProgressReport = None
 
-	result = {
-		"state": printer.getStateString(),
-		"temp": temp,
-		"bedTemp": bedTemp,
-		"targetTemp": targetTemp,
-		"targetBedTemp": bedTargetTemp,
-		"operational": printer.isOperational(),
-		"closedOrError": printer.isClosedOrError(),
-		"error": printer.isError(),
-		"printing": printer.isPrinting(),
-		"paused": printer.isPaused(),
-		"ready": printer.isReady(),
-		"loading": printer.isLoading()
-	}
+	def on_open(self, info):
+		printer.registerCallback(self)
 
-	if jobData is not None:
-		jobData["filename"] = jobData["filename"].replace(UPLOAD_FOLDER + os.sep, "")
-		result["job"] = jobData
+	def on_close(self):
+		printer.unregisterCallback(self)
 
-	if gcodeState is not None:
-		gcodeState["filename"] = gcodeState["filename"].replace(UPLOAD_FOLDER + os.sep, "")
-		result["gcode"] = gcodeState
+	def zChangeCB(self, currentZ):
+		formattedCurrentZ = None
+		if currentZ:
+			formattedCurrentZ = "%.2f mm" % (currentZ)
 
-	if feedrateState is not None:
-		result["feedrate"] = feedrateState
+		self.emit("zChange", {"currentZ": formattedCurrentZ})
 
-	if request.values.has_key("temperatures"):
-		result["temperatures"] = printer.temps
+	def progressChangeCB(self, currentLine, printTimeInSeconds, printTimeLeftInMinutes):
+		if self._lastProgressReport and time.time() + 0.5 < self._lastProgressReport:
+			return
 
-	if request.values.has_key("log"):
-		result["log"] = printer.log
+		formattedPrintTime = None
+		if (printTimeInSeconds):
+			formattedPrintTime = _getFormattedTimeDelta(datetime.timedelta(seconds=printTimeInSeconds))
 
-	if request.values.has_key("messages"):
-		result["messages"] = printer.messages
+		formattedPrintTimeLeft = None
+		if (printTimeLeftInMinutes):
+			formattedPrintTimeLeft = _getFormattedTimeDelta(datetime.timedelta(minutes=printTimeLeftInMinutes))
 
-	return jsonify(result)
+		self._lastProgressReport = time.time()
+		self.emit("printProgress", {
+			"currentLine": currentLine,
+			"printTime": formattedPrintTime,
+			"printTimeLeft": formattedPrintTimeLeft
+		})
 
-@app.route(BASEURL + "state/messages", methods=["GET"])
-def printerMessages():
-	return jsonify(messages=printer.messages)
+	def temperatureChangeCB(self, temp, bedTemp, targetTemp, bedTargetTemp, history):
+		self.emit("temperature", {
+			"currentTemp": temp,
+			"currentBedTemp": bedTemp,
+			"currentTargetTemp": targetTemp,
+			"currentTargetBedTemp": bedTargetTemp,
+			"history": history
+		})
 
-@app.route(BASEURL + "state/log", methods=["GET"])
-def printerLogs():
-	return jsonify(log=printer.log)
+	def stateChangeCB(self, state, stateString, booleanStates):
+		self.emit("state", {"currentState": stateString, "flags": booleanStates})
 
-@app.route(BASEURL + "state/temperatures", methods=["GET"])
-def printerTemperatures():
-	return jsonify(temperatures = printer.temps)
+	def logChangeCB(self, line, history):
+		self.emit("log", {"line": line, "history": history})
+
+	def messageChangeCB(self, line, history):
+		self.emit("message", {"line": line, "history": history})
+
+	def gcodeChangeCB(self, filename, progress):
+		self.emit("jobData", {"filename": "Loading... (%d%%)" % (round(progress * 100)), "lineCount": None, "estimatedPrintTime": None, "filament": None})
+
+	def jobDataChangeCB(self, filename, lines, estimatedPrintTimeInMinutes, filamentLengthInMillimeters):
+		formattedPrintTimeEstimation = None
+		if estimatedPrintTimeInMinutes:
+			formattedPrintTimeEstimation = _getFormattedTimeDelta(datetime.timedelta(minutes=estimatedPrintTimeInMinutes))
+
+		formattedFilament = None
+		if filamentLengthInMillimeters:
+			formattedFilament = "%.2fm" % (filamentLengthInMillimeters / 1000)
+
+		formattedFilename = None
+		if filename:
+			formattedFilename = filename.replace(UPLOAD_FOLDER + os.sep, "")
+
+		self.emit("jobData", {"filename": formattedFilename, "lineCount": lines, "estimatedPrintTime": formattedPrintTimeEstimation, "filament": formattedFilament})
 
 #~~ Printer control
 
@@ -315,6 +332,12 @@ def setSettings():
 
 #~~ helper functions
 
+def _getFormattedTimeDelta(d):
+	hours = d.seconds // 3600
+	minutes = (d.seconds % 3600) // 60
+	seconds = d.seconds % 60
+	return "%02d:%02d:%02d" % (hours, minutes, seconds)
+
 def sizeof_fmt(num):
 	"""
 	 Taken from http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
@@ -331,8 +354,21 @@ def allowed_file(filename, extensions):
 #~~ startup code
 
 def run(host = "0.0.0.0", port = 5000, debug = False):
+	from tornado.wsgi import WSGIContainer
+	from tornado.httpserver import HTTPServer
+	from tornado.ioloop import IOLoop
+	from tornado.web import Application, FallbackHandler
+
+	print "Listening on http://%s:%d" % (host, port)
 	app.debug = debug
-	app.run(host=host, port=port, use_reloader=False)
+
+	router = tornadio2.TornadioRouter(PrinterStateConnection)
+	tornado_app = Application(router.urls + [
+		(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
+	])
+	server = HTTPServer(tornado_app)
+	server.listen(port, address=host)
+	IOLoop.instance().start()
 
 def main():
 	from optparse import OptionParser

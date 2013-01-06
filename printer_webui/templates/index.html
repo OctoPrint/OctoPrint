@@ -9,16 +9,11 @@
         <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/ui.css') }}" rel="stylesheet" media="screen">
 
-        <script src="http://code.jquery.com/jquery-latest.js"></script>
-        <script src="{{ url_for('static', filename='js/knockout-2.2.0.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.iframe-transport.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
         <script lang="javascript">
             var AJAX_BASEURL = '/ajax/';
+
+            var WEB_SOCKET_SWF_LOCATION = "{{ url_for('static', filename='js/WebSocketMain.swf') }}";
+            var WEB_SOCKET_DEBUG = true;
         </script>
     </head>
     <body>
@@ -283,5 +278,15 @@
                 </div>
             </div>
         </div>
+
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="{{ url_for('static', filename='js/knockout-2.2.0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.iframe-transport.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
     </body>
 </html>

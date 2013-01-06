@@ -49,16 +49,16 @@ function ConnectionViewModel() {
         self.saveSettings(false);
     }
 
-    self.fromStateResponse = function(response) {
+    self.fromStateEvent = function(data) {
         self.previousIsOperational = self.isOperational();
 
-        self.isErrorOrClosed(response.closedOrError);
-        self.isOperational(response.operational);
-        self.isPaused(response.paused);
-        self.isPrinting(response.printing);
-        self.isError(response.error);
-        self.isReady(response.ready);
-        self.isLoading(response.loading);
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
 
         var connectionTab = $("#connection");
         if (self.previousIsOperational != self.isOperational()) {
@@ -139,39 +139,36 @@ function PrinterStateViewModel() {
             return "Pause";
     });
 
-    self.fromResponse = function(response) {
-        self.stateString(response.state);
-        self.isErrorOrClosed(response.closedOrError);
-        self.isOperational(response.operational);
-        self.isPaused(response.paused);
-        self.isPrinting(response.printing);
-        self.isError(response.error);
-        self.isReady(response.ready);
-        self.isLoading(response.loading);
+    self.fromStateEvent = function(data) {
+        self.stateString(data.currentState);
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
+    }
 
-        if (response.job) {
-            self.filename(response.job.filename);
-            self.filament(response.job.filament);
-            self.estimatedPrintTime(response.job.estimatedPrintTime);
-            self.printTime(response.job.printTime);
-            self.printTimeLeft(response.job.printTimeLeft);
-            self.currentLine(response.job.line ? response.job.line : 0);
-            self.totalLines(response.job.totalLines ? response.job.totalLines : 0);
-            self.currentHeight(response.job.currentZ);
-        } else {
-            if (response.loading && response.gcode) {
-                self.filename("Loading... (" + Math.round(response.gcode.progress * 100) + "%)");
-            } else {
-                self.filename(undefined);
-            }
-            self.filament(undefined);
-            self.estimatedPrintTime(undefined);
-            self.printTime(undefined);
-            self.printTimeLeft(undefined);
-            self.currentLine(undefined);
-            self.totalLines(undefined);
-            self.currentHeight(undefined);
-        }
+    self.fromJobEvent = function(data) {
+        self.filename(data.filename);
+        self.totalLines(data.lineCount);
+        self.estimatedPrintTime(data.estimatedPrintTime);
+        self.filament(data.filament);
+    }
+
+    self.fromProgressEvent = function(data) {
+        self.currentLine(data.currentLine);
+        self.printTime(data.printTime);
+        self.printTimeLeft(data.printTimeLeft);
+    }
+
+    self.fromZChangeEvent = function(data) {
+        self.currentHeight(data.currentZ);
+    }
+
+    self.fromGcodeEvent = function(data) {
+        self.filename("Loading... (" + Math.round(data.progress * 100) + "%)");
     }
 }
 var printerStateViewModel = new PrinterStateViewModel();
@@ -238,20 +235,22 @@ function TemperatureViewModel() {
         }
     }
 
-    self.fromResponse = function(response) {
-        self.temp(response.temp);
-        self.bedTemp(response.bedTemp);
-        self.targetTemp(response.targetTemp);
-        self.bedTargetTemp(response.bedTargetTemp);
-        self.temperatures = (response.temperatures);
+    self.fromStateEvent = function(data) {
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
+    }
 
-        self.isErrorOrClosed(response.closedOrError);
-        self.isOperational(response.operational);
-        self.isPaused(response.paused);
-        self.isPrinting(response.printing);
-        self.isError(response.error);
-        self.isReady(response.ready);
-        self.isLoading(response.loading);
+    self.fromTemperatureEvent = function(data) {
+        self.temp(data.temp);
+        self.bedTemp(data.bedTemp);
+        self.targetTemp(data.targetTemp);
+        self.bedTargetTemp(data.bedTargetTemp);
+        self.temperatures = (data.history);
 
         self.updatePlot();
     }
@@ -284,15 +283,16 @@ function SpeedViewModel() {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
-    self.fromResponse = function(response) {
-        self.isErrorOrClosed(response.closedOrError);
-        self.isOperational(response.operational);
-        self.isPaused(response.paused);
-        self.isPrinting(response.printing);
-        self.isError(response.error);
-        self.isReady(response.ready);
-        self.isLoading(response.loading);
+    self.fromStateEvent = function(data) {
+        self.isErrorOrClosed(data.closedOrError);
+        self.isOperational(data.operational);
+        self.isPaused(data.paused);
+        self.isPrinting(data.printing);
+        self.isError(data.error);
+        self.isReady(data.ready);
+        self.isLoading(data.loading);
 
+        /*
         if (response.feedrate) {
             self.outerWall(response.feedrate.outerWall);
             self.innerWall(response.feedrate.innerWall);
@@ -304,6 +304,7 @@ function SpeedViewModel() {
             self.fill(undefined);
             self.support(undefined);
         }
+        */
     }
 }
 var speedViewModel = new SpeedViewModel();
@@ -313,9 +314,26 @@ function TerminalViewModel() {
 
     self.log = undefined;
 
-    self.fromResponse = function(response) {
-        self.log = response.log;
+    self.isErrorOrClosed = ko.observable(undefined);
+    self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
 
+    self.fromStateEvent = function(data) {
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
+    }
+
+    self.fromLogEvent = function(data) {
+        self.log = data.history;
         self.updateOutput();
     }
 
@@ -333,10 +351,6 @@ function TerminalViewModel() {
         if (autoscroll) {
             container.scrollTop(container[0].scrollHeight - container.height())
         }
-    }
-
-    self.sendCommand = function(command) {
-
     }
 }
 var terminalViewModel = new TerminalViewModel();
@@ -413,7 +427,7 @@ function WebcamViewModel() {
             type: "GET",
             dataType: "json",
             success: self.fromResponse
-        })
+        });
     }
 
     self.fromResponse = function(response) {
@@ -427,14 +441,14 @@ function WebcamViewModel() {
         }
     }
 
-    self.fromStateResponse = function(response) {
-        self.isErrorOrClosed(response.closedOrError);
-        self.isOperational(response.operational);
-        self.isPaused(response.paused);
-        self.isPrinting(response.printing);
-        self.isError(response.error);
-        self.isReady(response.ready);
-        self.isLoading(response.loading);
+    self.fromStateEvent = function(data) {
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
     }
 
     self.removeFile = function() {
@@ -470,17 +484,38 @@ var webcamViewModel = new WebcamViewModel();
 function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel) {
     var self = this;
 
-    self.updateInterval = 500;
-    self.updateIntervalOnError = 10000;
-    self.includeTemperatures = true;
-    self.includeLogs = true;
-
     self.connectionViewModel = connectionViewModel;
     self.printerStateViewModel = printerStateViewModel;
     self.temperatureViewModel = temperatureViewModel;
     self.terminalViewModel = terminalViewModel;
     self.speedViewModel = speedViewModel;
     self.webcamViewModel = webcamViewModel;
+
+    self.socket = io.connect();
+
+    self.socket.on("state", function(data) {
+        self.printerStateViewModel.fromStateEvent(data);
+        self.connectionViewModel.fromStateEvent(data);
+        self.temperatureViewModel.fromStateEvent(data);
+        self.terminalViewModel.fromStateEvent(data);
+        self.speedViewModel.fromStateEvent(data);
+        self.webcamViewModel.fromStateEvent(data);
+    })
+    self.socket.on("temperature", function(data) {
+        self.temperatureViewModel.fromTemperatureEvent(data);
+    })
+    self.socket.on("jobData", function(data) {
+        self.printerStateViewModel.fromJobEvent(data);
+    })
+    self.socket.on("log", function(data) {
+        self.terminalViewModel.fromLogEvent(data);
+    })
+    self.socket.on("printProgress", function(data) {
+        self.printerStateViewModel.fromProgressEvent(data);
+    })
+    self.socket.on("zChange", function(data) {
+        self.printerStateViewModel.fromZChangeEvent(data);
+    })
 
     self.requestData = function() {
         var parameters = {};
@@ -496,8 +531,10 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
             dataType: "json",
             data: parameters,
             success: function(response) {
-                if ($("#offline_overlay").is(":visible"))
+                if ($("#offline_overlay").is(":visible")) {
                     $("#offline_overlay").hide();
+                    self.webcamViewModel.requestData();
+                }
 
                 self.printerStateViewModel.fromResponse(response);
                 self.connectionViewModel.fromStateResponse(response);
@@ -670,7 +707,7 @@ $(function() {
 
         //~~ startup commands
 
-        dataUpdater.requestData();
+        //dataUpdater.requestData();
         connectionViewModel.requestData();
         gcodeFilesViewModel.requestData();
         webcamViewModel.requestData();

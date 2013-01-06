@@ -22,62 +22,80 @@ def getConnectionOptions():
 		"baudratePreference": settings().getInt("serial", "baudrate")
 	}
 
-def _getFormattedTimeDelta(d):
-	hours = d.seconds // 3600
-	minutes = (d.seconds % 3600) // 60
-	seconds = d.seconds % 60
-	return "%02d:%02d:%02d" % (hours, minutes, seconds)
-
 class Printer():
 	def __init__(self):
 		# state
-		self.temps = {
+		self._temp = None
+		self._bedTemp = None
+		self._targetTemp = None
+		self._targetBedTemp = None
+		self._temps = {
 			"actual": [],
 			"target": [],
 			"actualBed": [],
 			"targetBed": []
 		}
-		self.messages = []
-		self.log = []
-		self.state = None
-		self.currentZ = None
-		self.progress = None
-		self.printTime = None
-		self.printTimeLeft = None
-		self.currentTemp = None
-		self.currentBedTemp = None
-		self.currentTargetTemp = None
-		self.currentBedTargetTemp = None
 
-		self.gcode = None
-		self.gcodeList = None
-		self.filename = None
+		self._latestMessage = None
+		self._messages = []
 
-		self.gcodeLoader = None
+		self._latestLog = None
+		self._log = []
 
-		self.feedrateModifierMapping = {"outerWall": "WALL-OUTER", "innerWall": "WALL_INNER", "fill": "FILL", "support": "SUPPORT"}
+		self._state = None
 
-		self.timelapse = None
+		self._currentZ = None
+
+		self._progress = None
+		self._printTime = None
+		self._printTimeLeft = None
+
+		# gcode handling
+		self._gcode = None
+		self._gcodeList = None
+		self._filename = None
+		self._gcodeLoader = None
+
+		# feedrate
+		self._feedrateModifierMapping = {"outerWall": "WALL-OUTER", "innerWall": "WALL_INNER", "fill": "FILL", "support": "SUPPORT"}
+
+		# timelapse
+		self._timelapse = None
 
 		# comm
-		self.comm = None
+		self._comm = None
+
+		# callbacks
+		self._callbacks = []
+
+	#~~ callback registration
+
+	def registerCallback(self, callback):
+		self._callbacks.append(callback)
+		self._sendInitialStateUpdate(callback)
+
+	def unregisterCallback(self, callback):
+		if callback in self._callbacks:
+			self._callbacks.remove(callback)
+
+	#~~ printer commands
 
 	def connect(self, port=None, baudrate=None):
 		"""
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
 		"""
-		if self.comm is not None:
-			self.comm.close()
-		self.comm = comm.MachineCom(port, baudrate, callbackObject=self)
+		if self._comm is not None:
+			self._comm.close()
+		self._comm = comm.MachineCom(port, baudrate, callbackObject=self)
 
 	def disconnect(self):
 		"""
 		 Closes the connection to the printer.
 		"""
-		if self.comm is not None:
-			self.comm.close()
-		self.comm = None
+		if self._comm is not None:
+			self._comm.close()
+		self._comm = None
 
 	def command(self, command):
 		"""
@@ -90,152 +108,272 @@ class Printer():
 		 Sends multiple gcode commands (provided as a list) to the printer.
 		"""
 		for command in commands:
-			self.comm.sendCommand(command)
+			self._comm.sendCommand(command)
 
 	def setFeedrateModifier(self, structure, percentage):
-		if (not self.feedrateModifierMapping.has_key(structure)) or percentage < 0:
+		if (not self._feedrateModifierMapping.has_key(structure)) or percentage < 0:
 			return
 
-		self.comm.setFeedrateModifier(self.feedrateModifierMapping[structure], percentage / 100.0)
+		self._comm.setFeedrateModifier(self._feedrateModifierMapping[structure], percentage / 100.0)
+
+	def loadGcode(self, file):
+		"""
+		 Loads the gcode from the given file as the new print job.
+		 Aborts if the printer is currently printing or another gcode file is currently being loaded.
+		"""
+		if (self._comm is not None and self._comm.isPrinting()) or (self._gcodeLoader is not None):
+			return
+
+		self._setJobData(None, None, None)
+
+		self._gcodeLoader = GcodeLoader(file, self)
+		self._gcodeLoader.start()
+
+	def startPrint(self):
+		"""
+		 Starts the currently loaded print job.
+		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
+		"""
+		if self._comm is None or not self._comm.isOperational():
+			return
+		if self._gcodeList is None:
+			return
+		if self._comm.isPrinting():
+			return
+
+		self._setCurrentZ(-1)
+		self._comm.printGCode(self._gcodeList)
+
+	def togglePausePrint(self):
+		"""
+		 Pause the current printjob.
+		"""
+		if self._comm is None:
+			return
+		self._comm.setPause(not self._comm.isPaused())
+
+	def cancelPrint(self, disableMotorsAndHeater=True):
+		"""
+		 Cancel the current printjob.
+		"""
+		if self._comm is None:
+			return
+		self._comm.cancelPrint()
+		if disableMotorsAndHeater:
+			self.commands(["M84", "M104 S0", "M140 S0"]) # disable motors, switch off heaters
+
+		# reset line, height, print time
+		self._setCurrentZ(None)
+		self._setProgressData(None, None, None)
+
+	#~~ state monitoring
 
 	def setTimelapse(self, timelapse):
-		if self.timelapse is not None and self.isPrinting():
-			self.timelapse.onPrintjobStopped()
-			del self.timelapse
-		self.timelapse = timelapse
+		if self._timelapse is not None and self.isPrinting():
+			self._timelapse.onPrintjobStopped()
+			del self._timelapse
+		self._timelapse = timelapse
 
 	def getTimelapse(self):
-		return self.timelapse
+		return self._timelapse
 
-	def mcLog(self, message):
+	def _setCurrentZ(self, currentZ):
+		self._currentZ = currentZ
+
+		for callback in self._callbacks:
+			try: callback.zChangeCB(self._currentZ)
+			except: pass
+
+	def _setState(self, state):
+		self._state = state
+
+		for callback in self._callbacks:
+			try: callback.stateChangeCB(self._state, self.getStateString(), self._getStateFlags())
+			except: pass
+
+	def _addLog(self, log):
 		"""
-		 Callback method for the comm object, called upon log output.
 		 Log line is stored in internal buffer, which is truncated to the last 300 lines.
 		"""
-		self.log.append(message)
-		self.log = self.log[-300:]
+		self._latestLog = log
+		self._log.append(log)
+		self._log = self._log[-300:]
 
-	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
+		for callback in self._callbacks:
+			try: callback.logChangeCB(log, self._log)
+			except: pass
+
+	def _addMessage(self, message):
+		self._latestMessage = message
+		self._messages.append(message)
+		self._messages = self._messages[-300:]
+
+		for callback in self._callbacks:
+			try: callback.messageChangeCB(message, self._messages)
+			except: pass
+
+	def _setProgressData(self, progress, printTime, printTimeLeft):
+		self._progress = progress
+		self._printTime = printTime
+		self._printTimeLeft = printTimeLeft
+
+		for callback in self._callbacks:
+			try: callback.progressChangeCB(self._progress, self._printTime, self._printTimeLeft)
+			except: pass
+
+
+	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		"""
-		 Callback method for the comm object, called upon receiving new temperature information.
 		 Temperature information (actual and target) for print head and print bed is stored in corresponding
 		 temperature history (including timestamp), history is truncated to 300 entries.
 		"""
 		currentTime = int(time.time() * 1000)
 
-		self.temps["actual"].append((currentTime, temp))
-		self.temps["actual"] = self.temps["actual"][-300:]
+		self._temps["actual"].append((currentTime, temp))
+		self._temps["actual"] = self._temps["actual"][-300:]
 
-		self.temps["target"].append((currentTime, targetTemp))
-		self.temps["target"] = self.temps["target"][-300:]
+		self._temps["target"].append((currentTime, targetTemp))
+		self._temps["target"] = self._temps["target"][-300:]
 
-		self.temps["actualBed"].append((currentTime, bedTemp))
-		self.temps["actualBed"] = self.temps["actualBed"][-300:]
+		self._temps["actualBed"].append((currentTime, bedTemp))
+		self._temps["actualBed"] = self._temps["actualBed"][-300:]
 
-		self.temps["targetBed"].append((currentTime, bedTargetTemp))
-		self.temps["targetBed"] = self.temps["targetBed"][-300:]
+		self._temps["targetBed"].append((currentTime, bedTargetTemp))
+		self._temps["targetBed"] = self._temps["targetBed"][-300:]
 
-		self.currentTemp = temp
-		self.currentTargetTemp = targetTemp
-		self.currentBedTemp = bedTemp
-		self.currentBedTargetTemp = bedTargetTemp
+		self._temp = temp
+		self._bedTemp = bedTemp
+		self._targetTemp = targetTemp
+		self._targetBedTemp = bedTargetTemp
+
+		for callback in self._callbacks:
+			try: callback.temperatureChangeCB(self._temp, self._bedTemp, self._targetTemp, self._targetBedTemp, self._temps)
+			except: pass
+
+	def _setJobData(self, filename, gcode, gcodeList):
+		self._filename = filename
+		self._gcode = gcode
+		self._gcodeList = gcodeList
+
+		for callback in self._callbacks:
+			try: callback.jobDataChangeCB(filename, len(gcodeList), self._gcode.totalMoveTimeMinute, self._gcode.extrusionAmount)
+			except: pass
+
+	def _sendInitialStateUpdate(self, callback):
+		lines = None
+		if self._gcodeList:
+			lines = len(self._gcodeList)
+
+		estimatedPrintTime = None
+		filament = None
+		if self._gcode:
+			estimatedPrintTime = self._gcode.totalMoveTimeMinute
+			filament = self._gcode.extrusionAmount
+
+		try:
+			callback.zChangeCB(self._currentZ)
+			callback.stateChangeCB(self._state, self.getStateString(), self._getStateFlags())
+			callback.logChangeCB(self._latestLog, self._log)
+			callback.messageChangeCB(self._latestMessage, self._messages)
+			callback.progressChangeCB(self._progress, self._printTime, self._printTimeLeft)
+			callback.temperatureChangeCB(self._temp, self._bedTemp, self._targetTemp, self._targetBedTemp, self._temps)
+			callback.jobDataChangeCB(self._filename, lines, estimatedPrintTime, filament)
+		except Exception, err:
+			import sys
+			sys.stderr.write("ERROR: %s\n" % str(err))
+			pass
+
+	def _getStateFlags(self):
+		return {
+			"operational": self.isOperational(),
+			"printing": self.isPrinting(),
+			"closedOrError": self.isClosedOrError(),
+			"error": self.isError(),
+			"loading": self.isLoading(),
+			"paused": self.isPaused(),
+			"ready": self.isReady()
+		}
+
+	#~~ callbacks triggered from self._comm
+
+	def mcLog(self, message):
+		"""
+		 Callback method for the comm object, called upon log output.
+		"""
+		self._addLog(message)
+
+	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
+		self._addTemperatureData(temp, bedTemp, targetTemp, bedTargetTemp)
 
 	def mcStateChange(self, state):
 		"""
 		 Callback method for the comm object, called if the connection state changes.
-		 New state is stored for retrieval by the frontend.
 		"""
-		oldState = self.state
-		self.state = state
+		oldState = self._state
 
-		if self.timelapse is not None:
-			if oldState == self.comm.STATE_PRINTING:
-				self.timelapse.onPrintjobStopped()
-			elif state == self.comm.STATE_PRINTING:
-				self.timelapse.onPrintjobStarted(self.filename)
+		if self._timelapse is not None:
+			if oldState == self._comm.STATE_PRINTING:
+				self._timelapse.onPrintjobStopped()
+			elif state == self._comm.STATE_PRINTING:
+				self._timelapse.onPrintjobStarted(self._filename)
+
+		self._setState(state)
+
 
 	def mcMessage(self, message):
 		"""
 		 Callback method for the comm object, called upon message exchanges via serial.
 		 Stores the message in the message buffer, truncates buffer to the last 300 lines.
 		"""
-		self.messages.append(message)
-		self.messages = self.messages[-300:]
+		self._addMessage(message)
 
 	def mcProgress(self, lineNr):
 		"""
 		 Callback method for the comm object, called upon any change in progress of the printjob.
 		 Triggers storage of new values for printTime, printTimeLeft and the current line.
 		"""
-		self.printTime = self.comm.getPrintTime()
-		self.printTimeLeft = self.comm.getPrintTimeRemainingEstimate()
-		oldProgress = self.progress;
-		self.progress = self.comm.getPrintPos()
-		if self.timelapse is not None:
-			self.timelapse.onPrintjobProgress(oldProgress, self.progress, int(round(self.progress * 100 / len(self.gcodeList))))
+		oldProgress = self._progress
+
+		if self._timelapse is not None:
+			try: self._timelapse.onPrintjobProgress(oldProgress, self._progress, int(round(self._progress * 100 / len(self._gcodeList))))
+			except: pass
+
+		self._setProgressData(self._comm.getPrintPos(), self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
+
 
 	def mcZChange(self, newZ):
 		"""
 		 Callback method for the comm object, called upon change of the z-layer.
 		"""
 		oldZ = self.currentZ
-		self.currentZ = newZ
-		if self.timelapse is not None:
-			self.timelapse.onZChange(oldZ, self.currentZ)
+		if self._timelapse is not None:
+			self._timelapse.onZChange(oldZ, newZ)
 
-	def onGcodeLoaded(self, gcodeLoader):
-		"""
-		 Callback method for the gcode loader, gets called when the gcode for the new printjob has finished loading.
-		 Takes care to set filename, gcode and commandlist from the gcode loader and reset print job progress.
-		"""
-		self.filename = gcodeLoader.filename
-		self.gcode = gcodeLoader.gcode
-		self.gcodeList = gcodeLoader.gcodeList
-		self.currentZ = None
-		self.progress = None
-		self.printTime = None
-		self.printTimeLeft = None
+		self._setCurrentZ(newZ)
 
-		self.gcodeLoader = None
+	#~~ callbacks triggered by gcodeLoader
 
-	def jobData(self):
-		"""
-		 Returns statistics regarding the currently loaded printjob, or None if no printjob is loaded.
-		"""
-		if self.gcode is not None:
-			formattedPrintTime = None
-			if (self.printTime):
-				formattedPrintTime = _getFormattedTimeDelta(datetime.timedelta(seconds=self.printTime))
+	def onGcodeLoadingProgress(self, progress):
+		for callback in self._callbacks:
+			try: callback.gcodeChangeCB(self._gcodeLoader._filename, progress)
+			except Exception, err:
+				import sys
+				sys.stderr.write("ERROR: %s\n" % str(err))
+				pass
 
-			formattedPrintTimeLeft = None
-			if (self.printTimeLeft):
-				formattedPrintTimeLeft = _getFormattedTimeDelta(datetime.timedelta(minutes=self.printTimeLeft))
+	def onGcodeLoaded(self):
+		self._setJobData(self._gcodeLoader._filename, self._gcodeLoader._gcode, self._gcodeLoader._gcodeList)
+		self._setCurrentZ(None)
+		self._setProgressData(None, None, None)
 
-			formattedPrintTimeEstimation = None
-			formattedFilament = None
-			if self.gcode:
-				if self.gcode.totalMoveTimeMinute:
-					formattedPrintTimeEstimation = _getFormattedTimeDelta(datetime.timedelta(minutes=self.gcode.totalMoveTimeMinute))
-				if self.gcode.extrusionAmount:
-					formattedFilament = "%.2fm" % (self.gcode.extrusionAmount / 1000)
+		self._gcodeLoader = None
 
-			formattedCurrentZ = None
-			if self.currentZ:
-				formattedCurrentZ = "%.2f mm" % (self.currentZ)
+		for callback in self._callbacks:
+			try: callback.stateChangeCB(self._state, self.getStateString(), self._getStateFlags())
+			except: pass
 
-			data = {
-				"filename": self.filename,
-				"currentZ": formattedCurrentZ,
-				"line": self.progress,
-				"totalLines": len(self.gcodeList),
-				"printTime": formattedPrintTime,
-				"printTimeLeft": formattedPrintTimeLeft,
-				"filament": formattedFilament,
-				"estimatedPrintTime": formattedPrintTimeEstimation
-			}
-		else:
-			data = None
-		return data
+	#~~ state reports
+
 
 	def gcodeState(self):
 		if self.gcodeLoader is not None:
@@ -247,12 +385,12 @@ class Printer():
 			return None
 
 	def feedrateState(self):
-		if self.comm is not None:
-			feedrateModifiers = self.comm.getFeedrateModifiers()
+		if self._comm is not None:
+			feedrateModifiers = self._comm.getFeedrateModifiers()
 			result = {}
-			for structure in self.feedrateModifierMapping.keys():
-				if (feedrateModifiers.has_key(self.feedrateModifierMapping[structure])):
-					result[structure] = int(round(feedrateModifiers[self.feedrateModifierMapping[structure]] * 100))
+			for structure in self._feedrateModifierMapping.keys():
+				if (feedrateModifiers.has_key(self._feedrateModifierMapping[structure])):
+					result[structure] = int(round(feedrateModifiers[self._feedrateModifierMapping[structure]] * 100))
 				else:
 					result[structure] = 100
 			return result
@@ -263,84 +401,31 @@ class Printer():
 		"""
 		 Returns a human readable string corresponding to the current communication state.
 		"""
-		if self.comm is None:
+		if self._comm is None:
 			return "Offline"
 		else:
-			return self.comm.getStateString()
+			return self._comm.getStateString()
 
 	def isClosedOrError(self):
-		return self.comm is None or self.comm.isClosedOrError()
+		return self._comm is None or self._comm.isClosedOrError()
 
 	def isOperational(self):
-		return self.comm is not None and self.comm.isOperational()
+		return self._comm is not None and self._comm.isOperational()
 
 	def isPrinting(self):
-		return self.comm is not None and self.comm.isPrinting()
+		return self._comm is not None and self._comm.isPrinting()
 
 	def isPaused(self):
-		return self.comm is not None and self.comm.isPaused()
+		return self._comm is not None and self._comm.isPaused()
 
 	def isError(self):
-		return self.comm is not None and self.comm.isError()
+		return self._comm is not None and self._comm.isError()
 
 	def isReady(self):
-		return self.gcodeLoader is None and self.gcodeList and len(self.gcodeList) > 0
+		return self._gcodeLoader is None and self._gcodeList and len(self._gcodeList) > 0
 
 	def isLoading(self):
-		return self.gcodeLoader is not None
-
-	def loadGcode(self, file):
-		"""
-		 Loads the gcode from the given file as the new print job.
-		 Aborts if the printer is currently printing or another gcode file is currently being loaded.
-		"""
-		if (self.comm is not None and self.comm.isPrinting()) or (self.gcodeLoader is not None):
-			return
-
-		self.filename = None
-		self.gcode = None
-		self.gcodeList = None
-
-		self.gcodeLoader = GcodeLoader(file, self)
-		self.gcodeLoader.start()
-
-	def startPrint(self):
-		"""
-		 Starts the currently loaded print job.
-		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
-		"""
-		if self.comm is None or not self.comm.isOperational():
-			return
-		if self.gcodeList is None:
-			return
-		if self.comm.isPrinting():
-			return
-		self.currentZ = -1
-		self.comm.printGCode(self.gcodeList)
-
-	def togglePausePrint(self):
-		"""
-		 Pause the current printjob.
-		"""
-		if self.comm is None:
-			return
-		self.comm.setPause(not self.comm.isPaused())
-
-	def cancelPrint(self, disableMotorsAndHeater=True):
-		"""
-		 Cancel the current printjob.
-		"""
-		if self.comm is None:
-			return
-		self.comm.cancelPrint()
-		if disableMotorsAndHeater:
-			self.commands(["M84", "M104 S0", "M140 S0"]) # disable motors, switch off heaters
-
-		# reset line, height, print time
-		self.currentZ = None
-		self.progress = None
-		self.printTime = None
-		self.printTimeLeft = None
+		return self._gcodeLoader is not None
 
 class GcodeLoader(Thread):
 	"""
@@ -352,19 +437,19 @@ class GcodeLoader(Thread):
 	def __init__(self, filename, printerCallback):
 		Thread.__init__(self);
 
-		self.printerCallback = printerCallback;
+		self._printerCallback = printerCallback;
 
-		self.filename = filename
-		self.progress = None
+		self._filename = filename
+		self._progress = None
 
-		self.gcode = None
-		self.gcodeList = None
+		self._gcode = None
+		self._gcodeList = None
 
 	def run(self):
 		#Send an initial M110 to reset the line counter to zero.
 		prevLineType = lineType = "CUSTOM"
 		gcodeList = ["M110"]
-		with open(self.filename, "r") as file:
+		with open(self._filename, "r") as file:
 			for line in file:
 				if line.startswith(";TYPE:"):
 					lineType = line[6:].strip()
@@ -378,13 +463,38 @@ class GcodeLoader(Thread):
 						gcodeList.append(line)
 					prevLineType = lineType
 
-		self.gcodeList = gcodeList
-		self.gcode = gcodeInterpreter.gcode()
-		self.gcode.progressCallback = self.onProgress
-		self.gcode.loadList(self.gcodeList)
+		self._gcodeList = gcodeList
+		self._gcode = gcodeInterpreter.gcode()
+		self._gcode.progressCallback = self.onProgress
+		self._gcode.loadList(self._gcodeList)
 
-		self.printerCallback.onGcodeLoaded(self)
+		self._printerCallback.onGcodeLoaded()
 
 	def onProgress(self, progress):
-		self.progress = progress
+		self._progress = progress
+		self._printerCallback.onGcodeLoadingProgress(progress)
 
+class PrinterCallback(object):
+	def zChangeCB(self, newZ):
+		pass
+
+	def progressChangeCB(self, currentLine, printTime, printTimeLeft):
+		pass
+
+	def temperatureChangeCB(self, temp, bedTemp, targetTemp, bedTargetTemp, history):
+		pass
+
+	def stateChangeCB(self, state, stateString, booleanStates):
+		pass
+
+	def logChangeCB(self, line, history):
+		pass
+
+	def messageChangeCB(self, line, history):
+		pass
+
+	def gcodeChangeCB(self, filename, progress):
+		pass
+
+	def jobDataChangeCB(self, filename, lines, estimatedPrintTime, filamentLength):
+		pass

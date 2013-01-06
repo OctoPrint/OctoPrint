@@ -122,3 +122,7 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     text-align: center;
     width: 20%;
 }
+
+#webcam_container {
+    width: 100%;
+}
