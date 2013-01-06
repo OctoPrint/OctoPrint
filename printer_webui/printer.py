@@ -4,7 +4,6 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import time
 from threading import Thread
-import datetime
 
 import printer_webui.util.comm as comm
 from printer_webui.util import gcodeInterpreter
@@ -67,6 +66,9 @@ class Printer():
 
 		# callbacks
 		self._callbacks = []
+
+		# callback throttling
+		self._lastProgressReport = None
 
 	#~~ callback registration
 
@@ -178,6 +180,7 @@ class Printer():
 		return self._timelapse
 
 	def _setCurrentZ(self, currentZ):
+		print("Setting currentZ=%s" % str(currentZ))
 		self._currentZ = currentZ
 
 		for callback in self._callbacks:
@@ -217,9 +220,13 @@ class Printer():
 		self._printTime = printTime
 		self._printTimeLeft = printTimeLeft
 
+		if self._lastProgressReport and self._lastProgressReport + 0.5 > time.time():
+			return
+
 		for callback in self._callbacks:
 			try: callback.progressChangeCB(self._progress, self._printTime, self._printTimeLeft)
 			except: pass
+		self._lastProgressReport = time.time()
 
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
@@ -345,7 +352,8 @@ class Printer():
 		"""
 		 Callback method for the comm object, called upon change of the z-layer.
 		"""
-		oldZ = self.currentZ
+		print("Got callback for z change: " + str(newZ))
+		oldZ = self._currentZ
 		if self._timelapse is not None:
 			self._timelapse.onZChange(oldZ, newZ)
 

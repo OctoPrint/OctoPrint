@@ -9,7 +9,6 @@ import tornadio2
 import os
 import fnmatch
 import datetime
-import time
 
 from printer_webui.printer import Printer, getConnectionOptions, PrinterCallback
 from printer_webui.settings import settings
@@ -34,10 +33,6 @@ def index():
 #~~ Printer state
 
 class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
-	def __init__(self, session, endpoint=None):
-		tornadio2.SocketConnection.__init__(self, session, endpoint)
-		self._lastProgressReport = None
-
 	def on_open(self, info):
 		printer.registerCallback(self)
 
@@ -52,9 +47,6 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 		self.emit("zChange", {"currentZ": formattedCurrentZ})
 
 	def progressChangeCB(self, currentLine, printTimeInSeconds, printTimeLeftInMinutes):
-		if self._lastProgressReport and time.time() + 0.5 < self._lastProgressReport:
-			return
-
 		formattedPrintTime = None
 		if (printTimeInSeconds):
 			formattedPrintTime = _getFormattedTimeDelta(datetime.timedelta(seconds=printTimeInSeconds))
@@ -63,7 +55,6 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 		if (printTimeLeftInMinutes):
 			formattedPrintTimeLeft = _getFormattedTimeDelta(datetime.timedelta(minutes=printTimeLeftInMinutes))
 
-		self._lastProgressReport = time.time()
 		self.emit("printProgress", {
 			"currentLine": currentLine,
 			"printTime": formattedPrintTime,
