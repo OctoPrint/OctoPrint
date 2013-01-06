@@ -34,9 +34,11 @@ def index():
 
 class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 	def on_open(self, info):
+		print("Opened socket")
 		printer.registerCallback(self)
 
 	def on_close(self):
+		print("Closed socket")
 		printer.unregisterCallback(self)
 
 	def zChangeCB(self, currentZ):
@@ -44,6 +46,7 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 		if currentZ:
 			formattedCurrentZ = "%.2f mm" % (currentZ)
 
+		print("Sending zChange...")
 		self.emit("zChange", {"currentZ": formattedCurrentZ})
 
 	def progressChangeCB(self, currentLine, printTimeInSeconds, printTimeLeftInMinutes):
@@ -55,31 +58,37 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 		if (printTimeLeftInMinutes):
 			formattedPrintTimeLeft = _getFormattedTimeDelta(datetime.timedelta(minutes=printTimeLeftInMinutes))
 
+		print("Sending progressChange...")
 		self.emit("printProgress", {
 			"currentLine": currentLine,
 			"printTime": formattedPrintTime,
 			"printTimeLeft": formattedPrintTimeLeft
 		})
 
-	def temperatureChangeCB(self, temp, bedTemp, targetTemp, bedTargetTemp, history):
+	def temperatureChangeCB(self, currentTime, temp, bedTemp, targetTemp, targetBedTemp):
+		print("Sending temperatureChange...")
 		self.emit("temperature", {
-			"currentTemp": temp,
-			"currentBedTemp": bedTemp,
-			"currentTargetTemp": targetTemp,
-			"currentTargetBedTemp": bedTargetTemp,
-			"history": history
+			"currentTime": currentTime,
+			"temp": temp,
+			"bedTemp": bedTemp,
+			"targetTemp": targetTemp,
+			"targetBedTemp": targetBedTemp
 		})
 
 	def stateChangeCB(self, state, stateString, booleanStates):
+		print("Sending stateChange...")
 		self.emit("state", {"currentState": stateString, "flags": booleanStates})
 
-	def logChangeCB(self, line, history):
-		self.emit("log", {"line": line, "history": history})
+	def logChangeCB(self, line):
+		print("Sending logChange...")
+		self.emit("log", {"line": line})
 
-	def messageChangeCB(self, line, history):
-		self.emit("message", {"line": line, "history": history})
+	def messageChangeCB(self, line):
+		print("Sending messageChange...")
+		self.emit("message", {"line": line})
 
 	def gcodeChangeCB(self, filename, progress):
+		print("Sending gcodeChange...")
 		self.emit("jobData", {"filename": "Loading... (%d%%)" % (round(progress * 100)), "lineCount": None, "estimatedPrintTime": None, "filament": None})
 
 	def jobDataChangeCB(self, filename, lines, estimatedPrintTimeInMinutes, filamentLengthInMillimeters):
@@ -95,7 +104,12 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 		if filename:
 			formattedFilename = filename.replace(UPLOAD_FOLDER + os.sep, "")
 
+		print("Sending jobDataChange...")
 		self.emit("jobData", {"filename": formattedFilename, "lineCount": lines, "estimatedPrintTime": formattedPrintTimeEstimation, "filament": formattedFilament})
+
+	def sendHistoryData(self, tempHistory, logHistory, messageHistory):
+		print("Sending history...")
+		self.emit("history", {"temperature": tempHistory, "log": logHistory, "message": messageHistory})
 
 #~~ Printer control
 

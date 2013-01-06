@@ -4,6 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import time
 from threading import Thread
+import Queue
 
 import printer_webui.util.comm as comm
 from printer_webui.util import gcodeInterpreter
@@ -66,11 +67,13 @@ class Printer():
 
 		# callbacks
 		self._callbacks = []
-
-		# callback throttling
 		self._lastProgressReport = None
 
-	#~~ callback registration
+		self._updateQueue = Queue.Queue()
+		self._updateQueueWorker = Thread(target=self._processQueue)
+		self._updateQueueWorker.start()
+
+	#~~ callback handling
 
 	def registerCallback(self, callback):
 		self._callbacks.append(callback)
@@ -80,7 +83,57 @@ class Printer():
 		if callback in self._callbacks:
 			self._callbacks.remove(callback)
 
-	#~~ printer commands
+	def _sendZChangeCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.zChangeCB(data["currentZ"])
+			except: pass
+
+	def _sendStateCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.stateChangeCB(data["state"], data["stateString"], data["stateFlags"])
+			except: pass
+
+	def _sendTemperatureCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.temperatureChangeCB(data["currentTime"], data["temp"], data["bedTemp"], data["targetTemp"], data["targetBedTemp"])
+			except: pass
+
+	def _sendLogCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.logChangeCB(data["log"])
+			except: pass
+
+	def _sendMessageCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.messageChangeCB(data["message"])
+			except: pass
+
+	def _sendProgressCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.progressChangeCB(data["progress"], data["printTime"], data["printTimeLeft"])
+			except: pass
+
+	def _sendJobCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.jobDataChangeCB(data["filename"], data["lines"], data["estimatedPrintTime"], data["filament"])
+			except: pass
+
+	def _sendGcodeCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.gcodeChangeCB(data["filename"], data["progress"])
+			except:
+				pass
+
+	def _addUpdate(self, target, data):
+		self._updateQueue.put((target, data))
+
+	def _processQueue(self):
+		while True:
+			(target, data) = self._updateQueue.get()
+			target(data)
+			self._updateQueue.task_done()
+
+#~~ printer commands
 
 	def connect(self, port=None, baudrate=None):
 		"""
@@ -180,19 +233,12 @@ class Printer():
 		return self._timelapse
 
 	def _setCurrentZ(self, currentZ):
-		print("Setting currentZ=%s" % str(currentZ))
 		self._currentZ = currentZ
-
-		for callback in self._callbacks:
-			try: callback.zChangeCB(self._currentZ)
-			except: pass
+		self._addUpdate(self._sendZChangeCallbacks, {"currentZ": self._currentZ})
 
 	def _setState(self, state):
 		self._state = state
-
-		for callback in self._callbacks:
-			try: callback.stateChangeCB(self._state, self.getStateString(), self._getStateFlags())
-			except: pass
+		self._addUpdate(self._sendStateCallbacks, {"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
 
 	def _addLog(self, log):
 		"""
@@ -201,33 +247,22 @@ class Printer():
 		self._latestLog = log
 		self._log.append(log)
 		self._log = self._log[-300:]
-
-		for callback in self._callbacks:
-			try: callback.logChangeCB(log, self._log)
-			except: pass
+		self._addUpdate(self._sendLogCallbacks, {"log": self._latestLog})
 
 	def _addMessage(self, message):
 		self._latestMessage = message
 		self._messages.append(message)
 		self._messages = self._messages[-300:]
-
-		for callback in self._callbacks:
-			try: callback.messageChangeCB(message, self._messages)
-			except: pass
+		self._addUpdate(self._sendLogCallbacks, {"message": self._latestLog})
 
 	def _setProgressData(self, progress, printTime, printTimeLeft):
 		self._progress = progress
 		self._printTime = printTime
 		self._printTimeLeft = printTimeLeft
 
-		if self._lastProgressReport and self._lastProgressReport + 0.5 > time.time():
-			return
-
-		for callback in self._callbacks:
-			try: callback.progressChangeCB(self._progress, self._printTime, self._printTimeLeft)
-			except: pass
-		self._lastProgressReport = time.time()
-
+		#if not self._lastProgressReport or self._lastProgressReport + 0.5 <= time.time():
+		self._addUpdate(self._sendProgressCallbacks, {"progress": self._progress, "printTime": self._printTime, "printTimeLeft": self._printTimeLeft})
+		#	self._lastProgressReport = time.time()
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		"""
@@ -253,18 +288,24 @@ class Printer():
 		self._targetTemp = targetTemp
 		self._targetBedTemp = bedTargetTemp
 
-		for callback in self._callbacks:
-			try: callback.temperatureChangeCB(self._temp, self._bedTemp, self._targetTemp, self._targetBedTemp, self._temps)
-			except: pass
+		self._addUpdate(self._sendTemperatureCallbacks, {"currentTime": currentTime, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp, "history": self._temps})
 
 	def _setJobData(self, filename, gcode, gcodeList):
 		self._filename = filename
 		self._gcode = gcode
 		self._gcodeList = gcodeList
 
-		for callback in self._callbacks:
-			try: callback.jobDataChangeCB(filename, len(gcodeList), self._gcode.totalMoveTimeMinute, self._gcode.extrusionAmount)
-			except: pass
+		lines = None
+		if self._gcodeList:
+			lines = len(self._gcodeList)
+
+		estimatedPrintTime = None
+		filament = None
+		if self._gcode:
+			estimatedPrintTime = self._gcode.totalMoveTimeMinute
+			filament = self._gcode.extrusionAmount
+
+		self._addUpdate(self._sendJobCallbacks, {"filename": self._filename, "lines": lines, "estimatedPrintTime": estimatedPrintTime, "filament": filament})
 
 	def _sendInitialStateUpdate(self, callback):
 		lines = None
@@ -280,11 +321,12 @@ class Printer():
 		try:
 			callback.zChangeCB(self._currentZ)
 			callback.stateChangeCB(self._state, self.getStateString(), self._getStateFlags())
-			callback.logChangeCB(self._latestLog, self._log)
-			callback.messageChangeCB(self._latestMessage, self._messages)
+			callback.logChangeCB(self._latestLog)
+			callback.messageChangeCB(self._latestMessage)
 			callback.progressChangeCB(self._progress, self._printTime, self._printTimeLeft)
-			callback.temperatureChangeCB(self._temp, self._bedTemp, self._targetTemp, self._targetBedTemp, self._temps)
+			callback.temperatureChangeCB(time.time() * 1000, self._temp, self._bedTemp, self._targetTemp, self._targetBedTemp)
 			callback.jobDataChangeCB(self._filename, lines, estimatedPrintTime, filament)
+			callback.sendHistoryData(self._temps, self._log, self._messages)
 		except Exception, err:
 			import sys
 			sys.stderr.write("ERROR: %s\n" % str(err))
@@ -347,12 +389,10 @@ class Printer():
 
 		self._setProgressData(self._comm.getPrintPos(), self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
 
-
 	def mcZChange(self, newZ):
 		"""
 		 Callback method for the comm object, called upon change of the z-layer.
 		"""
-		print("Got callback for z change: " + str(newZ))
 		oldZ = self._currentZ
 		if self._timelapse is not None:
 			self._timelapse.onZChange(oldZ, newZ)
@@ -362,23 +402,15 @@ class Printer():
 	#~~ callbacks triggered by gcodeLoader
 
 	def onGcodeLoadingProgress(self, progress):
-		for callback in self._callbacks:
-			try: callback.gcodeChangeCB(self._gcodeLoader._filename, progress)
-			except Exception, err:
-				import sys
-				sys.stderr.write("ERROR: %s\n" % str(err))
-				pass
+		self._addUpdate(self._sendGcodeCallbacks, {"filename": self._gcodeLoader._filename, "progress": progress})
 
 	def onGcodeLoaded(self):
 		self._setJobData(self._gcodeLoader._filename, self._gcodeLoader._gcode, self._gcodeLoader._gcodeList)
 		self._setCurrentZ(None)
 		self._setProgressData(None, None, None)
-
 		self._gcodeLoader = None
 
-		for callback in self._callbacks:
-			try: callback.stateChangeCB(self._state, self.getStateString(), self._getStateFlags())
-			except: pass
+		self._addUpdate(self._sendStateCallbacks, {"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
 
 	#~~ state reports
 
@@ -443,9 +475,9 @@ class GcodeLoader(Thread):
 	"""
 
 	def __init__(self, filename, printerCallback):
-		Thread.__init__(self);
+		Thread.__init__(self)
 
-		self._printerCallback = printerCallback;
+		self._printerCallback = printerCallback
 
 		self._filename = filename
 		self._progress = None
@@ -489,20 +521,23 @@ class PrinterCallback(object):
 	def progressChangeCB(self, currentLine, printTime, printTimeLeft):
 		pass
 
-	def temperatureChangeCB(self, temp, bedTemp, targetTemp, bedTargetTemp, history):
+	def temperatureChangeCB(self, currentTime, temp, bedTemp, targetTemp, bedTargetTemp):
 		pass
 
 	def stateChangeCB(self, state, stateString, booleanStates):
 		pass
 
-	def logChangeCB(self, line, history):
+	def logChangeCB(self, line):
 		pass
 
-	def messageChangeCB(self, line, history):
+	def messageChangeCB(self, line):
 		pass
 
 	def gcodeChangeCB(self, filename, progress):
 		pass
 
 	def jobDataChangeCB(self, filename, lines, estimatedPrintTime, filamentLength):
+		pass
+
+	def sendHistoryData(self, tempHistory, logHistory, messageHistory):
 		pass

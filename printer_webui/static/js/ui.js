@@ -250,8 +250,34 @@ function TemperatureViewModel() {
         self.bedTemp(data.bedTemp);
         self.targetTemp(data.targetTemp);
         self.bedTargetTemp(data.bedTargetTemp);
-        self.temperatures = (data.history);
 
+        // plot
+        if (!self.temperatures)
+            self.temperatures = [];
+        if (!self.temperatures.actual)
+            self.temperatures.actual = [];
+        if (!self.temperatures.target)
+            self.temperatures.target = [];
+        if (!self.temperatures.actualBed)
+            self.temperatures.actualBed = [];
+        if (!self.temperatures.targetBed)
+            self.temperatures.targetBed = [];
+
+        self.temperatures.actual.push([data.currentTime, data.temp])
+        self.temperatures.target.push([data.currentTime, data.targetTemp])
+        self.temperatures.actualBed.push([data.currentTime, data.bedTemp])
+        self.temperatures.targetBed.push([data.currentTime, data.bedTargetTemp])
+
+        self.temperatures.actual = self.temperatures.actual.slice(-300);
+        self.temperatures.target = self.temperatures.target.slice(-300);
+        self.temperatures.actualBed = self.temperatures.actualBed.slice(-300);
+        self.temperatures.targetBed = self.temperatures.targetBed.slice(-300);
+
+        self.updatePlot();
+    }
+
+    self.fromHistoryEvent = function(data) {
+        self.temperatures = data;
         self.updatePlot();
     }
 
@@ -312,7 +338,7 @@ var speedViewModel = new SpeedViewModel();
 function TerminalViewModel() {
     var self = this;
 
-    self.log = undefined;
+    self.log = [];
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -333,11 +359,21 @@ function TerminalViewModel() {
     }
 
     self.fromLogEvent = function(data) {
-        self.log = data.history;
+        if (!self.log)
+            self.log = []
+        self.log.push(data.log)
+        self.updateOutput();
+    }
+
+    self.fromHistoryEvent = function(data) {
+        self.log = data;
         self.updateOutput();
     }
 
     self.updateOutput = function() {
+        if (!self.log)
+            return;
+
         var output = "";
         for (var i = 0; i < self.log.length; i++) {
             output += self.log[i] + "\n";
@@ -515,6 +551,10 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     })
     self.socket.on("zChange", function(data) {
         self.printerStateViewModel.fromZChangeEvent(data);
+    })
+    self.socket.on("history", function(data) {
+        self.temperatureViewModel.fromHistoryEvent(data.temperature)
+        self.terminalViewModel.fromHistoryEvent(data.log)
     })
 
     self.requestData = function() {
