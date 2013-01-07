@@ -469,7 +469,7 @@ class MachineCom(object):
 				pass
 		if 'M140' in cmd or 'M190' in cmd:
 			try:
-				self._bedTargetTemp = float(re.search('S([0-9]+)').group(1))
+				self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 			except:
 				pass
 		self._log('Send: %s' % (cmd))
