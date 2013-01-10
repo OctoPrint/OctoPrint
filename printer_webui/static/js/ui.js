@@ -49,7 +49,11 @@ function ConnectionViewModel() {
         self.saveSettings(false);
     }
 
-    self.fromStateEvent = function(data) {
+    self.fromCurrentData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self._processStateData = function(data) {
         self.previousIsOperational = self.isOperational();
 
         self.isErrorOrClosed(data.flags.closedOrError);
@@ -139,8 +143,20 @@ function PrinterStateViewModel() {
             return "Pause";
     });
 
-    self.fromStateEvent = function(data) {
-        self.stateString(data.currentState);
+    self.fromCurrentData = function(data) {
+        self._processStateData(data.state);
+        self._processJobData(data.job);
+        self._processGcodeData(data.gcode);
+        self._processProgressData(data.progress);
+        self._processZData(data.currentZ);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._processStateData(data.state)
+    }
+
+    self._processStateData = function(data) {
+        self.stateString(data.stateString);
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);
@@ -150,31 +166,27 @@ function PrinterStateViewModel() {
         self.isLoading(data.flags.loading);
     }
 
-    self.fromJobEvent = function(data) {
+    self._processJobData = function(data) {
         self.filename(data.filename);
         self.totalLines(data.lineCount);
         self.estimatedPrintTime(data.estimatedPrintTime);
         self.filament(data.filament);
     }
 
-    self.fromGcodeEvent = function(data) {
+    self._processGcodeData = function(data) {
         if (self.isLoading()) {
-            self.filename("Loading... (" + Math.round(data.progress * 100) + ")");
+            self.filename("Loading... (" + Math.round(data.progress * 100) + "%)");
         }
     }
 
-    self.fromProgressEvent = function(data) {
+    self._processProgressData = function(data) {
         self.currentLine(data.currentLine);
         self.printTime(data.printTime);
         self.printTimeLeft(data.printTimeLeft);
     }
 
-    self.fromZChangeEvent = function(data) {
+    self._processZData = function(data) {
         self.currentHeight(data.currentZ);
-    }
-
-    self.fromGcodeEvent = function(data) {
-        self.filename("Loading... (" + Math.round(data.progress * 100) + "%)");
     }
 }
 var printerStateViewModel = new PrinterStateViewModel();
@@ -241,7 +253,17 @@ function TemperatureViewModel() {
         }
     }
 
-    self.fromStateEvent = function(data) {
+    self.fromCurrentData = function(data) {
+        self._processStateData(data.state);
+        self._processTemperatureUpdateData(data.temperatures);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._processStateData(data.state);
+        self._processTemperatureHistoryData(data.temperatureHistory);
+    }
+
+    self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);
@@ -251,7 +273,7 @@ function TemperatureViewModel() {
         self.isLoading(data.flags.loading);
     }
 
-    self.fromTemperatureEvent = function(data) {
+    self._processTemperatureUpdateData = function(data) {
         if (data.length == 0)
             return;
 
@@ -282,15 +304,15 @@ function TemperatureViewModel() {
         self.temperatures.actualBed = self.temperatures.actualBed.slice(-300);
         self.temperatures.targetBed = self.temperatures.targetBed.slice(-300);
 
-        self.updatePlot();
+        self._updatePlot();
     }
 
-    self.fromHistoryEvent = function(data) {
+    self._processTemperatureHistoryData = function(data) {
         self.temperatures = data;
-        self.updatePlot();
+        self._updatePlot();
     }
 
-    self.updatePlot = function() {
+    self._updatePlot = function() {
         var data = [
             {label: "Actual", color: "#FF4040", data: self.temperatures.actual},
             {label: "Target", color: "#FFA0A0", data: self.temperatures.target},
@@ -556,27 +578,15 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.speedViewModel.fromStateEvent(data);
         self.webcamViewModel.fromStateEvent(data);
     })
-    self.socket.on("temperatures", function(data) {
-        self.temperatureViewModel.fromTemperatureEvent(data);
-    })
-    self.socket.on("jobData", function(data) {
-        self.printerStateViewModel.fromJobEvent(data);
-    })
-    self.socket.on("gcode", function(data) {
-        self.printerStateViewModel.fromGcodeEvent(data);
-    })
-    self.socket.on("logs", function(data) {
-        self.terminalViewModel.fromLogEvent(data);
-    })
-    self.socket.on("printProgress", function(data) {
-        self.printerStateViewModel.fromProgressEvent(data);
-    })
-    self.socket.on("zChange", function(data) {
-        self.printerStateViewModel.fromZChangeEvent(data);
-    })
     self.socket.on("history", function(data) {
-        self.temperatureViewModel.fromHistoryEvent(data.temperature)
-        self.terminalViewModel.fromHistoryEvent(data.log)
+        self.printerStateViewModel.fromHistoryData(data);
+        self.temperatureViewModel.fromHistoryData(data);
+        //self.terminalViewModel.fromHistoryData(data);
+    })
+    self.socket.on("current", function(data) {
+        self.connectionViewModel.fromCurrentData(data);
+        self.printerStateViewModel.fromCurrentData(data);
+        self.temperatureViewModel.fromCurrentData(data);
     })
 }
 var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel);

@@ -3,9 +3,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import time
-from threading import Thread
-import Queue
-import collections
+from threading import Thread, Event, Lock
 
 import printer_webui.util.comm as comm
 from printer_webui.util import gcodeInterpreter
@@ -36,12 +34,15 @@ class Printer():
 			"actualBed": [],
 			"targetBed": []
 		}
+		self._tempBacklog = []
 
 		self._latestMessage = None
 		self._messages = []
+		self._messageBacklog = []
 
 		self._latestLog = None
 		self._log = []
+		self._logBacklog = []
 
 		self._state = None
 
@@ -70,18 +71,10 @@ class Printer():
 		self._callbacks = []
 		self._lastProgressReport = None
 
-		self._updateQueue = MessageQueue()
-		self._updateQueue.registerMessageType("zchange", self._sendZChangeCallbacks, overwrite=True)
-		self._updateQueue.registerMessageType("state", self._sendStateCallbacks)
-		self._updateQueue.registerMessageType("temperature", self._sendTemperatureCallbacks, mergeFunction=(lambda x,y: x + y))
-		self._updateQueue.registerMessageType("log", self._sendLogCallbacks, mergeFunction=(lambda x, y: x + y))
-		self._updateQueue.registerMessageType("message", self._sendMessageCallbacks, mergeFunction=(lambda x, y: x + y))
-		self._updateQueue.registerMessageType("progress", self._sendProgressCallbacks, overwrite=True)
-		self._updateQueue.registerMessageType("job", self._sendJobCallbacks, throttling=0.5)
-		self._updateQueue.registerMessageType("gcode", self._sendGcodeCallbacks, throttling=0.5)
-
-		self._updateQueueWorker = Thread(target=self._processQueue)
-		self._updateQueueWorker.start()
+		self._stateMonitor = StateMonitor(ratelimit=0.5, updateCallback=self._sendCurrentDataCallbacks)
+		self._stateMonitor.reset(
+			state={"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()}
+		)
 
 	#~~ callback handling
 
@@ -93,52 +86,10 @@ class Printer():
 		if callback in self._callbacks:
 			self._callbacks.remove(callback)
 
-	def _sendZChangeCallbacks(self, data):
+	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
-			try: callback.zChangeCB(data["currentZ"])
+			try: callback.sendCurrentData(data)
 			except: pass
-
-	def _sendStateCallbacks(self, data):
-		for callback in self._callbacks:
-			try: callback.stateChangeCB(data["state"], data["stateString"], data["stateFlags"])
-			except: pass
-
-	def _sendTemperatureCallbacks(self, data):
-		for callback in self._callbacks:
-			try: callback.temperatureChangeCB(data)
-			except: pass
-
-	def _sendLogCallbacks(self, data):
-		for callback in self._callbacks:
-			try: callback.logChangeCB(data)
-			except: pass
-
-	def _sendMessageCallbacks(self, data):
-		for callback in self._callbacks:
-			try: callback.messageChangeCB(data)
-			except: pass
-
-	def _sendProgressCallbacks(self, data):
-		for callback in self._callbacks:
-			try: callback.progressChangeCB(data["progress"], data["printTime"], data["printTimeLeft"])
-			except: pass
-
-	def _sendJobCallbacks(self, data):
-		for callback in self._callbacks:
-			try: callback.jobDataChangeCB(data["filename"], data["lines"], data["estimatedPrintTime"], data["filament"])
-			except: pass
-
-	def _sendGcodeCallbacks(self, data):
-		for callback in self._callbacks:
-			try: callback.gcodeChangeCB(data["filename"], data["progress"])
-			except:
-				pass
-
-	def _processQueue(self):
-		while True:
-			(target, data) = self._updateQueue.read()
-			target(data)
-			self._updateQueue.task_done()
 
 #~~ printer commands
 
@@ -241,41 +192,29 @@ class Printer():
 
 	def _setCurrentZ(self, currentZ):
 		self._currentZ = currentZ
-		self._updateQueue.message("zchange", {"currentZ": self._currentZ})
+		self._stateMonitor.setCurrentZ(self._currentZ)
 
 	def _setState(self, state):
 		self._state = state
-		self._updateQueue.message("state", {"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
 
 	def _addLog(self, log):
-		"""
-		 Log line is stored in internal buffer, which is truncated to the last 300 lines.
-		"""
-		self._latestLog = log
 		self._log.append(log)
 		self._log = self._log[-300:]
-		self._updateQueue.message("log", [self._latestLog])
+		self._stateMonitor.addLog(log)
 
 	def _addMessage(self, message):
-		self._latestMessage = message
 		self._messages.append(message)
 		self._messages = self._messages[-300:]
-		self._updateQueue.message("message", [self._latestLog])
+		self._stateMonitor.addMessage(message)
 
 	def _setProgressData(self, progress, printTime, printTimeLeft):
 		self._progress = progress
 		self._printTime = printTime
 		self._printTimeLeft = printTimeLeft
-
-		#if not self._lastProgressReport or self._lastProgressReport + 0.5 <= time.time():
-		self._updateQueue.message("progress", {"progress": self._progress, "printTime": self._printTime, "printTimeLeft": self._printTimeLeft})
-		#	self._lastProgressReport = time.time()
+		self._stateMonitor.setProgress({"progress": self._progress, "printTime": self._printTime, "printTimeLeft": self._printTimeLeft})
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		"""
-		 Temperature information (actual and target) for print head and print bed is stored in corresponding
-		 temperature history (including timestamp), history is truncated to 300 entries.
-		"""
 		currentTime = int(time.time() * 1000)
 
 		self._temps["actual"].append((currentTime, temp))
@@ -295,7 +234,7 @@ class Printer():
 		self._targetTemp = targetTemp
 		self._targetBedTemp = bedTargetTemp
 
-		self._updateQueue.message("temperature", [{"currentTime": currentTime, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp, "history": self._temps}])
+		self._stateMonitor.addTemperature({"currentTime": currentTime, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp})
 
 	def _setJobData(self, filename, gcode, gcodeList):
 		self._filename = filename
@@ -312,7 +251,7 @@ class Printer():
 			estimatedPrintTime = self._gcode.totalMoveTimeMinute
 			filament = self._gcode.extrusionAmount
 
-		self._updateQueue.message("job", {"filename": self._filename, "lines": lines, "estimatedPrintTime": estimatedPrintTime, "filament": filament})
+		self._stateMonitor.setJobData({"filename": self._filename, "lines": lines, "estimatedPrintTime": estimatedPrintTime, "filament": filament})
 
 	def _sendInitialStateUpdate(self, callback):
 		lines = None
@@ -326,12 +265,13 @@ class Printer():
 			filament = self._gcode.extrusionAmount
 
 		try:
-			callback.zChangeCB(self._currentZ)
-			callback.stateChangeCB(self._state, self.getStateString(), self._getStateFlags())
-			callback.progressChangeCB(self._progress, self._printTime, self._printTimeLeft)
-			callback.temperatureChangeCB([{"currentTime": time.time() * 1000, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "bedTargetTemp": self._targetBedTemp}])
-			callback.jobDataChangeCB(self._filename, lines, estimatedPrintTime, filament)
-			callback.sendHistoryData(self._temps, self._log, self._messages)
+			data = self._stateMonitor.getCurrentData()
+			data.update({
+				"temperatureHistory": self._temps,
+				"logHistory": self._log,
+				"messageHistory": self._messages
+			})
+			callback.sendHistoryData(data)
 		except Exception, err:
 			import sys
 			sys.stderr.write("ERROR: %s\n" % str(err))
@@ -407,7 +347,7 @@ class Printer():
 	#~~ callbacks triggered by gcodeLoader
 
 	def onGcodeLoadingProgress(self, progress):
-		self._updateQueue.message("gcode", {"filename": self._gcodeLoader._filename, "progress": progress})
+		self._stateMonitor.setGcodeData({"filename": self._gcodeLoader._filename, "progress": progress})
 
 	def onGcodeLoaded(self):
 		self._setJobData(self._gcodeLoader._filename, self._gcodeLoader._gcode, self._gcodeLoader._gcodeList)
@@ -415,19 +355,9 @@ class Printer():
 		self._setProgressData(None, None, None)
 		self._gcodeLoader = None
 
-		self._updateQueue.message("state", {"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
 
 	#~~ state reports
-
-
-	def gcodeState(self):
-		if self.gcodeLoader is not None:
-			return {
-				"filename": self.gcodeLoader.filename,
-				"progress": self.gcodeLoader.progress
-			}
-		else:
-			return None
 
 	def feedrateState(self):
 		if self._comm is not None:
@@ -520,86 +450,109 @@ class GcodeLoader(Thread):
 		self._printerCallback.onGcodeLoadingProgress(progress)
 
 class PrinterCallback(object):
-	def zChangeCB(self, newZ):
+	def sendCurrentData(self, data):
 		pass
 
-	def progressChangeCB(self, currentLine, printTime, printTimeLeft):
+	def sendHistoryData(self, data):
 		pass
 
-	def temperatureChangeCB(self, currentTime, temp, bedTemp, targetTemp, bedTargetTemp):
-		pass
+class StateMonitor(object):
+	def __init__(self, ratelimit, updateCallback):
+		self._ratelimit = ratelimit
+		self._updateCallback = updateCallback
 
-	def stateChangeCB(self, state, stateString, booleanStates):
-		pass
+		self._state = None
+		self._jobData = None
+		self._gcodeData = None
+		self._currentZ = None
+		self._progress = None
+		self._logBacklog = []
+		self._logHistory = []
+		self._messageBacklog = []
+		self._messageHistory = []
+		self._temperatureBacklog = []
+		self._temperatureHistory = []
 
-	def logChangeCB(self, line):
-		pass
+		self._temperatureBacklogMutex = Lock()
+		self._logBacklogMutex = Lock()
+		self._messageBacklogMutex = Lock()
+		self._changeEvent = Event()
 
-	def messageChangeCB(self, line):
-		pass
+		self._lastUpdate = time.time()
+		self._worker = Thread(target=self._work)
+		self._worker.start()
 
-	def gcodeChangeCB(self, filename, progress):
-		pass
+	def reset(self, state=None):
+		self.setState(state)
 
-	def jobDataChangeCB(self, filename, lines, estimatedPrintTime, filamentLength):
-		pass
+	def addTemperature(self, temperature):
+		with self._temperatureBacklogMutex:
+			self._temperatureBacklog.append(temperature)
+		self._changeEvent.set()
 
-	def sendHistoryData(self, tempHistory, logHistory, messageHistory):
-		pass
+	def addLog(self, log):
+		with self._logBacklogMutex:
+			self._logBacklog.append(log)
+		self._changeEvent.set()
 
+	def addMessage(self, message):
+		with self._messageBacklogMutex:
+			self._messageBacklog.append(message)
+		self._changeEvent.set()
 
-class MessageQueue(Queue.Queue):
-	def __init__(self, maxsize=0):
-		Queue.Queue.__init__(self, maxsize)
-		self._messageTypes = dict()
-		self._lastSends = dict()
+	def setCurrentZ(self, currentZ):
+		self._currentZ = currentZ
+		self._changeEvent.set()
 
-	def registerMessageType(self, messageType, callback, overwrite=False, throttling=None, mergeFunction=None):
-		self._messageTypes[messageType] = (callback, overwrite, throttling, mergeFunction)
-		if throttling is not None:
-			self._lastSends[messageType] = time.time()
+	def setState(self, state):
+		self._state = state
+		self._changeEvent.set()
 
-	def message(self, messageType, data, timestamp=time.time()):
-		if not self._messageTypes.has_key(messageType):
-			return
+	def setJobData(self, jobData):
+		self._jobData = jobData
+		self._changeEvent.set()
 
-		(callback, overwrite, throttling, merger) = self._messageTypes[messageType]
-		updated = False
-		try:
-			self.mutex.acquire()
-			if overwrite or throttling is not None or merger is not None:
-				for item in self.queue:
-					if item.type == messageType and ((throttling is not None and item.timestamp + throttling < time.time()) or overwrite or merger is not None):
-						if merger is not None:
-							item.payload = merger(item.payload, data)
-						else:
-							item.payload = data
-						updated = True
-						break
-		finally:
-			self.mutex.release()
+	def setGcodeData(self, gcodeData):
+		self._gcodeData = gcodeData
+		self._changeEvent.set()
 
-		if not updated:
-			item = MessageQueueItem(messageType, timestamp, data)
-			self.put(item)
+	def setProgress(self, progress):
+		self._progress = progress
+		self._changeEvent.set()
 
-	def read(self):
-		item = None
-		while item is None:
-			item = self.get()
-			if not self._messageTypes.has_key(item.type):
-				self.task_done()
-				item = None
-			(callback, overwrite, throttling, merger) = self._messageTypes[item.type]
-			if throttling and self._lastSends[item.type] + throttling > time.time():
-				self.message(item.type, item.payload, item.timestamp)
-				item = None
+	def _work(self):
+		while True:
+			self._changeEvent.wait()
+			additionalWaitTime = time.time() + self._ratelimit - self._lastUpdate
+			if additionalWaitTime > 0:
+				time.sleep(additionalWaitTime)
 
-		self._lastSends[item.type] = time.time()
-		return (callback, item.payload)
+			with self._temperatureBacklogMutex:
+				temperatures = self._temperatureBacklog
+				self._temperatureBacklog = []
 
-class MessageQueueItem(object):
-	def __init__(self, type, timestamp, payload):
-		self.type = type
-		self.timestamp = timestamp
-		self.payload = payload
+			with self._logBacklogMutex:
+				logs = self._logBacklog
+				self._logBacklog = []
+
+			with self._messageBacklogMutex:
+				messages = self._messageBacklog
+				self._messageBacklog = []
+
+			data = self.getCurrentData()
+			data.update({
+				"temperatures": temperatures,
+				"logs": logs,
+				"messages": messages
+			})
+			self._updateCallback(data)
+			self._lastUpdate = time.time()
+			self._changeEvent.clear()
+
+	def getCurrentData(self):
+		return {
+			"state": self._state,
+			"job": self._jobData,
+			"gcode": self._gcodeData,
+			"currentZ": self._currentZ
+		}
