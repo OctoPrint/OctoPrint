@@ -68,31 +68,25 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 			"printTimeLeft": formattedPrintTimeLeft
 		})
 
-	def temperatureChangeCB(self, currentTime, temp, bedTemp, targetTemp, targetBedTemp):
+	def temperatureChangeCB(self, temperatures):
 		print("Sending temperatureChange...")
-		self.emit("temperature", {
-			"currentTime": currentTime,
-			"temp": temp,
-			"bedTemp": bedTemp,
-			"targetTemp": targetTemp,
-			"targetBedTemp": targetBedTemp
-		})
+		self.emit("temperatures", temperatures)
 
 	def stateChangeCB(self, state, stateString, booleanStates):
 		print("Sending stateChange...")
 		self.emit("state", {"currentState": stateString, "flags": booleanStates})
 
-	def logChangeCB(self, line):
+	def logChangeCB(self, lines):
 		print("Sending logChange...")
-		self.emit("log", {"line": line})
+		self.emit("log", {"lines": lines})
 
-	def messageChangeCB(self, line):
+	def messageChangeCB(self, lines):
 		print("Sending messageChange...")
-		self.emit("message", {"line": line})
+		self.emit("message", {"lines": lines})
 
 	def gcodeChangeCB(self, filename, progress):
 		print("Sending gcodeChange...")
-		self.emit("jobData", {"filename": "Loading... (%d%%)" % (round(progress * 100)), "lineCount": None, "estimatedPrintTime": None, "filament": None})
+		self.emit("gcode", {"filename": filename, "progress": progress})
 
 	def jobDataChangeCB(self, filename, lines, estimatedPrintTimeInMinutes, filamentLengthInMillimeters):
 		formattedPrintTimeEstimation = None

@@ -157,6 +157,12 @@ function PrinterStateViewModel() {
         self.filament(data.filament);
     }
 
+    self.fromGcodeEvent = function(data) {
+        if (self.isLoading()) {
+            self.filename("Loading... (" + Math.round(data.progress * 100) + ")");
+        }
+    }
+
     self.fromProgressEvent = function(data) {
         self.currentLine(data.currentLine);
         self.printTime(data.printTime);
@@ -246,12 +252,14 @@ function TemperatureViewModel() {
     }
 
     self.fromTemperatureEvent = function(data) {
-        self.temp(data.temp);
-        self.bedTemp(data.bedTemp);
-        self.targetTemp(data.targetTemp);
-        self.bedTargetTemp(data.bedTargetTemp);
+        if (data.length == 0)
+            return;
 
-        // plot
+        self.temp(data[data.length - 1].temp);
+        self.bedTemp(data[data.length - 1].bedTemp);
+        self.targetTemp(data[data.length - 1].targetTemp);
+        self.bedTargetTemp(data[data.length - 1].bedTargetTemp);
+
         if (!self.temperatures)
             self.temperatures = [];
         if (!self.temperatures.actual)
@@ -263,11 +271,12 @@ function TemperatureViewModel() {
         if (!self.temperatures.targetBed)
             self.temperatures.targetBed = [];
 
-        self.temperatures.actual.push([data.currentTime, data.temp])
-        self.temperatures.target.push([data.currentTime, data.targetTemp])
-        self.temperatures.actualBed.push([data.currentTime, data.bedTemp])
-        self.temperatures.targetBed.push([data.currentTime, data.bedTargetTemp])
-
+        for (var i = 0; i < data.length; i++) {
+            self.temperatures.actual.push([data[i].currentTime, data[i].temp])
+            self.temperatures.target.push([data[i].currentTime, data[i].targetTemp])
+            self.temperatures.actualBed.push([data[i].currentTime, data[i].bedTemp])
+            self.temperatures.targetBed.push([data[i].currentTime, data[i].bedTargetTemp])
+        }
         self.temperatures.actual = self.temperatures.actual.slice(-300);
         self.temperatures.target = self.temperatures.target.slice(-300);
         self.temperatures.actualBed = self.temperatures.actualBed.slice(-300);
@@ -361,7 +370,7 @@ function TerminalViewModel() {
     self.fromLogEvent = function(data) {
         if (!self.log)
             self.log = []
-        self.log.push(data.line)
+        self.log.concat(data.line)
         self.updateOutput();
     }
 
@@ -547,13 +556,16 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.speedViewModel.fromStateEvent(data);
         self.webcamViewModel.fromStateEvent(data);
     })
-    self.socket.on("temperature", function(data) {
+    self.socket.on("temperatures", function(data) {
         self.temperatureViewModel.fromTemperatureEvent(data);
     })
     self.socket.on("jobData", function(data) {
         self.printerStateViewModel.fromJobEvent(data);
     })
-    self.socket.on("log", function(data) {
+    self.socket.on("gcode", function(data) {
+        self.printerStateViewModel.fromGcodeEvent(data);
+    })
+    self.socket.on("logs", function(data) {
         self.terminalViewModel.fromLogEvent(data);
     })
     self.socket.on("printProgress", function(data) {
