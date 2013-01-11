@@ -3,7 +3,10 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import time
-from threading import Thread, Event, Lock
+import datetime
+import threading
+import copy
+import os
 
 import printer_webui.util.comm as comm
 from printer_webui.util import gcodeInterpreter
@@ -71,9 +74,19 @@ class Printer():
 		self._callbacks = []
 		self._lastProgressReport = None
 
-		self._stateMonitor = StateMonitor(ratelimit=0.5, updateCallback=self._sendCurrentDataCallbacks)
+		self._stateMonitor = StateMonitor(
+			ratelimit=0.5,
+			updateCallback=self._sendCurrentDataCallbacks,
+			addTemperatureCallback=self._sendAddTemperatureCallbacks,
+			addLogCallback=self._sendAddLogCallbacks,
+			addMessageCallback=self._sendAddMessageCallbacks
+		)
 		self._stateMonitor.reset(
-			state={"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()}
+			state={"state": None, "stateString": self.getStateString(), "flags": self._getStateFlags()},
+			jobData={"filename": None, "lines": None, "estimatedPrintTime": None, "filament": None},
+			gcodeData={"filename": None, "progress": None},
+			progress={"progress": None, "printTime": None, "printTimeLeft": None},
+			currentZ=None
 		)
 
 	#~~ callback handling
@@ -86,9 +99,24 @@ class Printer():
 		if callback in self._callbacks:
 			self._callbacks.remove(callback)
 
+	def _sendAddTemperatureCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.addTemperature(data)
+			except: pass
+
+	def _sendAddLogCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.addLog(data)
+			except: pass
+
+	def _sendAddMessageCallbacks(self, data):
+		for callback in self._callbacks:
+			try: callback.addMessage(data)
+			except: pass
+
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
-			try: callback.sendCurrentData(data)
+			try: callback.sendCurrentData(copy.deepcopy(data))
 			except: pass
 
 #~~ printer commands
@@ -139,8 +167,10 @@ class Printer():
 
 		self._setJobData(None, None, None)
 
-		self._gcodeLoader = GcodeLoader(file, self)
+		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, self._onGcodeLoaded)
 		self._gcodeLoader.start()
+
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def startPrint(self):
 		"""
@@ -192,11 +222,15 @@ class Printer():
 
 	def _setCurrentZ(self, currentZ):
 		self._currentZ = currentZ
-		self._stateMonitor.setCurrentZ(self._currentZ)
+
+		formattedCurrentZ = None
+		if self._currentZ:
+			formattedCurrentZ = "%.2f mm" % (self._currentZ)
+		self._stateMonitor.setCurrentZ(formattedCurrentZ)
 
 	def _setState(self, state):
 		self._state = state
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def _addLog(self, log):
 		self._log.append(log)
@@ -212,7 +246,16 @@ class Printer():
 		self._progress = progress
 		self._printTime = printTime
 		self._printTimeLeft = printTimeLeft
-		self._stateMonitor.setProgress({"progress": self._progress, "printTime": self._printTime, "printTimeLeft": self._printTimeLeft})
+
+		formattedPrintTime = None
+		if (self._printTime):
+			formattedPrintTime = _getFormattedTimeDelta(datetime.timedelta(seconds=self._printTime))
+
+		formattedPrintTimeLeft = None
+		if (self._printTimeLeft):
+			formattedPrintTimeLeft = _getFormattedTimeDelta(datetime.timedelta(minutes=self._printTimeLeft))
+
+		self._stateMonitor.setProgress({"progress": self._progress, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		currentTime = int(time.time() * 1000)
@@ -245,25 +288,21 @@ class Printer():
 		if self._gcodeList:
 			lines = len(self._gcodeList)
 
-		estimatedPrintTime = None
-		filament = None
+		formattedPrintTimeEstimation = None
+		formattedFilament = None
 		if self._gcode:
-			estimatedPrintTime = self._gcode.totalMoveTimeMinute
-			filament = self._gcode.extrusionAmount
+			if self._gcode.totalMoveTimeMinute:
+				formattedPrintTimeEstimation = _getFormattedTimeDelta(datetime.timedelta(minutes=self._gcode.totalMoveTimeMinute))
+			if self._gcode.extrusionAmount:
+				formattedFilament = "%.2fm" % (self._gcode.extrusionAmount / 1000)
 
-		self._stateMonitor.setJobData({"filename": self._filename, "lines": lines, "estimatedPrintTime": estimatedPrintTime, "filament": filament})
+		formattedFilename = None
+		if self._filename:
+			formattedFilename = os.path.basename(self._filename)
+
+		self._stateMonitor.setJobData({"filename": formattedFilename, "lines": lines, "estimatedPrintTime": formattedPrintTimeEstimation, "filament": formattedFilament})
 
 	def _sendInitialStateUpdate(self, callback):
-		lines = None
-		if self._gcodeList:
-			lines = len(self._gcodeList)
-
-		estimatedPrintTime = None
-		filament = None
-		if self._gcode:
-			estimatedPrintTime = self._gcode.totalMoveTimeMinute
-			filament = self._gcode.extrusionAmount
-
 		try:
 			data = self._stateMonitor.getCurrentData()
 			data.update({
@@ -346,16 +385,24 @@ class Printer():
 
 	#~~ callbacks triggered by gcodeLoader
 
-	def onGcodeLoadingProgress(self, progress):
-		self._stateMonitor.setGcodeData({"filename": self._gcodeLoader._filename, "progress": progress})
+	def _onGcodeLoadingProgress(self, filename, progress):
+		formattedFilename = None
+		if filename is not None:
+			formattedFilename = os.path.basename(filename)
 
-	def onGcodeLoaded(self):
-		self._setJobData(self._gcodeLoader._filename, self._gcodeLoader._gcode, self._gcodeLoader._gcodeList)
+		self._stateMonitor.setGcodeData({"filename": formattedFilename, "progress": progress})
+
+	def _onGcodeLoaded(self, filename, gcode, gcodeList):
+		formattedFilename = None
+		if filename is not None:
+			formattedFilename = os.path.basename(filename)
+
+		self._setJobData(formattedFilename, gcode, gcodeList)
 		self._setCurrentZ(None)
 		self._setProgressData(None, None, None)
 		self._gcodeLoader = None
 
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "stateFlags": self._getStateFlags()})
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	#~~ state reports
 
@@ -402,17 +449,18 @@ class Printer():
 	def isLoading(self):
 		return self._gcodeLoader is not None
 
-class GcodeLoader(Thread):
+class GcodeLoader(threading.Thread):
 	"""
 	 The GcodeLoader takes care of loading a gcode-File from disk and parsing it into a gcode object in a separate
 	 thread while constantly notifying interested listeners about the current progress.
 	 The progress is returned as a float value between 0 and 1 which is to be interpreted as the percentage of completion.
 	"""
 
-	def __init__(self, filename, printerCallback):
-		Thread.__init__(self)
+	def __init__(self, filename, progressCallback, loadedCallback):
+		threading.Thread.__init__(self)
 
-		self._printerCallback = printerCallback
+		self._progressCallback = progressCallback
+		self._loadedCallback = loadedCallback
 
 		self._filename = filename
 		self._progress = None
@@ -443,11 +491,11 @@ class GcodeLoader(Thread):
 		self._gcode.progressCallback = self.onProgress
 		self._gcode.loadList(self._gcodeList)
 
-		self._printerCallback.onGcodeLoaded()
+		self._loadedCallback(self._filename, self._gcode, self._gcodeList)
 
 	def onProgress(self, progress):
 		self._progress = progress
-		self._printerCallback.onGcodeLoadingProgress(progress)
+		self._progressCallback(self._filename, self._progress)
 
 class PrinterCallback(object):
 	def sendCurrentData(self, data):
@@ -456,48 +504,52 @@ class PrinterCallback(object):
 	def sendHistoryData(self, data):
 		pass
 
+	def addTemperature(self, data):
+		pass
+
+	def addLog(self, data):
+		pass
+
+	def addMessage(self, data):
+		pass
+
 class StateMonitor(object):
-	def __init__(self, ratelimit, updateCallback):
+	def __init__(self, ratelimit, updateCallback, addTemperatureCallback, addLogCallback, addMessageCallback):
 		self._ratelimit = ratelimit
 		self._updateCallback = updateCallback
+		self._addTemperatureCallback = addTemperatureCallback
+		self._addLogCallback = addLogCallback
+		self._addMessageCallback = addMessageCallback
 
 		self._state = None
 		self._jobData = None
 		self._gcodeData = None
 		self._currentZ = None
 		self._progress = None
-		self._logBacklog = []
-		self._logHistory = []
-		self._messageBacklog = []
-		self._messageHistory = []
-		self._temperatureBacklog = []
-		self._temperatureHistory = []
 
-		self._temperatureBacklogMutex = Lock()
-		self._logBacklogMutex = Lock()
-		self._messageBacklogMutex = Lock()
-		self._changeEvent = Event()
+		self._changeEvent = threading.Event()
 
 		self._lastUpdate = time.time()
-		self._worker = Thread(target=self._work)
+		self._worker = threading.Thread(target=self._work)
 		self._worker.start()
 
-	def reset(self, state=None):
+	def reset(self, state=None, jobData=None, gcodeData=None, progress=None, currentZ=None):
 		self.setState(state)
+		self.setJobData(jobData)
+		self.setGcodeData(gcodeData)
+		self.setProgress(progress)
+		self.setCurrentZ(currentZ)
 
 	def addTemperature(self, temperature):
-		with self._temperatureBacklogMutex:
-			self._temperatureBacklog.append(temperature)
+		self._addTemperatureCallback(temperature)
 		self._changeEvent.set()
 
 	def addLog(self, log):
-		with self._logBacklogMutex:
-			self._logBacklog.append(log)
+		self._addLogCallback(log)
 		self._changeEvent.set()
 
 	def addMessage(self, message):
-		with self._messageBacklogMutex:
-			self._messageBacklog.append(message)
+		self._addMessageCallback(message)
 		self._changeEvent.set()
 
 	def setCurrentZ(self, currentZ):
@@ -523,28 +575,14 @@ class StateMonitor(object):
 	def _work(self):
 		while True:
 			self._changeEvent.wait()
-			additionalWaitTime = time.time() + self._ratelimit - self._lastUpdate
+
+			now = time.time()
+			delta = now - self._lastUpdate
+			additionalWaitTime = self._ratelimit - delta
 			if additionalWaitTime > 0:
 				time.sleep(additionalWaitTime)
 
-			with self._temperatureBacklogMutex:
-				temperatures = self._temperatureBacklog
-				self._temperatureBacklog = []
-
-			with self._logBacklogMutex:
-				logs = self._logBacklog
-				self._logBacklog = []
-
-			with self._messageBacklogMutex:
-				messages = self._messageBacklog
-				self._messageBacklog = []
-
 			data = self.getCurrentData()
-			data.update({
-				"temperatures": temperatures,
-				"logs": logs,
-				"messages": messages
-			})
 			self._updateCallback(data)
 			self._lastUpdate = time.time()
 			self._changeEvent.clear()
@@ -554,5 +592,14 @@ class StateMonitor(object):
 			"state": self._state,
 			"job": self._jobData,
 			"gcode": self._gcodeData,
-			"currentZ": self._currentZ
+			"currentZ": self._currentZ,
+			"progress": self._progress
 		}
+
+def _getFormattedTimeDelta(d):
+	if d is None:
+		return None
+	hours = d.seconds // 3600
+	minutes = (d.seconds % 3600) // 60
+	seconds = d.seconds % 60
+	return "%02d:%02d:%02d" % (hours, minutes, seconds)

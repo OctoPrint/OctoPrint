@@ -8,7 +8,7 @@ import tornadio2
 
 import os
 import fnmatch
-import datetime
+import threading
 
 from printer_webui.printer import Printer, getConnectionOptions, PrinterCallback
 from printer_webui.settings import settings
@@ -33,24 +33,62 @@ def index():
 #~~ Printer state
 
 class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
+	def __init__(self, session, endpoint=None):
+		tornadio2.SocketConnection.__init__(self, session, endpoint)
+
+		self._temperatureBacklog = []
+		self._temperatureBacklogMutex = threading.Lock()
+		self._logBacklog = []
+		self._logBacklogMutex = threading.Lock()
+		self._messageBacklog = []
+		self._messageBacklogMutex = threading.Lock()
+
 	def on_open(self, info):
-		print("Opened socket")
+		print("New connection from client")
 		printer.registerCallback(self)
 
 	def on_close(self):
-		print("Closed socket")
+		print("Closed client connection")
 		printer.unregisterCallback(self)
 
 	def on_message(self, message):
 		pass
 
 	def sendCurrentData(self, data):
-		print("Sending current data...")
+		# add current temperature, log and message backlogs to sent data
+		with self._temperatureBacklogMutex:
+			temperatures = self._temperatureBacklog
+			self._temperatureBacklog = []
+
+		with self._logBacklogMutex:
+			logs = self._logBacklog
+			self._logBacklog = []
+
+		with self._messageBacklogMutex:
+			messages = self._messageBacklog
+			self._messageBacklog = []
+
+		data.update({
+			"temperatures": temperatures,
+			"logs": logs,
+			"messages": messages
+		})
 		self.emit("current", data)
 
 	def sendHistoryData(self, data):
-		print("Sending history...")
 		self.emit("history", data)
+
+	def addLog(self, data):
+		with self._logBacklogMutex:
+			self._logBacklog.append(data)
+
+	def addMessage(self, data):
+		with self._messageBacklogMutex:
+			self._messageBacklog.append(data)
+
+	def addTemperature(self, data):
+		with self._temperatureBacklogMutex:
+			self._temperatureBacklog.append(data)
 
 #~~ Printer control
 
@@ -277,12 +315,6 @@ def setSettings():
 	return getSettings()
 
 #~~ helper functions
-
-def _getFormattedTimeDelta(d):
-	hours = d.seconds // 3600
-	minutes = (d.seconds % 3600) // 60
-	seconds = d.seconds % 60
-	return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
 def sizeof_fmt(num):
 	"""

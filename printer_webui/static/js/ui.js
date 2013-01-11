@@ -49,6 +49,10 @@ function ConnectionViewModel() {
         self.saveSettings(false);
     }
 
+    self.fromHistoryData = function(data) {
+        self._processStateData(data.state);
+    }
+
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
     }
@@ -102,7 +106,6 @@ function ConnectionViewModel() {
         }
     }
 }
-var connectionViewModel = new ConnectionViewModel();
 
 function PrinterStateViewModel() {
     var self = this;
@@ -144,15 +147,19 @@ function PrinterStateViewModel() {
     });
 
     self.fromCurrentData = function(data) {
-        self._processStateData(data.state);
+        self._fromData(data);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._fromData(data);
+    }
+
+    self._fromData = function(data) {
+        self._processStateData(data.state)
         self._processJobData(data.job);
         self._processGcodeData(data.gcode);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
-    }
-
-    self.fromHistoryData = function(data) {
-        self._processStateData(data.state)
     }
 
     self._processStateData = function(data) {
@@ -168,7 +175,7 @@ function PrinterStateViewModel() {
 
     self._processJobData = function(data) {
         self.filename(data.filename);
-        self.totalLines(data.lineCount);
+        self.totalLines(data.lines);
         self.estimatedPrintTime(data.estimatedPrintTime);
         self.filament(data.filament);
     }
@@ -180,16 +187,15 @@ function PrinterStateViewModel() {
     }
 
     self._processProgressData = function(data) {
-        self.currentLine(data.currentLine);
+        self.currentLine(data.progress);
         self.printTime(data.printTime);
         self.printTimeLeft(data.printTimeLeft);
     }
 
     self._processZData = function(data) {
-        self.currentHeight(data.currentZ);
+        self.currentHeight(data);
     }
 }
-var printerStateViewModel = new PrinterStateViewModel();
 
 function TemperatureViewModel() {
     var self = this;
@@ -304,15 +310,15 @@ function TemperatureViewModel() {
         self.temperatures.actualBed = self.temperatures.actualBed.slice(-300);
         self.temperatures.targetBed = self.temperatures.targetBed.slice(-300);
 
-        self._updatePlot();
+        self.updatePlot();
     }
 
     self._processTemperatureHistoryData = function(data) {
         self.temperatures = data;
-        self._updatePlot();
+        self.updatePlot();
     }
 
-    self._updatePlot = function() {
+    self.updatePlot = function() {
         var data = [
             {label: "Actual", color: "#FF4040", data: self.temperatures.actual},
             {label: "Target", color: "#FFA0A0", data: self.temperatures.target},
@@ -322,7 +328,6 @@ function TemperatureViewModel() {
         $.plot($("#temperature-graph"), data, self.plotOptions);
     }
 }
-var temperatureViewModel = new TemperatureViewModel();
 
 function SpeedViewModel() {
     var self = this;
@@ -340,31 +345,38 @@ function SpeedViewModel() {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
-    self.fromStateEvent = function(data) {
-        self.isErrorOrClosed(data.closedOrError);
-        self.isOperational(data.operational);
-        self.isPaused(data.paused);
-        self.isPrinting(data.printing);
-        self.isError(data.error);
-        self.isReady(data.ready);
-        self.isLoading(data.loading);
-
-        /*
-        if (response.feedrate) {
-            self.outerWall(response.feedrate.outerWall);
-            self.innerWall(response.feedrate.innerWall);
-            self.fill(response.feedrate.fill);
-            self.support(response.feedrate.support);
-        } else {
-            self.outerWall(undefined);
-            self.innerWall(undefined);
-            self.fill(undefined);
-            self.support(undefined);
-        }
-        */
+    self._fromCurrentData = function(data) {
+        self._processStateData(data.state);
     }
+
+    self._fromHistoryData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self._processStateData = function(data) {
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
+    }
+
+    /*
+    if (response.feedrate) {
+        self.outerWall(response.feedrate.outerWall);
+        self.innerWall(response.feedrate.innerWall);
+        self.fill(response.feedrate.fill);
+        self.support(response.feedrate.support);
+    } else {
+        self.outerWall(undefined);
+        self.innerWall(undefined);
+        self.fill(undefined);
+        self.support(undefined);
+    }
+    */
 }
-var speedViewModel = new SpeedViewModel();
 
 function TerminalViewModel() {
     var self = this;
@@ -379,7 +391,29 @@ function TerminalViewModel() {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
-    self.fromStateEvent = function(data) {
+    self.fromCurrentData = function(data) {
+        self._processStateData(data.state);
+        self._processCurrentLogData(data.logs);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._processStateData(data.state);
+        self._processHistoryLogData(data.logHistory);
+    }
+
+    self._processCurrentLogData = function(data) {
+        if (!self.log)
+            self.log = []
+        self.log = self.log.concat(data)
+        self.updateOutput();
+    }
+
+    self._processHistoryLogData = function(data) {
+        self.log = data;
+        self.updateOutput();
+    }
+
+    self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);
@@ -387,18 +421,6 @@ function TerminalViewModel() {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
-    }
-
-    self.fromLogEvent = function(data) {
-        if (!self.log)
-            self.log = []
-        self.log.concat(data.line)
-        self.updateOutput();
-    }
-
-    self.fromHistoryEvent = function(data) {
-        self.log = data;
-        self.updateOutput();
     }
 
     self.updateOutput = function() {
@@ -420,7 +442,6 @@ function TerminalViewModel() {
         }
     }
 }
-var terminalViewModel = new TerminalViewModel();
 
 function GcodeFilesViewModel() {
     var self = this;
@@ -463,7 +484,6 @@ function GcodeFilesViewModel() {
         })
     }
 }
-var gcodeFilesViewModel = new GcodeFilesViewModel();
 
 function WebcamViewModel() {
     var self = this;
@@ -508,7 +528,15 @@ function WebcamViewModel() {
         }
     }
 
-    self.fromStateEvent = function(data) {
+    self.fromCurrentData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);
@@ -546,7 +574,6 @@ function WebcamViewModel() {
         })
     }
 }
-var webcamViewModel = new WebcamViewModel();
 
 function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel) {
     var self = this;
@@ -558,40 +585,49 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     self.speedViewModel = speedViewModel;
     self.webcamViewModel = webcamViewModel;
 
-    self.socket = io.connect();
-    self.socket.on("connect", function() {
+    self._socket = io.connect();
+    self._socket.on("connect", function() {
         if ($("#offline_overlay").is(":visible")) {
             $("#offline_overlay").hide();
             self.webcamViewModel.requestData();
         }
     })
-    self.socket.on("disconnect", function() {
+    self._socket.on("disconnect", function() {
         // if the updated fails to communicate with the backend, we interpret this as a missing backend
         if (!$("#offline_overlay").is(":visible"))
             $("#offline_overlay").show();
     })
-    self.socket.on("state", function(data) {
-        self.printerStateViewModel.fromStateEvent(data);
-        self.connectionViewModel.fromStateEvent(data);
-        self.temperatureViewModel.fromStateEvent(data);
-        self.terminalViewModel.fromStateEvent(data);
-        self.speedViewModel.fromStateEvent(data);
-        self.webcamViewModel.fromStateEvent(data);
-    })
-    self.socket.on("history", function(data) {
+    self._socket.on("history", function(data) {
+        self.connectionViewModel.fromHistoryData(data);
         self.printerStateViewModel.fromHistoryData(data);
         self.temperatureViewModel.fromHistoryData(data);
-        //self.terminalViewModel.fromHistoryData(data);
+        self.terminalViewModel.fromHistoryData(data);
+        self.webcamViewModel.fromHistoryData(data);
     })
-    self.socket.on("current", function(data) {
+    self._socket.on("current", function(data) {
         self.connectionViewModel.fromCurrentData(data);
         self.printerStateViewModel.fromCurrentData(data);
         self.temperatureViewModel.fromCurrentData(data);
+        self.terminalViewModel.fromCurrentData(data);
+        self.webcamViewModel.fromCurrentData(data);
     })
+
+    self.reconnect = function() {
+        self._socket.socket.connect();
+    }
 }
-var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel);
 
 $(function() {
+
+        //~~ View models
+        var connectionViewModel = new ConnectionViewModel();
+        var printerStateViewModel = new PrinterStateViewModel();
+        var temperatureViewModel = new TemperatureViewModel();
+        var speedViewModel = new SpeedViewModel();
+        var terminalViewModel = new TerminalViewModel();
+        var gcodeFilesViewModel = new GcodeFilesViewModel();
+        var webcamViewModel = new WebcamViewModel();
+        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel);
 
         //~~ Print job control
 
@@ -641,6 +677,9 @@ $(function() {
                 success: function() {$("#temp_newBedTemp").val("")}
             })
         })
+        $('#tabs a[data-toggle="tab"]').on('shown', function (e) {
+            temperatureViewModel.updatePlot();
+        });
 
         //~~ Jog controls
 
@@ -719,7 +758,7 @@ $(function() {
         });
 
         //~~ Offline overlay
-        $("#offline_overlay_reconnect").click(function() {dataUpdater.requestData()});
+        $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
         //~~ knockout.js bindings
 
@@ -738,7 +777,6 @@ $(function() {
 
         //~~ startup commands
 
-        //dataUpdater.requestData();
         connectionViewModel.requestData();
         gcodeFilesViewModel.requestData();
         webcamViewModel.requestData();
