@@ -27,7 +27,8 @@ def index():
 	return render_template(
 		"index.html",
 		webcamStream=settings().get("webcam", "stream"),
-		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None)
+		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None),
+		enableEstimations=(settings().getBoolean("feature", "analyzeGcode"))
 	)
 
 #~~ Printer state

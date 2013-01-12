@@ -295,6 +295,9 @@ class Printer():
 				formattedPrintTimeEstimation = _getFormattedTimeDelta(datetime.timedelta(minutes=self._gcode.totalMoveTimeMinute))
 			if self._gcode.extrusionAmount:
 				formattedFilament = "%.2fm" % (self._gcode.extrusionAmount / 1000)
+		elif not settings().getBoolean("feature", "analyzeGcode"):
+			formattedPrintTimeEstimation = "unknown"
+			formattedFilament = "unknown"
 
 		formattedFilename = None
 		if self._filename:
@@ -385,12 +388,12 @@ class Printer():
 
 	#~~ callbacks triggered by gcodeLoader
 
-	def _onGcodeLoadingProgress(self, filename, progress):
+	def _onGcodeLoadingProgress(self, filename, progress, mode):
 		formattedFilename = None
 		if filename is not None:
 			formattedFilename = os.path.basename(filename)
 
-		self._stateMonitor.setGcodeData({"filename": formattedFilename, "progress": progress})
+		self._stateMonitor.setGcodeData({"filename": formattedFilename, "progress": progress, "mode": mode})
 
 	def _onGcodeLoaded(self, filename, gcode, gcodeList):
 		formattedFilename = None
@@ -464,8 +467,6 @@ class GcodeLoader(threading.Thread):
 		self._loadedCallback = loadedCallback
 
 		self._filename = filename
-		self._progress = None
-
 		self._gcode = None
 		self._gcodeList = None
 
@@ -473,6 +474,7 @@ class GcodeLoader(threading.Thread):
 		#Send an initial M110 to reset the line counter to zero.
 		prevLineType = lineType = "CUSTOM"
 		gcodeList = ["M110"]
+		filesize = os.stat(self._filename).st_size
 		with open(self._filename, "r") as file:
 			for line in file:
 				if line.startswith(";TYPE:"):
@@ -486,17 +488,21 @@ class GcodeLoader(threading.Thread):
 					else:
 						gcodeList.append(line)
 					prevLineType = lineType
+				self._onLoadingProgress(float(file.tell()) / float(filesize))
 
 		self._gcodeList = gcodeList
-		self._gcode = gcodeInterpreter.gcode()
-		self._gcode.progressCallback = self.onProgress
-		self._gcode.loadList(self._gcodeList)
+		if settings().getBoolean("feature", "analyzeGcode"):
+			self._gcode = gcodeInterpreter.gcode()
+			self._gcode.progressCallback = self._onParsingProgress
+			self._gcode.loadList(self._gcodeList)
 
 		self._loadedCallback(self._filename, self._gcode, self._gcodeList)
 
-	def onProgress(self, progress):
-		self._progress = progress
-		self._progressCallback(self._filename, self._progress)
+	def _onLoadingProgress(self, progress):
+		self._progressCallback(self._filename, progress, "loading")
+
+	def _onParsingProgress(self, progress):
+		self._progressCallback(self._filename, progress, "parsing")
 
 class PrinterCallback(object):
 	def sendCurrentData(self, data):

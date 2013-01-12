@@ -5,7 +5,8 @@ The Printer WebUI provides a responsive web interface for controlling a 3D print
 allows
 
 * uploading .gcode files to the server and managing them via the UI
-* selecting a file for printing, getting the usual stats regarding filament length etc
+* selecting a file for printing, getting the usual stats regarding filament length etc (stats can be disabled for
+  faster initial processing)
 * starting, pausing and canceling a print job
 * while connected to the printer, gaining information regarding the current temperature of both head and bed (if available) in a nice shiny javascript-y temperature graph
 * while printing, gaining information regarding the current progress of the print job (height, percentage etc)
@@ -49,40 +50,54 @@ Alternatively, the host and port on which to bind can be defined via the configu
 Configuration
 -------------
 
-The config-file `config.ini` for Printer WebUI is expected at `~/.printerwebui` for Linux, at `%APPDATA%/PrinterWebUI`
-for Windows and at `~/Library/Application Support` for MacOS X.
+The config-file `config.ini` for Printer WebUI is expected in its settings folder, which is located at `~/.printerwebui`
+on Linux, at `%APPDATA%/PrinterWebUI` on Windows and at `~/Library/Application Support` on MacOS X.
 
 The following example config should explain the available options:
 
     [serial]
-    # use the following option to define the default serial port, defaults to unset (= AUTO)
+    # Use the following option to define the default serial port, defaults to unset (= AUTO)
     port = /dev/ttyACM0
-    # use the following option to define the default baudrate, defaults to unset (= AUTO)
+
+    # Use the following option to define the default baudrate, defaults to unset (= AUTO)
     baudrate = 115200
 
     [server]
-    # use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
+    # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
     host = 0.0.0.0
-    # use this option to define the port to which to bind the server, defaults to 5000
+
+    # Use this option to define the port to which to bind the server, defaults to 5000
     port = 5000
 
     [webcam]
-    # use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer.
+    # Use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer.
     # Webcam support will be disabled if not set
     stream = http://<stream host>:<stream port>/?action=stream
-    # use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer.
+
+    # Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer.
     # Timelapse support will be disabled if not set
     snapshot = http://<stream host>:<stream port>/?action=snapshot
-    # path to ffmpeg binary to use for creating timelapse recordings.
+
+    # Path to ffmpeg binary to use for creating timelapse recordings.
     # Timelapse support will be disabled if not set
     ffmpeg = /path/to/ffmpeg
 
+    [feature]
+    # Whether to enable gcode analysis for displaying needed filament and estimated print time. Disabling this (set
+    # to False) will speed up the loading of gcode files before printing significantly, but the mentioned statistical
+    # data will not be available
+    analyzeGcode = True
+
     [folder]
-    # absolute path where to store gcode uploads. Defaults to the uploads folder in the Printer WebUI settings dir
+    # Absolute path where to store gcode uploads. Defaults to the uploads folder in the Printer WebUI settings folder
     uploads = /path/to/upload/folder
-    # absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the Printer WebUI settings dir
+
+    # Absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the Printer WebUI
+    # settings dir
     timelapse = /path/to/timelapse/folder
-    # absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the Printer WebUI settings dir
+
+    # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the Printer WebUI
+    # settings dir
     timelapse_tmp = /path/timelapse/tmp/folder
 
 Setup on a Raspberry Pi running Raspbian

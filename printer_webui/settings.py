@@ -34,6 +34,9 @@ default_settings = {
 		"uploads": None,
 		"timelapse": None,
 		"timelapse_tmp": None
+	},
+	"feature": {
+		"analyzeGcode": True
 	}
 }
 
@@ -87,16 +90,13 @@ class Settings(object):
 		if section not in default_settings.keys():
 			return None
 
-		value = None
 		if self._config.has_option(section, key):
-			value = self._config.get(section, key)
-		if value is None:
-			if default_settings.has_key(section) and default_settings[section].has_key(key):
-				return default_settings[section][key]
-			else:
-				return None
-		else:
-			return value
+			return self._config.get(section, key)
+
+		if default_settings.has_key(section) and default_settings[section].has_key(key):
+			return default_settings[section][key]
+
+		return None
 
 	def getInt(self, section, key):
 		value = self.get(section, key)
@@ -107,6 +107,14 @@ class Settings(object):
 			return int(value)
 		except ValueError:
 			return None
+
+	def getBoolean(self, section, key):
+		value = self.get(section, key)
+		if value is None:
+			return None
+		if isinstance(value, bool):
+			return value
+		return value.lower() in ["true", "yes", "y", "1"]
 
 	def getBaseFolder(self, type):
 		if type not in default_settings["folder"].keys():

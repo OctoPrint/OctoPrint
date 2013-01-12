@@ -182,7 +182,12 @@ function PrinterStateViewModel() {
 
     self._processGcodeData = function(data) {
         if (self.isLoading()) {
-            self.filename("Loading... (" + Math.round(data.progress * 100) + "%)");
+            var progress = Math.round(data.progress * 100);
+            if (data.mode == "loading") {
+                self.filename("Loading... (" + progress + "%)");
+            } else if (data.mode == "parsing") {
+                self.filename("Parsing... (" + progress + "%)");
+            }
         }
     }
 
