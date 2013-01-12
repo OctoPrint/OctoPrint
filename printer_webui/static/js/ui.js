@@ -286,7 +286,7 @@ function TemperatureViewModel() {
         self.temp(data[data.length - 1].temp);
         self.bedTemp(data[data.length - 1].bedTemp);
         self.targetTemp(data[data.length - 1].targetTemp);
-        self.bedTargetTemp(data[data.length - 1].bedTargetTemp);
+        self.bedTargetTemp(data[data.length - 1].targetBedTemp);
 
         if (!self.temperatures)
             self.temperatures = [];
@@ -303,7 +303,7 @@ function TemperatureViewModel() {
             self.temperatures.actual.push([data[i].currentTime, data[i].temp])
             self.temperatures.target.push([data[i].currentTime, data[i].targetTemp])
             self.temperatures.actualBed.push([data[i].currentTime, data[i].bedTemp])
-            self.temperatures.targetBed.push([data[i].currentTime, data[i].bedTargetTemp])
+            self.temperatures.targetBed.push([data[i].currentTime, data[i].targetBedTemp])
         }
         self.temperatures.actual = self.temperatures.actual.slice(-300);
         self.temperatures.target = self.temperatures.target.slice(-300);
