@@ -402,6 +402,7 @@ class Printer():
 		self._setProgressData(None, None, None)
 		self._gcodeLoader = None
 
+		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	#~~ state reports
