@@ -598,9 +598,19 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         }
     })
     self._socket.on("disconnect", function() {
-        // if the updated fails to communicate with the backend, we interpret this as a missing backend
+        $("#offline_overlay_message").html(
+            "The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect " +
+            "automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect " +
+            "anytime using the button below."
+        );
         if (!$("#offline_overlay").is(":visible"))
             $("#offline_overlay").show();
+    })
+    self._socket.on("reconnect_failed", function() {
+        $("#offline_overlay_message").html(
+            "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
+            "but you may try a manual reconnect using the button below."
+        );
     })
     self._socket.on("history", function(data) {
         self.connectionViewModel.fromHistoryData(data);
