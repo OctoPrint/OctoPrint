@@ -25,13 +25,16 @@ def getFinishedTimelapses():
 
 class Timelapse(object):
 	def __init__(self):
-		self.imageNumber = None
-		self.inTimelapse = False
-		self.gcodeFile = None
+		self._imageNumber = None
+		self._inTimelapse = False
+		self._gcodeFile = None
 
-		self.captureDir = settings().getBaseFolder("timelapse_tmp")
-		self.movieDir = settings().getBaseFolder("timelapse")
-		self.snapshotUrl = settings().get("webcam", "snapshot")
+		self._captureDir = settings().getBaseFolder("timelapse_tmp")
+		self._movieDir = settings().getBaseFolder("timelapse")
+		self._snapshotUrl = settings().get("webcam", "snapshot")
+
+		self._renderThread = None
+		self._captureMutex = threading.Lock()
 
 	def onPrintjobStarted(self, gcodeFile):
 		self.startTimelapse(gcodeFile)
@@ -48,49 +51,53 @@ class Timelapse(object):
 	def startTimelapse(self, gcodeFile):
 		self.cleanCaptureDir()
 
-		self.imageNumber = 0
-		self.inTimelapse = True
-		self.gcodeFile = os.path.basename(gcodeFile)
+		self._imageNumber = 0
+		self._inTimelapse = True
+		self._gcodeFile = os.path.basename(gcodeFile)
 
 	def stopTimelapse(self):
-		self.createMovie()
+		self._renderThread = threading.Thread(target=self._createMovie)
+		self._renderThread.daemon = True
+		self._renderThread.start()
 
-		self.imageNumber = None
-		self.inTimelapse = False
+		self._imageNumber = None
+		self._inTimelapse = False
 
 	def captureImage(self):
-		if self.captureDir is None:
+		if self._captureDir is None:
 			return
 
-		filename = os.path.join(self.captureDir, "tmp_%05d.jpg" % (self.imageNumber))
-		self.imageNumber += 1;
+		with self._captureMutex:
+			filename = os.path.join(self._captureDir, "tmp_%05d.jpg" % (self._imageNumber))
+			self._imageNumber += 1;
 
-		captureThread = threading.Thread(target=self.captureWorker, kwargs={"filename": filename})
+		captureThread = threading.Thread(target=self._captureWorker, kwargs={"filename": filename})
+		captureThread.daemon = True
 		captureThread.start()
 
-	def captureWorker(self, filename):
-		urllib.urlretrieve(self.snapshotUrl, filename)
+	def _captureWorker(self, filename):
+		urllib.urlretrieve(self._snapshotUrl, filename)
 
-	def createMovie(self):
+	def _createMovie(self):
 		ffmpeg = settings().get("webcam", "ffmpeg")
 		if ffmpeg is None:
 			return
 
-		input = os.path.join(self.captureDir, "tmp_%05d.jpg")
-		output = os.path.join(self.movieDir, "%s_%s.mpg" % (os.path.splitext(self.gcodeFile)[0], time.strftime("%Y%m%d%H%M%S")))
+		input = os.path.join(self._captureDir, "tmp_%05d.jpg")
+		output = os.path.join(self._movieDir, "%s_%s.mpg" % (os.path.splitext(self._gcodeFile)[0], time.strftime("%Y%m%d%H%M%S")))
 		subprocess.call([
 			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y',
 			 '-b:v', '1500k', '-f', 'vob', output
 		])
 
 	def cleanCaptureDir(self):
-		if not os.path.isdir(self.captureDir):
+		if not os.path.isdir(self._captureDir):
 			return
 
-		for filename in os.listdir(self.captureDir):
+		for filename in os.listdir(self._captureDir):
 			if not fnmatch.fnmatch(filename, "*.jpg"):
 				continue
-			os.remove(os.path.join(self.captureDir, filename))
+			os.remove(os.path.join(self._captureDir, filename))
 
 class ZTimelapse(Timelapse):
 	def __init__(self):
@@ -103,21 +110,22 @@ class TimedTimelapse(Timelapse):
 	def __init__(self, interval=1):
 		Timelapse.__init__(self)
 
-		self.interval = interval
-		if self.interval < 1:
-			self.interval = 1 # force minimum interval of 1s
+		self._interval = interval
+		if self._interval < 1:
+			self._interval = 1 # force minimum interval of 1s
 
-		self.timerThread = None
+		self._timerThread = None
 
 	def onPrintjobStarted(self, filename):
 		Timelapse.onPrintjobStarted(self, filename)
-		if self.timerThread is not None:
+		if self._timerThread is not None:
 			return
 
-		self.timerThread = threading.Thread(target=self.timerWorker)
-		self.timerThread.start()
+		self._timerThread = threading.Thread(target=self.timerWorker)
+		self._timerThread.daemon = True
+		self._timerThread.start()
 
 	def timerWorker(self):
-		while self.inTimelapse:
+		while self._inTimelapse:
 			self.captureImage()
-			time.sleep(self.interval)
+			time.sleep(self._interval)
