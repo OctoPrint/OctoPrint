@@ -203,7 +203,7 @@ class Printer():
 			return
 		self._comm.cancelPrint()
 		if disableMotorsAndHeater:
-			self.commands(["M84", "M104 S0", "M140 S0"]) # disable motors, switch off heaters
+			self.commands(["M84", "M104 S0", "M140 S0", "M106 S0"]) # disable motors, switch off heaters and fan
 
 		# reset line, height, print time
 		self._setCurrentZ(None)
@@ -538,6 +538,7 @@ class StateMonitor(object):
 
 		self._lastUpdate = time.time()
 		self._worker = threading.Thread(target=self._work)
+		self._worker.daemon = True
 		self._worker.start()
 
 	def reset(self, state=None, jobData=None, gcodeData=None, progress=None, currentZ=None):
