@@ -86,8 +86,12 @@ The following example config should explain the available options:
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
 
-I currently run the Printer WebUI on a Raspberry Pi running Raspbian (http://www.raspbian.org/). For the basic
-package you'll need Python 2.7 (should be installed by default), pip and flask:
+I currently run the Printer WebUI on a Raspberry Pi running Raspbian (http://www.raspbian.org/). I recommend to use
+a maximum baudrate of 115200 baud in your printer firmware, as the used Python serial module does not support 
+250000 baud in all Linux distributions yet (Raspbian being not one of them, at least according to my experience). 
+
+For the basic package you'll need Python 2.7 (should be installed by default), pip and a couple of dependencies
+listed in requirements.txt:
 
     cd ~
     sudo apt-get install python-pip git
