@@ -388,7 +388,7 @@ class MachineCom(object):
 					self._sendCommand("M105")
 				elif 'ok' in line:
 					self._changeState(self.STATE_OPERATIONAL)
-				if time.time() > timeout:
+				elif time.time() > timeout:
 					self.close()
 			elif self._state == self.STATE_OPERATIONAL:
 				#Request the temperature on comm timeout (every 2 seconds) when we are not printing.
