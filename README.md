@@ -18,6 +18,8 @@ allows
 The intended usecase is to run the Printer WebUI on a single-board computer like the Raspberry Pi and a WiFi module,
 connect the printer to the server and therefore create a WiFi-enabled 3D printer.
 
+If you want to add a webcam for visual monitoring and timelapse support, you'll need a **powered** USB hub.
+
 Dependencies
 ------------
 
