@@ -6,7 +6,8 @@ import ConfigParser
 import sys
 import os
 
-APPNAME="PrinterWebUI"
+APPNAME="OctoPrint"
+OLD_APPNAME="PrinterWebUI"
 
 instance = None
 
@@ -52,18 +53,12 @@ class Settings(object):
 		self.load()
 
 	def init_settings_dir(self):
-		# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
-		if sys.platform == "darwin":
-			from AppKit import NSSearchPathForDirectoriesInDomains
-			# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
-			# NSApplicationSupportDirectory = 14
-			# NSUserDomainMask = 1
-			# True for expanding the tilde into a fully qualified path
-			self.settings_dir = os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME)
-		elif sys.platform == "win32":
-			self.settings_dir = os.path.join(os.environ["APPDATA"], APPNAME)
-		else:
-			self.settings_dir = os.path.expanduser(os.path.join("~", "." + APPNAME.lower()))
+		self.settings_dir = _resolveSettingsDir(APPNAME)
+
+		# migration due to rename
+		old_settings_dir = _resolveSettingsDir(OLD_APPNAME)
+		if os.path.exists(old_settings_dir) and os.path.isdir(old_settings_dir) and not os.path.exists(self.settings_dir):
+			os.rename(old_settings_dir, self.settings_dir)
 
 	def load(self):
 		self._config = ConfigParser.ConfigParser(allow_no_value=True)
@@ -144,3 +139,16 @@ class Settings(object):
 		sectionConfig[key] = value
 		self._changes[section] = sectionConfig
 
+def _resolveSettingsDir(applicationName):
+	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
+	if sys.platform == "darwin":
+		from AppKit import NSSearchPathForDirectoriesInDomains
+		# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
+		# NSApplicationSupportDirectory = 14
+		# NSUserDomainMask = 1
+		# True for expanding the tilde into a fully qualified path
+		return os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], applicationName)
+	elif sys.platform == "win32":
+		return os.path.join(os.environ["APPDATA"], applicationName)
+	else:
+		return os.path.expanduser(os.path.join("~", "." + applicationName.lower()))

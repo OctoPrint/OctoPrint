@@ -1,7 +1,13 @@
-Printer WebUI
-=============
+Attention
+=========
 
-The Printer WebUI provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It currently
+OctoPrint -- formerly known as Printer WebUI -- will be migrated to a new repository location reflecting its new name on Saturday 26th 2013. It will then
+be located at http://github.com/foosel/OctoPrint. Please be prepared to upgrade your links and remote refs. Sorry for the inconvenience.
+
+OctoPrint
+=========
+
+OctoPrint provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It currently
 allows
 
 * uploading .gcode files to the server and managing them via the UI
@@ -16,7 +22,7 @@ allows
 * optional: visual monitoring of the printer via webcam stream integrated into the UI (using e.g. MJPG-Streamer)
 * optional: creation of timelapse recordings of the printjob via webcam stream (using e.g. MJPG-Streamer) -- currently two timelaspe methods are implemented, triggering a shot on z-layer change or every "n" seconds
 
-The intended usecase is to run the Printer WebUI on a single-board computer like the Raspberry Pi and a WiFi module,
+The intended usecase is to run OctoPrint on a single-board computer like the Raspberry Pi and a WiFi module,
 connect the printer to the server and therefore create a WiFi-enabled 3D printer.
 
 If you want to add a webcam for visual monitoring and timelapse support, you'll need a **powered** USB hub.
@@ -24,34 +30,34 @@ If you want to add a webcam for visual monitoring and timelapse support, you'll 
 Dependencies
 ------------
 
-Printer WebUI depends on a couple of python modules to do its job. Those are listed in requirements.txt and can be
+OctoPrint depends on a couple of python modules to do its job. Those are listed in requirements.txt and can be
 installed using `pip`:
 
     pip install -r requirements.txt
 
-Printer WebUI currently only supports Python 2.7.
+OctoPrint currently only supports Python 2.7.
 
 Usage
 -----
 
 Just start the server via
 
-    python -m printer_webui.server
+    python -m octoprint.server
 
 By default it binds to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
 will do the trick). If you want to change that, use the additional command line parameters `host` and `port`,
 which accept the host ip to bind to and the numeric port number respectively. If for example you want to the server
 to only listen on the local interface on port 8080, the command line would be
 
-    python -m printer_webui.server --host=127.0.0.1 --port=8080
+    python -m octoprint.server --host=127.0.0.1 --port=8080
 
 Alternatively, the host and port on which to bind can be defined via the configuration.
 
 Configuration
 -------------
 
-The config-file `config.ini` for Printer WebUI is expected in its settings folder, which is located at `~/.printerwebui`
-on Linux, at `%APPDATA%/PrinterWebUI` on Windows and at `~/Library/Application Support` on MacOS X.
+The config-file `config.ini` for OctoPrint is expected in its settings folder, which is located at `~/.octoprint`
+on Linux, at `%APPDATA%/OctoPrint` on Windows and at `~/Library/Application Support/OctoPrint` on MacOS.
 
 The following example config should explain the available options:
 
@@ -89,21 +95,21 @@ The following example config should explain the available options:
     analyzeGcode = True
 
     [folder]
-    # Absolute path where to store gcode uploads. Defaults to the uploads folder in the Printer WebUI settings folder
+    # Absolute path where to store gcode uploads. Defaults to the uploads folder in the OctoPrint settings folder
     uploads = /path/to/upload/folder
 
-    # Absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the Printer WebUI
+    # Absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the OctoPrint
     # settings dir
     timelapse = /path/to/timelapse/folder
 
-    # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the Printer WebUI
+    # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the OctoPrint
     # settings dir
     timelapse_tmp = /path/timelapse/tmp/folder
 
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
 
-I currently run the Printer WebUI on a Raspberry Pi running Raspbian (http://www.raspbian.org/). I recommend to use
+I currently run the OctoPrint on a Raspberry Pi running Raspbian (http://www.raspbian.org/). I recommend to use
 a maximum baudrate of 115200 baud in your printer firmware, as the used Python serial module does not support 
 250000 baud in all Linux distributions yet (Raspbian being not one of them, at least according to my experience). 
 
@@ -116,9 +122,9 @@ listed in requirements.txt:
     cd PrinterWebUI
     pip install -r requirements.txt
 
-You should then be able to start the WebUI server:
+You should then be able to start the OctoPrint server:
 
-    pi@raspberrypi ~/PrinterWebUI $ python -m printer_webui.server
+    pi@raspberrypi ~/PrinterWebUI $ python -m octoprint.server
      * Running on http://0.0.0.0:5000/
 
 If you also want webcam and timelapse support, you'll need to download and compile MJPG-Streamer:
@@ -145,23 +151,23 @@ This should hopefully run through without any compilation errors. You should the
      o: commands..........: enabled
 
 If you now point your browser to `http://<your Raspi's IP>:8080/?action=stream`, you should see a moving picture at 5fps.
-Open `~/.printerwebui/config.ini` and add the following lines to it:
+Open `~/.octoprint/config.ini` and add the following lines to it:
 
     [webcam]
     stream = http://<your Raspi's IP>:8080/?action=stream
     snapshot = http://127.0.0.1:8080/?action=snapshot
     ffmpeg = /usr/bin/avconv
 
-Restart the WebUI server and reload its frontend. You should now see a Webcam tab with content.
+Restart the OctoPrint server and reload its frontend. You should now see a Webcam tab with content.
 
 If everything works, add the startup commands to `/etc/rc.local`.
 
 Credits
 -------
 
-The Printer WebUI started out as a fork of Cura (https://github.com/daid/Cura) for adding a web interface to its
-printing functionality. It still uses Cura's communication code for talking to the printer, but has been reorganized to
-only include those parts of Cura necessary for its targeted usecase.
+The OctoPrint started out as a fork of Cura (https://github.com/daid/Cura) for adding a web interface to its
+printing functionality and was originally named Printer WebUI. It still uses Cura's communication code for talking to
+the printer, but has been reorganized to only include those parts of Cura necessary for its targeted usecase.
 
 It also uses the following libraries and frameworks for backend and frontend:
 
@@ -175,3 +181,5 @@ It also uses the following libraries and frameworks for backend and frontend:
 The following software is recommended for Webcam support on the Raspberry Pi:
 
 * MJPG-Streamer: http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page
+
+I also want to thank [Janina Himmen](http://jhimmen.de/) for providing the kick-ass logo!

@@ -8,10 +8,10 @@ import threading
 import copy
 import os
 
-import printer_webui.util.comm as comm
-from printer_webui.util import gcodeInterpreter
+import octoprint.util.comm as comm
+from octoprint.util import gcodeInterpreter
 
-from printer_webui.settings import settings
+from octoprint.settings import settings
 
 def getConnectionOptions():
 	"""

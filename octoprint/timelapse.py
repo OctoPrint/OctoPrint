@@ -2,7 +2,7 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from printer_webui.settings import settings
+from octoprint.settings import settings
 
 import os
 import threading

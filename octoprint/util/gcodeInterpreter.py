@@ -5,7 +5,7 @@ import math
 import re
 import os
 
-from printer_webui.util import util3d
+from octoprint.util import util3d
 
 preferences = {
 	"extruder_offset_x1": -22.0,

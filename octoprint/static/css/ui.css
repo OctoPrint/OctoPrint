@@ -57,6 +57,14 @@ table th.gcode_files_action, table td.gcode_files_action {
     width: 20%;
 }
 
+#temperature-graph {
+    height: 350px;
+    width: 100%;
+    background-image: url("/static/img/graph-background.png");
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 #temp {
     overflow: hidden;
 }

@@ -12,10 +12,10 @@ import Queue as queue
 
 import serial
 
-from printer_webui.util.avr_isp import stk500v2
-from printer_webui.util.avr_isp import ispBase
+from octoprint.util.avr_isp import stk500v2
+from octoprint.util.avr_isp import ispBase
 
-from printer_webui.settings import settings
+from octoprint.settings import settings
 
 try:
 	import _winreg

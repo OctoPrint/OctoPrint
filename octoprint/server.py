@@ -10,16 +10,16 @@ import os
 import fnmatch
 import threading
 
-from printer_webui.printer import Printer, getConnectionOptions, PrinterCallback
-from printer_webui.settings import settings
-import printer_webui.timelapse as timelapse
+from octoprint.printer import Printer, getConnectionOptions, PrinterCallback
+from octoprint.settings import settings
+import octoprint.timelapse as timelapse
 
 BASEURL = "/ajax/"
 SUCCESS = {}
 
 UPLOAD_FOLDER = settings().getBaseFolder("uploads")
 
-app = Flask("printer_webui")
+app = Flask("octoprint")
 printer = Printer()
 
 @app.route("/")
