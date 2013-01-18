@@ -44,12 +44,20 @@ Just start the server via
 
     python -m octoprint.server
 
+or alternatively
+
+    ./run
+
 By default it binds to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
 will do the trick). If you want to change that, use the additional command line parameters `host` and `port`,
 which accept the host ip to bind to and the numeric port number respectively. If for example you want to the server
 to only listen on the local interface on port 8080, the command line would be
 
     python -m octoprint.server --host=127.0.0.1 --port=8080
+
+or
+
+    ./run --host=127.0.0.1 --port=8080
 
 Alternatively, the host and port on which to bind can be defined via the configuration.
 
@@ -124,7 +132,7 @@ listed in requirements.txt:
 
 You should then be able to start the OctoPrint server:
 
-    pi@raspberrypi ~/PrinterWebUI $ python -m octoprint.server
+    pi@raspberrypi ~/PrinterWebUI $ ./run
      * Running on http://0.0.0.0:5000/
 
 If you also want webcam and timelapse support, you'll need to download and compile MJPG-Streamer:
