@@ -196,3 +196,8 @@ The following software is recommended for Webcam support on the Raspberry Pi:
 * MJPG-Streamer: http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page
 
 I also want to thank [Janina Himmen](http://jhimmen.de/) for providing the kick-ass logo!
+
+Why is it called OctoPrint and what's with the crystal ball in the logo?
+------------------------------------------------------------------------
+
+It so happens that I needed a favicon and also OctoPrint's first name -- Printer WebUI -- simply lacked a certain coolness to it. So I asked The Internet(tm) for advise. After some brainstorming, the idea of a cute Octopus watching his print job remotely through a crystal ball was born... [or something like that](https://plus.google.com/u/0/106003970953341660077/posts/UmLD5mW8yBQ).
