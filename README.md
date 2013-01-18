@@ -35,6 +35,8 @@ installed using `pip`:
 
     pip install -r requirements.txt
 
+You should also do this after pulling from the repository, since the dependencies might have changed.
+
 OctoPrint currently only supports Python 2.7.
 
 Usage
@@ -180,6 +182,9 @@ the printer, but has been reorganized to only include those parts of Cura necess
 It also uses the following libraries and frameworks for backend and frontend:
 
 * Flask: http://flask.pocoo.org/
+* Tornado: http://www.tornadoweb.org/
+* Tornadio2: https://github.com/MrJoes/tornadio2
+* Socket.io: http://socket.io/
 * jQuery: http://jquery.com/
 * Bootstrap: http://twitter.github.com/bootstrap/
 * Knockout.js: http://knockoutjs.com/
