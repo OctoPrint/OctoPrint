@@ -130,7 +130,7 @@ listed in requirements.txt:
     sudo apt-get install python-pip git
     git clone https://github.com/foosel/PrinterWebUI.git
     cd PrinterWebUI
-    pip install -r requirements.txt
+    sudo pip install -r requirements.txt
 
 You should then be able to start the OctoPrint server:
 
