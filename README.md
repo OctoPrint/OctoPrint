@@ -23,9 +23,10 @@ allows
 * optional: creation of timelapse recordings of the printjob via webcam stream (using e.g. MJPG-Streamer) -- currently two timelaspe methods are implemented, triggering a shot on z-layer change or every "n" seconds
 
 The intended usecase is to run OctoPrint on a single-board computer like the Raspberry Pi and a WiFi module,
-connect the printer to the server and therefore create a WiFi-enabled 3D printer.
+connect the printer to the server and therefore create a WiFi-enabled 3D printer. If you want to add a webcam for visual
+monitoring and timelapse support, you'll need a **powered** USB hub.
 
-If you want to add a webcam for visual monitoring and timelapse support, you'll need a **powered** USB hub.
+OctoPrint is Free Software and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
 
 Dependencies
 ------------
