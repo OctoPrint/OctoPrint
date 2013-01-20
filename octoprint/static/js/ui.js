@@ -452,6 +452,50 @@ function GcodeFilesViewModel() {
     var self = this;
 
     self.files = ko.observableArray([]);
+    self.pageSize = ko.observable(CONFIG_FILESPERPAGE);
+    self.currentPage = ko.observable(0);
+
+    self.paginatedFiles = ko.dependentObservable(function() {
+        if (self.files() == undefined) {
+            return [];
+        } else {
+            var from = Math.max(self.currentPage() * self.pageSize(), 0);
+            var to = Math.min(from + self.pageSize(), self.files().length);
+            return self.files().slice(from, to);
+        }
+    })
+    self.lastPage = ko.dependentObservable(function() {
+        return Math.ceil(self.files().length / self.pageSize()) - 1;
+    })
+    self.pages = ko.dependentObservable(function() {
+        var pages = [];
+        if (self.lastPage() < 7) {
+            for (var i = 0; i < self.lastPage() + 1; i++) {
+                pages.push({ number: i, text: i+1 });
+            }
+        } else {
+            pages.push({ number: 0, text: 1 });
+            if (self.currentPage() < 5) {
+                for (var i = 1; i < 5; i++) {
+                    pages.push({ number: i, text: i+1 });
+                }
+                pages.push({ number: -1, text: "…"});
+            } else if (self.currentPage() > self.lastPage() - 5) {
+                pages.push({ number: -1, text: "…"});
+                for (var i = self.lastPage() - 4; i < self.lastPage(); i++) {
+                    pages.push({ number: i, text: i+1 });
+                }
+            } else {
+                pages.push({ number: -1, text: "…"});
+                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
+                    pages.push({ number: i, text: i+1 });
+                }
+                pages.push({ number: -1, text: "…"});
+            }
+            pages.push({ number: self.lastPage(), text: self.lastPage() + 1})
+        }
+        return pages;
+    })
 
     self.requestData = function() {
         $.ajax({
@@ -465,11 +509,17 @@ function GcodeFilesViewModel() {
     }
 
     self.fromResponse = function(response) {
-        self.files(response.files);
+        var sortedFiles = response.files;
+        sortedFiles.sort(function(a, b) {
+            if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
+            if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
+            return 0;
+        });
+
+        self.files(sortedFiles);
     }
 
-    self.loadFile = function() {
-        var filename = this.name;
+    self.loadFile = function(filename) {
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/load",
             type: "POST",
@@ -478,8 +528,7 @@ function GcodeFilesViewModel() {
         })
     }
 
-    self.removeFile = function() {
-        var filename = this.name;
+    self.removeFile = function(filename) {
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/delete",
             type: "POST",
@@ -488,6 +537,23 @@ function GcodeFilesViewModel() {
             success: self.fromResponse
         })
     }
+
+    self.changePage = function(newPage) {
+        if (newPage < 0 || newPage > self.lastPage())
+            return;
+        self.currentPage(newPage);
+    }
+    self.prevPage = function() {
+        if (self.currentPage() > 0) {
+            self.currentPage(self.currentPage() - 1);
+        }
+    }
+    self.nextPage = function() {
+        if (self.currentPage() < self.lastPage()) {
+            self.currentPage(self.currentPage() + 1);
+        }
+    }
+
 }
 
 function WebcamViewModel() {

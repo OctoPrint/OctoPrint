@@ -11,6 +11,7 @@
 
         <script lang="javascript">
             var AJAX_BASEURL = '/ajax/';
+            var CONFIG_FILESPERPAGE = 5;
 
             var WEB_SOCKET_SWF_LOCATION = "{{ url_for('static', filename='js/WebSocketMain.swf') }}";
             var WEB_SOCKET_DEBUG = true;
@@ -85,14 +86,25 @@
                                             <th class="gcode_files_action">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody data-bind="foreach: files">
-                                        <tr data-bind="attr: {title: name}, event: {dblclick: $parent.loadFile}">
+                                    <tbody data-bind="foreach: paginatedFiles">
+                                        <tr data-bind="attr: {title: name}">
                                             <td class="gcode_files_name" data-bind="text: name"></td>
                                             <td class="gcode_files_size" data-bind="text: size"></td>
-                                            <td class="gcode_files_action"><a href="#" class="icon-trash" data-bind="click: $parent.removeFile"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" data-bind="click: $parent.loadFile"></a></td>
+                                            <td class="gcode_files_action"><a href="#" class="icon-trash" data-bind="click: function() { $root.removeFile($data.name); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" data-bind="click: function() { $root.loadFile($data.name); }"></a></td>
                                         </tr>
                                     </tbody>
                                 </table>
+                                <div class="pagination pagination-mini pagination-centered">
+                                    <ul>
+                                        <li data-bind="css: {disabled: currentPage() === 0}"><a href="#" data-bind="click: prevPage">«</a></li>
+                                    </ul>
+                                    <ul data-bind="foreach: pages">
+                                        <li data-bind="css: { active: $data.number === $root.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.changePage($data.number); }"></a></li>
+                                    </ul>
+                                    <ul>
+                                        <li data-bind="css: {disabled: currentPage() === lastPage()}"><a href="#" data-bind="click: nextPage">»</a></li>
+                                    </ul>
+                                </div>
                                 <span class="btn btn-primary btn-block fileinput-button" style="margin-bottom: 10px">
                                     <i class="icon-upload icon-white"></i>
                                     <span>Upload</span>
@@ -100,6 +112,9 @@
                                 </span>
                                 <div id="gcode_upload_progress" class="progress" style="width: 100%;">
                                     <div class="bar" style="width: 0%"></div>
+                                </div>
+                                <div>
+                                    <small>Hint: You can also drag and drop files on this page to upload them.</small>
                                 </div>
                             </div>
                         </div>
