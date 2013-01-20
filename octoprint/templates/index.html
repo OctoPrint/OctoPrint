@@ -219,6 +219,10 @@
                         </div>
                         <div class="tab-pane" id="term">
                             <pre id="terminal-output" class="pre-scrollable"></pre>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
+                            </label>
+
                             <div class="input-append">
                                 <input type="text" id="terminal-command">
                                 <button class="btn" type="button" id="terminal-send">Send</button>

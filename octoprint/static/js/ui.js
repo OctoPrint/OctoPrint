@@ -396,6 +396,8 @@ function TerminalViewModel() {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
+    self.autoscrollEnabled = ko.observable(true);
+
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
         self._processCurrentLogData(data.logs);
@@ -438,11 +440,9 @@ function TerminalViewModel() {
         }
 
         var container = $("#terminal-output");
-        var autoscroll = (container.scrollTop() == container[0].scrollHeight - container.height);
-
         container.text(output);
 
-        if (autoscroll) {
+        if (self.autoscrollEnabled()) {
             container.scrollTop(container[0].scrollHeight - container.height())
         }
     }
