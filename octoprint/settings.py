@@ -5,6 +5,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 import ConfigParser
 import sys
 import os
+import yaml
 
 APPNAME="OctoPrint"
 OLD_APPNAME="PrinterWebUI"
@@ -17,7 +18,7 @@ def settings():
 		instance = Settings()
 	return instance
 
-default_settings = {
+old_default_settings = {
 	"serial": {
 		"port": None,
 		"baudrate": None
@@ -38,8 +39,35 @@ default_settings = {
 	},
 	"feature": {
 		"analyzeGcode": True
-	}
+	},
 }
+
+default_settings = old_default_settings.copy()
+default_settings.update({
+	"controls": {
+		"Motors": {
+			"Enable Motors": {
+				"command": "M17"
+			},
+			"Disable Motors": {
+				"command": "M18"
+			}
+		},
+		"Fan": {
+			"Enable Fan": {
+				"command": "M106 S%(speed)",
+				"input": [{
+					"name": "speed",
+					"type": "integer",
+					"range": [0, 255]
+				}]
+			},
+			"Disable Fan": {
+				"command": "M107"
+			}
+		}
+	}
+})
 
 class Settings(object):
 
@@ -47,7 +75,7 @@ class Settings(object):
 		self.settings_dir = None
 
 		self._config = None
-		self._changes = None
+		self._dirty = False
 
 		self.init_settings_dir()
 		self.load()
@@ -61,32 +89,46 @@ class Settings(object):
 			os.rename(old_settings_dir, self.settings_dir)
 
 	def load(self):
-		self._config = ConfigParser.ConfigParser(allow_no_value=True)
-		self._config.read(os.path.join(self.settings_dir, "config.ini"))
+		filename = os.path.join(self.settings_dir, "config.yaml")
+		oldFilename = os.path.join(self.settings_dir, "config.ini")
+		if os.path.exists(filename) and os.path.isfile(filename):
+			with open(filename, "r") as f:
+				self._config = yaml.safe_load(f)
+		elif os.path.exists(oldFilename) and os.path.isfile(oldFilename):
+			config = ConfigParser.ConfigParser(allow_no_value=True)
+			config.read(oldFilename)
+			self._config = {}
+			for section in old_default_settings.keys():
+				if not config.has_section(section):
+					continue
+
+				self._config[section] = {}
+				for option in old_default_settings[section].keys():
+					if not config.has_option(section, option):
+						continue
+
+					self._config[section][option] = config.get(section, option)
+					self._dirty = True
+			self.save(force=True)
+			#os.rename(oldFilename, oldFilename + ".bck")
+		else:
+			self._config = {}
 
 	def save(self, force=False):
-		if self._changes is None and not force:
+		if not self._dirty and not force:
 			return
 
-		for section in default_settings.keys():
-			if self._changes.has_key(section):
-				for key in self._changes[section].keys():
-					value = self._changes[section][key]
-					if not self._config.has_section(section):
-						self._config.add_section(section)
-					self._config.set(section, key, value)
-
-		with open(os.path.join(self.settings_dir, "config.ini"), "wb") as configFile:
-			self._config.write(configFile)
-			self._changes = None
+		with open(os.path.join(self.settings_dir, "config.yaml"), "wb") as configFile:
+			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
+			self._dirty = False
 		self.load()
 
 	def get(self, section, key):
 		if section not in default_settings.keys():
 			return None
 
-		if self._config.has_option(section, key):
-			return self._config.get(section, key)
+		if self._config.has_key(section) and self._config[section].has_key(key):
+			return self._config[section][key]
 
 		if default_settings.has_key(section) and default_settings[section].has_key(key):
 			return default_settings[section][key]
@@ -112,7 +154,7 @@ class Settings(object):
 		return value.lower() in ["true", "yes", "y", "1"]
 
 	def getBaseFolder(self, type):
-		if type not in default_settings["folder"].keys():
+		if type not in old_default_settings["folder"].keys():
 			return None
 
 		folder = self.get("folder", type)
@@ -128,16 +170,13 @@ class Settings(object):
 		if section not in default_settings.keys():
 			return None
 
-		if self._changes is None:
-			self._changes = {}
-
-		if self._changes.has_key(section):
-			sectionConfig = self._changes[section]
+		if self._config.has_key(section):
+			sectionConfig = self._config[section]
 		else:
 			sectionConfig = {}
 
 		sectionConfig[key] = value
-		self._changes[section] = sectionConfig
+		self._config[section] = sectionConfig
 
 def _resolveSettingsDir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
