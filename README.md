@@ -141,7 +141,7 @@ You should then be able to start the OctoPrint server:
 If you also want webcam and timelapse support, you'll need to download and compile MJPG-Streamer:
 
     cd ~
-    sudo apt-get install libjpeg8-dev imagemagick libav-tools
+    sudo apt-get install subversion libjpeg8-dev imagemagick libav-tools
     wget -Omjpg-streamer.tar.gz http://mjpg-streamer.svn.sourceforge.net/viewvc/mjpg-streamer/mjpg-streamer/?view=tar
     tar xfz mjpg-streamer.tar.gz
     cd mjpg-streamer
