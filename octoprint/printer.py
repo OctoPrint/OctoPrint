@@ -258,18 +258,18 @@ class Printer():
 		self._stateMonitor.setProgress({"progress": self._progress, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		currentTime = int(time.time() * 1000)
+		currentTimeUtc = int((time.time() + time.timezone) * 1000)
 
-		self._temps["actual"].append((currentTime, temp))
+		self._temps["actual"].append((currentTimeUtc, temp))
 		self._temps["actual"] = self._temps["actual"][-300:]
 
-		self._temps["target"].append((currentTime, targetTemp))
+		self._temps["target"].append((currentTimeUtc, targetTemp))
 		self._temps["target"] = self._temps["target"][-300:]
 
-		self._temps["actualBed"].append((currentTime, bedTemp))
+		self._temps["actualBed"].append((currentTimeUtc, bedTemp))
 		self._temps["actualBed"] = self._temps["actualBed"][-300:]
 
-		self._temps["targetBed"].append((currentTime, bedTargetTemp))
+		self._temps["targetBed"].append((currentTimeUtc, bedTargetTemp))
 		self._temps["targetBed"] = self._temps["targetBed"][-300:]
 
 		self._temp = temp
@@ -277,7 +277,7 @@ class Printer():
 		self._targetTemp = targetTemp
 		self._targetBedTemp = bedTargetTemp
 
-		self._stateMonitor.addTemperature({"currentTime": currentTime, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp})
+		self._stateMonitor.addTemperature({"currentTime": currentTimeUtc, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp})
 
 	def _setJobData(self, filename, gcode, gcodeList):
 		self._filename = filename

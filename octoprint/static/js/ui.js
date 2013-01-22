@@ -250,9 +250,19 @@ function TemperatureViewModel() {
             mode: "time",
             minTickSize: [2, "minute"],
             tickFormatter: function(val, axis) {
+				if (val == undefined || val == 0)
+					return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+
+				// calculate current time in milliseconds in UTC
                 var now = new Date();
-                var diff = now.getTime() - val;
-                var diffInMins = Math.round(diff / (60000));
+				var timezoneOffset = now.getTimezoneOffset() * 60 * 1000;
+				var timestampUtc = now.getTime() + timezoneOffset;
+
+				// calculate difference in milliseconds
+                var diff = timestampUtc - val;
+
+				// convert to minutes
+                var diffInMins = Math.round(diff / (60 * 1000));
                 if (diffInMins == 0)
                     return "just now";
                 else
