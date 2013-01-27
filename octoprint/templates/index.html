@@ -10,8 +10,9 @@
         <link href="{{ url_for('static', filename='css/ui.css') }}" rel="stylesheet" media="screen">
 
         <script lang="javascript">
-            var AJAX_BASEURL = '/ajax/';
+            var AJAX_BASEURL = "/ajax/";
             var CONFIG_FILESPERPAGE = 5;
+            var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
 
             var WEB_SOCKET_SWF_LOCATION = "{{ url_for('static', filename='js/WebSocketMain.swf') }}";
             var WEB_SOCKET_DEBUG = true;
@@ -124,7 +125,7 @@
                 <div class="tabbable span8">
                     <ul class="nav nav-tabs" id="tabs">
                         <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
-                        <li><a href="#jog" data-toggle="tab">Controls</a></li>
+                        <li><a href="#controls" data-toggle="tab">Controls</a></li>
                         <!--<li><a href="#speed" data-toggle="tab">Speed</a></li>-->
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
                         {% if webcamStream %}<li><a href="#webcam" data-toggle="tab">Webcam</a></li>{% endif %}
@@ -166,24 +167,24 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tab-pane" id="jog">
+                        <div class="tab-pane" id="controls">
                             <div style="width: 350px; height: 70px">
                                 <div style="width: 70px; float: left;">&nbsp;</div>
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_y_inc" data-bind="enable: isOperational() && !isPrinting()">Y+</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y', 10) }">Y+</button></div>
                                 <div style="width: 70px; float: left;">&nbsp;</div>
-                                <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" id="jog_z_inc" data-bind="enable: isOperational() && !isPrinting()">Z+</button></div>
+                                <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z', 10) }">Z+</button></div>
                             </div>
                             <div style="width: 350px; height: 70px">
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_x_dec" data-bind="enable: isOperational() && !isPrinting()">X-</button></div>
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_xy_home" data-bind="enable: isOperational() && !isPrinting()">Home</button></div>
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_x_inc" data-bind="enable: isOperational() && !isPrinting()">X+</button></div>
-                                <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" id="jog_z_home" data-bind="enable: isOperational() && !isPrinting()">Home</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x', -10) }">X-</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand('XY') }">Home</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x', 10) }">X+</button></div>
+                                <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" id="jog_z_home" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand('Z') }">Home</button></div>
                             </div>
                             <div style="width: 350px; height: 70px">
                                 <div style="width: 70px; float: left;">&nbsp;</div>
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_y_dec" data-bind="enable: isOperational() && !isPrinting()">Y-</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y', -10) }">Y-</button></div>
                                 <div style="width: 70px; float: left;">&nbsp;</div>
-                                <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" id="jog_z_dec" data-bind="enable: isOperational() && !isPrinting()">Z-</button></div>
+                                <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z', -10) }">Z-</button></div>
                             </div>
 
                             <div data-bind="template: { name: $root.displayMode, foreach: controls }"></div>
@@ -195,9 +196,20 @@
                                 <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
                             </script>
                             <script type="text/html" id="customControls_commandTemplate">
-                                <button class="btn" data-bind="text: name, enable: $root.isOperational(), click: function() { $root.sendCustomCommand($data.command) }"></button>
+                                <form class="form-inline">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational(), click: function() { $root.sendCustomCommand($data) }"></button>
+                                </form>
                             </script>
-                            <script type="text/html" id="customControls_emptyTemplate"></script>
+                            <script type="text/html" id="customControls_parametrizedCommandTemplate">
+                                <form class="form-inline">
+                                    <!-- ko foreach: input -->
+                                        <label data-bind="text: name"></label>
+                                        <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
+                                    <!-- /ko -->
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational(), click: function() { $root.sendCustomCommand($data) }"></button>
+                                </form>
+                            </script>
+                            <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
                             <!-- End of templates for custom controls -->
                         </div>
                         <div class="tab-pane" id="speed">

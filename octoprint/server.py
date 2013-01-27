@@ -120,6 +120,19 @@ def disconnect():
 @app.route(BASEURL + "control/command", methods=["POST"])
 def printerCommand():
 	command = request.form["command"]
+
+	# if parameters for the command are given, retrieve them from the request and format the command string with them
+	parameters = {}
+	for requestParameter in request.values.keys():
+		if not requestParameter.startswith("parameter_"):
+			continue
+
+		parameterName = requestParameter[len("parameter_"):]
+		parameterValue = request.values[requestParameter]
+		parameters[parameterName] = parameterValue
+	if len(parameters) > 0:
+		command = command % parameters
+
 	printer.command(command)
 	return jsonify(SUCCESS)
 
@@ -182,6 +195,10 @@ def jog():
 
 	return jsonify(SUCCESS)
 
+@app.route(BASEURL + "control/speed", methods=["GET"])
+def getSpeedValues():
+	return jsonify(feedrate = printer.feedrateState())
+
 @app.route(BASEURL + "control/speed", methods=["POST"])
 def speed():
 	if not printer.isOperational():
@@ -192,12 +209,11 @@ def speed():
 			value = int(request.values[key])
 			printer.setFeedrateModifier(key, value)
 
-	return jsonify(feedrate = printer.feedrateState())
+	return getSpeedValues()
 
 @app.route(BASEURL + "control/custom", methods=["GET"])
 def getCustomControls():
 	customControls = settings().getObject("controls")
-	print("custom controls: %r" % customControls)
 	return jsonify(controls = customControls)
 
 #~~ GCODE file handling

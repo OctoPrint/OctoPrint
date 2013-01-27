@@ -45,46 +45,7 @@ old_default_settings = {
 
 default_settings = old_default_settings.copy()
 default_settings.update({
-	"controls": [
-		{
-			"name": "Motors",
-			"type": "section",
-			"children": [
-				{
-					"name": "Enable Motors",
-					"type": "command",
-					"command": "M17"
-				},
-				{
-					"name": "Disable Motors",
-					"type": "command",
-					"command": "M18"
-				}
-			]
-		},
-		{
-			"name": "Fan",
-			"type": "section",
-			"children": [
-				{
-					"name": "Enable Fan",
-					"type": "parameterized_command",
-					"command": "M106 S%(speed)",
-					"input": [{
-						"name": "Speed (0-255)",
-						"parameter": "speed",
-						"type": "integer",
-						"range": [0, 255]
-					}]
-				},
-				{
-					"name": "Disable Fan",
-					"type": "command",
-					"command": "M107"
-				}
-			]
-		}
-	]
+	"controls": []
 })
 
 class Settings(object):
@@ -128,7 +89,7 @@ class Settings(object):
 					self._config[section][option] = config.get(section, option)
 					self._dirty = True
 			self.save(force=True)
-			#os.rename(oldFilename, oldFilename + ".bck")
+			os.rename(oldFilename, oldFilename + ".bck")
 		else:
 			self._config = {}
 
@@ -195,7 +156,7 @@ class Settings(object):
 
 	def set(self, section, key, value):
 		if section not in default_settings.keys():
-			return None
+			return
 
 		if self._config.has_key(section):
 			sectionConfig = self._config[section]
@@ -204,6 +165,14 @@ class Settings(object):
 
 		sectionConfig[key] = value
 		self._config[section] = sectionConfig
+		self._dirty = True
+
+	def setObject(self, key, value):
+		if key not in default_settings.keys():
+			return
+
+		self._config[key] = value
+		self._dirty = True
 
 def _resolveSettingsDir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python

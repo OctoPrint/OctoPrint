@@ -12,7 +12,6 @@ allows
 * while printing, gaining information regarding the current progress of the print job (height, percentage etc)
 * reading the communication log and send arbitrary codes to be executed by the printer
 * moving the X, Y and Z axis (jog controls, although very ugly ones right now)
-* changing the speed modifiers for inner & outer wall, fill and support
 * optional: visual monitoring of the printer via webcam stream integrated into the UI (using e.g. MJPG-Streamer)
 * optional: creation of timelapse recordings of the printjob via webcam stream (using e.g. MJPG-Streamer) -- currently two timelaspe methods are implemented, triggering a shot on z-layer change or every "n" seconds
 
@@ -66,50 +65,81 @@ on Linux, at `%APPDATA%/OctoPrint` on Windows and at `~/Library/Application Supp
 
 The following example config should explain the available options:
 
-    [serial]
-    # Use the following option to define the default serial port, defaults to unset (= AUTO)
-    port = /dev/ttyACM0
+    # Use the following settings to configure the serial connection to the printer
+    serial:
+      # Use the following option to define the default serial port, defaults to unset (= AUTO)
+      port: /dev/ttyACM0
 
-    # Use the following option to define the default baudrate, defaults to unset (= AUTO)
-    baudrate = 115200
+      # Use the following option to define the default baudrate, defaults to unset (= AUTO)
+      baudrate: 115200
 
-    [server]
-    # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
-    host = 0.0.0.0
+    # Use the following settings to configure the web server
+    server:
+      # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
+      host: 0.0.0.0
 
-    # Use this option to define the port to which to bind the server, defaults to 5000
-    port = 5000
+      # Use this option to define the port to which to bind the server, defaults to 5000
+      port: 5000
 
-    [webcam]
-    # Use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer.
-    # Webcam support will be disabled if not set
-    stream = http://<stream host>:<stream port>/?action=stream
+    # Use the following settings to configure webcam support
+    webcam:
+      # Use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer.
+      # Webcam support will be disabled if not set
+      stream: http://<stream host>:<stream port>/?action=stream
 
-    # Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer.
-    # Timelapse support will be disabled if not set
-    snapshot = http://<stream host>:<stream port>/?action=snapshot
+      # Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer.
+      # Timelapse support will be disabled if not set
+      snapshot: http://<stream host>:<stream port>/?action=snapshot
 
-    # Path to ffmpeg binary to use for creating timelapse recordings.
-    # Timelapse support will be disabled if not set
-    ffmpeg = /path/to/ffmpeg
+      # Path to ffmpeg binary to use for creating timelapse recordings.
+      # Timelapse support will be disabled if not set
+      ffmpeg: /path/to/ffmpeg
 
-    [feature]
-    # Whether to enable gcode analysis for displaying needed filament and estimated print time. Disabling this (set
-    # to False) will speed up the loading of gcode files before printing significantly, but the mentioned statistical
-    # data will not be available
-    analyzeGcode = True
+    # Use the following settings to enable or disable OctoPrint features
+    feature:
+      # Whether to enable gcode analysis for displaying needed filament and estimated print time. Disabling this (set
+      # to false) will speed up the loading of gcode files before printing significantly, but the mentioned statistical
+      # data will not be available
+      analyzeGcode: true
 
-    [folder]
-    # Absolute path where to store gcode uploads. Defaults to the uploads folder in the OctoPrint settings folder
-    uploads = /path/to/upload/folder
+    # Use the following settings to set custom paths for folders used by OctoPrint
+    folder:
+      # Absolute path where to store gcode uploads. Defaults to the uploads folder in the OctoPrint settings folder
+      uploads: /path/to/upload/folder
 
-    # Absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the OctoPrint
-    # settings dir
-    timelapse = /path/to/timelapse/folder
+      # Absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the OctoPrint
+      # settings dir
+      timelapse: /path/to/timelapse/folder
 
-    # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the OctoPrint
-    # settings dir
-    timelapse_tmp = /path/timelapse/tmp/folder
+      # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the OctoPrint
+      # settings dir
+      timelapse_tmp: /path/timelapse/tmp/folder
+
+    # Use the following settings to add custom controls to the "Controls" tab within OctoPrint
+    #
+    # Controls consist at least of a name, a type and type-specific further attributes. Currently recognized types are
+    # - section: Creates a visual section in the UI, you can use this to separate functional blocks
+    # - command: Creates a button that sends a defined GCODE command to the printer when clicked
+    # - parametrized_command: Creates a button that sends a parametrized GCODE command to the printer, parameters
+    #   needed for the command are added to the UI as input fields and are named
+    #
+    # The following example defines a control for enabling the cooling fan with a variable speed defined by the user
+    # (default 255) and a control for disabling the fan, all within a section named "Fan".
+    controls:
+      - name: Fan
+        type: section
+        children:
+          - name: Enable Fan
+            type: parametrized_command
+            command: M106 S%(speed)s
+            input:
+              - name: Speed (0-255)
+                parameter: speed
+                default: 255
+          - name: Disable Fan
+            type: command
+            command: M107
+
 
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
@@ -158,10 +188,10 @@ This should hopefully run through without any compilation errors. You should the
 If you now point your browser to `http://<your Raspi's IP>:8080/?action=stream`, you should see a moving picture at 5fps.
 Open `~/.octoprint/config.ini` and add the following lines to it:
 
-    [webcam]
-    stream = http://<your Raspi's IP>:8080/?action=stream
-    snapshot = http://127.0.0.1:8080/?action=snapshot
-    ffmpeg = /usr/bin/avconv
+    webcam:
+      stream: http://<your Raspi's IP>:8080/?action=stream
+      snapshot: http://127.0.0.1:8080/?action=snapshot
+      ffmpeg: /usr/bin/avconv
 
 Restart the OctoPrint server and reload its frontend. You should now see a Webcam tab with content.
 
@@ -179,6 +209,7 @@ It also uses the following libraries and frameworks for backend and frontend:
 * Flask: http://flask.pocoo.org/
 * Tornado: http://www.tornadoweb.org/
 * Tornadio2: https://github.com/MrJoes/tornadio2
+* PyYAML: http://pyyaml.org/
 * Socket.io: http://socket.io/
 * jQuery: http://jquery.com/
 * Bootstrap: http://twitter.github.com/bootstrap/
@@ -201,14 +232,14 @@ What do I have to do after the rename from Printer WebUI to OctoPrint?
 ----------------------------------------------------------------------
 
 If you did checkout OctoPrint from its previous location at https://github.com/foosel/PrinterWebUI.git, you'll have to
-update your so-called remote references in git in order to make 'git pull' use the new repository location as origin.
+update your so-called remote references in git in order to make `git pull` use the new repository location as origin.
 
 To do so you'll only need to execute the following command in your OctoPrint/PrinterWebUI folder:
 
     git remote set-url origin https://github.com/foosel/OctoPrint.git
 
-After that you might also want to rename your base directory (which probably still is called 'PrinterWebUI') to 'OctoPrint'
-and delete the folder 'printer_webui' in your base folder (which stays there thanks to Python's compiled bytecode files
-even after a rename of the Python package to 'octoprint').
+After that you might also want to rename your base directory (which probably still is called `PrinterWebUI`) to `OctoPrint`
+and delete the folder `printer_webui` in your base folder (which stays there thanks to Python's compiled bytecode files
+even after a rename of the Python package to `octoprint`).
 
-After that you are set, the configuration files are migrated automatically :)
+After that you are set, the configuration files are migrated automatically.

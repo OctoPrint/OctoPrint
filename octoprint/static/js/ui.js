@@ -387,16 +387,66 @@ function ControlsViewModel() {
     }
 
     self._fromResponse = function(response) {
-        self.controls(response.controls);
+        self.controls(self._enhanceControls(response.controls));
+    }
+
+    self._enhanceControls = function(controls) {
+        for (var i = 0; i < controls.length; i++) {
+            controls[i] = self._enhanceControl(controls[i]);
+        }
+        return controls;
+    }
+
+    self._enhanceControl = function(control) {
+        if (control.type == "parametrized_command") {
+            for (var i = 0; i < control.input.length; i++) {
+                control.input[i].value = control.input[i].default;
+            }
+        } else if (control.type == "section") {
+            control.children = self._enhanceControls(control.children);
+        }
+        return control;
+    }
+
+    self.sendJogCommand = function(axis, distance) {
+        $.ajax({
+            url: AJAX_BASEURL + "control/jog",
+            type: "POST",
+            dataType: "json",
+            data: axis + "=" + distance
+        })
+    }
+
+    self.sendHomeCommand = function(axis) {
+        $.ajax({
+            url: AJAX_BASEURL + "control/jog",
+            type: "POST",
+            dataType: "json",
+            data: "home" + axis
+        })
     }
 
     self.sendCustomCommand = function(command) {
-        if (command) {
+        if (!command)
+            return;
+
+        if (command.type == "command") {
             $.ajax({
                 url: AJAX_BASEURL + "control/command",
                 type: "POST",
                 dataType: "json",
-                data: "command=" + command
+                data: "command=" + command.command
+            })
+        } else if (command.type="parametrized_command") {
+            var data = {"command": command.command};
+            for (var i = 0; i < command.input.length; i++) {
+                data["parameter_" + command.input[i].parameter] = command.input[i].value;
+            }
+            $.ajax({
+                url: AJAX_BASEURL + "control/command",
+                type: "POST",
+                dataType: "json",
+                data: data
             })
         }
     }
@@ -406,8 +456,9 @@ function ControlsViewModel() {
             case "section":
                 return "customControls_sectionTemplate";
             case "command":
-            case "parameterized_command":
                 return "customControls_commandTemplate";
+            case "parametrized_command":
+                return "customControls_parametrizedCommandTemplate";
             default:
                 return "customControls_emptyTemplate";
         }
@@ -449,19 +500,28 @@ function SpeedViewModel() {
         self.isLoading(data.flags.loading);
     }
 
-    /*
-    if (response.feedrate) {
-        self.outerWall(response.feedrate.outerWall);
-        self.innerWall(response.feedrate.innerWall);
-        self.fill(response.feedrate.fill);
-        self.support(response.feedrate.support);
-    } else {
-        self.outerWall(undefined);
-        self.innerWall(undefined);
-        self.fill(undefined);
-        self.support(undefined);
+    self.requestData = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "control/speed",
+            type: "GET",
+            dataType: "json",
+            success: self._fromResponse
+        });
     }
-    */
+
+    self._fromResponse = function(response) {
+        if (response.feedrate) {
+            self.outerWall(response.feedrate.outerWall);
+            self.innerWall(response.feedrate.innerWall);
+            self.fill(response.feedrate.fill);
+            self.support(response.feedrate.support);
+        } else {
+            self.outerWall(undefined);
+            self.innerWall(undefined);
+            self.fill(undefined);
+            self.support(undefined);
+        }
+    }
 }
 
 function TerminalViewModel() {
@@ -667,6 +727,7 @@ function WebcamViewModel() {
             dataType: "json",
             success: self.fromResponse
         });
+        $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
     }
 
     self.fromResponse = function(response) {
@@ -847,33 +908,6 @@ $(function() {
             temperatureViewModel.updatePlot();
         });
 
-        //~~ Jog controls
-
-        function jogCommand(axis, distance) {
-            $.ajax({
-                url: AJAX_BASEURL + "control/jog",
-                type: "POST",
-                dataType: "json",
-                data: axis + "=" + distance
-            })
-        }
-        function homeCommand(axis) {
-            $.ajax({
-                url: AJAX_BASEURL + "control/jog",
-                type: "POST",
-                dataType: "json",
-                data: "home" + axis
-            })
-        }
-        $("#jog_x_inc").click(function() {jogCommand("x", "10")});
-        $("#jog_x_dec").click(function() {jogCommand("x", "-10")});
-        $("#jog_y_inc").click(function() {jogCommand("y", "10")});
-        $("#jog_y_dec").click(function() {jogCommand("y", "-10")});
-        $("#jog_z_inc").click(function() {jogCommand("z", "10")});
-        $("#jog_z_dec").click(function() {jogCommand("z", "-10")});
-        $("#jog_xy_home").click(function() {homeCommand("XY")});
-        $("#jog_z_home").click(function() {homeCommand("Z")});
-
         //~~ Speed controls
 
         function speedCommand(structure) {
@@ -932,7 +966,7 @@ $(function() {
         ko.applyBindings(printerStateViewModel, document.getElementById("state"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-        ko.applyBindings(controlsViewModel, document.getElementById("jog"));
+        ko.applyBindings(controlsViewModel, document.getElementById("controls"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
 
