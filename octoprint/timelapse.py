@@ -80,14 +80,15 @@ class Timelapse(object):
 
 	def _createMovie(self):
 		ffmpeg = settings().get("webcam", "ffmpeg")
-		if ffmpeg is None:
+		bitrate = settings().get("webcam", "bitrate")
+		if ffmpeg is None or bitrate is None:
 			return
 
 		input = os.path.join(self._captureDir, "tmp_%05d.jpg")
 		output = os.path.join(self._movieDir, "%s_%s.mpg" % (os.path.splitext(self._gcodeFile)[0], time.strftime("%Y%m%d%H%M%S")))
 		subprocess.call([
 			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y',
-			 '-b:v', '1500k', '-f', 'vob', output
+			 '-b:v', bitrate, '-f', 'vob', output
 		])
 
 	def cleanCaptureDir(self):

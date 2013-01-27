@@ -169,22 +169,36 @@
                         <div class="tab-pane" id="jog">
                             <div style="width: 350px; height: 70px">
                                 <div style="width: 70px; float: left;">&nbsp;</div>
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_y_inc" data-bind="enable: isOperational() && !isPrinting()">Up</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_y_inc" data-bind="enable: isOperational() && !isPrinting()">Y+</button></div>
                                 <div style="width: 70px; float: left;">&nbsp;</div>
                                 <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" id="jog_z_inc" data-bind="enable: isOperational() && !isPrinting()">Z+</button></div>
                             </div>
                             <div style="width: 350px; height: 70px">
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_x_dec" data-bind="enable: isOperational() && !isPrinting()">Left</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_x_dec" data-bind="enable: isOperational() && !isPrinting()">X-</button></div>
                                 <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_xy_home" data-bind="enable: isOperational() && !isPrinting()">Home</button></div>
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_x_inc" data-bind="enable: isOperational() && !isPrinting()">Right</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_x_inc" data-bind="enable: isOperational() && !isPrinting()">X+</button></div>
                                 <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" id="jog_z_home" data-bind="enable: isOperational() && !isPrinting()">Home</button></div>
                             </div>
                             <div style="width: 350px; height: 70px">
                                 <div style="width: 70px; float: left;">&nbsp;</div>
-                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_y_dec" data-bind="enable: isOperational() && !isPrinting()">Down</button></div>
+                                <div style="width: 70px; float: left;"><button class="btn btn-block" id="jog_y_dec" data-bind="enable: isOperational() && !isPrinting()">Y-</button></div>
                                 <div style="width: 70px; float: left;">&nbsp;</div>
                                 <div style="width: 70px; float: left; margin-left: 20px"><button class="btn btn-block" id="jog_z_dec" data-bind="enable: isOperational() && !isPrinting()">Z-</button></div>
                             </div>
+
+                            <div data-bind="template: { name: $root.displayMode, foreach: controls }"></div>
+
+                            <!-- Templates for custom controls -->
+                            <script type="text/html" id="customControls_sectionTemplate">
+                                <h1 data-bind="text: name"></h1>
+
+                                <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+                            </script>
+                            <script type="text/html" id="customControls_commandTemplate">
+                                <button class="btn" data-bind="text: name, enable: $root.isOperational(), click: function() { $root.sendCustomCommand($data.command) }"></button>
+                            </script>
+                            <script type="text/html" id="customControls_emptyTemplate"></script>
+                            <!-- End of templates for custom controls -->
                         </div>
                         <div class="tab-pane" id="speed">
                             <div class="form-horizontal" style="margin-bottom: 20px">
@@ -301,7 +315,7 @@
         </div>
 
     <script src="http://code.jquery.com/jquery-latest.js"></script>
-    <script src="{{ url_for('static', filename='js/knockout-2.2.0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/knockout-2.2.1.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>

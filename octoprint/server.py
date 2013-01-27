@@ -194,6 +194,12 @@ def speed():
 
 	return jsonify(feedrate = printer.feedrateState())
 
+@app.route(BASEURL + "control/custom", methods=["GET"])
+def getCustomControls():
+	customControls = settings().getObject("controls")
+	print("custom controls: %r" % customControls)
+	return jsonify(controls = customControls)
+
 #~~ GCODE file handling
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])

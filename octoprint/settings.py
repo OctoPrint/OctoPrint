@@ -30,7 +30,8 @@ old_default_settings = {
 	"webcam": {
 		"stream": None,
 		"snapshot": None,
-		"ffmpeg": None
+		"ffmpeg": None,
+		"bitrate": "5000k"
 	},
 	"folder": {
 		"uploads": None,
@@ -44,29 +45,46 @@ old_default_settings = {
 
 default_settings = old_default_settings.copy()
 default_settings.update({
-	"controls": {
-		"Motors": {
-			"Enable Motors": {
-				"command": "M17"
-			},
-			"Disable Motors": {
-				"command": "M18"
-			}
+	"controls": [
+		{
+			"name": "Motors",
+			"type": "section",
+			"children": [
+				{
+					"name": "Enable Motors",
+					"type": "command",
+					"command": "M17"
+				},
+				{
+					"name": "Disable Motors",
+					"type": "command",
+					"command": "M18"
+				}
+			]
 		},
-		"Fan": {
-			"Enable Fan": {
-				"command": "M106 S%(speed)",
-				"input": [{
-					"name": "speed",
-					"type": "integer",
-					"range": [0, 255]
-				}]
-			},
-			"Disable Fan": {
-				"command": "M107"
-			}
+		{
+			"name": "Fan",
+			"type": "section",
+			"children": [
+				{
+					"name": "Enable Fan",
+					"type": "parameterized_command",
+					"command": "M106 S%(speed)",
+					"input": [{
+						"name": "Speed (0-255)",
+						"parameter": "speed",
+						"type": "integer",
+						"range": [0, 255]
+					}]
+				},
+				{
+					"name": "Disable Fan",
+					"type": "command",
+					"command": "M107"
+				}
+			]
 		}
-	}
+	]
 })
 
 class Settings(object):
@@ -122,6 +140,15 @@ class Settings(object):
 			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self.load()
+
+	def getObject(self, key):
+		if key not in default_settings.keys():
+			return None
+
+		if key in self._config.keys():
+			return self._config[key]
+
+		return default_settings[key]
 
 	def get(self, section, key):
 		if section not in default_settings.keys():

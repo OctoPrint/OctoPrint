@@ -250,18 +250,18 @@ function TemperatureViewModel() {
             mode: "time",
             minTickSize: [2, "minute"],
             tickFormatter: function(val, axis) {
-				if (val == undefined || val == 0)
-					return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+                if (val == undefined || val == 0)
+                    return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
 
-				// calculate current time in milliseconds in UTC
+                // calculate current time in milliseconds in UTC
                 var now = new Date();
-				var timezoneOffset = now.getTimezoneOffset() * 60 * 1000;
-				var timestampUtc = now.getTime() + timezoneOffset;
+                var timezoneOffset = now.getTimezoneOffset() * 60 * 1000;
+                var timestampUtc = now.getTime() + timezoneOffset;
 
-				// calculate difference in milliseconds
+                // calculate difference in milliseconds
                 var diff = timestampUtc - val;
 
-				// convert to minutes
+                // convert to minutes
                 var diffInMins = Math.round(diff / (60 * 1000));
                 if (diffInMins == 0)
                     return "just now";
@@ -342,6 +342,77 @@ function TemperatureViewModel() {
         ]
         $.plot($("#temperature-graph"), data, self.plotOptions);
     }
+}
+
+function ControlsViewModel() {
+    var self = this;
+
+    self.isErrorOrClosed = ko.observable(undefined);
+    self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
+
+    self.controls = ko.observableArray([]);
+
+    self.fromCurrentData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self._processStateData = function(data) {
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
+    }
+
+    self.requestData = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "control/custom",
+            method: "GET",
+            dataType: "json",
+            success: function(response) {
+                self._fromResponse(response);
+            }
+        });
+    }
+
+    self._fromResponse = function(response) {
+        self.controls(response.controls);
+    }
+
+    self.sendCustomCommand = function(command) {
+        if (command) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/command",
+                type: "POST",
+                dataType: "json",
+                data: "command=" + command
+            })
+        }
+    }
+
+    self.displayMode = function(customControl) {
+        switch (customControl.type) {
+            case "section":
+                return "customControls_sectionTemplate";
+            case "command":
+            case "parameterized_command":
+                return "customControls_commandTemplate";
+            default:
+                return "customControls_emptyTemplate";
+        }
+    }
+
 }
 
 function SpeedViewModel() {
@@ -656,12 +727,13 @@ function WebcamViewModel() {
     }
 }
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel) {
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel) {
     var self = this;
 
     self.connectionViewModel = connectionViewModel;
     self.printerStateViewModel = printerStateViewModel;
     self.temperatureViewModel = temperatureViewModel;
+    self.controlsViewModel = controlsViewModel;
     self.terminalViewModel = terminalViewModel;
     self.speedViewModel = speedViewModel;
     self.webcamViewModel = webcamViewModel;
@@ -692,6 +764,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.connectionViewModel.fromHistoryData(data);
         self.printerStateViewModel.fromHistoryData(data);
         self.temperatureViewModel.fromHistoryData(data);
+        self.controlsViewModel.fromHistoryData(data);
         self.terminalViewModel.fromHistoryData(data);
         self.webcamViewModel.fromHistoryData(data);
     })
@@ -699,6 +772,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.connectionViewModel.fromCurrentData(data);
         self.printerStateViewModel.fromCurrentData(data);
         self.temperatureViewModel.fromCurrentData(data);
+        self.controlsViewModel.fromCurrentData(data);
         self.terminalViewModel.fromCurrentData(data);
         self.webcamViewModel.fromCurrentData(data);
     })
@@ -714,11 +788,12 @@ $(function() {
         var connectionViewModel = new ConnectionViewModel();
         var printerStateViewModel = new PrinterStateViewModel();
         var temperatureViewModel = new TemperatureViewModel();
+        var controlsViewModel = new ControlsViewModel();
         var speedViewModel = new SpeedViewModel();
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
-        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel);
+        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel);
 
         //~~ Print job control
 
@@ -857,7 +932,7 @@ $(function() {
         ko.applyBindings(printerStateViewModel, document.getElementById("state"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-        ko.applyBindings(printerStateViewModel, document.getElementById("jog"));
+        ko.applyBindings(controlsViewModel, document.getElementById("jog"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
 
@@ -869,6 +944,7 @@ $(function() {
         //~~ startup commands
 
         connectionViewModel.requestData();
+        controlsViewModel.requestData();
         gcodeFilesViewModel.requestData();
         webcamViewModel.requestData();
 
