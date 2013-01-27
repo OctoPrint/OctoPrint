@@ -398,7 +398,7 @@ function ControlsViewModel() {
     }
 
     self._enhanceControl = function(control) {
-        if (control.type == "parametrized_command") {
+        if (control.type == "parametric_command") {
             for (var i = 0; i < control.input.length; i++) {
                 control.input[i].value = control.input[i].default;
             }
@@ -437,7 +437,7 @@ function ControlsViewModel() {
                 dataType: "json",
                 data: "command=" + command.command
             })
-        } else if (command.type="parametrized_command") {
+        } else if (command.type="parametric_command") {
             var data = {"command": command.command};
             for (var i = 0; i < command.input.length; i++) {
                 data["parameter_" + command.input[i].parameter] = command.input[i].value;
@@ -457,8 +457,8 @@ function ControlsViewModel() {
                 return "customControls_sectionTemplate";
             case "command":
                 return "customControls_commandTemplate";
-            case "parametrized_command":
-                return "customControls_parametrizedCommandTemplate";
+            case "parametric_command":
+                return "customControls_parametricCommandTemplate";
             default:
                 return "customControls_emptyTemplate";
         }

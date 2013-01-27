@@ -120,8 +120,8 @@ The following example config should explain the available options:
     # Controls consist at least of a name, a type and type-specific further attributes. Currently recognized types are
     # - section: Creates a visual section in the UI, you can use this to separate functional blocks
     # - command: Creates a button that sends a defined GCODE command to the printer when clicked
-    # - parametrized_command: Creates a button that sends a parametrized GCODE command to the printer, parameters
-    #   needed for the command are added to the UI as input fields and are named
+    # - parametric_command: Creates a button that sends a parameterized GCODE command to the printer, parameters
+    #   needed for the command are added to the UI as input fields, are named and can such be referenced from the command
     #
     # The following example defines a control for enabling the cooling fan with a variable speed defined by the user
     # (default 255) and a control for disabling the fan, all within a section named "Fan".
@@ -130,7 +130,7 @@ The following example config should explain the available options:
         type: section
         children:
           - name: Enable Fan
-            type: parametrized_command
+            type: parametric_command
             command: M106 S%(speed)s
             input:
               - name: Speed (0-255)
