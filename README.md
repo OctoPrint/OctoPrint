@@ -60,7 +60,7 @@ Alternatively, the host and port on which to bind can be defined via the configu
 Configuration
 -------------
 
-The config-file `config.ini` for OctoPrint is expected in its settings folder, which is located at `~/.octoprint`
+The config-file `config.yaml` for OctoPrint is expected in its settings folder, which is located at `~/.octoprint`
 on Linux, at `%APPDATA%/OctoPrint` on Windows and at `~/Library/Application Support/OctoPrint` on MacOS.
 
 The following example config should explain the available options:
