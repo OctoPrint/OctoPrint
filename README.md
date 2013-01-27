@@ -205,7 +205,7 @@ update your so-called remote references in git in order to make 'git pull' use t
 
 To do so you'll only need to execute the following command in your OctoPrint/PrinterWebUI folder:
 
-  git remote set-url origin https://github.com/foosel/OctoPrint.git
+    git remote set-url origin https://github.com/foosel/OctoPrint.git
 
 After that you might also want to rename your base directory (which probably still is called 'PrinterWebUI') to 'OctoPrint'
 and delete the folder 'printer_webui' in your base folder (which stays there thanks to Python's compiled bytecode files
