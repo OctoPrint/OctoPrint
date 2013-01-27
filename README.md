@@ -1,9 +1,3 @@
-Attention
-=========
-
-OctoPrint -- formerly known as Printer WebUI -- will be migrated to a new repository location reflecting its new name on Saturday 26th 2013. It will then
-be located at http://github.com/foosel/OctoPrint. Please be prepared to upgrade your links and remote refs. Sorry for the inconvenience.
-
 OctoPrint
 =========
 
