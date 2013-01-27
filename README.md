@@ -123,13 +123,13 @@ listed in requirements.txt:
 
     cd ~
     sudo apt-get install python-pip git
-    git clone https://github.com/foosel/PrinterWebUI.git
-    cd PrinterWebUI
+    git clone https://github.com/foosel/OctoPrint.git
+    cd OctoPrint
     sudo pip install -r requirements.txt
 
 You should then be able to start the OctoPrint server:
 
-    pi@raspberrypi ~/PrinterWebUI $ ./run
+    pi@raspberrypi ~/OctoPrint $ ./run
      * Running on http://0.0.0.0:5000/
 
 If you also want webcam and timelapse support, you'll need to download and compile MJPG-Streamer:
@@ -196,3 +196,19 @@ Why is it called OctoPrint and what's with the crystal ball in the logo?
 ------------------------------------------------------------------------
 
 It so happens that I needed a favicon and also OctoPrint's first name -- Printer WebUI -- simply lacked a certain coolness to it. So I asked The Internet(tm) for advise. After some brainstorming, the idea of a cute Octopus watching his print job remotely through a crystal ball was born... [or something like that](https://plus.google.com/u/0/106003970953341660077/posts/UmLD5mW8yBQ).
+
+What do I have to do after the rename from Printer WebUI to OctoPrint?
+----------------------------------------------------------------------
+
+If you did checkout OctoPrint from its previous location at https://github.com/foosel/PrinterWebUI.git, you'll have to
+update your so-called remote references in git in order to make 'git pull' use the new repository location as origin.
+
+To do so you'll only need to execute the following command in your OctoPrint/PrinterWebUI folder:
+
+  git remote set-url origin https://github.com/foosel/OctoPrint.git
+
+After that you might also want to rename your base directory (which probably still is called 'PrinterWebUI') to 'OctoPrint'
+and delete the folder 'printer_webui' in your base folder (which stays there thanks to Python's compiled bytecode files
+even after a rename of the Python package to 'octoprint').
+
+After that you are set, the configuration files are migrated automatically :)
