@@ -22,6 +22,9 @@ def getPreference(key, default=None):
 	else:
 		return default
 
+class AnalysisAborted(Exception):
+	pass
+
 class gcodePath(object):
 	def __init__(self, newType, pathType, layerThickness, startPoint):
 		self.type = newType
@@ -36,6 +39,7 @@ class gcode(object):
 		self.extrusionAmount = 0
 		self.totalMoveTimeMinute = 0
 		self.progressCallback = None
+		self._abort = False
 	
 	def load(self, filename):
 		if os.path.isfile(filename):
@@ -46,6 +50,9 @@ class gcode(object):
 	
 	def loadList(self, l):
 		self._load(l)
+
+	def abort(self):
+		self._abort = True
 	
 	def _load(self, gcodeFile):
 		filePos = 0
@@ -69,6 +76,8 @@ class gcode(object):
 		currentPath.list[0].extrudeAmountMultiply = extrudeAmountMultiply
 		currentLayer.append(currentPath)
 		for line in gcodeFile:
+			if self._abort:
+				raise StopIteration
 			if type(line) is tuple:
 				line = line[0]
 			if self.progressCallback != None:
@@ -253,8 +262,6 @@ class gcode(object):
 		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
 		self.totalMoveTimeMinute = totalMoveTimeMinute
-		#print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
-		#print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
 	def getCodeInt(self, line, code):
 		if code not in self.regMatch:

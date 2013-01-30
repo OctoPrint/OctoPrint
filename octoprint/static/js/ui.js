@@ -695,6 +695,29 @@ function GcodeFilesViewModel() {
         }
     }
 
+    self.getPopoverContent = function(data) {
+        var output = "<p><strong>Uploaded:</strong> " + data["date"] + "</p>";
+        if (data["gcodeAnalysis"]) {
+            output += "<p>";
+            output += "<strong>Filament:</strong> " + data["gcodeAnalysis"]["filament"] + "<br>";
+            output += "<strong>Estimated Print Time:</strong> " + data["gcodeAnalysis"]["estimatedPrintTime"];
+            output += "</p>";
+        }
+        if (data["prints"] && data["prints"]["last"]) {
+            output += "<p>";
+            output += "<strong>Last Print:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + data["prints"]["last"]["date"] + "</span>";
+            output += "</p>";
+        }
+        return output;
+    }
+
+    self.getSuccessClass = function(data) {
+        if (!data["prints"] || !data["prints"]["last"]) {
+            return "";
+        }
+        return data["prints"]["last"]["success"] ? "text-success" : "text-error";
+    }
+
 }
 
 function WebcamViewModel() {
@@ -962,6 +985,23 @@ $(function() {
 
         //~~ knockout.js bindings
 
+        ko.bindingHandlers.popover = {
+            init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+                var val = ko.utils.unwrapObservable(valueAccessor());
+
+                var options = {
+                    title: val.title,
+                    animation: val.animation,
+                    placement: val.placement,
+                    trigger: val.trigger,
+                    delay: val.delay,
+                    content: val.content,
+                    html: val.html
+                };
+                $(element).popover(options);
+            }
+        }
+
         ko.applyBindings(connectionViewModel, document.getElementById("connection"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
@@ -981,6 +1021,18 @@ $(function() {
         controlsViewModel.requestData();
         gcodeFilesViewModel.requestData();
         webcamViewModel.requestData();
+
+        //~~ UI stuff
+
+        $(".accordion-toggle[href='#files']").click(function() {
+            if ($("#files").hasClass("in")) {
+                $("#files").removeClass("overflow_visible");
+            } else {
+                setTimeout(function() {
+                    $("#files").addClass("overflow_visible");
+                }, 1000);
+            }
+        })
 
     }
 );

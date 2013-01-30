@@ -134,3 +134,15 @@ table th.timelapse_files_action, table td.timelapse_files_action {
 #webcam_container {
     width: 100%;
 }
+
+#files .popover {
+    font-size: 85%;
+}
+
+#files .popover p:last-child {
+    margin-bottom: 0;
+}
+
+.overflow_visible {
+    overflow: visible !important;
+}

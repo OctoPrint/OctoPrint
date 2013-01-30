@@ -9,6 +9,7 @@ import copy
 import os
 
 import octoprint.util.comm as comm
+import octoprint.util as util
 from octoprint.util import gcodeInterpreter
 
 from octoprint.settings import settings
@@ -25,7 +26,9 @@ def getConnectionOptions():
 	}
 
 class Printer():
-	def __init__(self):
+	def __init__(self, gcodeManager):
+		self._gcodeManager = gcodeManager
+
 		# state
 		self._temp = None
 		self._bedTemp = None
@@ -209,6 +212,9 @@ class Printer():
 		self._setCurrentZ(None)
 		self._setProgressData(None, None, None)
 
+		# mark print as failure
+		self._gcodeManager.printFailed(self._filename)
+
 	#~~ state monitoring
 
 	def setTimelapse(self, timelapse):
@@ -249,11 +255,11 @@ class Printer():
 
 		formattedPrintTime = None
 		if (self._printTime):
-			formattedPrintTime = _getFormattedTimeDelta(datetime.timedelta(seconds=self._printTime))
+			formattedPrintTime = util.getFormattedTimeDelta(datetime.timedelta(seconds=self._printTime))
 
 		formattedPrintTimeLeft = None
 		if (self._printTimeLeft):
-			formattedPrintTimeLeft = _getFormattedTimeDelta(datetime.timedelta(minutes=self._printTimeLeft))
+			formattedPrintTimeLeft = util.getFormattedTimeDelta(datetime.timedelta(minutes=self._printTimeLeft))
 
 		self._stateMonitor.setProgress({"progress": self._progress, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
 
@@ -292,7 +298,7 @@ class Printer():
 		formattedFilament = None
 		if self._gcode:
 			if self._gcode.totalMoveTimeMinute:
-				formattedPrintTimeEstimation = _getFormattedTimeDelta(datetime.timedelta(minutes=self._gcode.totalMoveTimeMinute))
+				formattedPrintTimeEstimation = util.getFormattedTimeDelta(datetime.timedelta(minutes=self._gcode.totalMoveTimeMinute))
 			if self._gcode.extrusionAmount:
 				formattedFilament = "%.2fm" % (self._gcode.extrusionAmount / 1000)
 		elif not settings().getBoolean("feature", "analyzeGcode"):
@@ -347,11 +353,18 @@ class Printer():
 		"""
 		oldState = self._state
 
+		#
 		if self._timelapse is not None:
-			if oldState == self._comm.STATE_PRINTING:
+			if oldState == self._comm.STATE_PRINTING and state != self._comm.STATE_PAUSED:
 				self._timelapse.onPrintjobStopped()
-			elif state == self._comm.STATE_PRINTING:
+			elif state == self._comm.STATE_PRINTING and oldState != self._comm.STATE_PAUSED:
 				self._timelapse.onPrintjobStarted(self._filename)
+
+		if oldState == self._comm.STATE_PRINTING:
+			if state == self._comm.STATE_OPERATIONAL:
+				self._gcodeManager.printSucceeded(self._filename)
+			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
+				self._gcodeManager.printFailed(self._filename)
 
 		self._setState(state)
 
@@ -604,10 +617,3 @@ class StateMonitor(object):
 			"progress": self._progress
 		}
 
-def _getFormattedTimeDelta(d):
-	if d is None:
-		return None
-	hours = d.seconds // 3600
-	minutes = (d.seconds % 3600) // 60
-	seconds = d.seconds % 60
-	return "%02d:%02d:%02d" % (hours, minutes, seconds)

@@ -3,16 +3,17 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from flask import Flask, request, render_template, jsonify, send_from_directory, abort, url_for
-from werkzeug import secure_filename
+from werkzeug.utils import secure_filename
 import tornadio2
 
 import os
-import fnmatch
 import threading
 
 from octoprint.printer import Printer, getConnectionOptions, PrinterCallback
 from octoprint.settings import settings
 import octoprint.timelapse as timelapse
+import octoprint.gcodefiles as gcodefiles
+import octoprint.util as util
 
 BASEURL = "/ajax/"
 SUCCESS = {}
@@ -20,7 +21,8 @@ SUCCESS = {}
 UPLOAD_FOLDER = settings().getBaseFolder("uploads")
 
 app = Flask("octoprint")
-printer = Printer()
+gcodeManager = gcodefiles.GcodeManager()
+printer = Printer(gcodeManager)
 
 @app.route("/")
 def index():
@@ -158,7 +160,7 @@ def setTargetTemperature():
 
 	if request.values.has_key("temp"):
 		# set target temperature
-		temp = request.values["temp"];
+		temp = request.values["temp"]
 		printer.command("M104 S" + temp)
 
 	if request.values.has_key("bedTemp"):
@@ -174,22 +176,22 @@ def jog():
 		# do not jog when a print job is running or we don"t have a connection
 		return jsonify(SUCCESS)
 
-	if request.values.has_key("x"):
+	if "x" in request.values.keys():
 		# jog x
 		x = request.values["x"]
 		printer.commands(["G91", "G1 X" + x + " F6000", "G90"])
-	if request.values.has_key("y"):
+	if "y" in request.values.keys():
 		# jog y
 		y = request.values["y"]
 		printer.commands(["G91", "G1 Y" + y + " F6000", "G90"])
-	if request.values.has_key("z"):
+	if "z" in request.values.keys():
 		# jog z
 		z = request.values["z"]
 		printer.commands(["G91", "G1 Z" + z + " F200", "G90"])
-	if request.values.has_key("homeXY"):
+	if "homeXY" in request.values.keys():
 		# home x/y
 		printer.command("G28 X0 Y0")
-	if request.values.has_key("homeZ"):
+	if "homeZ" in request.values.keys():
 		# home z
 		printer.command("G28 Z0")
 
@@ -197,7 +199,7 @@ def jog():
 
 @app.route(BASEURL + "control/speed", methods=["GET"])
 def getSpeedValues():
-	return jsonify(feedrate = printer.feedrateState())
+	return jsonify(feedrate=printer.feedrateState())
 
 @app.route(BASEURL + "control/speed", methods=["POST"])
 def speed():
@@ -205,7 +207,7 @@ def speed():
 		return jsonify(SUCCESS)
 
 	for key in ["outerWall", "innerWall", "fill", "support"]:
-		if request.values.has_key(key):
+		if key in request.values.keys():
 			value = int(request.values[key])
 			printer.setFeedrateModifier(key, value)
 
@@ -214,47 +216,34 @@ def speed():
 @app.route(BASEURL + "control/custom", methods=["GET"])
 def getCustomControls():
 	customControls = settings().getObject("controls")
-	return jsonify(controls = customControls)
+	return jsonify(controls=customControls)
 
 #~~ GCODE file handling
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])
 def readGcodeFiles():
-	files = []
-	for osFile in os.listdir(UPLOAD_FOLDER):
-		if not fnmatch.fnmatch(osFile, "*.gcode"):
-			continue
-		files.append({
-			"name": osFile,
-			"size": sizeof_fmt(os.stat(os.path.join(UPLOAD_FOLDER, osFile)).st_size)
-		})
-	return jsonify(files=files)
+	return jsonify(files=gcodeManager.getAllFileData())
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():
-	if request.files.has_key("gcode_file"):
+	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
-		if file and allowed_file(file.filename, set(["gcode"])):
-			secure = secure_filename(file.filename)
-			filename = os.path.join(UPLOAD_FOLDER, secure)
-			file.save(filename)
+		gcodeManager.addFile(file)
 	return readGcodeFiles()
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 def loadGcodeFile():
-	if request.values.has_key("filename"):
-		filename = request.values["filename"]
-		printer.loadGcode(os.path.join(UPLOAD_FOLDER, filename))
+	if "filename" in request.values.keys():
+		filename = gcodeManager.getAbsolutePath(request.values["filename"])
+		if filename is not None:
+			printer.loadGcode(filename)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
 def deleteGcodeFile():
-	if request.values.has_key("filename"):
+	if "filename" in request.values.keys():
 		filename = request.values["filename"]
-		if allowed_file(filename, set(["gcode"])):
-			secure = os.path.join(UPLOAD_FOLDER, secure_filename(filename))
-			if os.path.exists(secure):
-				os.remove(secure)
+		gcodeManager.removeFile(filename)
 	return readGcodeFiles()
 
 #~~ timelapse handling
@@ -275,7 +264,7 @@ def getTimelapseData():
 
 	files = timelapse.getFinishedTimelapses()
 	for file in files:
-		file["size"] = sizeof_fmt(file["size"])
+		file["size"] = util.getFormattedSize(file["size"])
 		file["url"] = url_for("downloadTimelapse", filename=file["name"])
 
 	return jsonify({
@@ -286,12 +275,12 @@ def getTimelapseData():
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["GET"])
 def downloadTimelapse(filename):
-	if allowed_file(filename, set(["mpg"])):
+	if util.isAllowedFile(filename, set(["mpg"])):
 		return send_from_directory(settings().getBaseFolder("timelapse"), filename, as_attachment=True)
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["DELETE"])
 def deleteTimelapse(filename):
-	if allowed_file(filename, set(["mpg"])):
+	if util.isAllowedFile(filename, set(["mpg"])):
 		secure = os.path.join(settings().getBaseFolder("timelapse"), secure_filename(filename))
 		if os.path.exists(secure):
 			os.remove(secure)
@@ -336,21 +325,6 @@ def setSettings():
 
 	s.save()
 	return getSettings()
-
-#~~ helper functions
-
-def sizeof_fmt(num):
-	"""
-	 Taken from http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
-	"""
-	for x in ["bytes","KB","MB","GB"]:
-		if num < 1024.0:
-			return "%3.1f%s" % (num, x)
-		num /= 1024.0
-	return "%3.1f%s" % (num, "TB")
-
-def allowed_file(filename, extensions):
-	return "." in filename and filename.rsplit(".", 1)[1] in extensions
 
 #~~ startup code
 
