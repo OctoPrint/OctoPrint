@@ -77,7 +77,7 @@ class gcode(object):
 		currentLayer.append(currentPath)
 		for line in gcodeFile:
 			if self._abort:
-				raise StopIteration
+				raise AnalysisAborted()
 			if type(line) is tuple:
 				line = line[0]
 			if self.progressCallback != None:
