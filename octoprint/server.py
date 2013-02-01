@@ -230,6 +230,10 @@ def readGcodeFiles():
 		})
 	return jsonify(files=files)
 
+@app.route("/gcodefile/<path:filename>", methods=["GET"])
+def readGcodeFile(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
+
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():
 	if request.files.has_key("gcode_file"):

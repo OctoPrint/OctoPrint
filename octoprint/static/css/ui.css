@@ -44,17 +44,17 @@ table th, table td {
 table th.gcode_files_name, table td.gcode_files_name {
     text-overflow: ellipsis;
     text-align: left;
-    width: 55%;
+    width: 50%;
 }
 
 table th.gcode_files_size, table td.gcode_files_size {
     text-align: right;
-    width: 25%;
+    width: 20%;
 }
 
 table th.gcode_files_action, table td.gcode_files_action {
     text-align: center;
-    width: 20%;
+    width: 30%;
 }
 
 #temperature-graph {

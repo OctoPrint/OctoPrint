@@ -667,6 +667,32 @@ function GcodeFilesViewModel() {
             dataType: "json",
             data: {filename: filename}
         })
+        $.ajax({
+            url: "gcodefile/"+filename,
+            type: "GET",
+            success: function(response, rstatus) {
+                self.showGCodeViewer(response, rstatus);
+            }
+        })
+    }
+
+    self.viewFile = function() {
+        var filename = this.name;
+        $.ajax({
+            url: "gcodefile/"+filename,
+            type: "GET",
+            success: function(response, rstatus) {
+                self.showGCodeViewer(response, rstatus);
+            }
+        })
+    }
+
+    self.showGCodeViewer = function(response, rstatus){
+        console.log(rstatus);
+        var par = {};
+        par.target = {};
+        par.target.result = response;
+        GCODE.gCodeReader.loadFile(par);
     }
 
     self.removeFile = function(filename) {
@@ -975,6 +1001,7 @@ $(function() {
             ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
         }
 
+        GCODE.ui.initHandlers();
         //~~ startup commands
 
         connectionViewModel.requestData();
