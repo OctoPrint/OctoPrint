@@ -296,6 +296,9 @@ GCODE.ui = (function(){
             }
             return -1;
         },
+        updateLayerInfo: function(layerNum){
+          printLayerInfo(layerNum);
+        },
 
         processOptions: function(){
             if(document.getElementById('sortLayersCheckbox').checked)GCODE.gCodeReader.setOption({sortLayers: true});

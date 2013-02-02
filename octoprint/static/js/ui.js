@@ -667,13 +667,6 @@ function GcodeFilesViewModel() {
             dataType: "json",
             data: {filename: filename}
         })
-        $.ajax({
-            url: "gcodefile/"+filename,
-            type: "GET",
-            success: function(response, rstatus) {
-                self.showGCodeViewer(response, rstatus);
-            }
-        })
     }
 
     self.viewFile = function() {
@@ -817,18 +810,53 @@ function WebcamViewModel() {
 function GcodeViewModel() {
     var self = this;
 
+    self.loadedFilename = undefined;
+    self.status = 'idle';
+
+    self.loadFile = function(filename){
+        if(self.status == 'idle'){
+            self.status = 'request';
+            $.ajax({
+                url: "gcodefile/"+filename,
+                type: "GET",
+                success: function(response, rstatus) {
+                    if(rstatus === 'success'){
+                        self.showGCodeViewer(response, rstatus);
+                        self.loadedFilename=filename;
+                        self.status = 'idle';
+                    }
+                },
+                error: function() {
+                    self.status = 'idle';
+                }
+            })
+        }
+    }
+
+    self.showGCodeViewer = function(response, rstatus){
+        var par = {};
+        par.target = {};
+        par.target.result = response;
+        GCODE.gCodeReader.loadFile(par);
+    }
+
     self.fromHistoryData = function(data) {
-        self._processProgressData(data.progress);
+        self._processData(data);
     }
 
     self.fromCurrentData = function(data) {
-        self._processProgressData(data.progress);
+        self._processData(data);
     }
 
-    self._processProgressData = function(data) {
-        var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress);
-        if(cmdIndex){
-            GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+    self._processData = function(data) {
+        if(self.loadedFilename == data.job.filename){
+            var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress.progress);
+            if(cmdIndex){
+                GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+                GCODE.ui.updateLayerInfo(cmdIndex.layer);
+            }
+        }else{
+            self.loadFile(data.job.filename);
         }
     }
 
