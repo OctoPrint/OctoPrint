@@ -669,6 +669,7 @@ function GcodeFilesViewModel() {
         })
     }
 
+<<<<<<< HEAD
     self.viewFile = function() {
         var filename = this.name;
         $.ajax({
@@ -689,6 +690,10 @@ function GcodeFilesViewModel() {
     }
 
     self.removeFile = function(filename) {
+=======
+    self.removeFile = function() {
+        var filename = this.name;
+>>>>>>> Some cleanup from initial integration: removed separate icon for viewing gcode
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/delete",
             type: "POST",
@@ -939,12 +944,8 @@ $(function() {
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
-<<<<<<< HEAD
-        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel);
-=======
         var gcodeViewModel = new GcodeViewModel();
-        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel, gcodeViewModel);
->>>>>>> Initial implementation of autoupdate gcodeview on status from server
+        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel, gcodeViewModel);
 
         //~~ Print job control
 
