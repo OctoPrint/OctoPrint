@@ -812,6 +812,12 @@ function GcodeViewModel() {
 
     self.loadedFilename = undefined;
     self.status = 'idle';
+    self.enabled = false;
+
+    self.initialize = function(){
+        self.enabled = true;
+        GCODE.ui.initHandlers();
+    }
 
     self.loadFile = function(filename){
         if(self.status == 'idle'){
@@ -849,6 +855,8 @@ function GcodeViewModel() {
     }
 
     self._processData = function(data) {
+        if(!self.enabled)return;
+
         if(self.loadedFilename == data.job.filename){
             var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress.progress);
             if(cmdIndex){
@@ -1056,8 +1064,10 @@ $(function() {
         if (webcamElement) {
             ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
         }
-
-        GCODE.ui.initHandlers();
+        var gCodeVisualizerElement = document.getElementById("tab2d");
+        if(gCodeVisualizerElement){
+            gcodeViewModel.initialize();
+        }
         //~~ startup commands
 
         connectionViewModel.requestData();

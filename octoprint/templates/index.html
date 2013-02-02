@@ -128,7 +128,7 @@
                     <ul class="nav nav-tabs" id="tabs">
                         <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
                         <li><a href="#controls" data-toggle="tab">Controls</a></li>
-                        <li><a href="#tab2d" data-toggle="tab">GCode Viewer</a></li>
+                        {% if gCodeVisualizer %}<li><a href="#tab2d" data-toggle="tab">GCode Viewer</a></li>{% endif %}
                         <!--<li><a href="#speed" data-toggle="tab">Speed</a></li>-->
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
                         {% if webcamStream %}<li><a href="#webcam" data-toggle="tab">Webcam</a></li>{% endif %}

@@ -109,7 +109,7 @@ GCODE.gCodeReader = (function(){
             lines = reader.target.result.split(/\n/);
             reader.target.result = null;
             prepareGCode();
-            
+
             worker.postMessage({
                     "cmd":"parseGCode",
                     "msg":{
