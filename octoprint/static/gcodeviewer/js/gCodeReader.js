@@ -28,9 +28,13 @@ GCODE.gCodeReader = (function(){
     var prepareGCode = function(){
         if(!lines)return;
         gcode = [];
-        var i;
+        var i, tmp;
         for(i=0;i<lines.length;i++){
-            if(lines[i].match(/^(G0|G1|G90|G91|G92|M82|M83|G28)/i))gcode.push(lines[i]);
+//            if(lines[i].match(/^(G0|G1|G90|G91|G92|M82|M83|G28)/i))gcode.push(lines[i]);
+            tmp = lines[i].indexOf(";");
+            if(tmp > 1 || tmp === -1) {
+                gcode.push(lines[i]);
+            }
         }
         lines = [];
 //        console.log("GCode prepared");
@@ -104,12 +108,12 @@ GCODE.gCodeReader = (function(){
 
             lines = reader.target.result.split(/\n/);
             reader.target.result = null;
-//            prepareGCode();
-
+            prepareGCode();
+            
             worker.postMessage({
                     "cmd":"parseGCode",
                     "msg":{
-                        gcode: lines,
+                        gcode: gcode,
                         options: {
                             firstReport: 5
                         }
@@ -117,9 +121,7 @@ GCODE.gCodeReader = (function(){
                 }
             );
             delete lines;
-
-
-
+            delete gcode;
         },
         setOption: function(options){
             for(var opt in options){
