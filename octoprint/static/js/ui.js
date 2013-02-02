@@ -814,7 +814,27 @@ function WebcamViewModel() {
     }
 }
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel) {
+function GcodeViewModel() {
+    var self = this;
+
+    self.fromHistoryData = function(data) {
+        self._processProgressData(data.progress);
+    }
+
+    self.fromCurrentData = function(data) {
+        self._processProgressData(data.progress);
+    }
+
+    self._processProgressData = function(data) {
+        var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress);
+        if(cmdIndex){
+            GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+        }
+    }
+
+}
+
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel, gcodeViewModel) {
     var self = this;
 
     self.connectionViewModel = connectionViewModel;
@@ -824,6 +844,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     self.terminalViewModel = terminalViewModel;
     self.speedViewModel = speedViewModel;
     self.webcamViewModel = webcamViewModel;
+    self.gcodeViewModel = gcodeViewModel;
 
     self._socket = io.connect();
     self._socket.on("connect", function() {
@@ -854,6 +875,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.controlsViewModel.fromHistoryData(data);
         self.terminalViewModel.fromHistoryData(data);
         self.webcamViewModel.fromHistoryData(data);
+        self.gcodeViewModel.fromHistoryData(data);
     })
     self._socket.on("current", function(data) {
         self.connectionViewModel.fromCurrentData(data);
@@ -862,6 +884,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.controlsViewModel.fromCurrentData(data);
         self.terminalViewModel.fromCurrentData(data);
         self.webcamViewModel.fromCurrentData(data);
+        self.gcodeViewModel.fromCurrentData(data);
     })
 
     self.reconnect = function() {
@@ -880,7 +903,12 @@ $(function() {
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
+<<<<<<< HEAD
         var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel);
+=======
+        var gcodeViewModel = new GcodeViewModel();
+        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, speedViewModel, terminalViewModel, webcamViewModel, gcodeViewModel);
+>>>>>>> Initial implementation of autoupdate gcodeview on status from server
 
         //~~ Print job control
 

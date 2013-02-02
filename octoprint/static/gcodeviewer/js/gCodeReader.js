@@ -23,6 +23,7 @@ GCODE.gCodeReader = (function(){
         purgeEmptyLayers: true,
         analyzeModel: false
     };
+    var linesCmdIndex = {};
 
     var prepareGCode = function(){
         if(!lines)return;
@@ -59,6 +60,16 @@ GCODE.gCodeReader = (function(){
 //        console.log(model.length);
         delete tmpModel;
     };
+
+    var prepareLinesIndex = function(){
+        linesCmdIndex = {};
+
+        for (var l in model){
+            for (var i=0; i< model[l].length; i++){
+                linesCmdIndex[model[l][i].gcodeLine] = {layer: l, cmd: i};
+            }
+        }
+    }
 
     var purgeLayers = function(){
         var purge=true;
@@ -120,6 +131,7 @@ GCODE.gCodeReader = (function(){
             if(gCodeOptions["sortLayers"])sortLayers();
 //            console.log(model);
             if(gCodeOptions["purgeEmptyLayers"])purgeLayers();
+            prepareLinesIndex();
 //            console.log(model);
             GCODE.renderer.doRender(model, 0);
 //            GCODE.renderer3d.setModel(model);
@@ -175,6 +187,9 @@ GCODE.gCodeReader = (function(){
             var i=0;
             var result = {first: model[layer][fromSegments].gcodeLine, last: model[layer][toSegments].gcodeLine};
             return result;
+        },
+        getLinesCmdIndex: function(line){
+            return linesCmdIndex[line];
         }
     }
 }());
