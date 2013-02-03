@@ -95,12 +95,13 @@ The following example config should explain the available options:
       # Timelapse support will be disabled if not set
       ffmpeg: /path/to/ffmpeg
 
+      # The bitrate to use for rendering the timelapse video. This gets directly passed to ffmpeg.
+      bitrate: 5000k
+
     # Use the following settings to enable or disable OctoPrint features
     feature:
-      # Whether to enable gcode analysis for displaying needed filament and estimated print time. Disabling this (set
-      # to false) will speed up the loading of gcode files before printing significantly, but the mentioned statistical
-      # data will not be available
-      analyzeGcode: true
+      # Whether to enable the gcode viewer in the UI or not
+      gCodeVisualizer: true
 
     # Use the following settings to set custom paths for folders used by OctoPrint
     folder:
