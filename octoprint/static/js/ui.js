@@ -669,31 +669,8 @@ function GcodeFilesViewModel() {
         })
     }
 
-<<<<<<< HEAD
-    self.viewFile = function() {
-        var filename = this.name;
-        $.ajax({
-            url: "gcodefile/"+filename,
-            type: "GET",
-            success: function(response, rstatus) {
-                self.showGCodeViewer(response, rstatus);
-            }
-        })
-    }
-
-    self.showGCodeViewer = function(response, rstatus){
-        console.log(rstatus);
-        var par = {};
-        par.target = {};
-        par.target.result = response;
-        GCODE.gCodeReader.loadFile(par);
-    }
-
-    self.removeFile = function(filename) {
-=======
     self.removeFile = function() {
         var filename = this.name;
->>>>>>> Some cleanup from initial integration: removed separate icon for viewing gcode
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/delete",
             type: "POST",
