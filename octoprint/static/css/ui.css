@@ -84,7 +84,6 @@ table th.gcode_files_action, table td.gcode_files_action {
     left: 0;
     width: 100%;
     height: 100%;
-    display: block;
     z-index: 10000;
     display: none;
 }

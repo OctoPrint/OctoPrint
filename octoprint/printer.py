@@ -10,7 +10,6 @@ import os
 
 import octoprint.util.comm as comm
 import octoprint.util as util
-from octoprint.util import gcodeInterpreter
 
 from octoprint.settings import settings
 
@@ -59,7 +58,6 @@ class Printer():
 		self._printTimeLeft = None
 
 		# gcode handling
-		self._gcode = None
 		self._gcodeList = None
 		self._filename = None
 		self._gcodeLoader = None
@@ -168,7 +166,7 @@ class Printer():
 		if (self._comm is not None and self._comm.isPrinting()) or (self._gcodeLoader is not None):
 			return
 
-		self._setJobData(None, None, None)
+		self._setJobData(None, None)
 
 		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, self._onGcodeLoaded)
 		self._gcodeLoader.start()
@@ -285,31 +283,28 @@ class Printer():
 
 		self._stateMonitor.addTemperature({"currentTime": currentTimeUtc, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp})
 
-	def _setJobData(self, filename, gcode, gcodeList):
+	def _setJobData(self, filename, gcodeList):
 		self._filename = filename
-		self._gcode = gcode
 		self._gcodeList = gcodeList
 
 		lines = None
 		if self._gcodeList:
 			lines = len(self._gcodeList)
 
-		formattedPrintTimeEstimation = None
-		formattedFilament = None
-		if self._gcode:
-			if self._gcode.totalMoveTimeMinute:
-				formattedPrintTimeEstimation = util.getFormattedTimeDelta(datetime.timedelta(minutes=self._gcode.totalMoveTimeMinute))
-			if self._gcode.extrusionAmount:
-				formattedFilament = "%.2fm" % (self._gcode.extrusionAmount / 1000)
-		elif not settings().getBoolean("feature", "analyzeGcode"):
-			formattedPrintTimeEstimation = "unknown"
-			formattedFilament = "unknown"
-
 		formattedFilename = None
+		estimatedPrintTime = None
+		filament = None
 		if self._filename:
 			formattedFilename = os.path.basename(self._filename)
 
-		self._stateMonitor.setJobData({"filename": formattedFilename, "lines": lines, "estimatedPrintTime": formattedPrintTimeEstimation, "filament": formattedFilament})
+			fileData = self._gcodeManager.getFileData(filename)
+			if fileData is not None and "gcodeAnalysis" in fileData.keys():
+				if "estimatedPrintTime" in fileData["gcodeAnalysis"].keys():
+					estimatedPrintTime = fileData["gcodeAnalysis"]["estimatedPrintTime"]
+				if "filament" in fileData["gcodeAnalysis"].keys():
+					filament = fileData["gcodeAnalysis"]["filament"]
+
+		self._stateMonitor.setJobData({"filename": formattedFilename, "lines": lines, "estimatedPrintTime": estimatedPrintTime, "filament": filament})
 
 	def _sendInitialStateUpdate(self, callback):
 		try:
@@ -353,18 +348,22 @@ class Printer():
 		"""
 		oldState = self._state
 
-		#
+		# forward relevant state changes to timelapse
 		if self._timelapse is not None:
 			if oldState == self._comm.STATE_PRINTING and state != self._comm.STATE_PAUSED:
 				self._timelapse.onPrintjobStopped()
 			elif state == self._comm.STATE_PRINTING and oldState != self._comm.STATE_PAUSED:
 				self._timelapse.onPrintjobStarted(self._filename)
 
+		# forward relevant state changes to gcode manager
 		if oldState == self._comm.STATE_PRINTING:
 			if state == self._comm.STATE_OPERATIONAL:
 				self._gcodeManager.printSucceeded(self._filename)
 			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
 				self._gcodeManager.printFailed(self._filename)
+			self._gcodeManager.resumeAnalysis() # do not analyse gcode while printing
+		elif state == self._comm.STATE_PRINTING:
+			self._gcodeManager.pauseAnalysis() # printing done, put those cpu cycles to good use
 
 		self._setState(state)
 
@@ -408,12 +407,8 @@ class Printer():
 
 		self._stateMonitor.setGcodeData({"filename": formattedFilename, "progress": progress, "mode": mode})
 
-	def _onGcodeLoaded(self, filename, gcode, gcodeList):
-		formattedFilename = None
-		if filename is not None:
-			formattedFilename = os.path.basename(filename)
-
-		self._setJobData(formattedFilename, gcode, gcodeList)
+	def _onGcodeLoaded(self, filename, gcodeList):
+		self._setJobData(filename, gcodeList)
 		self._setCurrentZ(None)
 		self._setProgressData(None, None, None)
 		self._gcodeLoader = None
@@ -480,7 +475,6 @@ class GcodeLoader(threading.Thread):
 		self._loadedCallback = loadedCallback
 
 		self._filename = filename
-		self._gcode = None
 		self._gcodeList = None
 
 	def run(self):
@@ -504,34 +498,13 @@ class GcodeLoader(threading.Thread):
 				self._onLoadingProgress(float(file.tell()) / float(filesize))
 
 		self._gcodeList = gcodeList
-		if settings().getBoolean("feature", "analyzeGcode"):
-			self._gcode = gcodeInterpreter.gcode()
-			self._gcode.progressCallback = self._onParsingProgress
-			self._gcode.loadList(self._gcodeList)
-
-		self._loadedCallback(self._filename, self._gcode, self._gcodeList)
+		self._loadedCallback(self._filename, self._gcodeList)
 
 	def _onLoadingProgress(self, progress):
 		self._progressCallback(self._filename, progress, "loading")
 
 	def _onParsingProgress(self, progress):
 		self._progressCallback(self._filename, progress, "parsing")
-
-class PrinterCallback(object):
-	def sendCurrentData(self, data):
-		pass
-
-	def sendHistoryData(self, data):
-		pass
-
-	def addTemperature(self, data):
-		pass
-
-	def addLog(self, data):
-		pass
-
-	def addMessage(self, data):
-		pass
 
 class StateMonitor(object):
 	def __init__(self, ratelimit, updateCallback, addTemperatureCallback, addLogCallback, addMessageCallback):

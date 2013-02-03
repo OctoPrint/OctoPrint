@@ -8,6 +8,7 @@ import threading
 import datetime
 import yaml
 import time
+import logging
 import octoprint.util as util
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 from octoprint.settings import settings
@@ -16,7 +17,11 @@ from werkzeug.utils import secure_filename
 
 class GcodeManager:
 	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+
 		self._uploadFolder = settings().getBaseFolder("uploads")
+
+		self._callbacks = []
 
 		self._metadata = {}
 		self._metadataDirty = False
@@ -26,9 +31,22 @@ class GcodeManager:
 		self._metadataAnalyzer = MetadataAnalyzer(getPathCallback=self.getAbsolutePath, loadedCallback=self._onMetadataAnalysisFinished)
 
 		self._loadMetadata()
+		self._processAnalysisBacklog()
+
+	def _processAnalysisBacklog(self):
+		for osFile in os.listdir(self._uploadFolder):
+			filename = self._getBasicFilename(osFile)
+			absolutePath = self.getAbsolutePath(filename)
+			if absolutePath is None:
+				continue
+
+			fileData = self.getFileData(filename)
+			if fileData is not None and "gcodeAnalysis" in fileData.keys():
+				continue
+
+			self._metadataAnalyzer.addFileToBacklog(filename)
 
 	def _onMetadataAnalysisFinished(self, filename, gcode):
-		print("Got gcode analysis for file %s: %r" % (filename, gcode))
 		if filename is None or gcode is None:
 			return
 
@@ -59,6 +77,8 @@ class GcodeManager:
 			with self._metadataFileAccessMutex:
 				with open(self._metadataFile, "r") as f:
 					self._metadata = yaml.safe_load(f)
+		if self._metadata is None:
+			self._metadata = {}
 
 	def _saveMetadata(self, force=False):
 		if not self._metadataDirty and not force:
@@ -69,12 +89,29 @@ class GcodeManager:
 				yaml.safe_dump(self._metadata, f, default_flow_style=False, indent="    ", allow_unicode=True)
 				self._metadataDirty = False
 		self._loadMetadata()
+		self._sendUpdateTrigger("gcodeFiles")
 
 	def _getBasicFilename(self, filename):
 		if filename.startswith(self._uploadFolder):
 			return filename[len(self._uploadFolder + os.path.sep):]
 		else:
 			return filename
+
+	#~~ callback handling
+
+	def registerCallback(self, callback):
+		self._callbacks.append(callback)
+
+	def unregisterCallback(self, callback):
+		if callback in self._callbacks:
+			self._callbacks.remove(callback)
+
+	def _sendUpdateTrigger(self, type):
+		for callback in self._callbacks:
+			try: callback.sendUpdateTrigger(type)
+			except: pass
+
+	#~~ file handling
 
 	def addFile(self, file):
 		if file:
@@ -90,6 +127,10 @@ class GcodeManager:
 		absolutePath = self.getAbsolutePath(filename)
 		if absolutePath is not None:
 			os.remove(absolutePath)
+			if filename in self._metadata.keys():
+				del self._metadata[filename]
+				self._metadataDirty = True
+				self._saveMetadata()
 
 	def getAbsolutePath(self, filename, mustExist=True):
 		"""
@@ -177,6 +218,8 @@ class GcodeManager:
 		self._metadata[filename] = metadata
 		self._metadataDirty = True
 
+	#~~ print job data
+
 	def printSucceeded(self, filename):
 		filename = self._getBasicFilename(filename)
 		absolutePath = self.getAbsolutePath(filename)
@@ -207,8 +250,18 @@ class GcodeManager:
 		self.setFileMetadata(filename, metadata)
 		self._saveMetadata()
 
+	#~~ analysis control
+
+	def pauseAnalysis(self):
+		self._metadataAnalyzer.pause()
+
+	def resumeAnalysis(self):
+		self._metadataAnalyzer.resume()
+
 class MetadataAnalyzer:
 	def __init__(self, getPathCallback, loadedCallback):
+		self._logger = logging.getLogger(__name__)
+
 		self._getPathCallback = getPathCallback
 		self._loadedCallback = loadedCallback
 
@@ -218,7 +271,7 @@ class MetadataAnalyzer:
 		self._currentFile = None
 		self._currentProgress = None
 
-		self._queue = Queue.Queue()
+		self._queue = Queue.PriorityQueue()
 		self._gcode = None
 
 		self._worker = threading.Thread(target=self._work)
@@ -226,7 +279,12 @@ class MetadataAnalyzer:
 		self._worker.start()
 
 	def addFileToQueue(self, filename):
-		self._queue.put(filename)
+		self._logger.debug("Adding file %s to analysis queue (high priority)" % filename)
+		self._queue.put((0, filename))
+
+	def addFileToBacklog(self, filename):
+		self._logger.debug("Adding file %s to analysis backlog (low priority)" % filename)
+		self._queue.put((100, filename))
 
 	def working(self):
 		return self.isActive() and not (self._queue.empty() and self._currentFile is None)
@@ -235,11 +293,14 @@ class MetadataAnalyzer:
 		return self._active.is_set()
 
 	def pause(self):
+		self._logger.debug("Pausing Gcode analyzer")
 		self._active.clear()
 		if self._gcode is not None:
+			self._logger.debug("Aborting running analysis, will restart when Gcode analyzer is resumed")
 			self._gcode.abort()
 
 	def resume(self):
+		self._logger.debug("Resuming Gcode analyzer")
 		self._active.set()
 
 	def _work(self):
@@ -250,14 +311,17 @@ class MetadataAnalyzer:
 			if aborted is not None:
 				filename = aborted
 				aborted = None
+				self._logger.debug("Got an aborted analysis job for file %s, processing this instead of first item in queue" % filename)
 			else:
-				filename = self._queue.get()
+				(priority, filename) = self._queue.get()
+				self._logger.debug("Processing file %s from queue (priority %d)" % (filename, priority))
 
 			try:
 				self._analyzeGcode(filename)
 				self._queue.task_done()
 			except gcodeInterpreter.AnalysisAborted:
 				aborted = filename
+				self._logger.debug("Running analysis of file %s aborted" % filename)
 
 	def _analyzeGcode(self, filename):
 		path = self._getPathCallback(filename)
@@ -268,9 +332,11 @@ class MetadataAnalyzer:
 		self._currentProgress = 0
 
 		try:
+			self._logger.debug("Starting analysis of file %s" % filename)
 			self._gcode = gcodeInterpreter.gcode()
 			self._gcode.progressCallback = self._onParsingProgress
 			self._gcode.load(path)
+			self._logger.debug("Analysis of file %s finished, notifying callback" % filename)
 			self._loadedCallback(self._currentFile, self._gcode)
 		finally:
 			self._gcode = None

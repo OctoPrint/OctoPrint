@@ -39,7 +39,6 @@ old_default_settings = {
 		"timelapse_tmp": None
 	},
 	"feature": {
-		"analyzeGcode": True
 	},
 }
 

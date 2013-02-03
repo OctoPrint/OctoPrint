@@ -811,7 +811,7 @@ function WebcamViewModel() {
     }
 }
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel) {
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, webcamViewModel) {
     var self = this;
 
     self.connectionViewModel = connectionViewModel;
@@ -820,6 +820,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     self.controlsViewModel = controlsViewModel;
     self.terminalViewModel = terminalViewModel;
     self.speedViewModel = speedViewModel;
+    self.gcodeFilesViewModel = gcodeFilesViewModel;
     self.webcamViewModel = webcamViewModel;
 
     self._socket = io.connect();
@@ -860,6 +861,11 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.terminalViewModel.fromCurrentData(data);
         self.webcamViewModel.fromCurrentData(data);
     })
+    self._socket.on("updateTrigger", function(type) {
+        if (type == "gcodeFiles") {
+            gcodeFilesViewModel.requestData();
+        }
+    })
 
     self.reconnect = function() {
         self._socket.socket.connect();
@@ -877,7 +883,16 @@ $(function() {
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
-        var dataUpdater = new DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, webcamViewModel);
+
+        var dataUpdater = new DataUpdater(
+            connectionViewModel,
+            printerStateViewModel,
+            temperatureViewModel,
+            controlsViewModel,
+            speedViewModel,
+            terminalViewModel,
+            gcodeFilesViewModel,
+            webcamViewModel);
 
         //~~ Print job control
 
@@ -982,6 +997,23 @@ $(function() {
 
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
+
+        //~~ Alert
+
+        /*
+        function displayAlert(text, timeout, type) {
+            var placeholder = $("#alert_placeholder");
+
+            var alertType = "";
+            if (type == "success" || type == "error" || type == "info") {
+                alertType = " alert-" + type;
+            }
+
+            placeholder.append($("<div id='activeAlert' class='alert " + alertType + " fade in' data-alert='alert'><p>" + text + "</p></div>"));
+            placeholder.fadeIn();
+            $("#activeAlert").delay(timeout).fadeOut("slow", function() {$(this).remove(); $("#alert_placeholder").hide();});
+        }
+        */
 
         //~~ knockout.js bindings
 

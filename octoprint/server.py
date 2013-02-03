@@ -8,8 +8,9 @@ import tornadio2
 
 import os
 import threading
+import logging, logging.config
 
-from octoprint.printer import Printer, getConnectionOptions, PrinterCallback
+from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
 import octoprint.timelapse as timelapse
 import octoprint.gcodefiles as gcodefiles
@@ -29,15 +30,16 @@ def index():
 	return render_template(
 		"index.html",
 		webcamStream=settings().get("webcam", "stream"),
-		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None),
-		enableEstimations=(settings().getBoolean("feature", "analyzeGcode"))
+		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None)
 	)
 
 #~~ Printer state
 
-class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
+class PrinterStateConnection(tornadio2.SocketConnection):
 	def __init__(self, session, endpoint=None):
 		tornadio2.SocketConnection.__init__(self, session, endpoint)
+
+		self._logger = logging.getLogger(__name__)
 
 		self._temperatureBacklog = []
 		self._temperatureBacklogMutex = threading.Lock()
@@ -47,12 +49,14 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 		self._messageBacklogMutex = threading.Lock()
 
 	def on_open(self, info):
-		print("New connection from client")
+		self._logger.info("New connection from client")
 		printer.registerCallback(self)
+		gcodeManager.registerCallback(self)
 
 	def on_close(self):
-		print("Closed client connection")
+		self._logger.info("Closed client connection")
 		printer.unregisterCallback(self)
+		gcodeManager.unregisterCallback(self)
 
 	def on_message(self, message):
 		pass
@@ -80,6 +84,9 @@ class PrinterStateConnection(tornadio2.SocketConnection, PrinterCallback):
 
 	def sendHistoryData(self, data):
 		self.emit("history", data)
+
+	def sendUpdateTrigger(self, type):
+		self.emit("updateTrigger", type)
 
 	def addLog(self, data):
 		with self._logBacklogMutex:
@@ -334,7 +341,7 @@ def run(host = "0.0.0.0", port = 5000, debug = False):
 	from tornado.ioloop import IOLoop
 	from tornado.web import Application, FallbackHandler
 
-	print "Listening on http://%s:%d" % (host, port)
+	logging.getLogger(__name__).info("Listening on http://%s:%d" % (host, port))
 	app.debug = debug
 
 	router = tornadio2.TornadioRouter(PrinterStateConnection)
@@ -344,6 +351,34 @@ def run(host = "0.0.0.0", port = 5000, debug = False):
 	server = HTTPServer(tornado_app)
 	server.listen(port, address=host)
 	IOLoop.instance().start()
+
+def initLogging():
+	config = {
+		"version": 1,
+		"formatters": {
+			"simple": {
+				"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+			}
+		},
+		"handlers": {
+			"console": {
+				"class": "logging.StreamHandler",
+				"level": "DEBUG",
+				"formatter": "simple",
+				"stream": "ext://sys.stdout"
+			}
+		},
+		"loggers": {
+			"octoprint.gcodefiles": {
+				"level": "DEBUG"
+			}
+		},
+		"root": {
+			"level": "INFO",
+			"handlers": ["console"]
+		}
+	}
+	logging.config.dictConfig(config)
 
 def main():
 	from optparse import OptionParser
@@ -360,6 +395,7 @@ def main():
 		help="Specify the port on which to bind the server, defaults to %s if not set" % (defaultPort))
 	(options, args) = parser.parse_args()
 
+	initLogging()
 	run(host=options.host, port=options.port, debug=options.debug)
 
 if __name__ == "__main__":
