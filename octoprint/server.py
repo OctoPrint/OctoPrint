@@ -30,7 +30,8 @@ def index():
 	return render_template(
 		"index.html",
 		webcamStream=settings().get("webcam", "stream"),
-		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None)
+		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None),
+		enableGCodeVisualizer=settings().get("feature", "gCodeVisualizer")
 	)
 
 #~~ Printer state
@@ -230,6 +231,10 @@ def getCustomControls():
 @app.route(BASEURL + "gcodefiles", methods=["GET"])
 def readGcodeFiles():
 	return jsonify(files=gcodeManager.getAllFileData())
+
+@app.route("/gcodefile/<path:filename>", methods=["GET"])
+def readGcodeFile(filename):
+	return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():

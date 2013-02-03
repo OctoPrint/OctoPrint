@@ -8,6 +8,8 @@
         <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/ui.css') }}" rel="stylesheet" media="screen">
+        <link href="{{ url_for('static', filename='gcodeviewer/css/cupertino/jquery-ui-1.9.0.custom.css') }}" rel="stylesheet" media="screen">
+        <link href="{{ url_for('static', filename='gcodeviewer/css/style.css') }}" rel="stylesheet" media="screen">
 
         <script lang="javascript">
             var AJAX_BASEURL = "/ajax/";
@@ -124,6 +126,7 @@
                     <ul class="nav nav-tabs" id="tabs">
                         <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
                         <li><a href="#controls" data-toggle="tab">Controls</a></li>
+                        {% if gCodeVisualizer %}<li><a href="#tab2d" data-toggle="tab">GCode Viewer</a></li>{% endif %}
                         <!--<li><a href="#speed" data-toggle="tab">Speed</a></li>-->
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
                         {% if webcamStream %}<li><a href="#webcam" data-toggle="tab">Webcam</a></li>{% endif %}
@@ -241,6 +244,92 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="tab-pane" id="tab2d">
+                            <canvas id="canvas" width="572" height="588"></canvas>
+                            <div id="slider-vertical"></div>
+                            <div id="slider-horizontal"></div>
+                            <div id="accordion2" class="accordion">
+                                <div class="accordion-group">
+                                    <div class="accordion-heading">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#progressAccordionTab">
+                                            Progress indicators
+                                        </a>
+                                    </div>
+                                    <div id="progressAccordionTab" class="accordion-body collapse">
+                                        <div class="accordion-inner">
+                                            <div id="progressBlock">
+                                                <div class="progress" >
+                                                    <div id="loadProgress" class="bar" style="width: 0%;"></div>
+                                                </div>
+                                                <div class="progress" >
+                                                    <div id="analyzeProgress" class="bar" style="width: 0%;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-group">
+                                    <div class="accordion-heading">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#infoAccordionTab">
+                                            Model info
+                                        </a>
+                                    </div>
+                                    <div id="infoAccordionTab" class="accordion-body collapse">
+                                        <div class="accordion-inner">
+                                            <p id="list"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-group">
+                                    <div class="accordion-heading">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#layerAccordionTab">
+                                            Layer Info
+                                        </a>
+                                    </div>
+                                    <div id="layerAccordionTab" class="accordion-body collapse">
+                                        <div class="accordion-inner">
+                                            <p id="layerInfo"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-group">
+                                    <div class="accordion-heading">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#options2DAccordionTab">
+                                            2D Render options
+                                        </a>
+                                    </div>
+                                    <div id="options2DAccordionTab" class="accordion-body collapse">
+                                        <div class="accordion-inner">
+                                            <input type="checkbox" id="showMovesCheckbox" value="1"  onclick="GCODE.ui.processOptions()" checked>Show non-extrusion moves</input><br>
+                                            <input type="checkbox" id="showRetractsCheckbox" value="2"  onclick="GCODE.ui.processOptions()" checked>Show retracts and restarts</input><br>
+                                            <input type="checkbox" id="moveModelCheckbox" value="3"  onclick="GCODE.ui.processOptions()" checked>Move model to the center of the grid</input><br>
+                                            <input type="checkbox" id="differentiateColorsCheckbox" value="7"  onclick="GCODE.ui.processOptions()" checked>Show different speeds with different colors</input><br>
+                                            <input type="checkbox" id="thickExtrusionCheckbox" value="8"  onclick="GCODE.ui.processOptions()">Emulate extrusion width</input><br>
+                                            Width modifier: <input type="text" value="2" id="widthModifier" onchange="GCODE.ui.processOptions()"/><br>
+                                            <input type="checkbox" id="showNextLayer" value="9"  onclick="GCODE.ui.processOptions()" >Show +1 layer</input><br>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-group">
+                                    <div class="accordion-heading">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#analyzeOptionsAccordioinTab">
+                                            GCode analyzer options
+                                        </a>
+                                    </div>
+                                    <div id="analyzeOptionsAccordioinTab" class="accordion-body collapse">
+                                        <div class="accordion-inner">
+                                            These require re-analyzing file:<br>
+                                            <input type="checkbox" id="sortLayersCheckbox" value="4" onclick="GCODE.ui.processOptions()" checked>Sort layers by Z</input><br>
+                                            <input type="checkbox" id="purgeEmptyLayersCheckbox" value="5"  onclick="GCODE.ui.processOptions()" checked>Hide empty layers</input><br>
+                                            <input type="checkbox" id="showGCodeCheckbox" value="6" onclick="GCODE.ui.processOptions()" checked>Show GCode in GCode tab (memory intensive!)</input><br>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
                         <div class="tab-pane" id="term">
                             <pre id="terminal-output" class="pre-scrollable"></pre>
                             <label class="checkbox">
@@ -327,11 +416,20 @@
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="{{ url_for('static', filename='js/knockout-2.2.1.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.ui.core.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.ui.mouse.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.ui.slider.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.iframe-transport.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
     <script src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/lib/modernizr.custom.09684.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
+        <!--<script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/lib/jquery-ui-1.9.0.custom.js') }}"></script>-->
+
     </body>
 </html>

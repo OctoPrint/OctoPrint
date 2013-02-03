@@ -669,7 +669,8 @@ function GcodeFilesViewModel() {
         })
     }
 
-    self.removeFile = function(filename) {
+    self.removeFile = function() {
+        var filename = this.name;
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/delete",
             type: "POST",
@@ -811,7 +812,70 @@ function WebcamViewModel() {
     }
 }
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, webcamViewModel) {
+function GcodeViewModel() {
+    var self = this;
+
+    self.loadedFilename = undefined;
+    self.status = 'idle';
+    self.enabled = false;
+
+    self.initialize = function(){
+        self.enabled = true;
+        GCODE.ui.initHandlers();
+    }
+
+    self.loadFile = function(filename){
+        if(self.status == 'idle'){
+            self.status = 'request';
+            $.ajax({
+                url: "gcodefile/"+filename,
+                type: "GET",
+                success: function(response, rstatus) {
+                    if(rstatus === 'success'){
+                        self.showGCodeViewer(response, rstatus);
+                        self.loadedFilename=filename;
+                        self.status = 'idle';
+                    }
+                },
+                error: function() {
+                    self.status = 'idle';
+                }
+            })
+        }
+    }
+
+    self.showGCodeViewer = function(response, rstatus){
+        var par = {};
+        par.target = {};
+        par.target.result = response;
+        GCODE.gCodeReader.loadFile(par);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._processData(data);
+    }
+
+    self.fromCurrentData = function(data) {
+        self._processData(data);
+    }
+
+    self._processData = function(data) {
+        if(!self.enabled)return;
+
+        if(self.loadedFilename == data.job.filename){
+            var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress.progress);
+            if(cmdIndex){
+                GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+                GCODE.ui.updateLayerInfo(cmdIndex.layer);
+            }
+        }else{
+            self.loadFile(data.job.filename);
+        }
+    }
+
+}
+
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, webcamViewModel, gcodeViewModel) {
     var self = this;
 
     self.connectionViewModel = connectionViewModel;
@@ -822,6 +886,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     self.speedViewModel = speedViewModel;
     self.gcodeFilesViewModel = gcodeFilesViewModel;
     self.webcamViewModel = webcamViewModel;
+    self.gcodeViewModel = gcodeViewModel;
 
     self._socket = io.connect();
     self._socket.on("connect", function() {
@@ -852,6 +917,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.controlsViewModel.fromHistoryData(data);
         self.terminalViewModel.fromHistoryData(data);
         self.webcamViewModel.fromHistoryData(data);
+        self.gcodeViewModel.fromHistoryData(data);
     })
     self._socket.on("current", function(data) {
         self.connectionViewModel.fromCurrentData(data);
@@ -860,6 +926,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.controlsViewModel.fromCurrentData(data);
         self.terminalViewModel.fromCurrentData(data);
         self.webcamViewModel.fromCurrentData(data);
+        self.gcodeViewModel.fromCurrentData(data);
     })
     self._socket.on("updateTrigger", function(type) {
         if (type == "gcodeFiles") {
@@ -883,6 +950,18 @@ $(function() {
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
+        var gcodeViewModel = new GcodeViewModel();
+        var dataUpdater = new DataUpdater(
+            connectionViewModel, 
+            printerStateViewModel, 
+            temperatureViewModel, 
+            controlsViewModel, 
+            speedViewModel, 
+            terminalViewModel,
+            gcodeFilesViewModel,
+            webcamViewModel,
+            gcodeViewModel
+        );
 
         var dataUpdater = new DataUpdater(
             connectionViewModel,
@@ -1046,7 +1125,10 @@ $(function() {
         if (webcamElement) {
             ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
         }
-
+        var gCodeVisualizerElement = document.getElementById("tab2d");
+        if(gCodeVisualizerElement){
+            gcodeViewModel.initialize();
+        }
         //~~ startup commands
 
         connectionViewModel.requestData();

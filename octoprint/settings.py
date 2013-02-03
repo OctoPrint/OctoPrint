@@ -39,6 +39,7 @@ old_default_settings = {
 		"timelapse_tmp": None
 	},
 	"feature": {
+    	"gCodeVisualizer": True
 	},
 }
 
