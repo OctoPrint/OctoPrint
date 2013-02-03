@@ -356,7 +356,7 @@ class Printer():
 				self._timelapse.onPrintjobStarted(self._filename)
 
 		# forward relevant state changes to gcode manager
-		if oldState == self._comm.STATE_PRINTING:
+		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if state == self._comm.STATE_OPERATIONAL:
 				self._gcodeManager.printSucceeded(self._filename)
 			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
