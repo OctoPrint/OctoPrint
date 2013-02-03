@@ -39,14 +39,14 @@
     margin-left: 5px;
     margin-bottom: 5px;
 }
-#gcode {
+/*#gcode {
     background: #ffffff;
     float:right;
     width: 680px;
     height: 680px;
     border-width: 2px;
     border-style: none none none solid;
-}
+}*/
 
 #canvas{
     /*float: left;*/

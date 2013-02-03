@@ -126,7 +126,7 @@
                     <ul class="nav nav-tabs" id="tabs">
                         <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
                         <li><a href="#controls" data-toggle="tab">Controls</a></li>
-                        {% if gCodeVisualizer %}<li><a href="#tab2d" data-toggle="tab">GCode Viewer</a></li>{% endif %}
+                        {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">GCode Viewer</a></li>{% endif %}
                         <!--<li><a href="#speed" data-toggle="tab">Speed</a></li>-->
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
                         {% if webcamStream %}<li><a href="#webcam" data-toggle="tab">Webcam</a></li>{% endif %}
@@ -244,14 +244,15 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tab-pane" id="tab2d">
+                        <div class="tab-pane" id="gcode">
                             <canvas id="canvas" width="572" height="588"></canvas>
                             <div id="slider-vertical"></div>
                             <div id="slider-horizontal"></div>
-                            <div id="accordion2" class="accordion">
+
+                            <div id="gcode_accordion" class="accordion" style="margin-top: 20px">
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#progressAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#progressAccordionTab">
                                             Progress indicators
                                         </a>
                                     </div>
@@ -270,7 +271,7 @@
                                 </div>
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#infoAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#infoAccordionTab">
                                             Model info
                                         </a>
                                     </div>
@@ -282,7 +283,7 @@
                                 </div>
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#layerAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#layerAccordionTab">
                                             Layer Info
                                         </a>
                                     </div>
@@ -294,7 +295,7 @@
                                 </div>
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#options2DAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#options2DAccordionTab">
                                             2D Render options
                                         </a>
                                     </div>
@@ -313,7 +314,7 @@
 
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#analyzeOptionsAccordioinTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#analyzeOptionsAccordioinTab">
                                             GCode analyzer options
                                         </a>
                                     </div>

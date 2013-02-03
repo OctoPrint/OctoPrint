@@ -232,7 +232,7 @@ def getCustomControls():
 def readGcodeFiles():
 	return jsonify(files=gcodeManager.getAllFileData())
 
-@app.route("/gcodefile/<path:filename>", methods=["GET"])
+@app.route(BASEURL + "gcodefiles/<path:filename>", methods=["GET"])
 def readGcodeFile(filename):
 	return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 

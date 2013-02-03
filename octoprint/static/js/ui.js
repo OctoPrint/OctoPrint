@@ -825,10 +825,10 @@ function GcodeViewModel() {
     }
 
     self.loadFile = function(filename){
-        if(self.status == 'idle'){
+        if (self.status == 'idle') {
             self.status = 'request';
             $.ajax({
-                url: "gcodefile/"+filename,
+                url: AJAX_BASEURL + "gcodefiles/" + filename,
                 type: "GET",
                 success: function(response, rstatus) {
                     if(rstatus === 'success'){
@@ -844,7 +844,7 @@ function GcodeViewModel() {
         }
     }
 
-    self.showGCodeViewer = function(response, rstatus){
+    self.showGCodeViewer = function(response, rstatus) {
         var par = {};
         par.target = {};
         par.target.result = response;
@@ -862,13 +862,13 @@ function GcodeViewModel() {
     self._processData = function(data) {
         if(!self.enabled)return;
 
-        if(self.loadedFilename == data.job.filename){
+        if(self.loadedFilename == data.job.filename) {
             var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress.progress);
             if(cmdIndex){
                 GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
                 GCODE.ui.updateLayerInfo(cmdIndex.layer);
             }
-        }else{
+        } else if (data.job.filename) {
             self.loadFile(data.job.filename);
         }
     }
@@ -951,6 +951,7 @@ $(function() {
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
         var gcodeViewModel = new GcodeViewModel();
+
         var dataUpdater = new DataUpdater(
             connectionViewModel, 
             printerStateViewModel, 
@@ -962,16 +963,6 @@ $(function() {
             webcamViewModel,
             gcodeViewModel
         );
-
-        var dataUpdater = new DataUpdater(
-            connectionViewModel,
-            printerStateViewModel,
-            temperatureViewModel,
-            controlsViewModel,
-            speedViewModel,
-            terminalViewModel,
-            gcodeFilesViewModel,
-            webcamViewModel);
 
         //~~ Print job control
 
@@ -1120,12 +1111,13 @@ $(function() {
         ko.applyBindings(controlsViewModel, document.getElementById("controls"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
+        ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
 
         var webcamElement = document.getElementById("webcam");
         if (webcamElement) {
             ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
         }
-        var gCodeVisualizerElement = document.getElementById("tab2d");
+        var gCodeVisualizerElement = document.getElementById("gcode");
         if(gCodeVisualizerElement){
             gcodeViewModel.initialize();
         }
