@@ -28,7 +28,8 @@ def index():
 		"index.html",
 		webcamStream=settings().get("webcam", "stream"),
 		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None),
-		enableEstimations=(settings().getBoolean("feature", "analyzeGcode"))
+		enableEstimations=(settings().getBoolean("feature", "analyzeGcode")),
+		gCodeVisualizer=settings().get("feature", "gCodeVisualizer")
 	)
 
 #~~ Printer state
@@ -229,6 +230,10 @@ def readGcodeFiles():
 			"size": sizeof_fmt(os.stat(os.path.join(UPLOAD_FOLDER, osFile)).st_size)
 		})
 	return jsonify(files=files)
+
+@app.route("/gcodefile/<path:filename>", methods=["GET"])
+def readGcodeFile(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():
