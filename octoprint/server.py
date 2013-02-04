@@ -238,10 +238,11 @@ def readGcodeFile(filename):
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():
+	filename = None
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
-		gcodeManager.addFile(file)
-	return readGcodeFiles()
+		filename = gcodeManager.addFile(file)
+	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 def loadGcodeFile():

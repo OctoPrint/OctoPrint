@@ -658,6 +658,11 @@ function GcodeFilesViewModel() {
         });
 
         self.files(sortedFiles);
+
+        if (response.filename) {
+            // got a file to scroll to
+            self.switchToFile(response.filename);
+        }
     }
 
     self.loadFile = function(filename) {
@@ -677,6 +682,22 @@ function GcodeFilesViewModel() {
             data: {filename: filename},
             success: self.fromResponse
         })
+    }
+
+    self.switchToFile = function(filename) {
+        var pos = -1;
+        var filelist = self.files();
+        for (var i = 0; i < filelist.length; i++) {
+            if (filelist[i].name == filename) {
+                pos = i;
+                break;
+            }
+        }
+
+        if (pos > -1) {
+            var page = Math.floor(pos / self.pageSize());
+            self.changePage(page);
+        }
     }
 
     self.changePage = function(newPage) {
@@ -1057,6 +1078,7 @@ $(function() {
             dataType: "json",
             done: function (e, data) {
                 gcodeFilesViewModel.fromResponse(data.result);
+                $("#gcode_upload_progress .bar").css("width", "0%");
             },
             progressall: function (e, data) {
                 var progress = parseInt(data.loaded / data.total * 100, 10);

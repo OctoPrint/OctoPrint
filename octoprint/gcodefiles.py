@@ -119,7 +119,7 @@ class GcodeManager:
 			if absolutePath is not None:
 				file.save(absolutePath)
 				self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
-				return absolutePath
+				return self._getBasicFilename(absolutePath)
 		return None
 
 	def removeFile(self, filename):
