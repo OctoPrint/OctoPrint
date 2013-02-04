@@ -59,6 +59,7 @@ class gcode(object):
 		totalMoveTimeMinute = 0.0
 		scale = 1.0
 		posAbs = True
+		posAbsExtruder = True;
 		feedRate = 3600
 		layerThickness = 0.1
 		pathType = 'CUSTOM';
@@ -139,7 +140,7 @@ class gcode(object):
 						totalMoveTimeMinute += (oldPos - pos).vsize() / feedRate
 					moveType = 'move'
 					if e is not None:
-						if posAbs:
+						if posAbsExtruder:
 							if e > currentE:
 								moveType = 'extrude'
 							if e < currentE:
@@ -190,8 +191,10 @@ class gcode(object):
 							pos.z = 0.0
 				elif G == 90:	#Absolute position
 					posAbs = True
+					posAbsExtruder = True
 				elif G == 91:	#Relative position
 					posAbs = False
+					posAbsExtruder = False
 				elif G == 92:
 					x = self.getCodeFloat(line, 'X')
 					y = self.getCodeFloat(line, 'Y')
@@ -216,6 +219,10 @@ class gcode(object):
 						pass
 					elif M == 81:	#Suicide/disable power supply
 						pass
+					elif M == 82:	# Use absolute extruder positions
+						posAbsExtruder = True
+					elif M == 83:	# Use relative extruder positions
+						posAbsExtruder = False
 					elif M == 84:	#Disable step drivers
 						pass
 					elif M == 92:	#Set steps per unit
