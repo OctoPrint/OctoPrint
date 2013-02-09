@@ -355,6 +355,7 @@ function ControlsViewModel() {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
+    self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
 
     self.fromCurrentData = function(data) {
@@ -423,6 +424,26 @@ function ControlsViewModel() {
             type: "POST",
             dataType: "json",
             data: "home" + axis
+        })
+    }
+
+    self.sendExtrudeCommand = function() {
+        self._sendECommand(1);
+    }
+
+    self.sendRetractCommand = function() {
+        self._sendECommand(-1);
+    }
+
+    self._sendECommand = function(dir) {
+        var length = self.extrusionAmount();
+        if (!length)
+            length = 5;
+        $.ajax({
+            url: AJAX_BASEURL + "control/jog",
+            type: "POST",
+            dataType: "json",
+            data: "extrude=" + (dir * length)
         })
     }
 

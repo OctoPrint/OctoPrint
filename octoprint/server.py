@@ -202,6 +202,10 @@ def jog():
 	if "homeZ" in request.values.keys():
 		# home z
 		printer.command("G28 Z0")
+	if "extrude" in request.values.keys():
+		# extrude/retract
+		length = request.values["extrude"]
+		printer.commands(["G91", "G1 E" + length + " F300", "G90"])
 
 	return jsonify(SUCCESS)
 

@@ -201,35 +201,26 @@
                             <div class="jog-panel">
                                 <h1>E</h1>
                                 <div>
-                                    <div class="input-append">
-                                        <input type="text" id="controls_extrusionAmount" class="input-mini text-right" data-bind="enable: isOperational(), attr: {placeholder: innerWall}">
+                                    <div class="input-append control-box">
+                                        <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting(), attr: {placeholder: 5}">
                                         <span class="add-on">mm</span>
                                     </div>
-                                    <div class="btn-group">
-                                        <button class="btn">Extrude</button>
-                                        <button class="btn dropdown-toggle" data-toggle="dropdown">
-                                            <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <a href="#">Retract</a>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendRetractCommand() }">Retract</button>
                                 </div>
                             </div>
-                            <!-- General control -->
-                            <!--div class="jog-panel">
-                                <h1>Control</h1>
+                            <!-- General control panel -->
+                            <div class="jog-panel">
+                                <h1>General</h1>
                                 <div>
                                     <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
                                     <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
                                     <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
-                            </div-->
+                            </div>
 
                             <!-- Container for custom controls -->
-                            <div data-bind="template: { name: $root.displayMode, foreach: controls }"></div>
+                            <div style="clear: both;" data-bind="template: { name: $root.displayMode, foreach: controls }"></div>
 
                             <!-- Templates for custom controls -->
                             <script type="text/html" id="customControls_sectionTemplate">
