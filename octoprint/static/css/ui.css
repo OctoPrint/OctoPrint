@@ -176,3 +176,7 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     margin-right: 20px;
     margin-bottom: 20px;
 }
+
+.text-right {
+    text-align: right;
+}
