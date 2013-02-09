@@ -12,6 +12,7 @@ allows
 * while printing, gaining information regarding the current progress of the print job (height, percentage etc)
 * reading the communication log and send arbitrary codes to be executed by the printer
 * moving the X, Y and Z axis (jog controls, although very ugly ones right now)
+* optional: previewing the GCODE of the selected model to print (via gCodeVisualizer), including rendering of the progress during printing
 * optional: visual monitoring of the printer via webcam stream integrated into the UI (using e.g. MJPG-Streamer)
 * optional: creation of timelapse recordings of the printjob via webcam stream (using e.g. MJPG-Streamer) -- currently two timelaspe methods are implemented, triggering a shot on z-layer change or every "n" seconds
 
@@ -194,16 +195,16 @@ Open `~/.octoprint/config.ini` and add the following lines to it:
       snapshot: http://127.0.0.1:8080/?action=snapshot
       ffmpeg: /usr/bin/avconv
 
-Restart the OctoPrint server and reload its frontend. You should now see a Webcam tab with content.
+Restart the OctoPrint server and reload its frontend. You should now see a "Webcam" tab with content.
 
 If everything works, add the startup commands to `/etc/rc.local`.
 
 Credits
 -------
 
-The OctoPrint started out as a fork of Cura (https://github.com/daid/Cura) for adding a web interface to its
+OctoPrint started out as a fork of Cura (https://github.com/daid/Cura) for adding a web interface to its
 printing functionality and was originally named Printer WebUI. It still uses Cura's communication code for talking to
-the printer, but has been reorganized to only include those parts of Cura necessary for its targeted usecase.
+the printer, but has been reorganized to only include those parts of Cura necessary for its targeted use case.
 
 It also uses the following libraries and frameworks for backend and frontend:
 
@@ -217,6 +218,7 @@ It also uses the following libraries and frameworks for backend and frontend:
 * Knockout.js: http://knockoutjs.com/
 * Flot: http://www.flotcharts.org/
 * jQuery File Upload: http://blueimp.github.com/jQuery-File-Upload/
+* gCodeVisualizer: https://github.com/hudbrog/gCodeViewer
 
 The following software is recommended for Webcam support on the Raspberry Pi:
 
