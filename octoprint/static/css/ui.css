@@ -169,3 +169,10 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     margin-right: 20px;
     margin-bottom: 20px;
 }
+
+#controls .control-box {
+    display: block;
+    height: 40px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+}

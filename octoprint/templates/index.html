@@ -170,7 +170,7 @@
                         </div>
                         <div class="tab-pane" id="controls">
                             <!-- XY jogging control panel -->
-                            <div id="jog_xy" class="jog-panel">
+                            <div class="jog-panel">
                                 <h4>XY</h4>
                                 <div>
                                     <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y', 10) }"><i class="icon-arrow-up"></i></button>
@@ -185,7 +185,7 @@
                                 </div>
                             </div>
                             <!-- Z jogging control panel -->
-                            <div id="jog_z" class="jog-panel">
+                            <div class="jog-panel">
                                 <h4>Z</h4>
                                 <div>
                                     <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z', 10) }"><i class="icon-arrow-up"></i></button>
@@ -195,6 +195,15 @@
                                 </div>
                                 <div>
                                     <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z', -10) }"><i class="icon-arrow-down"></i></button>
+                                </div>
+                            </div>
+                            <!-- General control -->
+                            <div class="jog-panel">
+                                <h4>Control</h4>
+                                <div>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
                             </div>
 
