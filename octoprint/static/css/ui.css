@@ -145,3 +145,38 @@ table th.timelapse_files_action, table td.timelapse_files_action {
 .overflow_visible {
     overflow: visible !important;
 }
+
+#controls {
+    overflow: hidden;
+}
+
+#controls .jog-panel {
+    float: left;
+    margin-right: 20px;
+}
+
+#controls .jog-panel > h4 {
+    border-bottom: 1px solid #ddd;
+}
+
+#controls .jog-panel > div {
+    text-align: center;
+}
+
+#controls .box {
+    width: 40px;
+    height: 40px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+}
+
+#controls .control-box {
+    display: block;
+    height: 40px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+}
+
+.text-right {
+    text-align: right;
+}
