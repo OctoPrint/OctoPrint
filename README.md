@@ -216,6 +216,7 @@ It also uses the following libraries and frameworks for backend and frontend:
 * jQuery: http://jquery.com/
 * Bootstrap: http://twitter.github.com/bootstrap/
 * Knockout.js: http://knockoutjs.com/
+* Underscore.js: http://underscorejs.org/
 * Flot: http://www.flotcharts.org/
 * jQuery File Upload: http://blueimp.github.com/jQuery-File-Upload/
 * gCodeVisualizer: https://github.com/hudbrog/gCodeViewer

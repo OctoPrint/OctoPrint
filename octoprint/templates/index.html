@@ -74,8 +74,20 @@
                         </div>
                     </div>
                     <div class="accordion-group">
-                        <div class="accordion-heading">
+                        <div class="accordion-heading" id="files-heading">
                             <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> Files</a>
+
+                            <div class="settings-trigger btn-group">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    <i class="icon-wrench"></i>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" data-bind="click: function() { $root.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Sort by name (ascending)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Sort by upload date (descending)</a></li>
+                                    <li class="divider"></li>
+                                    <li><a href="#" data-bind="click: function() { $root.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
@@ -198,13 +210,13 @@
                                         <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
                                     </div>
                                 </div>
-				<!-- Jog distance -->
+                                <!-- Jog distance -->
                                 <div class="distance">
                                     <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
                                         <button type="button" class="btn" data-distance="0.1">0.1</button>
-                                  	<button type="button" class="btn" data-distance="1">1</button>
-                                      	<button type="button" class="btn active" data-distance="10">10</button>
-                                      	<button type="button" class="btn" data-distance="100">100</button>
+                                        <button type="button" class="btn" data-distance="1">1</button>
+                                        <button type="button" class="btn active" data-distance="10">10</button>
+                                        <button type="button" class="btn" data-distance="100">100</button>
                                     </div>
                                 </div>
                             </div>
@@ -457,23 +469,24 @@
             </div>
         </div>
 
-    <script src="http://code.jquery.com/jquery-latest.js"></script>
-    <script src="{{ url_for('static', filename='js/knockout-2.2.1.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.ui.core.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.ui.mouse.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.ui.slider.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.iframe-transport.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/lib/modernizr.custom.09684.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
-        <!--<script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/lib/jquery-ui-1.9.0.custom.js') }}"></script>-->
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/underscore-min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/knockout-2.2.1.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.core.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.mouse.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.slider.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.iframe-transport.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/ui.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/lib/modernizr.custom.09684.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
+    <!--<script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/lib/jquery-ui-1.9.0.custom.js') }}"></script>-->
 
     </body>
 </html>

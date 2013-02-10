@@ -16,6 +16,8 @@ body {
     border-bottom-left-radius: 4px;
 }
 
+.accordion-heading a.accordion-toggle { display: inline-block; }
+
 .nav {
     margin-bottom: 0px;
 }
@@ -188,6 +190,11 @@ table th.timelapse_files_action, table td.timelapse_files_action {
 
 #controls .btn-group > .btn {
     min-width: 50px;
+}
+
+.accordion-heading .settings-trigger {
+    float: right;
+    padding: 0px 15px;
 }
 
 .text-right {

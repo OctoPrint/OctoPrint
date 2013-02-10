@@ -615,9 +615,13 @@ function TerminalViewModel() {
 function GcodeFilesViewModel() {
     var self = this;
 
+    self.allFiles = [];
+
     self.files = ko.observableArray([]);
     self.pageSize = ko.observable(CONFIG_FILESPERPAGE);
     self.currentPage = ko.observable(0);
+    self.currentSorting = ko.observable("name");
+    self.currentFilters = ko.observableArray([]);
 
     self.paginatedFiles = ko.dependentObservable(function() {
         if (self.files() == undefined) {
@@ -673,14 +677,8 @@ function GcodeFilesViewModel() {
     }
 
     self.fromResponse = function(response) {
-        var sortedFiles = response.files;
-        sortedFiles.sort(function(a, b) {
-            if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) return -1;
-            if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) return 1;
-            return 0;
-        });
-
-        self.files(sortedFiles);
+        self.allFiles = response.files;
+        self._updateFiles();
 
         if (response.filename) {
             // got a file to scroll to
@@ -737,6 +735,88 @@ function GcodeFilesViewModel() {
         if (self.currentPage() < self.lastPage()) {
             self.currentPage(self.currentPage() + 1);
         }
+    }
+
+    self.changeSorting = function(sorting) {
+        if (sorting != "name" && sorting != "upload")
+            return;
+
+        self.currentSorting(sorting);
+        self._updateFiles();
+    }
+
+    self.toggleFilter = function(filter) {
+        if (_.contains(self.currentFilters(), filter)) {
+            self.removeFilter(filter);
+        } else {
+            self.addFilter(filter);
+        }
+    }
+
+    self.addFilter = function(filter) {
+        if (filter != "printed")
+            return;
+
+        var filters = self.currentFilters();
+        filters.push(filter);
+        self.currentFilters(_.uniq(filters));
+        self._updateFiles();
+    }
+
+    self.removeFilter = function(filter) {
+        if (filter != "printed")
+            return;
+
+        self.currentFilters(_.without(self.currentFilters(), filter));
+        self._updateFiles();
+    }
+
+    self._updateFiles = function() {
+        // determine comparator
+        var comparator = undefined;
+        if (self.currentSorting() == "name") {
+            comparator = function(a, b) {
+                // sorts ascending
+                if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
+                if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                return 0;
+            }
+        } else if (self.currentSorting() == "upload") {
+            comparator = function(a, b) {
+                // sorts descending
+                if (a["date"] > b["date"]) return -1;
+                if (a["date"] < b["date"]) return 1;
+                return 0;
+            }
+        }
+
+        // work on all files
+        var result = self.allFiles;
+
+        // filter if necessary
+        var filters = self.currentFilters();
+        for (var i = 0; i < filters.length; i++) {
+            var filterFunction = undefined;
+            var filter = filters[i];
+            switch (filter) {
+                case "printed": {
+                    filterFunction = function(file) {
+                        return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
+                    }
+                    break;
+                }
+            }
+
+            if (typeof filterFunction !== undefined)
+                result = _.filter(result, filterFunction);
+        }
+
+        // sort if necessary
+        if (typeof comparator !== undefined)
+            result.sort(comparator);
+
+        // set result list
+        self.files(result);
     }
 
     self.getPopoverContent = function(data) {
@@ -1151,6 +1231,7 @@ $(function() {
         ko.applyBindings(connectionViewModel, document.getElementById("connection"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
+        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files-heading"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
         ko.applyBindings(controlsViewModel, document.getElementById("controls"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
