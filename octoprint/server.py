@@ -187,11 +187,11 @@ def jog():
 	if "x" in request.values.keys():
 		# jog x
 		x = request.values["x"]
-		printer.commands(["G91", "G1 X" + x + " F6000", "G90"])
+		printer.commands(["G91", "G1 X" + x + " F3000", "G90"])
 	if "y" in request.values.keys():
 		# jog y
 		y = request.values["y"]
-		printer.commands(["G91", "G1 Y" + y + " F6000", "G90"])
+		printer.commands(["G91", "G1 Y" + y + " F3000", "G90"])
 	if "z" in request.values.keys():
 		# jog z
 		z = request.values["z"]

@@ -409,12 +409,14 @@ function ControlsViewModel() {
         return control;
     }
 
-    self.sendJogCommand = function(axis, distance) {
+    self.sendJogCommand = function(axis, multiplier, distance) {
+        if (typeof distance === "undefined")
+            distance = $('#jog_distance button.active').data('distance');
         $.ajax({
             url: AJAX_BASEURL + "control/jog",
             type: "POST",
             dataType: "json",
-            data: axis + "=" + distance
+            data: axis + "=" + ( distance * multiplier )
         })
     }
 
