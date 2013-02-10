@@ -154,7 +154,7 @@ table th.timelapse_files_action, table td.timelapse_files_action {
 
 #controls .jog-panel {
     float: left;
-    margin-right: 20px;
+    margin-right: 19px;
 }
 
 #controls h1 {
@@ -184,12 +184,13 @@ table th.timelapse_files_action, table td.timelapse_files_action {
 }
 
 #controls .btn-group {
-    margin-top: 10px;
     margin-bottom: 10px;
 }
 
 #controls .btn-group > .btn {
-    min-width: 50px;
+    width: 43px;
+    padding: 3px 0;
+    height: 30px;
 }
 
 .accordion-heading .settings-trigger {
