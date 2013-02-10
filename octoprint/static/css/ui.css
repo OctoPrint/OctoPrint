@@ -155,12 +155,16 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     margin-right: 20px;
 }
 
-#controls .jog-panel > h4 {
-    border-bottom: 1px solid #ddd;
+#controls h1 {
+    text-align: left;
 }
 
 #controls .jog-panel > div {
     text-align: center;
+}
+
+#controls .jog-panel > div.distance {
+    text-align: left;
 }
 
 #controls .box {
@@ -175,6 +179,15 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     display: block;
     height: 30px;
     margin-bottom: 10px;
+}
+
+#controls .btn-group {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#controls .btn-group > .btn {
+    min-width: 50px;
 }
 
 .text-right {
