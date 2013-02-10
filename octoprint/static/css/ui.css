@@ -164,17 +164,17 @@ table th.timelapse_files_action, table td.timelapse_files_action {
 }
 
 #controls .box {
-    width: 40px;
-    height: 40px;
-    margin-right: 20px;
-    margin-bottom: 20px;
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding-left: 8px;
 }
 
 #controls .control-box {
     display: block;
-    height: 40px;
-    margin-right: 20px;
-    margin-bottom: 20px;
+    height: 30px;
+    margin-bottom: 10px;
 }
 
 .text-right {

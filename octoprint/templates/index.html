@@ -214,8 +214,8 @@
                                 <h1>General</h1>
                                 <div>
                                     <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
                             </div>
 
