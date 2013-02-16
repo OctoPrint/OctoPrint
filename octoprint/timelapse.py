@@ -31,7 +31,7 @@ class Timelapse(object):
 
 		self._captureDir = settings().getBaseFolder("timelapse_tmp")
 		self._movieDir = settings().getBaseFolder("timelapse")
-		self._snapshotUrl = settings().get("webcam", "snapshot")
+		self._snapshotUrl = settings().get(["webcam", "snapshot"])
 
 		self._renderThread = None
 		self._captureMutex = threading.Lock()
@@ -79,8 +79,8 @@ class Timelapse(object):
 		urllib.urlretrieve(self._snapshotUrl, filename)
 
 	def _createMovie(self):
-		ffmpeg = settings().get("webcam", "ffmpeg")
-		bitrate = settings().get("webcam", "bitrate")
+		ffmpeg = settings().get(["webcam", "ffmpeg"])
+		bitrate = settings().get(["webcam", "bitrate"])
 		if ffmpeg is None or bitrate is None:
 			return
 

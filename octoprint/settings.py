@@ -45,8 +45,18 @@ old_default_settings = {
 
 default_settings = old_default_settings.copy()
 default_settings.update({
-	"controls": []
+	"controls": [],
+	"printerParameters": {
+		"movementSpeed": {
+			"x": 6000,
+			"y": 6000,
+			"z": 200,
+			"e": 300
+		}
+	}
 })
+
+valid_boolean_trues = ["true", "yes", "y", "1"]
 
 class Settings(object):
 
@@ -56,16 +66,18 @@ class Settings(object):
 		self._config = None
 		self._dirty = False
 
-		self.init_settings_dir()
+		self._init_settings_dir()
 		self.load()
 
-	def init_settings_dir(self):
+	def _init_settings_dir(self):
 		self.settings_dir = _resolveSettingsDir(APPNAME)
 
 		# migration due to rename
 		old_settings_dir = _resolveSettingsDir(OLD_APPNAME)
 		if os.path.exists(old_settings_dir) and os.path.isdir(old_settings_dir) and not os.path.exists(self.settings_dir):
 			os.rename(old_settings_dir, self.settings_dir)
+
+	#~~ load and save
 
 	def load(self):
 		filename = os.path.join(self.settings_dir, "config.yaml")
@@ -102,29 +114,48 @@ class Settings(object):
 			self._dirty = False
 		self.load()
 
-	def getObject(self, key):
-		if key not in default_settings.keys():
+	#~~ getter
+
+	def get(self, path):
+		if len(path) == 0:
 			return None
 
-		if key in self._config.keys():
-			return self._config[key]
+		config = self._config
+		defaults = default_settings
 
-		return default_settings[key]
+		while len(path) > 1:
+			key = path.pop(0)
+			if key in config.keys() and key in defaults.keys():
+				config = config[key]
+				defaults = defaults[key]
+			elif key in defaults.keys():
+				config = {}
+				defaults = defaults[key]
+			else:
+				return None
 
-	def get(self, section, key):
-		if section not in default_settings.keys():
-			return None
+		k = path.pop(0)
+		if not isinstance(k, (list, tuple)):
+			keys = [k]
+		else:
+			keys = k
 
-		if self._config.has_key(section) and self._config[section].has_key(key):
-			return self._config[section][key]
+		results = []
+		for key in keys:
+			if key in config.keys():
+				results.append(config[key])
+			elif key in defaults:
+				results.append(defaults[key])
+			else:
+				results.append(None)
 
-		if default_settings.has_key(section) and default_settings[section].has_key(key):
-			return default_settings[section][key]
+		if not isinstance(k, (list, tuple)):
+			return results.pop()
+		else:
+			return results
 
-		return None
-
-	def getInt(self, section, key):
-		value = self.get(section, key)
+	def getInt(self, path):
+		value = self.get(path)
 		if value is None:
 			return None
 
@@ -133,19 +164,19 @@ class Settings(object):
 		except ValueError:
 			return None
 
-	def getBoolean(self, section, key):
-		value = self.get(section, key)
+	def getBoolean(self, path):
+		value = self.get(path)
 		if value is None:
 			return None
 		if isinstance(value, bool):
 			return value
-		return value.lower() in ["true", "yes", "y", "1"]
+		return value.lower() in valid_boolean_trues
 
 	def getBaseFolder(self, type):
 		if type not in old_default_settings["folder"].keys():
 			return None
 
-		folder = self.get("folder", type)
+		folder = self.get(["folder", type])
 		if folder is None:
 			folder = os.path.join(self.settings_dir, type.replace("_", os.path.sep))
 
@@ -154,25 +185,49 @@ class Settings(object):
 
 		return folder
 
-	def set(self, section, key, value):
-		if section not in default_settings.keys():
+	#~~ setter
+
+	def set(self, path, value):
+		if len(path) == 0:
 			return
 
-		if self._config.has_key(section):
-			sectionConfig = self._config[section]
+		config = self._config
+		defaults = default_settings
+
+		while len(path) > 1:
+			key = path.pop(0)
+			if key in config.keys():
+				config = config[key]
+			elif key in defaults.keys():
+				config[key] = {}
+				config = config[key]
+			else:
+				return
+
+		key = path.pop(0)
+		config[key] = value
+		self._dirty = True
+
+	def setInt(self, path, value):
+		if value is None:
+			return
+
+		try:
+			intValue = int(value)
+		except ValueError:
+			return
+
+		self.set(path, intValue)
+
+	def setBoolean(self, path, value):
+		if value is None:
+			return
+		elif isinstance(value, bool):
+			self.set(path, value)
+		elif value.lower() in valid_boolean_trues:
+			self.set(path, True)
 		else:
-			sectionConfig = {}
-
-		sectionConfig[key] = value
-		self._config[section] = sectionConfig
-		self._dirty = True
-
-	def setObject(self, key, value):
-		if key not in default_settings.keys():
-			return
-
-		self._config[key] = value
-		self._dirty = True
+			self.set(path, False)
 
 def _resolveSettingsDir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python

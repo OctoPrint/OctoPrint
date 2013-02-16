@@ -20,8 +20,8 @@ def getConnectionOptions():
 	return {
 		"ports": comm.serialList(),
 		"baudrates": comm.baudrateList(),
-		"portPreference": settings().get("serial", "port"),
-		"baudratePreference": settings().getInt("serial", "baudrate")
+		"portPreference": settings().get(["serial", "port"]),
+		"baudratePreference": settings().getInt(["serial", "baudrate"])
 	}
 
 class Printer():

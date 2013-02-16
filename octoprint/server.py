@@ -29,9 +29,9 @@ printer = Printer(gcodeManager)
 def index():
 	return render_template(
 		"index.html",
-		webcamStream=settings().get("webcam", "stream"),
-		enableTimelapse=(settings().get("webcam", "snapshot") is not None and settings().get("webcam", "ffmpeg") is not None),
-		enableGCodeVisualizer=settings().get("feature", "gCodeVisualizer")
+		webcamStream=settings().get(["webcam", "stream"]),
+		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
+		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"])
 	)
 
 #~~ Printer state
@@ -111,13 +111,13 @@ def connectionOptions():
 def connect():
 	port = None
 	baudrate = None
-	if request.values.has_key("port"):
+	if "port" in request.values.keys():
 		port = request.values["port"]
-	if request.values.has_key("baudrate"):
+	if "baudrate" in request.values.keys():
 		baudrate = request.values["baudrate"]
-	if request.values.has_key("save"):
-		settings().set("serial", "port", port)
-		settings().set("serial", "baudrate", baudrate)
+	if "save" in request.values.keys():
+		settings().set(["serial", "port"], port)
+		settings().setInt(["serial", "baudrate"], baudrate)
 		settings().save()
 	printer.connect(port=port, baudrate=baudrate)
 	return jsonify(state="Connecting")
@@ -181,21 +181,22 @@ def setTargetTemperature():
 @app.route(BASEURL + "control/jog", methods=["POST"])
 def jog():
 	if not printer.isOperational() or printer.isPrinting():
-		# do not jog when a print job is running or we don"t have a connection
+		# do not jog when a print job is running or we don't have a connection
 		return jsonify(SUCCESS)
 
+	(movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE) = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 	if "x" in request.values.keys():
 		# jog x
 		x = request.values["x"]
-		printer.commands(["G91", "G1 X" + x + " F3000", "G90"])
+		printer.commands(["G91", "G1 X%s F%d" % (x, movementSpeedX), "G90"])
 	if "y" in request.values.keys():
 		# jog y
 		y = request.values["y"]
-		printer.commands(["G91", "G1 Y" + y + " F3000", "G90"])
+		printer.commands(["G91", "G1 Y%s F%d" % (y, movementSpeedY), "G90"])
 	if "z" in request.values.keys():
 		# jog z
 		z = request.values["z"]
-		printer.commands(["G91", "G1 Z" + z + " F200", "G90"])
+		printer.commands(["G91", "G1 Z%s F%d" % (z, movementSpeedZ), "G90"])
 	if "homeXY" in request.values.keys():
 		# home x/y
 		printer.command("G28 X0 Y0")
@@ -205,7 +206,7 @@ def jog():
 	if "extrude" in request.values.keys():
 		# extrude/retract
 		length = request.values["extrude"]
-		printer.commands(["G91", "G1 E" + length + " F300", "G90"])
+		printer.commands(["G91", "G1 E%s F%d" % (length, movementSpeedE), "G90"])
 
 	return jsonify(SUCCESS)
 
@@ -227,7 +228,7 @@ def speed():
 
 @app.route(BASEURL + "control/custom", methods=["GET"])
 def getCustomControls():
-	customControls = settings().getObject("controls")
+	customControls = settings().get(["controls"])
 	return jsonify(controls=customControls)
 
 #~~ GCODE file handling
@@ -393,8 +394,8 @@ def initLogging():
 def main():
 	from optparse import OptionParser
 
-	defaultHost = settings().get("server", "host")
-	defaultPort = settings().get("server", "port")
+	defaultHost = settings().get(["server", "host"])
+	defaultPort = settings().get(["server", "port"])
 
 	parser = OptionParser(usage="usage: %prog [options]")
 	parser.add_option("-d", "--debug", action="store_true", dest="debug",

@@ -38,7 +38,7 @@ def serialList():
 		except:
 			pass
 	baselist = baselist + glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*") + glob.glob("/dev/tty.usb*") + glob.glob("/dev/cu.*") + glob.glob("/dev/rfcomm*")
-	prev = settings().get("serial", "port")
+	prev = settings().get(["serial", "port"])
 	if prev in baselist:
 		baselist.remove(prev)
 		baselist.insert(0, prev)
@@ -48,7 +48,7 @@ def serialList():
 
 def baudrateList():
 	ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
-	prev = settings().getInt("serial", "baudrate")
+	prev = settings().getInt(["serial", "baudrate"])
 	if prev in ret:
 		ret.remove(prev)
 		ret.insert(0, prev)
@@ -144,9 +144,9 @@ class MachineCom(object):
 	
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
 		if port == None:
-			port = settings().get("serial", "port")
+			port = settings().get(["serial", "port"])
 		if baudrate == None:
-			settingsBaudrate = settings().getInt("serial", "baudrate")
+			settingsBaudrate = settings().getInt(["serial", "baudrate"])
 			if settingsBaudrate is None:
 				baudrate = 0
 			else:
