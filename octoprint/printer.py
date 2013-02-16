@@ -362,7 +362,7 @@ class Printer():
 			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
 				self._gcodeManager.printFailed(self._filename)
 			self._gcodeManager.resumeAnalysis() # do not analyse gcode while printing
-		elif state == self._comm.STATE_PRINTING:
+		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._gcodeManager.pauseAnalysis() # printing done, put those cpu cycles to good use
 
 		self._setState(state)
