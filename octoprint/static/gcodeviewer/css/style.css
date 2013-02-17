@@ -85,7 +85,7 @@
     margin-right: 5px;
 }
 
-.mbut{
+#gcode .mbut{
     height:60px;
     width: 250px;
     font-size: 1em;
@@ -96,20 +96,20 @@
     padding: 0px;
 }
 
-.mtab{
+#gcode .mtab{
     background: transparent;
     border: none;
     font-weight: normal;
     font-size: 0.5em;
 }
 
-.mtab-defstate{
+#gcode .mtab-defstate{
     background: transparent;
     border: none;
 
 }
 
-.mtab-content{
+#gcode .mtab-content{
     background: #ffffff;
     background-image: none;
     border: 0px none #dddddd;
@@ -117,22 +117,22 @@
     margin: 0px;
 }
 
-.bar {
+#gcode .bar {
     -webkit-transition: width 0s linear !important;
     -moz-transition: width 0s linear !important;
     -o-transition: width 0s linear !important;
     transition: width 0s linear !important;
 }
 
-.nav {
+#gcode .nav {
     margin-bottom: 0px !important;
 }
 
-.tab-content {
+#gcode .tab-content {
     overflow: visible;
 }
 
-.aboutpage {
+#gcode .aboutpage {
     margin: 10px;
 }
 
@@ -150,12 +150,12 @@
     margin-bottom: 10px;
 }
 
-.colorBox {
+#gcode .colorBox {
     width: 50px;
     height: 15px;
     border: 1px solid #000000;
     float:left;
 }
 
-.activeline {background: #fff0b6 !important;}
+#gcode .activeline {background: #fff0b6 !important;}
 

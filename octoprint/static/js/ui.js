@@ -998,6 +998,97 @@ function GcodeViewModel() {
 
 }
 
+function SettingsViewModel() {
+    var self = this;
+
+    self.printer_movementSpeedX = ko.observable(undefined);
+    self.printer_movementSpeedY = ko.observable(undefined);
+    self.printer_movementSpeedZ = ko.observable(undefined);
+    self.printer_movementSpeedE = ko.observable(undefined);
+
+    self.webcam_streamUrl = ko.observable(undefined);
+    self.webcam_snapshotUrl = ko.observable(undefined);
+    self.webcam_ffmpegPath = ko.observable(undefined);
+    self.webcam_bitrate = ko.observable(undefined);
+
+    self.feature_gcodeViewer = ko.observable(undefined);
+    self.feature_waitForStart = ko.observable(undefined);
+
+    self.folder_uploads = ko.observable(undefined);
+    self.folder_timelapse = ko.observable(undefined);
+    self.folder_timelapseTmp = ko.observable(undefined);
+    self.folder_logs = ko.observable(undefined);
+
+    self.requestData = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "settings",
+            type: "GET",
+            dataType: "json",
+            success: self.fromResponse
+        })
+    }
+
+    self.fromResponse = function(response) {
+        self.printer_movementSpeedX(response.printer.movementSpeedX);
+        self.printer_movementSpeedY(response.printer.movementSpeedY);
+        self.printer_movementSpeedZ(response.printer.movementSpeedZ);
+        self.printer_movementSpeedE(response.printer.movementSpeedE);
+
+        self.webcam_streamUrl(response.webcam.streamUrl);
+        self.webcam_snapshotUrl(response.webcam.snapshotUrl);
+        self.webcam_ffmpegPath(response.webcam.ffmpegPath);
+        self.webcam_bitrate(response.webcam.bitrate);
+
+        self.feature_gcodeViewer(response.feature.gcodeViewer);
+        self.feature_waitForStart(response.feature.waitForStart);
+
+        self.folder_uploads(response.folder.uploads);
+        self.folder_timelapse(response.folder.timelapse);
+        self.folder_timelapseTmp(response.folder.timelapseTmp);
+        self.folder_logs(response.folder.logs);
+    }
+
+    self.saveData = function() {
+        var data = {
+            "printer": {
+                "movementSpeedX": self.printer_movementSpeedX(),
+                "movementSpeedY": self.printer_movementSpeedY(),
+                "movementSpeedZ": self.printer_movementSpeedZ(),
+                "movementSpeedE": self.printer_movementSpeedE()
+            },
+            "webcam": {
+                "streamUrl": self.webcam_streamUrl(),
+                "snapshotUrl": self.webcam_snapshotUrl(),
+                "ffmpegPath": self.webcam_ffmpegPath(),
+                "bitrate": self.webcam_bitrate()
+            },
+            "feature": {
+                "gcodeViewer": self.feature_gcodeViewer(),
+                "waitForStart": self.feature_waitForStart()
+            },
+            "folder": {
+                "uploads": self.folder_uploads(),
+                "timelapse": self.folder_timelapse(),
+                "timelapseTmp": self.folder_timelapseTmp(),
+                "logs": self.folder_logs()
+            }
+        }
+
+        $.ajax({
+            url: AJAX_BASEURL + "settings",
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data),
+            success: function(response) {
+                self.fromResponse(response);
+                $("#settings_dialog").modal("hide");
+            }
+        })
+    }
+
+}
+
 function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, webcamViewModel, gcodeViewModel) {
     var self = this;
 
@@ -1074,6 +1165,7 @@ $(function() {
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
         var gcodeViewModel = new GcodeViewModel();
+        var settingsViewModel = new SettingsViewModel();
 
         var dataUpdater = new DataUpdater(
             connectionViewModel, 
@@ -1237,6 +1329,7 @@ $(function() {
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
         ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
+        ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
 
         var webcamElement = document.getElementById("webcam");
         if (webcamElement) {
@@ -1252,6 +1345,7 @@ $(function() {
         controlsViewModel.requestData();
         gcodeFilesViewModel.requestData();
         webcamViewModel.requestData();
+        settingsViewModel.requestData();
 
         //~~ UI stuff
 

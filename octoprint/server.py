@@ -328,20 +328,64 @@ def setTimelapseConfig():
 @app.route(BASEURL + "settings", methods=["GET"])
 def getSettings():
 	s = settings()
+
+	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
+
 	return jsonify({
-		"serial_port": s.get("serial", "port"),
-		"serial_baudrate": s.get("serial", "baudrate")
+		"printer": {
+			"movementSpeedX": movementSpeedX,
+			"movementSpeedY": movementSpeedY,
+			"movementSpeedZ": movementSpeedZ,
+			"movementSpeedE": movementSpeedE,
+		},
+		"webcam": {
+			"streamUrl": s.get(["webcam", "stream"]),
+			"snapshotUrl": s.get(["webcam", "snapshot"]),
+			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
+			"bitrate": s.get(["webcam", "bitrate"])
+		},
+		"feature": {
+			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
+			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"])
+		},
+		"folder": {
+			"uploads": s.getBaseFolder("uploads"),
+			"timelapse": s.getBaseFolder("timelapse"),
+			"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
+			"logs": s.getBaseFolder("logs")
+		}
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
 def setSettings():
-	s = settings()
-	if request.values.has_key("serial_port"):
-		s.set("serial", "port", request.values["serial_port"])
-	if request.values.has_key("serial_baudrate"):
-		s.set("serial", "baudrate", request.values["serial_baudrate"])
+	if "application/json" in request.headers["Content-Type"]:
+		data = request.json
+		s = settings()
 
-	s.save()
+		if "printer" in data.keys():
+			if "movementSpeedX" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "x"], data["printer"]["movementSpeedX"])
+			if "movementSpeedY" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "y"], data["printer"]["movementSpeedY"])
+			if "movementSpeedZ" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "z"], data["printer"]["movementSpeedZ"])
+			if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
+
+		if "webcam" in data.keys():
+			if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
+			if "snapshot" in data["webcam"].keys(): s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
+			if "ffmpeg" in data["webcam"].keys(): s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpeg"])
+			if "bitrate" in data["webcam"].keys(): s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
+
+		if "feature" in data.keys():
+			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
+			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
+
+		if "folder" in data.keys():
+			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
+			if "timelapse" in data["folder"].keys(): s.setBaseFolder("timelapse", data["folder"]["timelapse"])
+			if "timelapseTmp" in data["folder"].keys(): s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
+			if "logs" in data["folder"].keys(): s.setBaseFolder("logs", data["folder"]["logs"])
+
+		s.save()
+
 	return getSettings()
 
 #~~ startup code

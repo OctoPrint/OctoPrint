@@ -1,8 +1,12 @@
+/** Top bar */
+
 body {
     padding-top: 60px;
 }
 
-.tab-content {
+/** OctoPrint application tabs */
+
+.octoprint-container .tab-content {
     padding: 9px 15px;
     border-left: 1px solid #DDD;
     border-right: 1px solid #DDD;
@@ -16,13 +20,11 @@ body {
     border-bottom-left-radius: 4px;
 }
 
-.accordion-heading a.accordion-toggle { display: inline-block; }
-
-.nav {
+.octoprint-container .nav {
     margin-bottom: 0px;
 }
 
-.tab-content h1 {
+.octoprint-container .tab-content h1 {
     display: block;
     width: 100%;
     padding: 0;
@@ -34,6 +36,17 @@ body {
     border-bottom: 1px solid #E5E5E5;
     font-weight: normal;
 }
+
+/** Accordions */
+
+.octoprint-container .accordion-heading a.accordion-toggle { display: inline-block; }
+
+.octoprint-container .accordion-heading .settings-trigger {
+    float: right;
+    padding: 0px 15px;
+}
+
+/** Tables */
 
 table {
     table-layout: fixed;
@@ -59,6 +72,24 @@ table th.gcode_files_action, table td.gcode_files_action {
     width: 20%;
 }
 
+table th.timelapse_files_name, table td.timelapse_files_name {
+    text-overflow: ellipsis;
+    text-align: left;
+    width: 55%;
+}
+
+table th.timelapse_files_size, table td.timelapse_files_size {
+    text-align: right;
+    width: 25%;
+}
+
+table th.timelapse_files_action, table td.timelapse_files_action {
+    text-align: center;
+    width: 20%;
+}
+
+/** Temperature tab */
+
 #temperature-graph {
     height: 350px;
     width: 100%;
@@ -75,10 +106,13 @@ table th.gcode_files_action, table td.gcode_files_action {
     text-align: right;
 }
 
+/** Connection settings */
 
 #connection_ports, #connection_baudrates {
     width: 100%;
 }
+
+/** Offline overlay */
 
 #offline_overlay {
     position: fixed;
@@ -116,25 +150,13 @@ table th.gcode_files_action, table td.gcode_files_action {
     margin: auto;
 }
 
-table th.timelapse_files_name, table td.timelapse_files_name {
-    text-overflow: ellipsis;
-    text-align: left;
-    width: 55%;
-}
-
-table th.timelapse_files_size, table td.timelapse_files_size {
-    text-align: right;
-    width: 25%;
-}
-
-table th.timelapse_files_action, table td.timelapse_files_action {
-    text-align: center;
-    width: 20%;
-}
+/** Webcam */
 
 #webcam_container {
     width: 100%;
 }
+
+/** GCODE file manager */
 
 #files .popover {
     font-size: 85%;
@@ -144,9 +166,7 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     margin-bottom: 0;
 }
 
-.overflow_visible {
-    overflow: visible !important;
-}
+/** Controls */
 
 #controls {
     overflow: hidden;
@@ -193,11 +213,13 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     height: 30px;
 }
 
-.accordion-heading .settings-trigger {
-    float: right;
-    padding: 0px 15px;
-}
+/** General helper classes */
 
 .text-right {
     text-align: right;
 }
+
+.overflow_visible {
+    overflow: visible !important;
+}
+

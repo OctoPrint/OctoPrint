@@ -6,6 +6,7 @@ import ConfigParser
 import sys
 import os
 import yaml
+import logging
 
 APPNAME="OctoPrint"
 OLD_APPNAME="PrinterWebUI"
@@ -63,6 +64,8 @@ valid_boolean_trues = ["true", "yes", "y", "1"]
 class Settings(object):
 
 	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+
 		self.settings_dir = None
 
 		self._config = None
@@ -78,6 +81,12 @@ class Settings(object):
 		old_settings_dir = _resolveSettingsDir(OLD_APPNAME)
 		if os.path.exists(old_settings_dir) and os.path.isdir(old_settings_dir) and not os.path.exists(self.settings_dir):
 			os.rename(old_settings_dir, self.settings_dir)
+
+	def _getDefaultFolder(self, type):
+		folder = default_settings["folder"][type]
+		if folder is None:
+			folder = os.path.join(self.settings_dir, type.replace("_", os.path.sep))
+		return folder
 
 	#~~ load and save
 
@@ -164,6 +173,7 @@ class Settings(object):
 		try:
 			return int(value)
 		except ValueError:
+			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
 	def getBoolean(self, path):
@@ -175,12 +185,12 @@ class Settings(object):
 		return value.lower() in valid_boolean_trues
 
 	def getBaseFolder(self, type):
-		if type not in old_default_settings["folder"].keys():
+		if type not in default_settings["folder"].keys():
 			return None
 
 		folder = self.get(["folder", type])
 		if folder is None:
-			folder = os.path.join(self.settings_dir, type.replace("_", os.path.sep))
+			folder = self._getDefaultFolder(type)
 
 		if not os.path.isdir(folder):
 			os.makedirs(folder)
@@ -189,7 +199,7 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value):
+	def set(self, path, value, force=False):
 		if len(path) == 0:
 			return
 
@@ -198,38 +208,63 @@ class Settings(object):
 
 		while len(path) > 1:
 			key = path.pop(0)
-			if key in config.keys():
+			if key in config.keys() and key in defaults.keys():
 				config = config[key]
+				defaults = defaults[key]
 			elif key in defaults.keys():
 				config[key] = {}
 				config = config[key]
+				defaults = defaults[key]
 			else:
 				return
 
 		key = path.pop(0)
-		config[key] = value
-		self._dirty = True
+		if not force and key in defaults.keys() and key in config.keys() and defaults[key] == value:
+			del config[key]
+			self._dirty = True
+		elif force or (not key in config.keys() and defaults[key] != value) or (key in config.keys() and config[key] != value):
+			if value is None:
+				del config[key]
+			else:
+				config[key] = value
+			self._dirty = True
 
-	def setInt(self, path, value):
+	def setInt(self, path, value, force=False):
 		if value is None:
-			return
+			self.set(path, None, force)
 
 		try:
 			intValue = int(value)
 		except ValueError:
+			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
-		self.set(path, intValue)
+		self.set(path, intValue, force)
 
-	def setBoolean(self, path, value):
-		if value is None:
-			return
-		elif isinstance(value, bool):
-			self.set(path, value)
+	def setBoolean(self, path, value, force=False):
+		if value is None or isinstance(value, bool):
+			self.set(path, value, force)
 		elif value.lower() in valid_boolean_trues:
-			self.set(path, True)
+			self.set(path, True, force)
 		else:
-			self.set(path, False)
+			self.set(path, False, force)
+
+	def setBaseFolder(self, type, path, force=False):
+		if type not in default_settings["folder"].keys():
+			return None
+
+		currentPath = self.getBaseFolder(type)
+		defaultPath = self._getDefaultFolder(type)
+		if (path is None or path == defaultPath) and "folder" in self._config.keys() and type in self._config["folder"].keys():
+			del self._config["folder"][type]
+			if not self._config["folder"]:
+				del self._config["folder"]
+			self._dirty = True
+		elif (path != currentPath and path != defaultPath) or force:
+			if not "folder" in self._config.keys():
+				self._config["folder"] = {}
+			self._config["folder"][type] = path
+			self._dirty = True
 
 def _resolveSettingsDir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
