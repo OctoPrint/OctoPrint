@@ -36,10 +36,12 @@ old_default_settings = {
 	"folder": {
 		"uploads": None,
 		"timelapse": None,
-		"timelapse_tmp": None
+		"timelapse_tmp": None,
+		"logs": None
 	},
 	"feature": {
-    	"gCodeVisualizer": True
+    	"gCodeVisualizer": True,
+		"waitForStartOnConnect": False
 	},
 }
 

@@ -377,6 +377,14 @@ def initLogging():
 				"level": "DEBUG",
 				"formatter": "simple",
 				"stream": "ext://sys.stdout"
+			},
+			"file": {
+				"class": "logging.handlers.TimedRotatingFileHandler",
+				"level": "DEBUG",
+				"formatter": "simple",
+				"when": "D",
+				"backupCount": "1",
+				"filename": os.path.join(settings().getBaseFolder("logs"), "octoprint.log")
 			}
 		},
 		"loggers": {
@@ -386,7 +394,7 @@ def initLogging():
 		},
 		"root": {
 			"level": "INFO",
-			"handlers": ["console"]
+			"handlers": ["console", "file"]
 		}
 	}
 	logging.config.dictConfig(config)

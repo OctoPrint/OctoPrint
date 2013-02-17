@@ -62,7 +62,7 @@ class VirtualPrinter():
 		self.lastTempAt = time.time()
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
-	
+
 	def write(self, data):
 		if self.readList is None:
 			return
@@ -314,6 +314,7 @@ class MachineCom(object):
 		#Start monitoring the serial port.
 		timeout = time.time() + 5
 		tempRequestTimeout = timeout
+		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		while True:
 			line = self._readline()
 			if line == None:
@@ -334,9 +335,9 @@ class MachineCom(object):
 					self._errorValue = line[6:]
 					self._changeState(self.STATE_ERROR)
 			if ' T:' in line or line.startswith('T:'):
-				self._temp = float(re.search("[0-9\.]*", line.split('T:')[1]).group(0))
+				self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
 				if ' B:' in line:
-					self._bedTemp = float(re.search("[0-9\.]*", line.split(' B:')[1]).group(0))
+					self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
 				self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
 				if not 'ok' in line and self._heatupWaitStartTime != 0:
@@ -384,9 +385,11 @@ class MachineCom(object):
 				else:
 					self._testingBaudrate = False
 			elif self._state == self.STATE_CONNECTING:
-				if line == '':
+				if line == '' and startSeen:
 					self._sendCommand("M105")
-				elif 'ok' in line:
+				elif 'start' in line:
+					startSeen = True
+				elif 'ok' in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
 				elif time.time() > timeout:
 					self.close()
