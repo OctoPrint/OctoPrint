@@ -170,12 +170,12 @@ def setTargetTemperature():
 	if not printer.isOperational():
 		return jsonify(SUCCESS)
 
-	if request.values.has_key("temp"):
+	elif request.values.has_key("temp"):
 		# set target temperature
 		temp = request.values["temp"]
 		printer.command("M104 S" + temp)
 
-	if request.values.has_key("bedTemp"):
+	elif request.values.has_key("bedTemp"):
 		# set target bed temperature
 		bedTemp = request.values["bedTemp"]
 		printer.command("M140 S" + bedTemp)
@@ -357,6 +357,9 @@ def getSettings():
 			"timelapse": s.getBaseFolder("timelapse"),
 			"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
 			"logs": s.getBaseFolder("logs")
+		},
+		"temperature": {
+			"profiles": s.get(["temperature", "profiles"])
 		}
 	})
 
@@ -387,6 +390,9 @@ def setSettings():
 			if "timelapse" in data["folder"].keys(): s.setBaseFolder("timelapse", data["folder"]["timelapse"])
 			if "timelapseTmp" in data["folder"].keys(): s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
 			if "logs" in data["folder"].keys(): s.setBaseFolder("logs", data["folder"]["logs"])
+
+		if "temperature" in data.keys():
+			if "profiles" in data["temperature"].keys(): s.set(["temperature", "profiles"], data["temperature"]["profiles"])
 
 		s.save()
 

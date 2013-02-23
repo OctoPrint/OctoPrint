@@ -202,7 +202,7 @@ function PrinterStateViewModel() {
     }
 }
 
-function TemperatureViewModel() {
+function TemperatureViewModel(settingsViewModel) {
     var self = this;
 
     self.temp = ko.observable(undefined);
@@ -218,25 +218,47 @@ function TemperatureViewModel() {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
+    self.temperature_profiles = settingsViewModel.temperature_profiles;
+
+    self.setTemp = function(profile) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { temp: profile.extruder },
+                success: function() {$("#temp_newTemp").val("")}
+            })
+        };
+    
+    self.setBedTemp = function(profile) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { temp: profile.bed },
+                success: function() {$("#temp_newBedTemp").val("")}
+            })
+        };
+
     self.tempString = ko.computed(function() {
         if (!self.temp())
             return "-";
-        return self.temp() + " °C";
+        return self.temp() + " &deg;C";
     });
     self.bedTempString = ko.computed(function() {
         if (!self.bedTemp())
             return "-";
-        return self.bedTemp() + " °C";
+        return self.bedTemp() + " &deg;C";
     });
     self.targetTempString = ko.computed(function() {
         if (!self.targetTemp())
             return "-";
-        return self.targetTemp() + " °C";
+        return self.targetTemp() + " &deg;C";
     });
     self.bedTargetTempString = ko.computed(function() {
         if (!self.bedTargetTemp())
             return "-";
-        return self.bedTargetTemp() + " °C";
+        return self.bedTargetTemp() + " &deg;C";
     });
 
     self.temperatures = [];
@@ -1029,6 +1051,16 @@ function SettingsViewModel() {
     self.folder_timelapseTmp = ko.observable(undefined);
     self.folder_logs = ko.observable(undefined);
 
+    self.temperature_profiles = ko.observableArray(undefined);
+
+    self.addTemperatureProfile = function() {
+            self.temperature_profiles.push({name: "New", extruder:0, bed:0});
+        };
+
+    self.removeTemperatureProfile = function(profile) {
+            self.temperature_profiles.remove(profile);
+        };
+
     self.requestData = function() {
         $.ajax({
             url: AJAX_BASEURL + "settings",
@@ -1056,6 +1088,8 @@ function SettingsViewModel() {
         self.folder_timelapse(response.folder.timelapse);
         self.folder_timelapseTmp(response.folder.timelapseTmp);
         self.folder_logs(response.folder.logs);
+
+        self.temperature_profiles(response.temperature.profiles);
     }
 
     self.saveData = function() {
@@ -1081,7 +1115,10 @@ function SettingsViewModel() {
                 "timelapse": self.folder_timelapse(),
                 "timelapseTmp": self.folder_timelapseTmp(),
                 "logs": self.folder_logs()
-            }
+            },
+            "temperature": {
+                "profiles": self.temperature_profiles(),
+            },
         }
 
         $.ajax({
@@ -1168,14 +1205,14 @@ $(function() {
         //~~ View models
         var connectionViewModel = new ConnectionViewModel();
         var printerStateViewModel = new PrinterStateViewModel();
-        var temperatureViewModel = new TemperatureViewModel();
+        var settingsViewModel = new SettingsViewModel();
+        var temperatureViewModel = new TemperatureViewModel(settingsViewModel);
         var controlsViewModel = new ControlsViewModel();
         var speedViewModel = new SpeedViewModel();
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
         var gcodeViewModel = new GcodeViewModel();
-        var settingsViewModel = new SettingsViewModel();
 
         var dataUpdater = new DataUpdater(
             connectionViewModel, 
@@ -1215,7 +1252,7 @@ $(function() {
             })
         })
 
-        //~~ Temperature control
+        //~~ Temperature control (should really move to knockout click binding)
 
         $("#temp_newTemp_set").click(function() {
             var newTemp = $("#temp_newTemp").val();
