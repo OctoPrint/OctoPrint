@@ -176,7 +176,7 @@
                                         </button>
                                         <ul class="dropdown-menu">
                                              <li data-bind="foreach: temperature_profiles">
-                                                 <a class="temp_newTemp_set" data-bind="attr: {'data-temp' : extruder}, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
+                                                 <a class="temp_newTemp_set" data-bind="click: $parent.setTemp, attr: {'data-temp' : extruder}, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
                                              </li>
                                              <li class="divider"></li>
                                              <li>
@@ -204,7 +204,7 @@
                                         </button>
                                         <ul class="dropdown-menu">
                                              <li data-bind="foreach: temperature_profiles">
-                                                 <a class="temp_newBedTemp_set" data-bind="attr: {'data-temp' : bed}, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
+                                                 <a class="temp_newBedTemp_set" data-bind="click: $parent.setBedTemp, attr: {'data-temp' : bed}, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
                                              </li>
                                              <li class="divider"></li>
                                              <li>

@@ -220,6 +220,26 @@ function TemperatureViewModel(settingsViewModel) {
 
     self.temperature_profiles = settingsViewModel.temperature_profiles;
 
+    self.setTemp = function(profile) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { temp: profile.extruder },
+                success: function() {$("#temp_newTemp").val("")}
+            })
+        };
+    
+    self.setBedTemp = function(profile) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { temp: profile.bed },
+                success: function() {$("#temp_newBedTemp").val("")}
+            })
+        };
+
     self.tempString = ko.computed(function() {
         if (!self.temp())
             return "-";
@@ -1222,12 +1242,10 @@ $(function() {
             })
         })
 
-        //~~ Temperature control
+        //~~ Temperature control (should really move to knockout click binding)
 
-        $("#temp_newTemp_set, .temp_newTemp_set").click(function() {
+        $("#temp_newTemp_set").click(function() {
             var newTemp = $("#temp_newTemp").val();
-            if ($(this).data('temp') != null)
-		newTemp = $(this).data('temp');
             $.ajax({
                 url: AJAX_BASEURL + "control/temperature",
                 type: "POST",
@@ -1236,10 +1254,8 @@ $(function() {
                 success: function() {$("#temp_newTemp").val("")}
             })
         })
-        $("#temp_newBedTemp_set, .temp_newBedTemp_set").click(function() {
+        $("#temp_newBedTemp_set").click(function() {
             var newBedTemp = $("#temp_newBedTemp").val();
-            if ($(this).data('temp') != null)
-		newBedTemp = $(this).data('temp');
             $.ajax({
                 url: AJAX_BASEURL + "control/temperature",
                 type: "POST",
