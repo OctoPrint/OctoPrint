@@ -421,7 +421,7 @@ function ControlsViewModel() {
     }
 
     self._enhanceControl = function(control) {
-        if (control.type == "parametric_command") {
+        if (control.type == "parametric_command" || control.type == "parametric_commands") {
             for (var i = 0; i < control.input.length; i++) {
                 control.input[i].value = control.input[i].default;
             }
@@ -475,25 +475,33 @@ function ControlsViewModel() {
         if (!command)
             return;
 
-        if (command.type == "command") {
-            $.ajax({
-                url: AJAX_BASEURL + "control/command",
-                type: "POST",
-                dataType: "json",
-                data: "command=" + command.command
-            })
-        } else if (command.type="parametric_command") {
-            var data = {"command": command.command};
-            for (var i = 0; i < command.input.length; i++) {
-                data["parameter_" + command.input[i].parameter] = command.input[i].value;
-            }
-            $.ajax({
-                url: AJAX_BASEURL + "control/command",
-                type: "POST",
-                dataType: "json",
-                data: data
-            })
+        var data = undefined;
+        if (command.type == "command" || command.type == "parametric_command") {
+            // single command
+            data = {"command" : command.command};
+        } else if (command.type == "commands" || command.type == "parametric_commands") {
+            // multi command
+            data = {"commands": command.commands};
         }
+
+        if (command.type == "parametric_command" || command.type == "parametric_commands") {
+            // parametric command(s)
+            data["parameters"] = {};
+            for (var i = 0; i < command.input.length; i++) {
+                data["parameters"][command.input[i].parameter] = command.input[i].value;
+            }
+        }
+
+        if (!data)
+            return;
+
+        $.ajax({
+            url: AJAX_BASEURL + "control/command",
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        })
     }
 
     self.displayMode = function(customControl) {
@@ -501,8 +509,10 @@ function ControlsViewModel() {
             case "section":
                 return "customControls_sectionTemplate";
             case "command":
+            case "commands":
                 return "customControls_commandTemplate";
             case "parametric_command":
+            case "parametric_commands":
                 return "customControls_parametricCommandTemplate";
             default:
                 return "customControls_emptyTemplate";
@@ -1299,7 +1309,8 @@ $(function() {
                     url: AJAX_BASEURL + "control/command",
                     type: "POST",
                     dataType: "json",
-                    data: "command=" + command
+                    contentType: "application/json; charset=UTF-8",
+                    data: JSON.stringify({"command": command})
                 })
             }
         })

@@ -129,21 +129,25 @@ def disconnect():
 
 @app.route(BASEURL + "control/command", methods=["POST"])
 def printerCommand():
-	command = request.form["command"]
+	if "application/json" in request.headers["Content-Type"]:
+		data = request.json
 
-	# if parameters for the command are given, retrieve them from the request and format the command string with them
-	parameters = {}
-	for requestParameter in request.values.keys():
-		if not requestParameter.startswith("parameter_"):
-			continue
+		parameters = {}
+		if "parameters" in data.keys(): parameters = data["parameters"]
 
-		parameterName = requestParameter[len("parameter_"):]
-		parameterValue = request.values[requestParameter]
-		parameters[parameterName] = parameterValue
-	if len(parameters) > 0:
-		command = command % parameters
+		commands = []
+		if "command" in data.keys(): commands = [data["command"]]
+		elif "commands" in data.keys(): commands = data["commands"]
 
-	printer.command(command)
+		commandsToSend = []
+		for command in commands:
+			commandToSend = command
+			if len(parameters) > 0:
+				commandToSend = command % parameters
+			commandsToSend.append(commandToSend)
+
+		printer.commands(commandsToSend)
+
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/print", methods=["POST"])
