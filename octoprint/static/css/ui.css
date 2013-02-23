@@ -110,6 +110,10 @@ table th.timelapse_files_action, table td.timelapse_files_action {
     text-align: right;
 }
 
+ul.dropdown-menu li a {
+    cursor: pointer;
+}
+
 /** Connection settings */
 
 #connection_ports, #connection_baudrates {
