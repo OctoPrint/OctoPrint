@@ -220,25 +220,37 @@ function TemperatureViewModel(settingsViewModel) {
 
     self.temperature_profiles = settingsViewModel.temperature_profiles;
 
-    self.setTemp = function(profile) {
-            $.ajax({
-                url: AJAX_BASEURL + "control/temperature",
-                type: "POST",
-                dataType: "json",
-                data: { temp: profile.extruder },
-                success: function() {$("#temp_newTemp").val("")}
-            })
-        };
-    
-    self.setBedTemp = function(profile) {
-            $.ajax({
-                url: AJAX_BASEURL + "control/temperature",
-                type: "POST",
-                dataType: "json",
-                data: { temp: profile.bed },
-                success: function() {$("#temp_newBedTemp").val("")}
-            })
-        };
+    self.setTempFromProfile = function(profile) {
+        if (!profile)
+            return;
+        self.setTemp(profile.extruder);
+    }
+
+    self.setTemp = function(temp) {
+        $.ajax({
+            url: AJAX_BASEURL + "control/temperature",
+            type: "POST",
+            dataType: "json",
+            data: { temp: temp },
+            success: function() {$("#temp_newTemp").val("")}
+        })
+    };
+
+    self.setBedTempFromProfile = function(profile) {
+        if (!profile)
+            return;
+        self.setBedTemp(profile.bed);
+    }
+
+    self.setBedTemp = function(bedTemp) {
+        $.ajax({
+            url: AJAX_BASEURL + "control/temperature",
+            type: "POST",
+            dataType: "json",
+            data: { bedTemp: bedTemp },
+            success: function() {$("#temp_newBedTemp").val("")}
+        })
+    };
 
     self.tempString = ko.computed(function() {
         if (!self.temp())
@@ -1117,8 +1129,8 @@ function SettingsViewModel() {
                 "logs": self.folder_logs()
             },
             "temperature": {
-                "profiles": self.temperature_profiles(),
-            },
+                "profiles": self.temperature_profiles()
+            }
         }
 
         $.ajax({

@@ -175,13 +175,15 @@
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu">
-                                             <li data-bind="foreach: temperature_profiles">
-                                                 <a class="temp_newTemp_set" data-bind="click: $parent.setTemp, attr: {'data-temp' : extruder}, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
-                                             </li>
-                                             <li class="divider"></li>
-                                             <li>
-                                                 <a class="temp_newTemp_set" data-temp="0">Off</a>
-                                             </li>
+                                            <!-- ko foreach: temperature_profiles -->
+                                            <li>
+                                                <a href="#" data-bind="click: $parent.setTempFromProfile, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
+                                            </li>
+                                            <!-- /ko -->
+                                            <li class="divider"></li>
+                                            <li>
+                                                <a href="#" data-bind="click: function() { $root.setTemp(0); }">Off</a>
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>
@@ -203,12 +205,14 @@
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu">
-                                             <li data-bind="foreach: temperature_profiles">
-                                                 <a class="temp_newBedTemp_set" data-bind="click: $parent.setBedTemp, attr: {'data-temp' : bed}, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
+                                             <!-- ko foreach: temperature_profiles -->
+                                             <li>
+                                                 <a href="#" data-bind="click: $parent.setBedTempFromProfile, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
                                              </li>
+                                             <!-- /ko -->
                                              <li class="divider"></li>
                                              <li>
-                                                 <a class="temp_newBedTemp_set" data-temp="0">Off</a>
+                                                 <a href="#" data-bind="click: function(){ $root.setBedTemp(0); }">Off</a>
                                              </li>
                                         </ul>
                                     </div>
