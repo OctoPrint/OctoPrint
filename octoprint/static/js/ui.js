@@ -1019,6 +1019,11 @@ function SettingsViewModel() {
     self.folder_timelapseTmp = ko.observable(undefined);
     self.folder_logs = ko.observable(undefined);
 
+    self.temperature_extruderABS = ko.observable(undefined);
+    self.temperature_bedABS = ko.observable(undefined);
+    self.temperature_extruderPLA = ko.observable(undefined);
+    self.temperature_bedPLA = ko.observable(undefined);
+
     self.requestData = function() {
         $.ajax({
             url: AJAX_BASEURL + "settings",
@@ -1046,6 +1051,11 @@ function SettingsViewModel() {
         self.folder_timelapse(response.folder.timelapse);
         self.folder_timelapseTmp(response.folder.timelapseTmp);
         self.folder_logs(response.folder.logs);
+
+        self.temperature_extruderABS(response.temperature.extruderABS);
+        self.temperature_bedABS(response.temperature.bedABS);
+        self.temperature_extruderPLA(response.temperature.extruderPLA);
+        self.temperature_bedPLA(response.temperature.bedPLA);
     }
 
     self.saveData = function() {
@@ -1071,7 +1081,13 @@ function SettingsViewModel() {
                 "timelapse": self.folder_timelapse(),
                 "timelapseTmp": self.folder_timelapseTmp(),
                 "logs": self.folder_logs()
-            }
+            },
+            "temperature": {
+                "extruderABS": self.temperature_extruderABS(),
+                "bedABS": self.temperature_bedABS(),
+                "extruderPLA": self.temperature_extruderPLA(),
+                "bedPLA": self.temperature_bedPLA()
+            },
         }
 
         $.ajax({
@@ -1207,8 +1223,10 @@ $(function() {
 
         //~~ Temperature control
 
-        $("#temp_newTemp_set").click(function() {
+        $("#temp_newTemp_set, .temp_newTemp_set").click(function() {
             var newTemp = $("#temp_newTemp").val();
+            if ($(this).data('temp') != null)
+		newTemp = $(this).data('temp');
             $.ajax({
                 url: AJAX_BASEURL + "control/temperature",
                 type: "POST",
@@ -1217,8 +1235,10 @@ $(function() {
                 success: function() {$("#temp_newTemp").val("")}
             })
         })
-        $("#temp_newBedTemp_set").click(function() {
+        $("#temp_newBedTemp_set, .temp_newBedTemp_set").click(function() {
             var newBedTemp = $("#temp_newBedTemp").val();
+            if ($(this).data('temp') != null)
+		newBedTemp = $(this).data('temp');
             $.ajax({
                 url: AJAX_BASEURL + "control/temperature",
                 type: "POST",

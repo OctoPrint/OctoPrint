@@ -156,8 +156,8 @@
                             <div class="row" style="padding-left: 20px">
                                 <div id="temperature-graph"></div>
                             </div>
-                            <div>
-                                <div class="form-horizontal" style="width: 49%; float: left; margin-bottom: 20px;">
+                            <div class="row-fluid" style="margin-bottom: 20px">
+                                <div class="form-horizontal span6">
                                     <h1>Temperature</h1>
 
                                     <label>Current: <strong data-bind="text: tempString"></strong></label>
@@ -166,12 +166,30 @@
 
                                     <label for="temp_newTemp">New Target</label>
                                     <div class="input-append">
-                                        <input class="span1" type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}">
+                                        <input type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}" class="tempInput">
                                         <span class="add-on">°C</span>
                                     </div>
-                                    <button type="submit" class="btn" id="temp_newTemp_set">Set</button>
+                                    <div class="btn-group">
+                                        <button type="submit" class="btn" id="temp_newTemp_set">Set</button>
+                                        <button class="btn dropdown-toggle" data-toggle="dropdown">
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                             <!-- Tried using data-bind="attr: {'data-temp': temperatureABS}" however I don't have access to the settingsViewModel -->
+                                             <li>
+                                                 <a href="#" class="temp_newTemp_set" data-temp="ABS">Set ABS</a>
+                                             </li>
+                                             <li>
+                                                 <a href="#" class="temp_newTemp_set" data-temp="PLA">Set PLA</a>
+                                             </li>
+                                             <li class="divider"></li>
+                                             <li>
+                                                 <a href="#" class="temp_newTemp_set" data-temp="0">Off</a>
+                                             </li>
+                                        </ul>
+                                    </div>
                                 </div>
-                                <div class="form-horizontal" style="width: 49%; margin-left: 2%; float: left; margin-bottom: 20px;">
+                                <div class="form-horizontal span6">
                                     <h1>Bed Temperature</h1>
 
                                     <label>Current: <strong data-bind="text: bedTempString"></strong></label>
@@ -180,10 +198,27 @@
 
                                     <label for="temp_newBedTemp">New Target</label>
                                     <div class="input-append">
-                                        <input class="span1" type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}">
+                                        <input type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}" class="tempInput">
                                         <span class="add-on">°C</span>
                                     </div>
-                                    <button type="submit" class="btn" id="temp_newBedTemp_set">Set</button>
+                                    <div class="btn-group">
+                                        <button type="submit" class="btn" id="temp_newBedTemp_set">Set</button>
+                                        <button class="btn dropdown-toggle" data-toggle="dropdown">
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                             <li>
+                                                 <a href="#" class="temp_newBedTemp_set" data-temp="ABS">Set ABS</a>
+                                             </li>
+                                             <li>
+                                                 <a href="#" class="temp_newBedTemp_set" data-temp="PLA">Set PLA</a>
+                                             </li>
+                                             <li class="divider"></li>
+                                             <li>
+                                                 <a href="#" class="temp_newBedTemp_set" data-temp="0">Off</a>
+                                             </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -489,6 +524,7 @@
                         <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
                         <li><a href="#settings_features" data-toggle="tab">Features</a></li>
                         <li><a href="#settings_folder" data-toggle="tab">Folder</a></li>
+                        <li><a href="#settings_temperature" data-toggle="tab">Temperature</a></li>
                     </ul>
 
                     <div class="tab-content">
@@ -590,6 +626,34 @@
                                     <label class="control-label" for="settings-folderLogs">Logs Folder</label>
                                     <div class="controls">
                                         <input type="text" class="input-block-level" data-bind="value: folder_logs" id="settings-folderLogs">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane" id="settings_temperature">
+                            <form class="form-horizontal">
+                                <div class="control-group">
+                                    <label class="control-label" for="settings-temperatureExtruderABS">Extruder Temperature (ABS)</label>
+                                    <div class="controls">
+                                        <input type="number" class="input-mini text-right" data-bind="value: temperature_extruderABS" id="settings-temperatureExtruderABS">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="settings-temperatureBedABS">Bed Temperature (ABS)</label>
+                                    <div class="controls">
+                                        <input type="number" class="input-mini text-right" data-bind="value: temperature_bedABS" id="settings-temperatureBedABS">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="settings-temperatureExtruderPLA">Extruder Temperature (PLA)</label>
+                                    <div class="controls">
+                                        <input type="number" class="input-mini text-right" data-bind="value: temperature_extruderPLA" id="settings-temperatureExtruderPLA">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="settings-temperatureBedPLA">Bed Temperature (PLA)</label>
+                                    <div class="controls">
+                                        <input type="number" class="input-mini text-right" data-bind="value: temperature_bedPLA" id="settings-temperatureBedPLA">
                                     </div>
                                 </div>
                             </form>

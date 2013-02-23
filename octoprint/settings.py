@@ -56,6 +56,12 @@ default_settings.update({
 			"z": 200,
 			"e": 300
 		}
+        },
+	"temperature": {
+		"extruderABS": 210,
+		"bedABS": 100,
+		"extruderPLA": 180,
+		"bedPLA": 60
 	}
 })
 

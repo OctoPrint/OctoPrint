@@ -166,14 +166,22 @@ def setTargetTemperature():
 	if not printer.isOperational():
 		return jsonify(SUCCESS)
 
-	if request.values.has_key("temp"):
+	elif request.values.has_key("temp"):
 		# set target temperature
 		temp = request.values["temp"]
+                if "ABS" == temp:
+                        temp = settings().get(["temperature","extruderABS"])
+                elif "PLA" == temp:
+                        temp = settings().get(["temperature","extruderPLA"])
 		printer.command("M104 S" + temp)
 
-	if request.values.has_key("bedTemp"):
+	elif request.values.has_key("bedTemp"):
 		# set target bed temperature
 		bedTemp = request.values["bedTemp"]
+                if "ABS" == bedTemp:
+                        bedTemp = settings().get(["temperature","bedABS"])
+                elif "PLA" == bedTemp:
+                        bedTemp = settings().get(["temperature","bedPLA"])
 		printer.command("M140 S" + bedTemp)
 
 	return jsonify(SUCCESS)
@@ -353,7 +361,13 @@ def getSettings():
 			"timelapse": s.getBaseFolder("timelapse"),
 			"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
 			"logs": s.getBaseFolder("logs")
-		}
+		},
+		"temperature": {
+			"extruderABS": s.get(["temperature", "extruderABS"]),
+			"bedABS": s.get(["temperature", "bedABS"]),
+			"extruderPLA": s.get(["temperature", "extruderPLA"]),
+			"bedPLA": s.get(["temperature", "bedPLA"])
+                }
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -383,6 +397,12 @@ def setSettings():
 			if "timelapse" in data["folder"].keys(): s.setBaseFolder("timelapse", data["folder"]["timelapse"])
 			if "timelapseTmp" in data["folder"].keys(): s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
 			if "logs" in data["folder"].keys(): s.setBaseFolder("logs", data["folder"]["logs"])
+
+		if "temperature" in data.keys():
+			if "extruderABS" in data["temperature"].keys(): s.set(["temperature", "extruderABS"], data["temperature"]["extruderABS"])
+			if "bedABS" in data["temperature"].keys(): s.set(["temperature", "bedABS"], data["temperature"]["bedABS"])
+			if "extruderPLA" in data["temperature"].keys(): s.set(["temperature", "extruderPLA"], data["temperature"]["extruderPLA"])
+			if "bedPLA" in data["temperature"].keys(): s.set(["temperature", "bedPLA"], data["temperature"]["bedPLA"])
 
 		s.save()
 
