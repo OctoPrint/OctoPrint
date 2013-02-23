@@ -122,11 +122,14 @@ The following example config should explain the available options:
     # Controls consist at least of a name, a type and type-specific further attributes. Currently recognized types are
     # - section: Creates a visual section in the UI, you can use this to separate functional blocks
     # - command: Creates a button that sends a defined GCODE command to the printer when clicked
+    # - commands: Creates a button that sends multiple defined GCODE commands to the printer when clicked
     # - parametric_command: Creates a button that sends a parameterized GCODE command to the printer, parameters
     #   needed for the command are added to the UI as input fields, are named and can such be referenced from the command
+    # - parametric_commands: Like parametric_command, but supports multiple commands
     #
     # The following example defines a control for enabling the cooling fan with a variable speed defined by the user
-    # (default 255) and a control for disabling the fan, all within a section named "Fan".
+    # (default 255) and a control for disabling the fan, all within a section named "Fan", and two example controls with
+    # multiple commands in a section "Example for multiple commands".
     controls:
       - name: Fan
         type: section
@@ -141,7 +144,28 @@ The following example config should explain the available options:
           - name: Disable Fan
             type: command
             command: M107
-
+      - name: Example for multiple commands
+        type: section
+        children:
+        - name: Move X (static)
+          type: commands
+          commands:
+          - G91
+          - G1 X10 F3000
+          - G90
+        - name: Move X (parametric)
+          type: parametric_commands
+          commands:
+          - G91
+          - G1 X%(distance)s F%(speed)s
+          - G90
+          input:
+          - default: 10
+            name: Distance
+            parameter: distance
+          - default: 3000
+            name: Speed
+            parameter: speed
 
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
