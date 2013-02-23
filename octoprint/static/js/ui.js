@@ -202,7 +202,7 @@ function PrinterStateViewModel() {
     }
 }
 
-function TemperatureViewModel() {
+function TemperatureViewModel(settingsViewModel) {
     var self = this;
 
     self.temp = ko.observable(undefined);
@@ -218,25 +218,27 @@ function TemperatureViewModel() {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
+    self.temperature_profiles = settingsViewModel.temperature_profiles;
+
     self.tempString = ko.computed(function() {
         if (!self.temp())
             return "-";
-        return self.temp() + " °C";
+        return self.temp() + " &deg;C";
     });
     self.bedTempString = ko.computed(function() {
         if (!self.bedTemp())
             return "-";
-        return self.bedTemp() + " °C";
+        return self.bedTemp() + " &deg;C";
     });
     self.targetTempString = ko.computed(function() {
         if (!self.targetTemp())
             return "-";
-        return self.targetTemp() + " °C";
+        return self.targetTemp() + " &deg;C";
     });
     self.bedTargetTempString = ko.computed(function() {
         if (!self.bedTargetTemp())
             return "-";
-        return self.bedTargetTemp() + " °C";
+        return self.bedTargetTemp() + " &deg;C";
     });
 
     self.temperatures = [];
@@ -1019,10 +1021,7 @@ function SettingsViewModel() {
     self.folder_timelapseTmp = ko.observable(undefined);
     self.folder_logs = ko.observable(undefined);
 
-    self.temperature_extruderABS = ko.observable(undefined);
-    self.temperature_bedABS = ko.observable(undefined);
-    self.temperature_extruderPLA = ko.observable(undefined);
-    self.temperature_bedPLA = ko.observable(undefined);
+    self.temperature_profiles = ko.observable(undefined);
 
     self.requestData = function() {
         $.ajax({
@@ -1052,10 +1051,7 @@ function SettingsViewModel() {
         self.folder_timelapseTmp(response.folder.timelapseTmp);
         self.folder_logs(response.folder.logs);
 
-        self.temperature_extruderABS(response.temperature.extruderABS);
-        self.temperature_bedABS(response.temperature.bedABS);
-        self.temperature_extruderPLA(response.temperature.extruderPLA);
-        self.temperature_bedPLA(response.temperature.bedPLA);
+        self.temperature_profiles(response.temperature.profiles);
     }
 
     self.saveData = function() {
@@ -1083,10 +1079,7 @@ function SettingsViewModel() {
                 "logs": self.folder_logs()
             },
             "temperature": {
-                "extruderABS": self.temperature_extruderABS(),
-                "bedABS": self.temperature_bedABS(),
-                "extruderPLA": self.temperature_extruderPLA(),
-                "bedPLA": self.temperature_bedPLA()
+                "profiles": self.temperature_profiles(),
             },
         }
 
@@ -1174,14 +1167,14 @@ $(function() {
         //~~ View models
         var connectionViewModel = new ConnectionViewModel();
         var printerStateViewModel = new PrinterStateViewModel();
-        var temperatureViewModel = new TemperatureViewModel();
+        var settingsViewModel = new SettingsViewModel();
+        var temperatureViewModel = new TemperatureViewModel(settingsViewModel);
         var controlsViewModel = new ControlsViewModel();
         var speedViewModel = new SpeedViewModel();
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
         var gcodeViewModel = new GcodeViewModel();
-        var settingsViewModel = new SettingsViewModel();
 
         var dataUpdater = new DataUpdater(
             connectionViewModel, 

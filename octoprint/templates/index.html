@@ -175,12 +175,8 @@
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu">
-                                             <!-- Tried using data-bind="attr: {'data-temp': temperatureABS}" however I don't have access to the settingsViewModel -->
-                                             <li>
-                                                 <a class="temp_newTemp_set" data-temp="ABS">Set ABS</a>
-                                             </li>
-                                             <li>
-                                                 <a class="temp_newTemp_set" data-temp="PLA">Set PLA</a>
+                                             <li data-bind="foreach: temperature_profiles">
+                                                 <a class="temp_newTemp_set" data-bind="attr: {'data-temp' : extruder}, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
                                              </li>
                                              <li class="divider"></li>
                                              <li>
@@ -207,11 +203,8 @@
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu">
-                                             <li>
-                                                 <a class="temp_newBedTemp_set" data-temp="ABS">Set ABS</a>
-                                             </li>
-                                             <li>
-                                                 <a class="temp_newBedTemp_set" data-temp="PLA">Set PLA</a>
+                                             <li data-bind="foreach: temperature_profiles">
+                                                 <a class="temp_newBedTemp_set" data-bind="attr: {'data-temp' : bed}, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
                                              </li>
                                              <li class="divider"></li>
                                              <li>
