@@ -1021,7 +1021,15 @@ function SettingsViewModel() {
     self.folder_timelapseTmp = ko.observable(undefined);
     self.folder_logs = ko.observable(undefined);
 
-    self.temperature_profiles = ko.observable(undefined);
+    self.temperature_profiles = ko.observableArray(undefined);
+
+    self.addTemperatureProfile = function() {
+            self.temperature_profiles.push({name: "New", extruder:0, bed:0});
+        };
+
+    self.removeTemperatureProfile = function(profile) {
+            self.temperature_profiles.remove(profile);
+        };
 
     self.requestData = function() {
         $.ajax({
