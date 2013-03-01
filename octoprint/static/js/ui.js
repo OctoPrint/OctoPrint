@@ -1240,7 +1240,7 @@ $(function() {
 
         //~~ Print job control
 
-        $("#job_print").click(function() {
+        $("#job_print, #job_restart").click(function() {
             $.ajax({
                 url: AJAX_BASEURL + "control/print",
                 type: "POST",
