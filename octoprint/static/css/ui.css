@@ -46,6 +46,12 @@ body {
     padding: 0px 15px;
 }
 
+.print-control .btn {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+
 /** Tables */
 
 table {
