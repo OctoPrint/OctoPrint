@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>OctoPrint</title>
+        <title data-bind="text: name">OctoPrint</title>
 
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
@@ -23,13 +23,13 @@
         </script>
     </head>
     <body>
-        <div class="navbar navbar-fixed-top">
-            <div class="navbar-inner">
+        <div id="navbar" class="navbar navbar-fixed-top">
+            <div class="navbar-inner" data-bind="css: color">
                 <div class="container">
-                    <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> OctoPrint</a>
+                    <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: name">OctoPrint</span></a>
                     <div class="nav-collapse">
                         <ul class="nav pull-right">
-                            <li><a class="pull-right" href="#settings_dialog" data-toggle="modal"><i class="icon-wrench"></i> Settings</a></li>
+                            <li><a id="navbar_show_settings" class="pull-right" href="#settings_dialog"><i class="icon-wrench"></i> Settings</a></li>
                         </ul>
                     </div>
                 </div>
@@ -74,9 +74,11 @@
                                     <div class="bar" id="job_progressBar" data-bind="style: { width: progress() + '%' }"></div>
                                 </div>
 
-                                <button class="btn btn-primary" data-bind="enable: isOperational() && isReady() && !isPrinting() && !isPaused()" id="job_print"><i class="icon-print icon-white"></i> <span>Print</span></button>
-                                <button class="btn" id="job_pause" data-bind="css: {active: isPaused}"><i class="icon-pause"></i> <span>Pause</span></button>
-                                <button class="btn" id="job_cancel"><i class="icon-stop"></i> Cancel</button>
+                                <div class="row-fluid print-control">
+                                    <button class="btn btn-primary span4" data-bind="enable: isOperational() && isReady() && !isPrinting(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-print icon-white"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
+                                    <button class="btn span4" id="job_pause" data-bind="css: {active: isPaused}"><i class="icon-pause"></i> <span>Pause</span></button>
+                                    <button class="btn span4" id="job_cancel"><i class="icon-stop"></i> Cancel</button>
+                                </div>
                             </div>
                         </div>
                     </div>
