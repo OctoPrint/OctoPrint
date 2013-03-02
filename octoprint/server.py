@@ -336,6 +336,10 @@ def getSettings():
 	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
 	return jsonify({
+                "appearance": {
+                        "name": s.get(["appearance", "name"]),
+                        "color": s.get(["appearance", "color"])
+                },
 		"printer": {
 			"movementSpeedX": movementSpeedX,
 			"movementSpeedY": movementSpeedY,
@@ -368,6 +372,10 @@ def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
 		s = settings()
+
+		if "appearance" in data.keys():
+			if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
+			if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 
 		if "printer" in data.keys():
 			if "movementSpeedX" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "x"], data["printer"]["movementSpeedX"])

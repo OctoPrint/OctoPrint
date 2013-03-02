@@ -202,6 +202,14 @@ function PrinterStateViewModel() {
     }
 }
 
+function AppearanceViewModel(settingsViewModel) {
+    var self = this;
+
+    self.name = settingsViewModel.appearance_name;
+    self.color = settingsViewModel.appearance_color;
+}
+
+
 function TemperatureViewModel(settingsViewModel) {
     var self = this;
 
@@ -1045,6 +1053,12 @@ function GcodeViewModel() {
 function SettingsViewModel() {
     var self = this;
 
+    self.appearance_name = ko.observable(undefined);
+    self.appearance_color = ko.observable(undefined);
+
+    /* I did attempt to allow arbitrary gradients but cross browser support via knockout or jquery was going to be horrible */
+    self.appearance_available_colors = ko.observable(["white", "red", "orange", "yellow", "green", "blue", "violet"]);
+
     self.printer_movementSpeedX = ko.observable(undefined);
     self.printer_movementSpeedY = ko.observable(undefined);
     self.printer_movementSpeedZ = ko.observable(undefined);
@@ -1083,6 +1097,9 @@ function SettingsViewModel() {
     }
 
     self.fromResponse = function(response) {
+        self.appearance_name(response.appearance.name);
+        self.appearance_color(response.appearance.color);
+
         self.printer_movementSpeedX(response.printer.movementSpeedX);
         self.printer_movementSpeedY(response.printer.movementSpeedY);
         self.printer_movementSpeedZ(response.printer.movementSpeedZ);
@@ -1106,6 +1123,10 @@ function SettingsViewModel() {
 
     self.saveData = function() {
         var data = {
+            "appearance" : {
+                "name": self.appearance_name(),
+                "color": self.appearance_color()
+             },
             "printer": {
                 "movementSpeedX": self.printer_movementSpeedX(),
                 "movementSpeedY": self.printer_movementSpeedY(),
@@ -1218,6 +1239,7 @@ $(function() {
         var connectionViewModel = new ConnectionViewModel();
         var printerStateViewModel = new PrinterStateViewModel();
         var settingsViewModel = new SettingsViewModel();
+        var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(settingsViewModel);
         var controlsViewModel = new ControlsViewModel();
         var speedViewModel = new SpeedViewModel();
@@ -1237,6 +1259,16 @@ $(function() {
             webcamViewModel,
             gcodeViewModel
         );
+
+        //~~ Show settings - to ensure centered
+        $('#navbar_show_settings').click(function() {
+            $('#settings_dialog').modal()
+                 .css({
+                     width: 'auto',
+                     'margin-left': function() { return -($(this).width() /2); }
+                  });
+            return false;
+        })
 
         //~~ Print job control
 
@@ -1390,6 +1422,8 @@ $(function() {
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
         ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+        ko.applyBindings(appearanceViewModel, document.getElementById("navbar"));
+        ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
 
         var webcamElement = document.getElementById("webcam");
         if (webcamElement) {
