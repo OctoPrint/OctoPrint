@@ -212,7 +212,7 @@ This should hopefully run through without any compilation errors. You should the
      o: commands..........: enabled
 
 If you now point your browser to `http://<your Raspi's IP>:8080/?action=stream`, you should see a moving picture at 5fps.
-Open `~/.octoprint/config.ini` and add the following lines to it:
+Open `~/.octoprint/config.yaml` and add the following lines to it:
 
     webcam:
       stream: http://<your Raspi's IP>:8080/?action=stream
