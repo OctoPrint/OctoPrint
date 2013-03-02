@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title data-bind="text: name">OctoPrint</title>
+        <title data-bind="text: title">OctoPrint</title>
 
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
@@ -26,7 +26,7 @@
         <div id="navbar" class="navbar navbar-fixed-top">
             <div class="navbar-inner" data-bind="css: color">
                 <div class="container">
-                    <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: name">OctoPrint</span></a>
+                    <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: title">OctoPrint</span></a>
                     <div class="nav-collapse">
                         <ul class="nav pull-right">
                             <li><a id="navbar_show_settings" class="pull-right" href="#settings_dialog"><i class="icon-wrench"></i> Settings</a></li>

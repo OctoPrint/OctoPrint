@@ -336,10 +336,10 @@ def getSettings():
 	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
 	return jsonify({
-                "appearance": {
-                        "name": s.get(["appearance", "name"]),
-                        "color": s.get(["appearance", "color"])
-                },
+		"appearance": {
+			"name": s.get(["appearance", "name"]),
+			"color": s.get(["appearance", "color"])
+		},
 		"printer": {
 			"movementSpeedX": movementSpeedX,
 			"movementSpeedY": movementSpeedY,
