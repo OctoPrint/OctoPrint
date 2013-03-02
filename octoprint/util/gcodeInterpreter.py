@@ -154,16 +154,15 @@ class gcode(object):
 								moveType = 'extrude'
 							if e < currentE:
 								moveType = 'retract'
+							totalExtrusion += e - currentE
+							currentE = e
 						else:
 							if e > 0:
 								moveType = 'extrude'
 							if e < 0:
 								moveType = 'retract'
-						if posAbsExtruder:
-							totalExtrusion += e - currentE
-							currentE = e
-						else:
 							totalExtrusion += e
+							currentE += e
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
 					if moveType == 'move' and oldPos.z != pos.z:
