@@ -309,10 +309,8 @@ function TemperatureViewModel(settingsViewModel) {
                 if (val == undefined || val == 0)
                     return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
 
-                // calculate current time in milliseconds in UTC
-                var now = new Date();
-                var timezoneOffset = now.getTimezoneOffset() * 60 * 1000;
-                var timestampUtc = now.getTime() + timezoneOffset;
+                // current time in milliseconds in UTC
+                var timestampUtc = Date.now();
 
                 // calculate difference in milliseconds
                 var diff = timestampUtc - val;
@@ -804,10 +802,11 @@ function GcodeFilesViewModel() {
     }
 
     self.changeSorting = function(sorting) {
-        if (sorting != "name" && sorting != "upload")
+        if (sorting != "name" && sorting != "upload" && sorting != "size")
             return;
 
         self.currentSorting(sorting);
+        self.changePage(0);
         self._updateFiles();
     }
 
@@ -852,6 +851,13 @@ function GcodeFilesViewModel() {
                 // sorts descending
                 if (a["date"] > b["date"]) return -1;
                 if (a["date"] < b["date"]) return 1;
+                return 0;
+            }
+        } else if (self.currentSorting() == "size") {
+            comparator = function(a, b) {
+                // sorts descending
+                if (a["bytes"] > b["bytes"]) return -1;
+                if (a["bytes"] < b["bytes"]) return 1;
                 return 0;
             }
         }

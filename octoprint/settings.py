@@ -49,7 +49,7 @@ old_default_settings = {
 default_settings = old_default_settings.copy()
 default_settings.update({
 	"appearance": {
-		"name": "OctoPrint",
+		"name": "",
 		"color": "white"
 	},
 	"controls": [],
