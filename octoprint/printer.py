@@ -262,7 +262,7 @@ class Printer():
 		self._stateMonitor.setProgress({"progress": self._progress, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		currentTimeUtc = int((time.time() + time.timezone) * 1000)
+		currentTimeUtc = int(time.time() * 1000)
 
 		self._temps["actual"].append((currentTimeUtc, temp))
 		self._temps["actual"] = self._temps["actual"][-300:]

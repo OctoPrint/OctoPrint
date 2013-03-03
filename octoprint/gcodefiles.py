@@ -117,6 +117,11 @@ class GcodeManager:
 		if file:
 			absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
 			if absolutePath is not None:
+				if file.filename in self._metadata.keys():
+					# delete existing metadata entry, since the file is going to get overwritten
+					del self._metadata[file.filename]
+					self._metadataDirty = True
+					self._saveMetadata()
 				file.save(absolutePath)
 				self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
 				return self._getBasicFilename(absolutePath)
@@ -136,9 +141,9 @@ class GcodeManager:
 		"""
 		Returns the absolute path of the given filename in the gcode upload folder.
 
-		Ensures that
+		Ensures that the file
 		<ul>
-		  <li>The file has the extension ".gcode"</li>
+		  <li>has the extension ".gcode"</li>
 		  <li>exists and is a file (not a directory) if "mustExist" is set to True</li>
 		</ul>
 
@@ -175,6 +180,7 @@ class GcodeManager:
 		fileData = {
 			"name": filename,
 			"size": util.getFormattedSize(statResult.st_size),
+			"bytes": statResult.st_size,
 			"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(statResult.st_ctime))
 		}
 
@@ -249,6 +255,32 @@ class GcodeManager:
 		}
 		self.setFileMetadata(filename, metadata)
 		self._saveMetadata()
+
+	def changeLastPrintSuccess(self, filename, succeeded):
+		filename = self._getBasicFilename(filename)
+		absolutePath = self.getAbsolutePath(filename)
+		if absolutePath is None:
+			return
+
+		metadata = self.getFileMetadata(filename)
+		if metadata is None:
+			return
+
+		if "prints" in metadata.keys():
+			if "last" in metadata.keys() and metadata["prints"]["last"] is not None:
+				currentSucceeded = metadata["prints"]["last"]["success"]
+				if currentSucceeded != succeeded:
+					metadata["prints"]["last"]["success"] = succeeded
+					if currentSucceeded:
+						# last print job was counted as success but actually failed
+						metadata["prints"]["success"] -= 1
+						metadata["prints"]["failure"] += 1
+					else:
+						# last print job was counted as a failure but actually succeeded
+						metadata["prints"]["success"] += 1
+						metadata["prints"]["failure"] -= 1
+					self.setFileMetadata(filename, metadata)
+					self._saveMetadata()
 
 	#~~ analysis control
 

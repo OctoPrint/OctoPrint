@@ -93,6 +93,7 @@
                                 <ul class="dropdown-menu">
                                     <li><a href="#" data-bind="click: function() { $root.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Sort by name (ascending)</a></li>
                                     <li><a href="#" data-bind="click: function() { $root.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Sort by upload date (descending)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> Sort by file size (descending)</a></li>
                                     <li class="divider"></li>
                                     <li><a href="#" data-bind="click: function() { $root.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
                                 </ul>
@@ -514,6 +515,7 @@
         {% include 'settings.html' %}
 
         <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/modernizr.custom.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/underscore-min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/knockout-2.2.1.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
@@ -526,7 +528,6 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/ui.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/lib/modernizr.custom.09684.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
