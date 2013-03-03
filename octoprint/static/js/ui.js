@@ -622,6 +622,15 @@ function GcodeFilesViewModel() {
     self.currentPage = ko.observable(0);
     self.currentSorting = ko.observable("name");
     self.currentFilters = ko.observableArray([]);
+    
+    if( localStorage["currentSorting"] )
+        self.currentSorting( localStorage["currentSorting"] );
+    
+    if( localStorage["filterPrinted"] == 1 ) {
+        var filters = self.currentFilters();
+        filters.push("printed");
+        self.currentFilters(_.uniq(filters));
+    }
 
     self.paginatedFiles = ko.dependentObservable(function() {
         if (self.files() == undefined) {
@@ -742,6 +751,7 @@ function GcodeFilesViewModel() {
             return;
 
         self.currentSorting(sorting);
+        localStorage["currentSorting"] = self.currentSorting(); //store setting in local storage
         self._updateFiles();
     }
 
@@ -760,6 +770,7 @@ function GcodeFilesViewModel() {
         var filters = self.currentFilters();
         filters.push(filter);
         self.currentFilters(_.uniq(filters));
+        localStorage["filterPrinted"] = 1;
         self._updateFiles();
     }
 
@@ -768,6 +779,7 @@ function GcodeFilesViewModel() {
             return;
 
         self.currentFilters(_.without(self.currentFilters(), filter));
+        localStorage["filterPrinted"] = 0;
         self._updateFiles();
     }
 
