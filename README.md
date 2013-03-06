@@ -11,7 +11,7 @@ allows
 * while connected to the printer, gaining information regarding the current temperature of both head and bed (if available) in a nice shiny javascript-y temperature graph
 * while printing, gaining information regarding the current progress of the print job (height, percentage etc)
 * reading the communication log and send arbitrary codes to be executed by the printer
-* moving the X, Y and Z axis (jog controls, although very ugly ones right now)
+* moving the X, Y and Z axis (jog controls), extruding, retracting and custom controls
 * optional: previewing the GCODE of the selected model to print (via gCodeVisualizer), including rendering of the progress during printing
 * optional: visual monitoring of the printer via webcam stream integrated into the UI (using e.g. MJPG-Streamer)
 * optional: creation of timelapse recordings of the printjob via webcam stream (using e.g. MJPG-Streamer) -- currently two timelaspe methods are implemented, triggering a shot on z-layer change or every "n" seconds
