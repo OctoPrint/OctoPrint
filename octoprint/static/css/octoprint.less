@@ -1,0 +1,57 @@
+/** Navbar */
+
+.navbar-inner-text (@base) when (lightness(@base) >= 58%) {
+  color: #333333;
+}
+.navbar-inner-text (@base) when (lightness(@base) < 58%) {
+  color: #f2f2f2;
+}
+.navbar-inner-text (@base) {
+  text-shadow: 0 1px 0 lighten(@base, 15%);
+}
+
+.navbar-inner-color (@base) {
+  @top: lighten(@base, 25%);
+  @bottom: darken(@base, 15%);
+
+  background-color: @base; /* fallback color if gradients are not supported */
+  background-image: -webkit-linear-gradient(top, @top, @bottom); /* For Chrome and Safari */
+  background-image: -moz-linear-gradient(top, @top, @bottom); /* For old Fx (3.6 to 15) */
+  background-image: -ms-linear-gradient(top, @top, @bottom); /* For pre-releases of IE 10*/
+  background-image: -o-linear-gradient(top, @top, @bottom); /* For old Opera (11.1 to 12.0) */
+  background-image: linear-gradient(to bottom, @top, @bottom); /* Standard syntax; must be last */
+
+  .brand, .nav>li>a {
+    .navbar-inner-text(@base);
+  }
+}
+
+#navbar .navbar-inner {
+  @base: #F2F2F2;
+  .navbar-inner-color(@base);
+
+  &.red {
+    @base: #F22828;
+    .navbar-inner-color(@base);
+  }
+  &.orange {
+    @base: #F27728;
+    .navbar-inner-color(@base);
+  }
+  &.yellow {
+    @base: #F2DE28;
+    .navbar-inner-color(@base);
+  }
+  &.green {
+    @base: #77FF28;
+    .navbar-inner-color(@base);
+  }
+  &.blue {
+    @base: #2877FF;
+    .navbar-inner-color(@base);
+  }
+  &.violet {
+    @base: #7728FF;
+    .navbar-inner-color(@base);
+  }
+}
