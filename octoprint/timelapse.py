@@ -3,6 +3,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from octoprint.settings import settings
+import octoprint.util as util
 
 import os
 import threading
@@ -10,6 +11,7 @@ import urllib
 import time
 import subprocess
 import fnmatch
+import datetime
 
 def getFinishedTimelapses():
 	files = []
@@ -17,9 +19,12 @@ def getFinishedTimelapses():
 	for osFile in os.listdir(basedir):
 		if not fnmatch.fnmatch(osFile, "*.mpg"):
 			continue
+		statResult = os.stat(os.path.join(basedir, osFile))
 		files.append({
 			"name": osFile,
-			"size": os.stat(os.path.join(basedir, osFile)).st_size
+			"size": util.getFormattedSize(statResult.st_size),
+			"bytes": statResult.st_size,
+			"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(statResult.st_ctime))
 		})
 	return files
 

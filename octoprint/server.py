@@ -286,7 +286,6 @@ def getTimelapseData():
 
 	files = timelapse.getFinishedTimelapses()
 	for file in files:
-		file["size"] = util.getFormattedSize(file["size"])
 		file["url"] = url_for("downloadTimelapse", filename=file["name"])
 
 	return jsonify({

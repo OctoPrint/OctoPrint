@@ -679,64 +679,38 @@ function TerminalViewModel() {
 function GcodeFilesViewModel() {
     var self = this;
 
-    self.allFiles = [];
-
-    self.files = ko.observableArray([]);
-    self.pageSize = ko.observable(CONFIG_FILESPERPAGE);
-    self.currentPage = ko.observable(0);
-    self.currentSorting = ko.observable("name");
-    self.currentFilters = ko.observableArray([]);
-    
-    if( localStorage["currentSorting"] )
-        self.currentSorting( localStorage["currentSorting"] );
-    
-    if( localStorage["filterPrinted"] == 1 ) {
-        var filters = self.currentFilters();
-        filters.push("printed");
-        self.currentFilters(_.uniq(filters));
-    }
-
-    self.paginatedFiles = ko.dependentObservable(function() {
-        if (self.files() == undefined) {
-            return [];
-        } else {
-            var from = Math.max(self.currentPage() * self.pageSize(), 0);
-            var to = Math.min(from + self.pageSize(), self.files().length);
-            return self.files().slice(from, to);
-        }
-    })
-    self.lastPage = ko.dependentObservable(function() {
-        return Math.ceil(self.files().length / self.pageSize()) - 1;
-    })
-    self.pages = ko.dependentObservable(function() {
-        var pages = [];
-        if (self.lastPage() < 7) {
-            for (var i = 0; i < self.lastPage() + 1; i++) {
-                pages.push({ number: i, text: i+1 });
+    // initialize list helper
+    self.listHelper = new ItemListHelper(
+        "gcodeFiles",
+        {
+            "name": function(a, b) {
+                // sorts ascending
+                if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
+                if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            "upload": function(a, b) {
+                    // sorts descending
+                    if (a["date"] > b["date"]) return -1;
+                    if (a["date"] < b["date"]) return 1;
+                    return 0;
+            },
+            "size": function(a, b) {
+                // sorts descending
+                if (a["bytes"] > b["bytes"]) return -1;
+                if (a["bytes"] < b["bytes"]) return 1;
+                return 0;
             }
-        } else {
-            pages.push({ number: 0, text: 1 });
-            if (self.currentPage() < 5) {
-                for (var i = 1; i < 5; i++) {
-                    pages.push({ number: i, text: i+1 });
-                }
-                pages.push({ number: -1, text: "…"});
-            } else if (self.currentPage() > self.lastPage() - 5) {
-                pages.push({ number: -1, text: "…"});
-                for (var i = self.lastPage() - 4; i < self.lastPage(); i++) {
-                    pages.push({ number: i, text: i+1 });
-                }
-            } else {
-                pages.push({ number: -1, text: "…"});
-                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
-                    pages.push({ number: i, text: i+1 });
-                }
-                pages.push({ number: -1, text: "…"});
+        },
+        {
+            "printed": function(file) {
+                return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
             }
-            pages.push({ number: self.lastPage(), text: self.lastPage() + 1})
-        }
-        return pages;
-    })
+        },
+        "name",
+        [],
+        CONFIG_GCODEFILESPERPAGE
+    )
 
     self.requestData = function() {
         $.ajax({
@@ -750,12 +724,11 @@ function GcodeFilesViewModel() {
     }
 
     self.fromResponse = function(response) {
-        self.allFiles = response.files;
-        self._updateFiles();
+        self.listHelper.updateItems(response.files);
 
         if (response.filename) {
             // got a file to scroll to
-            self.switchToFile(response.filename);
+            self.listHelper.switchToItem(function(item) {return item.name == response.filename});
         }
     }
 
@@ -776,131 +749,6 @@ function GcodeFilesViewModel() {
             data: {filename: filename},
             success: self.fromResponse
         })
-    }
-
-    self.switchToFile = function(filename) {
-        var pos = -1;
-        var filelist = self.files();
-        for (var i = 0; i < filelist.length; i++) {
-            if (filelist[i].name == filename) {
-                pos = i;
-                break;
-            }
-        }
-
-        if (pos > -1) {
-            var page = Math.floor(pos / self.pageSize());
-            self.changePage(page);
-        }
-    }
-
-    self.changePage = function(newPage) {
-        if (newPage < 0 || newPage > self.lastPage())
-            return;
-        self.currentPage(newPage);
-    }
-    self.prevPage = function() {
-        if (self.currentPage() > 0) {
-            self.currentPage(self.currentPage() - 1);
-        }
-    }
-    self.nextPage = function() {
-        if (self.currentPage() < self.lastPage()) {
-            self.currentPage(self.currentPage() + 1);
-        }
-    }
-
-    self.changeSorting = function(sorting) {
-        if (sorting != "name" && sorting != "upload" && sorting != "size")
-            return;
-
-        self.currentSorting(sorting);
-        localStorage["currentSorting"] = self.currentSorting(); //store setting in local storage
-        self.changePage(0);
-        self._updateFiles();
-    }
-
-    self.toggleFilter = function(filter) {
-        if (_.contains(self.currentFilters(), filter)) {
-            self.removeFilter(filter);
-        } else {
-            self.addFilter(filter);
-        }
-    }
-
-    self.addFilter = function(filter) {
-        if (filter != "printed")
-            return;
-
-        var filters = self.currentFilters();
-        filters.push(filter);
-        self.currentFilters(_.uniq(filters));
-        localStorage["filterPrinted"] = 1;
-        self._updateFiles();
-    }
-
-    self.removeFilter = function(filter) {
-        if (filter != "printed")
-            return;
-
-        self.currentFilters(_.without(self.currentFilters(), filter));
-        localStorage["filterPrinted"] = 0;
-        self._updateFiles();
-    }
-
-    self._updateFiles = function() {
-        // determine comparator
-        var comparator = undefined;
-        if (self.currentSorting() == "name") {
-            comparator = function(a, b) {
-                // sorts ascending
-                if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
-                if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
-                return 0;
-            }
-        } else if (self.currentSorting() == "upload") {
-            comparator = function(a, b) {
-                // sorts descending
-                if (a["date"] > b["date"]) return -1;
-                if (a["date"] < b["date"]) return 1;
-                return 0;
-            }
-        } else if (self.currentSorting() == "size") {
-            comparator = function(a, b) {
-                // sorts descending
-                if (a["bytes"] > b["bytes"]) return -1;
-                if (a["bytes"] < b["bytes"]) return 1;
-                return 0;
-            }
-        }
-
-        // work on all files
-        var result = self.allFiles;
-
-        // filter if necessary
-        var filters = self.currentFilters();
-        for (var i = 0; i < filters.length; i++) {
-            var filterFunction = undefined;
-            var filter = filters[i];
-            switch (filter) {
-                case "printed": {
-                    filterFunction = function(file) {
-                        return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
-                    }
-                    break;
-                }
-            }
-
-            if (typeof filterFunction !== undefined)
-                result = _.filter(result, filterFunction);
-        }
-
-        // sort if necessary
-        if (typeof comparator !== undefined)
-            result.sort(comparator);
-
-        // set result list
-        self.files(result);
     }
 
     self.getPopoverContent = function(data) {
@@ -933,7 +781,6 @@ function WebcamViewModel() {
 
     self.timelapseType = ko.observable(undefined);
     self.timelapseTimedInterval = ko.observable(undefined);
-    self.files = ko.observableArray([]);
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -951,6 +798,36 @@ function WebcamViewModel() {
         self.requestData();
     })
 
+    // initialize list helper
+    self.listHelper = new ItemListHelper(
+        "timelapseFiles",
+        {
+            "name": function(a, b) {
+                // sorts ascending
+                if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
+                if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                return 0;
+            },
+            "creation": function(a, b) {
+                // sorts descending
+                if (a["date"] > b["date"]) return -1;
+                if (a["date"] < b["date"]) return 1;
+                return 0;
+            },
+            "size": function(a, b) {
+                // sorts descending
+                if (a["bytes"] > b["bytes"]) return -1;
+                if (a["bytes"] < b["bytes"]) return 1;
+                return 0;
+            }
+        },
+        {
+        },
+        "name",
+        [],
+        CONFIG_TIMELAPSEFILESPERPAGE
+    )
+
     self.requestData = function() {
         $.ajax({
             url: AJAX_BASEURL + "timelapse",
@@ -962,8 +839,8 @@ function WebcamViewModel() {
     }
 
     self.fromResponse = function(response) {
-        self.timelapseType(response.type)
-        self.files(response.files)
+        self.timelapseType(response.type);
+        self.listHelper.updateItems(response.files);
 
         if (response.type == "timed" && response.config && response.config.interval) {
             self.timelapseTimedInterval(response.config.interval)
@@ -1089,7 +966,7 @@ function SettingsViewModel() {
     self.appearance_color = ko.observable(undefined);
 
     /* I did attempt to allow arbitrary gradients but cross browser support via knockout or jquery was going to be horrible */
-    self.appearance_available_colors = ko.observable(["white", "red", "orange", "yellow", "green", "blue", "violet"]);
+    self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet"]);
 
     self.printer_movementSpeedX = ko.observable(undefined);
     self.printer_movementSpeedY = ko.observable(undefined);
@@ -1265,6 +1142,231 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
     }
 }
 
+function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, filesPerPage) {
+    var self = this;
+
+    self.listType = listType;
+    self.supportedSorting = supportedSorting;
+    self.supportedFilters = supportedFilters;
+    self.defaultSorting = defaultSorting;
+    self.defaultFilters = defaultFilters;
+
+    self.allItems = [];
+    self.items = ko.observableArray([]);
+    self.pageSize = ko.observable(filesPerPage);
+    self.currentPage = ko.observable(0);
+    self.currentSorting = ko.observable(self.defaultSorting);
+    self.currentFilters = ko.observableArray(self.defaultFilters);
+
+    //~~ item handling
+
+    self.updateItems = function(items) {
+        self.allItems = items;
+        self._updateItems();
+    }
+
+    //~~ pagination
+
+    self.paginatedItems = ko.dependentObservable(function() {
+        if (self.items() == undefined) {
+            return [];
+        } else {
+            var from = Math.max(self.currentPage() * self.pageSize(), 0);
+            var to = Math.min(from + self.pageSize(), self.items().length);
+            return self.items().slice(from, to);
+        }
+    })
+    self.lastPage = ko.dependentObservable(function() {
+        return Math.ceil(self.items().length / self.pageSize()) - 1;
+    })
+    self.pages = ko.dependentObservable(function() {
+        var pages = [];
+        if (self.lastPage() < 7) {
+            for (var i = 0; i < self.lastPage() + 1; i++) {
+                pages.push({ number: i, text: i+1 });
+            }
+        } else {
+            pages.push({ number: 0, text: 1 });
+            if (self.currentPage() < 5) {
+                for (var i = 1; i < 5; i++) {
+                    pages.push({ number: i, text: i+1 });
+                }
+                pages.push({ number: -1, text: "…"});
+            } else if (self.currentPage() > self.lastPage() - 5) {
+                pages.push({ number: -1, text: "…"});
+                for (var i = self.lastPage() - 4; i < self.lastPage(); i++) {
+                    pages.push({ number: i, text: i+1 });
+                }
+            } else {
+                pages.push({ number: -1, text: "…"});
+                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
+                    pages.push({ number: i, text: i+1 });
+                }
+                pages.push({ number: -1, text: "…"});
+            }
+            pages.push({ number: self.lastPage(), text: self.lastPage() + 1})
+        }
+        return pages;
+    })
+
+    self.switchToItem = function(matcher) {
+        var pos = -1;
+        var itemList = self.items();
+        for (var i = 0; i < itemList.length; i++) {
+            if (matcher(itemList[i])) {
+                pos = i;
+                break;
+            }
+        }
+
+        if (pos > -1) {
+            var page = Math.floor(pos / self.pageSize());
+            self.changePage(page);
+        }
+    }
+
+    self.changePage = function(newPage) {
+        if (newPage < 0 || newPage > self.lastPage())
+            return;
+        self.currentPage(newPage);
+    }
+    self.prevPage = function() {
+        if (self.currentPage() > 0) {
+            self.currentPage(self.currentPage() - 1);
+        }
+    }
+    self.nextPage = function() {
+        if (self.currentPage() < self.lastPage()) {
+            self.currentPage(self.currentPage() + 1);
+        }
+    }
+
+    //~~ sorting
+
+    self.changeSorting = function(sorting) {
+        if (!_.contains(_.keys(self.supportedSorting), sorting))
+            return;
+
+        self.currentSorting(sorting);
+        self._saveCurrentSortingToLocalStorage();
+
+        self.changePage(0);
+        self._updateItems();
+    }
+
+    //~~ filtering
+
+    self.toggleFilter = function(filter) {
+        if (!_.contains(_.keys(self.supportedFilters), filter))
+            return;
+
+        if (_.contains(self.currentFilters(), filter)) {
+            self.removeFilter(filter);
+        } else {
+            self.addFilter(filter);
+        }
+    }
+
+    self.addFilter = function(filter) {
+        if (!_.contains(_.keys(self.supportedFilters), filter))
+            return;
+
+        var filters = self.currentFilters();
+        filters.push(filter);
+        self.currentFilters(filters);
+        self._saveCurrentFiltersToLocalStorage();
+
+        self._updateItems();
+    }
+
+    self.removeFilter = function(filter) {
+        if (filter != "printed")
+            return;
+
+        var filters = self.currentFilters();
+        filters.pop(filter);
+        self.currentFilters(filters);
+        self._saveCurrentFiltersToLocalStorage();
+
+        self._updateItems();
+    }
+
+    //~~ update for sorted and filtered view
+
+    self._updateItems = function() {
+        // determine comparator
+        var comparator = undefined;
+        var currentSorting = self.currentSorting();
+        if (typeof currentSorting !== undefined && typeof self.supportedSorting[currentSorting] !== undefined) {
+            comparator = self.supportedSorting[currentSorting];
+        }
+
+        // work on all items
+        var result = self.allItems;
+
+        // filter if necessary
+        var filters = self.currentFilters();
+        _.each(filters, function(filter) {
+            if (typeof filter !== undefined && typeof supportedFilters[filter] !== undefined)
+                result = _.filter(result, supportedFilters[filter]);
+        });
+
+        // sort if necessary
+        if (typeof comparator !== undefined)
+            result.sort(comparator);
+
+        // set result list
+        self.items(result);
+    }
+
+    //~~ local storage
+
+    self._saveCurrentSortingToLocalStorage = function() {
+        self._initializeLocalStorage();
+
+        var currentSorting = self.currentSorting();
+        if (currentSorting !== undefined)
+            localStorage[self.listType]["currentSorting"] = currentSorting;
+        else
+            localStorage[self.listType]["currentSorting"] = undefined;
+    }
+
+    self._loadCurrentSortingFromLocalStorage = function() {
+        self._initializeLocalStorage();
+
+        if (_.contains(_.keys(supportedSorting), localStorage[self.listType]["currentSorting"]))
+            self.currentSorting(localStorage[self.listType]["currentSorting"]);
+        else
+            self.currentSorting(defaultSorting);
+    }
+
+    self._saveCurrentFiltersToLocalStorage = function() {
+        self._initializeLocalStorage();
+
+        var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
+        localStorage[self.listType]["currentFilters"] = filters;
+    }
+
+    self._loadCurrentFiltersFromLocalStorage = function() {
+        self._initializeLocalStorage();
+
+        self.currentFilters(_.intersection(_.keys(self.supportedFilters), localStorage[self.listType, "currentFilters"]));
+    }
+
+    self._initializeLocalStorage = function() {
+        if (localStorage[self.listType] !== undefined)
+            return;
+
+        localStorage[self.listType] = {
+            "currentSorting": self.defaultSorting,
+            "currentFilters": self.defaultFilters
+        }
+    }
+
+    self._loadCurrentFiltersFromLocalStorage();
+    self._loadCurrentSortingFromLocalStorage();
+}
+
 $(function() {
 
         //~~ View models
@@ -1398,10 +1500,17 @@ $(function() {
             done: function (e, data) {
                 gcodeFilesViewModel.fromResponse(data.result);
                 $("#gcode_upload_progress .bar").css("width", "0%");
+                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                $("#gcode_upload_progress .bar").text("");
             },
             progressall: function (e, data) {
                 var progress = parseInt(data.loaded / data.total * 100, 10);
                 $("#gcode_upload_progress .bar").css("width", progress + "%");
+                $("#gcode_upload_progress .bar").text("Uploading ...");
+                if (progress >= 100) {
+                    $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
+                    $("#gcode_upload_progress .bar").text("Saving ...");
+                }
             }
         });
 
