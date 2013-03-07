@@ -1,4 +1,8 @@
-/** Navbar */
+/** Top bar */
+
+body {
+  padding-top: 60px;
+}
 
 .navbar-inner-text (@base) when (lightness(@base) >= 58%) {
   color: #333333;
@@ -55,3 +59,263 @@
     .navbar-inner-color(@base);
   }
 }
+
+/** OctoPrint application tabs */
+
+.octoprint-container {
+  .tab-content {
+    padding: 9px 15px;
+    border-left: 1px solid #DDD;
+    border-right: 1px solid #DDD;
+    border-bottom: 1px solid #DDD;
+
+    -webkit-border-bottom-right-radius: 4px;
+    -webkit-border-bottom-left-radius: 4px;
+    -moz-border-radius-bottomright: 4px;
+    -moz-border-radius-bottomleft: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+  }
+
+  .nav {
+    margin-bottom: 0px;
+  }
+
+  .tab-content h1 {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 20px;
+    font-size: 21px;
+    line-height: 40px;
+    color: #333;
+    border: 0;
+    border-bottom: 1px solid #E5E5E5;
+    font-weight: normal;
+  }
+}
+
+
+/** Accordions */
+
+.octoprint-container {
+  .accordion-heading {
+    .settings-trigger {
+      float: right;
+      padding: 0px 15px;
+    }
+
+    a.accordion-toggle {
+      display: inline-block;
+    }
+  }
+}
+
+.print-control .btn {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+
+/** Tables */
+
+table {
+  table-layout: fixed;
+
+  th, td {
+    overflow: hidden
+
+    // gcode files
+    .gcode_files_name {
+      text-overflow: ellipsis;
+      text-align: left;
+      width: 55%;
+    }
+
+    .gcode_files_size {
+      text-align: right;
+      width: 25%;
+    }
+
+    .gcode_files_action, .gcode_files_action {
+      text-align: center;
+      width: 20%;
+    }
+
+    // timelapse files
+    .timelapse_files_name, .timelapse_files_name {
+      text-overflow: ellipsis;
+      text-align: left;
+      width: 55%;
+    }
+
+    .timelapse_files_size, .timelapse_files_size {
+      text-align: right;
+      width: 25%;
+    }
+
+    .timelapse_files_action, .timelapse_files_action {
+      text-align: center;
+      width: 20%;
+    }
+  }
+}
+
+
+/** Temperature tab */
+
+#temperature-graph {
+  height: 350px;
+  width: 100%;
+  background-image: url("/static/img/graph-background.png");
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.tab-content, .tab-pane {
+  overflow: visible;
+}
+
+.tempInput {
+  width: 50px;
+}
+
+#temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support, #webcam_timelapse_interval {
+  text-align: right;
+}
+
+ul.dropdown-menu li a {
+  cursor: pointer;
+}
+
+/** Connection settings */
+
+#connection_ports, #connection_baudrates {
+  width: 100%;
+}
+
+/** Offline overlay */
+
+#offline_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: none;
+}
+
+#offline_overlay_background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  filter:alpha(opacity=50);
+  -moz-opacity:0.5;
+  -khtml-opacity: 0.5;
+  opacity: 0.5;
+}
+
+#offline_overlay_wrapper {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding-top: 60px;
+
+  .container {
+    margin: auto;
+  }
+}
+
+/** Webcam */
+
+#webcam_container {
+  width: 100%;
+}
+
+/** GCODE file manager */
+
+#files {
+  .popover {
+    font-size: 85%;
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+#gcode_upload_progress .bar {
+  -webkit-transition: width 0s linear !important;
+  -moz-transition: width 0s linear !important;
+  -o-transition: width 0s linear !important;
+  transition: width 0s linear !important;
+}
+
+/** Controls */
+
+#controls {
+  overflow: hidden;
+
+  .jog-panel {
+    float: left;
+    margin-right: 19px;
+  }
+
+  h1 {
+    text-align: left;
+  }
+
+  .jog-panel > div {
+    text-align: center;
+  }
+
+  .jog-panel > div.distance {
+    text-align: left;
+  }
+
+  .box {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding-left: 8px;
+  }
+
+  .control-box {
+    display: block;
+    height: 30px;
+    margin-bottom: 10px;
+  }
+
+  .btn-group {
+    margin-bottom: 10px;
+  }
+
+  .btn-group > .btn {
+    width: 43px;
+    padding: 3px 0;
+    height: 30px;
+  }
+
+}
+
+/** Settings dialog */
+#settings_dialog {
+  width: 650px;
+}
+/** General helper classes */
+
+.text-right {
+  text-align: right;
+}
+
+.overflow_visible {
+  overflow: visible !important;
+}
+

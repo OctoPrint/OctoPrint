@@ -50,7 +50,7 @@ default_settings = old_default_settings.copy()
 default_settings.update({
 	"appearance": {
 		"name": "",
-		"color": "white"
+		"color": "default"
 	},
 	"controls": [],
 	"printerParameters": {
