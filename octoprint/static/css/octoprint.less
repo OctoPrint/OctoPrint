@@ -4,14 +4,9 @@ body {
   padding-top: 60px;
 }
 
-.navbar-inner-text (@base) when (lightness(@base) >= 58%) {
-  color: #333333;
-}
-.navbar-inner-text (@base) when (lightness(@base) < 58%) {
-  color: #f2f2f2;
-}
 .navbar-inner-text (@base) {
   text-shadow: 0 1px 0 lighten(@base, 15%);
+  color: contrast(@base, #333333, #f2f2f2);
 }
 
 .navbar-inner-color (@base) {
