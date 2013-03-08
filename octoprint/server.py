@@ -349,7 +349,8 @@ def getSettings():
 			"streamUrl": s.get(["webcam", "stream"]),
 			"snapshotUrl": s.get(["webcam", "snapshot"]),
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
-			"bitrate": s.get(["webcam", "bitrate"])
+			"bitrate": s.get(["webcam", "bitrate"]),
+			"watermark": s.getBoolean(["webcam", "watermark"])
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
@@ -387,6 +388,7 @@ def setSettings():
 			if "snapshotUrl" in data["webcam"].keys(): s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
 			if "ffmpeg" in data["webcam"].keys(): s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpeg"])
 			if "bitrate" in data["webcam"].keys(): s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
+			if "watermark" in data["webcam"].keys(): s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
 
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])

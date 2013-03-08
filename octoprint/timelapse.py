@@ -13,6 +13,8 @@ import subprocess
 import fnmatch
 import datetime
 
+import sys
+
 def getFinishedTimelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse")
@@ -91,10 +93,24 @@ class Timelapse(object):
 
 		input = os.path.join(self._captureDir, "tmp_%05d.jpg")
 		output = os.path.join(self._movieDir, "%s_%s.mpg" % (os.path.splitext(self._gcodeFile)[0], time.strftime("%Y%m%d%H%M%S")))
-		subprocess.call([
-			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y',
-			 '-b:v', bitrate, '-f', 'vob', output
-		])
+
+		# prepare ffmpeg command
+		command = [
+			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y', '-b:v', bitrate,
+			'-f', 'vob']
+
+		# add watermark if configured
+		if settings().getBoolean(["webcam", "watermark"]):
+			watermark = os.path.join(os.path.dirname(__file__), "static", "img", "watermark.png")
+			if sys.platform == "win32":
+				# Because ffmpeg hiccups on windows' drive letters and backslashes we have to give the watermark
+				# path a special treatment. Yeah, I couldn't believe it either...
+				watermark = watermark.replace("\\", "/").replace(":", "\\\\:")
+			command.extend(['-vf', 'movie=%s [wm]; [in][wm] overlay=10:main_h-overlay_h-10 [out]' % (watermark)])
+
+		# finalize command with output file
+		command.append(output)
+		subprocess.call(command)
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):

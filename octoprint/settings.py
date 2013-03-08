@@ -32,7 +32,8 @@ old_default_settings = {
 		"stream": None,
 		"snapshot": None,
 		"ffmpeg": None,
-		"bitrate": "5000k"
+		"bitrate": "5000k",
+		"watermark": True
 	},
 	"folder": {
 		"uploads": None,
