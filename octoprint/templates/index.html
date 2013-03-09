@@ -482,7 +482,7 @@
                                     <th class="timelapse_files_action">Action</th>
                                 </tr>
                                 </thead>
-                                <tbody data-bind="foreach: listHelper.items">
+                                <tbody data-bind="foreach: listHelper.paginatedItems">
                                 <tr data-bind="attr: {title: name}">
                                     <td class="timelapse_files_name" data-bind="text: name"></td>
                                     <td class="timelapse_files_size" data-bind="text: size"></td>

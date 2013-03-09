@@ -106,7 +106,7 @@ class Timelapse(object):
 				# Because ffmpeg hiccups on windows' drive letters and backslashes we have to give the watermark
 				# path a special treatment. Yeah, I couldn't believe it either...
 				watermark = watermark.replace("\\", "/").replace(":", "\\\\:")
-			command.extend(['-vf', 'movie=%s [wm]; [in][wm] overlay=10:main_h-overlay_h-10 [out]' % (watermark)])
+			command.extend(['-vf', 'movie=%s [wm]; [in][wm] overlay=10:main_h-overlay_h-10 [out]' % watermark])
 
 		# finalize command with output file
 		command.append(output)
