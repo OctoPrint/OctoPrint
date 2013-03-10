@@ -58,6 +58,13 @@ or
 
 Alternatively, the host and port on which to bind can be defined via the configuration.
 
+If you want to run OctoPrint as a daemon, there's another script for that:
+
+   ./run-as-daemon [start|stop|restart]
+
+It will create a pid file at `/tmp/octoprint.pid` for now. Further commandline arguments will not be evaluated,
+so you'll need to define host and port in the configuration file if you want something different there than the default.
+
 Configuration
 -------------
 
@@ -235,8 +242,6 @@ Open `~/.octoprint/config.yaml` and add the following lines to it:
 
 Restart the OctoPrint server and reload its frontend. You should now see a "Webcam" tab with content.
 
-If everything works, add the startup commands to `/etc/rc.local`.
-
 If you want to be able to shutdown and restart your Pi via the webinterface, you'll first have to add a `sudo` rule
 for the system user OctoPrint is running under (for me that's the default user `pi`):
 
@@ -262,6 +267,8 @@ Then add the following lines to your `~/.octoprint/config.yaml`:
 After restarting and reloading OctoPrint, this should add a System menu to the top right where you'll find the two
 commands. Both are configured to show you a confirmation message before being executed (the `confirm` part) so that
 you'll hopefully not shutdown or reboot your Pi accidentally.
+
+Once everything works, add the startup commands to `/etc/rc.local`.
 
 Credits
 -------
