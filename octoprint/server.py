@@ -20,7 +20,8 @@ SUCCESS = {}
 UPLOAD_FOLDER = settings().getBaseFolder("uploads")
 BASEURL = "/ajax/"
 app = Flask("octoprint")
-# Only instantiated by the app runner
+# Only instantiated by the Server().run() method
+# In order that threads don't start too early when running as a Daemon
 printer = None 
 gcodeManager = None
 

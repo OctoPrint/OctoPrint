@@ -79,10 +79,6 @@ class Daemon:
 		self.daemonize()
 		self.run()
 
-		# Should the daemon terminate ensure pid removal
-		if os.path.exists(self.pidfile):
-			os.remove(self.pidfile)
-
 	def stop(self):
 		"""Stop the daemon."""
 
