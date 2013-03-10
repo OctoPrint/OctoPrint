@@ -363,11 +363,11 @@
                             <div id="gcode_accordion" class="accordion" style="margin-top: 20px">
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#progressAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" href="#progressAccordionTab">
                                             Progress indicators
                                         </a>
                                     </div>
-                                    <div id="progressAccordionTab" class="accordion-body collapse">
+                                    <div id="progressAccordionTab" class="accordion-body collapse in">
                                         <div class="accordion-inner">
                                             <div id="progressBlock">
                                                 <div class="progress" >
@@ -382,11 +382,11 @@
                                 </div>
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#infoAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" href="#infoAccordionTab">
                                             Model info
                                         </a>
                                     </div>
-                                    <div id="infoAccordionTab" class="accordion-body collapse">
+                                    <div id="infoAccordionTab" class="accordion-body collapse in">
                                         <div class="accordion-inner">
                                             <p id="list"></p>
                                         </div>
@@ -394,11 +394,11 @@
                                 </div>
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#layerAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" href="#layerAccordionTab">
                                             Layer Info
                                         </a>
                                     </div>
-                                    <div id="layerAccordionTab" class="accordion-body collapse">
+                                    <div id="layerAccordionTab" class="accordion-body collapse in">
                                         <div class="accordion-inner">
                                             <p id="layerInfo"></p>
                                         </div>
@@ -406,11 +406,11 @@
                                 </div>
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#options2DAccordionTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" href="#options2DAccordionTab">
                                             2D Render options
                                         </a>
                                     </div>
-                                    <div id="options2DAccordionTab" class="accordion-body collapse">
+                                    <div id="options2DAccordionTab" class="accordion-body collapse in">
                                         <div class="accordion-inner">
                                             <input type="checkbox" id="showMovesCheckbox" value="1"  onclick="GCODE.ui.processOptions()" checked>Show non-extrusion moves</input><br>
                                             <input type="checkbox" id="showRetractsCheckbox" value="2"  onclick="GCODE.ui.processOptions()" checked>Show retracts and restarts</input><br>
@@ -425,11 +425,11 @@
 
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#gcode_accordion" href="#analyzeOptionsAccordioinTab">
+                                        <a class="accordion-toggle" data-toggle="collapse" href="#analyzeOptionsAccordioinTab">
                                             GCode analyzer options
                                         </a>
                                     </div>
-                                    <div id="analyzeOptionsAccordioinTab" class="accordion-body collapse">
+                                    <div id="analyzeOptionsAccordioinTab" class="accordion-body collapse in">
                                         <div class="accordion-inner">
                                             These require re-analyzing file:<br>
                                             <input type="checkbox" id="sortLayersCheckbox" value="4" onclick="GCODE.ui.processOptions()" checked>Sort layers by Z</input><br>
