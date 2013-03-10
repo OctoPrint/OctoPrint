@@ -427,7 +427,7 @@ def performSystemAction():
 			if availableAction["action"] == action:
 				logger.info("Performing command: %s" % availableAction["command"])
 				try:
-					subprocess.check_output(availableAction["command"])
+					subprocess.check_output(availableAction["command"], shell=True)
 				except subprocess.CalledProcessError, e:
 					logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
 					return app.make_response(("Command failed with return code %i: %s" % (e.returncode, e.message), 500, []))
