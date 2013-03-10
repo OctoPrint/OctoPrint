@@ -61,13 +61,16 @@ default_settings.update({
 			"z": 200,
 			"e": 300
 		}
-        },
+	},
 	"temperature": {
 		"profiles":
 			[
 				{"name": "ABS", "extruder" : 210, "bed" : 100 },
 				{"name": "PLA", "extruder" : 180, "bed" : 60 }
 			]
+	},
+	"system": {
+		"actions": []
 	}
 })
 

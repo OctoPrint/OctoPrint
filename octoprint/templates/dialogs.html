@@ -1,0 +1,33 @@
+<div id="offline_overlay">
+    <div id="offline_overlay_background"></div>
+    <div id="offline_overlay_wrapper">
+        <div class="container">
+            <div class="hero-unit">
+                <h1>Server is offline</h1>
+                <p id="offline_overlay_message">
+                    The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect
+                    automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect
+                    anytime using the button below.
+                </p>
+                <p>
+                    <a class="btn btn-primary btn-large" id="offline_overlay_reconnect">Attempt to reconnect</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="confirmation_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>Are you sure?</h3>
+    </div>
+    <div class="modal-body">
+        <p class="confirmation_dialog_message"></p>
+        <p>Are you sure you want to proceed?</p>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
+        <a href="#" class="btn btn-danger confirmation_dialog_acknowledge">Proceed</a>
+    </div>
+</div>

@@ -202,28 +202,6 @@ function PrinterStateViewModel() {
     }
 }
 
-function AppearanceViewModel(settingsViewModel) {
-    var self = this;
-
-    self.name = settingsViewModel.appearance_name;
-    self.color = settingsViewModel.appearance_color;
-
-    self.brand = ko.computed(function() {
-        if (self.name())
-            return "OctoPrint: " + self.name();
-        else
-            return "OctoPrint";
-    })
-
-    self.title = ko.computed(function() {
-        if (self.name())
-            return self.name() + " [OctoPrint]";
-        else
-            return "OctoPrint";
-    })
-}
-
-
 function TemperatureViewModel(settingsViewModel) {
     var self = this;
 
@@ -989,6 +967,8 @@ function SettingsViewModel() {
 
     self.temperature_profiles = ko.observableArray(undefined);
 
+    self.system_actions = ko.observableArray([]);
+
     self.addTemperatureProfile = function() {
             self.temperature_profiles.push({name: "New", extruder:0, bed:0});
         };
@@ -1030,6 +1010,8 @@ function SettingsViewModel() {
         self.folder_logs(response.folder.logs);
 
         self.temperature_profiles(response.temperature.profiles);
+
+        self.system_actions(response.system.actions);
     }
 
     self.saveData = function() {
@@ -1063,6 +1045,9 @@ function SettingsViewModel() {
             },
             "temperature": {
                 "profiles": self.temperature_profiles()
+            },
+            "system": {
+                "actions": self.system_actions()
             }
         }
 
@@ -1079,6 +1064,37 @@ function SettingsViewModel() {
         })
     }
 
+}
+
+function NavigationViewModel(appearanceViewModel, settingsViewModel) {
+    var self = this;
+
+    self.appearance = appearanceViewModel;
+    self.systemActions = settingsViewModel.system_actions;
+
+    self.triggerAction = function(action) {
+        var callback = function() {
+            $.ajax({
+                url: AJAX_BASEURL + "system",
+                type: "POST",
+                dataType: "json",
+                data: "action=" + action.action,
+                success: function() {
+                    $.pnotify({title: "Success", text: "The command \""+ action.name +"\" executed successfully", type: "success"});
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $.pnotify({title: "Error", text: "<p>The command \"" + action.name + "\" could not be executed.</p><p>Reason: <pre>" + jqXHR.responseText + "</pre></p>", type: "error"});
+                }
+            })
+        }
+        if (action.confirm) {
+            $("#confirmation_dialog .confirmation_dialog_message").text(action.confirm);
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); callback(); });
+            $("#confirmation_dialog").modal("show");
+        } else {
+            callback();
+        }
+    }
 }
 
 function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, webcamViewModel, gcodeViewModel) {
@@ -1370,6 +1386,27 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self._loadCurrentSortingFromLocalStorage();
 }
 
+function AppearanceViewModel(settingsViewModel) {
+    var self = this;
+
+    self.name = settingsViewModel.appearance_name;
+    self.color = settingsViewModel.appearance_color;
+
+    self.brand = ko.computed(function() {
+        if (self.name())
+            return "OctoPrint: " + self.name();
+        else
+            return "OctoPrint";
+    })
+
+    self.title = ko.computed(function() {
+        if (self.name())
+            return self.name() + " [OctoPrint]";
+        else
+            return "OctoPrint";
+    })
+}
+
 $(function() {
 
         //~~ View models
@@ -1384,6 +1421,7 @@ $(function() {
         var gcodeFilesViewModel = new GcodeFilesViewModel();
         var webcamViewModel = new WebcamViewModel();
         var gcodeViewModel = new GcodeViewModel();
+        var navigationViewModel = new NavigationViewModel(appearanceViewModel, settingsViewModel);
 
         var dataUpdater = new DataUpdater(
             connectionViewModel, 
@@ -1566,7 +1604,7 @@ $(function() {
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
         ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-        ko.applyBindings(appearanceViewModel, document.getElementById("navbar"));
+        ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
 
         var webcamElement = document.getElementById("webcam");
@@ -1596,6 +1634,8 @@ $(function() {
                 }, 1000);
             }
         })
+
+        $.pnotify.defaults.history = false;
 
     }
 );

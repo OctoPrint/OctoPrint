@@ -23,6 +23,18 @@ body {
   .brand, .nav>li>a {
     .navbar-inner-text(@base);
   }
+
+  .nav {
+    li.dropdown.open>.dropdown-toggle, li.dropdown.active>.dropdown-toggle, li.dropdown.open.active>.dropdown-toggle {
+      // invert for dropdown
+      background-color: @base; /* fallback color if gradients are not supported */
+      background-image: -webkit-linear-gradient(top, @bottom, @top); /* For Chrome and Safari */
+      background-image: -moz-linear-gradient(top, @bottom, @top); /* For old Fx (3.6 to 15) */
+      background-image: -ms-linear-gradient(top, @bottom, @top); /* For pre-releases of IE 10*/
+      background-image: -o-linear-gradient(top, @bottom, @top); /* For old Opera (11.1 to 12.0) */
+      background-image: linear-gradient(to bottom, @bottom, @top); /* Standard syntax; must be last */
+    }
+  }
 }
 
 #navbar .navbar-inner {
