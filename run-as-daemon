@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, time
+import sys
 from octoprint.daemon import Daemon
 from octoprint.server import Server
 
@@ -7,23 +7,23 @@ class Main(Daemon):
 	def run(self):
 		octoprint = Server()
 		octoprint.start()
-		
+
 def main():
 	daemon = Main('/tmp/octoprint.pid')
-        if len(sys.argv) == 2:
-                if 'start' == sys.argv[1]:
-                        daemon.start()
-                elif 'stop' == sys.argv[1]:
-                        daemon.stop()
-                elif 'restart' == sys.argv[1]:
-                        daemon.restart()
-                else:
-                        print "Unknown command"
-                        sys.exit(2)
-                sys.exit(0)
-        else:
-                print "usage: %s start|stop|restart" % sys.argv[0]
-                sys.exit(2)
+	if len(sys.argv) == 2:
+		if 'start' == sys.argv[1]:
+			daemon.start()
+		elif 'stop' == sys.argv[1]:
+			daemon.stop()
+		elif 'restart' == sys.argv[1]:
+			daemon.restart()
+		else:
+			print "Unknown command"
+			sys.exit(2)
+		sys.exit(0)
+	else:
+		print "usage: %s start|stop|restart" % sys.argv[0]
+		sys.exit(2)
 
 if __name__ == "__main__":
 	main()
