@@ -9,6 +9,7 @@ import tornadio2
 import os
 import threading
 import logging, logging.config
+import subprocess
 
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
@@ -24,6 +25,18 @@ app = Flask("octoprint")
 # In order that threads don't start too early when running as a Daemon
 printer = None 
 gcodeManager = None
+
+# Did attempt to make webserver an encapsulated class but ended up with __call__ failures
+
+@app.route("/")
+def index():
+	return render_template(
+		"index.html",
+		webcamStream=settings().get(["webcam", "stream"]),
+		enableTimelapse=settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None,
+		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
+		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+	)
 
 #~~ Printer state
 
@@ -93,17 +106,6 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def addTemperature(self, data):
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
-
-# Did attempt to make webserver an encapsulated class but ended up with __call__ failures
-
-@app.route("/")
-def index():
-	return render_template(
-		"index.html",
-		webcamStream=settings().get(["webcam", "stream"]),
-		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
-		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"])
-	)
 
 #~~ Printer control
 
@@ -368,6 +370,9 @@ def getSettings():
 		},
 		"temperature": {
 			"profiles": s.get(["temperature", "profiles"])
+		},
+		"system": {
+			"actions": s.get(["system", "actions"])
 		}
 	})
 
@@ -407,9 +412,33 @@ def setSettings():
 		if "temperature" in data.keys():
 			if "profiles" in data["temperature"].keys(): s.set(["temperature", "profiles"], data["temperature"]["profiles"])
 
+		if "system" in data.keys():
+			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
+
 		s.save()
 
 	return getSettings()
+
+#~~ system control
+
+@app.route(BASEURL + "system", methods=["POST"])
+def performSystemAction():
+	logger = logging.getLogger(__name__)
+	if request.values.has_key("action"):
+		action = request.values["action"]
+		availableActions = settings().get(["system", "actions"])
+		for availableAction in availableActions:
+			if availableAction["action"] == action:
+				logger.info("Performing command: %s" % availableAction["command"])
+				try:
+					subprocess.check_output(availableAction["command"], shell=True)
+				except subprocess.CalledProcessError, e:
+					logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
+					return app.make_response(("Command failed with return code %i: %s" % (e.returncode, e.message), 500, []))
+				except Exception, ex:
+					logger.exception("Command failed")
+					return app.make_response(("Command failed: %r" % ex, 500, []))
+	return jsonify(SUCCESS)
 
 #~~ startup code
 class Server():

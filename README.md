@@ -167,6 +167,20 @@ The following example config should explain the available options:
             name: Speed
             parameter: speed
 
+    # Use the following settings to add custom system commands to the "System" dropdown within OctoPrint's top bar
+    #
+    # Commands consist of a name, an action identifier, the commandline to execute and an optional confirmation message
+    # to display before actually executing the command (should be set to False if a confirmation dialog is not desired).
+    #
+    # The following example defines a command for shutting down the system under Linux. It assumes that the user under
+    # which OctoPrint is running is allowed to do this without password entry.
+    system:
+      actions:
+      - name: Shutdown
+        action: shutdown
+        command: sudo shutdown -h now
+        confirm: You are about to shutdown the system.
+
 Setup on a Raspberry Pi running Raspbian
 ----------------------------------------
 
@@ -223,6 +237,32 @@ Restart the OctoPrint server and reload its frontend. You should now see a "Webc
 
 If everything works, add the startup commands to `/etc/rc.local`.
 
+If you want to be able to shutdown and restart your Pi via the webinterface, you'll first have to add a `sudo` rule
+for the system user OctoPrint is running under (for me that's the default user `pi`):
+
+    pi@raspberrypi ~ $ sudo -s
+    root@raspberrypi:/home/pi# cat > /etc/sudoers.d/octoprint-shutdown
+    pi ALL=NOPASSWD: /sbin/shutdown
+    ^D
+    root@raspberrypi:/home/pi# exit
+
+Then add the following lines to your `~/.octoprint/config.yaml`:
+
+    system:
+      actions:
+      - name: Shutdown
+        command: sudo shutdown -h now
+        action: shutdown
+        confirm: You are about to shutdown the system.
+      - name: Reboot
+        command: sudo shutdown -r now
+        action: reboot
+        confirm: You are about to reboot the system
+
+After restarting and reloading OctoPrint, this should add a System menu to the top right where you'll find the two
+commands. Both are configured to show you a confirmation message before being executed (the `confirm` part) so that
+you'll hopefully not shutdown or reboot your Pi accidentally.
+
 Credits
 -------
 
@@ -243,6 +283,7 @@ It also uses the following libraries and frameworks for backend and frontend:
 * Underscore.js: http://underscorejs.org/
 * Flot: http://www.flotcharts.org/
 * jQuery File Upload: http://blueimp.github.com/jQuery-File-Upload/
+* Pines Notify: http://pinesframework.org/pnotify/
 * gCodeVisualizer: https://github.com/hudbrog/gCodeViewer
 
 The following software is recommended for Webcam support on the Raspberry Pi:

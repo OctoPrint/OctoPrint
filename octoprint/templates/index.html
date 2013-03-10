@@ -9,6 +9,7 @@
 
         <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
+        <link href="{{ url_for('static', filename='css/jquery.pnotify.default.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
         <link href="{{ url_for('static', filename='gcodeviewer/css/cupertino/jquery-ui-1.9.0.custom.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='gcodeviewer/css/style.css') }}" rel="stylesheet" media="screen">
@@ -26,12 +27,23 @@
     </head>
     <body>
         <div id="navbar" class="navbar navbar-fixed-top">
-            <div class="navbar-inner" data-bind="css: color">
+            <div class="navbar-inner" data-bind="css: appearance.color">
                 <div class="container">
-                    <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: brand">OctoPrint</span></a>
+                    <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
                     <div class="nav-collapse">
                         <ul class="nav pull-right">
                             <li><a id="navbar_show_settings" class="pull-right" href="#settings_dialog"><i class="icon-wrench"></i> Settings</a></li>
+                            {% if enableSystemMenu %}
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                    <i class="icon-off"></i> System
+                                    <b class="caret"></b>
+                                </a>
+                                <ul class="dropdown-menu" data-bind="foreach: systemActions">
+                                    <li><a href="#" data-bind="click: $root.triggerAction, text: name"></a></li>
+                                </ul>
+                            </li>
+                            {% endif %}
                         </ul>
                     </div>
                 </div>
@@ -509,26 +521,8 @@
             </div>
         </div>
 
-        <div id="offline_overlay">
-            <div id="offline_overlay_background"></div>
-            <div id="offline_overlay_wrapper">
-                <div class="container">
-                    <div class="hero-unit">
-                        <h1>Server is offline</h1>
-                        <p id="offline_overlay_message">
-                            The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect
-                            automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect
-                            anytime using the button below.
-                        </p>
-                        <p>
-                            <a class="btn btn-primary btn-large" id="offline_overlay_reconnect">Attempt to reconnect</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         {% include 'settings.html' %}
+        {% include 'dialogs.html' %}
 
         <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/modernizr.custom.js') }}"></script>
@@ -539,6 +533,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.mouse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.slider.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.pnotify.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.iframe-transport.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
