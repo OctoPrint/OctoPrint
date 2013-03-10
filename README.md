@@ -283,6 +283,7 @@ It also uses the following libraries and frameworks for backend and frontend:
 * Underscore.js: http://underscorejs.org/
 * Flot: http://www.flotcharts.org/
 * jQuery File Upload: http://blueimp.github.com/jQuery-File-Upload/
+* Pines Notify: http://pinesframework.org/pnotify/
 * gCodeVisualizer: https://github.com/hudbrog/gCodeViewer
 
 The following software is recommended for Webcam support on the Raspberry Pi:
