@@ -6,7 +6,7 @@ from octoprint.server import Server
 class Main(Daemon):
 	def run(self):
 		octoprint = Server()
-		octoprint.run()
+		octoprint.start()
 		
 def main():
 	daemon = Main('/tmp/octoprint.pid')
