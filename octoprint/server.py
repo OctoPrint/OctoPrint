@@ -16,23 +16,13 @@ import octoprint.timelapse as timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 
-BASEURL = "/ajax/"
 SUCCESS = {}
-
 UPLOAD_FOLDER = settings().getBaseFolder("uploads")
-
+BASEURL = "/ajax/"
 app = Flask("octoprint")
-gcodeManager = gcodefiles.GcodeManager()
-printer = Printer(gcodeManager)
-
-@app.route("/")
-def index():
-	return render_template(
-		"index.html",
-		webcamStream=settings().get(["webcam", "stream"]),
-		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
-		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"])
-	)
+# Only instantiated by the app runner
+printer = None 
+gcodeManager = None
 
 #~~ Printer state
 
@@ -51,11 +41,13 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 	def on_open(self, info):
 		self._logger.info("New connection from client")
+		# Use of global here is smelly
 		printer.registerCallback(self)
 		gcodeManager.registerCallback(self)
 
 	def on_close(self):
 		self._logger.info("Closed client connection")
+		# Use of global here is smelly
 		printer.unregisterCallback(self)
 		gcodeManager.unregisterCallback(self)
 
@@ -100,6 +92,17 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def addTemperature(self, data):
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
+
+# Did attempt to make webserver an encapsulated class but ended up with __call__ failures
+
+@app.route("/")
+def index():
+	return render_template(
+		"index.html",
+		webcamStream=settings().get(["webcam", "stream"]),
+		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
+		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"])
+	)
 
 #~~ Printer control
 
@@ -171,7 +174,7 @@ def setTargetTemperature():
 		return jsonify(SUCCESS)
 
 	elif request.values.has_key("temp"):
-		# set target temperature
+	# set target temperature
 		temp = request.values["temp"]
 		printer.command("M104 S" + temp)
 
@@ -381,7 +384,7 @@ def setSettings():
 			if "movementSpeedX" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "x"], data["printer"]["movementSpeedX"])
 			if "movementSpeedY" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "y"], data["printer"]["movementSpeedY"])
 			if "movementSpeedZ" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "z"], data["printer"]["movementSpeedZ"])
-			if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
+		if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
 
 		if "webcam" in data.keys():
 			if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
@@ -408,77 +411,86 @@ def setSettings():
 	return getSettings()
 
 #~~ startup code
+class Server():
+	def run(self, host = "0.0.0.0", port = 5000, debug = False):
+		# Global as I can't work out a way to get it into PrinterStateConnection
+		global printer
+		global gcodeManager
 
-def run(host = "0.0.0.0", port = 5000, debug = False):
-	from tornado.wsgi import WSGIContainer
-	from tornado.httpserver import HTTPServer
-	from tornado.ioloop import IOLoop
-	from tornado.web import Application, FallbackHandler
+		from tornado.wsgi import WSGIContainer
+		from tornado.httpserver import HTTPServer
+		from tornado.ioloop import IOLoop
+		from tornado.web import Application, FallbackHandler
 
-	logging.getLogger(__name__).info("Listening on http://%s:%d" % (host, port))
-	app.debug = debug
+		gcodeManager = gcodefiles.GcodeManager()
+		printer = Printer(gcodeManager)
 
-	router = tornadio2.TornadioRouter(PrinterStateConnection)
-	tornado_app = Application(router.urls + [
-		(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
-	])
-	server = HTTPServer(tornado_app)
-	server.listen(port, address=host)
-	IOLoop.instance().start()
+		logging.getLogger(__name__).info("Listening on http://%s:%d" % (host, port))
+		app.debug = debug
 
-def initLogging():
-	config = {
-		"version": 1,
-		"formatters": {
-			"simple": {
-				"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-			}
-		},
-		"handlers": {
-			"console": {
-				"class": "logging.StreamHandler",
-				"level": "DEBUG",
-				"formatter": "simple",
-				"stream": "ext://sys.stdout"
+		self._router = tornadio2.TornadioRouter(PrinterStateConnection)
+
+		self._tornado_app = Application(self._router.urls + [
+			(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
+		])
+		self._server = HTTPServer(self._tornado_app)
+		self._server.listen(port, address=host)
+		IOLoop.instance().start()
+
+	def initLogging(self):
+		self._config = {
+			"version": 1,
+			"formatters": {
+				"simple": {
+					"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+				}
 			},
-			"file": {
-				"class": "logging.handlers.TimedRotatingFileHandler",
-				"level": "DEBUG",
-				"formatter": "simple",
-				"when": "D",
-				"backupCount": "1",
-				"filename": os.path.join(settings().getBaseFolder("logs"), "octoprint.log")
+			"handlers": {
+				"console": {
+					"class": "logging.StreamHandler",
+					"level": "DEBUG",
+					"formatter": "simple",
+					"stream": "ext://sys.stdout"
+				},
+				"file": {
+					"class": "logging.handlers.TimedRotatingFileHandler",
+					"level": "DEBUG",
+					"formatter": "simple",
+					"when": "D",
+					"backupCount": "1",
+					"filename": os.path.join(settings().getBaseFolder("logs"), "octoprint.log")
+				}
+			},
+			"loggers": {
+				"octoprint.gcodefiles": {
+					"level": "DEBUG"
+				}
+			},
+			"root": {
+				"level": "INFO",
+				"handlers": ["console", "file"]
 			}
-		},
-		"loggers": {
-			"octoprint.gcodefiles": {
-				"level": "DEBUG"
-			}
-		},
-		"root": {
-			"level": "INFO",
-			"handlers": ["console", "file"]
 		}
-	}
-	logging.config.dictConfig(config)
+		logging.config.dictConfig(self._config)
 
-def main():
-	from optparse import OptionParser
+	def start(self):
+		from optparse import OptionParser
 
-	defaultHost = settings().get(["server", "host"])
-	defaultPort = settings().get(["server", "port"])
+		self._defaultHost = settings().get(["server", "host"])
+		self._defaultPort = settings().get(["server", "port"])
 
-	parser = OptionParser(usage="usage: %prog [options]")
-	parser.add_option("-d", "--debug", action="store_true", dest="debug",
-		help="Enable debug mode")
-	parser.add_option("--host", action="store", type="string", default=defaultHost, dest="host",
-		help="Specify the host on which to bind the server, defaults to %s if not set" % (defaultHost))
-	parser.add_option("--port", action="store", type="int", default=defaultPort, dest="port",
-		help="Specify the port on which to bind the server, defaults to %s if not set" % (defaultPort))
-	(options, args) = parser.parse_args()
+		self._parser = OptionParser(usage="usage: %prog [options]")
+		self._parser.add_option("-d", "--debug", action="store_true", dest="debug",
+			help="Enable debug mode")
+		self._parser.add_option("--host", action="store", type="string", default=self._defaultHost, dest="host",
+			help="Specify the host on which to bind the server, defaults to %s if not set" % (self._defaultHost))
+		self._parser.add_option("--port", action="store", type="int", default=self._defaultPort, dest="port",
+			help="Specify the port on which to bind the server, defaults to %s if not set" % (self._defaultPort))
+		(options, args) = self._parser.parse_args()
 
-	initLogging()
-	run(host=options.host, port=options.port, debug=options.debug)
+		self.initLogging()
+		self.run(host=options.host, port=options.port, debug=options.debug)
 
 if __name__ == "__main__":
-	main()
+	octoprint = Server()
+	octoprint.start()
