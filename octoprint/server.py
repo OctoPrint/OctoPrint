@@ -281,7 +281,7 @@ def getTimelapseData():
 	elif lapse is not None and isinstance(lapse, timelapse.TimedTimelapse):
 		type = "timed"
 		additionalConfig = {
-			"interval": lapse.interval
+			"interval": lapse.interval()
 		}
 
 	files = timelapse.getFinishedTimelapses()
