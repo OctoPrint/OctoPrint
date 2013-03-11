@@ -47,11 +47,11 @@ def main():
 			sys.exit(2)
 
 		daemon = Main(args.pidfile, args.config, args.basedir, args.host, args.port, args.debug)
-		if "start" == args.command:
+		if "start" == args.daemon:
 			daemon.start()
-		elif "stop" == args.command:
+		elif "stop" == args.daemon:
 			daemon.stop()
-		elif "restart" == args.command:
+		elif "restart" == args.daemon:
 			daemon.restart()
 	else:
 		octoprint = Server(args.config, args.basedir, args.host, args.port, args.debug)
