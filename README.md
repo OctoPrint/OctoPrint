@@ -52,9 +52,9 @@ Alternatively, the host and port on which to bind can be defined via the configu
 
 If you want to run OctoPrint as a daemon (only supported on Linux), use
 
-   ./run --daemon {start|stop|restart} [--pidfile PIDFILE]
+   ./run --daemon {start|stop|restart} [--pid PIDFILE]
 
-If you do not supply a custom pidfile location via `--pidfile PIDFILE`, it will be created at `/tmp/octoprint.pid`.
+If you do not supply a custom pidfile location via `--pid PIDFILE`, it will be created at `/tmp/octoprint.pid`.
 
 You can also specify the configfile or the base directory (for basing off the `uploads`, `timelapse` and `logs` folders),
 e.g.:
