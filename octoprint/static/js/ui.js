@@ -1521,7 +1521,7 @@ $(function() {
 
         //~~ Terminal
 
-        $("#terminal-send").click(function () {
+		$("#terminal-send").click(function () {
             var command = $("#terminal-command").val();
             if (command) {
                 $.ajax({
@@ -1531,7 +1531,15 @@ $(function() {
                     contentType: "application/json; charset=UTF-8",
                     data: JSON.stringify({"command": command})
                 })
+            	$("#terminal-command").val('')
             }
+            
+        })
+
+        $("#terminal-command").keyup(function(event){
+	    if(event.keyCode == 13){
+                $("#terminal-send").click()
+	    }
         })
 
         //~~ Gcode upload
