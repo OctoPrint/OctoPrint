@@ -18,7 +18,6 @@ import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 
 SUCCESS = {}
-UPLOAD_FOLDER = settings().getBaseFolder("uploads")
 BASEURL = "/ajax/"
 app = Flask("octoprint")
 # Only instantiated by the Server().run() method
@@ -249,7 +248,7 @@ def readGcodeFiles():
 
 @app.route(BASEURL + "gcodefiles/<path:filename>", methods=["GET"])
 def readGcodeFile(filename):
-	return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
+	return send_from_directory(settings().getBaseFolder("uploads"), filename, as_attachment=True)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 def uploadGcodeFile():
@@ -442,7 +441,14 @@ def performSystemAction():
 
 #~~ startup code
 class Server():
-	def run(self, host = "0.0.0.0", port = 5000, debug = False):
+	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False):
+		self._configfile = configfile
+		self._basedir = basedir
+		self._host = host
+		self._port = port
+		self._debug = debug
+
+	def run(self):
 		# Global as I can't work out a way to get it into PrinterStateConnection
 		global printer
 		global gcodeManager
@@ -452,11 +458,22 @@ class Server():
 		from tornado.ioloop import IOLoop
 		from tornado.web import Application, FallbackHandler
 
+		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
+		self._initSettings(self._configfile, self._basedir)
+
+		# then initialize logging
+		self._initLogging(self._debug)
+
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
 
-		logging.getLogger(__name__).info("Listening on http://%s:%d" % (host, port))
-		app.debug = debug
+		if self._host is None:
+			self._host = settings().get(["server", "host"])
+		if self._port is None:
+			self._port = settings().getInt(["server", "port"])
+
+		logging.getLogger(__name__).info("Listening on http://%s:%d" % (self._host, self._port))
+		app.debug = self._debug
 
 		self._router = tornadio2.TornadioRouter(PrinterStateConnection)
 
@@ -464,10 +481,13 @@ class Server():
 			(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
 		])
 		self._server = HTTPServer(self._tornado_app)
-		self._server.listen(port, address=host)
+		self._server.listen(self._port, address=self._host)
 		IOLoop.instance().start()
 
-	def initLogging(self):
+	def _initSettings(self, configfile, basedir):
+		s = settings(init=True, basedir=basedir, configfile=configfile)
+
+	def _initLogging(self, debug):
 		self._config = {
 			"version": 1,
 			"formatters": {
@@ -503,24 +523,6 @@ class Server():
 		}
 		logging.config.dictConfig(self._config)
 
-	def start(self):
-		from optparse import OptionParser
-
-		self._defaultHost = settings().get(["server", "host"])
-		self._defaultPort = settings().get(["server", "port"])
-
-		self._parser = OptionParser(usage="usage: %prog [options]")
-		self._parser.add_option("-d", "--debug", action="store_true", dest="debug",
-			help="Enable debug mode")
-		self._parser.add_option("--host", action="store", type="string", default=self._defaultHost, dest="host",
-			help="Specify the host on which to bind the server, defaults to %s if not set" % (self._defaultHost))
-		self._parser.add_option("--port", action="store", type="int", default=self._defaultPort, dest="port",
-			help="Specify the port on which to bind the server, defaults to %s if not set" % (self._defaultPort))
-		(options, args) = self._parser.parse_args()
-
-		self.initLogging()
-		self.run(host=options.host, port=options.port, debug=options.debug)
-
 if __name__ == "__main__":
 	octoprint = Server()
-	octoprint.start()
+	octoprint.run()

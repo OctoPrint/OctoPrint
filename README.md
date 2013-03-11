@@ -39,39 +39,39 @@ Usage
 
 Just start the server via
 
-    python -m octoprint.server
-
-or alternatively
-
     ./run
 
 By default it binds to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
 will do the trick). If you want to change that, use the additional command line parameters `host` and `port`,
-which accept the host ip to bind to and the numeric port number respectively. If for example you want to the server
+which accept the host ip to bind to and the numeric port number respectively. If for example you want the server
 to only listen on the local interface on port 8080, the command line would be
-
-    python -m octoprint.server --host=127.0.0.1 --port=8080
-
-or
 
     ./run --host=127.0.0.1 --port=8080
 
 Alternatively, the host and port on which to bind can be defined via the configuration.
 
-If you want to run OctoPrint as a daemon, there's another script for that:
+If you want to run OctoPrint as a daemon (only supported on Linux), use
 
-   ./run-as-daemon [start|stop|restart]
+   ./run --daemon {start|stop|restart} [--pidfile PIDFILE]
 
-It will create a pid file at `/tmp/octoprint.pid` for now. Further commandline arguments will not be evaluated,
-so you'll need to define host and port in the configuration file if you want something different there than the default.
+If you do not supply a custom pidfile location via `--pidfile PIDFILE`, it will be created at `/tmp/octoprint.pid`.
+
+You can also specify the configfile or the base directory (for basing off the `uploads`, `timelapse` and `logs` folders),
+e.g.:
+
+    ./run --config /path/to/another/config.yaml --basedir /path/to/my/basedir
+
+See `run --help` for further information.
 
 Configuration
 -------------
 
-The config-file `config.yaml` for OctoPrint is expected in its settings folder, which is located at `~/.octoprint`
-on Linux, at `%APPDATA%/OctoPrint` on Windows and at `~/Library/Application Support/OctoPrint` on MacOS.
+If not specified via the commandline, the configfile `config.yaml` for OctoPrint is expected in its settings folder,
+which is located at `~/.octoprint` on Linux, at `%APPDATA%/OctoPrint` on Windows and at
+`~/Library/Application Support/OctoPrint` on MacOS.
 
-The following example config should explain the available options:
+The following example config should explain the available options, most of which can also be configured via the
+settings dialog within OctoPrint:
 
     # Use the following settings to configure the serial connection to the printer
     serial:
@@ -111,6 +111,10 @@ The following example config should explain the available options:
       # Whether to enable the gcode viewer in the UI or not
       gCodeVisualizer: true
 
+      # Specified whether OctoPrint should wait for the start response from the printer before trying to send commands
+      # during connect
+      waitForStartOnConnect: false
+
     # Use the following settings to set custom paths for folders used by OctoPrint
     folder:
       # Absolute path where to store gcode uploads. Defaults to the uploads folder in the OctoPrint settings folder
@@ -122,7 +126,38 @@ The following example config should explain the available options:
 
       # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the OctoPrint
       # settings dir
-      timelapse_tmp: /path/timelapse/tmp/folder
+      timelapse_tmp: /path/to/timelapse/tmp/folder
+
+      # Absolute path where to store log files. Defaults to the logs folder in the OctoPrint settings dir
+      logs: /path/to/logs/folder
+
+    # Use the following settings to configure temperature profiles which will be displayed in the temperature tab.
+    temperature:
+      profiles:
+      - name: ABS
+        extruder: 210
+        bed: 100
+      - name: PLA
+        extruder: 180
+        bed: 60
+
+    # Use the following settings to configure printer parameters
+    printerParameters:
+      # Use this to define the movement speed on X, Y, Z and E to use for the controls on the controls tab
+      movementSpeed:
+        x: 6000
+        y: 6000
+        z: 200
+        e: 300
+
+    # Use the following settings to tweak OctoPrint's appearance a bit to better distinguish multiple instances/printers
+    appearance:
+      # Use this to give your printer a name. It will be displayed in the title bar (as "<Name> [OctoPrint]") and in the
+      # navigation bar (as "OctoPrint: <Name>")
+      name: My Printer Model
+
+      # Use this to color the navigation bar. Supported colors are red, orange, yellow, green, blue, violet and default.
+      color: blue
 
     # Use the following settings to add custom controls to the "Controls" tab within OctoPrint
     #

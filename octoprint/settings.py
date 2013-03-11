@@ -9,17 +9,19 @@ import yaml
 import logging
 
 APPNAME="OctoPrint"
-OLD_APPNAME="PrinterWebUI"
 
 instance = None
 
-def settings():
+def settings(init=False, configfile=None, basedir=None):
 	global instance
 	if instance is None:
-		instance = Settings()
+		if init:
+			instance = Settings(configfile, basedir)
+		else:
+			raise ValueError("Settings not initialized yet")
 	return instance
 
-old_default_settings = {
+default_settings = {
 	"serial": {
 		"port": None,
 		"baudrate": None
@@ -35,32 +37,15 @@ old_default_settings = {
 		"bitrate": "5000k",
 		"watermark": True
 	},
+	"feature": {
+		"gCodeVisualizer": True,
+		"waitForStartOnConnect": False
+	},
 	"folder": {
 		"uploads": None,
 		"timelapse": None,
 		"timelapse_tmp": None,
 		"logs": None
-	},
-	"feature": {
-    	"gCodeVisualizer": True,
-		"waitForStartOnConnect": False
-	},
-}
-
-default_settings = old_default_settings.copy()
-default_settings.update({
-	"appearance": {
-		"name": "",
-		"color": "default"
-	},
-	"controls": [],
-	"printerParameters": {
-		"movementSpeed": {
-			"x": 6000,
-			"y": 6000,
-			"z": 200,
-			"e": 300
-		}
 	},
 	"temperature": {
 		"profiles":
@@ -69,16 +54,29 @@ default_settings.update({
 				{"name": "PLA", "extruder" : 180, "bed" : 60 }
 			]
 	},
+	"printerParameters": {
+		"movementSpeed": {
+			"x": 6000,
+			"y": 6000,
+			"z": 200,
+			"e": 300
+		}
+	},
+	"appearance": {
+		"name": "",
+		"color": "default"
+	},
+	"controls": [],
 	"system": {
 		"actions": []
 	}
-})
+}
 
 valid_boolean_trues = ["true", "yes", "y", "1"]
 
 class Settings(object):
 
-	def __init__(self):
+	def __init__(self, configfile=None, basedir=None):
 		self._logger = logging.getLogger(__name__)
 
 		self.settings_dir = None
@@ -86,16 +84,14 @@ class Settings(object):
 		self._config = None
 		self._dirty = False
 
-		self._init_settings_dir()
-		self.load()
+		self._init_settings_dir(basedir)
+		self.load(configfile)
 
-	def _init_settings_dir(self):
-		self.settings_dir = _resolveSettingsDir(APPNAME)
-
-		# migration due to rename
-		old_settings_dir = _resolveSettingsDir(OLD_APPNAME)
-		if os.path.exists(old_settings_dir) and os.path.isdir(old_settings_dir) and not os.path.exists(self.settings_dir):
-			os.rename(old_settings_dir, self.settings_dir)
+	def _init_settings_dir(self, basedir):
+		if basedir is not None:
+			self.settings_dir = basedir
+		else:
+			self.settings_dir = _resolveSettingsDir(APPNAME)
 
 	def _getDefaultFolder(self, type):
 		folder = default_settings["folder"][type]
@@ -105,29 +101,15 @@ class Settings(object):
 
 	#~~ load and save
 
-	def load(self):
-		filename = os.path.join(self.settings_dir, "config.yaml")
-		oldFilename = os.path.join(self.settings_dir, "config.ini")
+	def load(self, configfile):
+		if configfile is not None:
+			filename = configfile
+		else:
+			filename = os.path.join(self.settings_dir, "config.yaml")
+
 		if os.path.exists(filename) and os.path.isfile(filename):
 			with open(filename, "r") as f:
 				self._config = yaml.safe_load(f)
-		elif os.path.exists(oldFilename) and os.path.isfile(oldFilename):
-			config = ConfigParser.ConfigParser(allow_no_value=True)
-			config.read(oldFilename)
-			self._config = {}
-			for section in old_default_settings.keys():
-				if not config.has_section(section):
-					continue
-
-				self._config[section] = {}
-				for option in old_default_settings[section].keys():
-					if not config.has_option(section, option):
-						continue
-
-					self._config[section][option] = config.get(section, option)
-					self._dirty = True
-			self.save(force=True)
-			os.rename(oldFilename, oldFilename + ".bck")
 		else:
 			self._config = {}
 
