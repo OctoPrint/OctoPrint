@@ -1326,16 +1326,16 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
         var currentSorting = self.currentSorting();
         if (currentSorting !== undefined)
-            localStorage[self.listType]["currentSorting"] = currentSorting;
+            localStorage[self.listType + "." + "currentSorting"] = currentSorting;
         else
-            localStorage[self.listType]["currentSorting"] = undefined;
+            localStorage[self.listType + "." + "currentSorting"] = undefined;
     }
 
     self._loadCurrentSortingFromLocalStorage = function() {
         self._initializeLocalStorage();
 
-        if (_.contains(_.keys(supportedSorting), localStorage[self.listType]["currentSorting"]))
-            self.currentSorting(localStorage[self.listType]["currentSorting"]);
+        if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
+            self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
         else
             self.currentSorting(defaultSorting);
     }
@@ -1344,23 +1344,21 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         self._initializeLocalStorage();
 
         var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
-        localStorage[self.listType]["currentFilters"] = filters;
+        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
     }
 
     self._loadCurrentFiltersFromLocalStorage = function() {
         self._initializeLocalStorage();
 
-        self.currentFilters(_.intersection(_.keys(self.supportedFilters), localStorage[self.listType, "currentFilters"]));
+        self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
     }
 
     self._initializeLocalStorage = function() {
-        if (localStorage[self.listType] !== undefined)
+        if (localStorage[self.listType + "." + "currentSorting"] !== undefined && localStorage[self.listType + "." + "currentFilters"] !== undefined && JSON.parse(localStorage[self.listType + "." + "currentFilters"]) instanceof Array)
             return;
 
-        localStorage[self.listType] = {
-            "currentSorting": self.defaultSorting,
-            "currentFilters": self.defaultFilters
-        }
+        localStorage[self.listType + "." + "currentSorting"] = self.defaultSorting;
+        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(self.defaultFilters);
     }
 
     self._loadCurrentFiltersFromLocalStorage();
