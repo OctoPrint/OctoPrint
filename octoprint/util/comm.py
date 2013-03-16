@@ -486,7 +486,10 @@ class MachineCom(object):
 				pass
 
 		commandToSend = cmd
-		self._currentLine += 1
+		if "M110" in cmd:
+			pass
+		else:
+			self._currentLine += 1
 		if sendChecksum or self._alwaysSendChecksum:
 			lineNumber = self._gcodePos
 			if self._alwaysSendChecksum:
@@ -558,6 +561,7 @@ class MachineCom(object):
 			return
 		self._gcodeList = gcodeList
 		self._gcodePos = 0
+		self._currentLine = 0
 		self._printStartTime100 = None
 		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)
