@@ -9,6 +9,7 @@ import re
 import traceback
 import threading
 import Queue as queue
+import logging
 
 import serial
 
@@ -143,6 +144,9 @@ class MachineCom(object):
 	STATE_CLOSED_WITH_ERROR = 10
 	
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
+		self._logger = logging.getLogger(__name__)
+		self._serialLogger = logging.getLogger("SERIAL")
+
 		if port == None:
 			port = settings().get(["serial", "port"])
 		if baudrate == None:
@@ -422,6 +426,7 @@ class MachineCom(object):
 	
 	def _log(self, message):
 		self._callback.mcLog(message)
+		self._serialLogger.debug(message)
 		try:
 			self._logQueue.put(message, False)
 		except:

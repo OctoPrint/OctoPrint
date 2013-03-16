@@ -509,11 +509,20 @@ class Server():
 					"when": "D",
 					"backupCount": "1",
 					"filename": os.path.join(settings().getBaseFolder("logs"), "octoprint.log")
+				},
+				"serialFile": {
+					"class": "logging.handlers.RotatingFileHandler",
+					"level": "DEBUG",
+					"formatter": "simple",
+					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
+					"filename": os.path.join(settings().getBaseFolder("logs"), "serial.log")
 				}
 			},
 			"loggers": {
-				"octoprint.gcodefiles": {
-					"level": "DEBUG"
+				"SERIAL": {
+					"level": "DEBUG",
+					"handlers": ["serialFile"],
+					"propagate": False
 				}
 			},
 			"root": {
