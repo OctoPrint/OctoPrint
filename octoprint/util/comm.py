@@ -174,7 +174,10 @@ class MachineCom(object):
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
 		self._printStartTime100 = None
-		
+
+		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
+		self._currentLine = 0
+
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
@@ -344,7 +347,7 @@ class MachineCom(object):
 					t = time.time()
 					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 					self._heatupWaitStartTime = t
-			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
+			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
 				self._callback.mcMessage(line)
 
 			if self._state == self.STATE_DETECT_BAUDRATE:
@@ -385,28 +388,28 @@ class MachineCom(object):
 				else:
 					self._testingBaudrate = False
 			elif self._state == self.STATE_CONNECTING:
-				if line == '' and startSeen:
+				if (line == "" or "wait" in line) and startSeen:
 					self._sendCommand("M105")
-				elif 'start' in line:
+				elif "start" in line:
 					startSeen = True
-				elif 'ok' in line and startSeen:
+				elif "ok" in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
 				elif time.time() > timeout:
 					self.close()
 			elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 				#Request the temperature on comm timeout (every 5 seconds) when we are not printing.
-				if line == '':
+				if line == "" or "wait" in line:
 					self._sendCommand("M105")
 					tempRequestTimeout = time.time() + 5
 			elif self._state == self.STATE_PRINTING:
-				if line == '' and time.time() > timeout:
+				if line == "" and time.time() > timeout:
 					self._log("Communication timeout during printing, forcing a line")
-					line = 'ok'
+					line = "ok"
 				#Even when printing request the temperture every 5 seconds.
 				if time.time() > tempRequestTimeout:
 					self._commandQueue.put("M105")
 					tempRequestTimeout = time.time() + 5
-				if 'ok' in line:
+				if "ok" in line:
 					timeout = time.time() + 5
 					if not self._commandQueue.empty():
 						self._sendCommand(self._commandQueue.get())
@@ -460,7 +463,7 @@ class MachineCom(object):
 	def __del__(self):
 		self.close()
 	
-	def _sendCommand(self, cmd):
+	def _sendCommand(self, cmd, sendChecksum=False):
 		cmd = cmd.upper()
 		if self._serial is None:
 			return
@@ -476,13 +479,23 @@ class MachineCom(object):
 				self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 			except:
 				pass
-		self._log('Send: %s' % (cmd))
+
+		commandToSend = cmd
+		self._currentLine += 1
+		if sendChecksum or self._alwaysSendChecksum:
+			lineNumber = self._gcodePos
+			if self._alwaysSendChecksum:
+				lineNumber = self._currentLine
+			checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNumber, cmd)))
+			commandToSend = "N%d%s*%d" % (lineNumber, cmd, checksum)
+
+		self._log('Send: %s' % (commandToSend))
 		try:
-			self._serial.write(cmd + '\n')
+			self._serial.write(commandToSend + '\n')
 		except serial.SerialTimeoutException:
 			self._log("Serial timeout while writing to serial port, trying again.")
 			try:
-				self._serial.write(cmd + '\n')
+				self._serial.write(commandToSend + '\n')
 			except:
 				self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 				self._errorValue = getExceptionString()
@@ -491,7 +504,16 @@ class MachineCom(object):
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 			self._errorValue = getExceptionString()
 			self.close(True)
-	
+		finally:
+			if "M110" in cmd:
+				if " N" in cmd:
+					try:
+						self._currentLine = int(re.search("N([0-9]+)", cmd).group(1))
+					except:
+						pass
+				else:
+					self._currentLine = 0
+
 	def _sendNext(self):
 		if self._gcodePos >= len(self._gcodeList):
 			self._changeState(self.STATE_OPERATIONAL)
@@ -515,8 +537,7 @@ class MachineCom(object):
 					self._callback.mcZChange(z)
 		except:
 			self._log("Unexpected error: %s" % (getExceptionString()))
-		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (self._gcodePos, line)))
-		self._sendCommand("N%d%s*%d" % (self._gcodePos, line, checksum))
+		self._sendCommand(line, True)
 		self._gcodePos += 1
 		self._callback.mcProgress(self._gcodePos)
 	

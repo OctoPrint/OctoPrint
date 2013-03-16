@@ -959,6 +959,7 @@ function SettingsViewModel() {
 
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
+    self.feature_alwaysSendChecksum = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
     self.folder_timelapse = ko.observable(undefined);
@@ -1003,6 +1004,7 @@ function SettingsViewModel() {
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_waitForStart(response.feature.waitForStart);
+        self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
 
         self.folder_uploads(response.folder.uploads);
         self.folder_timelapse(response.folder.timelapse);
@@ -1035,7 +1037,8 @@ function SettingsViewModel() {
             },
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
-                "waitForStart": self.feature_waitForStart()
+                "waitForStart": self.feature_waitForStart(),
+                "alwaysSendChecksum": self.feature_alwaysSendChecksum()
             },
             "folder": {
                 "uploads": self.folder_uploads(),

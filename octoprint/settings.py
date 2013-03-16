@@ -39,7 +39,8 @@ default_settings = {
 	},
 	"feature": {
 		"gCodeVisualizer": True,
-		"waitForStartOnConnect": False
+		"waitForStartOnConnect": False,
+		"alwaysSendChecksum": False
 	},
 	"folder": {
 		"uploads": None,
