@@ -64,6 +64,8 @@ class VirtualPrinter():
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
 
+		self.currentLine = 0
+
 	def write(self, data):
 		if self.readList is None:
 			return
@@ -79,9 +81,18 @@ class VirtualPrinter():
 			except:
 				pass
 		if 'M105' in data:
+			# send simulated temperature data
 			self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
+		elif "M110" in data:
+			# reset current line
+			self.currentLine = int(re.search('N([0-9]+)', data).group(1))
+			self.readList.append("ok\n")
+		elif self.currentLine == 100:
+			# simulate a resend at line 100 of the last 5 lines
+			self.readList.append("rs %d\n" % (self.currentLine - 5))
 		elif len(data.strip()) > 0:
 			self.readList.append("ok\n")
+		self.currentLine += 1
 
 	def readline(self):
 		if self.readList is None:
@@ -180,7 +191,9 @@ class MachineCom(object):
 		self._printStartTime100 = None
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-		self._currentLine = 0
+		self._currentLine = 1
+		self._resendDelta = None
+		self._lastLines = []
 
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
@@ -409,22 +422,34 @@ class MachineCom(object):
 				if line == "" and time.time() > timeout:
 					self._log("Communication timeout during printing, forcing a line")
 					line = "ok"
-				#Even when printing request the temperture every 5 seconds.
+				#Even when printing request the temperature every 5 seconds.
 				if time.time() > tempRequestTimeout:
 					self._commandQueue.put("M105")
 					tempRequestTimeout = time.time() + 5
 				if "ok" in line:
 					timeout = time.time() + 5
-					if not self._commandQueue.empty():
+					if self._resendDelta is not None:
+						self._resendNextCommand()
+					elif not self._commandQueue.empty():
 						self._sendCommand(self._commandQueue.get())
 					else:
 						self._sendNext()
 				elif "resend" in line.lower() or "rs" in line:
+					lineToResend = None
 					try:
-						self._gcodePos = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
+						lineToResend = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
 					except:
 						if "rs" in line:
-							self._gcodePos = int(line.split()[1])
+							lineToResend = int(line.split()[1])
+
+					if lineToResend is not None:
+						self._resendDelta = self._currentLine - lineToResend
+						if self._resendDelta > len(self._lastLines):
+							self._errorValue = "Printer requested line %d but history is only available up to line %d" % (lineToResend, self._currentLine - len(self._lastLines))
+							self._changeState(self.STATE_ERROR)
+							self._logger.warn(self._errorValue)
+						else:
+							self._resendNextCommand()
 		self._log("Connection closed, closing down monitor")
 	
 	def _log(self, message):
@@ -467,7 +492,18 @@ class MachineCom(object):
 	
 	def __del__(self):
 		self.close()
-	
+
+	def _resendNextCommand(self):
+		self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
+		cmd = self._lastLines[-self._resendDelta]
+		lineNumber = self._currentLine - self._resendDelta
+
+		self._doSendWithChecksum(cmd, lineNumber)
+
+		self._resendDelta -= 1
+		if self._resendDelta < 0:
+			self._resendDelta = None
+
 	def _sendCommand(self, cmd, sendChecksum=False):
 		cmd = cmd.upper()
 		if self._serial is None:
@@ -485,25 +521,67 @@ class MachineCom(object):
 			except:
 				pass
 
-		commandToSend = cmd
 		if "M110" in cmd:
-			pass
+			newLineNumber = None
+			if " N" in cmd:
+				try:
+					newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+				except:
+					pass
+			else:
+				newLineNumber = 0
+
+			if settings().getBoolean(["feature", "resetLineNumbersWithPrefixedN"]) and newLineNumber is not None:
+				# let's rewrite the M110 command to fit repetier syntax
+				self._doSendWithChecksum("M110", newLineNumber)
+				self._addToLastLines(cmd)
+				self._currentLine = newLineNumber + 1
+			else:
+				self._doSend(cmd, sendChecksum)
+				if newLineNumber is not None:
+					self._currentLine = newLineNumber + 1
+
+			# after a reset of the line number we have no way to determine what line exactly the printer now wants
+			self._lastLines = []
+			self._resendDelta = None
 		else:
-			self._currentLine += 1
+			self._doSend(cmd, sendChecksum)
+
+	def _addToLastLines(self, cmd):
+		self._lastLines.append(cmd)
+		if len(self._lastLines) > 50:
+			self._lastLines = self._lastLines[-50:] # only keep the last 50 lines in memory
+		self._logger.debug("Got %d lines of history in memory" % len(self._lastLines))
+
+	def _doSend(self, cmd, sendChecksum=False):
 		if sendChecksum or self._alwaysSendChecksum:
-			lineNumber = self._gcodePos
 			if self._alwaysSendChecksum:
 				lineNumber = self._currentLine
-			checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNumber, cmd)))
-			commandToSend = "N%d%s*%d" % (lineNumber, cmd, checksum)
+			else:
+				lineNumber = self._gcodePos
+			self._doSendWithChecksum(cmd, lineNumber)
+			self._addToLastLines(cmd)
+			self._currentLine += 1
+		else:
+			self._doSendWithoutChecksum(cmd)
 
-		self._log('Send: %s' % (commandToSend))
+	def _doSendWithChecksum(self, cmd, lineNumber=None):
+		self._logger.debug("Sending cmd '%s' with lineNumber %r" % (cmd, lineNumber))
+
+		if lineNumber is None:
+			lineNumber = self._currentLine
+		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNumber, cmd)))
+		commandToSend = "N%d%s*%d" % (lineNumber, cmd, checksum)
+		self._doSendWithoutChecksum(commandToSend)
+
+	def _doSendWithoutChecksum(self, cmd):
+		self._log("Send: %s" % cmd)
 		try:
-			self._serial.write(commandToSend + '\n')
+			self._serial.write(cmd + '\n')
 		except serial.SerialTimeoutException:
 			self._log("Serial timeout while writing to serial port, trying again.")
 			try:
-				self._serial.write(commandToSend + '\n')
+				self._serial.write(cmd + '\n')
 			except:
 				self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 				self._errorValue = getExceptionString()
@@ -512,15 +590,6 @@ class MachineCom(object):
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 			self._errorValue = getExceptionString()
 			self.close(True)
-		finally:
-			if "M110" in cmd:
-				if " N" in cmd:
-					try:
-						self._currentLine = int(re.search("N([0-9]+)", cmd).group(1))
-					except:
-						pass
-				else:
-					self._currentLine = 0
 
 	def _sendNext(self):
 		if self._gcodePos >= len(self._gcodeList):
@@ -561,7 +630,6 @@ class MachineCom(object):
 			return
 		self._gcodeList = gcodeList
 		self._gcodePos = 0
-		self._currentLine = 0
 		self._printStartTime100 = None
 		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)

@@ -40,7 +40,8 @@ default_settings = {
 	"feature": {
 		"gCodeVisualizer": True,
 		"waitForStartOnConnect": False,
-		"alwaysSendChecksum": False
+		"alwaysSendChecksum": False,
+		"resetLineNumbersWithPrefixedN": False
 	},
 	"folder": {
 		"uploads": None,
