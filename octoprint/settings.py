@@ -85,7 +85,12 @@ class Settings(object):
 		self._dirty = False
 
 		self._init_settings_dir(basedir)
-		self.load(configfile)
+
+		if configfile is not None:
+			self._configfile = configfile
+		else:
+			self._configfile = os.path.join(self.settings_dir, "config.yaml")
+		self.load()
 
 	def _init_settings_dir(self, basedir):
 		if basedir is not None:
@@ -101,14 +106,9 @@ class Settings(object):
 
 	#~~ load and save
 
-	def load(self, configfile):
-		if configfile is not None:
-			filename = configfile
-		else:
-			filename = os.path.join(self.settings_dir, "config.yaml")
-
-		if os.path.exists(filename) and os.path.isfile(filename):
-			with open(filename, "r") as f:
+	def load(self):
+		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
+			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
 		else:
 			self._config = {}
@@ -117,7 +117,7 @@ class Settings(object):
 		if not self._dirty and not force:
 			return
 
-		with open(os.path.join(self.settings_dir, "config.yaml"), "wb") as configFile:
+		with open(self._configfile, "wb") as configFile:
 			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self.load()
