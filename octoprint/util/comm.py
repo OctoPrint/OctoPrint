@@ -532,7 +532,7 @@ class MachineCom(object):
 		self._doSendWithChecksum(cmd, lineNumber)
 
 		self._resendDelta -= 1
-		if self._resendDelta < 0:
+		if self._resendDelta <= 0:
 			self._resendDelta = None
 
 	def _sendCommand(self, cmd, sendChecksum=False):
