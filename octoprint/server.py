@@ -5,25 +5,31 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 from flask import Flask, request, render_template, jsonify, send_from_directory, abort, url_for
 from werkzeug.utils import secure_filename
 import tornadio2
+from flask.ext.login import LoginManager
 
 import os
 import threading
 import logging, logging.config
 import subprocess
 
+import hashlib
+
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings, valid_boolean_trues
 import octoprint.timelapse as timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
+import octoprint.users as users
 
 SUCCESS = {}
 BASEURL = "/ajax/"
+
 app = Flask("octoprint")
 # Only instantiated by the Server().run() method
 # In order that threads don't start too early when running as a Daemon
 printer = None 
 gcodeManager = None
+userManager = None
 
 #~~ Printer state
 
@@ -442,6 +448,21 @@ def performSystemAction():
 					return app.make_response(("Command failed: %r" % ex, 500, []))
 	return jsonify(SUCCESS)
 
+#~~ Login/user handling
+
+@app.route(BASEURL + "login", methods=["POST"])
+def login():
+	if "user" in request.values.keys() and "pass" in request.values.keys():
+		username = request.values["user"]
+		password = request.values["pass"]
+
+		passwordHash = users.createPasswordHash(password)
+
+		pass
+
+def load_user(userid):
+	pass
+
 #~~ startup code
 class Server():
 	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False):
@@ -469,6 +490,11 @@ class Server():
 
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
+
+		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
+		login_manager = LoginManager()
+		login_manager.session_protection = "strong"
+		login_manager.init_app(app)
 
 		if self._host is None:
 			self._host = settings().get(["server", "host"])
