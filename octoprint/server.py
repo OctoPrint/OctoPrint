@@ -519,17 +519,20 @@ class Server():
 				}
 			},
 			"loggers": {
-				"SERIAL": {
-					"level": "DEBUG",
-					"handlers": ["serialFile"],
-					"propagate": False
-				}
 			},
 			"root": {
 				"level": "INFO",
 				"handlers": ["console", "file"]
 			}
 		}
+
+		if debug:
+			self._config["loggers"]["SERIAL"] = {
+				"level": "DEBUG",
+				"handlers": ["serialFile"],
+				"propagate": False
+			}
+
 		logging.config.dictConfig(self._config)
 
 if __name__ == "__main__":
