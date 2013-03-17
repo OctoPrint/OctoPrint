@@ -1,4 +1,6 @@
 # coding=utf-8
+import logging
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -32,6 +34,8 @@ def getFinishedTimelapses():
 
 class Timelapse(object):
 	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+
 		self._imageNumber = None
 		self._inTimelapse = False
 		self._gcodeFile = None
@@ -56,6 +60,7 @@ class Timelapse(object):
 		pass
 
 	def startTimelapse(self, gcodeFile):
+		self._logger.debug("Starting timelapse for %s" % gcodeFile)
 		self.cleanCaptureDir()
 
 		self._imageNumber = 0
@@ -63,6 +68,7 @@ class Timelapse(object):
 		self._gcodeFile = os.path.basename(gcodeFile)
 
 	def stopTimelapse(self):
+		self._logger.debug("Stopping timelapse")
 		self._renderThread = threading.Thread(target=self._createMovie)
 		self._renderThread.daemon = True
 		self._renderThread.start()
@@ -72,11 +78,13 @@ class Timelapse(object):
 
 	def captureImage(self):
 		if self._captureDir is None:
+			self._logger.warn("Cannot capture image, capture directory is unset")
 			return
 
 		with self._captureMutex:
 			filename = os.path.join(self._captureDir, "tmp_%05d.jpg" % (self._imageNumber))
 			self._imageNumber += 1;
+		self._logger.debug("Capturing image to %s" % filename)
 
 		captureThread = threading.Thread(target=self._captureWorker, kwargs={"filename": filename})
 		captureThread.daemon = True
@@ -84,11 +92,13 @@ class Timelapse(object):
 
 	def _captureWorker(self, filename):
 		urllib.urlretrieve(self._snapshotUrl, filename)
+		self._logger.debug("Image %s captured from %s" % (filename, self._snapshotUrl))
 
 	def _createMovie(self):
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
 		bitrate = settings().get(["webcam", "bitrate"])
 		if ffmpeg is None or bitrate is None:
+			self._logger.warn("Cannot create movie, path to ffmpeg is unset")
 			return
 
 		input = os.path.join(self._captureDir, "tmp_%05d.jpg")
@@ -111,9 +121,11 @@ class Timelapse(object):
 		# finalize command with output file
 		command.append(output)
 		subprocess.call(command)
+		self._logger.debug("Rendering movie to %s" % output)
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):
+			self._logger.warn("Cannot clean capture directory, it is unset")
 			return
 
 		for filename in os.listdir(self._captureDir):
@@ -124,8 +136,10 @@ class Timelapse(object):
 class ZTimelapse(Timelapse):
 	def __init__(self):
 		Timelapse.__init__(self)
+		self._logger.debug("ZTimelapse initialized")
 
 	def onZChange(self, oldZ, newZ):
+		self._logger.debug("Z change detected, capturing image")
 		self.captureImage()
 
 class TimedTimelapse(Timelapse):
@@ -137,6 +151,8 @@ class TimedTimelapse(Timelapse):
 			self._interval = 1 # force minimum interval of 1s
 
 		self._timerThread = None
+
+		self._logger.debug("TimedTimelapse initialized")
 
 	def interval(self):
 		return self._interval
@@ -151,6 +167,7 @@ class TimedTimelapse(Timelapse):
 		self._timerThread.start()
 
 	def timerWorker(self):
+		self._logger.debug("Starting timer for interval based timelapse")
 		while self._inTimelapse:
 			self.captureImage()
 			time.sleep(self._interval)
