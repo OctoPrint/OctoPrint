@@ -89,10 +89,13 @@ class VirtualPrinter():
 			self.readList.append("ok\n")
 		elif self.currentLine == 100:
 			# simulate a resend at line 100 of the last 5 lines
+			self.readList.append("Error: Line Number is not Last Line Number\n")
 			self.readList.append("rs %d\n" % (self.currentLine - 5))
 		elif len(data.strip()) > 0:
 			self.readList.append("ok\n")
-		self.currentLine += 1
+
+		if "*" in data:
+			self.currentLine += 1
 
 	def readline(self):
 		if self.readList is None:
@@ -340,6 +343,8 @@ class MachineCom(object):
 			if line == None:
 				break
 			
+
+			### Error detection
 			#No matter the state, if we see an error, goto the error state and store the error for reference.
 			if line.startswith('Error:'):
 				#Oh YEAH, consistency.
@@ -349,24 +354,41 @@ class MachineCom(object):
 				if re.match('Error:[0-9]\n', line):
 					line = line.rstrip() + self._readline()
 				#Skip the communication errors, as those get corrected.
-				if 'checksum mismatch' in line or 'Line Number is not Last Line Number' in line or 'No Line Number with checksum' in line or 'No Checksum with line number' in line:
+				if 'checksum mismatch' in line \
+						or 'Wrong checksum' in line \
+						or 'Line Number is not Last Line Number' in line \
+						or 'expected line' in line \
+						or 'No Line Number with checksum' in line \
+						or 'No Checksum with line number' in line \
+						or 'Missing checksum' in line:
 					pass
 				elif not self.isError():
 					self._errorValue = line[6:]
 					self._changeState(self.STATE_ERROR)
+
+			### Evaluate temperature status messages
 			if ' T:' in line or line.startswith('T:'):
-				self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
-				if ' B:' in line:
-					self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
-				self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
+				try:
+					self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
+					if ' B:' in line:
+						self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
+
+					self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
+				except ValueError:
+					# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
+					pass
+
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
 				if not 'ok' in line and self._heatupWaitStartTime != 0:
 					t = time.time()
 					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 					self._heatupWaitStartTime = t
+
+			### Forward messages from the firmware
 			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
 				self._callback.mcMessage(line)
 
+			### Baudrate detection
 			if self._state == self.STATE_DETECT_BAUDRATE:
 				if line == '' or time.time() > timeout:
 					if len(self._baudrateDetectList) < 1:
@@ -404,6 +426,8 @@ class MachineCom(object):
 						self._changeState(self.STATE_OPERATIONAL)
 				else:
 					self._testingBaudrate = False
+
+			### Connection attempt
 			elif self._state == self.STATE_CONNECTING:
 				if (line == "" or "wait" in line) and startSeen:
 					self._sendCommand("M105")
@@ -413,11 +437,15 @@ class MachineCom(object):
 					self._changeState(self.STATE_OPERATIONAL)
 				elif time.time() > timeout:
 					self.close()
+
+			### Operational
 			elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 				#Request the temperature on comm timeout (every 5 seconds) when we are not printing.
 				if line == "" or "wait" in line:
 					self._sendCommand("M105")
 					tempRequestTimeout = time.time() + 5
+
+			### Printing
 			elif self._state == self.STATE_PRINTING:
 				if line == "" and time.time() > timeout:
 					self._log("Communication timeout during printing, forcing a line")
@@ -426,6 +454,8 @@ class MachineCom(object):
 				if time.time() > tempRequestTimeout:
 					self._commandQueue.put("M105")
 					tempRequestTimeout = time.time() + 5
+
+				# ok -> send next command
 				if "ok" in line:
 					timeout = time.time() + 5
 					if self._resendDelta is not None:
@@ -434,6 +464,7 @@ class MachineCom(object):
 						self._sendCommand(self._commandQueue.get())
 					else:
 						self._sendNext()
+				# resend -> start resend procedure from requested line
 				elif "resend" in line.lower() or "rs" in line:
 					lineToResend = None
 					try:
