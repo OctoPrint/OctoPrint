@@ -5,14 +5,12 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 from flask import Flask, request, render_template, jsonify, send_from_directory, abort, url_for
 from werkzeug.utils import secure_filename
 import tornadio2
-from flask.ext.login import LoginManager
+from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user, AnonymousUser
 
 import os
 import threading
 import logging, logging.config
 import subprocess
-
-import hashlib
 
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings, valid_boolean_trues
@@ -109,7 +107,8 @@ def index():
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
-    	enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
+		enableAccessControl=userManager is not None
 	)
 
 #~~ Printer control
@@ -119,6 +118,7 @@ def connectionOptions():
 	return jsonify(getConnectionOptions())
 
 @app.route(BASEURL + "control/connect", methods=["POST"])
+@login_required
 def connect():
 	port = None
 	baudrate = None
@@ -456,12 +456,36 @@ def login():
 		username = request.values["user"]
 		password = request.values["pass"]
 
-		passwordHash = users.createPasswordHash(password)
+		if "remember" in request.values.keys() and request.values["remember"]:
+			remember = True
+		else:
+			remember = False
 
-		pass
+		user = userManager.findUser(username)
+		if user is not None:
+			passwordHash = users.UserManager.createPasswordHash(password)
+			if passwordHash == user.passwordHash:
+				login_user(user, remember=remember)
+				return jsonify({"name": user.username, "roles": user.roles})
+		return app.make_response(("User unknown or password incorrect", 401, []))
+	elif "passive" in request.values.keys():
+		user = current_user
+		if user is not None and not user.is_anonymous():
+			return jsonify({"name": user.username, "roles": user.roles})
+		else:
+			return jsonify(SUCCESS)
 
-def load_user(userid):
-	pass
+@app.route(BASEURL + "logout", methods=["POST"])
+@login_required
+def logout():
+	logout_user()
+	return jsonify(SUCCESS)
+
+def load_user(id):
+	if userManager is not None:
+		return userManager.findUser(id)
+	else:
+		return users.DummyUser()
 
 #~~ startup code
 class Server():
@@ -476,6 +500,7 @@ class Server():
 		# Global as I can't work out a way to get it into PrinterStateConnection
 		global printer
 		global gcodeManager
+		global userManager
 
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
@@ -487,13 +512,25 @@ class Server():
 
 		# then initialize logging
 		self._initLogging(self._debug)
+		logger = logging.getLogger(__name__)
 
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
 
+		if settings().getBoolean(["accessControl", "enabled"]):
+			userManagerName = settings().get(["accessControl", "userManager"])
+			try:
+				clazz = util.getClass(userManagerName)
+				userManager = clazz()
+			except AttributeError, e:
+				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
+
 		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
 		login_manager = LoginManager()
 		login_manager.session_protection = "strong"
+		login_manager.user_callback = load_user
+		if userManager is None:
+			login_manager.anonymous_user = users.DummyUser
 		login_manager.init_app(app)
 
 		if self._host is None:
@@ -501,7 +538,7 @@ class Server():
 		if self._port is None:
 			self._port = settings().getInt(["server", "port"])
 
-		logging.getLogger(__name__).info("Listening on http://%s:%d" % (self._host, self._port))
+		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
 		self._router = tornadio2.TornadioRouter(PrinterStateConnection)
@@ -517,7 +554,7 @@ class Server():
 		s = settings(init=True, basedir=basedir, configfile=configfile)
 
 	def _initLogging(self, debug):
-		self._config = {
+		config = {
 			"version": 1,
 			"formatters": {
 				"simple": {
@@ -556,13 +593,13 @@ class Server():
 		}
 
 		if debug:
-			self._config["loggers"]["SERIAL"] = {
+			config["loggers"]["SERIAL"] = {
 				"level": "DEBUG",
 				"handlers": ["serialFile"],
 				"propagate": False
 			}
 
-		logging.config.dictConfig(self._config)
+		logging.config.dictConfig(config)
 
 if __name__ == "__main__":
 	octoprint = Server()

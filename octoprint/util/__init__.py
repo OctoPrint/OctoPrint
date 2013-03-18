@@ -28,3 +28,14 @@ def getFormattedDateTime(d):
 		return None
 
 	return d.strftime("%Y-%m-%d %H:%M")
+
+def getClass(name):
+	"""
+	 Taken from http://stackoverflow.com/a/452981/2028598
+	"""
+	parts = name.split(".")
+	module = ".".join(parts[:-1])
+	m = __import__(module)
+	for comp in parts[1:]:
+		m = getattr(m, comp)
+	return m

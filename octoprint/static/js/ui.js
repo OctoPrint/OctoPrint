@@ -1618,6 +1618,71 @@ $(function() {
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
+        //~~ Alert
+
+        /*
+        function displayAlert(text, timeout, type) {
+            var placeholder = $("#alert_placeholder");
+
+            var alertType = "";
+            if (type == "success" || type == "error" || type == "info") {
+                alertType = " alert-" + type;
+            }
+
+            placeholder.append($("<div id='activeAlert' class='alert " + alertType + " fade in' data-alert='alert'><p>" + text + "</p></div>"));
+            placeholder.fadeIn();
+            $("#activeAlert").delay(timeout).fadeOut("slow", function() {$(this).remove(); $("#alert_placeholder").hide();});
+        }
+        */
+
+        //~~ Login/logout
+
+        $("#login_button").click(function() {
+            var username = $("#login_user").val();
+            var password = $("#login_pass").val();
+            var remember = $("#login_remember").is(":checked");
+
+            $.ajax({
+                url: AJAX_BASEURL + "login",
+                type: "POST",
+                data: {"user": username, "pass": password, "remember": remember},
+                success: function(response) {
+                    $.pnotify({title: "Login successful", text: "You are now logged in", type: "success"});
+                    $("#login_dropdown_text").text("\"" + response.name + "\"");
+                    $("#login_dropdown_loggedout").removeClass("dropdown-menu").addClass("hide");
+                    $("#login_dropdown_loggedin").removeClass("hide").addClass("dropdown-menu");
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $.pnotify({title: "Login failed", text: "User unknown or wrong password", type: "error"});
+                }
+            })
+        });
+        $("#logout_button").click(function(){
+            $.ajax({
+                url: AJAX_BASEURL + "logout",
+                type: "POST",
+                success: function(response) {
+                    $.pnotify({title: "Logout successful", text: "You are now logged out", type: "success"});
+                    $("#login_dropdown_text").text("Login");
+                    $("#login_dropdown_loggedin").removeClass("dropdown-menu").addClass("hide");
+                    $("#login_dropdown_loggedout").removeClass("hide").addClass("dropdown-menu");
+                }
+            })
+        })
+
+        $.ajax({
+            url: AJAX_BASEURL + "login",
+            type: "POST",
+            data: {"passive": true},
+            success: function(response) {
+                if (response["name"]) {
+                    $("#login_dropdown_text").text("\"" + response.name + "\"");
+                    $("#login_dropdown_loggedout").removeClass("dropdown-menu").addClass("hide");
+                    $("#login_dropdown_loggedin").removeClass("hide").addClass("dropdown-menu");
+                }
+            }
+        })
+
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {

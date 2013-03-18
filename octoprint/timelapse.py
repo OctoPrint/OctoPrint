@@ -83,7 +83,7 @@ class Timelapse(object):
 
 		with self._captureMutex:
 			filename = os.path.join(self._captureDir, "tmp_%05d.jpg" % (self._imageNumber))
-			self._imageNumber += 1;
+			self._imageNumber += 1
 		self._logger.debug("Capturing image to %s" % filename)
 
 		captureThread = threading.Thread(target=self._captureWorker, kwargs={"filename": filename})

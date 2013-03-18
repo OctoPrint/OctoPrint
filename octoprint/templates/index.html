@@ -45,6 +45,7 @@
                                 </ul>
                             </li>
                             {% endif %}
+                            {% if enableAccessControl %}
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                     <i class="icon-user"></i> <span id="login_dropdown_text">Login</span>
@@ -63,9 +64,10 @@
                                 <ul id="login_dropdown_loggedin" class="hide">
                                     <li><a href="#">Profile</a></li>
                                     <li class="divider"></li>
-                                    <li><a href="#">Logout</a></li>
+                                    <li><a href="#" id="logout_button">Logout</a></li>
                                 </ul>
                             </li>
+                            {% endif %}
                         </ul>
                     </div>
                 </div>

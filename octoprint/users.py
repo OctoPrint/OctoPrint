@@ -9,8 +9,8 @@ import yaml
 
 from octoprint.settings import settings
 
-class UserManager:
-	valid_roles=["user", "admin"]
+class UserManager(object):
+	valid_roles = ["user", "admin"]
 
 	@staticmethod
 	def createPasswordHash(password):
@@ -37,9 +37,10 @@ class UserManager:
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
-	def __init__(self, userfile=None):
+	def __init__(self):
 		UserManager.__init__(self)
 
+		userfile = settings().get(["accessControl", "userfile"])
 		if userfile is None:
 			userfile = os.path.join(settings().settings_dir, "users.yaml")
 		self._userfile = userfile
@@ -49,7 +50,7 @@ class FilebasedUserManager(UserManager):
 		self._load()
 
 	def _load(self):
-		self._users = {}
+		self._users = {"admin": User("admin", "7557160613d5258f883014a7c3c0428de53040fc152b1791f1cc04a62b428c0c2a9c46ed330cdce9689353ab7a5352ba2b2ceb459b96e9c8ed7d0cb0b2c0c076", True, UserManager.valid_roles)}
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
 			with open(self._userfile, "r") as f:
 				data = yaml.safe_load(f)
@@ -159,3 +160,12 @@ class User(UserMixin):
 
 	def is_active(self):
 		return self.active
+
+##~~ DummyUser object to use when accessControl is disabled
+
+class DummyUser(UserMixin):
+	def __init__(self):
+		self.roles = UserManager.valid_roles
+
+	def get_id(self):
+		return "dummy"
