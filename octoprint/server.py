@@ -32,7 +32,7 @@ userManager = None
 #~~ Printer state
 
 class PrinterStateConnection(tornadio2.SocketConnection):
-	def __init__(self, session, endpoint=None):
+	def __init__(self, printer, gcodeManager, userManager, session, endpoint=None):
 		tornadio2.SocketConnection.__init__(self, session, endpoint)
 
 		self._logger = logging.getLogger(__name__)
@@ -43,6 +43,10 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._logBacklogMutex = threading.Lock()
 		self._messageBacklog = []
 		self._messageBacklogMutex = threading.Lock()
+
+		self._printer = printer
+		self._gcodeManager = gcodeManager
+		self._userManager = userManager
 
 	def on_open(self, info):
 		self._logger.info("New connection from client")
@@ -541,7 +545,7 @@ class Server():
 		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
-		self._router = tornadio2.TornadioRouter(PrinterStateConnection)
+		self._router = tornadio2.TornadioRouter(self._createSocketConnection)
 
 		self._tornado_app = Application(self._router.urls + [
 			(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
@@ -549,6 +553,10 @@ class Server():
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
 		IOLoop.instance().start()
+
+	def _createSocketConnection(self, session, endpoint=None):
+		global printer, gcodeManager, userManager
+		return PrinterStateConnection(printer, gcodeManager, userManager, session, endpoint)
 
 	def _initSettings(self, configfile, basedir):
 		s = settings(init=True, basedir=basedir, configfile=configfile)
