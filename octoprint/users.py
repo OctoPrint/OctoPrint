@@ -150,22 +150,34 @@ class UnknownRole(Exception):
 
 class User(UserMixin):
 	def __init__(self, username, passwordHash, active, roles):
-		self.username = username
-		self.passwordHash = passwordHash
-		self.active = active
-		self.roles = roles
+		self._username = username
+		self._passwordHash = passwordHash
+		self._active = active
+		self._roles = roles
+
+	def check_password(self, passwordHash):
+		return self._passwordHash == passwordHash
 
 	def get_id(self):
-		return self.username
+		return self._username
+
+	def get_name(self):
+		return self._username
 
 	def is_active(self):
-		return self.active
+		return self._active
+
+	def is_user(self):
+		return "user" in self._roles
+
+	def is_admin(self):
+		return "admin" in self._roles
 
 ##~~ DummyUser object to use when accessControl is disabled
 
-class DummyUser(UserMixin):
+class DummyUser(User):
 	def __init__(self):
-		self.roles = UserManager.valid_roles
+		User.__init__(self, "dummy", "", True, UserManager.valid_roles)
 
-	def get_id(self):
-		return "dummy"
+	def check_password(self, passwordHash):
+		return True

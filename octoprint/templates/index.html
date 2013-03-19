@@ -33,9 +33,13 @@
                     <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
                     <div class="nav-collapse">
                         <ul class="nav pull-right">
-                            <li><a id="navbar_show_settings" class="pull-right" href="#settings_dialog"><i class="icon-wrench"></i> Settings</a></li>
+                            <li class="hide" data-bind="css: {hide: !loginState.isAdmin()}">
+                                <a id="navbar_show_settings" class="pull-right" href="#settings_dialog">
+                                    <i class="icon-wrench"></i> Settings
+                                </a>
+                            </li>
                             {% if enableSystemMenu %}
-                            <li class="dropdown">
+                            <li class="dropdown hide" data-bind="css: {hide: !loginState.isAdmin()}">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                     <i class="icon-off"></i> System
                                     <b class="caret"></b>
@@ -48,10 +52,10 @@
                             {% if enableAccessControl %}
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="icon-user"></i> <span id="login_dropdown_text">Login</span>
+                                    <i class="icon-user"></i> <span data-bind="text: loginState.userMenuText">Login</span>
                                     <b class="caret"></b>
                                 </a>
-                                <div id="login_dropdown_loggedout" class="dropdown-menu" style="padding: 15px">
+                                <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
                                     <label for="login_user">Username</label>
                                     <input type="text" id="login_user" placeholder="Username">
                                     <label for="login_pass">Password</label>
@@ -59,12 +63,10 @@
                                     <label class="checkbox">
                                         <input type="checkbox" id="login_remember"> Remember me
                                     </label>
-                                    <button class="btn btn-block btn-primary" id="login_button">Login</button>
+                                    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">Login</button>
                                 </div>
-                                <ul id="login_dropdown_loggedin" class="hide">
-                                    <li><a href="#">Profile</a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#" id="logout_button">Logout</a></li>
+                                <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
+                                    <li><a href="#" id="logout_button" data-bind="click: loginState.logout">Logout</a></li>
                                 </ul>
                             </li>
                             {% endif %}
@@ -82,14 +84,14 @@
                         </div>
                         <div class="accordion-body collapse in" id="connection">
                             <div class="accordion-inner">
-                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed">Serial Port</label>
-                                <select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed"></select>
-                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed">Baudrate</label>
-                                <select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed"></select>
+                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser">Serial Port</label>
+                                <select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"></select>
+                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser">Baudrate</label>
+                                <select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"></select>
                                 <label class="checkbox">
-                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed"> Save connection settings
+                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"> Save connection settings
                                 </label>
-                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText()">Connect</button>
+                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser">Connect</button>
                             </div>
                         </div>
                     </div>
@@ -113,9 +115,9 @@
                                 </div>
 
                                 <div class="row-fluid print-control">
-                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
-                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isPrinting() || isPaused(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>Pause</span></button>
-                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isPrinting() || isPaused()"><i class="icon-stop"></i> Cancel</button>
+                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
+                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>Pause</span></button>
+                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()"><i class="icon-stop"></i> Cancel</button>
                                 </div>
                             </div>
                         </div>
@@ -209,12 +211,12 @@
 
                                     <label for="temp_newTemp">New Target</label>
                                     <div class="input-append">
-                                        <input type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}" class="tempInput">
+                                        <input type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
                                         <span class="add-on">&deg;C</span>
                                     </div>
                                     <div class="btn-group">
-                                        <button type="submit" class="btn" id="temp_newTemp_set">Set</button>
-                                        <button class="btn dropdown-toggle" data-toggle="dropdown">
+                                        <button type="submit" class="btn" id="temp_newTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
+                                        <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu">
@@ -239,12 +241,12 @@
 
                                     <label for="temp_newBedTemp">New Target</label>
                                     <div class="input-append">
-                                        <input type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}" class="tempInput">
+                                        <input type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
                                         <span class="add-on">&deg;C</span>
                                     </div>
                                     <div class="btn-group">
-                                        <button type="submit" class="btn" id="temp_newBedTemp_set">Set</button>
-                                        <button class="btn dropdown-toggle" data-toggle="dropdown">
+                                        <button type="submit" class="btn" id="temp_newBedTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
+                                        <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu">
@@ -274,37 +276,37 @@
                                 <div class="jog-panel">
                                     <h1>X/Y</h1>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
+                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand('XY') }"><i class="icon-home"></i></button>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
+                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
+                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand('XY') }"><i class="icon-home"></i></button>
+                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
+                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
                                     </div>
                                 </div>
                                 <!-- Z jogging control panel -->
                                 <div class="jog-panel">
                                     <h1>Z</h1>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
+                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand('Z') }"><i class="icon-home"></i></button>
+                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand('Z') }"><i class="icon-home"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
+                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
                                     </div>
                                 </div>
                                 <!-- Jog distance -->
                                 <div class="distance">
                                     <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
-                                        <button type="button" class="btn" data-distance="0.1">0.1</button>
-                                        <button type="button" class="btn" data-distance="1">1</button>
-                                        <button type="button" class="btn active" data-distance="10">10</button>
-                                        <button type="button" class="btn" data-distance="100">100</button>
+                                        <button type="button" class="btn" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
+                                        <button type="button" class="btn" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
+                                        <button type="button" class="btn active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
+                                        <button type="button" class="btn" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
                                     </div>
                                 </div>
                             </div>
@@ -313,20 +315,20 @@
                                 <h1>E</h1>
                                 <div>
                                     <div class="input-append control-box">
-                                        <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting(), attr: {placeholder: 5}">
+                                        <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: 5}">
                                         <span class="add-on">mm</span>
                                     </div>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendRetractCommand() }">Retract</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">Retract</button>
                                 </div>
                             </div>
                             <!-- General control panel -->
                             <div class="jog-panel">
                                 <h1>General</h1>
                                 <div>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
                             </div>
 
@@ -341,7 +343,7 @@
                             </script>
                             <script type="text/html" id="customControls_commandTemplate">
                                 <form class="form-inline">
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational(), click: function() { $root.sendCustomCommand($data) }"></button>
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
                                 </form>
                             </script>
                             <script type="text/html" id="customControls_parametricCommandTemplate">
@@ -350,7 +352,7 @@
                                         <label data-bind="text: name"></label>
                                         <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
                                     <!-- /ko -->
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational(), click: function() { $root.sendCustomCommand($data) }"></button>
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
                                 </form>
                             </script>
                             <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
@@ -360,30 +362,30 @@
                             <div class="form-horizontal" style="margin-bottom: 20px">
                                 <label for="speed_outerWall">Outer Wall</label>
                                 <div class="input-append">
-                                    <input type="text" id="speed_outerWall" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: outerWall}">
+                                    <input type="text" id="speed_outerWall" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: outerWall}">
                                     <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_outerWall_set" data-bind="enable: isOperational()">Set</button>
+                                    <button type="submit" class="btn" id="speed_outerWall_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
                                 </div>
 
                                 <label for="speed_innerWall">Inner Wall</label>
                                 <div class="input-append">
-                                    <input type="text" id="speed_innerWall" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: innerWall}">
+                                    <input type="text" id="speed_innerWall" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: innerWall}">
                                     <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_innerWall_set" data-bind="enable: isOperational()">Set</button>
+                                    <button type="submit" class="btn" id="speed_innerWall_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
                                 </div>
 
                                 <label for="speed_fill">Fill</label>
                                 <div class="input-append">
-                                    <input type="text" id="speed_fill" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: fill}">
+                                    <input type="text" id="speed_fill" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: fill}">
                                     <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_fill_set" data-bind="enable: isOperational()">Set</button>
+                                    <button type="submit" class="btn" id="speed_fill_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
                                 </div>
 
                                 <label for="speed_support">Support</label>
                                 <div class="input-append">
-                                    <input type="text" id="speed_support" class="input-mini" data-bind="enable: isOperational(), attr: {placeholder: support}">
+                                    <input type="text" id="speed_support" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: support}">
                                     <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_support_set" data-bind="enable: isOperational()">Set</button>
+                                    <button type="submit" class="btn" id="speed_support_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
                                 </div>
                             </div>
                         </div>
@@ -482,7 +484,7 @@
 
                             <div class="input-append">
                                 <input type="text" id="terminal-command">
-                                <button class="btn" type="button" id="terminal-send">Send</button>
+                                <button class="btn" type="button" id="terminal-send" data-bind="enable: isOperational() && loginState.isUser()">Send</button>
                             </div>
                         </div>
                         {% if enableTimelapse %}
@@ -490,7 +492,7 @@
                             <h1>Timelapse Configuration</h1>
 
                             <label for="webcam_timelapse_mode">Timelapse Mode</label>
-                            <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting()">
+                            <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
                                 <option value="off">Off</option>
                                 <option value="zchange">On Z Change</option>
                                 <option value="timed">Timed</option>
@@ -505,7 +507,7 @@
                             </div>
 
                             <div>
-                                <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting()">Save Settings</button>
+                                <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting() && loginState.isUser()">Save Settings</button>
                             </div>
 
                             <h1>Finished Timelapses</h1>

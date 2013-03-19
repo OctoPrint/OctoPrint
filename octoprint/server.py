@@ -138,11 +138,13 @@ def connect():
 	return jsonify(state="Connecting")
 
 @app.route(BASEURL + "control/disconnect", methods=["POST"])
+@login_required
 def disconnect():
 	printer.disconnect()
 	return jsonify(state="Offline")
 
 @app.route(BASEURL + "control/command", methods=["POST"])
+@login_required
 def printerCommand():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
@@ -166,21 +168,25 @@ def printerCommand():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/print", methods=["POST"])
+@login_required
 def printGcode():
 	printer.startPrint()
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/pause", methods=["POST"])
+@login_required
 def pausePrint():
 	printer.togglePausePrint()
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/cancel", methods=["POST"])
+@login_required
 def cancelPrint():
 	printer.cancelPrint()
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/temperature", methods=["POST"])
+@login_required
 def setTargetTemperature():
 	if not printer.isOperational():
 		return jsonify(SUCCESS)
@@ -198,6 +204,7 @@ def setTargetTemperature():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/jog", methods=["POST"])
+@login_required
 def jog():
 	if not printer.isOperational() or printer.isPrinting():
 		# do not jog when a print job is running or we don't have a connection
@@ -234,6 +241,7 @@ def getSpeedValues():
 	return jsonify(feedrate=printer.feedrateState())
 
 @app.route(BASEURL + "control/speed", methods=["POST"])
+@login_required
 def speed():
 	if not printer.isOperational():
 		return jsonify(SUCCESS)
@@ -261,6 +269,7 @@ def readGcodeFile(filename):
 	return send_from_directory(settings().getBaseFolder("uploads"), filename, as_attachment=True)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
+@login_required
 def uploadGcodeFile():
 	filename = None
 	if "gcode_file" in request.files.keys():
@@ -269,6 +278,7 @@ def uploadGcodeFile():
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
+@login_required
 def loadGcodeFile():
 	if "filename" in request.values.keys():
 		printAfterLoading = False
@@ -280,6 +290,7 @@ def loadGcodeFile():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
+@login_required
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
@@ -318,6 +329,7 @@ def downloadTimelapse(filename):
 		return send_from_directory(settings().getBaseFolder("timelapse"), filename, as_attachment=True)
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["DELETE"])
+@login_required
 def deleteTimelapse(filename):
 	if util.isAllowedFile(filename, set(["mpg"])):
 		secure = os.path.join(settings().getBaseFolder("timelapse"), secure_filename(filename))
@@ -326,6 +338,7 @@ def deleteTimelapse(filename):
 	return getTimelapseData()
 
 @app.route(BASEURL + "timelapse/config", methods=["POST"])
+@login_required
 def setTimelapseConfig():
 	if request.values.has_key("type"):
 		type = request.values["type"]
@@ -389,6 +402,7 @@ def getSettings():
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
+@login_required
 def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
@@ -434,6 +448,7 @@ def setSettings():
 #~~ system control
 
 @app.route(BASEURL + "system", methods=["POST"])
+@login_required
 def performSystemAction():
 	logger = logging.getLogger(__name__)
 	if request.values.has_key("action"):
@@ -467,15 +482,14 @@ def login():
 
 		user = userManager.findUser(username)
 		if user is not None:
-			passwordHash = users.UserManager.createPasswordHash(password)
-			if passwordHash == user.passwordHash:
+			if user.check_password(users.UserManager.createPasswordHash(password)):
 				login_user(user, remember=remember)
-				return jsonify({"name": user.username, "roles": user.roles})
+				return jsonify({"name": user.get_name(), "user": user.is_user(), "admin": user.is_admin()})
 		return app.make_response(("User unknown or password incorrect", 401, []))
 	elif "passive" in request.values.keys():
 		user = current_user
 		if user is not None and not user.is_anonymous():
-			return jsonify({"name": user.username, "roles": user.roles})
+			return jsonify({"name": user.get_name(), "user": user.is_user(), "admin": user.is_admin()})
 		else:
 			return jsonify(SUCCESS)
 
@@ -488,8 +502,7 @@ def logout():
 def load_user(id):
 	if userManager is not None:
 		return userManager.findUser(id)
-	else:
-		return users.DummyUser()
+	return None
 
 #~~ startup code
 class Server():
