@@ -127,7 +127,7 @@
                                         <tr data-bind="css: $root.getSuccessClass($data), popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data), html: true }">
                                             <td class="gcode_files_name" data-bind="text: name"></td>
                                             <td class="gcode_files_size" data-bind="text: size"></td>
-                                            <td class="gcode_files_action"><a href="#" class="icon-trash" data-bind="click: function() { $root.removeFile($data.name); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" data-bind="click: function() { $root.loadFile($data.name); }"></a></td>
+                                            <td class="gcode_files_action"><a href="#" class="icon-trash" title="Remove" data-bind="click: function() { $root.removeFile($data.name); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Open" data-bind="click: function() { $root.loadFile($data.name); }"></a></td>
                                         </tr>
                                     </tbody>
                                 </table>
