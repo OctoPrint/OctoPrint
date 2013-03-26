@@ -266,6 +266,14 @@ def loadGcodeFile():
 			printer.loadGcode(filename)
 	return jsonify(SUCCESS)
 
+@app.route(BASEURL + "gcodefiles/loadandprint", methods=["POST"])
+def loadAndPrintGcodeFile():
+	if "filename" in request.values.keys():
+		filename = gcodeManager.getAbsolutePath(request.values["filename"])
+		if filename is not None:
+			printer.loadAndPrintGcode(filename)
+	return jsonify(SUCCESS)
+
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
 def deleteGcodeFile():
 	if "filename" in request.values.keys():

@@ -719,6 +719,15 @@ function GcodeFilesViewModel() {
         })
     }
 
+    self.loadAndPrintFile = function(filename) {
+        $.ajax({
+            url: AJAX_BASEURL + "gcodefiles/loadandprint",
+            type: "POST",
+            dataType: "json",
+            data: {filename: filename}
+        })
+    }
+
     self.removeFile = function(filename) {
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/delete",

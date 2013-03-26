@@ -172,6 +172,22 @@ class Printer():
 		self._gcodeLoader.start()
 
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+	
+	def loadAndPrintGcode(self, file):
+		"""
+		 Loads the gcode from the given file as the new print job and starts the print.
+		 Aborts if the printer is currently printing or another gcode file is currently being loaded, or if loading the gcode file fails.
+		"""
+		if (self._comm is not None and self._comm.isPrinting()) or (self._gcodeLoader is not None):
+			return
+
+		self._setJobData(None, None)
+
+		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, self._onGcodeLoadedToPrint)
+		self._gcodeLoader.start()
+
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+	
 
 	def startPrint(self):
 		"""
@@ -415,6 +431,17 @@ class Printer():
 
 		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+	def _onGcodeLoadedToPrint(self, filename, gcodeList):
+		self._setJobData(filename, gcodeList)
+		self._setCurrentZ(None)
+		self._setProgressData(None, None, None)
+		self._gcodeLoader = None
+
+		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+		
+		self.startPrint();
 
 	#~~ state reports
 
