@@ -429,7 +429,9 @@ class MachineCom(object):
 
 			### Connection attempt
 			elif self._state == self.STATE_CONNECTING:
-				if (line == "" or "wait" in line) and startSeen:
+				#if (line == "" or "wait" in line) and startSeen:
+				#This modification allows more reliable initial connection.
+				if ("wait" in line) and startSeen:
 					self._sendCommand("M105")
 				elif "start" in line:
 					startSeen = True
