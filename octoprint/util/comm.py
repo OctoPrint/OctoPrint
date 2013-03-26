@@ -197,7 +197,7 @@ class MachineCom(object):
 		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = []
-
+		self._sending = False
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
@@ -429,7 +429,9 @@ class MachineCom(object):
 
 			### Connection attempt
 			elif self._state == self.STATE_CONNECTING:
-				if (line == "" or "wait" in line) and startSeen:
+				#if (line == "" or "wait" in line) and startSeen:
+				#This modification allows more reliable initial connection.
+				if ("wait" in line) and startSeen:
 					self._sendCommand("M105")
 				elif "start" in line:
 					startSeen = True
@@ -537,6 +539,10 @@ class MachineCom(object):
 
 	def _sendCommand(self, cmd, sendChecksum=False):
 		cmd = cmd.upper()
+		#Wait for current send to finish. 
+		while self._sending:
+			pass
+		self._sending = True
 		if self._serial is None:
 			return
 		if 'M109' in cmd or 'M190' in cmd:
@@ -621,6 +627,8 @@ class MachineCom(object):
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 			self._errorValue = getExceptionString()
 			self.close(True)
+		#clear sending flag
+		self._sending = False
 
 	def _sendNext(self):
 		if self._gcodePos >= len(self._gcodeList):
