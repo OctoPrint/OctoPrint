@@ -360,6 +360,7 @@ def getSettings():
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
+			"waitForWaitAfterStart": s.getBoolean(["feature", "waitForWaitAfterStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"resetLineNumbersWithPrefixedN": s.getBoolean(["feature", "resetLineNumbersWithPrefixedN"])
 		},
@@ -403,6 +404,7 @@ def setSettings():
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
+			if "waitForWait" in data["feature"].keys(): s.setBoolean(["feature", "waitForWaitOnConnect"], data["feature"]["waitForWait"]),
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "resetLineNumbersWithPrefixedN" in data["feature"].keys(): s.setBoolean(["feature", "resetLineNumbersWithPrefixedN"], data["feature"]["resetLineNumbersWithPrefixedN"])
 

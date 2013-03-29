@@ -66,6 +66,9 @@ class VirtualPrinter():
 
 		self.currentLine = 0
 
+		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
+		waitThread.start()
+
 	def write(self, data):
 		if self.readList is None:
 			return
@@ -124,6 +127,10 @@ class VirtualPrinter():
 	
 	def close(self):
 		self.readList = None
+
+	def _sendWaitAfterTimeout(self, timeout=5):
+		time.sleep(timeout)
+		self.readList.append("wait")
 
 class MachineComPrintCallback(object):
 	def mcLog(self, message):
@@ -197,7 +204,9 @@ class MachineCom(object):
 		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = []
-		self._sending = False
+
+		self._sendingLock = threading.Lock()
+
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
@@ -338,6 +347,7 @@ class MachineCom(object):
 		timeout = time.time() + 5
 		tempRequestTimeout = timeout
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+		waitSeen = not settings().getBoolean(["feature", "waitForWaitOnConnect"])
 		while True:
 			line = self._readline()
 			if line == None:
@@ -429,13 +439,13 @@ class MachineCom(object):
 
 			### Connection attempt
 			elif self._state == self.STATE_CONNECTING:
-				#if (line == "" or "wait" in line) and startSeen:
-				#This modification allows more reliable initial connection.
-				if ("wait" in line) and startSeen:
+				if line == "" and startSeen and waitSeen:
 					self._sendCommand("M105")
 				elif "start" in line:
 					startSeen = True
-				elif "ok" in line and startSeen:
+				elif "wait" in line:
+					waitSeen = True
+				elif "ok" in line and startSeen and waitSeen:
 					self._changeState(self.STATE_OPERATIONAL)
 				elif time.time() > timeout:
 					self.close()
@@ -444,8 +454,16 @@ class MachineCom(object):
 			elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 				#Request the temperature on comm timeout (every 5 seconds) when we are not printing.
 				if line == "" or "wait" in line:
-					self._sendCommand("M105")
+					if self._resendDelta is not None:
+						self._resendNextCommand()
+					elif not self._commandQueue.empty():
+						self._sendCommand(self._commandQueue.get())
+					else:
+						self._sendCommand("M105")
 					tempRequestTimeout = time.time() + 5
+				# resend -> start resend procedure from requested line
+				elif "resend" in line.lower() or "rs" in line:
+					self._handleResendRequest(line)
 
 			### Printing
 			elif self._state == self.STATE_PRINTING:
@@ -468,23 +486,26 @@ class MachineCom(object):
 						self._sendNext()
 				# resend -> start resend procedure from requested line
 				elif "resend" in line.lower() or "rs" in line:
-					lineToResend = None
-					try:
-						lineToResend = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
-					except:
-						if "rs" in line:
-							lineToResend = int(line.split()[1])
-
-					if lineToResend is not None:
-						self._resendDelta = self._currentLine - lineToResend
-						if self._resendDelta > len(self._lastLines):
-							self._errorValue = "Printer requested line %d but history is only available up to line %d" % (lineToResend, self._currentLine - len(self._lastLines))
-							self._changeState(self.STATE_ERROR)
-							self._logger.warn(self._errorValue)
-						else:
-							self._resendNextCommand()
+					self._handleResendRequest(line)
 		self._log("Connection closed, closing down monitor")
-	
+
+	def _handleResendRequest(self, line):
+		lineToResend = None
+		try:
+			lineToResend = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
+		except:
+			if "rs" in line:
+				lineToResend = int(line.split()[1])
+
+		if lineToResend is not None:
+			self._resendDelta = self._currentLine - lineToResend
+			if self._resendDelta > len(self._lastLines):
+				self._errorValue = "Printer requested line %d but history is only available up to line %d" % (lineToResend, self._currentLine - len(self._lastLines))
+				self._changeState(self.STATE_ERROR)
+				self._logger.warn(self._errorValue)
+			else:
+				self._resendNextCommand()
+
 	def _log(self, message):
 		self._callback.mcLog(message)
 		self._serialLogger.debug(message)
@@ -527,62 +548,63 @@ class MachineCom(object):
 		self.close()
 
 	def _resendNextCommand(self):
-		self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
-		cmd = self._lastLines[-self._resendDelta]
-		lineNumber = self._currentLine - self._resendDelta
+		# Make sure we are only handling one sending job at a time
+		with self._sendingLock:
+			self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
+			cmd = self._lastLines[-self._resendDelta]
+			lineNumber = self._currentLine - self._resendDelta
 
-		self._doSendWithChecksum(cmd, lineNumber)
+			self._doSendWithChecksum(cmd, lineNumber)
 
-		self._resendDelta -= 1
-		if self._resendDelta <= 0:
-			self._resendDelta = None
+			self._resendDelta -= 1
+			if self._resendDelta <= 0:
+				self._resendDelta = None
 
 	def _sendCommand(self, cmd, sendChecksum=False):
-		cmd = cmd.upper()
-		#Wait for current send to finish. 
-		while self._sending:
-			pass
-		self._sending = True
-		if self._serial is None:
-			return
-		if 'M109' in cmd or 'M190' in cmd:
-			self._heatupWaitStartTime = time.time()
-		if 'M104' in cmd or 'M109' in cmd:
-			try:
-				self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-			except:
-				pass
-		if 'M140' in cmd or 'M190' in cmd:
-			try:
-				self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-			except:
-				pass
+		# Make sure we are only handling one sending job at a time
+		with self._sendingLock:
+			cmd = cmd.upper()
 
-		if "M110" in cmd:
-			newLineNumber = None
-			if " N" in cmd:
+			if self._serial is None:
+				return
+			if 'M109' in cmd or 'M190' in cmd:
+				self._heatupWaitStartTime = time.time()
+			if 'M104' in cmd or 'M109' in cmd:
 				try:
-					newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+					self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 				except:
 					pass
-			else:
-				newLineNumber = 0
+			if 'M140' in cmd or 'M190' in cmd:
+				try:
+					self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+				except:
+					pass
 
-			if settings().getBoolean(["feature", "resetLineNumbersWithPrefixedN"]) and newLineNumber is not None:
-				# let's rewrite the M110 command to fit repetier syntax
-				self._doSendWithChecksum("M110", newLineNumber)
-				self._addToLastLines(cmd)
-				self._currentLine = newLineNumber + 1
-			else:
-				self._doSend(cmd, sendChecksum)
+			if "M110" in cmd:
+				newLineNumber = None
+				if " N" in cmd:
+					try:
+						newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+					except:
+						pass
+				else:
+					newLineNumber = 0
+
+				if settings().getBoolean(["feature", "resetLineNumbersWithPrefixedN"]) and newLineNumber is not None:
+					# let's rewrite the M110 command to fit repetier syntax
+					self._addToLastLines(cmd)
+					self._doSendWithChecksum("M110", newLineNumber)
+				else:
+					self._doSend(cmd, sendChecksum)
+
 				if newLineNumber is not None:
 					self._currentLine = newLineNumber + 1
 
-			# after a reset of the line number we have no way to determine what line exactly the printer now wants
-			self._lastLines = []
-			self._resendDelta = None
-		else:
-			self._doSend(cmd, sendChecksum)
+				# after a reset of the line number we have no way to determine what line exactly the printer now wants
+				self._lastLines = []
+				self._resendDelta = None
+			else:
+				self._doSend(cmd, sendChecksum)
 
 	def _addToLastLines(self, cmd):
 		self._lastLines.append(cmd)
@@ -596,17 +618,15 @@ class MachineCom(object):
 				lineNumber = self._currentLine
 			else:
 				lineNumber = self._gcodePos
-			self._doSendWithChecksum(cmd, lineNumber)
 			self._addToLastLines(cmd)
 			self._currentLine += 1
+			self._doSendWithChecksum(cmd, lineNumber)
 		else:
 			self._doSendWithoutChecksum(cmd)
 
-	def _doSendWithChecksum(self, cmd, lineNumber=None):
+	def _doSendWithChecksum(self, cmd, lineNumber):
 		self._logger.debug("Sending cmd '%s' with lineNumber %r" % (cmd, lineNumber))
 
-		if lineNumber is None:
-			lineNumber = self._currentLine
 		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNumber, cmd)))
 		commandToSend = "N%d%s*%d" % (lineNumber, cmd, checksum)
 		self._doSendWithoutChecksum(commandToSend)
@@ -627,8 +647,6 @@ class MachineCom(object):
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 			self._errorValue = getExceptionString()
 			self.close(True)
-		#clear sending flag
-		self._sending = False
 
 	def _sendNext(self):
 		if self._gcodePos >= len(self._gcodeList):

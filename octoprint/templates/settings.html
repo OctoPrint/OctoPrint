@@ -102,21 +102,28 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> Wait for start on connect
+                                    <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> Wait for <code>start</code> on connect
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> Send a checksum with <strong>every</strong> command
+                                    <input type="checkbox" data-bind="checked: feature_waitForWait" id="settings-featureWaitForWait"> Wait for <code>wait</code> on connect <span class="label">Repetier</span>
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_resetLineNumbersWithPrefixedN" id="settings-resetLineNumbersWithPrefixedN"> Send M110 commands with target line number as N-prefix
+                                    <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> Send a checksum with <strong>every</strong> command  <span class="label">Repetier</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: feature_resetLineNumbersWithPrefixedN" id="settings-resetLineNumbersWithPrefixedN"> Send M110 commands with target line number as N-prefix  <span class="label">Repetier</span>
                                 </label>
                             </div>
                         </div>
