@@ -65,6 +65,10 @@ body {
     @base: #7728FF;
     .navbar-inner-color(@base);
   }
+
+  .brand img {
+    vertical-align: bottom;
+  }
 }
 
 /** OctoPrint application tabs */
@@ -115,6 +119,11 @@ body {
     a.accordion-toggle {
       display: inline-block;
     }
+
+    [class^="icon-"],
+    [class*=" icon-"] {
+      color: #000;
+    }
   }
 }
 
@@ -146,6 +155,16 @@ table {
     &.gcode_files_action {
       text-align: center;
       width: 70px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
     }
 
     // timelapse files

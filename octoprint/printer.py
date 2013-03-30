@@ -158,7 +158,7 @@ class Printer():
 
 		self._comm.setFeedrateModifier(self._feedrateModifierMapping[structure], percentage / 100.0)
 
-	def loadGcode(self, file):
+	def loadGcode(self, file, printAfterLoading=False):
 		"""
 		 Loads the gcode from the given file as the new print job.
 		 Aborts if the printer is currently printing or another gcode file is currently being loaded.
@@ -168,27 +168,15 @@ class Printer():
 
 		self._setJobData(None, None)
 
-		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, self._onGcodeLoaded)
+		onGcodeLoadedCallback = self._onGcodeLoaded
+		if printAfterLoading:
+			onGcodeLoadedCallback = self._onGcodeLoadedToPrint
+
+		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, onGcodeLoadedCallback)
 		self._gcodeLoader.start()
 
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 	
-	def loadAndPrintGcode(self, file):
-		"""
-		 Loads the gcode from the given file as the new print job and starts the print.
-		 Aborts if the printer is currently printing or another gcode file is currently being loaded, or if loading the gcode file fails.
-		"""
-		if (self._comm is not None and self._comm.isPrinting()) or (self._gcodeLoader is not None):
-			return
-
-		self._setJobData(None, None)
-
-		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, self._onGcodeLoadedToPrint)
-		self._gcodeLoader.start()
-
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-	
-
 	def startPrint(self):
 		"""
 		 Starts the currently loaded print job.
@@ -433,15 +421,8 @@ class Printer():
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def _onGcodeLoadedToPrint(self, filename, gcodeList):
-		self._setJobData(filename, gcodeList)
-		self._setCurrentZ(None)
-		self._setProgressData(None, None, None)
-		self._gcodeLoader = None
-
-		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-		
-		self.startPrint();
+		self._onGcodeLoaded(filename, gcodeList)
+		self.startPrint()
 
 	#~~ state reports
 
