@@ -81,7 +81,7 @@ Credits
 -------
 
 OctoPrint started out as a fork of Cura (https://github.com/daid/Cura) for adding a web interface to its
-printing functionality and was originally named Printer WebUI. It still uses Cura's communication code for talking to
+printing functionality and was originally named "Printer WebUI". It still uses Cura's communication code for talking to
 the printer, but has been reorganized to only include those parts of Cura necessary for its targeted use case.
 
 It also uses the following libraries and frameworks for backend and frontend:
@@ -93,6 +93,7 @@ It also uses the following libraries and frameworks for backend and frontend:
 * Socket.io: http://socket.io/
 * jQuery: http://jquery.com/
 * Bootstrap: http://twitter.github.com/bootstrap/
+* Font Awesome: http://fortawesome.github.com/Font-Awesome/
 * Knockout.js: http://knockoutjs.com/
 * Underscore.js: http://underscorejs.org/
 * Flot: http://www.flotcharts.org/
