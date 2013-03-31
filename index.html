@@ -1,0 +1,284 @@
+---
+layout: default
+title : OctoPrint.org
+---
+<div class="jumbotron" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html"
+     xmlns="http://www.w3.org/1999/html">
+    <div class="container">
+        <div class="row">
+            <div class="span8">
+                <div class="hero-content">
+                    <h1>OctoPrint</h1>
+                    <p>Print anything from anywhere.</p>
+                    <div class="shameless-self-promotion">
+                        Created & Maintained by Gina Häußge
+                    </div>
+                </div>
+            </div>
+            <div class="span4">
+                <img src="{{ BASE_PATH }}/assets/img/logo.png">
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="social-buttons">
+    <div class="container">
+        <span class="watch">
+          <iframe src="http://ghbtns.com/github-btn.html?user=foosel&repo=OctoPrint&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="85" height="20"></iframe>
+        </span>
+        <span class="fork">
+          <iframe src="http://ghbtns.com/github-btn.html?user=foosel&repo=OctoPrint&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="95" height="20"></iframe>
+        </span>
+        <span class="flattr">
+          <a class="FlattrButton" style="display:none;" rev="flattr;button:compact;" href="http://github.com/foosel/OctoPrint"></a>
+          <noscript><a href="http://flattr.com/thing/1179085/OctoPrint" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0" /></a></noscript>
+        </span>
+        <span class="gplus">
+          <div class="g-plusone" data-size="medium" data-annotation="bubble" data-width="300" data-href="https://plus.google.com/110130855001142142895"></div>
+        </span>
+    </div>
+</div>
+
+<div class="container">
+    <section id="features" class="clearfix">
+        <div class="row">
+            <div class="span12" style="text-align: center">
+                <h3>The responsive web interface for your 3D printer</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span4">
+                <h4><i class="icon-cogs"></i> Control your printer</h4>
+                Start, pause and stop print jobs, remotely move the print head along all axes, extrude, retract
+                or just define your own custom controls.
+            </div>
+            <div class="span4">
+                <h4><i class="icon-eye-open"></i> Monitor your prints</h4>
+                Get constant feedback regarding the current progress of your print job, your printer's extrusion
+                and bed temperature and even a live webcam feed.
+            </div>
+            <div class="span4">
+                <h4><i class="icon-facetime-video"></i> Create timelapse movies</h4>
+                Automatically create a timelapse of your prints -- triggered by layer change or time -- and have
+                it rendered into a finished movie.
+            </div>
+        </div>
+        <div class="row">
+            <div class="span4">
+                <h4><i class="icon-signal"></i> Make your printer wireless</h4>
+                Connect you printer to a small embedded and WiFi enabled device such as the popular Raspberry Pi, install
+                OctoPrint on it and you have an instant wireless printer.
+            </div>
+            <div class="span4">
+                <h4><i class="icon-list"></i> Manage your gcode</h4>
+                With OctoPrint's built-in gcode management you can manage your ready-to-print gcode files within the host
+                software, including printing stats and gcode analysis results.
+            </div>
+            <div class="span4">
+                <h4><i class="icon-picture"></i> Visualize your gcode</h4>
+                OctoPrint incorporates the awesome <a href="https://github.com/hudbrog/gCodeViewer">gCodeVisualizer</a> by
+                Alexey Ustyantsev which allows you to visualize your gcode files before and even during printjobs.
+            </div>
+        </div>
+        <div class="row">
+            <div class="span4">
+                <h4><i class="icon-beer"></i> Free as in beer</h4>
+                OctoPrint is free and open source software released under the
+                <a href="https://github.com/foosel/OctoPrint/blob/master/LICENSE">Affero General Public License (AGPL)</a>.
+            </div>
+            <div class="span4">
+                <h4><i class="icon-lightbulb"></i> Highly compatible</h4>
+                OctoPrint has been <a href="https://github.com/foosel/OctoPrint/wiki/Supported-Printers">proven to work</a> with many different printer electronics and firmwares. Give it a try!
+            </div>
+            <div class="span4">
+                <h4><i class="icon-star"></i> Constantly updated</h4>
+                Thanks to its active community OctoPrint is constantly updated, with new features added regularly.
+            </div>
+        </div>
+        <div class="row">
+            <div class="span12" style="text-align: center">
+                <h4>... and <a href="https://github.com/foosel/OctoPrint/issues?labels=enhancement&page=1&state=open">more</a> to come!</h4>
+            </div>
+        </div>
+    </section>
+
+    <section id="about">
+        <div class="row">
+            <div class="span12">
+                <h2>About</h2>
+                <p>
+                    OctoPrint is a so called <strong>host software</strong> for 3D printers. It is the kind of software you need in
+                    order to control your 3D printer and send it the actual commands to do its job. Other tools for this task include
+                    <a href="https://github.com/kliment/Printrun">Printrun</a>,
+                    <a href="http://www.repetier.com/documentation/repetier-host/">Repetier Host</a> and also
+                    <a href="http://daid.github.com/Cura/">Cura</a>.
+                </p>
+                <p>
+                    OctoPrint differs from existing host solutions in that its major focus is to provide <strong>a web
+                    interface</strong> that allows controlling the printer remotely from anywhere on the network or even the
+                    internet while offering the same <strong>responsiveness</strong> and feedback options available on native host
+                    applications like the ones listed above. In order to achieve this, OctoPrint makes heavy use of
+                    current web technologies and frameworks, such as AJAX, HTML5 web sockets and data binding via Knockout.js.
+                </p>
+                <p>
+                    OctoPrint was developed to be run on small embedded devices such as the popular <a href="http://www.raspberrypi.org/">Raspberry Pi</a>,
+                    thus paving an easy and cheap path to make your existing 3D printer WiFi enabled and untether it
+                    from your laptop or work station.
+                </p>
+                <h3>Credit where credit is due</h3>
+                <p>
+                    OctoPrint started out as a fork of <a href="http://daid.github.com/Cura/">Cura</a> for adding a
+                    web interface to its printing functionality and was originally named "Printer WebUI". It still uses
+                    large parts of Cura's communication code for talking to the printer, but has been reorganized to
+                    only include those parts of Cura necessary for its targeted use case.
+                </p>
+                <p>
+                    It also uses the following libraries and frameworks for backend and frontend:
+                    <div class="row">
+                        <ul class="span3">
+                            <li><a href="http://flask.pocoo.org/">Flask</a></li>
+                            <li><a href="http://www.tornadoweb.org/">Tornado</a></li>
+                            <li><a href="https://github.com/MrJoes/tornadio2">Tornadio2</a></li>
+                            <li><a href="http://pyyaml.org/">PyYAML</a></li>
+                        </ul>
+                        <ul class="span3">
+                            <li><a href="http://socket.io/">Socket.io</a></li>
+                            <li><a href="http://jquery.com/">jQuery</a></li>
+                            <li><a href="http://twitter.github.com/bootstrap/">Bootstrap</a></li>
+                            <li><a href="http://fortawesome.github.com/Font-Awesome/">Font Awesome</a></li>
+                        </ul>
+                        <ul class="span3">
+                            <li><a href="http://knockoutjs.com/">Knockout.js</a></li>
+                            <li><a href="http://underscorejs.org/">Underscore.js</a></li>
+                            <li><a href="http://www.flotcharts.org/">Flot</a></li>
+                            <li><a href="http://blueimp.github.com/jQuery-File-Upload/">jQuery File Upload</a></li>
+                        </ul>
+                        <ul class="span3">
+                            <li><a href="http://pinesframework.org/pnotify/">Pines Notify</a></li>
+                            <li><a href="https://github.com/hudbrog/gCodeViewer">gCodeVisualizer</a></li>
+                        </ul>
+                    </div>
+                    For webcam support on the Raspberry Pi I recommend <a href="http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page">MJPG-Streamer</a>.
+                </p>
+                <p>
+                    I also want to thank <a href="http://jhimmen.de">Janina Himmen</a> for providing the kick-ass logo!
+                </p>
+                <h3>Why is it called OctoPrint and what's with the crystal ball in the logo?</h3>
+                <p>
+                    It so happens that I needed a favicon and also OctoPrint's first name -- Printer WebUI -- simply
+                    lacked a certain coolness to it. So I asked The Internet(tm) for advise. After some brainstorming,
+                    the idea of a cute Octopus watching his print job remotely through a crystal ball was born...
+                    <a href="https://plus.google.com/u/0/106003970953341660077/posts/UmLD5mW8yBQ">or something like that</a>.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="screenshots">
+        <div class="row">
+            <div class="span12">
+                <h2>Screenshots</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span10 offset1">
+                <div id="screenshot-carousel" class="carousel slide">
+                    <ol class="carousel-indicators">
+                        <li data-target="#screenshot-carousel" data-slide-to="0" class="active"></li>
+                        <li data-target="#screenshot-carousel" data-slide-to="1"></li>
+                        <li data-target="#screenshot-carousel" data-slide-to="2"></li>
+                        <li data-target="#screenshot-carousel" data-slide-to="3"></li>
+                        <li data-target="#screenshot-carousel" data-slide-to="4"></li>
+                        <li data-target="#screenshot-carousel" data-slide-to="5"></li>
+                        <li data-target="#screenshot-carousel" data-slide-to="6"></li>
+                    </ol>
+                    <!-- Carousel items -->
+                    <div class="carousel-inner">
+                        <div class="active item">
+                            <img src="{{ BASE_PATH }}/assets/img/screenshot-temperature.png">
+                            <div class="carousel-caption">
+                                <h4>The temperature graph and controls</h4>
+                                <p>The graph is continuously updated and gives feedback about the current and target temperatures of extruder and (optional) printbed.</p>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <img src="{{ BASE_PATH }}/assets/img/screenshot-webcam.png">
+                            <div class="carousel-caption">
+                                <h4>Embedded webcam view and timelapse settings</h4>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <img src="{{ BASE_PATH }}/assets/img/screenshot-gcodeviewer.png">
+                            <div class="carousel-caption">
+                                <h4>The gcode viewer</h4>
+                                <p>It offers you a layer-by-layer view of the currently selected GCODE file and also updates live during printing to show the currently executed GCODE commands.</p>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <img src="{{ BASE_PATH }}/assets/img/screenshot-controls.png">
+                            <div class="carousel-caption">
+                                <h4>Controls for jogging, extrusion, retraction, motor and fan control</h4>
+                                <p>Additionally to the pictured default controls it's possible to define custom controls via the configuration.</p>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <img src="{{ BASE_PATH }}/assets/img/screenshot-gcode.png">
+                            <div class="carousel-caption">
+                                <h4>Gcode management</h4>
+                                <p>Uploaded gcode files are analyzed and can be sorted and filtered. Since file analysis is quite CPU intense, OctoPrint makes sure to perform it only when the system is not currently busy with printing.</p>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <img src="{{ BASE_PATH }}/assets/img/screenshot-terminal.png">
+                            <div class="carousel-caption">
+                                <h4>The Terminal tab</h4>
+                                <p>It shows you the last 300 lines of communication with the printer and allows you to send manual commands to the printer.</p>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <img src="{{ BASE_PATH }}/assets/img/screenshot-settings.png">
+                            <div class="carousel-caption">
+                                <h4>The Settings dialog</h4>
+                                <p>It allows you the configuration of most of the software's options.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Carousel nav -->
+                    <a class="carousel-control left" href="#screenshot-carousel" data-slide="prev">&lsaquo;</a>
+                    <a class="carousel-control right" href="#screenshot-carousel" data-slide="next">&rsaquo;</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="videos">
+        <div class="row">
+            <div class="span12">
+                <h2>Videos</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span6">
+                <h3>Short example of a timelapse</h3>
+                <iframe width="460" height="259" src="http://www.youtube.com/embed/twPiRbfJ9FM" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="span6">
+                <h3>Another timelapse</h3>
+                <iframe width="460" height="259" src="http://www.youtube.com/embed/DqryrqZGu6c" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+        <!--div class="row">
+            <div class="span6">
+                <h3>Timelapse with a surprise ending</h3>
+                <iframe width="460" height="345" src="http://www.youtube.com/embed/8EbIO71Bi-M" frameborder="0" allowfullscreen></iframe>
+                by <a href="http://www.gullicksonlaboratories.com/">Jason Gullickson</a>
+            </div>
+            <div class="span6">
+                <h3>Short demo of OctoPrint's UI</h3>
+                <iframe width="460" height="345" src="http://www.youtube.com/embed/KR2PmA9sI0o" frameborder="0" allowfullscreen></iframe>
+                by <a href="http://www.3drucken.ch/">Gregor Luetolf</a>
+            </div>
+        </div-->
+    </section>
+</div>

@@ -1,0 +1,15 @@
+---
+layout: page
+title: The OctoBlog
+---
+{% include JB/setup %}
+
+{% for post in site.posts limit: 5 %}
+<section class="post">
+    <h1 class="post-title"><a href="{{ BASE_PATH }}{{ post.url }}">{{ post.title }}</a></h1>
+    <div class="post-meta">
+        <span class="post-date"><i class="icon-calendar"></i> {{ post.date | date_to_string }}</span>
+    </div>
+    <div class="post-content">{{ post.content }}</div>
+</section>
+{% endfor %}
