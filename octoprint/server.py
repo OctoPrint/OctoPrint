@@ -2,10 +2,11 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import Flask, request, render_template, jsonify, send_from_directory, abort, url_for
 from werkzeug.utils import secure_filename
 import tornadio2
-from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user, AnonymousUser
+from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session
+from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
+from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
 
 import os
 import threading
@@ -28,6 +29,10 @@ app = Flask("octoprint")
 printer = None 
 gcodeManager = None
 userManager = None
+
+principals = Principal(app)
+admin_permission = Permission(RoleNeed("admin"))
+user_permission = Permission(RoleNeed("user"))
 
 #~~ Printer state
 
@@ -403,6 +408,7 @@ def getSettings():
 
 @app.route(BASEURL + "settings", methods=["POST"])
 @login_required
+@admin_permission.require()
 def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
@@ -449,6 +455,7 @@ def setSettings():
 
 @app.route(BASEURL + "system", methods=["POST"])
 @login_required
+@admin_permission.require()
 def performSystemAction():
 	logger = logging.getLogger(__name__)
 	if request.values.has_key("action"):
@@ -484,6 +491,7 @@ def login():
 		if user is not None:
 			if user.check_password(users.UserManager.createPasswordHash(password)):
 				login_user(user, remember=remember)
+				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 				return jsonify({"name": user.get_name(), "user": user.is_user(), "admin": user.is_admin()})
 		return app.make_response(("User unknown or password incorrect", 401, []))
 	elif "passive" in request.values.keys():
@@ -496,8 +504,26 @@ def login():
 @app.route(BASEURL + "logout", methods=["POST"])
 @login_required
 def logout():
+	# Remove session keys set by Flask-Principal
+	for key in ('identity.name', 'identity.auth_type'):
+		del session[key]
+	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+
 	logout_user()
+
 	return jsonify(SUCCESS)
+
+@identity_loaded.connect_via(app)
+def on_identity_loaded(sender, identity):
+	user = load_user(identity.name)
+	if user is None:
+		return
+
+	identity.provides.add(UserNeed(user.get_name()))
+	if user.is_user():
+		identity.provides.add(RoleNeed("user"))
+	if user.is_admin():
+		identity.provides.add(RoleNeed("admin"))
 
 def load_user(id):
 	if userManager is not None:

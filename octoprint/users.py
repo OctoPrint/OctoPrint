@@ -50,7 +50,10 @@ class FilebasedUserManager(UserManager):
 		self._load()
 
 	def _load(self):
-		self._users = {"admin": User("admin", "7557160613d5258f883014a7c3c0428de53040fc152b1791f1cc04a62b428c0c2a9c46ed330cdce9689353ab7a5352ba2b2ceb459b96e9c8ed7d0cb0b2c0c076", True, UserManager.valid_roles)}
+		self._users = {
+			"admin": User("admin", "7557160613d5258f883014a7c3c0428de53040fc152b1791f1cc04a62b428c0c2a9c46ed330cdce9689353ab7a5352ba2b2ceb459b96e9c8ed7d0cb0b2c0c076", True, ["user", "admin"]),
+			"user": User("user", "ced28770ae4457f420e322a5c7b8abc5f31432aef2552871909d6f4f372d1e0d6e0e7be14114656971eeba88e6462d5ea596b656d521c847047a496fecc431a5", True, ["user"])
+		}
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
 			with open(self._userfile, "r") as f:
 				data = yaml.safe_load(f)
