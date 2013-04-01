@@ -347,7 +347,6 @@ class MachineCom(object):
 		timeout = time.time() + 5
 		tempRequestTimeout = timeout
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
-		waitSeen = not settings().getBoolean(["feature", "waitForWaitOnConnect"])
 		while True:
 			line = self._readline()
 			if line == None:
@@ -439,13 +438,11 @@ class MachineCom(object):
 
 			### Connection attempt
 			elif self._state == self.STATE_CONNECTING:
-				if line == "" and startSeen and waitSeen:
+				if (line == "" or "wait" in line) and startSeen:
 					self._sendCommand("M105")
 				elif "start" in line:
 					startSeen = True
-				elif "wait" in line:
-					waitSeen = True
-				elif "ok" in line and startSeen and waitSeen:
+				elif "ok" in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
 				elif time.time() > timeout:
 					self.close()

@@ -994,7 +994,6 @@ function SettingsViewModel() {
 
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
-    self.feature_waitForWait = ko.observable(undefined);
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_resetLineNumbersWithPrefixedN = ko.observable(undefined);
 
@@ -1041,7 +1040,6 @@ function SettingsViewModel() {
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_waitForStart(response.feature.waitForStart);
-        self.feature_waitForWait(response.feature.waitForWait);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_resetLineNumbersWithPrefixedN(response.feature.resetLineNumbersWithPrefixedN);
 
@@ -1077,7 +1075,6 @@ function SettingsViewModel() {
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
                 "waitForStart": self.feature_waitForStart(),
-                "waitForWait": self.feature_waitForWait(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "resetLineNumbersWithPrefixedN": self.feature_resetLineNumbersWithPrefixedN()
             },
