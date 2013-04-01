@@ -27,7 +27,7 @@ h1, h2, h3, h4, h5, h6 { font-family: @serifFontFamily; }
   padding: 90px 0 48px;
   text-shadow: 2px 2px 2px @grayDark;
 
-  #gradient > .radial( @octoLight, @octoDark);
+  #gradient > .radial( lighten(@octoLight, 3%), @octoDark);
 
   &, h1 { color: @white; }
 
@@ -162,7 +162,7 @@ section {
 }
 
 footer {
-  #gradient > .vertical(@octoLight, @octoDark);
+  #gradient > .vertical(lighten(@octoLight, 3%), @octoDark);
   background-color: @octoDark;
   border-top: 1px solid mix(@octoLight, @octoDark, 50%);
   a {
