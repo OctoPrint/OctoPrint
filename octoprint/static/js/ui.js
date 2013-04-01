@@ -658,6 +658,14 @@ function TerminalViewModel() {
 function GcodeFilesViewModel() {
     var self = this;
 
+    self.isErrorOrClosed = ko.observable(undefined);
+    self.isOperational = ko.observable(undefined);
+    self.isPrinting = ko.observable(undefined);
+    self.isPaused = ko.observable(undefined);
+    self.isError = ko.observable(undefined);
+    self.isReady = ko.observable(undefined);
+    self.isLoading = ko.observable(undefined);
+
     // initialize list helper
     self.listHelper = new ItemListHelper(
         "gcodeFiles",
@@ -689,7 +697,33 @@ function GcodeFilesViewModel() {
         "name",
         [],
         CONFIG_GCODEFILESPERPAGE
-    )
+    );
+
+    self.isLoadActionPossible = ko.computed(function() {
+        return !self.isPrinting() && !self.isPaused() && !self.isLoading();
+    });
+
+    self.isLoadAndPrintActionPossible = ko.computed(function() {
+        return self.isOperational() && self.isLoadActionPossible();
+    });
+
+    self.fromCurrentData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self.fromHistoryData = function(data) {
+        self._processStateData(data.state);
+    }
+
+    self._processStateData = function(data) {
+        self.isErrorOrClosed(data.flags.closedOrError);
+        self.isOperational(data.flags.operational);
+        self.isPaused(data.flags.paused);
+        self.isPrinting(data.flags.printing);
+        self.isError(data.flags.error);
+        self.isReady(data.flags.ready);
+        self.isLoading(data.flags.loading);
+    }
 
     self.requestData = function() {
         $.ajax({
@@ -711,12 +745,12 @@ function GcodeFilesViewModel() {
         }
     }
 
-    self.loadFile = function(filename) {
+    self.loadFile = function(filename, printAfterLoad) {
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/load",
             type: "POST",
             dataType: "json",
-            data: {filename: filename}
+            data: {filename: filename, print: printAfterLoad}
         })
     }
 
@@ -1150,6 +1184,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.terminalViewModel.fromHistoryData(data);
         self.webcamViewModel.fromHistoryData(data);
         self.gcodeViewModel.fromHistoryData(data);
+        self.gcodeFilesViewModel.fromCurrentData(data);
     })
     self._socket.on("current", function(data) {
         self.connectionViewModel.fromCurrentData(data);
@@ -1159,6 +1194,7 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.terminalViewModel.fromCurrentData(data);
         self.webcamViewModel.fromCurrentData(data);
         self.gcodeViewModel.fromCurrentData(data);
+        self.gcodeFilesViewModel.fromCurrentData(data);
     })
     self._socket.on("updateTrigger", function(type) {
         if (type == "gcodeFiles") {

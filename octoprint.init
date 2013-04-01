@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Copy this script to /etc/init.d/octoprint and adjust the variables
+# at the top to match your installation (should be okay for a Raspian
+# setup). Then link it to the correct run levels. On Debian/Rasbian
+# just call 'sudo update-rc.d octoprint defaults'
+
+### BEGIN INIT INFO
+# Provides:          octoprint
+# Required-Start:    $local_fs networking
+# Required-Stop:
+# Should-Start:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Run octoprint
+# Description:       Octoprint provides a responsive web interface for
+#                    controlling a 3D printer
+### END INIT INFO
+
+
+# OctoPrint's run script
+DAEMON=/home/pi/OctoPrint/run
+
+# Port to use
+PORT=5000
+
+# Run as this user
+RUNAS=pi
+
+# Exit if the run script is not found
+[ -x "$DAEMON" ] || exit 0
+
+
+case "$1" in
+  start)
+	su $RUNAS -c "$DAEMON --port=$PORT --daemon start"
+	;;
+  stop)
+	su $RUNAS -c "$DAEMON --port=$PORT --daemon stop"
+	;;
+  restart)
+	su $RUNAS -c "$DAEMON --port=$PORT --daemon restart"
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}" >&2
+	;;
+esac
+
+:

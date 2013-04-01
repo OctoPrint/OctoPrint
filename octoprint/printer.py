@@ -158,7 +158,7 @@ class Printer():
 
 		self._comm.setFeedrateModifier(self._feedrateModifierMapping[structure], percentage / 100.0)
 
-	def loadGcode(self, file):
+	def loadGcode(self, file, printAfterLoading=False):
 		"""
 		 Loads the gcode from the given file as the new print job.
 		 Aborts if the printer is currently printing or another gcode file is currently being loaded.
@@ -168,11 +168,15 @@ class Printer():
 
 		self._setJobData(None, None)
 
-		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, self._onGcodeLoaded)
+		onGcodeLoadedCallback = self._onGcodeLoaded
+		if printAfterLoading:
+			onGcodeLoadedCallback = self._onGcodeLoadedToPrint
+
+		self._gcodeLoader = GcodeLoader(file, self._onGcodeLoadingProgress, onGcodeLoadedCallback)
 		self._gcodeLoader.start()
 
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-
+	
 	def startPrint(self):
 		"""
 		 Starts the currently loaded print job.
@@ -416,6 +420,10 @@ class Printer():
 
 		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+	def _onGcodeLoadedToPrint(self, filename, gcodeList):
+		self._onGcodeLoaded(filename, gcodeList)
+		self.startPrint()
 
 	#~~ state reports
 

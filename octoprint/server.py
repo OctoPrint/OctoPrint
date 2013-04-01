@@ -261,9 +261,12 @@ def uploadGcodeFile():
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 def loadGcodeFile():
 	if "filename" in request.values.keys():
+		printAfterLoading = False
+		if "print" in request.values.keys() and request.values["print"]:
+			printAfterLoading = True
 		filename = gcodeManager.getAbsolutePath(request.values["filename"])
 		if filename is not None:
-			printer.loadGcode(filename)
+			printer.loadGcode(filename, printAfterLoading)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -525,20 +528,20 @@ class Server():
 				}
 			},
 			"loggers": {
-				#"octoprint.util.comm": {
-				#	"level": "DEBUG"
-				#},
-				"SERIAL": {
-					"level": "DEBUG",
-					"handlers": ["serialFile"],
-					"propagate": False
-				}
 			},
 			"root": {
 				"level": "INFO",
 				"handlers": ["console", "file"]
 			}
 		}
+
+		if debug:
+			self._config["loggers"]["SERIAL"] = {
+				"level": "DEBUG",
+				"handlers": ["serialFile"],
+				"propagate": False
+			}
+
 		logging.config.dictConfig(self._config)
 
 if __name__ == "__main__":
