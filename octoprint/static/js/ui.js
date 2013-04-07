@@ -376,7 +376,7 @@ function TemperatureViewModel(settingsViewModel) {
     }
 }
 
-function ControlsViewModel() {
+function ControlViewModel() {
     var self = this;
 
     self.isErrorOrClosed = ko.observable(undefined);
@@ -788,7 +788,7 @@ function GcodeFilesViewModel() {
 
 }
 
-function WebcamViewModel() {
+function TimelapseViewModel() {
     var self = this;
 
     self.timelapseType = ko.observable(undefined);
@@ -847,7 +847,6 @@ function WebcamViewModel() {
             dataType: "json",
             success: self.fromResponse
         });
-        $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
     }
 
     self.fromResponse = function(response) {
@@ -1131,24 +1130,25 @@ function NavigationViewModel(appearanceViewModel, settingsViewModel) {
     }
 }
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, webcamViewModel, gcodeViewModel) {
+function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel) {
     var self = this;
 
     self.connectionViewModel = connectionViewModel;
     self.printerStateViewModel = printerStateViewModel;
     self.temperatureViewModel = temperatureViewModel;
-    self.controlsViewModel = controlsViewModel;
+    self.controlViewModel = controlViewModel;
     self.terminalViewModel = terminalViewModel;
     self.speedViewModel = speedViewModel;
     self.gcodeFilesViewModel = gcodeFilesViewModel;
-    self.webcamViewModel = webcamViewModel;
+    self.timelapseViewModel = timelapseViewModel;
     self.gcodeViewModel = gcodeViewModel;
 
     self._socket = io.connect();
     self._socket.on("connect", function() {
         if ($("#offline_overlay").is(":visible")) {
             $("#offline_overlay").hide();
-            self.webcamViewModel.requestData();
+            self.timelapseViewModel.requestData();
+            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
         }
     })
     self._socket.on("disconnect", function() {
@@ -1170,9 +1170,9 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.connectionViewModel.fromHistoryData(data);
         self.printerStateViewModel.fromHistoryData(data);
         self.temperatureViewModel.fromHistoryData(data);
-        self.controlsViewModel.fromHistoryData(data);
+        self.controlViewModel.fromHistoryData(data);
         self.terminalViewModel.fromHistoryData(data);
-        self.webcamViewModel.fromHistoryData(data);
+        self.timelapseViewModel.fromHistoryData(data);
         self.gcodeViewModel.fromHistoryData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
     })
@@ -1180,9 +1180,9 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.connectionViewModel.fromCurrentData(data);
         self.printerStateViewModel.fromCurrentData(data);
         self.temperatureViewModel.fromCurrentData(data);
-        self.controlsViewModel.fromCurrentData(data);
+        self.controlViewModel.fromCurrentData(data);
         self.terminalViewModel.fromCurrentData(data);
-        self.webcamViewModel.fromCurrentData(data);
+        self.timelapseViewModel.fromCurrentData(data);
         self.gcodeViewModel.fromCurrentData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
     })
@@ -1449,11 +1449,11 @@ $(function() {
         var settingsViewModel = new SettingsViewModel();
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(settingsViewModel);
-        var controlsViewModel = new ControlsViewModel();
+        var controlViewModel = new ControlViewModel();
         var speedViewModel = new SpeedViewModel();
         var terminalViewModel = new TerminalViewModel();
         var gcodeFilesViewModel = new GcodeFilesViewModel();
-        var webcamViewModel = new WebcamViewModel();
+        var timelapseViewModel = new TimelapseViewModel();
         var gcodeViewModel = new GcodeViewModel();
         var navigationViewModel = new NavigationViewModel(appearanceViewModel, settingsViewModel);
 
@@ -1461,19 +1461,19 @@ $(function() {
             connectionViewModel, 
             printerStateViewModel, 
             temperatureViewModel, 
-            controlsViewModel, 
+            controlViewModel,
             speedViewModel, 
             terminalViewModel,
             gcodeFilesViewModel,
-            webcamViewModel,
+            timelapseViewModel,
             gcodeViewModel
         );
         
         //work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
         $.ajaxSetup({
-		    type: 'POST',
-		    headers: { "cache-control": "no-cache" }
-		});
+            type: 'POST',
+            headers: { "cache-control": "no-cache" }
+        });
 
         //~~ Show settings - to ensure centered
         $('#navbar_show_settings').click(function() {
@@ -1606,23 +1606,6 @@ $(function() {
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
-        //~~ Alert
-
-        /*
-        function displayAlert(text, timeout, type) {
-            var placeholder = $("#alert_placeholder");
-
-            var alertType = "";
-            if (type == "success" || type == "error" || type == "info") {
-                alertType = " alert-" + type;
-            }
-
-            placeholder.append($("<div id='activeAlert' class='alert " + alertType + " fade in' data-alert='alert'><p>" + text + "</p></div>"));
-            placeholder.fadeIn();
-            $("#activeAlert").delay(timeout).fadeOut("slow", function() {$(this).remove(); $("#alert_placeholder").hide();});
-        }
-        */
-
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {
@@ -1647,7 +1630,7 @@ $(function() {
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files-heading"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-        ko.applyBindings(controlsViewModel, document.getElementById("controls"));
+        ko.applyBindings(controlViewModel, document.getElementById("control"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         ko.applyBindings(speedViewModel, document.getElementById("speed"));
         ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
@@ -1655,9 +1638,9 @@ $(function() {
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
 
-        var webcamElement = document.getElementById("webcam");
-        if (webcamElement) {
-            ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
+        var timelapseElement = document.getElementById("timelapse");
+        if (timelapseElement) {
+            ko.applyBindings(timelapseViewModel, document.getElementById("timelapse"));
         }
         var gCodeVisualizerElement = document.getElementById("gcode");
         if(gCodeVisualizerElement){
@@ -1666,9 +1649,9 @@ $(function() {
         //~~ startup commands
 
         connectionViewModel.requestData();
-        controlsViewModel.requestData();
+        controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
-        webcamViewModel.requestData();
+        timelapseViewModel.requestData();
         settingsViewModel.requestData();
 
         //~~ UI stuff

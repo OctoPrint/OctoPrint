@@ -181,6 +181,16 @@ table {
     &.timelapse_files_action {
       text-align: center;
       width: 45px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
     }
   }
 }
@@ -274,9 +284,9 @@ ul.dropdown-menu li a {
   }
 }
 
-/** Controls */
+/** Control tab */
 
-#controls {
+#control {
   overflow: hidden;
 
   .jog-panel {
