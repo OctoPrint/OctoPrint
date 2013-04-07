@@ -161,14 +161,14 @@
                     </div>
                 </div>
 
-                <div class="tabbable span8">
+                <div class="span8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
                         <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
-                        <li><a href="#controls" data-toggle="tab">Controls</a></li>
+                        <li><a href="#control" data-toggle="tab">Control</a></li>
                         {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">GCode Viewer</a></li>{% endif %}
                         <!--<li><a href="#speed" data-toggle="tab">Speed</a></li>-->
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
-                        {% if webcamStream %}<li><a href="#webcam" data-toggle="tab">Webcam</a></li>{% endif %}
+                        {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Timelapse</a></li>{% endif %}
                     </ul>
 
                     <div class="tab-content">
@@ -239,7 +239,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tab-pane" id="controls">
+                        <div class="tab-pane" id="control">
+                            {% if webcamStream %}
+                            <div id="webcam_container">
+                                <img id="webcam_image" src="{{ webcamStream }}">
+                            </div>
+                            {% endif %}
+
                             <div class="jog-panel">
                                 <!-- XY jogging control panel -->
                                 <div class="jog-panel">
@@ -456,13 +462,8 @@
                                 <button class="btn" type="button" id="terminal-send">Send</button>
                             </div>
                         </div>
-                        {% if webcamStream %}
-                        <div class="tab-pane" id="webcam">
-                            <div id="webcam_container">
-                                <img id="webcam_image" src="{{ webcamStream }}">
-                            </div>
-
-                            {% if enableTimelapse %}
+                        {% if enableTimelapse %}
+                        <div class="tab-pane" id="timelapse">
                             <h1>Timelapse Configuration</h1>
 
                             <label for="webcam_timelapse_mode">Timelapse Mode</label>
@@ -516,7 +517,6 @@
                                     <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
                                 </ul>
                             </div>
-                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
