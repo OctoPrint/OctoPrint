@@ -12,7 +12,7 @@ import logging, logging.config
 import subprocess
 
 from octoprint.printer import Printer, getConnectionOptions
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 import octoprint.timelapse as timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
@@ -262,7 +262,7 @@ def uploadGcodeFile():
 def loadGcodeFile():
 	if "filename" in request.values.keys():
 		printAfterLoading = False
-		if "print" in request.values.keys() and request.values["print"]:
+		if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
 			printAfterLoading = True
 		filename = gcodeManager.getAbsolutePath(request.values["filename"])
 		if filename is not None:
