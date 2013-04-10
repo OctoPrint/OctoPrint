@@ -90,9 +90,9 @@
                                 </div>
 
                                 <div class="row-fluid print-control">
-                                    <button class="btn btn-primary span4" data-bind="enable: isOperational() && isReady() && !isPrinting(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-print icon-white"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
-                                    <button class="btn span4" id="job_pause" data-bind="css: {active: isPaused}"><i class="icon-pause"></i> <span>Pause</span></button>
-                                    <button class="btn span4" id="job_cancel"><i class="icon-stop"></i> Cancel</button>
+                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
+                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isPrinting() || isPaused(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>Pause</span></button>
+                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isPrinting() || isPaused()"><i class="icon-stop"></i> Cancel</button>
                                 </div>
                             </div>
                         </div>

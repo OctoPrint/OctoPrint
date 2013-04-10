@@ -200,6 +200,42 @@ function PrinterStateViewModel() {
     self._processZData = function(data) {
         self.currentHeight(data);
     }
+
+    self.print = function() {
+        var printAction = function() {
+            $.ajax({
+                url: AJAX_BASEURL + "control/print",
+                type: "POST",
+                dataType: "json"
+            });
+        }
+
+        if (self.isPaused()) {
+            $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); printAction(); });
+            $("#confirmation_dialog").modal("show");
+        } else {
+            printAction();
+        }
+
+    }
+
+    self.pause = function() {
+        $("#job_pause").button("toggle");
+        $.ajax({
+            url: AJAX_BASEURL + "control/pause",
+            type: "POST",
+            dataType: "json"
+        });
+    }
+
+    self.cancel = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "control/cancel",
+            type: "POST",
+            dataType: "json"
+        });
+    }
 }
 
 function TemperatureViewModel(settingsViewModel) {
@@ -1486,30 +1522,6 @@ $(function() {
         })
 
         //~~ Print job control
-
-        $("#job_print").click(function() {
-            $.ajax({
-                url: AJAX_BASEURL + "control/print",
-                type: "POST",
-                dataType: "json",
-                success: function(){}
-            })
-        })
-        $("#job_pause").click(function() {
-            $("#job_pause").button("toggle");
-            $.ajax({
-                url: AJAX_BASEURL + "control/pause",
-                type: "POST",
-                dataType: "json"
-            })
-        })
-        $("#job_cancel").click(function() {
-            $.ajax({
-                url: AJAX_BASEURL + "control/cancel",
-                type: "POST",
-                dataType: "json"
-            })
-        })
 
         //~~ Temperature control (should really move to knockout click binding)
 
