@@ -122,31 +122,29 @@ def index():
 
 #~~ Printer control
 
-@app.route(BASEURL + "control/connectionOptions", methods=["GET"])
+@app.route(BASEURL + "control/connection/options", methods=["GET"])
 def connectionOptions():
 	return jsonify(getConnectionOptions())
 
-@app.route(BASEURL + "control/connect", methods=["POST"])
+@app.route(BASEURL + "control/connection", methods=["POST"])
 @login_required
 def connect():
-	port = None
-	baudrate = None
-	if "port" in request.values.keys():
-		port = request.values["port"]
-	if "baudrate" in request.values.keys():
-		baudrate = request.values["baudrate"]
-	if "save" in request.values.keys():
-		settings().set(["serial", "port"], port)
-		settings().setInt(["serial", "baudrate"], baudrate)
-		settings().save()
-	printer.connect(port=port, baudrate=baudrate)
-	return jsonify(state="Connecting")
+	if "command" in request.values.keys() and request.values["command"] == "connect":
+		port = None
+		baudrate = None
+		if "port" in request.values.keys():
+			port = request.values["port"]
+		if "baudrate" in request.values.keys():
+			baudrate = request.values["baudrate"]
+		if "save" in request.values.keys():
+			settings().set(["serial", "port"], port)
+			settings().setInt(["serial", "baudrate"], baudrate)
+			settings().save()
+		printer.connect(port=port, baudrate=baudrate)
+	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
+		printer.disconnect()
 
-@app.route(BASEURL + "control/disconnect", methods=["POST"])
-@login_required
-def disconnect():
-	printer.disconnect()
-	return jsonify(state="Offline")
+	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/command", methods=["POST"])
 @login_required
@@ -172,36 +170,27 @@ def printerCommand():
 
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + "control/print", methods=["POST"])
+@app.route(BASEURL + "control/job", methods=["POST"])
 @login_required
-def printGcode():
-	printer.startPrint()
-	return jsonify(SUCCESS)
-
-@app.route(BASEURL + "control/pause", methods=["POST"])
-@login_required
-def pausePrint():
-	printer.togglePausePrint()
-	return jsonify(SUCCESS)
-
-@app.route(BASEURL + "control/cancel", methods=["POST"])
-@login_required
-def cancelPrint():
-	printer.cancelPrint()
+def printJobControl():
+	if "command" in request.values.keys():
+		if request.values["command"] == "start":
+			printer.startPrint()
+		elif request.values["command"] == "pause":
+			printer.togglePausePrint()
+		elif request.values["command"] == "cancel":
+			printer.cancelPrint()
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/temperature", methods=["POST"])
 @login_required
 def setTargetTemperature():
-	if not printer.isOperational():
-		return jsonify(SUCCESS)
-
-	elif request.values.has_key("temp"):
-	# set target temperature
+	if "temp" in request.values.keys():
+		# set target temperature
 		temp = request.values["temp"]
 		printer.command("M104 S" + temp)
 
-	elif request.values.has_key("bedTemp"):
+	if "bedTemp" in request.values.keys():
 		# set target bed temperature
 		bedTemp = request.values["bedTemp"]
 		printer.command("M140 S" + bedTemp)
@@ -342,7 +331,7 @@ def deleteTimelapse(filename):
 			os.remove(secure)
 	return getTimelapseData()
 
-@app.route(BASEURL + "timelapse/config", methods=["POST"])
+@app.route(BASEURL + "timelapse", methods=["POST"])
 @login_required
 def setTimelapseConfig():
 	if request.values.has_key("type"):
@@ -450,6 +439,90 @@ def setSettings():
 		s.save()
 
 	return getSettings()
+
+#~~ user settings
+
+@app.route(BASEURL + "users", methods=["GET"])
+@login_required
+@admin_permission.require()
+def getUsers():
+	return jsonify({"users": userManager.getAllUsers()})
+
+@app.route(BASEURL + "users", methods=["POST"])
+@login_required
+@admin_permission.require()
+def addUser():
+	if "application/json" in request.headers["Content-Type"]:
+		data = request.json
+
+		name = data["name"]
+		password = data["password"]
+		active = data["active"]
+
+		roles = ["user"]
+		if "admin" in data.keys() and data["admin"]:
+			roles.append("admin")
+
+		try:
+			userManager.addUser(name, password, active, roles)
+		except users.UserAlreadyExists:
+			return app.make_response(("User already exists: " % name, 409, []))
+	return getUsers()
+
+@app.route(BASEURL + "users/<username>", methods=["GET"])
+@login_required
+@admin_permission.require()
+def getUser(username):
+	user = userManager.findUser(username)
+	if user is not None:
+		return jsonify(user.asDict())
+	else:
+		return app.make_response(("Unknown user: " % username, 404, []))
+
+@app.route(BASEURL + "users/<username>", methods=["PUT"])
+@login_required
+@admin_permission.require()
+def updateUser(username):
+	user = userManager.findUser(username)
+	if user is not None:
+		if "application/json" in request.headers["Content-Type"]:
+			data = request.json
+
+			# change roles
+			roles = ["user"]
+			if "admin" in data.keys() and data["admin"]:
+				roles.append("admin")
+			userManager.changeUserRoles(username, roles)
+
+			# change activation
+			if "active" in data.keys():
+				userManager.changeUserActivation(username, data["active"])
+		return getUsers()
+	else:
+		return app.make_response(("Unknown user: " % username, 404, []))
+
+@app.route(BASEURL + "users/<username>", methods=["DELETE"])
+@login_required
+@admin_permission.require()
+def removeUser(username):
+	try:
+		userManager.removeUser(username)
+		return getUsers()
+	except users.UnknownUser:
+		return app.make_response(("Unknown user: " % username, 404, []))
+
+@app.route(BASEURL + "users/<username>/password", methods=["PUT"])
+@login_required
+@admin_permission.require()
+def changePasswordForUser(username):
+	if "application/json" in request.headers["Content-Type"]:
+		data = request.json
+		if "password" in data.keys() and data["password"]:
+			try:
+				userManager.changeUserPassword(username, data["password"])
+			except users.UnknownUser:
+				return app.make_response(("Unknown user: " % username, 404, []))
+	return jsonify(SUCCESS)
 
 #~~ system control
 

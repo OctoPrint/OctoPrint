@@ -16,16 +16,22 @@ class UserManager(object):
 	def createPasswordHash(password):
 		return hashlib.sha512(password + "mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW").hexdigest()
 
-	def addUser(self, username, password):
+	def addUser(self, username, password, active, roles):
 		pass
 
-	def addRoleToUser(self, username, role):
+	def changeUserActivation(self, username, active):
 		pass
 
-	def removeRoleFromUser(self, username, role):
+	def changeUserRoles(self, username, roles):
 		pass
 
-	def updateUser(self, username, password):
+	def addRolesToUser(self, username, roles):
+		pass
+
+	def removeRolesFromUser(self, username, roles):
+		pass
+
+	def changeUserPassword(self, username, password):
 		pass
 
 	def removeUser(self, username):
@@ -33,6 +39,9 @@ class UserManager(object):
 
 	def findUser(self, username=None):
 		return None
+
+	def getAllUsers(self):
+		return []
 
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
@@ -44,22 +53,18 @@ class FilebasedUserManager(UserManager):
 		if userfile is None:
 			userfile = os.path.join(settings().settings_dir, "users.yaml")
 		self._userfile = userfile
-		self._users = None
+		self._users = {}
 		self._dirty = False
 
 		self._load()
 
 	def _load(self):
-		self._users = {
-			"admin": User("admin", "7557160613d5258f883014a7c3c0428de53040fc152b1791f1cc04a62b428c0c2a9c46ed330cdce9689353ab7a5352ba2b2ceb459b96e9c8ed7d0cb0b2c0c076", True, ["user", "admin"]),
-			"user": User("user", "ced28770ae4457f420e322a5c7b8abc5f31432aef2552871909d6f4f372d1e0d6e0e7be14114656971eeba88e6462d5ea596b656d521c847047a496fecc431a5", True, ["user"])
-		}
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
 			with open(self._userfile, "r") as f:
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]
-					self._users[name] = User(name, attributes.password, attributes.active, attributes.roles)
+					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"])
 
 	def _save(self, force=False):
 		if not self._dirty and not force:
@@ -69,9 +74,9 @@ class FilebasedUserManager(UserManager):
 		for name in self._users.keys():
 			user = self._users[name]
 			data[name] = {
-				"password": user.passwordHash,
-				"active": user.active,
-				"roles": user.roles
+				"password": user._passwordHash,
+				"active": user._active,
+				"roles": user._roles
 			}
 
 		with open(self._userfile, "wb") as f:
@@ -79,42 +84,65 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password):
+	def addUser(self, username, password, active=False, roles=["user"]):
 		if username in self._users.keys():
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), False, ["user"])
+		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles)
 		self._dirty = True
 		self._save()
 
-	def addRoleToUser(self, username, role):
+	def changeUserActivation(self, username, active):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		if self._users[username]._active != active:
+			self._users[username]._active = active
+			self._dirty = True
+			self._save()
+
+	def changeUserRoles(self, username, roles):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		if not role in user.roles:
-			user.roles.append(role)
-			self._dirty = True
-			self._save()
 
-	def removeRoleFromUser(self, username, role):
+		removedRoles = set(user._roles) - set(roles)
+		self.removeRolesFromUser(username, removedRoles)
+
+		addedRoles = set(roles) - set(user._roles)
+		self.addRolesToUser(username, addedRoles)
+
+	def addRolesToUser(self, username, roles):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		if role in user.roles:
-			user.roles.remove(role)
-			self._dirty = True
-			self._save()
+		for role in roles:
+			if not role in user._roles:
+				user._roles.append(role)
+				self._dirty = True
+		self._save()
 
-	def updateUser(self, username, password):
+	def removeRolesFromUser(self, username, roles):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		for role in roles:
+			if role in user._roles:
+				user._roles.remove(role)
+				self._dirty = True
+		self._save()
+
+	def changeUserPassword(self, username, password):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
 		passwordHash = UserManager.createPasswordHash(password)
 		user = self._users[username]
-		if user.passwordHash != passwordHash:
-			user.passwordHash = passwordHash
+		if user._passwordHash != passwordHash:
+			user._passwordHash = passwordHash
 			self._dirty = True
 			self._save()
 
@@ -134,6 +162,9 @@ class FilebasedUserManager(UserManager):
 			return None
 
 		return self._users[username]
+
+	def getAllUsers(self):
+		return map(lambda x: x.asDict(), self._users.values())
 
 ##~~ Exceptions
 
@@ -157,6 +188,13 @@ class User(UserMixin):
 		self._passwordHash = passwordHash
 		self._active = active
 		self._roles = roles
+
+	def asDict(self):
+		return {
+			"name": self._username,
+			"active": self.is_active(),
+			"admin": self.is_admin()
+		}
 
 	def check_password(self, passwordHash):
 		return self._passwordHash == passwordHash
