@@ -119,7 +119,7 @@
                                     <div class="bar" id="job_progressBar" data-bind="style: { width: progress() + '%' }"></div>
                                 </div>
 
-                                <div class="row-fluid print-control">
+                                <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
                                     <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
                                     <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>Pause</span></button>
                                     <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()"><i class="icon-stop"></i> Cancel</button>

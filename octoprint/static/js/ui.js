@@ -298,11 +298,7 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.print = function() {
         var printAction = function() {
-            $.ajax({
-                url: AJAX_BASEURL + "control/print",
-                type: "POST",
-                dataType: "json"
-            });
+            self._jobCommand("start");
         }
 
         if (self.isPaused()) {
@@ -316,19 +312,19 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self.pause = function() {
-        $("#job_pause").button("toggle");
-        $.ajax({
-            url: AJAX_BASEURL + "control/pause",
-            type: "POST",
-            dataType: "json"
-        });
+        self._jobCommand("pause");
     }
 
     self.cancel = function() {
+        self._jobCommand("cancel");
+    }
+
+    self._jobCommand = function(command) {
         $.ajax({
-            url: AJAX_BASEURL + "control/cancel",
+            url: AJAX_BASEURL + "control/job",
             type: "POST",
-            dataType: "json"
+            dataType: "json",
+            data: {command: command}
         });
     }
 }
@@ -1733,7 +1729,7 @@ $(function() {
         var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
-        var controlViewModel = new ControlsViewModel(loginStateViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(loginStateViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
