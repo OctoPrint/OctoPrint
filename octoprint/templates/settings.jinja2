@@ -12,7 +12,7 @@
                 <li><a href="#settings_folder" data-toggle="tab">Folder</a></li>
                 <li><a href="#settings_temperature" data-toggle="tab">Temperature</a></li>
                 <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
-                <li><a href="#settings_users" data-toggle="tab">Users</a></li>
+                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Users</a></li>{% endif %}
             </ul>
 
             <div class="tab-content span8">
@@ -185,6 +185,8 @@
                         </div>
                     </form>
                 </div>
+
+                {% if enableAccessControl %}
                 <div class="tab-pane" id="settings_users">
                     <table class="table table-condensed table-hover" id="system_users">
                         <thead>
@@ -327,6 +329,8 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
+
             </div>
         </div>
     </div>

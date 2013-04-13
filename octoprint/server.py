@@ -4,7 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 from werkzeug.utils import secure_filename
 import tornadio2
-from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session
+from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
 
@@ -112,7 +112,8 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 @app.route("/")
 def index():
 	return render_template(
-		"index.html",
+		"index.jinja2",
+		ajaxBaseUrl=BASEURL,
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
@@ -397,7 +398,7 @@ def getSettings():
 
 @app.route(BASEURL + "settings", methods=["POST"])
 @login_required
-@admin_permission.require()
+@admin_permission.require(403)
 def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
@@ -444,14 +445,20 @@ def setSettings():
 
 @app.route(BASEURL + "users", methods=["GET"])
 @login_required
-@admin_permission.require()
+@admin_permission.require(403)
 def getUsers():
+	if userManager is None:
+		return jsonify(SUCCESS)
+
 	return jsonify({"users": userManager.getAllUsers()})
 
 @app.route(BASEURL + "users", methods=["POST"])
 @login_required
-@admin_permission.require()
+@admin_permission.require(403)
 def addUser():
+	if userManager is None:
+		return jsonify(SUCCESS)
+
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
 
@@ -466,23 +473,31 @@ def addUser():
 		try:
 			userManager.addUser(name, password, active, roles)
 		except users.UserAlreadyExists:
-			return app.make_response(("User already exists: " % name, 409, []))
+			abort(409)
 	return getUsers()
 
 @app.route(BASEURL + "users/<username>", methods=["GET"])
 @login_required
-@admin_permission.require()
 def getUser(username):
-	user = userManager.findUser(username)
-	if user is not None:
-		return jsonify(user.asDict())
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+		user = userManager.findUser(username)
+		if user is not None:
+			return jsonify(user.asDict())
+		else:
+			abort(404)
 	else:
-		return app.make_response(("Unknown user: " % username, 404, []))
+		abort(403)
 
 @app.route(BASEURL + "users/<username>", methods=["PUT"])
 @login_required
-@admin_permission.require()
+@admin_permission.require(403)
 def updateUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
 	user = userManager.findUser(username)
 	if user is not None:
 		if "application/json" in request.headers["Content-Type"]:
@@ -499,36 +514,44 @@ def updateUser(username):
 				userManager.changeUserActivation(username, data["active"])
 		return getUsers()
 	else:
-		return app.make_response(("Unknown user: " % username, 404, []))
+		abort(404)
 
 @app.route(BASEURL + "users/<username>", methods=["DELETE"])
 @login_required
-@admin_permission.require()
+@admin_permission.require(http_exception=403)
 def removeUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
 	try:
 		userManager.removeUser(username)
 		return getUsers()
 	except users.UnknownUser:
-		return app.make_response(("Unknown user: " % username, 404, []))
+		abort(404)
 
 @app.route(BASEURL + "users/<username>/password", methods=["PUT"])
 @login_required
-@admin_permission.require()
 def changePasswordForUser(username):
-	if "application/json" in request.headers["Content-Type"]:
-		data = request.json
-		if "password" in data.keys() and data["password"]:
-			try:
-				userManager.changeUserPassword(username, data["password"])
-			except users.UnknownUser:
-				return app.make_response(("Unknown user: " % username, 404, []))
-	return jsonify(SUCCESS)
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+		if "application/json" in request.headers["Content-Type"]:
+			data = request.json
+			if "password" in data.keys() and data["password"]:
+				try:
+					userManager.changeUserPassword(username, data["password"])
+				except users.UnknownUser:
+					return app.make_response(("Unknown user: %s" % username, 404, []))
+		return jsonify(SUCCESS)
+	else:
+		return app.make_response(("Forbidden", 403, []))
 
 #~~ system control
 
 @app.route(BASEURL + "system", methods=["POST"])
 @login_required
-@admin_permission.require()
+@admin_permission.require(403)
 def performSystemAction():
 	logger = logging.getLogger(__name__)
 	if request.values.has_key("action"):
@@ -565,12 +588,12 @@ def login():
 			if user.check_password(users.UserManager.createPasswordHash(password)):
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
-				return jsonify({"name": user.get_name(), "user": user.is_user(), "admin": user.is_admin()})
+				return jsonify(user.asDict())
 		return app.make_response(("User unknown or password incorrect", 401, []))
 	elif "passive" in request.values.keys():
 		user = current_user
 		if user is not None and not user.is_anonymous():
-			return jsonify({"name": user.get_name(), "user": user.is_user(), "admin": user.is_admin()})
+			return jsonify(user.asDict())
 		else:
 			return jsonify(SUCCESS)
 
@@ -590,7 +613,11 @@ def logout():
 def on_identity_loaded(sender, identity):
 	user = load_user(identity.name)
 	if user is None:
-		return
+		if userManager is None:
+			# access control is disabled, we'll create permissions for the DummyUser
+			user = users.DummyUser()
+		else:
+			return
 
 	identity.provides.add(UserNeed(user.get_name()))
 	if user.is_user():

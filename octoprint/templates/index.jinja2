@@ -17,13 +17,15 @@
         <link href="{{ url_for('static', filename='gcodeviewer/css/style.css') }}" rel="stylesheet" media="screen">
 
         <script lang="javascript">
-            var AJAX_BASEURL = "/ajax/";
+            var AJAX_BASEURL = "{{ ajaxBaseUrl }}";
+
             var CONFIG_GCODEFILESPERPAGE = 5;
             var CONFIG_TIMELAPSEFILESPERPAGE = 10;
             var CONFIG_USERSPERPAGE = 10;
             var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
+            var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
 
-            var WEB_SOCKET_SWF_LOCATION = "{{ url_for('static', filename='js/WebSocketMain.swf') }}";
+            var WEB_SOCKET_SWF_LOCATION = "{{ url_for('static', filename='js/socket.io/WebSocketMain.swf') }}";
             var WEB_SOCKET_DEBUG = true;
         </script>
         <script src="{{ url_for('static', filename='js/less-1.3.3.min.js') }}" type="text/javascript"></script>
@@ -35,13 +37,13 @@
                     <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
                     <div class="nav-collapse">
                         <ul class="nav pull-right">
-                            <li class="hide" data-bind="css: {hide: !loginState.isAdmin()}">
+                            <li style="display: none;" data-bind="visible: loginState.isAdmin">
                                 <a id="navbar_show_settings" class="pull-right" href="#settings_dialog">
                                     <i class="icon-wrench"></i> Settings
                                 </a>
                             </li>
                             {% if enableSystemMenu %}
-                            <li class="dropdown hide" data-bind="css: {hide: !loginState.isAdmin()}">
+                            <li class="dropdown" style="display: none" data-bind="visible: loginState.isAdmin">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                     <i class="icon-off"></i> System
                                     <b class="caret"></b>
@@ -68,6 +70,7 @@
                                     <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">Login</button>
                                 </div>
                                 <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
+                                    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">Change Password</a></li>
                                     <li><a href="#" id="logout_button" data-bind="click: loginState.logout">Logout</a></li>
                                 </ul>
                             </li>
@@ -80,7 +83,7 @@
         <div class="container octoprint-container">
             <div class="row">
                 <div class="accordion span4">
-                    <div class="accordion-group">
+                    <div class="accordion-group" data-bind="visible: loginState.isUser" id="connection_accordion">
                         <div class="accordion-heading">
                             <a class="accordion-toggle" data-toggle="collapse" href="#connection"><i class="icon-signal"></i> Connection</a>
                         </div>
@@ -97,7 +100,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="accordion-group">
+                    <div class="accordion-group" id="state_accordion">
                         <div class="accordion-heading">
                             <a class="accordion-toggle" data-toggle="collapse" href="#state"><i class="icon-info-sign"></i> State</a>
                         </div>
@@ -124,8 +127,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="accordion-group">
-                        <div class="accordion-heading" id="files-heading">
+                    <div class="accordion-group" id="files_accordion">
+                        <div class="accordion-heading">
                             <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> Files</a>
 
                             <div class="settings-trigger btn-group">
@@ -156,7 +159,7 @@
                                             <td class="gcode_files_name" data-bind="text: name"></td>
                                             <td class="gcode_files_size" data-bind="text: size"></td>
                                             <td class="gcode_files_action">
-                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { $root.removeFile($data.name); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.isLoadActionPossible()) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.isLoadActionPossible()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.isLoadAndPrintActionPossible()) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.isLoadAndPrintActionPossible()}"></a>
+                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.loginState.isUser()) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.isLoadActionPossible()) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.isLoadActionPossible()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.isLoadAndPrintActionPossible()) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.isLoadAndPrintActionPossible()}"></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -172,16 +175,18 @@
                                         <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
                                     </ul>
                                 </div>
-                                <span class="btn btn-primary btn-block fileinput-button" style="margin-bottom: 10px">
-                                    <i class="icon-upload icon-white"></i>
-                                    <span>Upload</span>
-                                    <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload">
-                                </span>
-                                <div id="gcode_upload_progress" class="progress" style="width: 100%;">
-                                    <div class="bar" style="width: 0%"></div>
-                                </div>
-                                <div>
-                                    <small>Hint: You can also drag and drop files on this page to upload them.</small>
+                                <div style="display: none;" data-bind="visible: loginState.isUser">
+                                    <span class="btn btn-primary btn-block fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                        <i class="icon-upload icon-white"></i>
+                                        <span>Upload</span>
+                                        <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
+                                    </span>
+                                    <div id="gcode_upload_progress" class="progress" style="width: 100%;">
+                                        <div class="bar" style="width: 0%"></div>
+                                    </div>
+                                    <div>
+                                        <small>Hint: You can also drag and drop files on this page to upload them.</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -193,7 +198,6 @@
                         <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
                         <li><a href="#control" data-toggle="tab">Control</a></li>
                         {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">GCode Viewer</a></li>{% endif %}
-                        <!--<li><a href="#speed" data-toggle="tab">Speed</a></li>-->
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
                         {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Timelapse</a></li>{% endif %}
                     </ul>
@@ -211,27 +215,29 @@
 
                                     <label>Target: <strong data-bind="html: targetTempString"></strong></label>
 
-                                    <label for="temp_newTemp">New Target</label>
-                                    <div class="input-append">
-                                        <input type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
-                                        <span class="add-on">&deg;C</span>
-                                    </div>
-                                    <div class="btn-group">
-                                        <button type="submit" class="btn" id="temp_newTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
-                                        <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
-                                            <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <!-- ko foreach: temperature_profiles -->
-                                            <li>
-                                                <a href="#" data-bind="click: $parent.setTempFromProfile, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
-                                            </li>
-                                            <!-- /ko -->
-                                            <li class="divider"></li>
-                                            <li>
-                                                <a href="#" data-bind="click: function() { $root.setTemp(0); }">Off</a>
-                                            </li>
-                                        </ul>
+                                    <div style="display: none;" data-bind="visible: loginState.isUser">
+                                        <label for="temp_newTemp">New Target</label>
+                                        <div class="input-append">
+                                            <input type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
+                                            <span class="add-on">&deg;C</span>
+                                        </div>
+                                        <div class="btn-group">
+                                            <button type="submit" class="btn" id="temp_newTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
+                                            <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <!-- ko foreach: temperature_profiles -->
+                                                <li>
+                                                    <a href="#" data-bind="click: $parent.setTempFromProfile, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
+                                                </li>
+                                                <!-- /ko -->
+                                                <li class="divider"></li>
+                                                <li>
+                                                    <a href="#" data-bind="click: function() { $root.setTemp(0); }">Off</a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-horizontal span6">
@@ -241,27 +247,29 @@
 
                                     <label>Target: <strong data-bind="html: bedTargetTempString"></strong></label>
 
-                                    <label for="temp_newBedTemp">New Target</label>
-                                    <div class="input-append">
-                                        <input type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
-                                        <span class="add-on">&deg;C</span>
-                                    </div>
-                                    <div class="btn-group">
-                                        <button type="submit" class="btn" id="temp_newBedTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
-                                        <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
-                                            <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                             <!-- ko foreach: temperature_profiles -->
-                                             <li>
-                                                 <a href="#" data-bind="click: $parent.setBedTempFromProfile, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
-                                             </li>
-                                             <!-- /ko -->
-                                             <li class="divider"></li>
-                                             <li>
-                                                 <a href="#" data-bind="click: function(){ $root.setBedTemp(0); }">Off</a>
-                                             </li>
-                                        </ul>
+                                    <div style="display: none;" data-bind="visible: loginState.isUser">
+                                        <label for="temp_newBedTemp">New Target</label>
+                                        <div class="input-append">
+                                            <input type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
+                                            <span class="add-on">&deg;C</span>
+                                        </div>
+                                        <div class="btn-group">
+                                            <button type="submit" class="btn" id="temp_newBedTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
+                                            <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                 <!-- ko foreach: temperature_profiles -->
+                                                 <li>
+                                                     <a href="#" data-bind="click: $parent.setBedTempFromProfile, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
+                                                 </li>
+                                                 <!-- /ko -->
+                                                 <li class="divider"></li>
+                                                 <li>
+                                                     <a href="#" data-bind="click: function(){ $root.setBedTemp(0); }">Off</a>
+                                                 </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -273,7 +281,7 @@
                             </div>
                             {% endif %}
 
-                            <div class="jog-panel">
+                            <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
                                 <!-- XY jogging control panel -->
                                 <div class="jog-panel">
                                     <h1>X/Y</h1>
@@ -313,7 +321,7 @@
                                 </div>
                             </div>
                             <!-- Extrusion control panel -->
-                            <div class="jog-panel">
+                            <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
                                 <h1>E</h1>
                                 <div>
                                     <div class="input-append control-box">
@@ -325,7 +333,7 @@
                                 </div>
                             </div>
                             <!-- General control panel -->
-                            <div class="jog-panel">
+                            <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
                                 <h1>General</h1>
                                 <div>
                                     <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
@@ -335,7 +343,7 @@
                             </div>
 
                             <!-- Container for custom controls -->
-                            <div style="clear: both;" data-bind="template: { name: $root.displayMode, foreach: controls }"></div>
+                            <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
 
                             <!-- Templates for custom controls -->
                             <script type="text/html" id="customControls_sectionTemplate">
@@ -359,37 +367,6 @@
                             </script>
                             <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
                             <!-- End of templates for custom controls -->
-                        </div>
-                        <div class="tab-pane" id="speed">
-                            <div class="form-horizontal" style="margin-bottom: 20px">
-                                <label for="speed_outerWall">Outer Wall</label>
-                                <div class="input-append">
-                                    <input type="text" id="speed_outerWall" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: outerWall}">
-                                    <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_outerWall_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
-                                </div>
-
-                                <label for="speed_innerWall">Inner Wall</label>
-                                <div class="input-append">
-                                    <input type="text" id="speed_innerWall" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: innerWall}">
-                                    <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_innerWall_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
-                                </div>
-
-                                <label for="speed_fill">Fill</label>
-                                <div class="input-append">
-                                    <input type="text" id="speed_fill" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: fill}">
-                                    <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_fill_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
-                                </div>
-
-                                <label for="speed_support">Support</label>
-                                <div class="input-append">
-                                    <input type="text" id="speed_support" class="input-mini" data-bind="enable: isOperational() && loginState.isUser(), attr: {placeholder: support}">
-                                    <span class="add-on">%</span>
-                                    <button type="submit" class="btn" id="speed_support_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
-                                </div>
-                            </div>
                         </div>
                         <div class="tab-pane" id="gcode">
                             <canvas id="canvas" width="572" height="588"></canvas>
@@ -484,32 +461,34 @@
                                 <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
                             </label>
 
-                            <div class="input-append">
-                                <input type="text" id="terminal-command">
+                            <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
+                                <input type="text" id="terminal-command" data-bind="enable: isOperational() && loginState.isUser()">
                                 <button class="btn" type="button" id="terminal-send" data-bind="enable: isOperational() && loginState.isUser()">Send</button>
                             </div>
                         </div>
                         {% if enableTimelapse %}
                         <div class="tab-pane" id="timelapse">
-                            <h1>Timelapse Configuration</h1>
+                            <div style="display: none;" data-bind="visible: loginState.isUser">
+                                <h1>Timelapse Configuration</h1>
 
-                            <label for="webcam_timelapse_mode">Timelapse Mode</label>
-                            <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
-                                <option value="off">Off</option>
-                                <option value="zchange">On Z Change</option>
-                                <option value="timed">Timed</option>
-                            </select>
+                                <label for="webcam_timelapse_mode">Timelapse Mode</label>
+                                <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
+                                    <option value="off">Off</option>
+                                    <option value="zchange">On Z Change</option>
+                                    <option value="timed">Timed</option>
+                                </select>
 
-                            <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
-                                <label for="webcam_timelapse_interval">Interval</label>
-                                <div class="input-append">
-                                    <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting()">
-                                    <span class="add-on">sec</span>
+                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
+                                    <label for="webcam_timelapse_interval">Interval</label>
+                                    <div class="input-append">
+                                        <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting() && loginState.isUser()">
+                                        <span class="add-on">sec</span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div>
-                                <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting() && loginState.isUser()">Save Settings</button>
+                                <div>
+                                    <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting() && loginState.isUser()">Save Settings</button>
+                                </div>
                             </div>
 
                             <h1>Finished Timelapses</h1>
@@ -529,7 +508,7 @@
                                     <tr data-bind="attr: {title: name}">
                                         <td class="timelapse_files_name" data-bind="text: name"></td>
                                         <td class="timelapse_files_size" data-bind="text: size"></td>
-                                        <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: $parent.removeFile"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
+                                        <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile(); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -559,26 +538,27 @@
             </div>
         </div>
 
-        {% include 'settings.html' %}
-        {% include 'dialogs.html' %}
+        {% include 'settings.jinja2' %}
+        {% include 'dialogs.jinja2' %}
 
         <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/modernizr.custom.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/underscore-min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/knockout-2.2.1.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-modalmanager.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-modal.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.core.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.widget.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.mouse.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.ui.slider.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.pnotify.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.flot.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.iframe-transport.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/underscore.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/knockout.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap-modalmanager.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap-modal.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.ui.core.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.ui.widget.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.ui.mouse.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.ui.slider.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.pnotify.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.flot.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.iframe-transport.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.fileupload.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/socket.io/socket.io.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/ui.js') }}"></script>
+
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>

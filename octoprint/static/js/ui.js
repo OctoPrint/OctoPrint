@@ -8,6 +8,8 @@ function LoginStateViewModel() {
     self.isAdmin = ko.observable(false);
     self.isUser = ko.observable(false);
 
+    self.currentUser = ko.observable(undefined);
+
     self.userMenuText = ko.computed(function() {
         if (self.loggedIn()) {
             return "\"" + self.username() + "\"";
@@ -15,6 +17,11 @@ function LoginStateViewModel() {
             return "Login";
         }
     })
+
+    self.subscribers = [];
+    self.subscribe = function(callback) {
+        self.subscribers.push(callback);
+    }
 
     self.requestData = function() {
         $.ajax({
@@ -31,11 +38,19 @@ function LoginStateViewModel() {
             self.username(response.name);
             self.isUser(response.user);
             self.isAdmin(response.admin);
+
+            self.currentUser(response);
+
+            _.each(self.subscribers, function(callback) { callback("login", response); });
         } else {
             self.loggedIn(false);
             self.username(undefined);
             self.isUser(false);
             self.isAdmin(false);
+
+            self.currentUser(undefined);
+
+            _.each(self.subscribers, function(callback) { callback("logout", {}); });
         }
     }
 
@@ -44,12 +59,16 @@ function LoginStateViewModel() {
         var password = $("#login_pass").val();
         var remember = $("#login_remember").is(":checked");
 
+        $("#login_user").val("");
+        $("#login_pass").val("");
+        $("#login_remember").prop("checked", false);
+
         $.ajax({
             url: AJAX_BASEURL + "login",
             type: "POST",
             data: {"user": username, "pass": password, "remember": remember},
             success: function(response) {
-                $.pnotify({title: "Login successful", text: "You are now logged in", type: "success"});
+                $.pnotify({title: "Login successful", text: "You are now logged in as \"" + response.name + "\"", type: "success"});
                 self.fromResponse(response);
             },
             error: function(jqXHR, textStatus, errorThrown) {
@@ -647,66 +666,6 @@ function ControlViewModel(loginStateViewModel) {
 
 }
 
-function SpeedViewModel(loginStateViewModel) {
-    var self = this;
-
-    self.loginState = loginStateViewModel;
-
-    self.outerWall = ko.observable(undefined);
-    self.innerWall = ko.observable(undefined);
-    self.fill = ko.observable(undefined);
-    self.support = ko.observable(undefined);
-
-    self.isErrorOrClosed = ko.observable(undefined);
-    self.isOperational = ko.observable(undefined);
-    self.isPrinting = ko.observable(undefined);
-    self.isPaused = ko.observable(undefined);
-    self.isError = ko.observable(undefined);
-    self.isReady = ko.observable(undefined);
-    self.isLoading = ko.observable(undefined);
-
-    self._fromCurrentData = function(data) {
-        self._processStateData(data.state);
-    }
-
-    self._fromHistoryData = function(data) {
-        self._processStateData(data.state);
-    }
-
-    self._processStateData = function(data) {
-        self.isErrorOrClosed(data.flags.closedOrError);
-        self.isOperational(data.flags.operational);
-        self.isPaused(data.flags.paused);
-        self.isPrinting(data.flags.printing);
-        self.isError(data.flags.error);
-        self.isReady(data.flags.ready);
-        self.isLoading(data.flags.loading);
-    }
-
-    self.requestData = function() {
-        $.ajax({
-            url: AJAX_BASEURL + "control/speed",
-            type: "GET",
-            dataType: "json",
-            success: self._fromResponse
-        });
-    }
-
-    self._fromResponse = function(response) {
-        if (response.feedrate) {
-            self.outerWall(response.feedrate.outerWall);
-            self.innerWall(response.feedrate.innerWall);
-            self.fill(response.feedrate.fill);
-            self.support(response.feedrate.support);
-        } else {
-            self.outerWall(undefined);
-            self.innerWall(undefined);
-            self.fill(undefined);
-            self.support(undefined);
-        }
-    }
-}
-
 function TerminalViewModel(loginStateViewModel) {
     var self = this;
 
@@ -822,11 +781,11 @@ function GcodeFilesViewModel(loginStateViewModel) {
     );
 
     self.isLoadActionPossible = ko.computed(function() {
-        return !self.isPrinting() && !self.isPaused() && !self.isLoading();
+        return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
     });
 
     self.isLoadAndPrintActionPossible = ko.computed(function() {
-        return self.isOperational() && self.isLoadActionPossible();
+        return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
     });
 
     self.fromCurrentData = function(data) {
@@ -1117,7 +1076,7 @@ function UsersViewModel(loginStateViewModel) {
         "name",
         [],
         CONFIG_USERSPERPAGE
-    )
+    );
 
     self.emptyUser = {name: "", admin: false, active: false};
 
@@ -1148,6 +1107,8 @@ function UsersViewModel(loginStateViewModel) {
     });
 
     self.requestData = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         $.ajax({
             url: AJAX_BASEURL + "users",
             type: "GET",
@@ -1161,11 +1122,16 @@ function UsersViewModel(loginStateViewModel) {
     }
 
     self.showAddUserDialog = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         self.currentUser(undefined);
+        self.editorActive(true);
         $("#settings-usersDialogAddUser").modal("show");
     }
 
     self.confirmAddUser = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         var user = {name: self.editorUsername(), password: self.editorPassword(), admin: self.editorAdmin(), active: self.editorActive()};
         self.addUser(user, function() {
             // close dialog
@@ -1175,11 +1141,15 @@ function UsersViewModel(loginStateViewModel) {
     }
 
     self.showEditUserDialog = function(user) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         self.currentUser(user);
         $("#settings-usersDialogEditUser").modal("show");
     }
 
     self.confirmEditUser = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         var user = self.currentUser();
         user.active = self.editorActive();
         user.admin = self.editorAdmin();
@@ -1193,11 +1163,15 @@ function UsersViewModel(loginStateViewModel) {
     }
 
     self.showChangePasswordDialog = function(user) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         self.currentUser(user);
         $("#settings-usersDialogChangePassword").modal("show");
     }
 
     self.confirmChangePassword = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         self.updatePassword(self.currentUser().name, self.editorPassword(), function() {
             // close dialog
             self.currentUser(undefined);
@@ -1208,6 +1182,7 @@ function UsersViewModel(loginStateViewModel) {
     //~~ AJAX calls
 
     self.addUser = function(user, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
         if (user === undefined) return;
 
         $.ajax({
@@ -1223,7 +1198,9 @@ function UsersViewModel(loginStateViewModel) {
     }
 
     self.removeUser = function(user, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
         if (user === undefined) return;
+
         if (user.name == loginStateViewModel.username()) {
             // we do not allow to delete ourself
             $.pnotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
@@ -1241,6 +1218,7 @@ function UsersViewModel(loginStateViewModel) {
     }
 
     self.updateUser = function(user, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
         if (user === undefined) return;
 
         $.ajax({
@@ -1256,6 +1234,8 @@ function UsersViewModel(loginStateViewModel) {
     }
 
     self.updatePassword = function(username, password, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
         $.ajax({
             url: AJAX_BASEURL + "users/" + username + "/password",
             type: "PUT",
@@ -1316,7 +1296,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             dataType: "json",
             success: self.fromResponse
         });
-        self.users.requestData();
     }
 
     self.fromResponse = function(response) {
@@ -1399,12 +1378,13 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
 }
 
-function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel) {
+function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.appearance = appearanceViewModel;
     self.systemActions = settingsViewModel.system_actions;
+    self.users = usersViewModel;
 
     self.triggerAction = function(action) {
         var callback = function() {
@@ -1431,7 +1411,7 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
     }
 }
 
-function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel) {
+function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel) {
     var self = this;
 
     self.loginStateViewModel = loginStateViewModel;
@@ -1440,7 +1420,6 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
     self.temperatureViewModel = temperatureViewModel;
     self.controlViewModel = controlViewModel;
     self.terminalViewModel = terminalViewModel;
-    self.speedViewModel = speedViewModel;
     self.gcodeFilesViewModel = gcodeFilesViewModel;
     self.timelapseViewModel = timelapseViewModel;
     self.gcodeViewModel = gcodeViewModel;
@@ -1755,12 +1734,11 @@ $(function() {
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlsViewModel(loginStateViewModel);
-        var speedViewModel = new SpeedViewModel(loginStateViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(loginStateViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
-        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel);
+        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
 
         var dataUpdater = new DataUpdater(
             loginStateViewModel,
@@ -1768,7 +1746,6 @@ $(function() {
             printerStateViewModel, 
             temperatureViewModel, 
             controlViewModel,
-            speedViewModel, 
             terminalViewModel,
             gcodeFilesViewModel,
             timelapseViewModel,
@@ -1820,28 +1797,6 @@ $(function() {
             temperatureViewModel.updatePlot();
             terminalViewModel.updateOutput();
         });
-
-        //~~ Speed controls
-
-        function speedCommand(structure) {
-            var speedSetting = $("#speed_" + structure).val();
-            if (speedSetting) {
-                $.ajax({
-                    url: AJAX_BASEURL + "control/speed",
-                    type: "POST",
-                    dataType: "json",
-                    data: structure + "=" + speedSetting,
-                    success: function(response) {
-                        $("#speed_" + structure).val("")
-                        speedViewModel.fromResponse(response);
-                    }
-                })
-            }
-        }
-        $("#speed_outerWall_set").click(function() {speedCommand("outerWall")});
-        $("#speed_innerWall_set").click(function() {speedCommand("innerWall")});
-        $("#speed_support_set").click(function() {speedCommand("support")});
-        $("#speed_fill_set").click(function() {speedCommand("fill")});
 
         //~~ Terminal
 
@@ -1909,14 +1864,12 @@ $(function() {
             }
         }
 
-        ko.applyBindings(connectionViewModel, document.getElementById("connection"));
-        ko.applyBindings(printerStateViewModel, document.getElementById("state"));
-        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
-        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files-heading"));
+        ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+        ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
         ko.applyBindings(controlViewModel, document.getElementById("control"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
-        ko.applyBindings(speedViewModel, document.getElementById("speed"));
         ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
@@ -1930,6 +1883,7 @@ $(function() {
         if (gCodeVisualizerElement) {
             gcodeViewModel.initialize();
         }
+
         //~~ startup commands
 
         loginStateViewModel.requestData();
@@ -1937,7 +1891,19 @@ $(function() {
         controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
-        settingsViewModel.requestData();
+
+        loginStateViewModel.subscribe(function(change, data) {
+            if ("login" == change) {
+                $("#gcode_upload").fileupload("enable");
+
+                settingsViewModel.requestData();
+                if (data.admin) {
+                    usersViewModel.requestData();
+                }
+            } else {
+                $("#gcode_upload").fileupload("disable");
+            }
+        })
 
         //~~ UI stuff
 

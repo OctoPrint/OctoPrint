@@ -65,6 +65,8 @@ class FilebasedUserManager(UserManager):
 				for name in data.keys():
 					attributes = data[name]
 					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"])
+		else:
+			self._users["admin"] = User("admin", "7557160613d5258f883014a7c3c0428de53040fc152b1791f1cc04a62b428c0c2a9c46ed330cdce9689353ab7a5352ba2b2ceb459b96e9c8ed7d0cb0b2c0c076", True, ["user", "admin"])
 
 	def _save(self, force=False):
 		if not self._dirty and not force:
@@ -193,7 +195,8 @@ class User(UserMixin):
 		return {
 			"name": self._username,
 			"active": self.is_active(),
-			"admin": self.is_admin()
+			"admin": self.is_admin(),
+			"user": self.is_user()
 		}
 
 	def check_password(self, passwordHash):
