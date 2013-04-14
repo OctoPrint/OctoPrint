@@ -239,7 +239,7 @@ GCODE.ui = (function(){
         });
 
         if(!Modernizr.canvas)fatal.push("<li>Your browser doesn't seem to support HTML5 Canvas, this application won't work without it.</li>");
-        if(!Modernizr.filereader)fatal.push("<li>Your browser doesn't seem to support HTML5 File API, this application won't work without it.</li>");
+        //if(!Modernizr.filereader)fatal.push("<li>Your browser doesn't seem to support HTML5 File API, this application won't work without it.</li>");
         if(!Modernizr.webworkers)fatal.push("<li>Your browser doesn't seem to support HTML5 Web Workers, this application won't work without it.</li>");
         if(!Modernizr.svg)fatal.push("<li>Your browser doesn't seem to support HTML5 SVG, this application won't work without it.</li>");
 
@@ -249,7 +249,7 @@ GCODE.ui = (function(){
             return false;
         }
 
-        if(!Modernizr.webgl){
+        if(!Modernizr.webgl && GCODE.renderer3d){
             warnings.push("<li>Your browser doesn't seem to support HTML5 Web GL, 3d mode is not recommended, going to be SLOW!</li>");
             GCODE.renderer3d.setOption({rendererType: "canvas"});
         }
