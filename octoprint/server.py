@@ -610,7 +610,7 @@ def logout():
 
 @identity_loaded.connect_via(app)
 def on_identity_loaded(sender, identity):
-	user = load_user(identity.name)
+	user = load_user(identity.id)
 	if user is None:
 		return
 
