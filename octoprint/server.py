@@ -574,7 +574,7 @@ def performSystemAction():
 
 @app.route(BASEURL + "login", methods=["POST"])
 def login():
-	if "user" in request.values.keys() and "pass" in request.values.keys():
+	if userManager is not None and "user" in request.values.keys() and "pass" in request.values.keys():
 		username = request.values["user"]
 		password = request.values["pass"]
 
@@ -594,8 +594,7 @@ def login():
 		user = current_user
 		if user is not None and not user.is_anonymous():
 			return jsonify(user.asDict())
-		else:
-			return jsonify(SUCCESS)
+	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "logout", methods=["POST"])
 @login_required
@@ -613,11 +612,7 @@ def logout():
 def on_identity_loaded(sender, identity):
 	user = load_user(identity.name)
 	if user is None:
-		if userManager is None:
-			# access control is disabled, we'll create permissions for the DummyUser
-			user = users.DummyUser()
-		else:
-			return
+		return
 
 	identity.provides.add(UserNeed(user.get_name()))
 	if user.is_user():
@@ -628,7 +623,7 @@ def on_identity_loaded(sender, identity):
 def load_user(id):
 	if userManager is not None:
 		return userManager.findUser(id)
-	return None
+	return users.DummyUser()
 
 #~~ startup code
 class Server():
@@ -674,6 +669,7 @@ class Server():
 		login_manager.user_callback = load_user
 		if userManager is None:
 			login_manager.anonymous_user = users.DummyUser
+			principals.identity_loaders.appendleft(users.dummy_identity_loader)
 		login_manager.init_app(app)
 
 		if self._host is None:

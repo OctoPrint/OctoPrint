@@ -3,6 +3,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from flask.ext.login import UserMixin
+from flask.ext.principal import Identity
 import hashlib
 import os
 import yaml
@@ -225,3 +226,10 @@ class DummyUser(User):
 
 	def check_password(self, passwordHash):
 		return True
+
+class DummyIdentity(Identity):
+	def __init__(self):
+		Identity.__init__(self, "dummy")
+
+def dummy_identity_loader():
+	return DummyIdentity()
