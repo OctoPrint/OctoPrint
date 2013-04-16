@@ -466,7 +466,6 @@ class MachineCom(object):
 		self.close()
 	
 	def _sendCommand(self, cmd):
-		cmd = cmd.upper()
 		if self._serial is None:
 			return
 		if 'M109' in cmd or 'M190' in cmd:
