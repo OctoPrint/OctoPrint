@@ -1563,6 +1563,15 @@ $(function() {
 
         $("#terminal-send").click(function () {
             var command = $("#terminal-command").val();
+
+            /*
+            var re = /^([gm][0-9]+)(\s.*)?/;
+            var commandMatch = command.match(re);
+            if (commandMatch != null) {
+                command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
+            }
+            */
+
             if (command) {
                 $.ajax({
                     url: AJAX_BASEURL + "control/command",
