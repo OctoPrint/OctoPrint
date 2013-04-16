@@ -113,7 +113,20 @@ body {
   .accordion-heading {
     .settings-trigger {
       float: right;
-      padding: 0px 15px;
+
+      .dropdown-toggle {
+        display: inline-block;
+        padding: 8px 15px;
+        font-size: 14px;
+        line-height: 20px;
+        color: #000;
+        text-decoration: none;
+        background: none;
+
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
+      }
     }
 
     a.accordion-toggle {
@@ -181,6 +194,42 @@ table {
     &.timelapse_files_action {
       text-align: center;
       width: 45px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
+    }
+
+    // user settings
+    &.settings_users_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    &.settings_users_active, &.settings_users_admin {
+      text-align: center;
+      width: 55px;
+    }
+
+    &.settings_users_actions {
+      text-align: center;
+      width: 60px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
     }
   }
 }
@@ -274,9 +323,9 @@ ul.dropdown-menu li a {
   }
 }
 
-/** Controls */
+/** Control tab */
 
-#controls {
+#control {
   overflow: hidden;
 
   .jog-panel {
@@ -324,7 +373,6 @@ ul.dropdown-menu li a {
 
 /** Settings dialog */
 #settings_dialog {
-  width: 650px;
 }
 
 /** Footer */

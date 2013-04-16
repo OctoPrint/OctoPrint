@@ -560,8 +560,6 @@ class MachineCom(object):
 	def _sendCommand(self, cmd, sendChecksum=False):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
-			cmd = cmd.upper()
-
 			if self._serial is None:
 				return
 			if 'M109' in cmd or 'M190' in cmd:

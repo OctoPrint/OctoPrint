@@ -1,7 +1,98 @@
 //~~ View models
 
-function ConnectionViewModel() {
+function LoginStateViewModel() {
     var self = this;
+
+    self.loggedIn = ko.observable(false);
+    self.username = ko.observable(undefined);
+    self.isAdmin = ko.observable(false);
+    self.isUser = ko.observable(false);
+
+    self.currentUser = ko.observable(undefined);
+
+    self.userMenuText = ko.computed(function() {
+        if (self.loggedIn()) {
+            return "\"" + self.username() + "\"";
+        } else {
+            return "Login";
+        }
+    })
+
+    self.subscribers = [];
+    self.subscribe = function(callback) {
+        self.subscribers.push(callback);
+    }
+
+    self.requestData = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "login",
+            type: "POST",
+            data: {"passive": true},
+            success: self.fromResponse
+        })
+    }
+
+    self.fromResponse = function(response) {
+        if (response && response.name) {
+            self.loggedIn(true);
+            self.username(response.name);
+            self.isUser(response.user);
+            self.isAdmin(response.admin);
+
+            self.currentUser(response);
+
+            _.each(self.subscribers, function(callback) { callback("login", response); });
+        } else {
+            self.loggedIn(false);
+            self.username(undefined);
+            self.isUser(false);
+            self.isAdmin(false);
+
+            self.currentUser(undefined);
+
+            _.each(self.subscribers, function(callback) { callback("logout", {}); });
+        }
+    }
+
+    self.login = function() {
+        var username = $("#login_user").val();
+        var password = $("#login_pass").val();
+        var remember = $("#login_remember").is(":checked");
+
+        $("#login_user").val("");
+        $("#login_pass").val("");
+        $("#login_remember").prop("checked", false);
+
+        $.ajax({
+            url: AJAX_BASEURL + "login",
+            type: "POST",
+            data: {"user": username, "pass": password, "remember": remember},
+            success: function(response) {
+                $.pnotify({title: "Login successful", text: "You are now logged in as \"" + response.name + "\"", type: "success"});
+                self.fromResponse(response);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                $.pnotify({title: "Login failed", text: "User unknown or wrong password", type: "error"});
+            }
+        })
+    }
+
+    self.logout = function() {
+        $.ajax({
+            url: AJAX_BASEURL + "logout",
+            type: "POST",
+            success: function(response) {
+                $.pnotify({title: "Logout successful", text: "You are now logged out", type: "success"});
+                self.fromResponse(response);
+            }
+        })
+    }
+}
+
+function ConnectionViewModel(loginStateViewModel) {
+    var self = this;
+
+    self.loginState = loginStateViewModel;
 
     self.portOptions = ko.observableArray(undefined);
     self.baudrateOptions = ko.observableArray(undefined);
@@ -28,7 +119,7 @@ function ConnectionViewModel() {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "control/connectionOptions",
+            url: AJAX_BASEURL + "control/connection/options",
             method: "GET",
             dataType: "json",
             success: function(response) {
@@ -83,6 +174,7 @@ function ConnectionViewModel() {
     self.connect = function() {
         if (self.isErrorOrClosed()) {
             var data = {
+                "command": "connect",
                 "port": self.selectedPort(),
                 "baudrate": self.selectedBaudrate()
             };
@@ -91,7 +183,7 @@ function ConnectionViewModel() {
                 data["save"] = true;
 
             $.ajax({
-                url: AJAX_BASEURL + "control/connect",
+                url: AJAX_BASEURL + "control/connection",
                 type: "POST",
                 dataType: "json",
                 data: data
@@ -99,16 +191,19 @@ function ConnectionViewModel() {
         } else {
             self.requestData();
             $.ajax({
-                url: AJAX_BASEURL + "control/disconnect",
+                url: AJAX_BASEURL + "control/connection",
                 type: "POST",
-                dataType: "json"
+                dataType: "json",
+                data: {"command": "disconnect"}
             })
         }
     }
 }
 
-function PrinterStateViewModel() {
+function PrinterStateViewModel(loginStateViewModel) {
     var self = this;
+
+    self.loginState = loginStateViewModel;
 
     self.stateString = ko.observable(undefined);
     self.isErrorOrClosed = ko.observable(undefined);
@@ -200,10 +295,44 @@ function PrinterStateViewModel() {
     self._processZData = function(data) {
         self.currentHeight(data);
     }
+
+    self.print = function() {
+        var printAction = function() {
+            self._jobCommand("start");
+        }
+
+        if (self.isPaused()) {
+            $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); printAction(); });
+            $("#confirmation_dialog").modal("show");
+        } else {
+            printAction();
+        }
+
+    }
+
+    self.pause = function() {
+        self._jobCommand("pause");
+    }
+
+    self.cancel = function() {
+        self._jobCommand("cancel");
+    }
+
+    self._jobCommand = function(command) {
+        $.ajax({
+            url: AJAX_BASEURL + "control/job",
+            type: "POST",
+            dataType: "json",
+            data: {command: command}
+        });
+    }
 }
 
-function TemperatureViewModel(settingsViewModel) {
+function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     var self = this;
+
+    self.loginState = loginStateViewModel;
 
     self.temp = ko.observable(undefined);
     self.bedTemp = ko.observable(undefined);
@@ -376,8 +505,10 @@ function TemperatureViewModel(settingsViewModel) {
     }
 }
 
-function ControlsViewModel() {
+function ControlViewModel(loginStateViewModel) {
     var self = this;
+
+    self.loginState = loginStateViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -531,66 +662,10 @@ function ControlsViewModel() {
 
 }
 
-function SpeedViewModel() {
+function TerminalViewModel(loginStateViewModel) {
     var self = this;
 
-    self.outerWall = ko.observable(undefined);
-    self.innerWall = ko.observable(undefined);
-    self.fill = ko.observable(undefined);
-    self.support = ko.observable(undefined);
-
-    self.isErrorOrClosed = ko.observable(undefined);
-    self.isOperational = ko.observable(undefined);
-    self.isPrinting = ko.observable(undefined);
-    self.isPaused = ko.observable(undefined);
-    self.isError = ko.observable(undefined);
-    self.isReady = ko.observable(undefined);
-    self.isLoading = ko.observable(undefined);
-
-    self._fromCurrentData = function(data) {
-        self._processStateData(data.state);
-    }
-
-    self._fromHistoryData = function(data) {
-        self._processStateData(data.state);
-    }
-
-    self._processStateData = function(data) {
-        self.isErrorOrClosed(data.flags.closedOrError);
-        self.isOperational(data.flags.operational);
-        self.isPaused(data.flags.paused);
-        self.isPrinting(data.flags.printing);
-        self.isError(data.flags.error);
-        self.isReady(data.flags.ready);
-        self.isLoading(data.flags.loading);
-    }
-
-    self.requestData = function() {
-        $.ajax({
-            url: AJAX_BASEURL + "control/speed",
-            type: "GET",
-            dataType: "json",
-            success: self._fromResponse
-        });
-    }
-
-    self._fromResponse = function(response) {
-        if (response.feedrate) {
-            self.outerWall(response.feedrate.outerWall);
-            self.innerWall(response.feedrate.innerWall);
-            self.fill(response.feedrate.fill);
-            self.support(response.feedrate.support);
-        } else {
-            self.outerWall(undefined);
-            self.innerWall(undefined);
-            self.fill(undefined);
-            self.support(undefined);
-        }
-    }
-}
-
-function TerminalViewModel() {
-    var self = this;
+    self.loginState = loginStateViewModel;
 
     self.log = [];
 
@@ -655,8 +730,10 @@ function TerminalViewModel() {
     }
 }
 
-function GcodeFilesViewModel() {
+function GcodeFilesViewModel(loginStateViewModel) {
     var self = this;
+
+    self.loginState = loginStateViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -700,11 +777,11 @@ function GcodeFilesViewModel() {
     );
 
     self.isLoadActionPossible = ko.computed(function() {
-        return !self.isPrinting() && !self.isPaused() && !self.isLoading();
+        return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
     });
 
     self.isLoadAndPrintActionPossible = ko.computed(function() {
-        return self.isOperational() && self.isLoadActionPossible();
+        return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
     });
 
     self.fromCurrentData = function(data) {
@@ -789,8 +866,10 @@ function GcodeFilesViewModel() {
 
 }
 
-function WebcamViewModel() {
+function TimelapseViewModel(loginStateViewModel) {
     var self = this;
+
+    self.loginState = loginStateViewModel;
 
     self.timelapseType = ko.observable(undefined);
     self.timelapseTimedInterval = ko.observable(undefined);
@@ -848,7 +927,6 @@ function WebcamViewModel() {
             dataType: "json",
             success: self.fromResponse
         });
-        $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
     }
 
     self.fromResponse = function(response) {
@@ -909,8 +987,10 @@ function WebcamViewModel() {
     }
 }
 
-function GcodeViewModel() {
+function GcodeViewModel(loginStateViewModel) {
     var self = this;
+
+    self.loginState = loginStateViewModel;
 
     self.loadedFilename = undefined;
     self.status = 'idle';
@@ -972,8 +1052,201 @@ function GcodeViewModel() {
 
 }
 
-function SettingsViewModel() {
+function UsersViewModel(loginStateViewModel) {
     var self = this;
+
+    self.loginState = loginStateViewModel;
+
+    // initialize list helper
+    self.listHelper = new ItemListHelper(
+        "users",
+        {
+            "name": function(a, b) {
+                // sorts ascending
+                if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
+                if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                return 0;
+            }
+        },
+        {},
+        "name",
+        [],
+        CONFIG_USERSPERPAGE
+    );
+
+    self.emptyUser = {name: "", admin: false, active: false};
+
+    self.currentUser = ko.observable(self.emptyUser);
+
+    self.editorUsername = ko.observable(undefined);
+    self.editorPassword = ko.observable(undefined);
+    self.editorRepeatedPassword = ko.observable(undefined);
+    self.editorAdmin = ko.observable(undefined);
+    self.editorActive = ko.observable(undefined);
+
+    self.currentUser.subscribe(function(newValue) {
+        if (newValue === undefined) {
+            self.editorUsername(undefined);
+            self.editorAdmin(undefined);
+            self.editorActive(undefined);
+        } else {
+            self.editorUsername(newValue.name);
+            self.editorAdmin(newValue.admin);
+            self.editorActive(newValue.active);
+        }
+        self.editorPassword(undefined);
+        self.editorRepeatedPassword(undefined);
+    });
+
+    self.editorPasswordMismatch = ko.computed(function() {
+        return self.editorPassword() != self.editorRepeatedPassword();
+    });
+
+    self.requestData = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        $.ajax({
+            url: AJAX_BASEURL + "users",
+            type: "GET",
+            dataType: "json",
+            success: self.fromResponse
+        });
+    }
+
+    self.fromResponse = function(response) {
+        self.listHelper.updateItems(response.users);
+    }
+
+    self.showAddUserDialog = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        self.currentUser(undefined);
+        self.editorActive(true);
+        $("#settings-usersDialogAddUser").modal("show");
+    }
+
+    self.confirmAddUser = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        var user = {name: self.editorUsername(), password: self.editorPassword(), admin: self.editorAdmin(), active: self.editorActive()};
+        self.addUser(user, function() {
+            // close dialog
+            self.currentUser(undefined);
+            $("#settings-usersDialogAddUser").modal("hide");
+        });
+    }
+
+    self.showEditUserDialog = function(user) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        self.currentUser(user);
+        $("#settings-usersDialogEditUser").modal("show");
+    }
+
+    self.confirmEditUser = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        var user = self.currentUser();
+        user.active = self.editorActive();
+        user.admin = self.editorAdmin();
+
+        // make AJAX call
+        self.updateUser(user, function() {
+            // close dialog
+            self.currentUser(undefined);
+            $("#settings-usersDialogEditUser").modal("hide");
+        });
+    }
+
+    self.showChangePasswordDialog = function(user) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        self.currentUser(user);
+        $("#settings-usersDialogChangePassword").modal("show");
+    }
+
+    self.confirmChangePassword = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        self.updatePassword(self.currentUser().name, self.editorPassword(), function() {
+            // close dialog
+            self.currentUser(undefined);
+            $("#settings-usersDialogChangePassword").modal("hide");
+        });
+    }
+
+    //~~ AJAX calls
+
+    self.addUser = function(user, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+        if (user === undefined) return;
+
+        $.ajax({
+            url: AJAX_BASEURL + "users",
+            type: "POST",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(user),
+            success: function(response) {
+                self.fromResponse(response);
+                callback();
+            }
+        });
+    }
+
+    self.removeUser = function(user, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+        if (user === undefined) return;
+
+        if (user.name == loginStateViewModel.username()) {
+            // we do not allow to delete ourself
+            $.pnotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
+            return;
+        }
+
+        $.ajax({
+            url: AJAX_BASEURL + "users/" + user.name,
+            type: "DELETE",
+            success: function(response) {
+                self.fromResponse(response);
+                callback();
+            }
+        });
+    }
+
+    self.updateUser = function(user, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+        if (user === undefined) return;
+
+        $.ajax({
+            url: AJAX_BASEURL + "users/" + user.name,
+            type: "PUT",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(user),
+            success: function(response) {
+                self.fromResponse(response);
+                callback();
+            }
+        });
+    }
+
+    self.updatePassword = function(username, password, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        $.ajax({
+            url: AJAX_BASEURL + "users/" + username + "/password",
+            type: "PUT",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify({password: password}),
+            success: callback
+        });
+    }
+}
+
+function SettingsViewModel(loginStateViewModel, usersViewModel) {
+    var self = this;
+
+    self.loginState = loginStateViewModel;
+    self.users = usersViewModel;
 
     self.appearance_name = ko.observable(undefined);
     self.appearance_color = ko.observable(undefined);
@@ -1020,7 +1293,7 @@ function SettingsViewModel() {
             type: "GET",
             dataType: "json",
             success: self.fromResponse
-        })
+        });
     }
 
     self.fromResponse = function(response) {
@@ -1107,11 +1380,13 @@ function SettingsViewModel() {
 
 }
 
-function NavigationViewModel(appearanceViewModel, settingsViewModel) {
+function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel) {
     var self = this;
 
+    self.loginState = loginStateViewModel;
     self.appearance = appearanceViewModel;
     self.systemActions = settingsViewModel.system_actions;
+    self.users = usersViewModel;
 
     self.triggerAction = function(action) {
         var callback = function() {
@@ -1138,24 +1413,26 @@ function NavigationViewModel(appearanceViewModel, settingsViewModel) {
     }
 }
 
-function DataUpdater(connectionViewModel, printerStateViewModel, temperatureViewModel, controlsViewModel, speedViewModel, terminalViewModel, gcodeFilesViewModel, webcamViewModel, gcodeViewModel) {
+function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel) {
     var self = this;
 
+    self.loginStateViewModel = loginStateViewModel;
     self.connectionViewModel = connectionViewModel;
     self.printerStateViewModel = printerStateViewModel;
     self.temperatureViewModel = temperatureViewModel;
-    self.controlsViewModel = controlsViewModel;
+    self.controlViewModel = controlViewModel;
     self.terminalViewModel = terminalViewModel;
-    self.speedViewModel = speedViewModel;
     self.gcodeFilesViewModel = gcodeFilesViewModel;
-    self.webcamViewModel = webcamViewModel;
+    self.timelapseViewModel = timelapseViewModel;
     self.gcodeViewModel = gcodeViewModel;
 
     self._socket = io.connect();
     self._socket.on("connect", function() {
         if ($("#offline_overlay").is(":visible")) {
             $("#offline_overlay").hide();
-            self.webcamViewModel.requestData();
+            self.timelapseViewModel.requestData();
+            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+            self.loginStateViewModel.requestData();
         }
     })
     self._socket.on("disconnect", function() {
@@ -1177,9 +1454,9 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.connectionViewModel.fromHistoryData(data);
         self.printerStateViewModel.fromHistoryData(data);
         self.temperatureViewModel.fromHistoryData(data);
-        self.controlsViewModel.fromHistoryData(data);
+        self.controlViewModel.fromHistoryData(data);
         self.terminalViewModel.fromHistoryData(data);
-        self.webcamViewModel.fromHistoryData(data);
+        self.timelapseViewModel.fromHistoryData(data);
         self.gcodeViewModel.fromHistoryData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
     })
@@ -1187,9 +1464,9 @@ function DataUpdater(connectionViewModel, printerStateViewModel, temperatureView
         self.connectionViewModel.fromCurrentData(data);
         self.printerStateViewModel.fromCurrentData(data);
         self.temperatureViewModel.fromCurrentData(data);
-        self.controlsViewModel.fromCurrentData(data);
+        self.controlViewModel.fromCurrentData(data);
         self.terminalViewModel.fromCurrentData(data);
-        self.webcamViewModel.fromCurrentData(data);
+        self.timelapseViewModel.fromCurrentData(data);
         self.gcodeViewModel.fromCurrentData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
     })
@@ -1451,36 +1728,38 @@ function AppearanceViewModel(settingsViewModel) {
 $(function() {
 
         //~~ View models
-        var connectionViewModel = new ConnectionViewModel();
-        var printerStateViewModel = new PrinterStateViewModel();
-        var settingsViewModel = new SettingsViewModel();
+        var loginStateViewModel = new LoginStateViewModel(loginStateViewModel);
+        var usersViewModel = new UsersViewModel(loginStateViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel);
+        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel);
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
-        var temperatureViewModel = new TemperatureViewModel(settingsViewModel);
-        var controlsViewModel = new ControlsViewModel();
-        var speedViewModel = new SpeedViewModel();
-        var terminalViewModel = new TerminalViewModel();
-        var gcodeFilesViewModel = new GcodeFilesViewModel();
-        var webcamViewModel = new WebcamViewModel();
-        var gcodeViewModel = new GcodeViewModel();
-        var navigationViewModel = new NavigationViewModel(appearanceViewModel, settingsViewModel);
+        var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel);
+        var terminalViewModel = new TerminalViewModel(loginStateViewModel);
+        var gcodeFilesViewModel = new GcodeFilesViewModel(loginStateViewModel);
+        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
+        var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
+        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
 
         var dataUpdater = new DataUpdater(
+            loginStateViewModel,
             connectionViewModel, 
             printerStateViewModel, 
             temperatureViewModel, 
-            controlsViewModel, 
-            speedViewModel, 
+            controlViewModel,
             terminalViewModel,
             gcodeFilesViewModel,
-            webcamViewModel,
+            timelapseViewModel,
             gcodeViewModel
         );
         
-        //work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
+        // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
+        // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
         $.ajaxSetup({
-		    type: 'POST',
-		    headers: { "cache-control": "no-cache" }
-		});
+            type: 'POST',
+            headers: { "cache-control": "no-cache" }
+        });
 
         //~~ Show settings - to ensure centered
         $('#navbar_show_settings').click(function() {
@@ -1492,31 +1771,7 @@ $(function() {
             return false;
         })
 
-        //~~ Print job control
-
-        $("#job_print").click(function() {
-            $.ajax({
-                url: AJAX_BASEURL + "control/print",
-                type: "POST",
-                dataType: "json",
-                success: function(){}
-            })
-        })
-        $("#job_pause").click(function() {
-            $("#job_pause").button("toggle");
-            $.ajax({
-                url: AJAX_BASEURL + "control/pause",
-                type: "POST",
-                dataType: "json"
-            })
-        })
-        $("#job_cancel").click(function() {
-            $.ajax({
-                url: AJAX_BASEURL + "control/cancel",
-                type: "POST",
-                dataType: "json"
-            })
-        })
+        //~~ Print job control (should move to PrinterStateViewModel)
 
         //~~ Temperature control (should really move to knockout click binding)
 
@@ -1542,34 +1797,22 @@ $(function() {
         })
         $('#tabs a[data-toggle="tab"]').on('shown', function (e) {
             temperatureViewModel.updatePlot();
+            terminalViewModel.updateOutput();
         });
-
-        //~~ Speed controls
-
-        function speedCommand(structure) {
-            var speedSetting = $("#speed_" + structure).val();
-            if (speedSetting) {
-                $.ajax({
-                    url: AJAX_BASEURL + "control/speed",
-                    type: "POST",
-                    dataType: "json",
-                    data: structure + "=" + speedSetting,
-                    success: function(response) {
-                        $("#speed_" + structure).val("")
-                        speedViewModel.fromResponse(response);
-                    }
-                })
-            }
-        }
-        $("#speed_outerWall_set").click(function() {speedCommand("outerWall")});
-        $("#speed_innerWall_set").click(function() {speedCommand("innerWall")});
-        $("#speed_support_set").click(function() {speedCommand("support")});
-        $("#speed_fill_set").click(function() {speedCommand("fill")});
 
         //~~ Terminal
 
         $("#terminal-send").click(function () {
             var command = $("#terminal-command").val();
+
+            /*
+            var re = /^([gm][0-9]+)(\s.*)?/;
+            var commandMatch = command.match(re);
+            if (commandMatch != null) {
+                command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
+            }
+            */
+
             if (command) {
                 $.ajax({
                     url: AJAX_BASEURL + "control/command",
@@ -1613,23 +1856,6 @@ $(function() {
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
-        //~~ Alert
-
-        /*
-        function displayAlert(text, timeout, type) {
-            var placeholder = $("#alert_placeholder");
-
-            var alertType = "";
-            if (type == "success" || type == "error" || type == "info") {
-                alertType = " alert-" + type;
-            }
-
-            placeholder.append($("<div id='activeAlert' class='alert " + alertType + " fade in' data-alert='alert'><p>" + text + "</p></div>"));
-            placeholder.fadeIn();
-            $("#activeAlert").delay(timeout).fadeOut("slow", function() {$(this).remove(); $("#alert_placeholder").hide();});
-        }
-        */
-
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {
@@ -1649,34 +1875,46 @@ $(function() {
             }
         }
 
-        ko.applyBindings(connectionViewModel, document.getElementById("connection"));
-        ko.applyBindings(printerStateViewModel, document.getElementById("state"));
-        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files"));
-        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files-heading"));
+        ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+        ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-        ko.applyBindings(controlsViewModel, document.getElementById("controls"));
+        ko.applyBindings(controlViewModel, document.getElementById("control"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
-        ko.applyBindings(speedViewModel, document.getElementById("speed"));
         ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
 
-        var webcamElement = document.getElementById("webcam");
-        if (webcamElement) {
-            ko.applyBindings(webcamViewModel, document.getElementById("webcam"));
+        var timelapseElement = document.getElementById("timelapse");
+        if (timelapseElement) {
+            ko.applyBindings(timelapseViewModel, timelapseElement);
         }
         var gCodeVisualizerElement = document.getElementById("gcode");
-        if(gCodeVisualizerElement){
+        if (gCodeVisualizerElement) {
             gcodeViewModel.initialize();
         }
+
         //~~ startup commands
 
+        loginStateViewModel.requestData();
         connectionViewModel.requestData();
-        controlsViewModel.requestData();
+        controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
-        webcamViewModel.requestData();
-        settingsViewModel.requestData();
+        timelapseViewModel.requestData();
+
+        loginStateViewModel.subscribe(function(change, data) {
+            if ("login" == change) {
+                $("#gcode_upload").fileupload("enable");
+
+                settingsViewModel.requestData();
+                if (data.admin) {
+                    usersViewModel.requestData();
+                }
+            } else {
+                $("#gcode_upload").fileupload("disable");
+            }
+        })
 
         //~~ UI stuff
 
@@ -1691,6 +1929,16 @@ $(function() {
         })
 
         $.pnotify.defaults.history = false;
+
+        $.fn.modal.defaults.maxHeight = function(){
+            // subtract the height of the modal header and footer
+            return $(window).height() - 165;
+        }
+
+        // Fix input element click problem on login dialog
+        $('.dropdown input, .dropdown label').click(function(e) {
+            e.stopPropagation();
+        });
 
     }
 );

@@ -2,9 +2,11 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import Flask, request, render_template, jsonify, send_from_directory, abort, url_for
 from werkzeug.utils import secure_filename
 import tornadio2
+from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort
+from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
+from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
 
 import os
 import threading
@@ -12,23 +14,30 @@ import logging, logging.config
 import subprocess
 
 from octoprint.printer import Printer, getConnectionOptions
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 import octoprint.timelapse as timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
+import octoprint.users as users
 
 SUCCESS = {}
 BASEURL = "/ajax/"
+
 app = Flask("octoprint")
 # Only instantiated by the Server().run() method
 # In order that threads don't start too early when running as a Daemon
 printer = None 
 gcodeManager = None
+userManager = None
+
+principals = Principal(app)
+admin_permission = Permission(RoleNeed("admin"))
+user_permission = Permission(RoleNeed("user"))
 
 #~~ Printer state
 
 class PrinterStateConnection(tornadio2.SocketConnection):
-	def __init__(self, session, endpoint=None):
+	def __init__(self, printer, gcodeManager, userManager, session, endpoint=None):
 		tornadio2.SocketConnection.__init__(self, session, endpoint)
 
 		self._logger = logging.getLogger(__name__)
@@ -39,6 +48,10 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._logBacklogMutex = threading.Lock()
 		self._messageBacklog = []
 		self._messageBacklogMutex = threading.Lock()
+
+		self._printer = printer
+		self._gcodeManager = gcodeManager
+		self._userManager = userManager
 
 	def on_open(self, info):
 		self._logger.info("New connection from client")
@@ -99,40 +112,43 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 @app.route("/")
 def index():
 	return render_template(
-		"index.html",
+		"index.jinja2",
+		ajaxBaseUrl=BASEURL,
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
-    	enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
+		enableAccessControl=userManager is not None
 	)
 
 #~~ Printer control
 
-@app.route(BASEURL + "control/connectionOptions", methods=["GET"])
+@app.route(BASEURL + "control/connection/options", methods=["GET"])
 def connectionOptions():
 	return jsonify(getConnectionOptions())
 
-@app.route(BASEURL + "control/connect", methods=["POST"])
+@app.route(BASEURL + "control/connection", methods=["POST"])
+@login_required
 def connect():
-	port = None
-	baudrate = None
-	if "port" in request.values.keys():
-		port = request.values["port"]
-	if "baudrate" in request.values.keys():
-		baudrate = request.values["baudrate"]
-	if "save" in request.values.keys():
-		settings().set(["serial", "port"], port)
-		settings().setInt(["serial", "baudrate"], baudrate)
-		settings().save()
-	printer.connect(port=port, baudrate=baudrate)
-	return jsonify(state="Connecting")
+	if "command" in request.values.keys() and request.values["command"] == "connect":
+		port = None
+		baudrate = None
+		if "port" in request.values.keys():
+			port = request.values["port"]
+		if "baudrate" in request.values.keys():
+			baudrate = request.values["baudrate"]
+		if "save" in request.values.keys():
+			settings().set(["serial", "port"], port)
+			settings().setInt(["serial", "baudrate"], baudrate)
+			settings().save()
+		printer.connect(port=port, baudrate=baudrate)
+	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
+		printer.disconnect()
 
-@app.route(BASEURL + "control/disconnect", methods=["POST"])
-def disconnect():
-	printer.disconnect()
-	return jsonify(state="Offline")
+	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/command", methods=["POST"])
+@login_required
 def printerCommand():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
@@ -155,32 +171,27 @@ def printerCommand():
 
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + "control/print", methods=["POST"])
-def printGcode():
-	printer.startPrint()
-	return jsonify(SUCCESS)
-
-@app.route(BASEURL + "control/pause", methods=["POST"])
-def pausePrint():
-	printer.togglePausePrint()
-	return jsonify(SUCCESS)
-
-@app.route(BASEURL + "control/cancel", methods=["POST"])
-def cancelPrint():
-	printer.cancelPrint()
+@app.route(BASEURL + "control/job", methods=["POST"])
+@login_required
+def printJobControl():
+	if "command" in request.values.keys():
+		if request.values["command"] == "start":
+			printer.startPrint()
+		elif request.values["command"] == "pause":
+			printer.togglePausePrint()
+		elif request.values["command"] == "cancel":
+			printer.cancelPrint()
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/temperature", methods=["POST"])
+@login_required
 def setTargetTemperature():
-	if not printer.isOperational():
-		return jsonify(SUCCESS)
-
-	elif request.values.has_key("temp"):
-	# set target temperature
+	if "temp" in request.values.keys():
+		# set target temperature
 		temp = request.values["temp"]
 		printer.command("M104 S" + temp)
 
-	elif request.values.has_key("bedTemp"):
+	if "bedTemp" in request.values.keys():
 		# set target bed temperature
 		bedTemp = request.values["bedTemp"]
 		printer.command("M140 S" + bedTemp)
@@ -188,6 +199,7 @@ def setTargetTemperature():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/jog", methods=["POST"])
+@login_required
 def jog():
 	if not printer.isOperational() or printer.isPrinting():
 		# do not jog when a print job is running or we don't have a connection
@@ -224,6 +236,7 @@ def getSpeedValues():
 	return jsonify(feedrate=printer.feedrateState())
 
 @app.route(BASEURL + "control/speed", methods=["POST"])
+@login_required
 def speed():
 	if not printer.isOperational():
 		return jsonify(SUCCESS)
@@ -251,6 +264,7 @@ def readGcodeFile(filename):
 	return send_from_directory(settings().getBaseFolder("uploads"), filename, as_attachment=True)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
+@login_required
 def uploadGcodeFile():
 	filename = None
 	if "gcode_file" in request.files.keys():
@@ -259,10 +273,11 @@ def uploadGcodeFile():
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
+@login_required
 def loadGcodeFile():
 	if "filename" in request.values.keys():
 		printAfterLoading = False
-		if "print" in request.values.keys() and request.values["print"]:
+		if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
 			printAfterLoading = True
 		filename = gcodeManager.getAbsolutePath(request.values["filename"])
 		if filename is not None:
@@ -270,6 +285,7 @@ def loadGcodeFile():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
+@login_required
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
@@ -308,6 +324,7 @@ def downloadTimelapse(filename):
 		return send_from_directory(settings().getBaseFolder("timelapse"), filename, as_attachment=True)
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["DELETE"])
+@login_required
 def deleteTimelapse(filename):
 	if util.isAllowedFile(filename, set(["mpg"])):
 		secure = os.path.join(settings().getBaseFolder("timelapse"), secure_filename(filename))
@@ -315,7 +332,8 @@ def deleteTimelapse(filename):
 			os.remove(secure)
 	return getTimelapseData()
 
-@app.route(BASEURL + "timelapse/config", methods=["POST"])
+@app.route(BASEURL + "timelapse", methods=["POST"])
+@login_required
 def setTimelapseConfig():
 	if request.values.has_key("type"):
 		type = request.values["type"]
@@ -381,6 +399,8 @@ def getSettings():
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
+@login_required
+@admin_permission.require(403)
 def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
@@ -425,9 +445,117 @@ def setSettings():
 
 	return getSettings()
 
+#~~ user settings
+
+@app.route(BASEURL + "users", methods=["GET"])
+@login_required
+@admin_permission.require(403)
+def getUsers():
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	return jsonify({"users": userManager.getAllUsers()})
+
+@app.route(BASEURL + "users", methods=["POST"])
+@login_required
+@admin_permission.require(403)
+def addUser():
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if "application/json" in request.headers["Content-Type"]:
+		data = request.json
+
+		name = data["name"]
+		password = data["password"]
+		active = data["active"]
+
+		roles = ["user"]
+		if "admin" in data.keys() and data["admin"]:
+			roles.append("admin")
+
+		try:
+			userManager.addUser(name, password, active, roles)
+		except users.UserAlreadyExists:
+			abort(409)
+	return getUsers()
+
+@app.route(BASEURL + "users/<username>", methods=["GET"])
+@login_required
+def getUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+		user = userManager.findUser(username)
+		if user is not None:
+			return jsonify(user.asDict())
+		else:
+			abort(404)
+	else:
+		abort(403)
+
+@app.route(BASEURL + "users/<username>", methods=["PUT"])
+@login_required
+@admin_permission.require(403)
+def updateUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	user = userManager.findUser(username)
+	if user is not None:
+		if "application/json" in request.headers["Content-Type"]:
+			data = request.json
+
+			# change roles
+			roles = ["user"]
+			if "admin" in data.keys() and data["admin"]:
+				roles.append("admin")
+			userManager.changeUserRoles(username, roles)
+
+			# change activation
+			if "active" in data.keys():
+				userManager.changeUserActivation(username, data["active"])
+		return getUsers()
+	else:
+		abort(404)
+
+@app.route(BASEURL + "users/<username>", methods=["DELETE"])
+@login_required
+@admin_permission.require(http_exception=403)
+def removeUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	try:
+		userManager.removeUser(username)
+		return getUsers()
+	except users.UnknownUser:
+		abort(404)
+
+@app.route(BASEURL + "users/<username>/password", methods=["PUT"])
+@login_required
+def changePasswordForUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+		if "application/json" in request.headers["Content-Type"]:
+			data = request.json
+			if "password" in data.keys() and data["password"]:
+				try:
+					userManager.changeUserPassword(username, data["password"])
+				except users.UnknownUser:
+					return app.make_response(("Unknown user: %s" % username, 404, []))
+		return jsonify(SUCCESS)
+	else:
+		return app.make_response(("Forbidden", 403, []))
+
 #~~ system control
 
 @app.route(BASEURL + "system", methods=["POST"])
+@login_required
+@admin_permission.require(403)
 def performSystemAction():
 	logger = logging.getLogger(__name__)
 	if request.values.has_key("action"):
@@ -446,6 +574,61 @@ def performSystemAction():
 					return app.make_response(("Command failed: %r" % ex, 500, []))
 	return jsonify(SUCCESS)
 
+#~~ Login/user handling
+
+@app.route(BASEURL + "login", methods=["POST"])
+def login():
+	if userManager is not None and "user" in request.values.keys() and "pass" in request.values.keys():
+		username = request.values["user"]
+		password = request.values["pass"]
+
+		if "remember" in request.values.keys() and request.values["remember"]:
+			remember = True
+		else:
+			remember = False
+
+		user = userManager.findUser(username)
+		if user is not None:
+			if user.check_password(users.UserManager.createPasswordHash(password)):
+				login_user(user, remember=remember)
+				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
+				return jsonify(user.asDict())
+		return app.make_response(("User unknown or password incorrect", 401, []))
+	elif "passive" in request.values.keys():
+		user = current_user
+		if user is not None and not user.is_anonymous():
+			return jsonify(user.asDict())
+	return jsonify(SUCCESS)
+
+@app.route(BASEURL + "logout", methods=["POST"])
+@login_required
+def logout():
+	# Remove session keys set by Flask-Principal
+	for key in ('identity.name', 'identity.auth_type'):
+		del session[key]
+	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+
+	logout_user()
+
+	return jsonify(SUCCESS)
+
+@identity_loaded.connect_via(app)
+def on_identity_loaded(sender, identity):
+	user = load_user(identity.id)
+	if user is None:
+		return
+
+	identity.provides.add(UserNeed(user.get_name()))
+	if user.is_user():
+		identity.provides.add(RoleNeed("user"))
+	if user.is_admin():
+		identity.provides.add(RoleNeed("admin"))
+
+def load_user(id):
+	if userManager is not None:
+		return userManager.findUser(id)
+	return users.DummyUser()
+
 #~~ startup code
 class Server():
 	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False):
@@ -459,6 +642,7 @@ class Server():
 		# Global as I can't work out a way to get it into PrinterStateConnection
 		global printer
 		global gcodeManager
+		global userManager
 
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
@@ -470,19 +654,37 @@ class Server():
 
 		# then initialize logging
 		self._initLogging(self._debug)
+		logger = logging.getLogger(__name__)
 
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
+
+		if settings().getBoolean(["accessControl", "enabled"]):
+			userManagerName = settings().get(["accessControl", "userManager"])
+			try:
+				clazz = util.getClass(userManagerName)
+				userManager = clazz()
+			except AttributeError, e:
+				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
+
+		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
+		login_manager = LoginManager()
+		login_manager.session_protection = "strong"
+		login_manager.user_callback = load_user
+		if userManager is None:
+			login_manager.anonymous_user = users.DummyUser
+			principals.identity_loaders.appendleft(users.dummy_identity_loader)
+		login_manager.init_app(app)
 
 		if self._host is None:
 			self._host = settings().get(["server", "host"])
 		if self._port is None:
 			self._port = settings().getInt(["server", "port"])
 
-		logging.getLogger(__name__).info("Listening on http://%s:%d" % (self._host, self._port))
+		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
-		self._router = tornadio2.TornadioRouter(PrinterStateConnection)
+		self._router = tornadio2.TornadioRouter(self._createSocketConnection)
 
 		self._tornado_app = Application(self._router.urls + [
 			(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
@@ -491,11 +693,15 @@ class Server():
 		self._server.listen(self._port, address=self._host)
 		IOLoop.instance().start()
 
+	def _createSocketConnection(self, session, endpoint=None):
+		global printer, gcodeManager, userManager
+		return PrinterStateConnection(printer, gcodeManager, userManager, session, endpoint)
+
 	def _initSettings(self, configfile, basedir):
 		s = settings(init=True, basedir=basedir, configfile=configfile)
 
 	def _initLogging(self, debug):
-		self._config = {
+		config = {
 			"version": 1,
 			"formatters": {
 				"simple": {
@@ -534,13 +740,13 @@ class Server():
 		}
 
 		if debug:
-			self._config["loggers"]["SERIAL"] = {
+			config["loggers"]["SERIAL"] = {
 				"level": "DEBUG",
 				"handlers": ["serialFile"],
 				"propagate": False
 			}
 
-		logging.config.dictConfig(self._config)
+		logging.config.dictConfig(config)
 
 if __name__ == "__main__":
 	octoprint = Server()

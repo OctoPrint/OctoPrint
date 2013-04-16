@@ -1,20 +1,21 @@
-<div id="settings_dialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="settings_dialog_label" aria-hidden="true">
+<div id="settings_dialog" class="modal hide fade container" tabindex="-1" role="dialog" aria-labelledby="settings_dialog_label" aria-hidden="true">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h3 id="settings_dialog_label">OctoPrint Settings</h3>
     </div>
     <div class="modal-body">
         <div class="tabbable">
-            <ul class="nav nav-pills" id="settingsTabs">
+            <ul class="nav nav-list span4" id="settingsTabs">
                 <li class="active"><a href="#settings_printerParameters" data-toggle="tab">Printer Parameters</a></li>
                 <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
                 <li><a href="#settings_features" data-toggle="tab">Features</a></li>
                 <li><a href="#settings_folder" data-toggle="tab">Folder</a></li>
                 <li><a href="#settings_temperature" data-toggle="tab">Temperature</a></li>
                 <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
+                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Users</a></li>{% endif %}
             </ul>
 
-            <div class="tab-content">
+            <div class="tab-content span8">
                 <div class="tab-pane active" id="settings_printerParameters">
                     <form class="form-horizontal">
                         <div class="control-group">
@@ -198,6 +199,152 @@
                         </div>
                     </form>
                 </div>
+
+                {% if enableAccessControl %}
+                <div class="tab-pane" id="settings_users">
+                    <table class="table table-condensed table-hover" id="system_users">
+                        <thead>
+                            <tr>
+                                <th class="settings_users_name">Name</th>
+                                <th class="settings_users_active">Active</th>
+                                <th class="settings_users_admin">Admin</th>
+                                <th class="settings_users_actions">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach: users.listHelper.paginatedItems">
+                            <tr>
+                                <td class="settings_users_name" data-bind="text: name"></td>
+                                <td class="settings_users_active"><i data-bind="css: { 'icon-check': active, 'icon-check-empty': !active }"></i></td>
+                                <td class="settings_users_admin"><i data-bind="css: { 'icon-check': admin, 'icon-check-empty': !admin }"></i></td>
+                                <td class="settings_users_actions" class="system_users_action">
+                                    <a href="#" class="icon-pencil" title="Update User" data-bind="click: function() { $root.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-key" title="Change password" data-bind="click: function() { $root.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="Delete user" data-bind="click: function() { $root.users.removeUser($data); }"></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination pagination-mini pagination-centered">
+                        <ul>
+                            <li data-bind="css: {disabled: users.listHelper.currentPage() === 0}"><a href="#" data-bind="click: users.listHelper.prevPage">«</a></li>
+                        </ul>
+                        <ul data-bind="foreach: users.listHelper.pages">
+                            <li data-bind="css: { active: $data.number === $root.users.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.users.listHelper.changePage($data.number); }"></a></li>
+                        </ul>
+                        <ul>
+                            <li data-bind="css: {disabled: users.listHelper.currentPage() === users.listHelper.lastPage()}"><a href="#" data-bind="click: users.listHelper.nextPage">»</a></li>
+                        </ul>
+                    </div>
+
+                    <button title="Add user" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="icon-plus"></i> Create new user</button>
+
+                    <!-- Modals for user management -->
+
+                    <div id="settings-usersDialogAddUser" class="modal hide fade">
+                        <div class="modal-header">
+                            <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+                            <h3>Create new user</h3>
+                        </div>
+                        <div class="modal-body">
+                            <form class="form-horizontal">
+                                <div class="control-group">
+                                    <label class="control-label" for="settings-usersDialogAddUserName">Username</label>
+                                    <div class="controls">
+                                        <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="value: $root.users.editorUsername" required>
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="settings-usersDialogAddUserPassword1">Password</label>
+                                    <div class="controls">
+                                        <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword1" data-bind="value: $root.users.editorPassword" required>
+                                    </div>
+                                </div>
+                                <div class="control-group" data-bind="css: {error: $root.users.editorPasswordMismatch()}">
+                                    <label class="control-label" for="settings-usersDialogAddUserPassword2">Repeat Password</label>
+                                    <div class="controls">
+                                        <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword2" data-bind="value: $root.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
+                                        <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Passwords do not match</span>
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <div class="controls">
+                                        <label class="checkbox">
+                                            <input type="checkbox" id="settings-usersDialogAddUserActive" data-bind="checked: $root.users.editorActive"> Active
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <div class="controls">
+                                        <label class="checkbox">
+                                            <input type="checkbox" id="settings-usersDialogAddUserAdmin" data-bind="checked: $root.users.editorAdmin"> Admin
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" data-dismiss="modal" aria-hidden="true">Abort</button>
+                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmAddUser(); }, enable: !$root.users.editorPasswordMismatch()">Confirm</button>
+                        </div>
+                    </div>
+
+                    <div id="settings-usersDialogEditUser" class="modal hide fade">
+                        <div class="modal-header">
+                            <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+                            <h3>Edit user "<span data-bind="text: $root.users.editorUsername"></span>"</h3>
+                        </div>
+                        <div class="modal-body">
+                            <form class="form-horizontal">
+                                <div class="control-group">
+                                    <div class="controls">
+                                        <label class="checkbox">
+                                            <input type="checkbox" id="settings-usersDialogEditUserActive" data-bind="checked: $root.users.editorActive"> Active
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <div class="controls">
+                                        <label class="checkbox">
+                                            <input type="checkbox" id="settings-usersDialogEditUserAdmin" data-bind="checked: $root.users.editorAdmin"> Admin
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" data-dismiss="modal" aria-hidden="true">Abort</button>
+                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmEditUser(); }">Confirm</button>
+                        </div>
+                    </div>
+
+                    <div id="settings-usersDialogChangePassword" class="modal hide fade">
+                        <div class="modal-header">
+                            <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+                            <h3>Change password for user "<span data-bind="text: $root.users.editorUsername"></span>"</h3>
+                        </div>
+                        <div class="modal-body">
+                            <form class="form-horizontal">
+                                <div class="control-group">
+                                    <label class="control-label" for="settings-usersDialogChangePasswordPassword1">New Password</label>
+                                    <div class="controls">
+                                        <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword1" data-bind="value: $root.users.editorPassword" required>
+                                    </div>
+                                </div>
+                                <div class="control-group" data-bind="css: {error: $root.users.editorPasswordMismatch()}">
+                                    <label class="control-label" for="settings-usersDialogChangePasswordPassword2">Repeat Password</label>
+                                    <div class="controls">
+                                        <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword2" data-bind="value: $root.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
+                                        <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Passwords do not match</span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" data-dismiss="modal" aria-hidden="true">Abort</button>
+                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmChangePassword(); }, enable: !$root.users.editorPasswordMismatch()">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
             </div>
         </div>
     </div>
