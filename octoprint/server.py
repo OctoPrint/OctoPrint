@@ -600,7 +600,7 @@ def login():
 @login_required
 def logout():
 	# Remove session keys set by Flask-Principal
-	for key in ('identity.name', 'identity.auth_type'):
+	for key in ('identity.id', 'identity.auth_type'):
 		del session[key]
 	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
 
