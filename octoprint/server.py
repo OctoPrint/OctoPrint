@@ -103,7 +103,7 @@ def index():
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
-		enableATXPowerControl=settings().get(["printer", "canControlATXPower"]),
+		enableATXPowerControl=settings().get(["printerParameters", "canControlATXPower"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
 	)
 
