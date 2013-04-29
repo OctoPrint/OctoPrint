@@ -55,6 +55,7 @@ default_settings = {
 			]
 	},
 	"printerParameters": {
+		"canControlATXPower": False,
 		"movementSpeed": {
 			"x": 6000,
 			"y": 6000,
