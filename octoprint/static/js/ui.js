@@ -984,6 +984,7 @@ function SettingsViewModel() {
     self.printer_movementSpeedY = ko.observable(undefined);
     self.printer_movementSpeedZ = ko.observable(undefined);
     self.printer_movementSpeedE = ko.observable(undefined);
+    self.printer_canControlATXPower = ko.observable(undefined);
 
     self.webcam_streamUrl = ko.observable(undefined);
     self.webcam_snapshotUrl = ko.observable(undefined);
@@ -1028,6 +1029,7 @@ function SettingsViewModel() {
         self.printer_movementSpeedY(response.printer.movementSpeedY);
         self.printer_movementSpeedZ(response.printer.movementSpeedZ);
         self.printer_movementSpeedE(response.printer.movementSpeedE);
+        self.printer_canControlATXPower(response.printer.canControlATXPower);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -1058,7 +1060,8 @@ function SettingsViewModel() {
                 "movementSpeedX": self.printer_movementSpeedX(),
                 "movementSpeedY": self.printer_movementSpeedY(),
                 "movementSpeedZ": self.printer_movementSpeedZ(),
-                "movementSpeedE": self.printer_movementSpeedE()
+                "movementSpeedE": self.printer_movementSpeedE(),
+                "canControlATXPower": self.printer_canControlATXPower()
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),
