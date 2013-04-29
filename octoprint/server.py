@@ -103,7 +103,8 @@ def index():
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
-    	enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+		enableATXPowerControl=settings().get(["printer", "canControlATXPower"]),
+		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
 	)
 
 #~~ Printer control
@@ -352,6 +353,7 @@ def getSettings():
 			"movementSpeedY": movementSpeedY,
 			"movementSpeedZ": movementSpeedZ,
 			"movementSpeedE": movementSpeedE,
+			"canControlATXPower": s.getBoolean(["printerParameters", "canControlATXPower"])
 		},
 		"webcam": {
 			"streamUrl": s.get(["webcam", "stream"]),
@@ -393,6 +395,7 @@ def setSettings():
 			if "movementSpeedY" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "y"], data["printer"]["movementSpeedY"])
 			if "movementSpeedZ" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "z"], data["printer"]["movementSpeedZ"])
 			if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
+			if "canControlATXPower" in data["printer"].keys(): s.setBoolean(["printerParameters", "canControlATXPower"], data["printer"]["canControlATXPower"])
 
 		if "webcam" in data.keys():
 			if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
