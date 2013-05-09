@@ -72,6 +72,8 @@ class gcode(object):
 		pathType = 'CUSTOM';
 		startCodeDone = False
 		currentLayer = []
+		unknownGcodes={}
+		unknownMcodes={}
 		currentPath = gcodePath('move', pathType, layerThickness, pos.copy())
 		currentPath.list[0].e = totalExtrusion
 		currentPath.list[0].extrudeAmountMultiply = extrudeAmountMultiply
@@ -220,7 +222,9 @@ class gcode(object):
 					if z is not None:
 						posOffset.z = pos.z - z
 				else:
-					print "Unknown G code:" + str(G)
+					if G not in unknownGcodes:
+						print "Unknown G code:" + str(G)
+					unknownGcodes[G] = True
 			else:
 				M = self.getCodeInt(line, 'M')
 				if M is not None:
@@ -267,7 +271,9 @@ class gcode(object):
 						if s != None:
 							extrudeAmountMultiply = s / 100.0
 					else:
-						print "Unknown M code:" + str(M)
+						if M not in unknownMcodes:
+							print "Unknown M code:" + str(M)
+						unknownMcodes[M] = True
 		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
 		self.totalMoveTimeMinute = totalMoveTimeMinute
