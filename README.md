@@ -1,5 +1,12 @@
-Added support for system commands at print start, print end, print cancelled and z-height change.  Add the commands to run to the config.yaml file:
+Added support for system commands at print start, print end, print cancelled and z-height change.  Add the commands as strings as a new section to the config.yaml file:
 
+    appearance {}
+    feature: {}
+    serial:
+        baudrate: 115200
+        port: /dev/ttyACM0
+    system: {}
+    temperature {} 
     system_commands:
       cancelled: echo cancelled _FILE_ at _PROGRESS_ percent done.
       print_done: growlnotify "done with _FILE_"
