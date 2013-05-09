@@ -69,14 +69,8 @@ default_settings = {
 	"controls": [],
 	"system": {
 		"actions": []
-	},
-    "system_commands": {
-        "z_change":None,
-        "print_started":None,
-        "cancelled":None,
-        "print_done":None
-    }
-} 
+	}
+}
 
 valid_boolean_trues = ["true", "yes", "y", "1"]
 

@@ -375,15 +375,7 @@ def getSettings():
 		},
 		"system": {
 			"actions": s.get(["system", "actions"])
-		},
-        "system_commands": {
-			"print_done": s.get(["system_commands", "print_done"]),
-			"cancelled": s.get(["system_commands", "cancelled"]),
-			"print_started": s.get(["system_commands", "print_started"]),
-			"z_change": s.get(["system_commands", "z_change"])
-			
 		}
-
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -425,12 +417,6 @@ def setSettings():
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
 
-		if "system_commands" in data.keys():
-            if "z_change" in data["system_commands"].keys(): s.set(["system_commands", "z_change"], data["system_commands"]["z_change"])
-            if "print_started" in data["system_commands"].keys(): s.set(["system_commands", "print_started"], data["system_commands"]["print_started"])
-            if "cancelled" in data["system_commands"].keys(): s.set(["system_commands", "cancelled"], data["system_commands"]["cancelled"])
-            if "print_done" in data["system_commands"].keys(): s.set(["system_commands", "print_done"], data["system_commands"]["print_done"])
-            
 		s.save()
 
 	return getSettings()
