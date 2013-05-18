@@ -7,6 +7,7 @@ import sys
 import os
 import yaml
 import logging
+import uuid
 
 APPNAME="OctoPrint"
 
@@ -74,6 +75,10 @@ default_settings = {
 		"enabled": False,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None
+	},
+	"api": {
+		"allow": False,
+		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	}
 }
 
