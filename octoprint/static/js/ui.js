@@ -1248,6 +1248,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.loginState = loginStateViewModel;
     self.users = usersViewModel;
 
+    self.api_allow = ko.observable(undefined);
+    self.api_key = ko.observable(undefined);
+
     self.appearance_name = ko.observable(undefined);
     self.appearance_color = ko.observable(undefined);
 
@@ -1295,6 +1298,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     }
 
     self.fromResponse = function(response) {
+	self.api_allow(response.api.allow);
+	self.api_key(response.api.key);
+
         self.appearance_name(response.appearance.name);
         self.appearance_color(response.appearance.color);
 
@@ -1324,6 +1330,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.saveData = function() {
         var data = {
+            "api" : {
+                "allow": self.api_allow(),
+                "key": self.api_key()
+             },
             "appearance" : {
                 "name": self.appearance_name(),
                 "color": self.appearance_color()
