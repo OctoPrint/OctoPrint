@@ -328,7 +328,7 @@ def apiLoad():
 	else:
 		return jsonify(success=False, message="gcode file not present")
 
-	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
+	return jsonify(SUCCESS)
 
 #~~ timelapse handling
 
