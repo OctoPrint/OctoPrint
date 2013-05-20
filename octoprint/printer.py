@@ -62,6 +62,11 @@ class Printer():
 		self._filename = None
 		self._gcodeLoader = None
 
+		# sd handling
+		self._sdPrinting = False
+		self._sdFile = None
+		self._sdStreamer = None
+
 		# feedrate
 		self._feedrateModifierMapping = {"outerWall": "WALL-OUTER", "innerWall": "WALL_INNER", "fill": "FILL", "support": "SUPPORT"}
 
@@ -86,6 +91,7 @@ class Printer():
 			state={"state": None, "stateString": self.getStateString(), "flags": self._getStateFlags()},
 			jobData={"filename": None, "lines": None, "estimatedPrintTime": None, "filament": None},
 			gcodeData={"filename": None, "progress": None},
+			sdUploadData={"filename": None, "progress": None},
 			progress={"progress": None, "printTime": None, "printTimeLeft": None},
 			currentZ=None
 		)
@@ -120,7 +126,12 @@ class Printer():
 			try: callback.sendCurrentData(copy.deepcopy(data))
 			except: pass
 
-#~~ printer commands
+	def _sendTriggerUpdateCallbacks(self, type):
+		for callback in self._callbacks:
+			try: callback.sendUpdateTrigger(type)
+			except: pass
+
+	#~~ printer commands
 
 	def connect(self, port=None, baudrate=None):
 		"""
@@ -184,13 +195,19 @@ class Printer():
 		"""
 		if self._comm is None or not self._comm.isOperational():
 			return
-		if self._gcodeList is None:
+		if self._gcodeList is None and self._sdFile is None:
 			return
 		if self._comm.isPrinting():
 			return
 
 		self._setCurrentZ(-1)
-		self._comm.printGCode(self._gcodeList)
+		if self._sdFile is not None:
+			# we are working in sd mode
+			self._sdPrinting = True
+			self._comm.printSdFile()
+		else:
+			# we are working in local mode
+			self._comm.printGCode(self._gcodeList)
 
 	def togglePausePrint(self):
 		"""
@@ -206,13 +223,17 @@ class Printer():
 		"""
 		if self._comm is None:
 			return
+
+		if self._sdPrinting:
+			self._sdPrinting = False
 		self._comm.cancelPrint()
+
 		if disableMotorsAndHeater:
 			self.commands(["M84", "M104 S0", "M140 S0", "M106 S0"]) # disable motors, switch off heaters and fan
 
 		# reset line, height, print time
 		self._setCurrentZ(None)
-		self._setProgressData(None, None, None)
+		self._setProgressData(None, None, None, None)
 
 		# mark print as failure
 		self._gcodeManager.printFailed(self._filename)
@@ -250,7 +271,7 @@ class Printer():
 		self._messages = self._messages[-300:]
 		self._stateMonitor.addMessage(message)
 
-	def _setProgressData(self, progress, printTime, printTimeLeft):
+	def _setProgressData(self, progress, currentLine, printTime, printTimeLeft):
 		self._progress = progress
 		self._printTime = printTime
 		self._printTimeLeft = printTimeLeft
@@ -263,7 +284,7 @@ class Printer():
 		if (self._printTimeLeft):
 			formattedPrintTimeLeft = util.getFormattedTimeDelta(datetime.timedelta(minutes=self._printTimeLeft))
 
-		self._stateMonitor.setProgress({"progress": self._progress, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
+		self._stateMonitor.setProgress({"progress": self._progress, "currentLine": currentLine, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
 		currentTimeUtc = int(time.time() * 1000)
@@ -365,12 +386,11 @@ class Printer():
 				self._gcodeManager.printSucceeded(self._filename)
 			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
 				self._gcodeManager.printFailed(self._filename)
-			self._gcodeManager.resumeAnalysis() # do not analyse gcode while printing
+			self._gcodeManager.resumeAnalysis() # printing done, put those cpu cycles to good use
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
-			self._gcodeManager.pauseAnalysis() # printing done, put those cpu cycles to good use
+			self._gcodeManager.pauseAnalysis() # do not analyse gcode while printing
 
 		self._setState(state)
-
 
 	def mcMessage(self, message):
 		"""
@@ -379,18 +399,22 @@ class Printer():
 		"""
 		self._addMessage(message)
 
-	def mcProgress(self, lineNr):
+	def mcProgress(self):
 		"""
 		 Callback method for the comm object, called upon any change in progress of the printjob.
 		 Triggers storage of new values for printTime, printTimeLeft and the current line.
 		"""
 		oldProgress = self._progress
 
-		if self._timelapse is not None:
-			try: self._timelapse.onPrintjobProgress(oldProgress, self._progress, int(round(self._progress * 100 / len(self._gcodeList))))
-			except: pass
+		if self._sdPrinting:
+			newLine = None
+			(filePos, fileSize) = self._comm.getSdProgress()
+			newProgress = float(filePos) / float(fileSize)
+		else:
+			newLine = self._comm.getPrintPos()
+			newProgress = float(newLine) / float(len(self._gcodeList))
 
-		self._setProgressData(self._comm.getPrintPos(), self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
+		self._setProgressData(newProgress, newLine, self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
 
 	def mcZChange(self, newZ):
 		"""
@@ -401,6 +425,66 @@ class Printer():
 			self._timelapse.onZChange(oldZ, newZ)
 
 		self._setCurrentZ(newZ)
+
+	def mcSdFiles(self, files):
+		self._sendTriggerUpdateCallbacks("gcodeFiles")
+
+	def mcSdSelected(self, filename, filesize):
+		self._sdFile = filename
+
+		self._setJobData(filename, None)
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+		if self._sdPrintAfterSelect:
+			self.startPrint()
+
+	def mcSdPrintingDone(self):
+		self._sdPrinting = False
+		self._setProgressData(1.0, None, self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+	#~~ sd file handling
+
+	def getSdFiles(self):
+		if self._comm is None:
+			return
+		return self._comm.getSdFiles()
+
+	def addSdFile(self, filename, file):
+		if not self._comm:
+			return
+
+		self._sdStreamer = SdFileStreamer(self._comm, filename, file, self._onSdFileStreamProgress, self._onSdFileStreamFinish)
+		self._sdStreamer.start()
+
+	def deleteSdFile(self, filename):
+		if not self._comm:
+			return
+
+		if self._sdFile == filename:
+			self._sdFile = None
+		self._comm.deleteSdFile(filename)
+
+	def selectSdFile(self, filename, printAfterSelect):
+		if not self._comm:
+			return
+
+		self._sdPrintAfterSelect = printAfterSelect
+		self._comm.selectSdFile(filename)
+
+	#~~ callbacks triggered by sdFileStreamer
+
+	def _onSdFileStreamProgress(self, filename, progress):
+		self._stateMonitor.setSdUploadData({"filename": filename, "progress": progress})
+
+	def _onSdFileStreamFinish(self, filename):
+		self._setJobData(filename, None)
+		self._setCurrentZ(None)
+		self._setProgressData(None, None, None, None)
+		self._sdStreamer = None
+
+		self._stateMonitor.setSdUploadData({"filename": None, "progress": None})
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	#~~ callbacks triggered by gcodeLoader
 
@@ -414,7 +498,7 @@ class Printer():
 	def _onGcodeLoaded(self, filename, gcodeList):
 		self._setJobData(filename, gcodeList)
 		self._setCurrentZ(None)
-		self._setProgressData(None, None, None)
+		self._setProgressData(None, None, None, None)
 		self._gcodeLoader = None
 
 		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
@@ -464,10 +548,10 @@ class Printer():
 		return self._comm is not None and self._comm.isError()
 
 	def isReady(self):
-		return self._gcodeLoader is None and self._gcodeList and len(self._gcodeList) > 0
+		return self._gcodeLoader is None and self._sdStreamer is None and ((self._gcodeList and len(self._gcodeList) > 0) or self._sdFile)
 
 	def isLoading(self):
-		return self._gcodeLoader is not None
+		return self._gcodeLoader is not None or self._sdStreamer is not None
 
 class GcodeLoader(threading.Thread):
 	"""
@@ -514,6 +598,34 @@ class GcodeLoader(threading.Thread):
 	def _onParsingProgress(self, progress):
 		self._progressCallback(self._filename, progress, "parsing")
 
+class SdFileStreamer(threading.Thread):
+	def __init__(self, comm, filename, file, progressCallback, finishCallback):
+		threading.Thread.__init__(self)
+
+		self._comm = comm
+		self._filename = filename
+		self._file = file
+		self._progressCallback = progressCallback
+		self._finishCallback = finishCallback
+
+	def run(self):
+		if self._comm.isBusy():
+			return
+
+		name = self._filename[:self._filename.rfind(".")]
+		sdFilename = name[:8] + ".GCO"
+		try:
+			size = os.stat(self._file).st_size
+			with open(self._file, "r") as f:
+				self._comm.startSdFileTransfer(sdFilename)
+				for line in f:
+					self._comm.sendCommand(line)
+					self._progressCallback(sdFilename, float(f.tell()) / float(size))
+					time.sleep(0.001) # do not send too fast
+		finally:
+			self._comm.endSdFileTransfer(sdFilename)
+			self._finishCallback(sdFilename)
+
 class StateMonitor(object):
 	def __init__(self, ratelimit, updateCallback, addTemperatureCallback, addLogCallback, addMessageCallback):
 		self._ratelimit = ratelimit
@@ -525,6 +637,7 @@ class StateMonitor(object):
 		self._state = None
 		self._jobData = None
 		self._gcodeData = None
+		self._sdUploadData = None
 		self._currentZ = None
 		self._progress = None
 
@@ -535,10 +648,11 @@ class StateMonitor(object):
 		self._worker.daemon = True
 		self._worker.start()
 
-	def reset(self, state=None, jobData=None, gcodeData=None, progress=None, currentZ=None):
+	def reset(self, state=None, jobData=None, gcodeData=None, sdUploadData=None, progress=None, currentZ=None):
 		self.setState(state)
 		self.setJobData(jobData)
 		self.setGcodeData(gcodeData)
+		self.setSdUploadData(sdUploadData)
 		self.setProgress(progress)
 		self.setCurrentZ(currentZ)
 
@@ -570,6 +684,10 @@ class StateMonitor(object):
 		self._gcodeData = gcodeData
 		self._changeEvent.set()
 
+	def setSdUploadData(self, uploadData):
+		self._sdUploadData = uploadData
+		self._changeEvent.set()
+
 	def setProgress(self, progress):
 		self._progress = progress
 		self._changeEvent.set()
@@ -594,6 +712,7 @@ class StateMonitor(object):
 			"state": self._state,
 			"job": self._jobData,
 			"gcode": self._gcodeData,
+			"sdUpload": self._sdUploadData,
 			"currentZ": self._currentZ,
 			"progress": self._progress
 		}

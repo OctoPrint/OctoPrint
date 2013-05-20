@@ -118,7 +118,8 @@ def index():
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
-		enableAccessControl=userManager is not None
+		enableAccessControl=userManager is not None,
+		enableSdSupport=settings().get(["feature", "sdSupport"])
 	)
 
 #~~ Printer control
@@ -257,7 +258,19 @@ def getCustomControls():
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])
 def readGcodeFiles():
-	return jsonify(files=gcodeManager.getAllFileData())
+	files = gcodeManager.getAllFileData()
+
+	sdFileList = printer.getSdFiles()
+	if sdFileList is not None:
+		for sdFile in sdFileList:
+			files.append({
+				"name": sdFile,
+				"size": "n/a",
+				"bytes": 0,
+				"date": "n/a",
+				"origin": "sd"
+			})
+	return jsonify(files=files)
 
 @app.route(BASEURL + "gcodefiles/<path:filename>", methods=["GET"])
 def readGcodeFile(filename):
@@ -270,6 +283,8 @@ def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
 		filename = gcodeManager.addFile(file)
+		if filename and "target" in request.values.keys() and request.values["target"] == "sd":
+			printer.addSdFile(filename, gcodeManager.getAbsolutePath(filename))
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
@@ -279,9 +294,14 @@ def loadGcodeFile():
 		printAfterLoading = False
 		if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
 			printAfterLoading = True
-		filename = gcodeManager.getAbsolutePath(request.values["filename"])
-		if filename is not None:
-			printer.loadGcode(filename, printAfterLoading)
+
+		if "target" in request.values.keys() and request.values["target"] == "sd":
+			filename = request.values["filename"]
+			printer.selectSdFile(filename, printAfterLoading)
+		else:
+			filename = gcodeManager.getAbsolutePath(request.values["filename"])
+			if filename is not None:
+				printer.loadGcode(filename, printAfterLoading)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -289,7 +309,10 @@ def loadGcodeFile():
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
-		gcodeManager.removeFile(filename)
+		if "target" in request.values.keys() and request.values["target"] == "sd":
+			printer.deleteSdFile(filename)
+		else:
+			gcodeManager.removeFile(filename)
 	return readGcodeFiles()
 
 #~~ timelapse handling
@@ -380,7 +403,8 @@ def getSettings():
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
-			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"])
+			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
+			"sdSupport": s.getBoolean(["feature", "sdSupport"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -424,6 +448,7 @@ def setSettings():
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
+			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])

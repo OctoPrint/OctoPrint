@@ -219,6 +219,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     self.estimatedPrintTime = ko.observable(undefined);
     self.printTime = ko.observable(undefined);
     self.printTimeLeft = ko.observable(undefined);
+    self.progress = ko.observable(undefined);
     self.currentLine = ko.observable(undefined);
     self.totalLines = ko.observable(undefined);
     self.currentHeight = ko.observable(undefined);
@@ -229,10 +230,10 @@ function PrinterStateViewModel(loginStateViewModel) {
         var currentLine = self.currentLine() ? self.currentLine() : "-";
         return currentLine + " / " + self.totalLines();
     });
-    self.progress = ko.computed(function() {
-        if (!self.currentLine() || !self.totalLines())
+    self.progressString = ko.computed(function() {
+        if (!self.progress())
             return 0;
-        return Math.round(self.currentLine() * 100 / self.totalLines());
+        return self.progress();
     });
     self.pauseString = ko.computed(function() {
         if (self.isPaused())
@@ -253,6 +254,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         self._processStateData(data.state)
         self._processJobData(data.job);
         self._processGcodeData(data.gcode);
+        self._processSdUploadData(data.sdUpload);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
     }
@@ -286,8 +288,20 @@ function PrinterStateViewModel(loginStateViewModel) {
         }
     }
 
+    self._processSdUploadData = function(data) {
+        if (self.isLoading()) {
+            var progress = Math.round(data.progress * 100);
+            self.filename("Streaming to SD... (" + progress + "%)");
+        }
+    }
+
     self._processProgressData = function(data) {
-        self.currentLine(data.progress);
+        if (data.progress) {
+            self.progress(Math.round(data.progress * 100));
+        } else {
+            self.progress(undefined);
+        }
+        self.currentLine(data.currentLine);
         self.printTime(data.printTime);
         self.printTimeLeft(data.printTimeLeft);
     }
@@ -754,14 +768,14 @@ function GcodeFilesViewModel(loginStateViewModel) {
                 return 0;
             },
             "upload": function(a, b) {
-                    // sorts descending
-                    if (a["date"] > b["date"]) return -1;
-                    if (a["date"] < b["date"]) return 1;
-                    return 0;
+                // sorts descending
+                if (b["date"] === undefined || a["date"] > b["date"]) return -1;
+                if (a["date"] < b["date"]) return 1;
+                return 0;
             },
             "size": function(a, b) {
                 // sorts descending
-                if (a["bytes"] > b["bytes"]) return -1;
+                if (b["bytes"] === undefined || a["bytes"] > b["bytes"]) return -1;
                 if (a["bytes"] < b["bytes"]) return 1;
                 return 0;
             }
@@ -769,10 +783,17 @@ function GcodeFilesViewModel(loginStateViewModel) {
         {
             "printed": function(file) {
                 return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
+            },
+            "sd": function(file) {
+                return file["origin"] && file["origin"] == "sd";
+            },
+            "local": function(file) {
+                return !(file["origin"] && file["origin"] == "sd");
             }
         },
         "name",
         [],
+        [["sd", "local"]],
         CONFIG_GCODEFILESPERPAGE
     );
 
@@ -823,20 +844,26 @@ function GcodeFilesViewModel(loginStateViewModel) {
     }
 
     self.loadFile = function(filename, printAfterLoad) {
+        var file = self.listHelper.getItem(function(item) {return item.name == filename});
+        if (!file) return;
+
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/load",
             type: "POST",
             dataType: "json",
-            data: {filename: filename, print: printAfterLoad}
+            data: {filename: filename, print: printAfterLoad, target: file.origin}
         })
     }
 
     self.removeFile = function(filename) {
+        var file = self.listHelper.getItem(function(item) {return item.name == filename});
+        if (!file) return;
+
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles/delete",
             type: "POST",
             dataType: "json",
-            data: {filename: filename},
+            data: {filename: filename, target: file.origin},
             success: self.fromResponse
         })
     }
@@ -917,6 +944,7 @@ function TimelapseViewModel(loginStateViewModel) {
         },
         "name",
         [],
+        [],
         CONFIG_TIMELAPSEFILESPERPAGE
     )
 
@@ -996,13 +1024,15 @@ function GcodeViewModel(loginStateViewModel) {
     self.status = 'idle';
     self.enabled = false;
 
+    self.errorCount = 0;
+
     self.initialize = function(){
         self.enabled = true;
         GCODE.ui.initHandlers();
     }
 
     self.loadFile = function(filename){
-        if (self.status == 'idle') {
+        if (self.status == 'idle' && self.errorCount < 3) {
             self.status = 'request';
             $.ajax({
                 url: AJAX_BASEURL + "gcodefiles/" + filename,
@@ -1016,6 +1046,7 @@ function GcodeViewModel(loginStateViewModel) {
                 },
                 error: function() {
                     self.status = 'idle';
+                    self.errorCount++;
                 }
             })
         }
@@ -1045,6 +1076,7 @@ function GcodeViewModel(loginStateViewModel) {
                 GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
                 GCODE.ui.updateLayerInfo(cmdIndex.layer);
             }
+            self.errorCount = 0
         } else if (data.job.filename) {
             self.loadFile(data.job.filename);
         }
@@ -1198,7 +1230,7 @@ function UsersViewModel(loginStateViewModel) {
         if (user === undefined) return;
 
         if (user.name == loginStateViewModel.username()) {
-            // we do not allow to delete ourself
+            // we do not allow to delete ourselves
             $.pnotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
             return;
         }
@@ -1267,6 +1299,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
+    self.feature_sdSupport = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
     self.folder_timelapse = ko.observable(undefined);
@@ -1311,6 +1344,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_waitForStart(response.feature.waitForStart);
+        self.feature_sdSupport(response.feature.sdSupport);
 
         self.folder_uploads(response.folder.uploads);
         self.folder_timelapse(response.folder.timelapse);
@@ -1343,7 +1377,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             },
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
-                "waitForStart": self.feature_waitForStart()
+                "waitForStart": self.feature_waitForStart(),
+                "sdSupport": self.feature_sdSupport()
             },
             "folder": {
                 "uploads": self.folder_uploads(),
@@ -1475,7 +1510,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
     }
 }
 
-function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, filesPerPage) {
+function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
     var self = this;
 
     self.listType = listType;
@@ -1483,6 +1518,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.supportedFilters = supportedFilters;
     self.defaultSorting = defaultSorting;
     self.defaultFilters = defaultFilters;
+    self.exclusiveFilters = exclusiveFilters;
 
     self.allItems = [];
     self.items = ko.observableArray([]);
@@ -1574,6 +1610,17 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
     }
 
+    self.getItem = function(matcher) {
+        var itemList = self.items();
+        for (var i = 0; i < itemList.length; i++) {
+            if (matcher(itemList[i])) {
+                return itemList[i];
+            }
+        }
+
+        return undefined;
+    }
+
     //~~ sorting
 
     self.changeSorting = function(sorting) {
@@ -1604,6 +1651,16 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         if (!_.contains(_.keys(self.supportedFilters), filter))
             return;
 
+        for (var i = 0; i < self.exclusiveFilters.length; i++) {
+            if (_.contains(self.exclusiveFilters[i], filter)) {
+                for (var j = 0; j < self.exclusiveFilters[i].length; j++) {
+                    if (self.exclusiveFilters[i][j] == filter)
+                        continue;
+                    self.removeFilter(self.exclusiveFilters[i][j]);
+                }
+            }
+        }
+
         var filters = self.currentFilters();
         filters.push(filter);
         self.currentFilters(filters);
@@ -1613,7 +1670,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     }
 
     self.removeFilter = function(filter) {
-        if (filter != "printed")
+        if (!_.contains(_.keys(self.supportedFilters), filter))
             return;
 
         var filters = self.currentFilters();
@@ -1847,6 +1904,26 @@ $(function() {
             }
         });
 
+        $("#gcode_upload_sd").fileupload({
+            dataType: "json",
+            formData: {target: "sd"},
+            done: function (e, data) {
+                gcodeFilesViewModel.fromResponse(data.result);
+                $("#gcode_upload_progress .bar").css("width", "0%");
+                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                $("#gcode_upload_progress .bar").text("");
+            },
+            progressall: function (e, data) {
+                var progress = parseInt(data.loaded / data.total * 100, 10);
+                $("#gcode_upload_progress .bar").css("width", progress + "%");
+                $("#gcode_upload_progress .bar").text("Uploading ...");
+                if (progress >= 100) {
+                    $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
+                    $("#gcode_upload_progress .bar").text("Saving ...");
+                }
+            }
+        });
+
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
@@ -1908,7 +1985,7 @@ $(function() {
             } else {
                 $("#gcode_upload").fileupload("disable");
             }
-        })
+        });
 
         //~~ UI stuff
 
