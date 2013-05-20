@@ -7,6 +7,9 @@ import datetime
 import threading
 import copy
 import os
+import subprocess
+import re
+import logging, logging.config
 
 import octoprint.util.comm as comm
 import octoprint.util as util
@@ -53,6 +56,7 @@ class Printer():
 
 		self._currentZ = None
 
+		self.peakZ = -1
 		self._progress = None
 		self._printTime = None
 		self._printTimeLeft = None
@@ -89,6 +93,9 @@ class Printer():
 			progress={"progress": None, "printTime": None, "printTimeLeft": None},
 			currentZ=None
 		)
+
+		self.sys_command= { "z_change": settings().get(["system_commands", "z_change"]), "cancelled" : settings().get(["system_commands", "cancelled"]), "print_done" :settings().get(["system_commands", "print_done"]), "print_started": settings().get(["system_commands", "print_started"])};
+			
 
 	#~~ callback handling
 
@@ -190,6 +197,9 @@ class Printer():
 			return
 
 		self._setCurrentZ(-1)
+
+		self.executeSystemCommand(self.sys_command['print_started'])
+
 		self._comm.printGCode(self._gcodeList)
 
 	def togglePausePrint(self):
@@ -216,7 +226,8 @@ class Printer():
 
 		# mark print as failure
 		self._gcodeManager.printFailed(self._filename)
-
+		self.executeSystemCommand(self.sys_command['cancelled'])
+ 
 	#~~ state monitoring
 
 	def setTimelapse(self, timelapse):
@@ -363,8 +374,13 @@ class Printer():
 		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if state == self._comm.STATE_OPERATIONAL:
 				self._gcodeManager.printSucceeded(self._filename)
+				#hrm....we seem to hit this state and THEN the next failed state on a cancel request?
+				# oh well, add a check to see if we're really done before sending the success event external command
+				if self._printTimeLeft < 1:
+					self.executeSystemCommand(self.sys_command['print_done'])
 			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
 				self._gcodeManager.printFailed(self._filename)
+				self.executeSystemCommand(self.sys_command['cancelled'])
 			self._gcodeManager.resumeAnalysis() # do not analyse gcode while printing
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._gcodeManager.pauseAnalysis() # printing done, put those cpu cycles to good use
@@ -397,9 +413,14 @@ class Printer():
 		 Callback method for the comm object, called upon change of the z-layer.
 		"""
 		oldZ = self._currentZ
-		if self._timelapse is not None:
-			self._timelapse.onZChange(oldZ, newZ)
-
+		# only do this if we hit a new Z peak level.  Some slicers do a Z-lift when retracting / moving without printing 
+		# and some do ananti-backlash up-then-down movement when advancing layers
+		if newZ > self.peakZ:
+			self.peakZ = newZ
+			if self._timelapse is not None:
+				self._timelapse.onZChange(oldZ, newZ)
+			self.executeSystemCommand(self.sys_command['z_change'])
+			
 		self._setCurrentZ(newZ)
 
 	#~~ callbacks triggered by gcodeLoader
@@ -468,6 +489,32 @@ class Printer():
 
 	def isLoading(self):
 		return self._gcodeLoader is not None
+		
+	def executeSystemCommand(self,command_string):
+		if command_string is None:
+			return
+		logger = logging.getLogger(__name__)
+		try:
+			# handle a few regex substs for job data passed to external apps
+			cmd_string_with_params = command_string
+			cmd_string_with_params = re.sub("_ZHEIGHT_",str(self._currentZ), cmd_string_with_params)
+			cmd_string_with_params = re.sub("_FILE_",os.path.basename(self._filename), cmd_string_with_params)
+			# cut down to 2 decimal places, forcing through an int to avoid the 10.320000000001 floating point thing...
+			if self._gcodeList and self._progress: 
+				prog =  int(10000.0 * self._progress / len(self._gcodeList))/100.0 
+			else: 
+				prog = 0.0
+			cmd_string_with_params = re.sub("_PROGRESS_",str(prog), cmd_string_with_params)
+			cmd_string_with_params = re.sub("_LINE_",str(self._comm._gcodePos), cmd_string_with_params)
+			logger.info ("Executing system command: %s " % cmd_string_with_params)
+			#use Popen here since it won't wait for the shell to return...and we send some of these
+			# commands during a print job, we don't want to block!
+			subprocess.Popen(cmd_string_with_params,shell = True)
+		except subprocess.CalledProcessError, e:
+			logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
+		except Exception, ex:
+			logger.exception("Command failed")
+		 
 
 class GcodeLoader(threading.Thread):
 	"""
@@ -526,6 +573,7 @@ class StateMonitor(object):
 		self._jobData = None
 		self._gcodeData = None
 		self._currentZ = None
+		self._peakZ = -1
 		self._progress = None
 
 		self._changeEvent = threading.Event()
