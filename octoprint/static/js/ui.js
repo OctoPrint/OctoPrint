@@ -1885,43 +1885,103 @@ $(function() {
 
         //~~ Gcode upload
 
+        function gcode_upload_done(e, data) {
+            gcodeFilesViewModel.fromResponse(data.result);
+            $("#gcode_upload_progress .bar").css("width", "0%");
+            $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+            $("#gcode_upload_progress .bar").text("");
+        }
+
+        function gcode_upload_progress(e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+            $("#gcode_upload_progress .bar").css("width", progress + "%");
+            $("#gcode_upload_progress .bar").text("Uploading ...");
+            if (progress >= 100) {
+                $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
+                $("#gcode_upload_progress .bar").text("Saving ...");
+            }
+        }
+
+        var localTarget;
+        if (CONFIG_SD_SUPPORT) {
+            localTarget = $("#drop_locally");
+        } else {
+            localTarget = $("#drop");
+        }
+
         $("#gcode_upload").fileupload({
             dataType: "json",
-            done: function (e, data) {
-                gcodeFilesViewModel.fromResponse(data.result);
-                $("#gcode_upload_progress .bar").css("width", "0%");
-                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                $("#gcode_upload_progress .bar").text("");
-            },
-            progressall: function (e, data) {
-                var progress = parseInt(data.loaded / data.total * 100, 10);
-                $("#gcode_upload_progress .bar").css("width", progress + "%");
-                $("#gcode_upload_progress .bar").text("Uploading ...");
-                if (progress >= 100) {
-                    $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                    $("#gcode_upload_progress .bar").text("Saving ...");
-                }
-            }
+            dropZone: localTarget,
+            formData: {target: "local"},
+            done: gcode_upload_done,
+            progressall: gcode_upload_progress
         });
 
-        $("#gcode_upload_sd").fileupload({
-            dataType: "json",
-            formData: {target: "sd"},
-            done: function (e, data) {
-                gcodeFilesViewModel.fromResponse(data.result);
-                $("#gcode_upload_progress .bar").css("width", "0%");
-                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                $("#gcode_upload_progress .bar").text("");
-            },
-            progressall: function (e, data) {
-                var progress = parseInt(data.loaded / data.total * 100, 10);
-                $("#gcode_upload_progress .bar").css("width", progress + "%");
-                $("#gcode_upload_progress .bar").text("Uploading ...");
-                if (progress >= 100) {
-                    $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                    $("#gcode_upload_progress .bar").text("Saving ...");
-                }
+        if (CONFIG_SD_SUPPORT) {
+            $("#gcode_upload_sd").fileupload({
+                dataType: "json",
+                dropZone: $("#drop_sd"),
+                formData: {target: "sd"},
+                done: gcode_upload_done,
+                progressall: gcode_upload_progress
+            });
+        }
+
+        $(document).bind("dragover", function (e) {
+            var dropOverlay = $("#drop_overlay");
+            var dropZone = $("#drop");
+            var dropZoneLocal = $("#drop_locally");
+            var dropZoneSd = $("#drop_sd");
+            var dropZoneBackground = $("#drop_background");
+            var dropZoneLocalBackground = $("#drop_locally_background");
+            var dropZoneSdBackground = $("#drop_sd_background");
+            var timeout = window.dropZoneTimeout;
+
+            if (!timeout) {
+                dropOverlay.addClass('in');
+            } else {
+                clearTimeout(timeout);
             }
+
+            var foundLocal = false;
+            var foundSd = false;
+            var found = false
+            var node = e.target;
+            do {
+                if (dropZoneLocal && node === dropZoneLocal[0]) {
+                    foundLocal = true;
+                    break;
+                } else if (dropZoneSd && node === dropZoneSd[0]) {
+                    foundSd = true;
+                    break;
+                } else if (dropZone && node === dropZone[0]) {
+                    found = true;
+                    break;
+                }
+                node = node.parentNode;
+            } while (node != null);
+
+            if (foundLocal) {
+                dropZoneLocalBackground.addClass("hover");
+                dropZoneSdBackground.removeClass("hover");
+            } else if (foundSd) {
+                dropZoneSdBackground.addClass("hover");
+                dropZoneLocalBackground.removeClass("hover");
+            } else if (found) {
+                dropZoneBackground.addClass("hover");
+            } else {
+                if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
+                if (dropZoneBackground) dropZoneBackground.removeClass("hover");
+            }
+
+            window.dropZoneTimeout = setTimeout(function () {
+                window.dropZoneTimeout = null;
+                dropOverlay.removeClass("in");
+                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
+                if (dropZone) dropZoneBackground.removeClass("hover");
+            }, 100);
         });
 
         //~~ Offline overlay
@@ -2007,10 +2067,13 @@ $(function() {
         }
 
         // Fix input element click problem on login dialog
-        $('.dropdown input, .dropdown label').click(function(e) {
+        $(".dropdown input, .dropdown label").click(function(e) {
             e.stopPropagation();
         });
 
+        $(document).bind("drop dragover", function (e) {
+            e.preventDefault();
+        });
     }
 );
 
