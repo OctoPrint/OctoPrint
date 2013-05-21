@@ -59,7 +59,7 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 	def on_open(self, info):
 		global eventManager
-		eventManager.FireEvent("ClientOpen")
+		eventManager.fire("ClientOpen")
 		self._logger.info("New connection from client")
 		# Use of global here is smelly
 		printer.registerCallback(self)
@@ -67,7 +67,7 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 	def on_close(self):
 		global eventManager
-		eventManager.FireEvent("ClientClosed")
+		eventManager.fire("ClientClosed")
 		self._logger.info("Closed client connection")
 		# Use of global here is smelly
 		printer.unregisterCallback(self)
@@ -152,7 +152,7 @@ def connect():
 		printer.connect(port=port, baudrate=baudrate)
 	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
 		printer.disconnect()
-		eventManager.FireEvent("Disconnected")
+		eventManager.fire("Disconnected")
 
 	return jsonify(SUCCESS)
 
@@ -188,10 +188,10 @@ def printJobControl():
 			printer.startPrint()
 		elif request.values["command"] == "pause":
 			printer.togglePausePrint()
-			eventManager.FireEvent("Paused")
+			eventManager.fire("Paused")
 		elif request.values["command"] == "cancel":
 			printer.cancelPrint()
-			eventManager.FireEvent("Cancelled")
+			eventManager.fire("Cancelled")
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/temperature", methods=["POST"])
@@ -282,7 +282,7 @@ def uploadGcodeFile():
 		file = request.files["gcode_file"]
 		filename = gcodeManager.addFile(file)
 		global eventManager
-		eventManager.FireEvent("Upload",filename)
+		eventManager.fire("Upload",filename)
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
@@ -296,7 +296,7 @@ def loadGcodeFile():
 		if filename is not None:
 			printer.loadGcode(filename, printAfterLoading)
 			global eventManager
-			eventManager.FireEvent("LoadStart",filename)
+			eventManager.fire("LoadStart",filename)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -715,7 +715,7 @@ class Server():
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
 
-		eventManager.FireEvent("Startup")
+		eventManager.fire("Startup")
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):

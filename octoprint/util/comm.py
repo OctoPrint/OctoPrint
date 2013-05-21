@@ -478,30 +478,30 @@ class MachineCom(object):
 	# some useful event triggered from GCode commands
 	# pause for user input.  M0 in Marlin and M1 in G-code standard RS274NGC        
 			if re.search ("^\s*M226\D",t_cmd,re.I) or re.search ("^\s*M[01]\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('Waiting')
+				self._eventManager.fire ('Waiting')
 	# part cooler started
 			if re.search ("^\s*M245\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('Cooling')
+				self._eventManager.fire ('Cooling')
 	# part conveyor started
 			if re.search ("^\s*M240\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('Conveyor')
+				self._eventManager.fire ('Conveyor')
 	# part ejector 
 			if re.search ("^\s*M40\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('Eject')
+				self._eventManager.fire ('Eject')
 	# user alert issued by sending beep command to printer...
 			if re.search ("^\s*M300\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('Alert')
+				self._eventManager.fire ('Alert')
 	# Print head has moved to home
 			if re.search ("^\s*G28\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('Home')
+				self._eventManager.fire ('Home')
 			if re.search ("^\s*M112\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('EStop')
+				self._eventManager.fire ('EStop')
 			if re.search ("^\s*M80\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('PowerOn')
+				self._eventManager.fire ('PowerOn')
 			if re.search ("^\s*M81\D",t_cmd,re.I):
-				self._eventManager.FireEvent ('PowerOff')
+				self._eventManager.fire ('PowerOff')
 			if re.search ("^\s*M25\D",t_cmd,re.I):      # SD Card pause
-				self._eventManager.FireEvent ('Paused')
+				self._eventManager.fire ('Paused')
 
 			
 # these comparisons assume that the searched-for string is not in a comment or a parameter, for example
