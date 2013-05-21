@@ -781,6 +781,8 @@ class MachineCom(object):
 	def printGCode(self, gcodeList):
 		if not self.isOperational() or self.isPrinting():
 			return
+		if self._sdPrinting:
+			self._sdPrinting = False
 		self._gcodeList = gcodeList
 		self._gcodePos = 0
 		self._printSection = 'CUSTOM'
@@ -814,6 +816,7 @@ class MachineCom(object):
 		if self.isOperational():
 			self._changeState(self.STATE_OPERATIONAL)
 		if self._sdPrinting:
+			self._sdPrinting = False
 			self.sendCommand("M25")    # pause print
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 	
@@ -837,12 +840,6 @@ class MachineCom(object):
 		result = {}
 		result.update(self._feedRateModifier)
 		return result
-
-	def enableSdPrinting(self, enable):
-		if self.isPrinting():
-			return
-
-		self._sdPrinting = enable
 
 	def getSdFiles(self):
 		return self._sdFiles

@@ -177,6 +177,7 @@ class Printer():
 		if (self._comm is not None and self._comm.isPrinting()) or (self._gcodeLoader is not None):
 			return
 
+		self._sdFile = None
 		self._setJobData(None, None)
 
 		onGcodeLoadedCallback = self._onGcodeLoaded
