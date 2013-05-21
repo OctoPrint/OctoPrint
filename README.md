@@ -1,23 +1,3 @@
-Added support for system commands at print start, print end, print cancelled and z-height change.  Add the commands as strings as a new section to the config.yaml file:
-
-    appearance {}
-    feature: {}
-    serial:
-        baudrate: 115200
-        port: /dev/ttyACM0
-    system: {}
-    temperature {} 
-    system_commands:
-      cancelled: echo cancelled _FILE_ at _PROGRESS_ percent done.
-      print_done: growlnotify "done with _FILE_"
-      print_started: echo starting _FILE_
-      z_change: echo _LINE_ _PROGRESS_ _ZHEIGHT_
-
-These commands take the tokens take _FILE_, _PERCENT_, _LINES_ and _ZHEIGHT_ which will be passed to external commands.
-
-
-
-
 OctoPrint
 =========
 
