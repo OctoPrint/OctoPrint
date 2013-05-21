@@ -17,6 +17,9 @@ import octoprint.timelapse as timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 
+
+import octoprint.events as events
+
 SUCCESS = {}
 BASEURL = "/ajax/"
 app = Flask("octoprint")
@@ -24,6 +27,7 @@ app = Flask("octoprint")
 # In order that threads don't start too early when running as a Daemon
 printer = None 
 gcodeManager = None
+eventManager =None
 
 #~~ Printer state
 
@@ -41,12 +45,16 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._messageBacklogMutex = threading.Lock()
 
 	def on_open(self, info):
+		global eventManager
+		eventManager.FireEvent("ClientOpen")
 		self._logger.info("New connection from client")
 		# Use of global here is smelly
 		printer.registerCallback(self)
 		gcodeManager.registerCallback(self)
 
 	def on_close(self):
+		global eventManager
+		eventManager.FireEvent("ClientClosed")
 		self._logger.info("Closed client connection")
 		# Use of global here is smelly
 		printer.unregisterCallback(self)
@@ -103,7 +111,7 @@ def index():
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
-    	enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
 	)
 
 #~~ Printer control
@@ -129,7 +137,9 @@ def connect():
 
 @app.route(BASEURL + "control/disconnect", methods=["POST"])
 def disconnect():
+	global eventManager
 	printer.disconnect()
+	eventManager.FireEvent("Disconnected")
 	return jsonify(state="Offline")
 
 @app.route(BASEURL + "control/command", methods=["POST"])
@@ -162,11 +172,15 @@ def printGcode():
 
 @app.route(BASEURL + "control/pause", methods=["POST"])
 def pausePrint():
+	global eventManager
+	eventManager.FireEvent("Paused")
 	printer.togglePausePrint()
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/cancel", methods=["POST"])
 def cancelPrint():
+	global eventManager
+	eventManager.FireEvent("Cancelled")
 	printer.cancelPrint()
 	return jsonify(SUCCESS)
 
@@ -256,6 +270,8 @@ def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
 		filename = gcodeManager.addFile(file)
+		global eventManager
+		eventManager.FireEvent("Upload",filename)
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
@@ -267,6 +283,8 @@ def loadGcodeFile():
 		filename = gcodeManager.getAbsolutePath(request.values["filename"])
 		if filename is not None:
 			printer.loadGcode(filename, printAfterLoading)
+			global eventManager
+			eventManager.FireEvent("LoadStart",filename)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -317,11 +335,12 @@ def deleteTimelapse(filename):
 
 @app.route(BASEURL + "timelapse/config", methods=["POST"])
 def setTimelapseConfig():
+	global eventManager
 	if request.values.has_key("type"):
 		type = request.values["type"]
 		lapse = None
 		if "zchange" == type:
-			lapse = timelapse.ZTimelapse()
+			lapse = timelapse.ZTimelapse(eventManager)
 		elif "timed" == type:
 			interval = 10
 			if request.values.has_key("interval"):
@@ -329,7 +348,7 @@ def setTimelapseConfig():
 					interval = int(request.values["interval"])
 				except ValueError:
 					pass
-			lapse = timelapse.TimedTimelapse(interval)
+			lapse = timelapse.TimedTimelapse( eventManager,interval)
 		printer.setTimelapse(lapse)
 
 	return getTimelapseData()
@@ -374,16 +393,9 @@ def getSettings():
 			"profiles": s.get(["temperature", "profiles"])
 		},
 		"system": {
-			"actions": s.get(["system", "actions"])
-		},
-        "system_commands": {
-			"print_done": s.get(["system_commands", "print_done"]),
-			"cancelled": s.get(["system_commands", "cancelled"]),
-			"print_started": s.get(["system_commands", "print_started"]),
-			"z_change": s.get(["system_commands", "z_change"])
-			
-		}
-
+			"actions": s.get(["system", "actions"]),
+			"events": s.get(["system", "events"])
+		} 
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -424,13 +436,7 @@ def setSettings():
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
-
-		if "system_commands" in data.keys():
-            if "z_change" in data["system_commands"].keys(): s.set(["system_commands", "z_change"], data["system_commands"]["z_change"])
-            if "print_started" in data["system_commands"].keys(): s.set(["system_commands", "print_started"], data["system_commands"]["print_started"])
-            if "cancelled" in data["system_commands"].keys(): s.set(["system_commands", "cancelled"], data["system_commands"]["cancelled"])
-            if "print_done" in data["system_commands"].keys(): s.set(["system_commands", "print_done"], data["system_commands"]["print_done"])
-            
+			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 		s.save()
 
 	return getSettings()
@@ -465,11 +471,13 @@ class Server():
 		self._port = port
 		self._debug = debug
 
+		  
 	def run(self):
 		# Global as I can't work out a way to get it into PrinterStateConnection
 		global printer
 		global gcodeManager
-
+		global eventManager
+		
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
@@ -481,14 +489,21 @@ class Server():
 		# then initialize logging
 		self._initLogging(self._debug)
 
+		eventManager = events.EventManager()
 		gcodeManager = gcodefiles.GcodeManager()
-		printer = Printer(gcodeManager)
+		printer = Printer(gcodeManager, eventManager)
+		self.event_dispatcher = events.EventResponse (eventManager,printer)
+		self.event_dispatcher.setupEvents(settings())
+# a few test commands to test the event manager is working...        
+	 #   eventManager.Register("Startup",self,self.event_rec)
+	 #   eventManager.unRegister("Startup",self,self.event_rec)
+	 #   eventManager.FireEvent("Startup")
+ 
 
 		if self._host is None:
 			self._host = settings().get(["server", "host"])
 		if self._port is None:
 			self._port = settings().getInt(["server", "port"])
-
 		logging.getLogger(__name__).info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
@@ -499,6 +514,8 @@ class Server():
 		])
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
+
+		eventManager.FireEvent("Startup")
 		IOLoop.instance().start()
 
 	def _initSettings(self, configfile, basedir):

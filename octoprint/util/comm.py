@@ -178,11 +178,15 @@ class MachineCom(object):
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
 		self._printStartTime100 = None
+		self._eventManager = None
 		
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
 	
+	def setEventManager(self,em):
+		self._eventManager = em
+		
 	def _changeState(self, newState):
 		if self._state == newState:
 			return
@@ -328,8 +332,8 @@ class MachineCom(object):
 			if line.startswith('Error:'):
 				#Oh YEAH, consistency.
 				# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
-				#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
-				#	So we can have an extra newline in the most common case. Awesome work people.
+				#   But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
+				#   So we can have an extra newline in the most common case. Awesome work people.
 				if re.match('Error:[0-9]\n', line):
 					line = line.rstrip() + self._readline()
 				#Skip the communication errors, as those get corrected.
@@ -468,6 +472,47 @@ class MachineCom(object):
 	def _sendCommand(self, cmd):
 		if self._serial is None:
 			return
+		if self._eventManager:    
+			t_cmd = cmd+' ' 
+			t_cmd = cmd+' ' 
+	# some useful event triggered from GCode commands
+	# pause for user input.  M0 in Marlin and M1 in G-code standard RS274NGC        
+			if re.search ("^\s*M226\D",t_cmd,re.I) or re.search ("^\s*M[01]\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('Waiting')
+	# part cooler started
+			if re.search ("^\s*M245\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('Cooling')
+	# part conveyor started
+			if re.search ("^\s*M240\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('Conveyor')
+	# part ejector 
+			if re.search ("^\s*M40\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('Eject')
+	# user alert issued by sending beep command to printer...
+			if re.search ("^\s*M300\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('Alert')
+	# Print head has moved to home
+			if re.search ("^\s*G28\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('Home')
+			if re.search ("^\s*M112\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('EStop')
+			if re.search ("^\s*M80\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('PowerOn')
+			if re.search ("^\s*M81\D",t_cmd,re.I):
+				self._eventManager.FireEvent ('PowerOff')
+			if re.search ("^\s*M25\D",t_cmd,re.I):      # SD Card pause
+				self._eventManager.FireEvent ('Paused')
+
+			
+# these comparisons assume that the searched-for string is not in a comment or a parameter, for example
+# GCode lines like this: 
+#    G0 X100 ; let's not do an M109 here!!!
+#    M420 R000 E000 B000 ; set LED color on makerbot to RGB (note the G is replaced with an E)
+#    M1090 ; some command > 999
+# could potentially trip us up here....
+# this can be avoided by checking only the START of the string for the command code
+# and checking for whitespace after the command (after trimming any leading whitespace, as necessary)
+
 		if 'M109' in cmd or 'M190' in cmd:
 			self._heatupWaitStartTime = time.time()
 		if 'M104' in cmd or 'M109' in cmd:
@@ -507,9 +552,13 @@ class MachineCom(object):
 			self._printSection = line[1]
 			line = line[0]
 		try:
-			if line == 'M0' or line == 'M1':
+			if line == 'M0' or line == 'M1' or line=='M112':    # M112 is also an LCD pause
 				self.setPause(True)
-				line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+				line = 'M105'   #Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+
+			   # LCD / user response pause can be used for things like mid-print filament changes, so
+			   # always removing them may not be so good.   Something to consider as a user preference?
+				
 			if self._printSection in self._feedRateModifier:
 				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
 			if ('G0' in line or 'G1' in line) and 'Z' in line:
@@ -519,8 +568,8 @@ class MachineCom(object):
 					self._callback.mcZChange(z)
 		except:
 			self._log("Unexpected error: %s" % (getExceptionString()))
-		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (self._gcodePos, line)))
-		self._sendCommand("N%d%s*%d" % (self._gcodePos, line, checksum))
+		checksum = reduce(lambda x,y:x^y, map(ord, "N%d %s " % (self._gcodePos, line)))
+		self._sendCommand("N%d %s *%d" % (self._gcodePos, line, checksum))          # added spaces between line # and command and checksum, because some firmware needs it and it's more readable in the terminal window
 		self._gcodePos += 1
 		self._callback.mcProgress(self._gcodePos)
 	
