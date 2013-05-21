@@ -20,6 +20,9 @@ import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 import octoprint.users as users
 
+
+import octoprint.events as events
+
 SUCCESS = {}
 BASEURL = "/ajax/"
 
@@ -29,6 +32,7 @@ app = Flask("octoprint")
 printer = None 
 gcodeManager = None
 userManager = None
+eventManager =None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -54,12 +58,16 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._userManager = userManager
 
 	def on_open(self, info):
+		global eventManager
+		eventManager.FireEvent("ClientOpen")
 		self._logger.info("New connection from client")
 		# Use of global here is smelly
 		printer.registerCallback(self)
 		gcodeManager.registerCallback(self)
 
 	def on_close(self):
+		global eventManager
+		eventManager.FireEvent("ClientClosed")
 		self._logger.info("Closed client connection")
 		# Use of global here is smelly
 		printer.unregisterCallback(self)
@@ -144,6 +152,7 @@ def connect():
 		printer.connect(port=port, baudrate=baudrate)
 	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
 		printer.disconnect()
+		eventManager.FireEvent("Disconnected")
 
 	return jsonify(SUCCESS)
 
@@ -179,8 +188,10 @@ def printJobControl():
 			printer.startPrint()
 		elif request.values["command"] == "pause":
 			printer.togglePausePrint()
+			eventManager.FireEvent("Paused")
 		elif request.values["command"] == "cancel":
 			printer.cancelPrint()
+			eventManager.FireEvent("Cancelled")
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/temperature", methods=["POST"])
@@ -270,6 +281,8 @@ def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
 		filename = gcodeManager.addFile(file)
+		global eventManager
+		eventManager.FireEvent("Upload",filename)
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
@@ -282,6 +295,8 @@ def loadGcodeFile():
 		filename = gcodeManager.getAbsolutePath(request.values["filename"])
 		if filename is not None:
 			printer.loadGcode(filename, printAfterLoading)
+			global eventManager
+			eventManager.FireEvent("LoadStart",filename)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -335,11 +350,12 @@ def deleteTimelapse(filename):
 @app.route(BASEURL + "timelapse", methods=["POST"])
 @login_required
 def setTimelapseConfig():
+	global eventManager
 	if request.values.has_key("type"):
 		type = request.values["type"]
 		lapse = None
 		if "zchange" == type:
-			lapse = timelapse.ZTimelapse()
+			lapse = timelapse.ZTimelapse(eventManager)
 		elif "timed" == type:
 			interval = 10
 			if request.values.has_key("interval"):
@@ -347,7 +363,7 @@ def setTimelapseConfig():
 					interval = int(request.values["interval"])
 				except ValueError:
 					pass
-			lapse = timelapse.TimedTimelapse(interval)
+			lapse = timelapse.TimedTimelapse( eventManager,interval)
 		printer.setTimelapse(lapse)
 
 	return getTimelapseData()
@@ -392,8 +408,9 @@ def getSettings():
 			"profiles": s.get(["temperature", "profiles"])
 		},
 		"system": {
-			"actions": s.get(["system", "actions"])
-		}
+			"actions": s.get(["system", "actions"]),
+			"events": s.get(["system", "events"])
+		} 
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -436,7 +453,7 @@ def setSettings():
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
-
+			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 		s.save()
 
 	return getSettings()
@@ -634,12 +651,14 @@ class Server():
 		self._port = port
 		self._debug = debug
 
+		  
 	def run(self):
 		# Global as I can't work out a way to get it into PrinterStateConnection
 		global printer
 		global gcodeManager
 		global userManager
-
+		global eventManager
+		
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
@@ -652,8 +671,16 @@ class Server():
 		self._initLogging(self._debug)
 		logger = logging.getLogger(__name__)
 
+		eventManager = events.EventManager()
 		gcodeManager = gcodefiles.GcodeManager()
-		printer = Printer(gcodeManager)
+		printer = Printer(gcodeManager, eventManager)
+		self.event_dispatcher = events.EventResponse (eventManager,printer)
+		self.event_dispatcher.setupEvents(settings())
+# a few test commands to test the event manager is working...        
+	 #   eventManager.Register("Startup",self,self.event_rec)
+	 #   eventManager.unRegister("Startup",self,self.event_rec)
+	 #   eventManager.FireEvent("Startup")
+ 
 
 		if settings().getBoolean(["accessControl", "enabled"]):
 			userManagerName = settings().get(["accessControl", "userManager"])
@@ -687,6 +714,8 @@ class Server():
 		])
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
+
+		eventManager.FireEvent("Startup")
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):

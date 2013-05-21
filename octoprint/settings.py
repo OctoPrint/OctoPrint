@@ -68,7 +68,8 @@ default_settings = {
 	},
 	"controls": [],
 	"system": {
-		"actions": []
+		"actions": [],
+		"events": []
 	},
 	"accessControl": {
 		"enabled": False,
@@ -115,7 +116,8 @@ class Settings(object):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
-		else:
+		# chamged from else to handle cases where the file exists, but is empty / 0 bytes
+		if not self._config:
 			self._config = {}
 
 	def save(self, force=False):
