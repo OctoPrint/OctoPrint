@@ -619,9 +619,13 @@ class SdFileStreamer(threading.Thread):
 			with open(self._file, "r") as f:
 				self._comm.startSdFileTransfer(sdFilename)
 				for line in f:
-					self._comm.sendCommand(line)
+					if ";" in line:
+						line = line[0:line.find(";")]
+					line = line.strip()
+					if len(line) > 0:
+						self._comm.sendCommand(line)
+						time.sleep(0.001) # do not send too fast
 					self._progressCallback(sdFilename, float(f.tell()) / float(size))
-					time.sleep(0.001) # do not send too fast
 		finally:
 			self._comm.endSdFileTransfer(sdFilename)
 			self._finishCallback(sdFilename)

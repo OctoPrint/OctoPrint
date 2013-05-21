@@ -71,6 +71,7 @@ class VirtualPrinter():
 		self._selectedSdFileSize = None
 		self._selectedSdFilePos = None
 		self._writingToSd = False
+		self._newSdFilePos = None
 
 	def write(self, data):
 		if self.readList is None:
@@ -105,6 +106,9 @@ class VirtualPrinter():
 			self._startSdPrint()
 		elif 'M25' in data:
 			self._pauseSdPrint()
+		elif 'M26' in data:
+			pos = int(re.search("S([0-9]+)", data).group(1))
+			self._setSdPos(pos)
 		elif 'M27' in data:
 			self._reportSdStatus()
 		elif 'M28' in data:
@@ -147,6 +151,9 @@ class VirtualPrinter():
 		self._sdPrintingSemaphore.clear()
 		self.readList.append("ok")
 
+	def _setSdPos(self, pos):
+		self._newSdFilePos = pos
+
 	def _reportSdStatus(self):
 		if self._sdPrinter is not None and self._sdPrintingSemaphore.is_set:
 			self.readList.append("SD printing byte %d/%d" % (self._selectedSdFilePos, self._selectedSdFileSize))
@@ -174,8 +181,12 @@ class VirtualPrinter():
 		self._selectedSdFilePos = 0
 		with open(self._selectedSdFile, "rb") as f:
 			for line in f:
+				# reset position if requested by client
+				if self._newSdFilePos is not None:
+					f.seek(self._newSdFilePos)
+					self._newSdFilePos = None
+
 				# read current file position
-				print("Progress: %d (%d / %d)" % ((round(self._selectedSdFilePos * 100 / self._selectedSdFileSize)), self._selectedSdFilePos, self._selectedSdFileSize))
 				self._selectedSdFilePos = f.tell()
 
 				# if we are paused, wait for unpausing
@@ -192,8 +203,6 @@ class VirtualPrinter():
 						self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
 					except:
 						pass
-
-				print line
 
 				time.sleep(0.01)
 
@@ -373,7 +382,7 @@ class MachineCom(object):
 		if self._state == self.STATE_CLOSED_WITH_ERROR:
 			return "Error: %s" % (self.getShortErrorString())
 		if self._state == self.STATE_RECEIVING_FILE:
-			return "Streaming file to SD"
+			return "Sending file to SD"
 		return "?%d?" % (self._state)
 	
 	def getShortErrorString(self):
@@ -792,6 +801,8 @@ class MachineCom(object):
 		if not self.isOperational() or self.isPrinting():
 			return
 
+		if self.isPaused():
+			self.sendCommand("M26 S0") # reset position in file to byte 0
 		self.sendCommand("M24")
 
 		self._printSection = 'CUSTOM'
@@ -803,7 +814,8 @@ class MachineCom(object):
 		if self.isOperational():
 			self._changeState(self.STATE_OPERATIONAL)
 		if self._sdPrinting:
-			self.sendCommand("M25")
+			self.sendCommand("M25")    # pause print
+			self.sendCommand("M26 S0") # reset position in file to byte 0
 	
 	def setPause(self, pause):
 		if not pause and self.isPaused():
@@ -816,7 +828,7 @@ class MachineCom(object):
 		if pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
 			if self._sdPrinting:
-				self.sendCommand("M25")
+				self.sendCommand("M25") # pause print
 
 	def setFeedrateModifier(self, type, value):
 		self._feedRateModifier[type] = value

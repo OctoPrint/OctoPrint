@@ -291,7 +291,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     self._processSdUploadData = function(data) {
         if (self.isLoading()) {
             var progress = Math.round(data.progress * 100);
-            self.filename("Streaming to SD... (" + progress + "%)");
+            self.filename("Streaming... (" + progress + "%)");
         }
     }
 
