@@ -327,6 +327,17 @@ class MachineCom(object):
 	def _changeState(self, newState):
 		if self._state == newState:
 			return
+
+		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
+			if settings().get(["feature", "sdSupport"]):
+				self._sdPrinting = False
+				self._sdFileList = False
+				self._sdFile = None
+				self._sdFilePos = None
+				self._sdFileSize = None
+				self._sdFiles = []
+				self._callback.mcSdFiles([])
+
 		oldState = self.getStateString()
 		self._state = newState
 		self._log('Changing monitoring state from \'%s\' to \'%s\'' % (oldState, self.getStateString()))
@@ -685,7 +696,10 @@ class MachineCom(object):
 			else:
 				self._changeState(self.STATE_CLOSED)
 		self._serial = None
-	
+
+		if settings().get(["feature", "sdSupport"]):
+			self._sdFileList = []
+
 	def __del__(self):
 		self.close()
 	

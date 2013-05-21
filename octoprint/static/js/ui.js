@@ -1462,6 +1462,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
             self.timelapseViewModel.requestData();
             $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
             self.loginStateViewModel.requestData();
+            self.gcodeFilesViewModel.requestData();
         }
     })
     self._socket.on("disconnect", function() {
@@ -1821,8 +1822,6 @@ $(function() {
                   });
             return false;
         })
-
-        //~~ Print job control (should move to PrinterStateViewModel)
 
         //~~ Temperature control (should really move to knockout click binding)
 
