@@ -797,7 +797,7 @@ class MachineCom(object):
 		self._sdFile = None
 		self._sdFilePos = 0
 
-		self.sendCommand("M23 %s" % filename)
+		self.sendCommand("M23 %s" % filename.lower())
 
 	def printSdFile(self):
 		if not self.isOperational() or self.isPrinting():
@@ -848,15 +848,15 @@ class MachineCom(object):
 		if self.isPrinting() or self.isPaused():
 			return
 		self._changeState(self.STATE_RECEIVING_FILE)
-		self.sendCommand("M28 %s" % filename)
+		self.sendCommand("M28 %s" % filename.lower())
 
 	def endSdFileTransfer(self, filename):
-		self.sendCommand("M29 %s" % filename)
+		self.sendCommand("M29 %s" % filename.lower())
 		self._changeState(self.STATE_OPERATIONAL)
 		self.sendCommand("M20")
 
 	def deleteSdFile(self, filename):
-		self.sendCommand("M30 %s" % filename)
+		self.sendCommand("M30 %s" % filename.lower())
 		self.sendCommand("M20")
 
 def getExceptionString():
