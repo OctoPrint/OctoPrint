@@ -416,7 +416,10 @@ class Printer():
 				newProgress = 0.0
 		else:
 			newLine = self._comm.getPrintPos()
-			newProgress = float(newLine) / float(len(self._gcodeList))
+			if self._gcodeList is not None:
+				newProgress = float(newLine) / float(len(self._gcodeList))
+			else:
+				newProgress = 0.0
 
 		self._setProgressData(newProgress, newLine, self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
 

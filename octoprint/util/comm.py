@@ -637,7 +637,11 @@ class MachineCom(object):
 					self._sendCommand("M105")
 					tempRequestTimeout = time.time() + 5
 			elif self._state == self.STATE_PRINTING:
-				# Even when printing request the temperture every 5 seconds.
+				if line == '' and time.time() > timeout:
+					self._log("Communication timeout during printing, forcing a line")
+					line = 'ok'
+
+				# Even when printing request the temperature every 5 seconds.
 				if time.time() > tempRequestTimeout:
 					self._commandQueue.put("M105")
 					tempRequestTimeout = time.time() + 5
@@ -647,13 +651,9 @@ class MachineCom(object):
 						self._commandQueue.put("M27")
 						sdStatusRequestTimeout = time.time() + 1
 
-					if not self._commandQueue.empty():
+					if 'ok' in line and not self._commandQueue.empty():
 						self._sendCommand(self._commandQueue.get())
 				else:
-					if line == '' and time.time() > timeout:
-						self._log("Communication timeout during printing, forcing a line")
-						line = 'ok'
-
 					if 'ok' in line:
 						timeout = time.time() + 5
 						if not self._commandQueue.empty():
