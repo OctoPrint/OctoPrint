@@ -410,7 +410,10 @@ class Printer():
 		if self._sdPrinting:
 			newLine = None
 			(filePos, fileSize) = self._comm.getSdProgress()
-			newProgress = float(filePos) / float(fileSize)
+			if fileSize > 0:
+				newProgress = float(filePos) / float(fileSize)
+			else:
+				newProgress = 0.0
 		else:
 			newLine = self._comm.getPrintPos()
 			newProgress = float(newLine) / float(len(self._gcodeList))
