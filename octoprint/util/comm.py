@@ -565,8 +565,8 @@ class MachineCom(object):
 				self._sdFileSize = int(match.group(2))
 				self._callback.mcProgress()
 			elif 'File opened' in line:
-				# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened: %s Size: %d"
-				match = re.search("File opened: (.*?) Size: ([0-9]*)", line)
+				# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
+				match = re.search("File opened:\s*(.*?)\s+Size:\s*([0-9]*)", line)
 				self._sdFile = match.group(1)
 				self._sdFileSize = int(match.group(2))
 			elif 'File selected' in line:
