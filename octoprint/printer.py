@@ -485,7 +485,6 @@ class Printer():
 		self._stateMonitor.setSdUploadData({"filename": filename, "progress": progress})
 
 	def _onSdFileStreamFinish(self, filename):
-		self._setJobData(filename, None)
 		self._setCurrentZ(None)
 		self._setProgressData(None, None, None, None)
 		self._sdStreamer = None
