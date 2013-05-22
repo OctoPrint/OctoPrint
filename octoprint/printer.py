@@ -196,7 +196,7 @@ class Printer():
 
 		self._setCurrentZ(-1)
 
-		self._eventManager.FireEvent ('PrintStarted',filename)
+		self._eventManager.FireEvent ('PrintStarted',self._filename)
 
 		self._comm.printGCode(self._gcodeList)
 
@@ -369,7 +369,7 @@ class Printer():
 				self._timelapse.onPrintjobStarted(self._filename)
 
 		if state == self._comm.STATE_PRINTING and oldState != self._comm.STATE_PAUSED:
-			self._eventManager.FireEvent ('PrintStarted',filename)
+			self._eventManager.FireEvent ('PrintStarted',self._filename)
 		if state == self._comm.STATE_OPERATIONAL and (oldState <=  self._comm.STATE_CONNECTING or oldState >=self._comm.STATE_CLOSED):
 			self._eventManager.FireEvent ('Connected',self._comm._port+" at " +self._comm._baudrate)
 		if state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
@@ -382,10 +382,10 @@ class Printer():
 				#hrm....we seem to hit this state and THEN the next failed state on a cancel request?
 				# oh well, add a check to see if we're really done before sending the success event external command
 				if self._printTimeLeft < 1:
-					self._eventManager.FireEvent ('PrintDone',filename)
+					self._eventManager.FireEvent ('PrintDone',self._filename)
 			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
 				self._gcodeManager.printFailed(self._filename)
-				self._eventManager.FireEvent ('PrintFailed',filename)
+				self._eventManager.FireEvent ('PrintFailed',self._filename)
 			self._gcodeManager.resumeAnalysis() # do not analyse gcode while printing
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._gcodeManager.pauseAnalysis() # printing done, put those cpu cycles to good use
@@ -442,7 +442,7 @@ class Printer():
 		self._setCurrentZ(None)
 		self._setProgressData(None, None, None)
 		self._gcodeLoader = None
-		self.eventManager.FireEvent("LoadDone",filename)
+		self._eventManager.FireEvent("LoadDone",filename)
 		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
