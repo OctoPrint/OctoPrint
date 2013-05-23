@@ -64,6 +64,11 @@ class VirtualPrinter():
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
 
+		self.currentLine = 0
+
+		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
+		waitThread.start()
+
 	def write(self, data):
 		if self.readList is None:
 			return
@@ -79,9 +84,21 @@ class VirtualPrinter():
 			except:
 				pass
 		if 'M105' in data:
+			# send simulated temperature data
 			self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
+		elif "M110" in data:
+			# reset current line
+			self.currentLine = int(re.search('N([0-9]+)', data).group(1))
+			self.readList.append("ok\n")
+		elif self.currentLine == 100:
+			# simulate a resend at line 100 of the last 5 lines
+			self.readList.append("Error: Line Number is not Last Line Number\n")
+			self.readList.append("rs %d\n" % (self.currentLine - 5))
 		elif len(data.strip()) > 0:
 			self.readList.append("ok\n")
+
+		if "*" in data:
+			self.currentLine += 1
 
 	def readline(self):
 		if self.readList is None:
@@ -110,6 +127,10 @@ class VirtualPrinter():
 	
 	def close(self):
 		self.readList = None
+
+	def _sendWaitAfterTimeout(self, timeout=5):
+		time.sleep(timeout)
+		self.readList.append("wait")
 
 class MachineComPrintCallback(object):
 	def mcLog(self, message):
@@ -178,7 +199,15 @@ class MachineCom(object):
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
 		self._printStartTime100 = None
-		
+
+		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
+		self._currentLine = 1
+		self._resendDelta = None
+		self._lastLines = []
+
+		self._sendNextLock = threading.Lock()
+		self._sendingLock = threading.Lock()
+
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
@@ -324,6 +353,8 @@ class MachineCom(object):
 			if line == None:
 				break
 			
+
+			### Error detection
 			#No matter the state, if we see an error, goto the error state and store the error for reference.
 			if line.startswith('Error:'):
 				#Oh YEAH, consistency.
@@ -333,24 +364,41 @@ class MachineCom(object):
 				if re.match('Error:[0-9]\n', line):
 					line = line.rstrip() + self._readline()
 				#Skip the communication errors, as those get corrected.
-				if 'checksum mismatch' in line or 'Line Number is not Last Line Number' in line or 'No Line Number with checksum' in line or 'No Checksum with line number' in line:
+				if 'checksum mismatch' in line \
+						or 'Wrong checksum' in line \
+						or 'Line Number is not Last Line Number' in line \
+						or 'expected line' in line \
+						or 'No Line Number with checksum' in line \
+						or 'No Checksum with line number' in line \
+						or 'Missing checksum' in line:
 					pass
 				elif not self.isError():
 					self._errorValue = line[6:]
 					self._changeState(self.STATE_ERROR)
+
+			### Evaluate temperature status messages
 			if ' T:' in line or line.startswith('T:'):
-				self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
-				if ' B:' in line:
-					self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
-				self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
+				try:
+					self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
+					if ' B:' in line:
+						self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
+
+					self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
+				except ValueError:
+					# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
+					pass
+
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
 				if not 'ok' in line and self._heatupWaitStartTime != 0:
 					t = time.time()
 					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 					self._heatupWaitStartTime = t
-			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
+
+			### Forward messages from the firmware
+			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
 				self._callback.mcMessage(line)
 
+			### Baudrate detection
 			if self._state == self.STATE_DETECT_BAUDRATE:
 				if line == '' or time.time() > timeout:
 					if len(self._baudrateDetectList) < 1:
@@ -388,42 +436,74 @@ class MachineCom(object):
 						self._changeState(self.STATE_OPERATIONAL)
 				else:
 					self._testingBaudrate = False
+
+			### Connection attempt
 			elif self._state == self.STATE_CONNECTING:
-				if line == '' and startSeen:
+				if (line == "" or "wait" in line) and startSeen:
 					self._sendCommand("M105")
-				elif 'start' in line:
+				elif "start" in line:
 					startSeen = True
-				elif 'ok' in line and startSeen:
+				elif "ok" in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
 				elif time.time() > timeout:
 					self.close()
+
+			### Operational
 			elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 				#Request the temperature on comm timeout (every 5 seconds) when we are not printing.
-				if line == '':
-					self._sendCommand("M105")
+				if line == "" or "wait" in line:
+					if self._resendDelta is not None:
+						self._resendNextCommand()
+					elif not self._commandQueue.empty():
+						self._sendCommand(self._commandQueue.get())
+					else:
+						self._sendCommand("M105")
 					tempRequestTimeout = time.time() + 5
+				# resend -> start resend procedure from requested line
+				elif "resend" in line.lower() or "rs" in line:
+					self._handleResendRequest(line)
+
+			### Printing
 			elif self._state == self.STATE_PRINTING:
-				if line == '' and time.time() > timeout:
+				if line == "" and time.time() > timeout:
 					self._log("Communication timeout during printing, forcing a line")
-					line = 'ok'
-				#Even when printing request the temperture every 5 seconds.
+					line = "ok"
+				#Even when printing request the temperature every 5 seconds.
 				if time.time() > tempRequestTimeout:
 					self._commandQueue.put("M105")
 					tempRequestTimeout = time.time() + 5
-				if 'ok' in line:
+
+				# ok -> send next command
+				if "ok" in line:
 					timeout = time.time() + 5
-					if not self._commandQueue.empty():
+					if self._resendDelta is not None:
+						self._resendNextCommand()
+					elif not self._commandQueue.empty():
 						self._sendCommand(self._commandQueue.get())
 					else:
 						self._sendNext()
+				# resend -> start resend procedure from requested line
 				elif "resend" in line.lower() or "rs" in line:
-					try:
-						self._gcodePos = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
-					except:
-						if "rs" in line:
-							self._gcodePos = int(line.split()[1])
+					self._handleResendRequest(line)
 		self._log("Connection closed, closing down monitor")
-	
+
+	def _handleResendRequest(self, line):
+		lineToResend = None
+		try:
+			lineToResend = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
+		except:
+			if "rs" in line:
+				lineToResend = int(line.split()[1])
+
+		if lineToResend is not None:
+			self._resendDelta = self._currentLine - lineToResend
+			if self._resendDelta > len(self._lastLines):
+				self._errorValue = "Printer requested line %d but history is only available up to line %d" % (lineToResend, self._currentLine - len(self._lastLines))
+				self._changeState(self.STATE_ERROR)
+				self._logger.warn(self._errorValue)
+			else:
+				self._resendNextCommand()
+
 	def _log(self, message):
 		self._callback.mcLog(message)
 		self._serialLogger.debug(message)
@@ -464,23 +544,91 @@ class MachineCom(object):
 	
 	def __del__(self):
 		self.close()
-	
-	def _sendCommand(self, cmd):
-		if self._serial is None:
-			return
-		if 'M109' in cmd or 'M190' in cmd:
-			self._heatupWaitStartTime = time.time()
-		if 'M104' in cmd or 'M109' in cmd:
-			try:
-				self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-			except:
-				pass
-		if 'M140' in cmd or 'M190' in cmd:
-			try:
-				self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-			except:
-				pass
-		self._log('Send: %s' % (cmd))
+
+	def _resendNextCommand(self):
+		# Make sure we are only handling one sending job at a time
+		with self._sendingLock:
+			self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
+			cmd = self._lastLines[-self._resendDelta]
+			lineNumber = self._currentLine - self._resendDelta
+
+			self._doSendWithChecksum(cmd, lineNumber)
+
+			self._resendDelta -= 1
+			if self._resendDelta <= 0:
+				self._resendDelta = None
+
+	def _sendCommand(self, cmd, sendChecksum=False):
+		# Make sure we are only handling one sending job at a time
+		with self._sendingLock:
+			if self._serial is None:
+				return
+			if 'M109' in cmd or 'M190' in cmd:
+				self._heatupWaitStartTime = time.time()
+			if 'M104' in cmd or 'M109' in cmd:
+				try:
+					self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+				except:
+					pass
+			if 'M140' in cmd or 'M190' in cmd:
+				try:
+					self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+				except:
+					pass
+
+			if "M110" in cmd:
+				newLineNumber = None
+				if " N" in cmd:
+					try:
+						newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+					except:
+						pass
+				else:
+					newLineNumber = 0
+
+				if settings().getBoolean(["feature", "resetLineNumbersWithPrefixedN"]) and newLineNumber is not None:
+					# let's rewrite the M110 command to fit repetier syntax
+					self._addToLastLines(cmd)
+					self._doSendWithChecksum("M110", newLineNumber)
+				else:
+					self._doSend(cmd, sendChecksum)
+
+				if newLineNumber is not None:
+					self._currentLine = newLineNumber + 1
+
+				# after a reset of the line number we have no way to determine what line exactly the printer now wants
+				self._lastLines = []
+				self._resendDelta = None
+			else:
+				self._doSend(cmd, sendChecksum)
+
+	def _addToLastLines(self, cmd):
+		self._lastLines.append(cmd)
+		if len(self._lastLines) > 50:
+			self._lastLines = self._lastLines[-50:] # only keep the last 50 lines in memory
+		self._logger.debug("Got %d lines of history in memory" % len(self._lastLines))
+
+	def _doSend(self, cmd, sendChecksum=False):
+		if sendChecksum or self._alwaysSendChecksum:
+			if self._alwaysSendChecksum:
+				lineNumber = self._currentLine
+			else:
+				lineNumber = self._gcodePos
+			self._addToLastLines(cmd)
+			self._currentLine += 1
+			self._doSendWithChecksum(cmd, lineNumber)
+		else:
+			self._doSendWithoutChecksum(cmd)
+
+	def _doSendWithChecksum(self, cmd, lineNumber):
+		self._logger.debug("Sending cmd '%s' with lineNumber %r" % (cmd, lineNumber))
+
+		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNumber, cmd)))
+		commandToSend = "N%d%s*%d" % (lineNumber, cmd, checksum)
+		self._doSendWithoutChecksum(commandToSend)
+
+	def _doSendWithoutChecksum(self, cmd):
+		self._log("Send: %s" % cmd)
 		try:
 			self._serial.write(cmd + '\n')
 		except serial.SerialTimeoutException:
@@ -495,34 +643,34 @@ class MachineCom(object):
 			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
 			self._errorValue = getExceptionString()
 			self.close(True)
-	
+
 	def _sendNext(self):
-		if self._gcodePos >= len(self._gcodeList):
-			self._changeState(self.STATE_OPERATIONAL)
-			return
-		if self._gcodePos == 100:
-			self._printStartTime100 = time.time()
-		line = self._gcodeList[self._gcodePos]
-		if type(line) is tuple:
-			self._printSection = line[1]
-			line = line[0]
-		try:
-			if line == 'M0' or line == 'M1':
-				self.setPause(True)
-				line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-			if self._printSection in self._feedRateModifier:
-				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
-			if ('G0' in line or 'G1' in line) and 'Z' in line:
-				z = float(re.search('Z([0-9\.]*)', line).group(1))
-				if self._currentZ != z:
-					self._currentZ = z
-					self._callback.mcZChange(z)
-		except:
-			self._log("Unexpected error: %s" % (getExceptionString()))
-		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (self._gcodePos, line)))
-		self._sendCommand("N%d%s*%d" % (self._gcodePos, line, checksum))
-		self._gcodePos += 1
-		self._callback.mcProgress(self._gcodePos)
+		with self._sendNextLock:
+			if self._gcodePos >= len(self._gcodeList):
+				self._changeState(self.STATE_OPERATIONAL)
+				return
+			if self._gcodePos == 100:
+				self._printStartTime100 = time.time()
+			line = self._gcodeList[self._gcodePos]
+			if type(line) is tuple:
+				self._printSection = line[1]
+				line = line[0]
+			try:
+				if line == 'M0' or line == 'M1':
+					self.setPause(True)
+					line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+				if self._printSection in self._feedRateModifier:
+					line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
+				if ('G0' in line or 'G1' in line) and 'Z' in line:
+					z = float(re.search('Z([0-9\.]*)', line).group(1))
+					if self._currentZ != z:
+						self._currentZ = z
+						self._callback.mcZChange(z)
+			except:
+				self._log("Unexpected error: %s" % (getExceptionString()))
+			self._sendCommand(line, True)
+			self._gcodePos += 1
+			self._callback.mcProgress(self._gcodePos)
 	
 	def sendCommand(self, cmd):
 		cmd = cmd.encode('ascii', 'replace')
@@ -540,8 +688,7 @@ class MachineCom(object):
 		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)
 		self._printStartTime = time.time()
-		for i in xrange(0, 6):
-			self._sendNext()
+		self._sendNext()
 	
 	def cancelPrint(self):
 		if self.isOperational():
