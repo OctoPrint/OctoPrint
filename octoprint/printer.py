@@ -237,7 +237,8 @@ class Printer():
 		self._setProgressData(None, None, None, None)
 
 		# mark print as failure
-		self._gcodeManager.printFailed(self._filename)
+		if self._filename is not None:
+			self._gcodeManager.printFailed(self._filename)
 
 	#~~ state monitoring
 
@@ -578,7 +579,7 @@ class GcodeLoader(threading.Thread):
 	def run(self):
 		#Send an initial M110 to reset the line counter to zero.
 		prevLineType = lineType = "CUSTOM"
-		gcodeList = ["M110"]
+		gcodeList = ["M110 N0"]
 		filesize = os.stat(self._filename).st_size
 		with open(self._filename, "r") as file:
 			for line in file:
