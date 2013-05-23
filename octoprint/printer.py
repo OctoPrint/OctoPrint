@@ -196,7 +196,7 @@ class Printer():
 
 		self._setCurrentZ(-1)
 
-		self._eventManager.FireEvent ('PrintStarted',self._filename)
+#		self._eventManager.FireEvent ('PrintStarted',self._filename)
 
 		self._comm.printGCode(self._gcodeList)
 
