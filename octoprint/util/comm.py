@@ -688,7 +688,6 @@ class MachineCom(object):
 		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)
 		self._printStartTime = time.time()
-		#for i in xrange(0, 6):
 		self._sendNext()
 	
 	def cancelPrint(self):
