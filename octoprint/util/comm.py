@@ -205,6 +205,7 @@ class MachineCom(object):
 		self._resendDelta = None
 		self._lastLines = []
 
+		self._sendNextLock = threading.Lock()
 		self._sendingLock = threading.Lock()
 
 		self.thread = threading.Thread(target=self._monitor)
@@ -644,31 +645,32 @@ class MachineCom(object):
 			self.close(True)
 
 	def _sendNext(self):
-		if self._gcodePos >= len(self._gcodeList):
-			self._changeState(self.STATE_OPERATIONAL)
-			return
-		if self._gcodePos == 100:
-			self._printStartTime100 = time.time()
-		line = self._gcodeList[self._gcodePos]
-		if type(line) is tuple:
-			self._printSection = line[1]
-			line = line[0]
-		try:
-			if line == 'M0' or line == 'M1':
-				self.setPause(True)
-				line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-			if self._printSection in self._feedRateModifier:
-				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
-			if ('G0' in line or 'G1' in line) and 'Z' in line:
-				z = float(re.search('Z([0-9\.]*)', line).group(1))
-				if self._currentZ != z:
-					self._currentZ = z
-					self._callback.mcZChange(z)
-		except:
-			self._log("Unexpected error: %s" % (getExceptionString()))
-		self._sendCommand(line, True)
-		self._gcodePos += 1
-		self._callback.mcProgress(self._gcodePos)
+		with self._sendNextLock:
+			if self._gcodePos >= len(self._gcodeList):
+				self._changeState(self.STATE_OPERATIONAL)
+				return
+			if self._gcodePos == 100:
+				self._printStartTime100 = time.time()
+			line = self._gcodeList[self._gcodePos]
+			if type(line) is tuple:
+				self._printSection = line[1]
+				line = line[0]
+			try:
+				if line == 'M0' or line == 'M1':
+					self.setPause(True)
+					line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+				if self._printSection in self._feedRateModifier:
+					line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
+				if ('G0' in line or 'G1' in line) and 'Z' in line:
+					z = float(re.search('Z([0-9\.]*)', line).group(1))
+					if self._currentZ != z:
+						self._currentZ = z
+						self._callback.mcZChange(z)
+			except:
+				self._log("Unexpected error: %s" % (getExceptionString()))
+			self._sendCommand(line, True)
+			self._gcodePos += 1
+			self._callback.mcProgress(self._gcodePos)
 	
 	def sendCommand(self, cmd):
 		cmd = cmd.encode('ascii', 'replace')
@@ -686,8 +688,8 @@ class MachineCom(object):
 		self._printSection = 'CUSTOM'
 		self._changeState(self.STATE_PRINTING)
 		self._printStartTime = time.time()
-		for i in xrange(0, 6):
-			self._sendNext()
+		#for i in xrange(0, 6):
+		self._sendNext()
 	
 	def cancelPrint(self):
 		if self.isOperational():
