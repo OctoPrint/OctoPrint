@@ -17,6 +17,21 @@
     </div>
 </div>
 
+<div id="drop_overlay">
+    <div id="drop_overlay_background"></div>
+    <div id="drop_overlay_wrapper">
+        {% if enableSdSupport %}
+            <div class="dropzone" id="drop_locally"><span class="centered"><i class="icon-upload-alt"></i><br>Upload locally</span></div>
+            <div class="dropzone_background" id="drop_locally_background"></div>
+            <div class="dropzone" id="drop_sd"><span class="centered"><i class="icon-upload-alt"></i><br>Upload to SD</span></div>
+            <div class="dropzone_background" id="drop_sd_background"></div>
+        {% else %}
+            <div class="dropzone" id="drop"><span class="centered"><i class="icon-upload-alt"></i><br>Upload</span></div>
+            <div class="dropzone_background" id="drop_background"></div>
+        {% endif %}
+    </div>
+</div>
+
 <div id="confirmation_dialog" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>

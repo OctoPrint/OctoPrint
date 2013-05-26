@@ -53,9 +53,6 @@ class Timelapse(object):
 	def onPrintjobStopped(self):
 		self.stopTimelapse()
 
-	def onPrintjobProgress(self, oldPos, newPos, percentage):
-		pass
-
 	def onZChange(self, oldZ, newZ):
 		pass
 

@@ -24,6 +24,7 @@
             var CONFIG_USERSPERPAGE = 10;
             var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
             var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
+            var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
 
             var WEB_SOCKET_SWF_LOCATION = "{{ url_for('static', filename='js/socket.io/WebSocketMain.swf') }}";
             var WEB_SOCKET_DEBUG = true;
@@ -116,7 +117,7 @@
                                 Print Time Left: <strong data-bind="text: printTimeLeft"></strong><br>
 
                                 <div class="progress">
-                                    <div class="bar" id="job_progressBar" data-bind="style: { width: progress() + '%' }"></div>
+                                    <div class="bar" id="job_progressBar" data-bind="style: { width: progressString() + '%' }"></div>
                                 </div>
 
                                 <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
@@ -131,7 +132,7 @@
                         <div class="accordion-heading">
                             <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> Files</a>
 
-                            <div class="settings-trigger btn-group">
+                            <div class="settings-trigger accordion-heading-button btn-group">
                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                                     <span class="icon-wrench"></span>
                                 </a>
@@ -139,10 +140,28 @@
                                     <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Sort by name (ascending)</a></li>
                                     <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Sort by upload date (descending)</a></li>
                                     <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> Sort by file size (descending)</a></li>
+                                    {% if enableSdSupport %}
+                                    <li class="divider"></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> Only show files stored locally</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> Only show files stored on SD</a></li>
+                                    {% endif %}
                                     <li class="divider"></li>
                                     <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
                                 </ul>
                             </div>
+
+                            {% if enableSdSupport %}
+                            <div class="sd-trigger accordion-heading-button btn-group">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    <span class="icon-hdd"></span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> Initialize SD card</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> Refresh SD files</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> Release SD card</a></li>
+                                </ul>
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
@@ -176,11 +195,26 @@
                                     </ul>
                                 </div>
                                 <div style="display: none;" data-bind="visible: loginState.isUser">
-                                    <span class="btn btn-primary btn-block fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
-                                        <i class="icon-upload icon-white"></i>
-                                        <span>Upload</span>
-                                        <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
-                                    </span>
+                                    <div class="row-fluid upload-buttons">
+                                        {% if enableSdSupport %}
+                                        <button class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                            <i class="icon-upload-alt icon-white"></i>
+                                            <span>Upload</span>
+                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
+                                        </button>
+                                        <button class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                            <i class="icon-upload-alt icon-white"></i>
+                                            <span>Upload to SD</span>
+                                            <input id="gcode_upload_sd" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                            <i class="icon-upload-alt icon-white"></i>
+                                            <span>Upload</span>
+                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                     <div id="gcode_upload_progress" class="progress" style="width: 100%;">
                                         <div class="bar" style="width: 0%"></div>
                                     </div>

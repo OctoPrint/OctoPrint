@@ -39,13 +39,18 @@ default_settings = {
 	},
 	"feature": {
 		"gCodeVisualizer": True,
-		"waitForStartOnConnect": False
+		"waitForStartOnConnect": False,
+		"waitForWaitOnConnect": False,
+		"alwaysSendChecksum": False,
+		"resetLineNumbersWithPrefixedN": False,
+		"sdSupport": False
 	},
 	"folder": {
 		"uploads": None,
 		"timelapse": None,
 		"timelapse_tmp": None,
-		"logs": None
+		"logs": None,
+		"virtualSd": None
 	},
 	"temperature": {
 		"profiles":
