@@ -67,8 +67,7 @@ gcodeToEvent = {
 	"G28": "Home",      # home print head
 	"M112": "EStop",
 	"M80": "PowerOn",
-	"M81": "PowerOff",
-	"M25": "Paused"     # SD Card pause
+	"M81": "PowerOff"
 }
 
 class VirtualPrinter():
@@ -504,7 +503,6 @@ class MachineCom(object):
 			else:
 				printTimeTotal = printTime * self._sdFileSize
 			printTimeLeft = printTimeTotal - printTime
-			self._logger.info("printTime: %f, sdFileSize: %f, sdFilePos: %f, printTimeTotal: %f, printTimeLeft: %f" % (printTime, self._sdFileSize, self._sdFilePos, printTimeTotal, printTimeLeft))
 			return printTimeLeft
 		else:
 			# for host printing we only start counting the print time at gcode line 100, so we need to calculate stuff
@@ -865,9 +863,9 @@ class MachineCom(object):
 			if self._serial is None:
 				return
 
-            for gcode in gcodeToEvent.keys():
-                if gcode in cmd:
-                    eventManager().fire(gcodeToEvent[gcode])
+			for gcode in gcodeToEvent.keys():
+				if gcode in cmd:
+					eventManager().fire(gcodeToEvent[gcode])
 
 			if 'M109' in cmd or 'M190' in cmd:
 				self._heatupWaitStartTime = time.time()
@@ -954,7 +952,7 @@ class MachineCom(object):
 		with self._sendNextLock:
 			if self._gcodePos >= len(self._gcodeList):
 				self._changeState(self.STATE_OPERATIONAL)
-    			eventManager().fire('PrintDone')
+				eventManager().fire('PrintDone')
 				return
 		
 			if self._gcodePos == 100:
