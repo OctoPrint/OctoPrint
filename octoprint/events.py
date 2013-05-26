@@ -191,10 +191,12 @@ class CommandTrigger(GenericEventListener):
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
 			params["currentZ"] = str(currentData["currentZ"])
 
-		if "jobData" in currentData.keys() and currentData["jobData"] is not None:
-			params["filename"] = currentData["jobData"]["filename"]
-			if "progress" in currentData.keys() and currentData["progress"] is not None and currentData["jobData"]["lines"] is not None:
-				params["progress"] = str(round(currentData["progress"] * 100 / currentData["jobData"]["lines"]))
+		if "job" in currentData.keys() and currentData["job"] is not None:
+			params["filename"] = currentData["job"]["filename"]
+			if "progress" in currentData.keys() and currentData["progress"] is not None \
+				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None \
+				and currentData["job"]["lines"] is not None:
+				params["progress"] = str(round(currentData["progress"]["progress"] * 100 / currentData["job"]["lines"]))
 
 		return command % params
 
