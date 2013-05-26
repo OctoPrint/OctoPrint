@@ -103,6 +103,13 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> Enable SD support
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> Wait for <code>start</code> on connect
                                 </label>
                             </div>
@@ -118,13 +125,6 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: feature_resetLineNumbersWithPrefixedN" id="settings-resetLineNumbersWithPrefixedN"> Send M110 commands with target line number as N-prefix  <span class="label">Repetier</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <div class="controls">
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> Enable SD support
                                 </label>
                             </div>
                         </div>

@@ -57,7 +57,7 @@ def baudrateList():
 
 class VirtualPrinter():
 	def __init__(self):
-		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n']
+		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD init fail\n'] # no sd card as default startup scenario
 		self.temp = 0.0
 		self.targetTemp = 0.0
 		self.lastTempAt = time.time()
@@ -65,6 +65,7 @@ class VirtualPrinter():
 		self.bedTargetTemp = 1.0
 
 		self._virtualSd = settings().getBaseFolder("virtualSd")
+		self._sdCardReady = False
 		self._sdPrinter = None
 		self._sdPrintingSemaphore = threading.Event()
 		self._selectedSdFile = None
@@ -104,27 +105,41 @@ class VirtualPrinter():
 			# send simulated temperature data
 			self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
 		elif 'M20' in data:
-			self._listSd()
+			if self._sdCardReady:
+				self._listSd()
+		elif 'M21' in data:
+			self._sdCardReady = True
+			self.readList.append("SD card ok")
+		elif 'M22' in data:
+			self._sdCardReady = False
 		elif 'M23' in data:
-			filename = data.split(None, 1)[1].strip()
-			self._selectSdFile(filename)
+			if self._sdCardReady:
+				filename = data.split(None, 1)[1].strip()
+				self._selectSdFile(filename)
 		elif 'M24' in data:
-			self._startSdPrint()
+			if self._sdCardReady:
+				self._startSdPrint()
 		elif 'M25' in data:
-			self._pauseSdPrint()
+			if self._sdCardReady:
+				self._pauseSdPrint()
 		elif 'M26' in data:
-			pos = int(re.search("S([0-9]+)", data).group(1))
-			self._setSdPos(pos)
+			if self._sdCardReady:
+				pos = int(re.search("S([0-9]+)", data).group(1))
+				self._setSdPos(pos)
 		elif 'M27' in data:
-			self._reportSdStatus()
+			if self._sdCardReady:
+				self._reportSdStatus()
 		elif 'M28' in data:
-			filename = data.split(None, 1)[1].strip()
-			self._writeSdFile(filename)
+			if self._sdCardReady:
+				filename = data.split(None, 1)[1].strip()
+				self._writeSdFile(filename)
 		elif 'M29' in data:
-			self._finishSdFile()
+			if self._sdCardReady:
+				self._finishSdFile()
 		elif 'M30' in data:
-			filename = data.split(None, 1)[1].strip()
-			self._deleteSdFile(filename)
+			if self._sdCardReady:
+				filename = data.split(None, 1)[1].strip()
+				self._deleteSdFile(filename)
 		elif "M110" in data:
 			# reset current line
 			self.currentLine = int(re.search('N([0-9]+)', data).group(1))
@@ -196,7 +211,7 @@ class VirtualPrinter():
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
-		with open(self._selectedSdFile, "rb") as f:
+		with open(self._selectedSdFile, "r") as f:
 			for line in f:
 				# reset position if requested by client
 				if self._newSdFilePos is not None:
@@ -284,6 +299,9 @@ class MachineComPrintCallback(object):
 	def mcZChange(self, newZ):
 		pass
 
+	def mcSdStateChange(self, sdReady):
+		pass
+
 	def mcSdFiles(self, files):
 		pass
 
@@ -355,6 +373,7 @@ class MachineCom(object):
 		self.thread.daemon = True
 		self.thread.start()
 
+		self._sdAvailable = False
 		self._sdPrinting = False
 		self._sdFileList = False
 		self._sdFile = None
@@ -443,6 +462,9 @@ class MachineCom(object):
 	def isBusy(self):
 		return self.isPrinting() or self._state == self.STATE_RECEIVING_FILE
 
+	def isSdReady(self):
+		return self._sdAvailable
+
 	def getPrintPos(self):
 		if self._sdPrinting:
 			return self._sdFilePos
@@ -462,10 +484,11 @@ class MachineCom(object):
 		if self._sdPrinting:
 			printTime = (time.time() - self._printStartTime) / 60
 			if self._sdFilePos > 0:
-				printTimeTotal = printTime * (self._sdFileSize / self._sdFilePos)
+				printTimeTotal = printTime * self._sdFileSize / self._sdFilePos
 			else:
 				printTimeTotal = printTime * self._sdFileSize
 			printTimeLeft = printTimeTotal - printTime
+			self._logger.info("printTime: %f, sdFileSize: %f, sdFilePos: %f, printTimeTotal: %f, printTimeLeft: %f" % (printTime, self._sdFileSize, self._sdFilePos, printTimeTotal, printTimeLeft))
 			return printTimeLeft
 		else:
 			# for host printing we only start counting the print time at gcode line 100, so we need to calculate stuff
@@ -593,6 +616,14 @@ class MachineCom(object):
 					self._heatupWaitStartTime = t
 
 			##~~ SD Card handling
+			elif 'SD init fail' in line:
+				self._sdAvailable = False
+				self._sdFiles = []
+				self._callback.mcSdStateChange(self._sdAvailable)
+			elif 'SD card ok' in line:
+				self._sdAvailable = True
+				self.refreshSdFiles()
+				self._callback.mcSdStateChange(self._sdAvailable)
 			elif 'Begin file list' in line:
 				self._sdFiles = []
 				self._sdFileList = True
@@ -671,8 +702,6 @@ class MachineCom(object):
 					startSeen = True
 				elif "ok" in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
-					if settings().get(["feature", "sdSupport"]):
-						self._sendCommand("M20")
 				elif time.time() > timeout:
 					self.close()
 
@@ -697,24 +726,28 @@ class MachineCom(object):
 					self._log("Communication timeout during printing, forcing a line")
 					line = 'ok'
 
-				# Even when printing request the temperature every 5 seconds.
-				if time.time() > tempRequestTimeout:
-					self._commandQueue.put("M105")
-					tempRequestTimeout = time.time() + 5
-
 				if self._sdPrinting:
+					if time.time() > tempRequestTimeout:
+						self._sendCommand("M105")
+						tempRequestTimeout = time.time() + 5
+
 					if time.time() > sdStatusRequestTimeout:
-						self._commandQueue.put("M27")
+						self._sendCommand("M27")
 						sdStatusRequestTimeout = time.time() + 1
 
-					if 'ok' in line and not self._commandQueue.empty():
-						self._sendCommand(self._commandQueue.get())
+					if 'ok' or 'SD printing byte' in line:
+						timeout = time.time() + 5
 				else:
+					# Even when printing request the temperature every 5 seconds.
+					if time.time() > tempRequestTimeout:
+						self._commandQueue.put("M105")
+						tempRequestTimeout = time.time() + 5
+
 					if 'ok' in line:
 						timeout = time.time() + 5
-                        if self._resendDelta is not None:
-                            self._resendNextCommand()
-                        elif not self._commandQueue.empty():
+						if self._resendDelta is not None:
+							self._resendNextCommand()
+						elif not self._commandQueue.empty():
 							self._sendCommand(self._commandQueue.get())
 						else:
 							self._sendNext()
@@ -908,7 +941,7 @@ class MachineCom(object):
 				self._log("Unexpected error: %s" % (getExceptionString()))
 			self._sendCommand(line, True)
 			self._gcodePos += 1
-			self._callback.mcProgress(self._gcodePos)
+			self._callback.mcProgress()
 	
 	def sendCommand(self, cmd):
 		cmd = cmd.encode('ascii', 'replace')
@@ -928,14 +961,6 @@ class MachineCom(object):
 		self._changeState(self.STATE_PRINTING)
 		self._printStartTime = time.time()
 		self._sendNext()
-
-	def selectSdFile(self, filename):
-		if not self.isOperational() or self.isPrinting():
-			return
-		self._sdFile = None
-		self._sdFilePos = 0
-
-		self.sendCommand("M23 %s" % filename.lower())
 
 	def printSdFile(self):
 		if not self.isOperational() or self.isPrinting():
@@ -979,23 +1004,63 @@ class MachineCom(object):
 		result.update(self._feedRateModifier)
 		return result
 
+	##~~ SD card
 	def getSdFiles(self):
 		return self._sdFiles
 
 	def startSdFileTransfer(self, filename):
-		if self.isPrinting() or self.isPaused():
+		if not self.isOperational() or self.isPrinting() or self.isPaused():
 			return
+
 		self._changeState(self.STATE_RECEIVING_FILE)
 		self.sendCommand("M28 %s" % filename.lower())
 
 	def endSdFileTransfer(self, filename):
+		if not self.isOperational() or self.isPrinting() or self.isPaused():
+			return
+
 		self.sendCommand("M29 %s" % filename.lower())
 		self._changeState(self.STATE_OPERATIONAL)
-		self.sendCommand("M20")
+		self.refreshSdFiles()
+
+	def selectSdFile(self, filename):
+		if not self.isOperational() or self.isPrinting() or self.isPaused():
+			return
+
+		self._sdFile = None
+		self._sdFilePos = 0
+
+		self.sendCommand("M23 %s" % filename.lower())
 
 	def deleteSdFile(self, filename):
+		if not self.isOperational() or ((self.isPrinting() or self.isPaused()) and self._sdFile == filename.lower()):
+			# do not delete a file from sd we are currently printing from
+			return
+
 		self.sendCommand("M30 %s" % filename.lower())
+		self.refreshSdFiles()
+
+	def refreshSdFiles(self):
+		if not self.isOperational() or self.isPrinting() or self.isPaused():
+			return
 		self.sendCommand("M20")
+
+	def initSdCard(self):
+		if not self.isOperational():
+			return
+		self.sendCommand("M21")
+
+	def releaseSdCard(self):
+		if not self.isOperational() or ((self.isPrinting() or self.isPaused()) and self._sdPrinting):
+			# do not release the sd card if we are currently printing from it
+			return
+
+		self.sendCommand("M22")
+		self._sdAvailable = False
+		self._sdFiles = []
+
+		self._callback.mcSdStateChange(self._sdAvailable)
+		self._callback.mcSdFiles(self._sdFiles)
 
 def getExceptionString():
 	locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]

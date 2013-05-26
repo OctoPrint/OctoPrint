@@ -213,6 +213,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     self.isError = ko.observable(undefined);
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
+    self.isSdReady = ko.observable(undefined);
 
     self.filename = ko.observable(undefined);
     self.filament = ko.observable(undefined);
@@ -268,6 +269,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
+        self.isSdReady(data.flags.sdReady);
     }
 
     self._processJobData = function(data) {
@@ -756,6 +758,7 @@ function GcodeFilesViewModel(loginStateViewModel) {
     self.isError = ko.observable(undefined);
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
+    self.isSdReady = ko.observable(undefined);
 
     // initialize list helper
     self.listHelper = new ItemListHelper(
@@ -821,6 +824,7 @@ function GcodeFilesViewModel(loginStateViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
+        self.isSdReady(data.flags.sdReady);
     }
 
     self.requestData = function() {
@@ -866,6 +870,27 @@ function GcodeFilesViewModel(loginStateViewModel) {
             data: {filename: filename, target: file.origin},
             success: self.fromResponse
         })
+    }
+
+    self.initSdCard = function() {
+        self._sendSdCommand("init");
+    }
+
+    self.releaseSdCard = function() {
+        self._sendSdCommand("release");
+    }
+
+    self.refreshSdFiles = function() {
+        self._sendSdCommand("refresh");
+    }
+
+    self._sendSdCommand = function(command) {
+        $.ajax({
+            url: AJAX_BASEURL + "control/sd",
+            type: "POST",
+            dataType: "json",
+            data: {command: command}
+        });
     }
 
     self.getPopoverContent = function(data) {

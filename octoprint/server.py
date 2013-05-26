@@ -254,6 +254,23 @@ def getCustomControls():
 	customControls = settings().get(["controls"])
 	return jsonify(controls=customControls)
 
+@app.route(BASEURL + "control/sd", methods=["POST"])
+@login_required
+def sdCommand():
+	if not settings().getBoolean(["feature", "sdSupport"]) or not printer.isOperational() or printer.isPrinting():
+		return jsonify(SUCCESS)
+
+	if "command" in request.values.keys():
+		command = request.values["command"]
+		if command == "init":
+			printer.initSdCard()
+		elif command == "refresh":
+			printer.refreshSdFiles()
+		elif command == "release":
+			printer.releaseSdCard()
+
+	return jsonify(SUCCESS)
+
 #~~ GCODE file handling
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])
@@ -314,6 +331,11 @@ def deleteGcodeFile():
 		else:
 			gcodeManager.removeFile(filename)
 	return readGcodeFiles()
+
+@app.route(BASEURL + "gcodefiles/refresh", methods=["POST"])
+def refreshFiles():
+	printer.updateSdFiles()
+	return jsonify(SUCCESS)
 
 #~~ timelapse handling
 

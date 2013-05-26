@@ -132,7 +132,7 @@
                         <div class="accordion-heading">
                             <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> Files</a>
 
-                            <div class="settings-trigger btn-group">
+                            <div class="settings-trigger accordion-heading-button btn-group">
                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                                     <span class="icon-wrench"></span>
                                 </a>
@@ -149,6 +149,19 @@
                                     <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
                                 </ul>
                             </div>
+
+                            {% if enableSdSupport %}
+                            <div class="sd-trigger accordion-heading-button btn-group">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    <span class="icon-hdd"></span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> Initialize SD card</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> Refresh SD files</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> Release SD card</a></li>
+                                </ul>
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">

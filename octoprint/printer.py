@@ -348,6 +348,11 @@ class Printer():
 			pass
 
 	def _getStateFlags(self):
+		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
+			sdReady = False
+		else:
+			sdReady = self._comm.isSdReady()
+
 		return {
 			"operational": self.isOperational(),
 			"printing": self.isPrinting(),
@@ -355,7 +360,8 @@ class Printer():
 			"error": self.isError(),
 			"loading": self.isLoading(),
 			"paused": self.isPaused(),
-			"ready": self.isReady()
+			"ready": self.isReady(),
+			"sdReady": sdReady
 		}
 
 	#~~ callbacks triggered from self._comm
@@ -434,6 +440,9 @@ class Printer():
 
 		self._setCurrentZ(newZ)
 
+	def mcSdStateChange(self, sdReady):
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
 	def mcSdFiles(self, files):
 		self._sendTriggerUpdateCallbacks("gcodeFiles")
 
@@ -479,6 +488,21 @@ class Printer():
 
 		self._sdPrintAfterSelect = printAfterSelect
 		self._comm.selectSdFile(filename)
+
+	def initSdCard(self):
+		if not self._comm:
+			return
+		self._comm.initSdCard()
+
+	def releaseSdCard(self):
+		if not self._comm:
+			return
+		self._comm.releaseSdCard()
+
+	def refreshSdFiles(self):
+		if not self._comm:
+			return
+		self._comm.refreshSdFiles()
 
 	#~~ callbacks triggered by sdFileStreamer
 
