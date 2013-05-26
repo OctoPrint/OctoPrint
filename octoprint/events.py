@@ -1,149 +1,228 @@
+# coding=utf-8
+
+__author__ = "Lars Norpchen"
+__author__ = "Gina Häußge <osd@foosel.net>"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+
 import datetime
-import re
 import logging
 import subprocess
-import os
 
-# right now we're logging a lot of extra information for testing
-# we might want to comment out some of the logging eventually
+from octoprint.settings import settings
 
-class event_record(object):
-	def __init__(self, what, who, action):
-		self.what = what
-		self.who = who
-		self.action = action
+# singleton
+_instance = None
+
+def eventManager():
+	global _instance
+	if _instance is None:
+		_instance = EventManager()
+	return _instance
 
 class EventManager(object):
 	"""
-	Handles receiving events and dispatching them to listeners
+	Handles receiving events and dispatching them to subscribers
 	"""
 
 	def __init__(self):
-		self.registered_events = []
-		self.logger = logging.getLogger(__name__)
-	 
-	def fire(self, name, payload=None):
-		"""
-		Fire an event to anyone listening.
+		self._registeredListeners = {}
+		self._logger = logging.getLogger(__name__)
 
-		Any object can generate an event and any object can listen pass in the event_name as a string (arbitrary, but
+	def fire(self, event, payload=None):
+		"""
+		Fire an event to anyone subscribed to it
+
+		Any object can generate an event and any object can subscribe to the event's name as a string (arbitrary, but
 		case sensitive) and any extra payload data that may pertain to the event.
+
+		Callbacks must implement the signature "callback(event, payload)", with "event" being the event's name and
+		payload being a payload object specific to the event.
 		"""
 
-		self.logger.debug("Firing event: %s (%r)" % (name, payload))
-		for event in self.registered_events:
-			(who, what, action) = event
-			if name == what:
-				self.logger.debug("Sending action to %r" % who)
-				if action is not None:
-					action(name, payload)
+		if not event in self._registeredListeners.keys():
+			return
+		self._logger.debug("Firing event: %s (%r)" % (event, payload))
+
+		eventListeners = self._registeredListeners[event]
+		for listener in eventListeners:
+			self._logger.debug("Sending action to %r" % listener)
+			listener(event, payload)
 
 	
-	def subscribe(self, name, target, action):
+	def subscribe(self, event, callback):
 		"""
-		Subscribe a listener to an event -- pass in the event name (as a string), the target object
-		and the callback object
+		Subscribe a listener to an event -- pass in the event name (as a string) and the callback object
 		"""
 
-		newEvent = (name, target, action)
-		self.registered_events = self.registered_events.append(newEvent)
-		self.logger.debug("Registered event \"%s\" to invoke \"%r\" on %r" % (name, action, target))
+		if not event in self._registeredListeners.keys():
+			self._registeredListeners[event] = []
 
-	def unsubscribe (self, event_name, target, action):
-		self.registered_events[:] = [e for e in self.registered_events if event_name != e.what or e.action != action or e.who != target]
-	
-	#sample event receiver
-	#  def event_rec(self,event_name,extra_data):
-	#     print str(self) + " Receieved event ", event_name ," (", str (extra_data),")"
-	
-	# and registering it:
-	#   eventManager.Register("Startup",self,self.event_rec)
-
-	
-class event_dispatch(object):
-	type = None
-	event_string = None
-	command_data = None
-	
-class EventResponse(object):
-	"""
-	Hooks the event manager to system events, gcode, etc. Creates listeners to any events defined in the settings.
-	"""
-
-	def __init__(self, eventManager,printer):
-		self.registered_responses = []
-		self._eventManager = eventManager
-		self._printer = printer
-		self.logger = logging.getLogger(__name__)
-		self._event_data = ""
-	   
-	def setupEvents(self,s):
-		availableEvents = s.get(["system", "events"])
-		for event in availableEvents:
-			name = event["event"].strip()
-			action = event["type"].strip()
-			data = event["command"]
-
-			self._eventManager.subscribe(event.event_string, self, self.eventRec)
-
-			self.registered_responses = self.registered_responses.append(event)
-			self.logger.debug("Registered %s event \"%s\" to execute \"%s\"" % (event.type, event.event_string, event.command_data))
-		self.logger.debug("Registered %d events" % len(self.registered_responses))
-	 
-	def eventRec (self,event_name, event_data):
-		self.logger.debug("Received event: %s (%r)" % (event_name, event_data))
-		self._event_data = event_data
-		for ev in self.registered_responses:
-			if ev.event_string == event_name:
-				if ev.type == "system":
-					self.executeSystemCommand (ev.command_data)
-				if ev.type == "gcode":
-					self.executeGCode(ev.command_data)
-	
-	def doStringProcessing (self, command_string):
-		"""
-		Handles a few regex substs for job data passed to external apps
-		"""
-		cmd_string_with_params = command_string
-		cmd_string_with_params = re.sub("_ZHEIGHT_",str(self._printer._currentZ), cmd_string_with_params)
-		if self._printer._filename:
-			cmd_string_with_params = re.sub("_FILE_",os.path.basename(self._printer._filename), cmd_string_with_params)
-		else:
-			cmd_string_with_params = re.sub("_FILE_","NO FILE", cmd_string_with_params)
-		# cut down to 2 decimal places, forcing through an int to avoid the 10.320000000001 floating point thing...
-		if self._printer._gcodeList and self._printer._progress: 
-			prog =  int(10000.0 * self._printer._progress / len(self._printer._gcodeList))/100.0 
-		else: 
-			prog = 0.0
-		cmd_string_with_params = re.sub("_PROGRESS_",str(prog), cmd_string_with_params)
-		if self._printer._comm:
-			cmd_string_with_params = re.sub("_LINE_",str(self._printer._comm._gcodePos), cmd_string_with_params)
-		else:
-			cmd_string_with_params = re.sub("_LINE_","0", cmd_string_with_params)
-		if self._event_data:
-			cmd_string_with_params = re.sub("_DATA_",str(self._event_data), cmd_string_with_params)            
-		else: 
-			cmd_string_with_params = re.sub("_DATA_","", cmd_string_with_params)                        
-		cmd_string_with_params = re.sub("_NOW_",str(datetime.datetime.now()), cmd_string_with_params)                        
-		return cmd_string_with_params
-
-		
-	def executeGCode(self,command_string):
-		command_string = self.doStringProcessing(command_string)
-		self.logger.debug("GCode command: " + command_string)
-		self._printer.commands(command_string.split(','))
-	   
-	def executeSystemCommand(self, command_string):
-		if command_string is None:
+		if callback in self._registeredListeners[event]:
+			# callback is already subscribed to the event
 			return
 
+		self._registeredListeners[event].append(callback)
+		self._logger.debug("Subscribed listener %r for event %s" % (callback, event))
+
+	def unsubscribe (self, event, callback):
+		if not event in self._registeredListeners:
+			# no callback registered for callback, just return
+			return
+
+		if not callback in self._registeredListeners[event]:
+			# callback not subscribed to event, just return
+			return
+
+		self._registeredListeners[event].remove(callback)
+		self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
+
+class GenericEventListener(object):
+	"""
+	The GenericEventListener can be subclassed to easily create custom event listeners.
+	"""
+
+	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+
+	def subscribe(self, events):
+		"""
+		Subscribes the eventCallback method for all events in the given list.
+		"""
+
+		for event in events:
+			eventManager().subscribe(event, self.eventCallback)
+
+	def unsubscribe(self, events):
+		"""
+		Unsubscribes the eventCallback method for all events in the given list
+		"""
+
+		for event in events:
+			eventManager().unsubscribe(event, self.eventCallback)
+
+	def eventCallback(self, event, payload):
+		"""
+		Actual event callback called with name of event and optional payload. Not implemented here, override in
+		child classes.
+		"""
+		pass
+
+class CommandTrigger(GenericEventListener):
+	def __init__(self, triggerType, printer):
+		GenericEventListener.__init__(self)
+		self._printer = printer
+		self._subscriptions = {}
+
+		self._initSubscriptions(triggerType)
+
+	def _initSubscriptions(self, triggerType):
+		"""
+		Subscribes all events as defined in "events > $triggerType > subscriptions" in the settings with their
+		respective commands.
+		"""
+		if not settings().get(["events", triggerType]):
+			return
+
+		if not settings().getBoolean(["events", triggerType, "enabled"]):
+			return
+
+		eventsToSubscribe = []
+		for subscription in settings().get(["events", triggerType, "subscriptions"]):
+			if not "event" in subscription.keys() or not "command" in subscription.keys():
+				self._logger.info("Invalid %s, missing either event or command: %r" % (triggerType, subscription))
+				continue
+
+			event = subscription["event"]
+			command = subscription["command"]
+
+			if not event in self._subscriptions.keys():
+				self._subscriptions[event] = []
+			self._subscriptions[event].append(command)
+
+			if not event in eventsToSubscribe:
+				eventsToSubscribe.append(event)
+
+		self.subscribe(eventsToSubscribe)
+
+	def eventCallback(self, event, payload):
+		"""
+		Event callback, iterates over all subscribed commands for the given event, processes the command
+		string and then executes the command via the abstract executeCommand method.
+		"""
+
+		GenericEventListener.eventCallback(self, event, payload)
+
+		if not event in self._subscriptions:
+			return
+
+		for command in self._subscriptions[event]:
+			processedCommand = self._processCommand(command, payload)
+			self.executeCommand(processedCommand)
+
+	def executeCommand(self, command):
+		"""
+		Not implemented, override in child classes
+		"""
+		pass
+
+	def _processCommand(self, command, payload):
+		"""
+		Performs string substitutions in the command string based on a couple of current parameters.
+
+		The following substitutions are currently supported:
+
+		  - %(currentZ)s : current Z position of the print head
+		  - %(filename)s : current selected filename, or "NO FILE" if no file is selected
+		  - %(progress)s : current print progress in percent, 0 if no print is in progress
+		  - %(data)s : the string representation of the event's payload
+		  - %(now)s : ISO 8601 representation of the current date and time
+		"""
+
+		params = {
+			"currentZ": "-1",
+			"filename": "NO FILE",
+			"progress": "0",
+			"data": str(payload),
+			"now": datetime.datetime.now().isoformat()
+		}
+
+		currentData = self._printer.getCurrentData()
+
+		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
+			params["currentZ"] = str(currentData["currentZ"])
+
+		if "jobData" in currentData.keys() and currentData["jobData"] is not None:
+			params["filename"] = currentData["jobData"]["filename"]
+			if "progress" in currentData.keys() and currentData["progress"] is not None and currentData["jobData"]["lines"] is not None:
+				params["progress"] = str(round(currentData["progress"] * 100 / currentData["jobData"]["lines"]))
+
+		return command % params
+
+class SystemCommandTrigger(CommandTrigger):
+	"""
+	Performs configured system commands for configured events.
+	"""
+
+	def __init__(self, printer):
+		CommandTrigger.__init__(self, "systemCommandTrigger", printer)
+
+	def executeCommand(self, command):
 		try:
-			command_string = self.doStringProcessing(command_string)
-			self.logger.info("Executing system command: %s" % command_string)
-			#use Popen here since it won't wait for the shell to return...and we send some of these
-			# commands during a print job, we don't want to block!
-			subprocess.Popen(command_string, shell=True)
+			self._logger.info("Executing system command: %s" % command)
+			subprocess.Popen(command, shell=True)
 		except subprocess.CalledProcessError, e:
-			self.logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
+			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
 		except Exception, ex:
-			self.logger.exception("Command failed")
+			self._logger.exception("Command failed")
+
+class GcodeCommandTrigger(CommandTrigger):
+	"""
+	Sends configured GCODE commands to the printer for configured events.
+	"""
+
+	def __init__(self, printer):
+		CommandTrigger.__init__(self, "gcodeCommandTrigger", printer)
+
+	def executeCommand(self, command):
+		self._logger.debug("Executing GCode command: %s" % command)
+		self._printer.commands(command.split(","))

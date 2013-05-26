@@ -1,12 +1,9 @@
 # coding=utf-8
-import logging
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from octoprint.settings import settings
-import octoprint.util as util
-
+import logging
 import os
 import threading
 import urllib
@@ -14,9 +11,12 @@ import time
 import subprocess
 import fnmatch
 import datetime
-import octoprint.events as events
-
 import sys
+
+import octoprint.util as util
+
+from octoprint.settings import settings
+from octoprint.events import eventManager
 
 def getFinishedTimelapses():
 	files = []
@@ -34,9 +34,8 @@ def getFinishedTimelapses():
 	return files
 
 class Timelapse(object):
-	def __init__(self,ev):
+	def __init__(self):
 		self._logger = logging.getLogger(__name__)
-		self._eventManager = ev
 		self._imageNumber = None
 		self._inTimelapse = False
 		self._gcodeFile = None
@@ -86,15 +85,15 @@ class Timelapse(object):
 			filename = os.path.join(self._captureDir, "tmp_%05d.jpg" % (self._imageNumber))
 			self._imageNumber += 1
 		self._logger.debug("Capturing image to %s" % filename)
-		self._eventManager.fire("CaptureStart",filename);
 		captureThread = threading.Thread(target=self._captureWorker, kwargs={"filename": filename})
 		captureThread.daemon = True
 		captureThread.start()
 
 	def _captureWorker(self, filename):
+		eventManager().fire("CaptureStart", filename);
 		urllib.urlretrieve(self._snapshotUrl, filename)
 		self._logger.debug("Image %s captured from %s" % (filename, self._snapshotUrl))
-		self._eventManager.fire("CaptureDone",filename);
+		eventManager().fire("CaptureDone", filename);
 
 	def _createMovie(self):
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
@@ -121,10 +120,10 @@ class Timelapse(object):
 			command.extend(['-vf', 'movie=%s [wm]; [in][wm] overlay=10:main_h-overlay_h-10 [out]' % watermark])
 
 		# finalize command with output file
+		self._logger.debug("Rendering movie to %s" % output)
 		command.append(output)
 		subprocess.call(command)
-		self._logger.debug("Rendering movie to %s" % output)
-		self._eventManager.fire("MovieDone",output);
+		eventManager().fire("MovieDone", output);
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):
@@ -137,8 +136,8 @@ class Timelapse(object):
 			os.remove(os.path.join(self._captureDir, filename))
 
 class ZTimelapse(Timelapse):
-	def __init__(self,ev):
-		Timelapse.__init__(self,ev)
+	def __init__(self):
+		Timelapse.__init__(self)
 		self._logger.debug("ZTimelapse initialized")
 
 	def onZChange(self, oldZ, newZ):
@@ -146,8 +145,8 @@ class ZTimelapse(Timelapse):
 		self.captureImage()
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, ev,interval=1):
-		Timelapse.__init__(self,ev)
+	def __init__(self, interval=1):
+		Timelapse.__init__(self)
 
 		self._interval = interval
 		if self._interval < 1:

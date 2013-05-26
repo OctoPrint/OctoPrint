@@ -2,6 +2,8 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+import re
+
 def getFormattedSize(num):
 	"""
 	 Taken from http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
@@ -39,3 +41,6 @@ def getClass(name):
 	for comp in parts[1:]:
 		m = getattr(m, comp)
 	return m
+
+def matchesGcode(line, gcode):
+	return re.search("^\s*%s\D" % gcode, line, re.I)

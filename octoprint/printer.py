@@ -14,6 +14,7 @@ import octoprint.util.comm as comm
 import octoprint.util as util
 
 from octoprint.settings import settings
+from octoprint.events import eventManager
 
 def getConnectionOptions():
 	"""
@@ -27,9 +28,8 @@ def getConnectionOptions():
 	}
 
 class Printer():
-	def __init__(self, gcodeManager,eventManager):
+	def __init__(self, gcodeManager):
 		self._gcodeManager = gcodeManager
-		self._eventManager = eventManager
 
 		# state
 		self._temp = None
@@ -124,7 +124,7 @@ class Printer():
 			try: callback.sendCurrentData(copy.deepcopy(data))
 			except: pass
 
-#~~ printer commands
+	#~~ printer commands
 
 	def connect(self, port=None, baudrate=None):
 		"""
@@ -134,7 +134,6 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self)
-		self._comm.setEventManager(self._eventManager)
 
 	def disconnect(self):
 		"""
@@ -143,6 +142,7 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = None
+		eventManager().fire("Disconnected")
 
 	def command(self, command):
 		"""
@@ -196,8 +196,6 @@ class Printer():
 
 		self._setCurrentZ(-1)
 
-		#self._eventManager.fire('PrintStarted', self.filename)
-
 		self._comm.printGCode(self._gcodeList)
 
 	def togglePausePrint(self):
@@ -225,6 +223,7 @@ class Printer():
 		# mark print as failure
 		if self._filename:
 			self._gcodeManager.printFailed(self._filename)
+			eventManager().fire("PrintFailed", self._filename)
 	 
 	#~~ state monitoring
 
@@ -344,6 +343,9 @@ class Printer():
 			"ready": self.isReady()
 		}
 
+	def getCurrentData(self):
+		return self._stateMonitor.getCurrentData()
+
 	#~~ callbacks triggered from self._comm
 
 	def mcLog(self, message):
@@ -368,24 +370,12 @@ class Printer():
 			elif state == self._comm.STATE_PRINTING and oldState != self._comm.STATE_PAUSED:
 				self._timelapse.onPrintjobStarted(self._filename)
 
-		if state == self._comm.STATE_PRINTING and oldState != self._comm.STATE_PAUSED:
-			self._eventManager.fire('PrintStarted', self._filename)
-		if state == self._comm.STATE_OPERATIONAL and (oldState <=  self._comm.STATE_CONNECTING or oldState >=self._comm.STATE_CLOSED):
-			self._eventManager.fire('Connected',self._comm._port+" at " +self._comm._baudrate)
-		if state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
-			self._eventManager.fire('Error',self._comm.getErrorString())
-			 
 		# forward relevant state changes to gcode manager
 		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if state == self._comm.STATE_OPERATIONAL:
 				self._gcodeManager.printSucceeded(self._filename)
-				#hrm....we seem to hit this state and THEN the next failed state on a cancel request?
-				# oh well, add a check to see if we're really done before sending the success event external command
-				if self._printTimeLeft < 1:
-					self._eventManager.fire('PrintDone', self._filename)
 			elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
 				self._gcodeManager.printFailed(self._filename)
-				self._eventManager.fire('PrintFailed', self._filename)
 			self._gcodeManager.resumeAnalysis() # do not analyse gcode while printing
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._gcodeManager.pauseAnalysis() # printing done, put those cpu cycles to good use
@@ -424,7 +414,7 @@ class Printer():
 			self.peakZ = newZ
 			if self._timelapse is not None:
 				self._timelapse.onZChange(oldZ, newZ)
-			self._eventManager.FireEvent ('ZChange',newZ)
+			eventManager().fire("ZChange", newZ)
 			
 		self._setCurrentZ(newZ)
 
@@ -442,9 +432,10 @@ class Printer():
 		self._setCurrentZ(None)
 		self._setProgressData(None, None, None)
 		self._gcodeLoader = None
-		self._eventManager.fire("LoadDone", filename)
 		self._stateMonitor.setGcodeData({"filename": None, "progress": None})
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+		eventManager().fire("LoadDone", filename)
 
 	def _onGcodeLoadedToPrint(self, filename, gcodeList):
 		self._onGcodeLoaded(filename, gcodeList)

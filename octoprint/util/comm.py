@@ -17,6 +17,7 @@ from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
+from octoprint.events import eventManager
 
 try:
 	import _winreg
@@ -54,6 +55,21 @@ def baudrateList():
 		ret.remove(prev)
 		ret.insert(0, prev)
 	return ret
+
+gcodeToEvent = {
+	"M226": "Waiting",  # pause for user input
+	"M0": "Waiting",
+	"M1": "Waiting",
+	"M245": "Cooling",  # part cooler
+	"M240": "Conveyor", # part conveyor
+	"M40": "Eject",     # part ejector
+	"M300": "Alert",    # user alert
+	"G28": "Home",      # home print head
+	"M112": "EStop",
+	"M80": "PowerOn",
+	"M81": "PowerOff",
+	"M25": "Paused"     # SD Card pause
+}
 
 class VirtualPrinter():
 	def __init__(self):
@@ -178,15 +194,11 @@ class MachineCom(object):
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
 		self._printStartTime100 = None
-		self._eventManager = None
-		
+
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
 	
-	def setEventManager(self,em):
-		self._eventManager = em
-		
 	def _changeState(self, newState):
 		if self._state == newState:
 			return
@@ -312,6 +324,7 @@ class MachineCom(object):
 			self._log("Failed to open serial port (%s)" % (self._port))
 			self._errorValue = 'Failed to autodetect serial port.'
 			self._changeState(self.STATE_ERROR)
+			eventManager().fire("Error", self.getErrorString())
 			return
 		self._log("Connected to: %s, starting monitor" % (self._serial))
 		if self._baudrate == 0:
@@ -340,8 +353,12 @@ class MachineCom(object):
 				if 'checksum mismatch' in line or 'Line Number is not Last Line Number' in line or 'No Line Number with checksum' in line or 'No Checksum with line number' in line:
 					pass
 				elif not self.isError():
+					if self.isPrinting():
+						eventManager().fire("PrintFailed")
+
 					self._errorValue = line[6:]
 					self._changeState(self.STATE_ERROR)
+					eventManager().fire("Error", self.getErrorString())
 			if ' T:' in line or line.startswith('T:'):
 				self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
 				if ' B:' in line:
@@ -361,6 +378,7 @@ class MachineCom(object):
 						self.close()
 						self._errorValue = "No more baudrates to test, and no suitable baudrate found."
 						self._changeState(self.STATE_ERROR)
+						eventManager().fire("Error", self.getErrorString())
 					elif self._baudrateDetectRetry > 0:
 						self._baudrateDetectRetry -= 1
 						self._serial.write('\n')
@@ -390,6 +408,7 @@ class MachineCom(object):
 						self._sendCommand("M999")
 						self._serial.timeout = 2
 						self._changeState(self.STATE_OPERATIONAL)
+						eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
 				else:
 					self._testingBaudrate = False
 			elif self._state == self.STATE_CONNECTING:
@@ -399,6 +418,7 @@ class MachineCom(object):
 					startSeen = True
 				elif 'ok' in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
+					eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
 				elif time.time() > timeout:
 					self.close()
 			elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
@@ -458,6 +478,7 @@ class MachineCom(object):
 		return ret
 	
 	def close(self, isError = False):
+		printing = self.isPrinting() or self.isPaused()
 		if self._serial != None:
 			self._serial.close()
 			if isError:
@@ -465,53 +486,21 @@ class MachineCom(object):
 			else:
 				self._changeState(self.STATE_CLOSED)
 		self._serial = None
-	
+
+		if printing:
+			eventManager().fire("PrintFailed")
+		eventManager().fire("Disconnected")
+
 	def __del__(self):
 		self.close()
 	
 	def _sendCommand(self, cmd):
 		if self._serial is None:
 			return
-		if self._eventManager:    
-			t_cmd = cmd+' ' 
-			t_cmd = cmd+' ' 
-	# some useful event triggered from GCode commands
-	# pause for user input.  M0 in Marlin and M1 in G-code standard RS274NGC        
-			if re.search ("^\s*M226\D",t_cmd,re.I) or re.search ("^\s*M[01]\D",t_cmd,re.I):
-				self._eventManager.fire ('Waiting')
-	# part cooler started
-			if re.search ("^\s*M245\D",t_cmd,re.I):
-				self._eventManager.fire ('Cooling')
-	# part conveyor started
-			if re.search ("^\s*M240\D",t_cmd,re.I):
-				self._eventManager.fire ('Conveyor')
-	# part ejector 
-			if re.search ("^\s*M40\D",t_cmd,re.I):
-				self._eventManager.fire ('Eject')
-	# user alert issued by sending beep command to printer...
-			if re.search ("^\s*M300\D",t_cmd,re.I):
-				self._eventManager.fire ('Alert')
-	# Print head has moved to home
-			if re.search ("^\s*G28\D",t_cmd,re.I):
-				self._eventManager.fire ('Home')
-			if re.search ("^\s*M112\D",t_cmd,re.I):
-				self._eventManager.fire ('EStop')
-			if re.search ("^\s*M80\D",t_cmd,re.I):
-				self._eventManager.fire ('PowerOn')
-			if re.search ("^\s*M81\D",t_cmd,re.I):
-				self._eventManager.fire ('PowerOff')
-			if re.search ("^\s*M25\D",t_cmd,re.I):      # SD Card pause
-				self._eventManager.fire ('Paused')
 
-			
-# these comparisons assume that the searched-for string is not in a comment or a parameter, for example
-# GCode lines like this: 
-#    G0 X100 ; let's not do an M109 here!!!
-#    M420 R000 E000 B000 ; set LED color on makerbot to RGB (note the G is replaced with an E)
-#    M1090 ; some command > 999
-# could potentially trip us up here....
-# this can be avoided by checking only the START of the string for the command code
-# and checking for whitespace after the command (after trimming any leading whitespace, as necessary)
+		for gcode in gcodeToEvent.keys():
+			if gcode in cmd:
+				eventManager().fire(gcodeToEvent[gcode])
 
 		if 'M109' in cmd or 'M190' in cmd:
 			self._heatupWaitStartTime = time.time()
@@ -544,7 +533,9 @@ class MachineCom(object):
 	def _sendNext(self):
 		if self._gcodePos >= len(self._gcodeList):
 			self._changeState(self.STATE_OPERATIONAL)
+			eventManager().fire('PrintDone')
 			return
+
 		if self._gcodePos == 100:
 			self._printStartTime100 = time.time()
 		line = self._gcodeList[self._gcodePos]
@@ -552,13 +543,9 @@ class MachineCom(object):
 			self._printSection = line[1]
 			line = line[0]
 		try:
-			if line == 'M0' or line == 'M1' or line=='M112':    # M112 is also an LCD pause
+			if line == 'M0' or line == 'M1':
 				self.setPause(True)
 				line = 'M105'   #Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-
-			   # LCD / user response pause can be used for things like mid-print filament changes, so
-			   # always removing them may not be so good.   Something to consider as a user preference?
-				
 			if self._printSection in self._feedRateModifier:
 				line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
 			if ('G0' in line or 'G1' in line) and 'Z' in line:
@@ -591,11 +578,13 @@ class MachineCom(object):
 		self._printStartTime = time.time()
 		for i in xrange(0, 6):
 			self._sendNext()
+		eventManager().fire("PrintStarted")
 	
 	def cancelPrint(self):
 		if self.isOperational():
 			self._changeState(self.STATE_OPERATIONAL)
-	
+		eventManager().fire("PrintCancelled")
+
 	def setPause(self, pause):
 		if not pause and self.isPaused():
 			self._changeState(self.STATE_PRINTING)
@@ -603,6 +592,7 @@ class MachineCom(object):
 				self._sendNext()
 		if pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
+			eventManager().fire("Paused")
 	
 	def setFeedrateModifier(self, type, value):
 		self._feedRateModifier[type] = value

@@ -20,7 +20,6 @@ import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 import octoprint.users as users
 
-
 import octoprint.events as events
 
 SUCCESS = {}
@@ -32,7 +31,7 @@ app = Flask("octoprint")
 printer = None 
 gcodeManager = None
 userManager = None
-eventManager =None
+eventManager = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -41,7 +40,7 @@ user_permission = Permission(RoleNeed("user"))
 #~~ Printer state
 
 class PrinterStateConnection(tornadio2.SocketConnection):
-	def __init__(self, printer, gcodeManager, userManager, session, endpoint=None):
+	def __init__(self, printer, gcodeManager, userManager, eventManager, session, endpoint=None):
 		tornadio2.SocketConnection.__init__(self, session, endpoint)
 
 		self._logger = logging.getLogger(__name__)
@@ -56,22 +55,23 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._printer = printer
 		self._gcodeManager = gcodeManager
 		self._userManager = userManager
+		self._eventManager = eventManager
 
 	def on_open(self, info):
-		global eventManager
-		eventManager.fire("ClientOpen")
 		self._logger.info("New connection from client")
 		# Use of global here is smelly
 		printer.registerCallback(self)
 		gcodeManager.registerCallback(self)
 
+		self._eventManager.fire("ClientOpened")
+
 	def on_close(self):
-		global eventManager
-		eventManager.fire("ClientClosed")
 		self._logger.info("Closed client connection")
 		# Use of global here is smelly
 		printer.unregisterCallback(self)
 		gcodeManager.unregisterCallback(self)
+
+		self._eventManager.fire("ClientClosed")
 
 	def on_message(self, message):
 		pass
@@ -152,7 +152,6 @@ def connect():
 		printer.connect(port=port, baudrate=baudrate)
 	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
 		printer.disconnect()
-		eventManager.fire("Disconnected")
 
 	return jsonify(SUCCESS)
 
@@ -188,10 +187,8 @@ def printJobControl():
 			printer.startPrint()
 		elif request.values["command"] == "pause":
 			printer.togglePausePrint()
-			eventManager.fire("Paused")
 		elif request.values["command"] == "cancel":
 			printer.cancelPrint()
-			eventManager.fire("Cancelled")
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/temperature", methods=["POST"])
@@ -281,8 +278,9 @@ def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
 		filename = gcodeManager.addFile(file)
+
 		global eventManager
-		eventManager.fire("Upload",filename)
+		eventManager.fire("Upload", filename)
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
@@ -295,8 +293,9 @@ def loadGcodeFile():
 		filename = gcodeManager.getAbsolutePath(request.values["filename"])
 		if filename is not None:
 			printer.loadGcode(filename, printAfterLoading)
+
 			global eventManager
-			eventManager.fire("LoadStart",filename)
+			eventManager.fire("LoadStart", filename)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -350,12 +349,11 @@ def deleteTimelapse(filename):
 @app.route(BASEURL + "timelapse", methods=["POST"])
 @login_required
 def setTimelapseConfig():
-	global eventManager
 	if request.values.has_key("type"):
 		type = request.values["type"]
 		lapse = None
 		if "zchange" == type:
-			lapse = timelapse.ZTimelapse(eventManager)
+			lapse = timelapse.ZTimelapse()
 		elif "timed" == type:
 			interval = 10
 			if request.values.has_key("interval"):
@@ -363,7 +361,7 @@ def setTimelapseConfig():
 					interval = int(request.values["interval"])
 				except ValueError:
 					pass
-			lapse = timelapse.TimedTimelapse( eventManager,interval)
+			lapse = timelapse.TimedTimelapse(interval)
 		printer.setTimelapse(lapse)
 
 	return getTimelapseData()
@@ -671,16 +669,13 @@ class Server():
 		self._initLogging(self._debug)
 		logger = logging.getLogger(__name__)
 
-		eventManager = events.EventManager()
+		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
-		printer = Printer(gcodeManager, eventManager)
-		self.event_dispatcher = events.EventResponse (eventManager,printer)
-		self.event_dispatcher.setupEvents(settings())
-# a few test commands to test the event manager is working...        
-	 #   eventManager.Register("Startup",self,self.event_rec)
-	 #   eventManager.unRegister("Startup",self,self.event_rec)
-	 #   eventManager.FireEvent("Startup")
- 
+		printer = Printer(gcodeManager)
+
+		# setup system and gcode command triggers
+		events.SystemCommandTrigger(printer)
+		events.GcodeCommandTrigger(printer)
 
 		if settings().getBoolean(["accessControl", "enabled"]):
 			userManagerName = settings().get(["accessControl", "userManager"])
@@ -719,8 +714,8 @@ class Server():
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):
-		global printer, gcodeManager, userManager
-		return PrinterStateConnection(printer, gcodeManager, userManager, session, endpoint)
+		global printer, gcodeManager, userManager, eventManager
+		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session, endpoint)
 
 	def _initSettings(self, configfile, basedir):
 		s = settings(init=True, basedir=basedir, configfile=configfile)

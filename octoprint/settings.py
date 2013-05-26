@@ -68,13 +68,20 @@ default_settings = {
 	},
 	"controls": [],
 	"system": {
-		"actions": [],
-		"events": []
+		"actions": []
 	},
 	"accessControl": {
 		"enabled": False,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None
+	},
+	"events": {
+		"systemCommandTrigger": {
+			"enabled": False
+		},
+		"gcodeCommandTrigger": {
+			"enabled": False
+		}
 	}
 }
 
