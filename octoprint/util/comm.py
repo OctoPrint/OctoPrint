@@ -488,7 +488,6 @@ class MachineCom(object):
 			else:
 				printTimeTotal = printTime * self._sdFileSize
 			printTimeLeft = printTimeTotal - printTime
-			self._logger.info("printTime: %f, sdFileSize: %f, sdFilePos: %f, printTimeTotal: %f, printTimeLeft: %f" % (printTime, self._sdFileSize, self._sdFilePos, printTimeTotal, printTimeLeft))
 			return printTimeLeft
 		else:
 			# for host printing we only start counting the print time at gcode line 100, so we need to calculate stuff
