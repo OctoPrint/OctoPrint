@@ -271,6 +271,17 @@ def sdCommand():
 
 	return jsonify(SUCCESS)
 
+#~~ Printer State
+
+@app.route(BASEURL + "state", methods=["GET"])
+@login_required
+def getPrinterState():
+	currentData = printer.getCurrentData()
+	currentData.update({
+		"temperatures": printer.getCurrentTemperatures()
+	})
+	return jsonify(currentData)
+
 #~~ GCODE file handling
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])

@@ -563,6 +563,21 @@ class Printer():
 		else:
 			return self._comm.getStateString()
 
+	def getCurrentData(self):
+		return self._stateMonitor.getCurrentData()
+
+	def getCurrentTemperatures(self):
+		return {
+			"extruder": {
+				"current": self._temp,
+				"target": self._targetTemp
+			},
+			"bed": {
+				"current": self._bedTemp,
+				"target": self._targetBedTemp
+			}
+		}
+
 	def isClosedOrError(self):
 		return self._comm is None or self._comm.isClosedOrError()
 
