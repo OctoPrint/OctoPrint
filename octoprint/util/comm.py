@@ -693,6 +693,8 @@ class MachineCom(object):
 						self._sendCommand("M999")
 						self._serial.timeout = 2
 						self._changeState(self.STATE_OPERATIONAL)
+						if self._sdAvailable:
+							self.refreshSdFiles()
 				else:
 					self._testingBaudrate = False
 
@@ -704,6 +706,8 @@ class MachineCom(object):
 					startSeen = True
 				elif "ok" in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
+					if self._sdAvailable:
+						self.refreshSdFiles()
 				elif time.time() > timeout:
 					self.close()
 
@@ -1055,7 +1059,7 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
-		if self.isBusy():
+		if not self.isOperational() or self.isBusy():
 			return
 		self.sendCommand("M20")
 
