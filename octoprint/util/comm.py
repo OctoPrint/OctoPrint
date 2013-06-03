@@ -1055,7 +1055,7 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
-		if not self.isOperational() or self.isBusy():
+		if self.isBusy():
 			return
 		self.sendCommand("M20")
 
