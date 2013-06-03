@@ -108,13 +108,13 @@
                         <div class="accordion-body collapse in" id="state">
                             <div class="accordion-inner">
                                 Machine State: <strong data-bind="text: stateString"></strong><br>
-                                File: <strong data-bind="text: filename"></strong><br>
+                                File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
                                 Estimated Print Time: <strong data-bind="text: estimatedPrintTime"></strong><br>
-                                Line: <strong data-bind="text: lineString"></strong><br>
                                 Height: <strong data-bind="text: currentHeight"></strong><br>
                                 Print Time: <strong data-bind="text: printTime"></strong><br>
                                 Print Time Left: <strong data-bind="text: printTimeLeft"></strong><br>
+                                Printed: <strong data-bind="text: byteString"></strong><br>
 
                                 <div class="progress">
                                     <div class="bar" id="job_progressBar" data-bind="style: { width: progressString() + '%' }"></div>
@@ -153,7 +153,7 @@
                             {% if enableSdSupport %}
                             <div class="sd-trigger accordion-heading-button btn-group">
                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                    <span class="icon-hdd"></span>
+                                    <span class="icon-sd-black-14"></span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> Initialize SD card</a></li>

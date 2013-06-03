@@ -216,21 +216,25 @@ function PrinterStateViewModel(loginStateViewModel) {
     self.isSdReady = ko.observable(undefined);
 
     self.filename = ko.observable(undefined);
-    self.filament = ko.observable(undefined);
-    self.estimatedPrintTime = ko.observable(undefined);
+    self.progress = ko.observable(undefined);
+    self.filesize = ko.observable(undefined);
+    self.filepos = ko.observable(undefined);
     self.printTime = ko.observable(undefined);
     self.printTimeLeft = ko.observable(undefined);
-    self.progress = ko.observable(undefined);
-    self.currentLine = ko.observable(undefined);
-    self.totalLines = ko.observable(undefined);
+    self.sd = ko.observable(undefined);
+
+    self.filament = ko.observable(undefined);
+    self.estimatedPrintTime = ko.observable(undefined);
+
     self.currentHeight = ko.observable(undefined);
 
-    self.lineString = ko.computed(function() {
-        if (!self.totalLines())
+    self.byteString = ko.computed(function() {
+        if (!self.filesize())
             return "-";
-        var currentLine = self.currentLine() ? self.currentLine() : "-";
-        return currentLine + " / " + self.totalLines();
+        var filepos = self.filepos() ? self.filepos() : "-";
+        return filepos + " / " + self.filesize();
     });
+
     self.progressString = ko.computed(function() {
         if (!self.progress())
             return 0;
@@ -254,8 +258,6 @@ function PrinterStateViewModel(loginStateViewModel) {
     self._fromData = function(data) {
         self._processStateData(data.state)
         self._processJobData(data.job);
-        self._processGcodeData(data.gcode);
-        self._processSdUploadData(data.sdUpload);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
     }
@@ -268,33 +270,15 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.isPrinting(data.flags.printing);
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
-        self.isLoading(data.flags.loading);
         self.isSdReady(data.flags.sdReady);
     }
 
     self._processJobData = function(data) {
         self.filename(data.filename);
-        self.totalLines(data.lines);
+        self.filesize(data.filesize);
         self.estimatedPrintTime(data.estimatedPrintTime);
         self.filament(data.filament);
-    }
-
-    self._processGcodeData = function(data) {
-        if (self.isLoading()) {
-            var progress = Math.round(data.progress * 100);
-            if (data.mode == "loading") {
-                self.filename("Loading... (" + progress + "%)");
-            } else if (data.mode == "parsing") {
-                self.filename("Parsing... (" + progress + "%)");
-            }
-        }
-    }
-
-    self._processSdUploadData = function(data) {
-        if (self.isLoading()) {
-            var progress = Math.round(data.progress * 100);
-            self.filename("Streaming... (" + progress + "%)");
-        }
+        self.sd(data.sd);
     }
 
     self._processProgressData = function(data) {
@@ -303,7 +287,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         } else {
             self.progress(undefined);
         }
-        self.currentLine(data.currentLine);
+        self.filepos(data.filepos);
         self.printTime(data.printTime);
         self.printTimeLeft(data.printTimeLeft);
     }

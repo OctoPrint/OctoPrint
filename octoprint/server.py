@@ -232,23 +232,6 @@ def jog():
 
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + "control/speed", methods=["GET"])
-def getSpeedValues():
-	return jsonify(feedrate=printer.feedrateState())
-
-@app.route(BASEURL + "control/speed", methods=["POST"])
-@login_required
-def speed():
-	if not printer.isOperational():
-		return jsonify(SUCCESS)
-
-	for key in ["outerWall", "innerWall", "fill", "support"]:
-		if key in request.values.keys():
-			value = int(request.values[key])
-			printer.setFeedrateModifier(key, value)
-
-	return getSpeedValues()
-
 @app.route(BASEURL + "control/custom", methods=["GET"])
 def getCustomControls():
 	customControls = settings().get(["controls"])
@@ -323,13 +306,14 @@ def loadGcodeFile():
 		if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
 			printAfterLoading = True
 
+		sd = False
+		filename = None
 		if "target" in request.values.keys() and request.values["target"] == "sd":
 			filename = request.values["filename"]
-			printer.selectSdFile(filename, printAfterLoading)
+			sd = True
 		else:
 			filename = gcodeManager.getAbsolutePath(request.values["filename"])
-			if filename is not None:
-				printer.loadGcode(filename, printAfterLoading)
+		printer.selectFile(filename, sd, printAfterLoading)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
