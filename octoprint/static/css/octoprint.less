@@ -5,8 +5,21 @@ body {
 }
 
 .navbar-inner-text (@base) {
-  text-shadow: 0 1px 0 lighten(@base, 15%);
-  color: contrast(@base, #333333, #f2f2f2);
+  @text-color: contrast(@base, #333333, #f2f2f2);
+  text-shadow: 0 1px 0 contrast(@base, lighten(@base, 15%), darken(@base, 15%));
+  color: @text-color;
+  @caret-color: average(@base, @text-color);
+  @caret-hover-color: average(@caret-color, @text-color);
+  
+  .caret {
+	  border-bottom-color: @caret-color;
+	  border-top-color: @caret-color;
+  }
+  
+  &:hover .caret, &:focus .caret {
+	  border-bottom-color: @caret-hover-color;
+	  border-top-color: @caret-hover-color;
+  }
 }
 
 .navbar-inner-color (@base) {
