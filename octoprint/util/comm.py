@@ -593,7 +593,7 @@ class MachineCom(object):
 			##~~ SD file list
 			# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 			if self._sdFileList and not 'End file list' in line:
-				self._sdFiles.append(line.trim().lower())
+				self._sdFiles.append(line.strip().lower())
 				continue
 
 			##~~ Temperature processing
