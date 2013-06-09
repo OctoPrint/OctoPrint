@@ -900,8 +900,8 @@ class MachineCom(object):
 	def _doSendWithChecksum(self, cmd, lineNumber):
 		self._logger.debug("Sending cmd '%s' with lineNumber %r" % (cmd, lineNumber))
 
-		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNumber, cmd)))
-		commandToSend = "N%d%s*%d" % (lineNumber, cmd, checksum)
+		checksum = reduce(lambda x,y:x^y, map(ord, "N%d %s" % (lineNumber, cmd)))
+		commandToSend = "N%d %s*%d" % (lineNumber, cmd, checksum)
 		self._doSendWithoutChecksum(commandToSend)
 
 	def _doSendWithoutChecksum(self, cmd):
