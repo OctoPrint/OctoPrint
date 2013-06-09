@@ -16,6 +16,8 @@ import serial
 from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
+from octoprint.util import matchesGcode
+
 from octoprint.settings import settings
 
 try:
@@ -833,20 +835,20 @@ class MachineCom(object):
 		with self._sendingLock:
 			if self._serial is None:
 				return
-			if 'M109' in cmd or 'M190' in cmd:
+			if matchesGcode(cmd, "M109") or matchesGcode(cmd, "M190"):
 				self._heatupWaitStartTime = time.time()
-			if 'M104' in cmd or 'M109' in cmd:
+			if matchesGcode(cmd, "M104") or matchesGcode(cmd, "M109"):
 				try:
 					self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 				except:
 					pass
-			if 'M140' in cmd or 'M190' in cmd:
+			if matchesGcode(cmd, "M140") or matchesGcode(cmd, "M190"):
 				try:
 					self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 				except:
 					pass
 
-			if "M110" in cmd:
+			if matchesGcode(cmd, "M110"):
 				newLineNumber = None
 				if " N" in cmd:
 					try:
@@ -926,12 +928,12 @@ class MachineCom(object):
 				self._printSection = line[1]
 				line = line[0]
 			try:
-				if line == 'M0' or line == 'M1':
+				if matchesGcode(line, "M0") or matchesGcode(line, "M1"):
 					self.setPause(True)
-					line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+					line = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 				if self._printSection in self._feedRateModifier:
 					line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
-				if ('G0' in line or 'G1' in line) and 'Z' in line:
+				if (matchesGcode(line, "G0") or matchesGcode(line, "G1")) and 'Z' in line:
 					z = float(re.search('Z([0-9\.]*)', line).group(1))
 					if self._currentZ != z:
 						self._currentZ = z
