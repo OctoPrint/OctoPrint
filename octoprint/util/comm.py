@@ -951,8 +951,6 @@ class MachineCom(object):
 					if matchesGcode(line, "M0") or matchesGcode(line, "M1"):
 						self.setPause(True)
 						line = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-					if self._printSection in self._feedRateModifier:
-						line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
 					if (matchesGcode(line, "G0") or matchesGcode(line, "G1")) and 'Z' in line:
 						z = float(re.search('Z([0-9\.]*)', line).group(1))
 						if self._currentZ != z:
