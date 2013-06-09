@@ -978,7 +978,7 @@ function TimelapseViewModel(loginStateViewModel) {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "timelapse/config",
+            url: AJAX_BASEURL + "timelapse",
             type: "POST",
             dataType: "json",
             data: data,
