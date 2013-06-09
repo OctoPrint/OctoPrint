@@ -1093,13 +1093,16 @@ function GcodeViewModel(loginStateViewModel) {
     }
 
     self._processData = function(data) {
-        if(!self.enabled)return;
+        if (!self.enabled) return;
+        if (!data.job.filename) return;
 
-        if(self.loadedFilename == data.job.filename) {
-            var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress.progress);
-            if(cmdIndex){
-                GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
-                GCODE.ui.updateLayerInfo(cmdIndex.layer);
+        if(self.loadedFilename && self.loadedFilename == data.job.filename) {
+            if (data.state.flags && (data.state.flags.printing || data.state.flags.paused)) {
+                var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.progress * 100);
+                if(cmdIndex){
+                    GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+                    GCODE.ui.updateLayerInfo(cmdIndex.layer);
+                }
             }
             self.errorCount = 0
         } else if (data.job.filename) {
