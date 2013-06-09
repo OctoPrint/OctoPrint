@@ -6,17 +6,17 @@ OctoPrint
 OctoPrint provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It currently
 allows
 
-* uploading .gcode files to the server and managing them via the UI
-* selecting a file for printing, getting the usual stats regarding filament length etc (stats can be disabled for
-  faster initial processing)
+* uploading .gcode files to the server plus optionally the printer's SD card and managing them via the UI
+* selecting a file for printing, getting the usual stats regarding filament length etc (stats not available for SD files)
 * starting, pausing and canceling a print job
 * while connected to the printer, gaining information regarding the current temperature of both head and bed (if available) in a nice shiny javascript-y temperature graph
 * while printing, gaining information regarding the current progress of the print job (height, percentage etc)
 * reading the communication log and send arbitrary codes to be executed by the printer
 * moving the X, Y and Z axis (jog controls), extruding, retracting and custom controls
-* optional: previewing the GCODE of the selected model to print (via gCodeVisualizer), including rendering of the progress during printing
+* previewing the GCODE of the selected model to print (via gCodeVisualizer), including rendering of the progress during printing (not available when SD printing)
 * optional: visual monitoring of the printer via webcam stream integrated into the UI (using e.g. MJPG-Streamer)
 * optional: creation of timelapse recordings of the printjob via webcam stream (using e.g. MJPG-Streamer) -- currently two timelaspe methods are implemented, triggering a shot on z-layer change or every "n" seconds
+* optional: access control to provide a read-only mode on the web interface, allowing any actions only to logged in users
 
 The intended usecase is to run OctoPrint on a single-board computer like the Raspberry Pi and a WiFi module,
 connect the printer to the server and therefore create a WiFi-enabled 3D printer. If you want to add a webcam for visual
@@ -54,7 +54,7 @@ Alternatively, the host and port on which to bind can be defined via the configu
 
 If you want to run OctoPrint as a daemon (only supported on Linux), use
 
-   ./run --daemon {start|stop|restart} [--pid PIDFILE]
+    ./run --daemon {start|stop|restart} [--pid PIDFILE]
 
 If you do not supply a custom pidfile location via `--pid PIDFILE`, it will be created at `/tmp/octoprint.pid`.
 
@@ -106,8 +106,3 @@ The following software is recommended for Webcam support on the Raspberry Pi:
 * MJPG-Streamer: http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page
 
 I also want to thank [Janina Himmen](http://jhimmen.de/) for providing the kick-ass logo!
-
-Why is it called OctoPrint and what's with the crystal ball in the logo?
-------------------------------------------------------------------------
-
-It so happens that I needed a favicon and also OctoPrint's first name -- Printer WebUI -- simply lacked a certain coolness to it. So I asked The Internet(tm) for advise. After some brainstorming, the idea of a cute Octopus watching his print job remotely through a crystal ball was born... [or something like that](https://plus.google.com/u/0/106003970953341660077/posts/UmLD5mW8yBQ).
