@@ -1189,11 +1189,11 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					# file got closed just now
 					return None
 				line = self._filehandle.readline()
-				self._lineCount += 1
 				if not line:
 					self._filehandle.close()
 					self._filehandle = None
 				processedLine = self._processLine(line)
+			self._lineCount += 1
 			self._filepos = self._filehandle.tell()
 
 			if self._lineCount >= 100 and self._startTime is None:
