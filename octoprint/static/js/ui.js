@@ -231,6 +231,11 @@ function PrinterStateViewModel(loginStateViewModel) {
         var currentLine = self.currentLine() ? self.currentLine() : "-";
         return currentLine + " / " + self.totalLines();
     });
+    self.heightString = ko.computed(function() {
+        if (!self.currentHeight())
+            return "-";
+        return self.currentHeight();
+    })
     self.progressString = ko.computed(function() {
         if (!self.progress())
             return 0;

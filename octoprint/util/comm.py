@@ -358,7 +358,7 @@ class MachineCom(object):
 		self._commandQueue = queue.Queue()
 		self._logQueue = queue.Queue(256)
 		self._feedRateModifier = {}
-		self._currentZ = -1
+		self._currentZ = None
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
 		self._printStartTime = None

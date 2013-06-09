@@ -201,7 +201,7 @@ class Printer():
 		if self._comm.isPrinting():
 			return
 
-		self._setCurrentZ(-1)
+		self._setCurrentZ(None)
 		if self._sdFile is not None:
 			# we are working in sd mode
 			self._sdPrinting = True
