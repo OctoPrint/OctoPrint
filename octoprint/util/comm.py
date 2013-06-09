@@ -560,6 +560,7 @@ class MachineCom(object):
 		tempRequestTimeout = timeout
 		sdStatusRequestTimeout = timeout
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+		heatingUp = False
 		while True:
 			line = self._readline()
 			if line == None:
@@ -606,10 +607,14 @@ class MachineCom(object):
 					pass
 
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
-				if not 'ok' in line and self._heatupWaitStartTime != 0:
-					t = time.time()
-					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
-					self._heatupWaitStartTime = t
+				if not 'ok' in line:
+					heatingUp = True
+					if self._heatupWaitStartTime != 0:
+						t = time.time()
+						self._heatupWaitTimeLost = t - self._heatupWaitStartTime
+						self._heatupWaitStartTime = t
+				else:
+					heatingUp = False
 
 			##~~ SD Card handling
 			elif 'SD init fail' in line:
@@ -733,11 +738,11 @@ class MachineCom(object):
 					line = 'ok'
 
 				if self.isSdPrinting():
-					if time.time() > tempRequestTimeout:
+					if time.time() > tempRequestTimeout and not heatingUp:
 						self._sendCommand("M105")
 						tempRequestTimeout = time.time() + 5
 
-					if time.time() > sdStatusRequestTimeout:
+					if time.time() > sdStatusRequestTimeout and not heatingUp:
 						self._sendCommand("M27")
 						sdStatusRequestTimeout = time.time() + 1
 
