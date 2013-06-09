@@ -613,8 +613,6 @@ class MachineCom(object):
 						t = time.time()
 						self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 						self._heatupWaitStartTime = t
-				else:
-					heatingUp = False
 
 			##~~ SD Card handling
 			elif 'SD init fail' in line:
@@ -661,6 +659,9 @@ class MachineCom(object):
 			##~~ Message handling
 			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
 				self._callback.mcMessage(line)
+
+			if "ok" in line and heatingUp:
+				heatingUp = False
 
 			### Baudrate detection
 			if self._state == self.STATE_DETECT_BAUDRATE:
