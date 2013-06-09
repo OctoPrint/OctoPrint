@@ -234,7 +234,11 @@ function PrinterStateViewModel(loginStateViewModel) {
         var filepos = self.filepos() ? self.filepos() : "-";
         return filepos + " / " + self.filesize();
     });
-
+    self.heightString = ko.computed(function() {
+        if (!self.currentHeight())
+            return "-";
+        return self.currentHeight();
+    })
     self.progressString = ko.computed(function() {
         if (!self.progress())
             return 0;
@@ -1077,13 +1081,16 @@ function GcodeViewModel(loginStateViewModel) {
     }
 
     self._processData = function(data) {
-        if(!self.enabled)return;
+        if (!self.enabled) return;
+        if (!data.job.filename) return;
 
-        if(self.loadedFilename == data.job.filename) {
-            var cmdIndex = GCODE.gCodeReader.getLinesCmdIndex(data.progress.progress);
-            if(cmdIndex){
-                GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
-                GCODE.ui.updateLayerInfo(cmdIndex.layer);
+        if(self.loadedFilename && self.loadedFilename == data.job.filename) {
+            if (data.state.flags && (data.state.flags.printing || data.state.flags.paused)) {
+                var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.progress * 100);
+                if(cmdIndex){
+                    GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+                    GCODE.ui.updateLayerInfo(cmdIndex.layer);
+                }
             }
             self.errorCount = 0
         } else if (data.job.filename) {
@@ -1729,43 +1736,48 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     //~~ local storage
 
     self._saveCurrentSortingToLocalStorage = function() {
-        self._initializeLocalStorage();
-
-        var currentSorting = self.currentSorting();
-        if (currentSorting !== undefined)
-            localStorage[self.listType + "." + "currentSorting"] = currentSorting;
-        else
-            localStorage[self.listType + "." + "currentSorting"] = undefined;
+        if ( self._initializeLocalStorage() ) {
+	        var currentSorting = self.currentSorting();
+	        if (currentSorting !== undefined)
+	            localStorage[self.listType + "." + "currentSorting"] = currentSorting;
+	        else
+	            localStorage[self.listType + "." + "currentSorting"] = undefined;
+        }
     }
 
     self._loadCurrentSortingFromLocalStorage = function() {
-        self._initializeLocalStorage();
-
-        if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
-            self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
-        else
-            self.currentSorting(defaultSorting);
+        if ( self._initializeLocalStorage() ) {
+	        if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
+	            self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
+	        else
+	            self.currentSorting(defaultSorting);
+	    }
     }
 
     self._saveCurrentFiltersToLocalStorage = function() {
-        self._initializeLocalStorage();
-
-        var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
-        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
+        if ( self._initializeLocalStorage() ) {
+	        var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
+	        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
+	    }
     }
 
     self._loadCurrentFiltersFromLocalStorage = function() {
-        self._initializeLocalStorage();
-
-        self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
+        if ( self._initializeLocalStorage() ) {
+        	self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
+        }
     }
 
     self._initializeLocalStorage = function() {
+        if (!Modernizr.localstorage)
+        	return false;
+        
         if (localStorage[self.listType + "." + "currentSorting"] !== undefined && localStorage[self.listType + "." + "currentFilters"] !== undefined && JSON.parse(localStorage[self.listType + "." + "currentFilters"]) instanceof Array)
-            return;
+            return true;
 
         localStorage[self.listType + "." + "currentSorting"] = self.defaultSorting;
         localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(self.defaultFilters);
+        
+        return true;
     }
 
     self._loadCurrentFiltersFromLocalStorage();

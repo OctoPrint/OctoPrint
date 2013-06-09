@@ -111,7 +111,7 @@
                                 File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
                                 Estimated Print Time: <strong data-bind="text: estimatedPrintTime"></strong><br>
-                                Height: <strong data-bind="text: currentHeight"></strong><br>
+                                Height: <strong data-bind="text: heightString"></strong><br>
                                 Print Time: <strong data-bind="text: printTime"></strong><br>
                                 Print Time Left: <strong data-bind="text: printTimeLeft"></strong><br>
                                 Printed: <strong data-bind="text: byteString"></strong><br>
@@ -579,6 +579,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/modernizr.custom.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/underscore.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/knockout.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/avltree.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap-modalmanager.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap-modal.js') }}"></script>

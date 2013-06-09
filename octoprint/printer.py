@@ -177,7 +177,7 @@ class Printer():
 		if self._selectedFile is None:
 			return
 
-		self._setCurrentZ(-1)
+		self._setCurrentZ(None)
 		self._comm.startPrint()
 
 	def togglePausePrint(self):
