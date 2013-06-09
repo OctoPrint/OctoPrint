@@ -25,4 +25,3 @@ scripts/darwin/build/*
 scripts/darwin/Cura.dmg.sparseimage
 scripts/win32/dist/*
 log.txt
-.metadata/*
