@@ -958,7 +958,7 @@ class MachineCom(object):
 							self._callback.mcZChange(z)
 				except:
 					self._log("Unexpected error: %s" % (getExceptionString()))
-				self._sendCommand(line, True)
+			self._sendCommand(line, True)
 			self._callback.mcProgress()
 	
 	def sendCommand(self, cmd):
