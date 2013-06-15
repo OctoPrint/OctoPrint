@@ -788,7 +788,7 @@ class MachineCom(object):
 
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
-			if self._resendDelta > len(self._lastLines):
+			if self._resendDelta >= len(self._lastLines):
 				self._errorValue = "Printer requested line %d but history is only available up to line %d" % (lineToResend, self._currentLine - len(self._lastLines))
 				self._changeState(self.STATE_ERROR)
 				self._logger.warn(self._errorValue)
