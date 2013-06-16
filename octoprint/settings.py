@@ -43,7 +43,7 @@ default_settings = {
 		"waitForWaitOnConnect": False,
 		"alwaysSendChecksum": False,
 		"resetLineNumbersWithPrefixedN": False,
-		"sdSupport": False
+		"sdSupport": True
 	},
 	"folder": {
 		"uploads": None,

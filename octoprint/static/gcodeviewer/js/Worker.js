@@ -223,42 +223,31 @@
         var assumeNonDC = false;
 
         for(var i=0;i<gcode.length;i++){
-    //            for(var len = gcode.length- 1, i=0;i!=len;i++){
             x=undefined;
             y=undefined;
             z=undefined;
             retract = 0;
 
+            var line = gcode[i].line;
+            var percentage = gcode[i].percentage;
 
             extrude=false;
-            gcode[i] = gcode[i].split(/[\(;]/)[0];
+            line = line.split(/[\(;]/)[0];
 
-    //                prevRetract=0;
-    //                retract=0;
-    //                if(gcode[i].match(/^(?:G0|G1)\s+/i)){
-            if(reg.test(gcode[i])){
-                var args = gcode[i].split(/\s/);
+            if(reg.test(line)){
+                var args = line.split(/\s/);
                 for(j=0;j<args.length;j++){
-    //                        console.log(args);
-    //                        if(!args[j])continue;
                     switch(argChar = args[j].charAt(0).toLowerCase()){
                         case 'x':
                             x=args[j].slice(1);
-//                            if(x === prevX){
-//                                x=undefined;
-//                            }
                             break;
                         case 'y':
                             y=args[j].slice(1);
-//                            if(y===prevY){
-//                                y=undefined;
-//                            }
                             break;
                         case 'z':
                             z=args[j].slice(1);
                             z = Number(z);
-                            if(z == prevZ)continue;
-//                            z = Number(z);
+                            if(z == prevZ) continue;
                             if(z_heights.hasOwnProperty(z)){
                                 layer = z_heights[z];
                             }else{
@@ -267,9 +256,6 @@
                             }
                             sendLayer = layer;
                             sendLayerZ = z;
-                            //                                if(parseFloat(prevZ) < )
-    //                                if(args[j].charAt(1) === "-")layer--;
-    //                                else layer++;
                             prevZ = z;
                             break;
                         case 'e':
@@ -292,13 +278,11 @@
                                 retract = -1;
                             }
                             else if(prev_extrude["abs"]==0){
-    //                                        if(prevRetract <0 )prevRetract=retract;
                                 retract = 0;
                             }else if(prev_extrude["abs"]>0&&prevRetract < 0){
                                 prevRetract = 0;
                                 retract = 1;
                             } else {
-    //                                        prevRetract = retract;
                                 retract = 0;
                             }
                             prev_extrude[argChar] = numSlice;
@@ -317,24 +301,24 @@
                     prev_extrude["abs"] = Math.sqrt((prevX-x)*(prevX-x)+(prevY-y)*(prevY-y));
                 }
                 if(!model[layer])model[layer]=[];
-                if(typeof(x) !== 'undefined' || typeof(y) !== 'undefined' ||typeof(z) !== 'undefined'||retract!=0) model[layer][model[layer].length] = {x: Number(x), y: Number(y), z: Number(z), extrude: extrude, retract: Number(retract), noMove: false, extrusion: (extrude||retract)?Number(prev_extrude["abs"]):0, prevX: Number(prevX), prevY: Number(prevY), prevZ: Number(prevZ), speed: Number(lastF), gcodeLine: Number(i)};
+                if(typeof(x) !== 'undefined' || typeof(y) !== 'undefined' ||typeof(z) !== 'undefined'||retract!=0) model[layer][model[layer].length] = {x: Number(x), y: Number(y), z: Number(z), extrude: extrude, retract: Number(retract), noMove: false, extrusion: (extrude||retract)?Number(prev_extrude["abs"]):0, prevX: Number(prevX), prevY: Number(prevY), prevZ: Number(prevZ), speed: Number(lastF), gcodeLine: Number(i), percentage: percentage};
                 //{x: x, y: y, z: z, extrude: extrude, retract: retract, noMove: false, extrusion: (extrude||retract)?prev_extrude["abs"]:0, prevX: prevX, prevY: prevY, prevZ: prevZ, speed: lastF, gcodeLine: i};
                 if(typeof(x) !== 'undefined') prevX = x;
                 if(typeof(y) !== 'undefined') prevY = y;
-            } else if(gcode[i].match(/^(?:M82)/i)){
+            } else if(line.match(/^(?:M82)/i)){
                 extrudeRelative = false;
-            }else if(gcode[i].match(/^(?:G91)/i)){
+            }else if(line.match(/^(?:G91)/i)){
                 extrudeRelative=true;
-            }else if(gcode[i].match(/^(?:G90)/i)){
+            }else if(line.match(/^(?:G90)/i)){
                 extrudeRelative=false;
-            }else if(gcode[i].match(/^(?:M83)/i)){
+            }else if(line.match(/^(?:M83)/i)){
                 extrudeRelative=true;
-            }else if(gcode[i].match(/^(?:M101)/i)){
+            }else if(line.match(/^(?:M101)/i)){
                 dcExtrude=true;
-            }else if(gcode[i].match(/^(?:M103)/i)){
+            }else if(line.match(/^(?:M103)/i)){
                 dcExtrude=false;
-            }else if(gcode[i].match(/^(?:G92)/i)){
-                var args = gcode[i].split(/\s/);
+            }else if(line.match(/^(?:G92)/i)){
+                var args = line.split(/\s/);
                 for(j=0;j<args.length;j++){
                     switch(argChar = args[j].charAt(0).toLowerCase()){
                         case 'x':
@@ -354,16 +338,15 @@
                             else {
                                 prev_extrude[argChar] = numSlice;
                             }
-//                            prevZ = z;
                             break;
                         default:
                             break;
                     }
                 }
                 if(!model[layer])model[layer]=[];
-                if(typeof(x) !== 'undefined' || typeof(y) !== 'undefined' ||typeof(z) !== 'undefined') model[layer][model[layer].length] = {x: parseFloat(x), y: parseFloat(y), z: parseFloat(z), extrude: extrude, retract: parseFloat(retract), noMove: true, extrusion: (extrude||retract)?parseFloat(prev_extrude["abs"]):0, prevX: parseFloat(prevX), prevY: parseFloat(prevY), prevZ: parseFloat(prevZ), speed: parseFloat(lastF),gcodeLine: parseFloat(i)};
-            }else if(gcode[i].match(/^(?:G28)/i)){
-                var args = gcode[i].split(/\s/);
+                if(typeof(x) !== 'undefined' || typeof(y) !== 'undefined' ||typeof(z) !== 'undefined') model[layer][model[layer].length] = {x: parseFloat(x), y: parseFloat(y), z: parseFloat(z), extrude: extrude, retract: parseFloat(retract), noMove: true, extrusion: (extrude||retract)?parseFloat(prev_extrude["abs"]):0, prevX: parseFloat(prevX), prevY: parseFloat(prevY), prevZ: parseFloat(prevZ), speed: parseFloat(lastF),gcodeLine: parseFloat(i), percentage: percentage};
+            }else if(line.match(/^(?:G28)/i)){
+                var args = line.split(/\s/);
                 for(j=0;j<args.length;j++){
                     switch(argChar = args[j].charAt(0).toLowerCase()){
                         case 'x':
@@ -405,17 +388,11 @@
                     }
                     prevZ = z;
                 }
-//                x=0, y=0,z=0,prevZ=0, extrude=false;
-//                if(typeof(prevX) === 'undefined'){prevX=0;}
-//                if(typeof(prevY) === 'undefined'){prevY=0;}
 
                 if(!model[layer])model[layer]=[];
-                if(typeof(x) !== 'undefined' || typeof(y) !== 'undefined' ||typeof(z) !== 'undefined'||retract!=0) model[layer][model[layer].length] = {x: Number(x), y: Number(y), z: Number(z), extrude: extrude, retract: Number(retract), noMove: false, extrusion: (extrude||retract)?Number(prev_extrude["abs"]):0, prevX: Number(prevX), prevY: Number(prevY), prevZ: Number(prevZ), speed: Number(lastF), gcodeLine: Number(i)};
-//                if(typeof(x) !== 'undefined' || typeof(y) !== 'undefined' ||typeof(z) !== 'undefined') model[layer][model[layer].length] = {x: x, y: y, z: z, extrude: extrude, retract: retract, noMove:false, extrusion: (extrude||retract)?prev_extrude["abs"]:0, prevX: prevX, prevY: prevY, prevZ: prevZ, speed: lastF, gcodeLine: parseFloat(i)};
+                if(typeof(x) !== 'undefined' || typeof(y) !== 'undefined' ||typeof(z) !== 'undefined'||retract!=0) model[layer][model[layer].length] = {x: Number(x), y: Number(y), z: Number(z), extrude: extrude, retract: Number(retract), noMove: false, extrusion: (extrude||retract)?Number(prev_extrude["abs"]):0, prevX: Number(prevX), prevY: Number(prevY), prevZ: Number(prevZ), speed: Number(lastF), gcodeLine: Number(i), percentage: percentage};
             }
             if(typeof(sendLayer) !== "undefined"){
-//                sendLayerToParent(sendLayer, sendLayerZ, i/gcode.length*100);
-//                sendLayer = undefined;
 
                 if(i-lastSend > gcode.length*0.02 && sendMultiLayer.length != 0){
                     lastSend = i;
@@ -429,13 +406,7 @@
                 sendLayerZ = undefined;
             }
         }
-//        sendMultiLayer[sendMultiLayer.length] = layer;
-//        sendMultiLayerZ[sendMultiLayerZ.length] = z;
         sendMultiLayerToParent(sendMultiLayer, sendMultiLayerZ, i/gcode.length*100);
-
-//            if(gCodeOptions["sortLayers"])sortLayers();
-//            if(gCodeOptions["purgeEmptyLayers"])purgeLayers();
-
     };
 
 

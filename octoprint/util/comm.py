@@ -16,6 +16,8 @@ import serial
 from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
+from octoprint.util import matchesGcode
+
 from octoprint.settings import settings
 from octoprint.events import eventManager
 
@@ -102,6 +104,7 @@ class VirtualPrinter():
 		if self._writingToSd and not self._selectedSdFile is None and not "M29" in data:
 			with open(self._selectedSdFile, "a") as f:
 				f.write(data)
+			self.readList.append("ok")
 			return
 
 		#print "Send: %s" % (data.rstrip())
@@ -217,6 +220,7 @@ class VirtualPrinter():
 
 		self._writingToSd = True
 		self._selectedSdFile = file
+		self.readList.append("Writing to file: %s" % filename)
 		self.readList.append("ok")
 
 	def _finishSdFile(self):
@@ -314,16 +318,19 @@ class MachineComPrintCallback(object):
 	def mcZChange(self, newZ):
 		pass
 
+	def mcFileSelected(self, filename, filesize, sd):
+		pass
+
 	def mcSdStateChange(self, sdReady):
 		pass
 
 	def mcSdFiles(self, files):
 		pass
 
-	def mcSdSelected(self, filename, size):
+	def mcSdPrintingDone(self):
 		pass
 
-	def mcSdPrintingDone(self):
+	def mcFileTransferStarted(self, filename, filesize):
 		pass
 
 class MachineCom(object):
@@ -366,15 +373,11 @@ class MachineCom(object):
 		self._bedTemp = 0
 		self._targetTemp = 0
 		self._bedTargetTemp = 0
-		self._gcodeList = None
-		self._gcodePos = 0
 		self._commandQueue = queue.Queue()
 		self._logQueue = queue.Queue(256)
-		self._feedRateModifier = {}
-		self._currentZ = -1
+		self._currentZ = None
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
-		self._printStartTime = None
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 1
@@ -388,13 +391,13 @@ class MachineCom(object):
 		self.thread.daemon = True
 		self.thread.start()
 
+		# SD status data
 		self._sdAvailable = False
-		self._sdPrinting = False
 		self._sdFileList = False
-		self._sdFile = None
-		self._sdFilePos = None
-		self._sdFileSize = None
 		self._sdFiles = []
+
+		# print job
+		self._currentFile = None
 
 	def _changeState(self, newState):
 		if self._state == newState:
@@ -402,11 +405,7 @@ class MachineCom(object):
 
 		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
 			if settings().get(["feature", "sdSupport"]):
-				self._sdPrinting = False
 				self._sdFileList = False
-				self._sdFile = None
-				self._sdFilePos = None
-				self._sdFileSize = None
 				self._sdFiles = []
 				self._callback.mcSdFiles([])
 
@@ -432,8 +431,10 @@ class MachineCom(object):
 		if self._state == self.STATE_OPERATIONAL:
 			return "Operational"
 		if self._state == self.STATE_PRINTING:
-			if self._sdPrinting:
+			if self.isSdFileSelected():
 				return "Printing from SD"
+			elif self.isStreaming():
+				return "Sending file to SD"
 			else:
 				return "Printing"
 		if self._state == self.STATE_PAUSED:
@@ -469,53 +470,51 @@ class MachineCom(object):
 		return self._state == self.STATE_PRINTING
 
 	def isSdPrinting(self):
-		return self._sdPrinting
-	
+		return self.isSdFileSelected() and self.isPrinting()
+
+	def isSdFileSelected(self):
+		return self._currentFile is not None and isinstance(self._currentFile, PrintingSdFileInformation)
+
+	def isStreaming(self):
+		return self._currentFile is not None and isinstance(self._currentFile, StreamingGcodeFileInformation)
+
 	def isPaused(self):
 		return self._state == self.STATE_PAUSED
 
 	def isBusy(self):
-		return self.isPrinting() or self._state == self.STATE_RECEIVING_FILE
+		return self.isPrinting() or self.isPaused()
 
 	def isSdReady(self):
 		return self._sdAvailable
 
-	def getPrintPos(self):
-		if self._sdPrinting:
-			return self._sdFilePos
-		else:
-			return self._gcodePos
-	
+	def getPrintProgress(self):
+		if self._currentFile is None:
+			return None
+		return self._currentFile.getProgress()
+
+	def getPrintFilepos(self):
+		if self._currentFile is None:
+			return None
+		return self._currentFile.getFilepos()
+
 	def getPrintTime(self):
-		if self._printStartTime == None:
-			return 0
+		if self._currentFile is None or self._currentFile.getStartTime() is None:
+			return None
 		else:
-			return time.time() - self._printStartTime
+			return time.time() - self._currentFile.getStartTime()
 
 	def getPrintTimeRemainingEstimate(self):
-		if self._printStartTime == None:
+		printTime = self.getPrintTime()
+		if printTime is None:
 			return None
 
-		if self._sdPrinting:
-			printTime = (time.time() - self._printStartTime) / 60
-			if self._sdFilePos > 0:
-				printTimeTotal = printTime * self._sdFileSize / self._sdFilePos
-			else:
-				printTimeTotal = printTime * self._sdFileSize
-			printTimeLeft = printTimeTotal - printTime
-			return printTimeLeft
+		printTime /= 60
+		progress = self._currentFile.getProgress()
+		if progress:
+			printTimeTotal = printTime / progress
+			return printTimeTotal - printTime
 		else:
-			# for host printing we only start counting the print time at gcode line 100, so we need to calculate stuff
-			# a bit different here
-			if self.getPrintPos() < 200:
-				return None
-			printTime = (time.time() - self._printStartTime) / 60
-			printTimeTotal = printTime * (len(self._gcodeList) - 100) / (self.getPrintPos() - 100)
-			printTimeLeft = printTimeTotal - printTime
-			return printTimeLeft
-
-	def getSdProgress(self):
-		return (self._sdFilePos, self._sdFileSize)
+			return None
 
 	def getTemp(self):
 		return self._temp
@@ -579,6 +578,7 @@ class MachineCom(object):
 		tempRequestTimeout = timeout
 		sdStatusRequestTimeout = timeout
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+		heatingUp = False
 		while True:
 			line = self._readline()
 			if line == None:
@@ -614,7 +614,7 @@ class MachineCom(object):
 		##~~ SD file list
 			# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 			if self._sdFileList and not 'End file list' in line:
-				self._sdFiles.append(line)
+				self._sdFiles.append(line.strip().lower())
 				continue
 
 			##~~ Temperature processing
@@ -630,16 +630,23 @@ class MachineCom(object):
 					pass
 
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
-				if not 'ok' in line and self._heatupWaitStartTime != 0:
-					t = time.time()
-					self._heatupWaitTimeLost = t - self._heatupWaitStartTime
-					self._heatupWaitStartTime = t
+				if not 'ok' in line:
+					heatingUp = True
+					if self._heatupWaitStartTime != 0:
+						t = time.time()
+						self._heatupWaitTimeLost = t - self._heatupWaitStartTime
+						self._heatupWaitStartTime = t
 
 			##~~ SD Card handling
 			elif 'SD init fail' in line:
 				self._sdAvailable = False
 				self._sdFiles = []
 				self._callback.mcSdStateChange(self._sdAvailable)
+			elif 'Not SD printing' in line:
+				if self.isSdFileSelected() and self.isPrinting():
+					# something went wrong, printer is reporting that we actually are not printing right now...
+					self._sdFilePos = 0
+					self._changeState(self.STATE_OPERATIONAL)
 			elif 'SD card ok' in line:
 				self._sdAvailable = True
 				self.refreshSdFiles()
@@ -653,27 +660,31 @@ class MachineCom(object):
 			elif 'SD printing byte' in line:
 				# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 				match = re.search("([0-9]*)/([0-9]*)", line)
-				self._sdFilePos = int(match.group(1))
-				self._sdFileSize = int(match.group(2))
+				self._currentFile.setFilepos(int(match.group(1)))
 				self._callback.mcProgress()
 			elif 'File opened' in line:
 				# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 				match = re.search("File opened:\s*(.*?)\s+Size:\s*([0-9]*)", line)
-				self._sdFile = match.group(1)
-				self._sdFileSize = int(match.group(2))
+				self._currentFile = PrintingSdFileInformation(match.group(1), int(match.group(2)))
 			elif 'File selected' in line:
 				# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
-				self._callback.mcSdSelected(self._sdFile, self._sdFileSize)
+				self._callback.mcFileSelected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
+			elif 'Writing to file' in line:
+				# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
+				self._printSection = "CUSTOM"
+				self._changeState(self.STATE_PRINTING)
 			elif 'Done printing file' in line:
 				# printer is reporting file finished printing
-				self._sdPrinting = False
 				self._sdFilePos = 0
 				self._changeState(self.STATE_OPERATIONAL)
-				self._callback.mcSdPrintingDone()
+				self._callback.mcPrintjobDone()
 
 			##~~ Message handling
 			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
 				self._callback.mcMessage(line)
+
+			if "ok" in line and heatingUp:
+				heatingUp = False
 
 			### Baudrate detection
 			if self._state == self.STATE_DETECT_BAUDRATE:
@@ -712,6 +723,8 @@ class MachineCom(object):
 						self._sendCommand("M999")
 						self._serial.timeout = 2
 						self._changeState(self.STATE_OPERATIONAL)
+						if self._sdAvailable:
+							self.refreshSdFiles()
 						eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
 				else:
 					self._testingBaudrate = False
@@ -724,6 +737,8 @@ class MachineCom(object):
 					startSeen = True
 				elif "ok" in line and startSeen:
 					self._changeState(self.STATE_OPERATIONAL)
+					if self._sdAvailable:
+						self.refreshSdFiles()
 					eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
 				elif time.time() > timeout:
 					self.close()
@@ -749,12 +764,12 @@ class MachineCom(object):
 					self._log("Communication timeout during printing, forcing a line")
 					line = 'ok'
 
-				if self._sdPrinting:
-					if time.time() > tempRequestTimeout:
+				if self.isSdPrinting():
+					if time.time() > tempRequestTimeout and not heatingUp:
 						self._sendCommand("M105")
 						tempRequestTimeout = time.time() + 5
 
-					if time.time() > sdStatusRequestTimeout:
+					if time.time() > sdStatusRequestTimeout and not heatingUp:
 						self._sendCommand("M27")
 						sdStatusRequestTimeout = time.time() + 1
 
@@ -762,7 +777,7 @@ class MachineCom(object):
 						timeout = time.time() + 5
 				else:
 					# Even when printing request the temperature every 5 seconds.
-					if time.time() > tempRequestTimeout:
+					if time.time() > tempRequestTimeout and not self.isStreaming():
 						self._commandQueue.put("M105")
 						tempRequestTimeout = time.time() + 5
 
@@ -770,7 +785,7 @@ class MachineCom(object):
 						timeout = time.time() + 5
 						if self._resendDelta is not None:
 							self._resendNextCommand()
-						elif not self._commandQueue.empty():
+						elif not self._commandQueue.empty() and not self.isStreaming():
 							self._sendCommand(self._commandQueue.get())
 						else:
 							self._sendNext()
@@ -864,23 +879,23 @@ class MachineCom(object):
 				return
 
 			for gcode in gcodeToEvent.keys():
-				if gcode in cmd:
+				if matchesGcode(cmd, gcode):
 					eventManager().fire(gcodeToEvent[gcode])
 
-			if 'M109' in cmd or 'M190' in cmd:
+			if matchesGcode(cmd, "M109") or matchesGcode(cmd, "M190"):
 				self._heatupWaitStartTime = time.time()
-			if 'M104' in cmd or 'M109' in cmd:
+			if matchesGcode(cmd, "M104") or matchesGcode(cmd, "M109"):
 				try:
 					self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 				except:
 					pass
-			if 'M140' in cmd or 'M190' in cmd:
+			if matchesGcode(cmd, "M140") or matchesGcode(cmd, "M190"):
 				try:
 					self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 				except:
 					pass
 
-			if "M110" in cmd:
+			if matchesGcode(cmd, "M110"):
 				newLineNumber = None
 				if " N" in cmd:
 					try:
@@ -917,7 +932,7 @@ class MachineCom(object):
 			if self._alwaysSendChecksum:
 				lineNumber = self._currentLine
 			else:
-				lineNumber = self._gcodePos
+				lineNumber = self._currentFile.getLineCount()
 			self._addToLastLines(cmd)
 			self._currentLine += 1
 			self._doSendWithChecksum(cmd, lineNumber)
@@ -927,8 +942,8 @@ class MachineCom(object):
 	def _doSendWithChecksum(self, cmd, lineNumber):
 		self._logger.debug("Sending cmd '%s' with lineNumber %r" % (cmd, lineNumber))
 
-		checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (lineNumber, cmd)))
-		commandToSend = "N%d%s*%d" % (lineNumber, cmd, checksum)
+		checksum = reduce(lambda x,y:x^y, map(ord, "N%d %s" % (lineNumber, cmd)))
+		commandToSend = "N%d %s*%d" % (lineNumber, cmd, checksum)
 		self._doSendWithoutChecksum(commandToSend)
 
 	def _doSendWithoutChecksum(self, cmd):
@@ -950,131 +965,141 @@ class MachineCom(object):
 
 	def _sendNext(self):
 		with self._sendNextLock:
-			if self._gcodePos >= len(self._gcodeList):
+			line = self._currentFile.getNext()
+			if line is None:
+				if self.isStreaming():
+					self._sendCommand("M29")
+					self._currentFile = None
+					self._callback.mcFileTransferDone()
+				else:
+					self._callback.mcPrintjobDone()
 				self._changeState(self.STATE_OPERATIONAL)
 				eventManager().fire('PrintDone')
 				return
-		
-			if self._gcodePos == 100:
-				self._printStartTime100 = time.time()
-			line = self._gcodeList[self._gcodePos]
+
 			if type(line) is tuple:
 				self._printSection = line[1]
 				line = line[0]
-			try:
-				if line == 'M0' or line == 'M1':
-					self.setPause(True)
-					line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-				if self._printSection in self._feedRateModifier:
-					line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
-				if ('G0' in line or 'G1' in line) and 'Z' in line:
-					z = float(re.search('Z([0-9\.]*)', line).group(1))
-					if self._currentZ != z:
-						self._currentZ = z
-						self._callback.mcZChange(z)
-			except:
-				self._log("Unexpected error: %s" % (getExceptionString()))
+
+			if not self.isStreaming():
+				try:
+					if matchesGcode(line, "M0") or matchesGcode(line, "M1"):
+						self.setPause(True)
+						line = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+					if (matchesGcode(line, "G0") or matchesGcode(line, "G1")) and 'Z' in line:
+						z = float(re.search('Z([0-9\.]*)', line).group(1))
+						if self._currentZ != z:
+							self._currentZ = z
+							self._callback.mcZChange(z)
+				except:
+					self._log("Unexpected error: %s" % (getExceptionString()))
 			self._sendCommand(line, True)
-			self._gcodePos += 1
 			self._callback.mcProgress()
 	
 	def sendCommand(self, cmd):
 		cmd = cmd.encode('ascii', 'replace')
-		if self.isPrinting():
+		if self.isPrinting() and not self.isSdFileSelected():
 			self._commandQueue.put(cmd)
 		elif self.isOperational():
 			self._sendCommand(cmd)
 	
-	def printGCode(self, gcodeList):
-		if not self.isOperational() or self.isPrinting():
-			return
-		if self._sdPrinting:
-			self._sdPrinting = False
-		self._gcodeList = gcodeList
-		self._gcodePos = 0
-		self._printSection = 'CUSTOM'
-		self._changeState(self.STATE_PRINTING)
-		self._printStartTime = time.time()
-		self._sendNext()
-		eventManager().fire("PrintStarted")
-
-	def printSdFile(self):
+	def startPrint(self):
 		if not self.isOperational() or self.isPrinting():
 			return
 
-		if self.isPaused():
-			self.sendCommand("M26 S0") # reset position in file to byte 0
-		self.sendCommand("M24")
+		if self._currentFile is None:
+			raise ValueError("No file selected for printing")
 
-		self._printSection = 'CUSTOM'
-		self._sdPrinting = True
+		self._printSection = "CUSTOM"
 		self._changeState(self.STATE_PRINTING)
-		self._printStartTime = time.time()
 		eventManager().fire("PrintStarted")
+
+		try:
+			self._currentFile.start()
+			if self.isSdFileSelected():
+				if self.isPaused():
+					self.sendCommand("M26 S0")
+					self._currentFile.setFilepos(0)
+				self.sendCommand("M24")
+			else:
+				self._sendNext()
+		except:
+			self._changeState(self.STATE_ERROR)
+			self._errorValue = getExceptionString()
+
+	def startFileTransfer(self, filename, remoteFilename):
+		if not self.isOperational() or self.isBusy():
+			return
+
+		self._currentFile = StreamingGcodeFileInformation(filename)
+		self._currentFile.start()
+
+		self.sendCommand("M28 %s" % remoteFilename)
+		self._callback.mcFileTransferStarted(remoteFilename, self._currentFile.getFilesize())
+
+	def selectFile(self, filename, sd):
+		if self.isBusy():
+			return
+
+		if sd:
+			if not self.isOperational():
+				# printer is not connected, can't use SD
+				return
+			self.sendCommand("M23 %s" % filename)
+		else:
+			self._currentFile = PrintingGcodeFileInformation(filename)
+			self._callback.mcFileSelected(filename, self._currentFile.getFilesize(), False)
 
 	def cancelPrint(self):
-		if self.isOperational():
-			self._changeState(self.STATE_OPERATIONAL)
-		if self._sdPrinting:
-			self._sdPrinting = False
+		if not self.isOperational() or self.isStreaming():
+			return
+
+		self._changeState(self.STATE_OPERATIONAL)
+
+		if self.isSdFileSelected():
 			self.sendCommand("M25")    # pause print
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 	
 		eventManager().fire("PrintCancelled")
 
 	def setPause(self, pause):
+		if self.isStreaming():
+			return
+
 		if not pause and self.isPaused():
 			self._changeState(self.STATE_PRINTING)
-			if self._sdPrinting:
+			if self.isSdFileSelected():
 				self.sendCommand("M24")
 			else:
-				for i in xrange(0, 6):
-					self._sendNext()
+				self._sendNext()
 		if pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
-			if self._sdPrinting:
+			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
 
 			eventManager().fire("Paused")
 	
-	def setFeedrateModifier(self, type, value):
-		self._feedRateModifier[type] = value
-
-	def getFeedrateModifiers(self):
-		result = {}
-		result.update(self._feedRateModifier)
-		return result
-
-	##~~ SD card
+	##~~ SD card handling
 	def getSdFiles(self):
 		return self._sdFiles
 
 	def startSdFileTransfer(self, filename):
-		if not self.isOperational() or self.isPrinting() or self.isPaused():
+		if not self.isOperational() or self.isBusy():
 			return
 
 		self._changeState(self.STATE_RECEIVING_FILE)
 		self.sendCommand("M28 %s" % filename.lower())
 
 	def endSdFileTransfer(self, filename):
-		if not self.isOperational() or self.isPrinting() or self.isPaused():
+		if not self.isOperational() or self.isBusy():
 			return
 
 		self.sendCommand("M29 %s" % filename.lower())
 		self._changeState(self.STATE_OPERATIONAL)
 		self.refreshSdFiles()
 
-	def selectSdFile(self, filename):
-		if not self.isOperational() or self.isPrinting() or self.isPaused():
-			return
-
-		self._sdFile = None
-		self._sdFilePos = 0
-
-		self.sendCommand("M23 %s" % filename.lower())
-
 	def deleteSdFile(self, filename):
-		if not self.isOperational() or ((self.isPrinting() or self.isPaused()) and self._sdFile == filename.lower()):
+		if not self.isOperational() or (self.isBusy() and self._sdFile == filename.lower()):
 			# do not delete a file from sd we are currently printing from
 			return
 
@@ -1082,7 +1107,7 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
-		if not self.isOperational() or self.isPrinting() or self.isPaused():
+		if not self.isOperational() or self.isBusy():
 			return
 		self.sendCommand("M20")
 
@@ -1092,7 +1117,7 @@ class MachineCom(object):
 		self.sendCommand("M21")
 
 	def releaseSdCard(self):
-		if not self.isOperational() or ((self.isPrinting() or self.isPaused()) and self._sdPrinting):
+		if not self.isOperational() or (self.isBusy() and self.isSdFileSelected()):
 			# do not release the sd card if we are currently printing from it
 			return
 
@@ -1106,3 +1131,145 @@ class MachineCom(object):
 def getExceptionString():
 	locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]
 	return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
+
+class PrintingFileInformation(object):
+	"""
+	Encapsulates information regarding the current file being printed: file name, current position, total size and
+	time the print started.
+	Allows to reset the current file position to 0 and to calculate the current progress as a floating point
+	value between 0 and 1.
+	"""
+
+	def __init__(self, filename):
+		self._filename = filename
+		self._filepos = 0
+		self._filesize = None
+		self._startTime = None
+
+	def getStartTime(self):
+		return self._startTime
+
+	def getFilename(self):
+		return self._filename
+
+	def getFilesize(self):
+		return self._filesize
+
+	def getFilepos(self):
+		return self._filepos
+
+	def getProgress(self):
+		"""
+		The current progress of the file, calculated as relation between file position and absolute size. Returns -1
+		if file size is None or < 1.
+		"""
+		if self._filesize is None or not self._filesize > 0:
+			return -1
+		return float(self._filepos) / float(self._filesize)
+
+	def reset(self):
+		"""
+		Resets the current file position to 0.
+		"""
+		self._filepos = 0
+
+	def start(self):
+		"""
+		Marks the print job as started and remembers the start time.
+		"""
+		self._startTime = time.time()
+
+class PrintingSdFileInformation(PrintingFileInformation):
+	"""
+	Encapsulates information regarding an ongoing print from SD.
+	"""
+
+	def __init__(self, filename, filesize):
+		PrintingFileInformation.__init__(self, filename)
+		self._filesize = filesize
+
+	def setFilepos(self, filepos):
+		"""
+		Sets the current file position.
+		"""
+		self._filepos = filepos
+
+class PrintingGcodeFileInformation(PrintingFileInformation):
+	"""
+	Encapsulates information regarding an ongoing direct print. Takes care of the needed file handle and ensures
+	that the file is closed in case of an error.
+	"""
+
+	def __init__(self, filename):
+		PrintingFileInformation.__init__(self, filename)
+		self._filehandle = None
+		self._lineCount = 0
+		self._firstLine = None
+		self._prevLineType = None
+
+		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
+			raise IOError("File %s does not exist" % self._filename)
+		self._filesize = os.stat(self._filename).st_size
+
+	def start(self):
+		"""
+		Opens the file for reading and determines the file size. Start time won't be recorded until 100 lines in
+		"""
+		self._filehandle = open(self._filename, "r")
+		self._lineCount = 0
+		self._prevLineType = "CUSTOM"
+
+	def getNext(self):
+		"""
+		Retrieves the next line for printing.
+		"""
+		if self._filehandle is None:
+			raise ValueError("File %s is not open for reading" % self._filename)
+
+		if self._lineCount == 0:
+			self._lineCount += 1
+			return "M110 N0"
+
+		try:
+			processedLine = None
+			while processedLine is None:
+				if self._filehandle is None:
+					# file got closed just now
+					return None
+				line = self._filehandle.readline()
+				if not line:
+					self._filehandle.close()
+					self._filehandle = None
+				processedLine = self._processLine(line)
+			self._lineCount += 1
+			self._filepos = self._filehandle.tell()
+
+			if self._lineCount >= 100 and self._startTime is None:
+				self._startTime = time.time()
+
+			return processedLine
+		except Exception as (e):
+			if self._filehandle is not None:
+				self._filehandle.close()
+			raise e
+
+	def getLineCount(self):
+		return self._lineCount
+
+	def _processLine(self, line):
+		lineType = self._prevLineType
+		if line.startswith(";TYPE:"):
+			lineType = line[6:].strip()
+		if ";" in line:
+			line = line[0:line.find(";")]
+		line = line.strip()
+		if len(line) > 0:
+			if self._prevLineType != lineType:
+				return line, lineType
+			else:
+				return line
+		else:
+			return None
+
+class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
+	pass
