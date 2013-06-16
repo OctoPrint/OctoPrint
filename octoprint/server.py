@@ -15,7 +15,7 @@ import subprocess
 
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings, valid_boolean_trues
-import octoprint.timelapse as timelapse
+import octoprint.timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 import octoprint.users as users
@@ -28,7 +28,9 @@ BASEURL = "/ajax/"
 app = Flask("octoprint")
 # Only instantiated by the Server().run() method
 # In order that threads don't start too early when running as a Daemon
-printer = None 
+printer = None
+timelapse = None
+
 gcodeManager = None
 userManager = None
 eventManager = None
@@ -60,8 +62,8 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def on_open(self, info):
 		self._logger.info("New connection from client")
 		# Use of global here is smelly
-		printer.registerCallback(self)
-		gcodeManager.registerCallback(self)
+		self._printer.registerCallback(self)
+		self._gcodeManager.registerCallback(self)
 
 		self._eventManager.fire("ClientOpened")
 		self._eventManager.subscribe("MovieDone", self._onMovieDone)
@@ -69,8 +71,8 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def on_close(self):
 		self._logger.info("Closed client connection")
 		# Use of global here is smelly
-		printer.unregisterCallback(self)
-		gcodeManager.unregisterCallback(self)
+		self._printer.unregisterCallback(self)
+		self._gcodeManager.unregisterCallback(self)
 
 		self._eventManager.fire("ClientClosed")
 		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
@@ -352,19 +354,19 @@ def refreshFiles():
 
 @app.route(BASEURL + "timelapse", methods=["GET"])
 def getTimelapseData():
-	lapse = printer.getTimelapse()
+	global timelapse
 
 	type = "off"
 	additionalConfig = {}
-	if lapse is not None and isinstance(lapse, timelapse.ZTimelapse):
+	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
 		type = "zchange"
-	elif lapse is not None and isinstance(lapse, timelapse.TimedTimelapse):
+	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		type = "timed"
 		additionalConfig = {
-			"interval": lapse.interval()
+			"interval": timelapse.interval()
 		}
 
-	files = timelapse.getFinishedTimelapses()
+	files = octoprint.timelapse.getFinishedTimelapses()
 	for file in files:
 		file["url"] = url_for("downloadTimelapse", filename=file["name"])
 
@@ -391,11 +393,17 @@ def deleteTimelapse(filename):
 @app.route(BASEURL + "timelapse", methods=["POST"])
 @login_required
 def setTimelapseConfig():
+	global timelapse
+
 	if request.values.has_key("type"):
 		type = request.values["type"]
-		lapse = None
+		if type in ["zchange", "timed"]:
+			# valid timelapse type, check if there is an old one we need to stop first
+			if timelapse is not None:
+				timelapse.unload()
+			timelapse = None
 		if "zchange" == type:
-			lapse = timelapse.ZTimelapse()
+			timelapse = octoprint.timelapse.ZTimelapse()
 		elif "timed" == type:
 			interval = 10
 			if request.values.has_key("interval"):
@@ -403,8 +411,7 @@ def setTimelapseConfig():
 					interval = int(request.values["interval"])
 				except ValueError:
 					pass
-			lapse = timelapse.TimedTimelapse(interval)
-		printer.setTimelapse(lapse)
+			timelapse = octoprint.timelapse.TimedTimelapse(interval)
 
 	return getTimelapseData()
 
@@ -802,6 +809,12 @@ class Server():
 				}
 			},
 			"loggers": {
+				#"octoprint.timelapse": {
+				#	"level": "DEBUG"
+				#},
+				#"octoprint.events": {
+				#	"level": "DEBUG"
+				#}
 			},
 			"root": {
 				"level": "INFO",

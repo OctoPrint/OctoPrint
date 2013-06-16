@@ -47,10 +47,23 @@ class Timelapse(object):
 		self._renderThread = None
 		self._captureMutex = threading.Lock()
 
+		# subscribe events
 		eventManager().subscribe("PrintStarted", self.onPrintStarted)
 		eventManager().subscribe("PrintFailed", self.onPrintDone)
 		eventManager().subscribe("PrintDone", self.onPrintDone)
-		self.subscribeToEvents()
+		for (event, callback) in self.eventSubscriptions():
+			eventManager().subscribe(event, callback)
+
+	def unload(self):
+		if self._inTimelapse:
+			self.stopTimelapse(doCreateMovie=False)
+
+		# unsubscribe events
+		eventManager().unsubscribe("PrintStarted", self.onPrintStarted)
+		eventManager().unsubscribe("PrintFailed", self.onPrintDone)
+		eventManager().unsubscribe("PrintDone", self.onPrintDone)
+		for (event, callback) in self.eventSubscriptions():
+			eventManager().unsubscribe(event, callback)
 
 	def onPrintStarted(self, event, payload):
 		"""
@@ -64,14 +77,16 @@ class Timelapse(object):
 		"""
 		self.stopTimelapse()
 
-	def subscribeToEvents(self):
+	def eventSubscriptions(self):
 		"""
-		Override this method to subscribe to additional events. Events that are already subscribed:
+		Override this method to subscribe to additional events by returning an array of (event, callback) tuples.
+
+		Events that are already subscribed:
 		  * PrintStarted - self.onPrintStarted
 		  * PrintFailed - self.onPrintDone
 		  * PrintDone - self.onPrintDone
 		"""
-		pass
+		return []
 
 	def startTimelapse(self, gcodeFile):
 		self._logger.debug("Starting timelapse for %s" % gcodeFile)
@@ -81,11 +96,13 @@ class Timelapse(object):
 		self._inTimelapse = True
 		self._gcodeFile = os.path.basename(gcodeFile)
 
-	def stopTimelapse(self):
+	def stopTimelapse(self, doCreateMovie=True):
 		self._logger.debug("Stopping timelapse")
-		self._renderThread = threading.Thread(target=self._createMovie)
-		self._renderThread.daemon = True
-		self._renderThread.start()
+
+		if doCreateMovie:
+			self._renderThread = threading.Thread(target=self._createMovie)
+			self._renderThread.daemon = True
+			self._renderThread.start()
 
 		self._imageNumber = None
 		self._inTimelapse = False
@@ -157,8 +174,10 @@ class ZTimelapse(Timelapse):
 		Timelapse.__init__(self)
 		self._logger.debug("ZTimelapse initialized")
 
-	def subscribeToEvents(self):
-		eventManager().subscribe("ZChange", self._onZChange)
+	def eventSubscriptions(self):
+		return [
+			("ZChange", self._onZChange)
+		]
 
 	def _onZChange(self, event, payload):
 		self.captureImage()

@@ -73,9 +73,6 @@ class Printer():
 
 		self._selectedFile = None
 
-		# timelapse
-		self._timelapse = None
-
 		# comm
 		self._comm = None
 
@@ -214,15 +211,6 @@ class Printer():
 		if self._selectedFile is not None:
 			self._gcodeManager.printFailed(self._selectedFile["filename"])
 			eventManager().fire("PrintFailed", self._filename)
-
-	def setTimelapse(self, timelapse):
-		if self._timelapse is not None and self.isPrinting():
-			self._timelapse.stopTimelapse()
-			del self._timelapse
-		self._timelapse = timelapse
-
-	def getTimelapse(self):
-		return self._timelapse
 
 	#~~ state monitoring
 
