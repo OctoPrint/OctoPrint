@@ -197,22 +197,22 @@
                                 <div style="display: none;" data-bind="visible: loginState.isUser">
                                     <div class="row-fluid upload-buttons">
                                         {% if enableSdSupport %}
-                                        <button class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                        <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload</span>
                                             <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
-                                        </button>
-                                        <button class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                        </span>
+                                        <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload to SD</span>
                                             <input id="gcode_upload_sd" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
-                                        </button>
+                                        </span>
                                         {% else %}
-                                        <button class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                        <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload</span>
                                             <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
-                                        </button>
+                                        </span>
                                         {% endif %}
                                     </div>
                                     <div id="gcode_upload_progress" class="progress" style="width: 100%;">
