@@ -47,13 +47,30 @@ class Timelapse(object):
 		self._renderThread = None
 		self._captureMutex = threading.Lock()
 
-	def onPrintjobStarted(self, gcodeFile):
-		self.startTimelapse(gcodeFile)
+		eventManager().subscribe("PrintStarted", self.onPrintStarted)
+		eventManager().subscribe("PrintFailed", self.onPrintDone)
+		eventManager().subscribe("PrintDone", self.onPrintDone)
+		self.subscribeToEvents()
 
-	def onPrintjobStopped(self):
+	def onPrintStarted(self, event, payload):
+		"""
+		Override this to perform additional actions upon start of a print job.
+		"""
+		self.startTimelapse(payload)
+
+	def onPrintDone(self, event, payload):
+		"""
+		Override this to perform additional actions upon the stop of a print job.
+		"""
 		self.stopTimelapse()
 
-	def onZChange(self, oldZ, newZ):
+	def subscribeToEvents(self):
+		"""
+		Override this method to subscribe to additional events. Events that are already subscribed:
+		  * PrintStarted - self.onPrintStarted
+		  * PrintFailed - self.onPrintDone
+		  * PrintDone - self.onPrintDone
+		"""
 		pass
 
 	def startTimelapse(self, gcodeFile):
@@ -96,7 +113,7 @@ class Timelapse(object):
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
 		bitrate = settings().get(["webcam", "bitrate"])
 		if ffmpeg is None or bitrate is None:
-			self._logger.warn("Cannot create movie, path to ffmpeg is unset")
+			self._logger.warn("Cannot create movie, path to ffmpeg or desired bitrate is unset")
 			return
 
 		input = os.path.join(self._captureDir, "tmp_%05d.jpg")
@@ -119,8 +136,11 @@ class Timelapse(object):
 		# finalize command with output file
 		self._logger.debug("Rendering movie to %s" % output)
 		command.append(output)
-		subprocess.call(command)
-		eventManager().fire("MovieDone", output);
+		try:
+			subprocess.check_call(command)
+			eventManager().fire("MovieDone", output);
+		except subprocess.CalledProcessError as (e):
+			self._logger.warn("Could not render movie, got return code %r" % e.returncode)
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):
@@ -137,35 +157,38 @@ class ZTimelapse(Timelapse):
 		Timelapse.__init__(self)
 		self._logger.debug("ZTimelapse initialized")
 
-	def onZChange(self, oldZ, newZ):
-		self._logger.debug("Z change detected, capturing image")
+	def subscribeToEvents(self):
+		eventManager().subscribe("ZChange", self._onZChange)
+
+	def _onZChange(self, event, payload):
 		self.captureImage()
 
 class TimedTimelapse(Timelapse):
 	def __init__(self, interval=1):
 		Timelapse.__init__(self)
-
 		self._interval = interval
 		if self._interval < 1:
 			self._interval = 1 # force minimum interval of 1s
-
 		self._timerThread = None
-
 		self._logger.debug("TimedTimelapse initialized")
 
 	def interval(self):
 		return self._interval
 
-	def onPrintjobStarted(self, filename):
-		Timelapse.onPrintjobStarted(self, filename)
+	def onPrintStarted(self, event, payload):
+		Timelapse.onPrintStarted(self, event, payload)
 		if self._timerThread is not None:
 			return
 
-		self._timerThread = threading.Thread(target=self.timerWorker)
+		self._timerThread = threading.Thread(target=self._timerWorker)
 		self._timerThread.daemon = True
 		self._timerThread.start()
 
-	def timerWorker(self):
+	def onPrintDone(self, event, payload):
+		Timelapse.onPrintDone(self, event, payload)
+		self._timerThread = None
+
+	def _timerWorker(self):
 		self._logger.debug("Starting timer for interval based timelapse")
 		while self._inTimelapse:
 			self.captureImage()

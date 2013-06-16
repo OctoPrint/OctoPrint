@@ -40,8 +40,9 @@ Available Events:
   * ''PowerOn'': the GCode has turned on the printer power via M80
   * ''PowerOff'': the GCode has turned on the printer power via M81
   * ''Upload'': a gcode file upload has been uploaded (data is filename)
-  * ''LoadStart'': a gcode file load has started  (data is filename)
-  * ''LoadDone'': a gcode file load has finished  (data is filename)
+  * ''FileSelected'': a gcode file has been selected for printing (data is filename)
+  * ''TransferStart'': a gcode file transfer to SD has started (data is filename)
+  * ''TransferDone'': a gcode file transfer to SD has finished (data is filename)
   * ''PrintStarted'': a print has started
   * ''PrintFailed'': a print failed
   * ''PrintDone'': a print completed successfully

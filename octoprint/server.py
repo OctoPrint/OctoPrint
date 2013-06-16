@@ -64,6 +64,7 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		gcodeManager.registerCallback(self)
 
 		self._eventManager.fire("ClientOpened")
+		self._eventManager.subscribe("MovieDone", self._onMovieDone)
 
 	def on_close(self):
 		self._logger.info("Closed client connection")
@@ -72,6 +73,7 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		gcodeManager.unregisterCallback(self)
 
 		self._eventManager.fire("ClientClosed")
+		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
 
 	def on_message(self, message):
 		pass
@@ -114,6 +116,9 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def addTemperature(self, data):
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
+
+	def _onMovieDone(self, event, payload):
+		self.sendUpdateTrigger("timelapseFiles")
 
 # Did attempt to make webserver an encapsulated class but ended up with __call__ failures
 
@@ -364,9 +369,9 @@ def getTimelapseData():
 		file["url"] = url_for("downloadTimelapse", filename=file["name"])
 
 	return jsonify({
-	"type": type,
-	"config": additionalConfig,
-	"files": files
+		"type": type,
+		"config": additionalConfig,
+		"files": files
 	})
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["GET"])
@@ -719,6 +724,8 @@ class Server():
 		# setup system and gcode command triggers
 		events.SystemCommandTrigger(printer)
 		events.GcodeCommandTrigger(printer)
+		if self._debug:
+			events.DebugEventListener()
 
 		if settings().getBoolean(["accessControl", "enabled"]):
 			userManagerName = settings().get(["accessControl", "userManager"])

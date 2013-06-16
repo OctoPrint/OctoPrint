@@ -217,7 +217,7 @@ class Printer():
 
 	def setTimelapse(self, timelapse):
 		if self._timelapse is not None and self.isPrinting():
-			self._timelapse.onPrintjobStopped()
+			self._timelapse.stopTimelapse()
 			del self._timelapse
 		self._timelapse = timelapse
 
@@ -368,13 +368,6 @@ class Printer():
 		"""
 		oldState = self._state
 
-		# forward relevant state changes to timelapse
-		if self._timelapse is not None:
-			if oldState == self._comm.STATE_PRINTING and state != self._comm.STATE_PAUSED:
-				self._timelapse.onPrintjobStopped()
-			elif state == self._comm.STATE_PRINTING and oldState != self._comm.STATE_PAUSED:
-				self._timelapse.onPrintjobStarted(self._selectedFile["filename"])
-
 		# forward relevant state changes to gcode manager
 		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if self._selectedFile is not None:
@@ -409,11 +402,9 @@ class Printer():
 		"""
 		oldZ = self._currentZ
 		# only do this if we hit a new Z peak level.  Some slicers do a Z-lift when retracting / moving without printing 
-		# and some do ananti-backlash up-then-down movement when advancing layers
+		# and some do anti-backlash up-then-down movement when advancing layers
 		if newZ > self.peakZ:
 			self.peakZ = newZ
-			if self._timelapse is not None:
-				self._timelapse.onZChange(oldZ, newZ)
 			eventManager().fire("ZChange", newZ)
 			
 		self._setCurrentZ(newZ)

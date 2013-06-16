@@ -345,7 +345,7 @@ class MachineCom(object):
 	STATE_CLOSED = 8
 	STATE_ERROR = 9
 	STATE_CLOSED_WITH_ERROR = 10
-	STATE_RECEIVING_FILE = 11
+	STATE_TRANSFERING_FILE = 11
 	
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
 		self._logger = logging.getLogger(__name__)
@@ -445,8 +445,8 @@ class MachineCom(object):
 			return "Error: %s" % (self.getShortErrorString())
 		if self._state == self.STATE_CLOSED_WITH_ERROR:
 			return "Error: %s" % (self.getShortErrorString())
-		if self._state == self.STATE_RECEIVING_FILE:
-			return "Sending file to SD"
+		if self._state == self.STATE_TRANSFERING_FILE:
+			return "Transfering file to SD"
 		return "?%d?" % (self._state)
 	
 	def getShortErrorString(self):
@@ -464,7 +464,7 @@ class MachineCom(object):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR
 	
 	def isOperational(self):
-		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED or self._state == self.STATE_RECEIVING_FILE
+		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED or self._state == self.STATE_TRANSFERING_FILE
 	
 	def isPrinting(self):
 		return self._state == self.STATE_PRINTING
@@ -611,7 +611,7 @@ class MachineCom(object):
 
 					eventManager().fire("Error", self.getErrorString())
 
-		##~~ SD file list
+			##~~ SD file list
 			# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 			if self._sdFileList and not 'End file list' in line:
 				self._sdFiles.append(line.strip().lower())
@@ -669,6 +669,7 @@ class MachineCom(object):
 			elif 'File selected' in line:
 				# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 				self._callback.mcFileSelected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
+				eventManager().fire("FileSelected", self._currentFile.getFilename())
 			elif 'Writing to file' in line:
 				# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 				self._printSection = "CUSTOM"
@@ -676,8 +677,9 @@ class MachineCom(object):
 			elif 'Done printing file' in line:
 				# printer is reporting file finished printing
 				self._sdFilePos = 0
-				self._changeState(self.STATE_OPERATIONAL)
 				self._callback.mcPrintjobDone()
+				self._changeState(self.STATE_OPERATIONAL)
+				eventManager().fire("PrintDone")
 
 			##~~ Message handling
 			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
@@ -971,10 +973,12 @@ class MachineCom(object):
 					self._sendCommand("M29")
 					self._currentFile = None
 					self._callback.mcFileTransferDone()
+					self._changeState(self.STATE_OPERATIONAL)
+					eventManager().fire("TransferDone", self._currentFile.getFilename())
 				else:
 					self._callback.mcPrintjobDone()
-				self._changeState(self.STATE_OPERATIONAL)
-				eventManager().fire('PrintDone')
+					self._changeState(self.STATE_OPERATIONAL)
+					eventManager().fire("PrintDone", self._currentFile.getFilename())
 				return
 
 			if type(line) is tuple:
@@ -1012,7 +1016,7 @@ class MachineCom(object):
 
 		self._printSection = "CUSTOM"
 		self._changeState(self.STATE_PRINTING)
-		eventManager().fire("PrintStarted")
+		eventManager().fire("PrintStarted", self._currentFile.getFilename())
 
 		try:
 			self._currentFile.start()
@@ -1035,6 +1039,7 @@ class MachineCom(object):
 		self._currentFile.start()
 
 		self.sendCommand("M28 %s" % remoteFilename)
+		eventManager().fire("TransferStart", remoteFilename)
 		self._callback.mcFileTransferStarted(remoteFilename, self._currentFile.getFilesize())
 
 	def selectFile(self, filename, sd):
@@ -1048,6 +1053,7 @@ class MachineCom(object):
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename)
+			eventManager().fire("FileSelected", filename)
 			self._callback.mcFileSelected(filename, self._currentFile.getFilesize(), False)
 
 	def cancelPrint(self):
@@ -1087,7 +1093,7 @@ class MachineCom(object):
 		if not self.isOperational() or self.isBusy():
 			return
 
-		self._changeState(self.STATE_RECEIVING_FILE)
+		self._changeState(self.STATE_TRANSFERING_FILE)
 		self.sendCommand("M28 %s" % filename.lower())
 
 	def endSdFileTransfer(self, filename):
@@ -1251,6 +1257,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		except Exception as (e):
 			if self._filehandle is not None:
 				self._filehandle.close()
+				self._filehandle = None
 			raise e
 
 	def getLineCount(self):

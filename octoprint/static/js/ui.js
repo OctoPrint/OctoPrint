@@ -999,8 +999,7 @@ function TimelapseViewModel(loginStateViewModel) {
         self.isLoading(data.flags.loading);
     }
 
-    self.removeFile = function() {
-        var filename = this.name;
+    self.removeFile = function(filename) {
         $.ajax({
             url: AJAX_BASEURL + "timelapse/" + filename,
             type: "DELETE",
@@ -1526,6 +1525,8 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
     self._socket.on("updateTrigger", function(type) {
         if (type == "gcodeFiles") {
             gcodeFilesViewModel.requestData();
+        } else if (type == "timelapseFiles") {
+            timelapseViewModel.requestData();
         }
     })
 
@@ -1737,28 +1738,28 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self._saveCurrentSortingToLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-	        var currentSorting = self.currentSorting();
-	        if (currentSorting !== undefined)
-	            localStorage[self.listType + "." + "currentSorting"] = currentSorting;
-	        else
-	            localStorage[self.listType + "." + "currentSorting"] = undefined;
+            var currentSorting = self.currentSorting();
+            if (currentSorting !== undefined)
+                localStorage[self.listType + "." + "currentSorting"] = currentSorting;
+            else
+                localStorage[self.listType + "." + "currentSorting"] = undefined;
         }
     }
 
     self._loadCurrentSortingFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-	        if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
-	            self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
-	        else
-	            self.currentSorting(defaultSorting);
-	    }
+            if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
+                self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
+            else
+                self.currentSorting(defaultSorting);
+        }
     }
 
     self._saveCurrentFiltersToLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-	        var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
-	        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
-	    }
+            var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
+            localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
+        }
     }
 
     self._loadCurrentFiltersFromLocalStorage = function() {

@@ -41,7 +41,7 @@ class EventManager(object):
 
 		if not event in self._registeredListeners.keys():
 			return
-		self._logger.debug("Firing event: %s (%r)" % (event, payload))
+		self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
 
 		eventListeners = self._registeredListeners[event]
 		for listener in eventListeners:
@@ -106,6 +106,20 @@ class GenericEventListener(object):
 		child classes.
 		"""
 		pass
+
+class DebugEventListener(GenericEventListener):
+	def __init__(self):
+		GenericEventListener.__init__(self)
+
+		events = ["Startup", "Connected", "Disconnected", "ClientOpen", "ClientClosed", "PowerOn", "PowerOff", "Upload",
+				  "FileSelected", "TransferStarted", "TransferDone", "PrintStarted", "PrintDone", "PrintFailed",
+				  "Cancelled", "Home", "ZChange", "Paused", "Waiting", "Cooling", "Alert", "Conveyor", "Eject",
+				  "CaptureStart", "CaptureDone", "MovieDone", "EStop", "Error"]
+		self.subscribe(events)
+
+	def eventCallback(self, event, payload):
+		GenericEventListener.eventCallback(self, event, payload)
+		self._logger.debug("Received event: %s (Payload: %r)" % (event, payload))
 
 class CommandTrigger(GenericEventListener):
 	def __init__(self, triggerType, printer):
@@ -194,9 +208,8 @@ class CommandTrigger(GenericEventListener):
 		if "job" in currentData.keys() and currentData["job"] is not None:
 			params["filename"] = currentData["job"]["filename"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
-				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None \
-				and currentData["job"]["lines"] is not None:
-				params["progress"] = str(round(currentData["progress"]["progress"] * 100 / currentData["job"]["lines"]))
+				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None:
+				params["progress"] = str(round(currentData["progress"]["progress"] * 100))
 
 		return command % params
 

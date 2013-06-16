@@ -542,7 +542,7 @@
                                     <tr data-bind="attr: {title: name}">
                                         <td class="timelapse_files_name" data-bind="text: name"></td>
                                         <td class="timelapse_files_size" data-bind="text: size"></td>
-                                        <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile(); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
+                                        <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
                                     </tr>
                                 </tbody>
                             </table>
