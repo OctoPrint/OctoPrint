@@ -999,8 +999,7 @@ function TimelapseViewModel(loginStateViewModel) {
         self.isLoading(data.flags.loading);
     }
 
-    self.removeFile = function() {
-        var filename = this.name;
+    self.removeFile = function(filename) {
         $.ajax({
             url: AJAX_BASEURL + "timelapse/" + filename,
             type: "DELETE",
@@ -1300,7 +1299,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.appearance_color = ko.observable(undefined);
 
     /* I did attempt to allow arbitrary gradients but cross browser support via knockout or jquery was going to be horrible */
-    self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet"]);
+    self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
 
     self.printer_movementSpeedX = ko.observable(undefined);
     self.printer_movementSpeedY = ko.observable(undefined);
