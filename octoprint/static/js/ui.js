@@ -1016,8 +1016,7 @@ function TimelapseViewModel(loginStateViewModel) {
         self.isLoading(data.flags.loading);
     }
 
-    self.removeFile = function() {
-        var filename = this.name;
+    self.removeFile = function(filename) {
         $.ajax({
             url: AJAX_BASEURL + "timelapse/" + filename,
             type: "DELETE",
