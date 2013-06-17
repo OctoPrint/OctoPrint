@@ -37,6 +37,7 @@ class gcode(object):
 		self.regMatch = {}
 		self.layerList = []
 		self.extrusionAmount = 0
+		self.extrusionVolume = 0
 		self.totalMoveTimeMinute = 0
 		self.progressCallback = None
 		self._abort = False
@@ -61,6 +62,7 @@ class gcode(object):
 		currentE = 0.0
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
+		extrusionDiameter = 0
 		currentExtruder = 0
 		extrudeAmountMultiply = 1.0
 		totalMoveTimeMinute = 0.0
@@ -105,6 +107,8 @@ class gcode(object):
 					pathType = 'WALL-INNER'
 				elif comment == 'skirt':
 					pathType = 'SKIRT'
+				elif comment.startswith('filament_diameter = '):
+					filamentDiameter = int(line[line.find('=')+1:])
 				if comment.startswith('LAYER:'):
 					self.layerList.append(currentLayer)
 					currentLayer = []
@@ -276,6 +280,7 @@ class gcode(object):
 						unknownMcodes[M] = True
 		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
+		self.extrusionVolume = math.pi * math.pow(filamentDiameter / 2.0, 2) * maxExtrusion / 1000.0
 		self.totalMoveTimeMinute = totalMoveTimeMinute
 
 	def getCodeInt(self, line, code):
