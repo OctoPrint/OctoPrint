@@ -36,6 +36,8 @@ default_settings = {
 		"ffmpeg": None,
 		"bitrate": "5000k",
 		"watermark": True
+		"flipX": False,
+		"flipY": False
 	},
 	"feature": {
 		"gCodeVisualizer": True,

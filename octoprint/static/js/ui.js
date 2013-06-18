@@ -1328,6 +1328,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.webcam_ffmpegPath = ko.observable(undefined);
     self.webcam_bitrate = ko.observable(undefined);
     self.webcam_watermark = ko.observable(undefined);
+    self.webcam_flipX = ko.observable(undefined);
+    self.webcam_flipY = ko.observable(undefined);
 
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
@@ -1375,6 +1377,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.webcam_ffmpegPath(response.webcam.ffmpegPath);
         self.webcam_bitrate(response.webcam.bitrate);
         self.webcam_watermark(response.webcam.watermark);
+        self.webcam_flipX(response.webcam.flipX);
+        self.webcam_flipY(response.webcam.flipY);
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_waitForStart(response.feature.waitForStart);
@@ -1409,7 +1413,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "snapshotUrl": self.webcam_snapshotUrl(),
                 "ffmpegPath": self.webcam_ffmpegPath(),
                 "bitrate": self.webcam_bitrate(),
-                "watermark": self.webcam_watermark()
+                "watermark": self.webcam_watermark(),
+                "flipX": self.webcam_flipX(),
+                "flipY": self.webcam_flipY()
             },
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
