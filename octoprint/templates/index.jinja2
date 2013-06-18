@@ -35,7 +35,7 @@
         <div id="navbar" class="navbar navbar-fixed-top">
             <div class="navbar-inner" data-bind="css: appearance.color">
                 <div class="container">
-                    <a class="brand" href="#"><img src="{{ url_for('static', filename='img/tentacle-20x20.png') }}"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
+                    <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
                     <div class="nav-collapse">
                         <ul class="nav pull-right">
                             <li style="display: none;" data-bind="visible: loginState.isAdmin">
@@ -575,7 +575,8 @@
         {% include 'settings.jinja2' %}
         {% include 'dialogs.jinja2' %}
 
-        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+        <!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>-->
+        <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/modernizr.custom.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/underscore.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/knockout.js') }}"></script>
