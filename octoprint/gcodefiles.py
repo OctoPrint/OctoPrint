@@ -64,7 +64,7 @@ class GcodeManager:
 		if gcode.extrusionAmount:
 			analysisResult["filament"] = "%.2fm" % (gcode.extrusionAmount / 1000)
 			if gcode.extrusionVolume:
-				 analysisResult["filament"] += " / %.2fcc" % gcode.extrusionVolume
+				 analysisResult["filament"] += " / %.2fcm³" % gcode.extrusionVolume
 			dirty = True
 
 		if dirty:
