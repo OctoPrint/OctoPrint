@@ -119,7 +119,9 @@ def index():
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
-		enableSdSupport=settings().get(["feature", "sdSupport"])
+		enableSdSupport=settings().get(["feature", "sdSupport"]),
+		webcamFlipX=settings().get(["webcam", "flipX"]),
+		webcamFlipY=settings().get(["webcam", "flipY"])
 	)
 
 #~~ Printer control

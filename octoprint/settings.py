@@ -35,7 +35,7 @@ default_settings = {
 		"snapshot": None,
 		"ffmpeg": None,
 		"bitrate": "5000k",
-		"watermark": True
+		"watermark": True,
 		"flipX": False,
 		"flipY": False
 	},
