@@ -1135,6 +1135,7 @@ function UsersViewModel(loginStateViewModel) {
         {},
         "name",
         [],
+        [],
         CONFIG_USERSPERPAGE
     );
 
