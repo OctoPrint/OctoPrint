@@ -779,7 +779,7 @@ class MachineCom(object):
 
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
-			if self._resendDelta > len(self._lastLines):
+			if self._resendDelta >= len(self._lastLines):
 				self._errorValue = "Printer requested line %d but history is only available up to line %d" % (lineToResend, self._currentLine - len(self._lastLines))
 				self._changeState(self.STATE_ERROR)
 				self._logger.warn(self._errorValue)
@@ -834,13 +834,13 @@ class MachineCom(object):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
-			cmd = self._lastLines[-self._resendDelta]
+			cmd = self._lastLines[-(self._resendDelta+1)]
 			lineNumber = self._currentLine - self._resendDelta
 
 			self._doSendWithChecksum(cmd, lineNumber)
 
 			self._resendDelta -= 1
-			if self._resendDelta <= 0:
+			if self._resendDelta < 0:
 				self._resendDelta = None
 
 	def _sendCommand(self, cmd, sendChecksum=False):
