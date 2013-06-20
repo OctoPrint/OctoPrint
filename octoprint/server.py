@@ -119,9 +119,7 @@ def index():
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
-		enableSdSupport=settings().get(["feature", "sdSupport"]),
-		webcamFlipX=settings().get(["webcam", "flipX"]),
-		webcamFlipY=settings().get(["webcam", "flipY"])
+		enableSdSupport=settings().get(["feature", "sdSupport"])
 	)
 
 #~~ Printer control
@@ -435,8 +433,8 @@ def getSettings():
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
 			"bitrate": s.get(["webcam", "bitrate"]),
 			"watermark": s.getBoolean(["webcam", "watermark"]),
-			"flipX": s.getBoolean(["webcam", "flipX"]),
-			"flipY": s.getBoolean(["webcam", "flipY"])
+			"flipH": s.getBoolean(["webcam", "flipH"]),
+			"flipV": s.getBoolean(["webcam", "flipV"])
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
@@ -483,8 +481,8 @@ def setSettings():
 			if "ffmpegPath" in data["webcam"].keys(): s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
 			if "bitrate" in data["webcam"].keys(): s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
 			if "watermark" in data["webcam"].keys(): s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
-			if "flipX" in data["webcam"].keys(): s.setBoolean(["webcam", "flipX"], data["webcam"]["flipX"])
-			if "flipY" in data["webcam"].keys(): s.setBoolean(["webcam", "flipY"], data["webcam"]["flipY"])
+			if "flipH" in data["webcam"].keys(): s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
+			if "flipV" in data["webcam"].keys(): s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
 
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])

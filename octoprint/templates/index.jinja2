@@ -310,8 +310,8 @@
                         </div>
                         <div class="tab-pane" id="control">
                             {% if webcamStream %}
-                            <div id="webcam_container" class="{{ 'flipX' if webcamFlipX else '' }} {{ 'flipY' if webcamFlipY else '' }}">
-                                <img id="webcam_image" src="{{ webcamStream }}">
+                            <div id="webcam_container">
+                                <img id="webcam_image" src="{{ webcamStream }}" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
                             </div>
                             {% endif %}
 
