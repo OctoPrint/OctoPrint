@@ -156,6 +156,9 @@ class VirtualPrinter():
 		elif "M114" in data:
 			# send dummy position report
 			self.readList.append("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
+		elif "M999" in data:
+			# mirror Marlin behaviour
+			self.readList.append("Resend: 1")
 		elif self.currentLine == 100:
 			# simulate a resend at line 100 of the last 5 lines
 			self.readList.append("Error: Line Number is not Last Line Number\n")
@@ -805,9 +808,14 @@ class MachineCom(object):
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
 			if self._resendDelta >= len(self._lastLines):
-				self._errorValue = "Printer requested line %d but history is only available up to line %d" % (lineToResend, self._currentLine - len(self._lastLines))
-				self._changeState(self.STATE_ERROR)
+				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(self._errorValue)
+				if self.isPrinting():
+					# abort the print, there's nothing we can do to rescue it now
+					self._changeState(self.STATE_ERROR)
+				else:
+					# reset resend delta, we can't do anything about it
+					self._resendDelta = None
 			else:
 				self._resendNextCommand()
 
