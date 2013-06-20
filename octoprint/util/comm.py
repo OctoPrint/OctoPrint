@@ -623,7 +623,6 @@ class MachineCom(object):
 					elif not self.isError():
 						self._errorValue = line[6:]
 						self._changeState(self.STATE_ERROR)
-
 						eventManager().fire("Error", self.getErrorString())
 
 				##~~ SD file list
@@ -768,8 +767,8 @@ class MachineCom(object):
 						if self._sdAvailable:
 							self.refreshSdFiles()
 						eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
-				else:
-					self._testingBaudrate = False
+					elif time.time() > timeout:
+						self.close()
 
 				### Operational
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
@@ -826,6 +825,7 @@ class MachineCom(object):
 				self._log(errorMsg)
 				self._errorValue = errorMsg
 				self._changeState(self.STATE_ERROR)
+				eventManager().fire("Error", self.getErrorString())
 		self._log("Connection closed, closing down monitor")
 
 	def _handleResendRequest(self, line):
@@ -844,7 +844,7 @@ class MachineCom(object):
 				if self.isPrinting():
 					# abort the print, there's nothing we can do to rescue it now
 					self._changeState(self.STATE_ERROR)
-					
+					eventManager().fire("Error", self.getErrorString())
 				else:
 					# reset resend delta, we can't do anything about it
 					self._resendDelta = None
@@ -1067,8 +1067,9 @@ class MachineCom(object):
 			else:
 				self._sendNext()
 		except:
-			self._changeState(self.STATE_ERROR)
 			self._errorValue = getExceptionString()
+			self._changeState(self.STATE_ERROR)
+			eventManager().fire("Error", self.getErrorString())
 
 	def startFileTransfer(self, filename, remoteFilename):
 		if not self.isOperational() or self.isBusy():
