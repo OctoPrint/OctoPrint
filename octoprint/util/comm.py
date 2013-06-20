@@ -682,7 +682,7 @@ class MachineCom(object):
 					try:
 						match = matcher.search(line)
 						if match is not None:
-							self._callback.mcReceivedRegisteredMessage(name, template % match.groups("n/a"))
+							self._callback.mcReceivedRegisteredMessage(name, str.format(template, *(match.groups("n/a"))))
 					except:
 						# ignored on purpose
 						pass

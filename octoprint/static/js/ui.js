@@ -545,7 +545,7 @@ function ControlViewModel(loginStateViewModel) {
         self.isLoading(data.flags.loading);
     }
 
-    self._processFeedbackCommandData = function(data) {
+    self.fromFeedbackCommandData = function(data) {
         if (data.name in self.feedbackControlLookup) {
             self.feedbackControlLookup[data.name](data.output);
         }
@@ -632,7 +632,7 @@ function ControlViewModel(loginStateViewModel) {
             return;
 
         var data = undefined;
-        if (command.type == "command" || command.type == "parametric_command") {
+        if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
             // single command
             data = {"command" : command.command};
         } else if (command.type == "commands" || command.type == "parametric_commands") {
@@ -1500,7 +1500,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
             self.loginStateViewModel.requestData();
             self.gcodeFilesViewModel.requestData();
         }
-    })
+    });
     self._socket.on("disconnect", function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect " +
@@ -1509,13 +1509,13 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         );
         if (!$("#offline_overlay").is(":visible"))
             $("#offline_overlay").show();
-    })
+    });
     self._socket.on("reconnect_failed", function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
             "but you may try a manual reconnect using the button below."
         );
-    })
+    });
     self._socket.on("history", function(data) {
         self.connectionViewModel.fromHistoryData(data);
         self.printerStateViewModel.fromHistoryData(data);
@@ -1525,7 +1525,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self.timelapseViewModel.fromHistoryData(data);
         self.gcodeViewModel.fromHistoryData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
-    })
+    });
     self._socket.on("current", function(data) {
         self.connectionViewModel.fromCurrentData(data);
         self.printerStateViewModel.fromCurrentData(data);
@@ -1535,12 +1535,15 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self.timelapseViewModel.fromCurrentData(data);
         self.gcodeViewModel.fromCurrentData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
-    })
+    });
     self._socket.on("updateTrigger", function(type) {
         if (type == "gcodeFiles") {
             gcodeFilesViewModel.requestData();
         }
-    })
+    });
+    self._socket.on("feedbackCommandOutput", function(data) {
+        self.controlViewModel.fromFeedbackCommandData(data);
+    });
 
     self.reconnect = function() {
         self._socket.socket.connect();
@@ -1750,33 +1753,33 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self._saveCurrentSortingToLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-	        var currentSorting = self.currentSorting();
-	        if (currentSorting !== undefined)
-	            localStorage[self.listType + "." + "currentSorting"] = currentSorting;
-	        else
-	            localStorage[self.listType + "." + "currentSorting"] = undefined;
+            var currentSorting = self.currentSorting();
+            if (currentSorting !== undefined)
+                localStorage[self.listType + "." + "currentSorting"] = currentSorting;
+            else
+                localStorage[self.listType + "." + "currentSorting"] = undefined;
         }
     }
 
     self._loadCurrentSortingFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-	        if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
-	            self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
-	        else
-	            self.currentSorting(defaultSorting);
-	    }
+            if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
+                self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
+            else
+                self.currentSorting(defaultSorting);
+        }
     }
 
     self._saveCurrentFiltersToLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-	        var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
-	        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
-	    }
+            var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
+            localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
+        }
     }
 
     self._loadCurrentFiltersFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-        	self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
+            self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
         }
     }
 
