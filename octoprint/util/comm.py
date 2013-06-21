@@ -40,7 +40,13 @@ def serialList():
 				i+=1
 		except:
 			pass
-	baselist = baselist + glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*") + glob.glob("/dev/tty.usb*") + glob.glob("/dev/cu.*") + glob.glob("/dev/rfcomm*")
+	baselist = baselist \
+			   + glob.glob("/dev/ttyUSB*") \
+			   + glob.glob("/dev/ttyACM*") \
+			   + glob.glob("/dev/ttyAMA*") \
+			   + glob.glob("/dev/tty.usb*") \
+			   + glob.glob("/dev/cu.*") \
+			   + glob.glob("/dev/rfcomm*")
 	prev = settings().get(["serial", "port"])
 	if prev in baselist:
 		baselist.remove(prev)
