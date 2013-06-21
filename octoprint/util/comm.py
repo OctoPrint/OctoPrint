@@ -153,6 +153,9 @@ class VirtualPrinter():
 			# reset current line
 			self.currentLine = int(re.search('N([0-9]+)', data).group(1))
 			self.readList.append("ok\n")
+		elif "M114" in data:
+			# send dummy position report
+			self.readList.append("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
 		elif self.currentLine == 100:
 			# simulate a resend at line 100 of the last 5 lines
 			self.readList.append("Error: Line Number is not Last Line Number\n")
@@ -322,6 +325,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def mcFileTransferStarted(self, filename, filesize):
+		pass
+
+	def mcReceivedRegisteredMessage(self, command, message):
 		pass
 
 class MachineCom(object):
@@ -522,6 +528,8 @@ class MachineCom(object):
 		return ret
 	
 	def _monitor(self):
+		feedbackControls = settings().getFeedbackControls()
+
 		#Open the serial port.
 		if self._port == 'AUTO':
 			self._changeState(self.STATE_DETECT_SERIAL)
@@ -667,6 +675,17 @@ class MachineCom(object):
 			##~~ Message handling
 			elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
 				self._callback.mcMessage(line)
+
+			##~~ Parsing for feedback commands
+			if feedbackControls:
+				for name, matcher, template in feedbackControls:
+					try:
+						match = matcher.search(line)
+						if match is not None:
+							self._callback.mcReceivedRegisteredMessage(name, str.format(template, *(match.groups("n/a"))))
+					except:
+						# ignored on purpose
+						pass
 
 			if "ok" in line and heatingUp:
 				heatingUp = False
