@@ -525,6 +525,8 @@ function ControlViewModel(loginStateViewModel) {
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
 
+    self.feedbackControlLookup = {};
+
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
     }
@@ -543,6 +545,12 @@ function ControlViewModel(loginStateViewModel) {
         self.isLoading(data.flags.loading);
     }
 
+    self._processFeedbackCommandData = function(data) {
+        if (data.name in self.feedbackControlLookup) {
+            self.feedbackControlLookup[data.name](data.output);
+        }
+    }
+
     self.requestData = function() {
         $.ajax({
             url: AJAX_BASEURL + "control/custom",
@@ -555,23 +563,26 @@ function ControlViewModel(loginStateViewModel) {
     }
 
     self._fromResponse = function(response) {
-        self.controls(self._enhanceControls(response.controls));
+        self.controls(self._processControls(response.controls));
     }
 
-    self._enhanceControls = function(controls) {
+    self._processControls = function(controls) {
         for (var i = 0; i < controls.length; i++) {
-            controls[i] = self._enhanceControl(controls[i]);
+            controls[i] = self._processControl(controls[i]);
         }
         return controls;
     }
 
-    self._enhanceControl = function(control) {
+    self._processControl = function(control) {
         if (control.type == "parametric_command" || control.type == "parametric_commands") {
             for (var i = 0; i < control.input.length; i++) {
                 control.input[i].value = control.input[i].default;
             }
+        } else if (control.type == "feedback_command") {
+            control.output = ko.observable("");
+            self.feedbackControlLookup[control.name] = control.output;
         } else if (control.type == "section") {
-            control.children = self._enhanceControls(control.children);
+            control.children = self._processControls(control.children);
         }
         return control;
     }
@@ -659,6 +670,8 @@ function ControlViewModel(loginStateViewModel) {
             case "parametric_command":
             case "parametric_commands":
                 return "customControls_parametricCommandTemplate";
+            case "feedback_command":
+                return "customControls_feedbackCommandTemplate";
             default:
                 return "customControls_emptyTemplate";
         }

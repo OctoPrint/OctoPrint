@@ -95,6 +95,9 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def sendUpdateTrigger(self, type):
 		self.emit("updateTrigger", type)
 
+	def sendFeedbackCommandOutput(self, name, output):
+		self.emit("feedbackCommandOutput", {"name": name, "output": output})
+
 	def addLog(self, data):
 		with self._logBacklogMutex:
 			self._logBacklog.append(data)

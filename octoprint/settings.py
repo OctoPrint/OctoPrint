@@ -2,11 +2,11 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-import ConfigParser
 import sys
 import os
 import yaml
 import logging
+import re
 
 APPNAME="OctoPrint"
 
@@ -203,6 +203,29 @@ class Settings(object):
 			os.makedirs(folder)
 
 		return folder
+
+	def getFeedbackControls(self):
+		feedbackControls = []
+		for control in self.get(["controls"]):
+			feedbackControls.extend(self._getFeedbackControls(control))
+		return feedbackControls
+
+	def _getFeedbackControls(self, control=None):
+		if control["type"] == "feedback_command":
+			pattern = control["regex"]
+			try:
+				matcher = re.compile(pattern)
+				return [(control["name"], matcher, control["template"])]
+			except:
+				# invalid regex or something like this, we'll just skip this entry
+				pass
+		elif control["type"] == "section":
+			result = []
+			for c in control["children"]:
+				result.extend(self._getFeedbackControls(c))
+			return result
+		else:
+			return []
 
 	#~~ setter
 
