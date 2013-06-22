@@ -359,6 +359,18 @@ ul.dropdown-menu li a {
 #webcam_container {
   width: 100%;
 }
+#webcam_container.flipX {
+  -webkit-transform: scaleX(-1);
+  -moz-transform: scaleX(-1);
+}
+#webcam_container.flipY {
+  -webkit-transform: scaleY(-1);
+  -moz-transform: scaleY(-1);
+}
+#webcam_container.flipX.flipY {
+  -webkit-transform: scaleX(-1) scaleY(-1);
+  -moz-transform: scaleX(-1) scaleY(-1);
+}
 
 /** GCODE file manager */
 
