@@ -525,6 +525,8 @@ function ControlViewModel(loginStateViewModel) {
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
 
+    self.feedbackControlLookup = {};
+
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
     }
@@ -543,6 +545,12 @@ function ControlViewModel(loginStateViewModel) {
         self.isLoading(data.flags.loading);
     }
 
+    self.fromFeedbackCommandData = function(data) {
+        if (data.name in self.feedbackControlLookup) {
+            self.feedbackControlLookup[data.name](data.output);
+        }
+    }
+
     self.requestData = function() {
         $.ajax({
             url: AJAX_BASEURL + "control/custom",
@@ -555,23 +563,26 @@ function ControlViewModel(loginStateViewModel) {
     }
 
     self._fromResponse = function(response) {
-        self.controls(self._enhanceControls(response.controls));
+        self.controls(self._processControls(response.controls));
     }
 
-    self._enhanceControls = function(controls) {
+    self._processControls = function(controls) {
         for (var i = 0; i < controls.length; i++) {
-            controls[i] = self._enhanceControl(controls[i]);
+            controls[i] = self._processControl(controls[i]);
         }
         return controls;
     }
 
-    self._enhanceControl = function(control) {
+    self._processControl = function(control) {
         if (control.type == "parametric_command" || control.type == "parametric_commands") {
             for (var i = 0; i < control.input.length; i++) {
                 control.input[i].value = control.input[i].default;
             }
+        } else if (control.type == "feedback_command") {
+            control.output = ko.observable("");
+            self.feedbackControlLookup[control.name] = control.output;
         } else if (control.type == "section") {
-            control.children = self._enhanceControls(control.children);
+            control.children = self._processControls(control.children);
         }
         return control;
     }
@@ -621,7 +632,7 @@ function ControlViewModel(loginStateViewModel) {
             return;
 
         var data = undefined;
-        if (command.type == "command" || command.type == "parametric_command") {
+        if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
             // single command
             data = {"command" : command.command};
         } else if (command.type == "commands" || command.type == "parametric_commands") {
@@ -659,6 +670,8 @@ function ControlViewModel(loginStateViewModel) {
             case "parametric_command":
             case "parametric_commands":
                 return "customControls_parametricCommandTemplate";
+            case "feedback_command":
+                return "customControls_feedbackCommandTemplate";
             default:
                 return "customControls_emptyTemplate";
         }
@@ -1487,7 +1500,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
             self.loginStateViewModel.requestData();
             self.gcodeFilesViewModel.requestData();
         }
-    })
+    });
     self._socket.on("disconnect", function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect " +
@@ -1496,13 +1509,13 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         );
         if (!$("#offline_overlay").is(":visible"))
             $("#offline_overlay").show();
-    })
+    });
     self._socket.on("reconnect_failed", function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
             "but you may try a manual reconnect using the button below."
         );
-    })
+    });
     self._socket.on("history", function(data) {
         self.connectionViewModel.fromHistoryData(data);
         self.printerStateViewModel.fromHistoryData(data);
@@ -1512,7 +1525,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self.timelapseViewModel.fromHistoryData(data);
         self.gcodeViewModel.fromHistoryData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
-    })
+    });
     self._socket.on("current", function(data) {
         self.connectionViewModel.fromCurrentData(data);
         self.printerStateViewModel.fromCurrentData(data);
@@ -1522,14 +1535,17 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self.timelapseViewModel.fromCurrentData(data);
         self.gcodeViewModel.fromCurrentData(data);
         self.gcodeFilesViewModel.fromCurrentData(data);
-    })
+    });
     self._socket.on("updateTrigger", function(type) {
         if (type == "gcodeFiles") {
             gcodeFilesViewModel.requestData();
         } else if (type == "timelapseFiles") {
             timelapseViewModel.requestData();
         }
-    })
+    });
+    self._socket.on("feedbackCommandOutput", function(data) {
+        self.controlViewModel.fromFeedbackCommandData(data);
+    });
 
     self.reconnect = function() {
         self._socket.socket.connect();
@@ -1765,7 +1781,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self._loadCurrentFiltersFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
-        	self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
+            self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
         }
     }
 

@@ -129,6 +129,11 @@ class Printer():
 			try: callback.sendUpdateTrigger(type)
 			except: pass
 
+	def _sendFeedbackCommandOutput(self, name, output):
+		for callback in self._callbacks:
+			try: callback.sendFeedbackCommandOutput(name, output)
+			except: pass
+
 	#~~ printer commands
 
 	def connect(self, port=None, baudrate=None):
@@ -434,6 +439,9 @@ class Printer():
 		self._setJobData(None, None, None)
 		self._setProgressData(None, None, None, None)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+	def mcReceivedRegisteredMessage(self, command, output):
+		self._sendFeedbackCommandOutput(command, output)
 
 #~~ sd file handling
 
