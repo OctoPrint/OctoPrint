@@ -19,7 +19,7 @@ class CuraFactoryTestCase(unittest.TestCase):
 
         cura_engine = CuraFactory.create_slicer()
 
-        file_path = './cura/tests/test_02.stl'
+        file_path = './cura/tests/test.stl'
         config_path = './cura/tests/config'
         gcode_filename= './cura/tests/output.gcode'
 
