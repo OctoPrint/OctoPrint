@@ -4,7 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 import logging
 import subprocess
 
-class CuraWrapper(object):
+class CuraFactory(object):
 
     CURA_PATH = '/home/rosshendrickson/workspaces/opensource/CuraEngine/CuraEngine'
 
@@ -14,7 +14,7 @@ class CuraWrapper(object):
         if path:
             return CuraEngine(path)
         else:
-            return CuraEngine(CuraWrapper.CURA_PATH)
+            return CuraEngine(CuraFactory.CURA_PATH)
 
 
 
