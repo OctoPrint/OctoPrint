@@ -273,17 +273,6 @@ def sdCommand():
 
 	return jsonify(SUCCESS)
 
-#~~ Printer State
-
-@app.route(BASEURL + "state", methods=["GET"])
-@login_required
-def getPrinterState():
-	currentData = printer.getCurrentData()
-	currentData.update({
-		"temperatures": printer.getCurrentTemperatures()
-	})
-	return jsonify(currentData)
-
 #~~ GCODE file handling
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])
@@ -388,6 +377,23 @@ def apiLoad():
 	if filepath is not None:
 		printer.selectFile(filepath, False, printAfterSelect)
 	return jsonify(SUCCESS)
+
+@app.route(APIBASEURL + "state", methods=["GET"])
+def apiPrinterState():
+	if not settings().get(["api", "enabled"]):
+		abort(401)
+
+	if not "apikey" in request.values.keys():
+		abort(401)
+
+	if request.values["apikey"] != settings().get(["api", "key"]):
+		abort(403)
+
+	currentData = printer.getCurrentData()
+	currentData.update({
+		"temperatures": printer.getCurrentTemperatures()
+	})
+	return jsonify(currentData)
 
 #~~ timelapse handling
 
