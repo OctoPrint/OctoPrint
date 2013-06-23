@@ -7,6 +7,7 @@ import os
 import yaml
 import logging
 import re
+import uuid
 
 APPNAME="OctoPrint"
 
@@ -89,6 +90,10 @@ default_settings = {
 		"gcodeCommandTrigger": {
 			"enabled": False
 		}
+	},
+	"api": {
+		"allow": False,
+		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	}
 }
 

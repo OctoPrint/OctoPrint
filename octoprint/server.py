@@ -24,6 +24,7 @@ import octoprint.events as events
 
 SUCCESS = {}
 BASEURL = "/ajax/"
+APIBASEURL = "/api/"
 
 app = Flask("octoprint")
 # Only instantiated by the Server().run() method
@@ -319,6 +320,7 @@ def uploadGcodeFile():
 		eventManager.fire("Upload", filename)
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
+
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 @login_required
 def loadGcodeFile():
@@ -349,8 +351,45 @@ def deleteGcodeFile():
 	return readGcodeFiles()
 
 @app.route(BASEURL + "gcodefiles/refresh", methods=["POST"])
+@login_required
 def refreshFiles():
 	printer.updateSdFiles()
+	return jsonify(SUCCESS)
+
+#-- very simple api routines
+@app.route(APIBASEURL + "load", methods=["POST"])
+@login_required
+def apiLoad():
+	filename = None
+	s = settings()
+	if not s.get(["api", "allow"]):
+		return jsonify(success=False, message="API calls not enabled")
+
+	if not "apikey" in request.values.keys():
+		return jsonify(success=False, message="apikey not present")
+
+	if request.values["apikey"] <> s.get(["api", "key"]):
+		return jsonify(success=False, message="apikey incorrect" + s.get(["api","key"]) + " " + request.values["apikey"])
+
+	if "file" in request.files.keys():
+		# Perform an upload
+		file = request.files["file"]
+		filename = gcodeManager.addFile(file)
+		if filename is None:
+			return jsonify(success=False, message="failure loading gcode")
+		else:
+			logger = logging.getLogger(__name__)
+			logger.info("loaded " + filename)
+			# Immediately perform a loadGcode and possibly print too
+			printAfterLoading = False
+			if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
+				printAfterLoading = True
+			filepath = gcodeManager.getAbsolutePath(filename)
+			if filepath is not None:
+				printer.loadGcode(filepath, printAfterLoading)
+	else:
+		return jsonify(success=False, message="gcode file not present")
+
 	return jsonify(SUCCESS)
 
 #~~ timelapse handling
@@ -427,6 +466,10 @@ def getSettings():
 	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
 	return jsonify({
+		"api": {
+			"allow": s.getBoolean(["api", "allow"]),
+			"key": s.get(["api", "key"])
+		},
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"])
@@ -475,6 +518,10 @@ def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
 		s = settings()
+
+		if "api" in data.keys():
+			if "allow" in data["api"].keys(): s.set(["api", "allow"], data["api"]["allow"])
+			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
 
 		if "appearance" in data.keys():
 			if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
