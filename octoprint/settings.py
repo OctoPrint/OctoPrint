@@ -92,7 +92,7 @@ default_settings = {
 		}
 	},
 	"api": {
-		"allow": False,
+		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	}
 }

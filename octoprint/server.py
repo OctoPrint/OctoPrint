@@ -361,7 +361,7 @@ def refreshFiles():
 def apiLoad():
 	logger = logging.getLogger(__name__)
 
-	if not settings().get(["api", "allow"]):
+	if not settings().get(["api", "enabled"]):
 		abort(401)
 
 	if not "apikey" in request.values.keys():
