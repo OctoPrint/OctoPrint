@@ -358,38 +358,35 @@ def refreshFiles():
 
 #-- very simple api routines
 @app.route(APIBASEURL + "load", methods=["POST"])
-@login_required
 def apiLoad():
-	filename = None
-	s = settings()
-	if not s.get(["api", "allow"]):
-		return jsonify(success=False, message="API calls not enabled")
+	logger = logging.getLogger(__name__)
+
+	if not settings().get(["api", "allow"]):
+		abort(401)
 
 	if not "apikey" in request.values.keys():
-		return jsonify(success=False, message="apikey not present")
+		abort(401)
 
-	if request.values["apikey"] <> s.get(["api", "key"]):
-		return jsonify(success=False, message="apikey incorrect" + s.get(["api","key"]) + " " + request.values["apikey"])
+	if request.values["apikey"] != settings().get(["api", "key"]):
+		abort(403)
 
-	if "file" in request.files.keys():
-		# Perform an upload
-		file = request.files["file"]
-		filename = gcodeManager.addFile(file)
-		if filename is None:
-			return jsonify(success=False, message="failure loading gcode")
-		else:
-			logger = logging.getLogger(__name__)
-			logger.info("loaded " + filename)
-			# Immediately perform a loadGcode and possibly print too
-			printAfterLoading = False
-			if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
-				printAfterLoading = True
-			filepath = gcodeManager.getAbsolutePath(filename)
-			if filepath is not None:
-				printer.loadGcode(filepath, printAfterLoading)
-	else:
-		return jsonify(success=False, message="gcode file not present")
+	if not "file" in request.files.keys():
+		abort(400)
 
+	# Perform an upload
+	file = request.files["file"]
+	filename = gcodeManager.addFile(file)
+	if filename is None:
+		logger.warn("Upload via API failed")
+		abort(500)
+
+	# Immediately perform a file select and possibly print too
+	printAfterSelect = False
+	if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
+		printAfterSelect = True
+	filepath = gcodeManager.getAbsolutePath(filename)
+	if filepath is not None:
+		printer.selectFile(filepath, False, printAfterSelect)
 	return jsonify(SUCCESS)
 
 #~~ timelapse handling
