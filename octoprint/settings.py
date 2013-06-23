@@ -35,7 +35,9 @@ default_settings = {
 		"snapshot": None,
 		"ffmpeg": None,
 		"bitrate": "5000k",
-		"watermark": True
+		"watermark": True,
+		"flipH": False,
+		"flipV": False
 	},
 	"feature": {
 		"gCodeVisualizer": True,

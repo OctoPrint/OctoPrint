@@ -141,14 +141,37 @@ class Timelapse(object):
 			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y', '-b:v', bitrate,
 			'-f', 'vob']
 
+		filters = []
+
+		# flip video if configured
+		if settings().getBoolean(["webcam", "flipX"]):
+			filters.append('hflip')
+		if settings().getBoolean(["webcam", "flipY"]):
+			filters.append('vflip')
+
 		# add watermark if configured
+		watermarkFilter = None
 		if settings().getBoolean(["webcam", "watermark"]):
 			watermark = os.path.join(os.path.dirname(__file__), "static", "img", "watermark.png")
 			if sys.platform == "win32":
 				# Because ffmpeg hiccups on windows' drive letters and backslashes we have to give the watermark
 				# path a special treatment. Yeah, I couldn't believe it either...
 				watermark = watermark.replace("\\", "/").replace(":", "\\\\:")
-			command.extend(['-vf', 'movie=%s [wm]; [in][wm] overlay=10:main_h-overlay_h-10 [out]' % watermark])
+
+			watermarkFilter = "movie=%s [wm]; [%%(inputName)s][wm] overlay=10:main_h-overlay_h-10" % watermark
+
+		filterstring = None
+		if len(filters) > 0:
+			if watermarkFilter is not None:
+				filterstring = "[in] %s [postprocessed]; %s [out]" % (",".join(filters), watermarkFilter % {"inputName": "postprocessed"})
+			else:
+				filterstring = "[in] %s [out]" % ",".join(filters)
+		elif watermarkFilter is not None:
+			filterstring = watermarkFilter % {"inputName": "in"} + " [out]"
+
+		if filterstring is not None:
+			self._logger.debug("Applying videofilter chain: %s" % filterstring)
+			command.extend(["-vf", filterstring])
 
 		# finalize command with output file
 		self._logger.debug("Rendering movie to %s" % output)

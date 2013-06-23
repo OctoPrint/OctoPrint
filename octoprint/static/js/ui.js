@@ -509,10 +509,11 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     }
 }
 
-function ControlViewModel(loginStateViewModel) {
+function ControlViewModel(loginStateViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.settings = settingsViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -1325,6 +1326,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.webcam_ffmpegPath = ko.observable(undefined);
     self.webcam_bitrate = ko.observable(undefined);
     self.webcam_watermark = ko.observable(undefined);
+    self.webcam_flipH = ko.observable(undefined);
+    self.webcam_flipV = ko.observable(undefined);
 
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
@@ -1372,6 +1375,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.webcam_ffmpegPath(response.webcam.ffmpegPath);
         self.webcam_bitrate(response.webcam.bitrate);
         self.webcam_watermark(response.webcam.watermark);
+        self.webcam_flipH(response.webcam.flipH);
+        self.webcam_flipV(response.webcam.flipV);
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_waitForStart(response.feature.waitForStart);
@@ -1406,14 +1411,15 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "snapshotUrl": self.webcam_snapshotUrl(),
                 "ffmpegPath": self.webcam_ffmpegPath(),
                 "bitrate": self.webcam_bitrate(),
-                "watermark": self.webcam_watermark()
+                "watermark": self.webcam_watermark(),
+                "flipH": self.webcam_flipH(),
+                "flipV": self.webcam_flipV()
             },
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "resetLineNumbersWithPrefixedN": self.feature_resetLineNumbersWithPrefixedN(),
-                "waitForStart": self.feature_waitForStart(),
                 "sdSupport": self.feature_sdSupport()
             },
             "folder": {
@@ -1833,7 +1839,7 @@ $(function() {
         var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
-        var controlViewModel = new ControlViewModel(loginStateViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(loginStateViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
