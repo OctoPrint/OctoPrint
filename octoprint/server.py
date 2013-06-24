@@ -470,7 +470,7 @@ def getSettings():
 
 	return jsonify({
 		"api": {
-			"allow": s.getBoolean(["api", "allow"]),
+			"enabled": s.getBoolean(["api", "enabled"]),
 			"key": s.get(["api", "key"])
 		},
 		"appearance": {
@@ -523,7 +523,7 @@ def setSettings():
 		s = settings()
 
 		if "api" in data.keys():
-			if "allow" in data["api"].keys(): s.set(["api", "allow"], data["api"]["allow"])
+			if "enabled" in data["api"].keys(): s.set(["api", "enabled"], data["api"]["enabled"])
 			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
 
 		if "appearance" in data.keys():
