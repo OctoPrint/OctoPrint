@@ -778,7 +778,7 @@ class MachineCom(object):
 
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
-			if self._resendDelta >= len(self._lastLines):
+			if self._resendDelta > len(self._lastLines):
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(self._errorValue)
 				if self.isPrinting():
@@ -838,13 +838,13 @@ class MachineCom(object):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
-			cmd = self._lastLines[-(self._resendDelta+1)]
+			cmd = self._lastLines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 
 			self._doSendWithChecksum(cmd, lineNumber)
 
 			self._resendDelta -= 1
-			if self._resendDelta < 0:
+			if self._resendDelta <= 0:
 				self._resendDelta = None
 
 	def _sendCommand(self, cmd, sendChecksum=False):
