@@ -215,7 +215,7 @@ class Printer():
 		# mark print as failure
 		if self._selectedFile is not None:
 			self._gcodeManager.printFailed(self._selectedFile["filename"])
-			eventManager().fire("PrintFailed", self._filename)
+			eventManager().fire("PrintFailed", self._selectedFile["filename"])
 
 	#~~ state monitoring
 

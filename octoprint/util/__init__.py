@@ -43,4 +43,4 @@ def getClass(name):
 	return m
 
 def matchesGcode(line, gcode):
-	return re.search("^\s*%s\D" % gcode, line, re.I)
+	return re.search("^%s(\D|$)" % gcode.strip(), line, re.I)

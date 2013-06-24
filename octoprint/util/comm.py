@@ -106,6 +106,12 @@ class VirtualPrinter():
 		if self.readList is None:
 			return
 
+		# strip checksum
+		data = data.strip()
+		if "*" in data:
+			data = data[:data.rfind("*")]
+		data += "\n"
+
 		# shortcut for writing to SD
 		if self._writingToSd and not self._selectedSdFile is None and not "M29" in data:
 			with open(self._selectedSdFile, "a") as f:
@@ -395,7 +401,7 @@ class MachineCom(object):
 		self._heatupWaitTimeLost = 0.0
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-		self._currentLine = 1
+		self._currentLine = 0
 		self._resendDelta = None
 		self._lastLines = []
 
@@ -838,7 +844,7 @@ class MachineCom(object):
 
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
-			if self._resendDelta >= len(self._lastLines):
+			if self._resendDelta > len(self._lastLines):
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(self._errorValue)
 				if self.isPrinting():
@@ -904,13 +910,13 @@ class MachineCom(object):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
-			cmd = self._lastLines[-(self._resendDelta + 1)]
+			cmd = self._lastLines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 
 			self._doSendWithChecksum(cmd, lineNumber)
 
 			self._resendDelta -= 1
-			if self._resendDelta < 0:
+			if self._resendDelta <= 0:
 				self._resendDelta = None
 
 	def _sendCommand(self, cmd, sendChecksum=False):
@@ -919,48 +925,49 @@ class MachineCom(object):
 			if self._serial is None:
 				return
 
-			for gcode in gcodeToEvent.keys():
-				if matchesGcode(cmd, gcode):
-					eventManager().fire(gcodeToEvent[gcode])
+			if not self.isStreaming():
+				for gcode in gcodeToEvent.keys():
+					if matchesGcode(cmd, gcode):
+						eventManager().fire(gcodeToEvent[gcode])
 
-			if matchesGcode(cmd, "M109") or matchesGcode(cmd, "M190"):
-				self._heatupWaitStartTime = time.time()
-			if matchesGcode(cmd, "M104") or matchesGcode(cmd, "M109"):
-				try:
-					self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-				except:
-					pass
-			if matchesGcode(cmd, "M140") or matchesGcode(cmd, "M190"):
-				try:
-					self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-				except:
-					pass
-
-			if matchesGcode(cmd, "M110"):
-				newLineNumber = None
-				if " N" in cmd:
+				if matchesGcode(cmd, "M109") or matchesGcode(cmd, "M190"):
+					self._heatupWaitStartTime = time.time()
+				if matchesGcode(cmd, "M104") or matchesGcode(cmd, "M109"):
 					try:
-						newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+						self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 					except:
 						pass
-				else:
-					newLineNumber = 0
+				if matchesGcode(cmd, "M140") or matchesGcode(cmd, "M190"):
+					try:
+						self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+					except:
+						pass
 
-				if settings().getBoolean(["feature", "resetLineNumbersWithPrefixedN"]) and newLineNumber is not None:
-					# let's rewrite the M110 command to fit repetier syntax
-					self._addToLastLines(cmd)
-					self._doSendWithChecksum("M110", newLineNumber)
-				else:
-					self._doSend(cmd, sendChecksum)
+				if matchesGcode(cmd, "M110"):
+					newLineNumber = None
+					if " N" in cmd:
+						try:
+							newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+						except:
+							pass
+					else:
+						newLineNumber = 0
 
-				if newLineNumber is not None:
-					self._currentLine = newLineNumber + 1
+					if settings().getBoolean(["feature", "resetLineNumbersWithPrefixedN"]) and newLineNumber is not None:
+						# let's rewrite the M110 command to fit repetier syntax
+						self._addToLastLines(cmd)
+						self._doSendWithChecksum("M110", newLineNumber)
+					else:
+						self._doSend(cmd, sendChecksum)
 
-				# after a reset of the line number we have no way to determine what line exactly the printer now wants
-				self._lastLines = []
-				self._resendDelta = None
-			else:
-				self._doSend(cmd, sendChecksum)
+					if newLineNumber is not None:
+						self._currentLine = newLineNumber + 1
+
+					# after a reset of the line number we have no way to determine what line exactly the printer now wants
+					self._lastLines = []
+					self._resendDelta = None
+					return
+			self._doSend(cmd, sendChecksum)
 
 	def _addToLastLines(self, cmd):
 		self._lastLines.append(cmd)
@@ -970,10 +977,7 @@ class MachineCom(object):
 
 	def _doSend(self, cmd, sendChecksum=False):
 		if sendChecksum or self._alwaysSendChecksum:
-			if self._alwaysSendChecksum:
-				lineNumber = self._currentLine
-			else:
-				lineNumber = self._currentFile.getLineCount()
+			lineNumber = self._currentLine
 			self._addToLastLines(cmd)
 			self._currentLine += 1
 			self._doSendWithChecksum(cmd, lineNumber)
@@ -1010,10 +1014,11 @@ class MachineCom(object):
 			if line is None:
 				if self.isStreaming():
 					self._sendCommand("M29")
+					filename = self._currentFile.getFilename()
 					self._currentFile = None
 					self._callback.mcFileTransferDone()
 					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire("TransferDone", self._currentFile.getFilename())
+					eventManager().fire("TransferDone", filename)
 				else:
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
@@ -1249,7 +1254,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 	def __init__(self, filename):
 		PrintingFileInformation.__init__(self, filename)
 		self._filehandle = None
-		self._lineCount = 0
+		self._lineCount = None
 		self._firstLine = None
 		self._prevLineType = None
 
@@ -1262,7 +1267,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		Opens the file for reading and determines the file size. Start time won't be recorded until 100 lines in
 		"""
 		self._filehandle = open(self._filename, "r")
-		self._lineCount = 0
+		self._lineCount = None
 		self._prevLineType = "CUSTOM"
 
 	def getNext(self):
@@ -1272,8 +1277,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		if self._filehandle is None:
 			raise ValueError("File %s is not open for reading" % self._filename)
 
-		if self._lineCount == 0:
-			self._lineCount += 1
+		if self._lineCount is None:
+			self._lineCount = 0
 			return "M110 N0"
 
 		try:
@@ -1299,9 +1304,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 				self._filehandle.close()
 				self._filehandle = None
 			raise e
-
-	def getLineCount(self):
-		return self._lineCount
 
 	def _processLine(self, line):
 		lineType = self._prevLineType
