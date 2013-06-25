@@ -826,7 +826,7 @@ class MachineCom(object):
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
 
-				errorMsg = "Please see octoprint.log for details"
+				errorMsg = "See octoprint.log for details"
 				self._log(errorMsg)
 				self._errorValue = errorMsg
 				self._changeState(self.STATE_ERROR)
