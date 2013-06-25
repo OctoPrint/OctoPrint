@@ -703,7 +703,7 @@ def login():
 		username = request.values["user"]
 		password = request.values["pass"]
 
-		if "remember" in request.values.keys() and request.values["remember"]:
+		if "remember" in request.values.keys() and request.values["remember"] == "true":
 			remember = True
 		else:
 			remember = False
