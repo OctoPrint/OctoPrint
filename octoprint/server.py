@@ -720,6 +720,7 @@ def login():
 	elif "passive" in request.values.keys():
 		user = current_user
 		if user is not None and not user.is_anonymous():
+			identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 			return jsonify(user.asDict())
 	return jsonify(SUCCESS)
 
