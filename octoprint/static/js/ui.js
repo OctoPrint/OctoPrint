@@ -1335,7 +1335,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
     self.feature_alwaysSendChecksum = ko.observable(undefined);
-    self.feature_resetLineNumbersWithPrefixedN = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
@@ -1387,7 +1386,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_waitForStart(response.feature.waitForStart);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
-        self.feature_resetLineNumbersWithPrefixedN(response.feature.resetLineNumbersWithPrefixedN);
         self.feature_sdSupport(response.feature.sdSupport);
 
         self.folder_uploads(response.folder.uploads);
@@ -1429,7 +1427,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "gcodeViewer": self.feature_gcodeViewer(),
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
-                "resetLineNumbersWithPrefixedN": self.feature_resetLineNumbersWithPrefixedN(),
                 "sdSupport": self.feature_sdSupport()
             },
             "folder": {

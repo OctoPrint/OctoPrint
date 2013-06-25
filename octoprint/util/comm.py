@@ -110,6 +110,7 @@ class VirtualPrinter():
 		data = data.strip()
 		if "*" in data:
 			data = data[:data.rfind("*")]
+			self.currentLine += 1
 		data += "\n"
 
 		# shortcut for writing to SD
@@ -172,7 +173,8 @@ class VirtualPrinter():
 				self._deleteSdFile(filename)
 		elif "M110" in data:
 			# reset current line
-			self.currentLine = int(re.search('N([0-9]+)', data).group(1))
+			self.currentLine = int(re.search('^N([0-9]+)', data).group(1))
+			self.readList.append("reset line to %r\n" % self.currentLine)
 			self.readList.append("ok\n")
 		elif "M114" in data:
 			# send dummy position report
@@ -186,9 +188,6 @@ class VirtualPrinter():
 			self.readList.append("rs %d\n" % (self.currentLine - 5))
 		elif len(data.strip()) > 0:
 			self.readList.append("ok\n")
-
-		if "*" in data:
-			self.currentLine += 1
 
 	def _listSd(self):
 		self.readList.append("Begin file list")
@@ -953,15 +952,9 @@ class MachineCom(object):
 					else:
 						newLineNumber = 0
 
-					if settings().getBoolean(["feature", "resetLineNumbersWithPrefixedN"]) and newLineNumber is not None:
-						# let's rewrite the M110 command to fit repetier syntax
-						self._addToLastLines(cmd)
-						self._doSendWithChecksum("M110", newLineNumber)
-					else:
-						self._doSend(cmd, sendChecksum)
-
-					if newLineNumber is not None:
-						self._currentLine = newLineNumber + 1
+					# send M110 command with new line number
+					self._doSendWithChecksum(cmd, newLineNumber)
+					self._currentLine = newLineNumber + 1
 
 					# after a reset of the line number we have no way to determine what line exactly the printer now wants
 					self._lastLines = []

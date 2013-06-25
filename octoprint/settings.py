@@ -43,9 +43,7 @@ default_settings = {
 	"feature": {
 		"gCodeVisualizer": True,
 		"waitForStartOnConnect": False,
-		"waitForWaitOnConnect": False,
 		"alwaysSendChecksum": False,
-		"resetLineNumbersWithPrefixedN": False,
 		"sdSupport": True
 	},
 	"folder": {
