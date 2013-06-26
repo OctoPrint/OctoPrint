@@ -25,7 +25,8 @@ def settings(init=False, configfile=None, basedir=None):
 default_settings = {
 	"serial": {
 		"port": None,
-		"baudrate": None
+		"baudrate": None,
+		"autoconnect": False
 	},
 	"server": {
 		"host": "0.0.0.0",

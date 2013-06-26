@@ -824,6 +824,8 @@ class Server():
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire("Startup")
+		if settings().getBoolean(["serial", "autoconnect"]):
+			printer.connect(settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"]))
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):
