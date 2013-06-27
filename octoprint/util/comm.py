@@ -843,7 +843,7 @@ class MachineCom(object):
 
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
-			if self._resendDelta > len(self._lastLines):
+			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0:
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(self._errorValue)
 				if self.isPrinting():
