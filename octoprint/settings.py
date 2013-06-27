@@ -239,6 +239,7 @@ class Settings(object):
 	def setInt(self, path, value, force=False):
 		if value is None:
 			self.set(path, None, force)
+			return
 
 		try:
 			intValue = int(value)
