@@ -16,8 +16,6 @@ import serial
 from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
-from octoprint.util import matchesGcode
-
 from octoprint.settings import settings
 from octoprint.events import eventManager
 
@@ -551,6 +549,10 @@ class MachineCom(object):
 		return ret
 	
 	def _monitor(self):
+		import cProfile
+		cProfile.runctx('self._actMonitor()',globals(),locals(),'/tmp/profile.log')
+
+	def _actMonitor(self):
 		feedbackControls = settings().getFeedbackControls()
 
 		#Open the serial port.
@@ -925,24 +927,36 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
+				gfunc = re.search('([GM][0-9]+)', cmd)
+				if gfunc:
+					gfunc = gfunc.group(1)
 				for gcode in gcodeToEvent.keys():
-					if matchesGcode(cmd, gcode):
+					if gcode == gfunc:
 						eventManager().fire(gcodeToEvent[gcode])
 
-				if matchesGcode(cmd, "M109") or matchesGcode(cmd, "M190"):
+				if (gfunc == "G0" or gfunc == "G1") and 'Z' in cmd:
+					z = float(re.search('Z([0-9\.]*)', cmd).group(1))
+					if self._currentZ != z:
+						self._currentZ = z
+						self._callback.mcZChange(z)
+				elif gfunc == "M0" or gfunc == "M1":
+					self.setPause(True)
+					cmd = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+
+				elif gfunc == "M109" or gfunc == "M190":
 					self._heatupWaitStartTime = time.time()
-				if matchesGcode(cmd, "M104") or matchesGcode(cmd, "M109"):
+				elif gfunc == "M104" or gfunc == "M109":
 					try:
 						self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 					except:
 						pass
-				if matchesGcode(cmd, "M140") or matchesGcode(cmd, "M190"):
+				elif gfunc == "M140" or gfunc == "M190":
 					try:
 						self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 					except:
 						pass
 
-				if matchesGcode(cmd, "M110"):
+				elif gfunc == "M110":
 					newLineNumber = None
 					if " N" in cmd:
 						try:
@@ -1022,18 +1036,6 @@ class MachineCom(object):
 				self._printSection = line[1]
 				line = line[0]
 
-			if not self.isStreaming():
-				try:
-					if matchesGcode(line, "M0") or matchesGcode(line, "M1"):
-						self.setPause(True)
-						line = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-					if (matchesGcode(line, "G0") or matchesGcode(line, "G1")) and 'Z' in line:
-						z = float(re.search('Z([0-9\.]*)', line).group(1))
-						if self._currentZ != z:
-							self._currentZ = z
-							self._callback.mcZChange(z)
-				except:
-					self._log("Unexpected error: %s" % (getExceptionString()))
 			self._sendCommand(line, True)
 			self._callback.mcProgress()
 	
