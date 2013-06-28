@@ -16,8 +16,6 @@ import serial
 from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
-from octoprint.util import matchesGcode
-
 from octoprint.settings import settings
 from octoprint.events import eventManager
 
@@ -368,6 +366,8 @@ class MachineCom(object):
 	STATE_TRANSFERING_FILE = 11
 	
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
+		from collections import deque
+
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
 
@@ -394,7 +394,6 @@ class MachineCom(object):
 		self._targetTemp = 0
 		self._bedTargetTemp = 0
 		self._commandQueue = queue.Queue()
-		self._logQueue = queue.Queue(256)
 		self._currentZ = None
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
@@ -402,7 +401,7 @@ class MachineCom(object):
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 0
 		self._resendDelta = None
-		self._lastLines = []
+		self._lastLines = deque([], 50)
 
 		self._sendNextLock = threading.Lock()
 		self._sendingLock = threading.Lock()
@@ -418,6 +417,7 @@ class MachineCom(object):
 
 		# print job
 		self._currentFile = None
+
 
 	def _changeState(self, newState):
 		if self._state == newState:
@@ -541,14 +541,6 @@ class MachineCom(object):
 	
 	def getBedTemp(self):
 		return self._bedTemp
-	
-	def getLog(self):
-		ret = []
-		while not self._logQueue.empty():
-			ret.append(self._logQueue.get())
-		for line in ret:
-			self._logQueue.put(line, False)
-		return ret
 	
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
@@ -859,15 +851,6 @@ class MachineCom(object):
 	def _log(self, message):
 		self._callback.mcLog(message)
 		self._serialLogger.debug(message)
-		try:
-			self._logQueue.put(message, False)
-		except:
-			#If the log queue is full, remove the first message and append the new message again
-			self._logQueue.get()
-			try:
-				self._logQueue.put(message, False)
-			except:
-				pass
 
 	def _readline(self):
 		if self._serial == None:
@@ -925,47 +908,69 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				for gcode in gcodeToEvent.keys():
-					if matchesGcode(cmd, gcode):
-						eventManager().fire(gcodeToEvent[gcode])
+				gcode = re.search('([GM][0-9]+)', cmd)
+				if gcode:
+					gcode = gcode.group(1)
 
-				if matchesGcode(cmd, "M109") or matchesGcode(cmd, "M190"):
-					self._heatupWaitStartTime = time.time()
-				if matchesGcode(cmd, "M104") or matchesGcode(cmd, "M109"):
-					try:
-						self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-					except:
-						pass
-				if matchesGcode(cmd, "M140") or matchesGcode(cmd, "M190"):
-					try:
-						self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-					except:
-						pass
+				if gcode in gcodeToEvent:
+					eventManager().fire(gcodeToEvent[gcode])
+				try:
+					cmd = getattr(self, '_gcode_' + gcode)(cmd) or cmd
+				except:
+					pass
 
-				if matchesGcode(cmd, "M110"):
-					newLineNumber = None
-					if " N" in cmd:
-						try:
-							newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
-						except:
-							pass
-					else:
-						newLineNumber = 0
 
-					# send M110 command with new line number
-					self._doSendWithChecksum(cmd, newLineNumber)
-					self._currentLine = newLineNumber + 1
+			if cmd != "":
+				self._doSend(cmd, sendChecksum)
 
-					# after a reset of the line number we have no way to determine what line exactly the printer now wants
-					self._lastLines = []
-					self._resendDelta = None
-					return
-			self._doSend(cmd, sendChecksum)
+	def _gcode_G0(self, cmd):
+		if 'Z' in cmd:
+			z = float(re.search('Z([0-9\.]*)', cmd).group(1))
+			if self._currentZ != z:
+				self._currentZ = z
+				self._callback.mcZChange(z)
+	_gcode_G1 = _gcode_G0
+
+	def _gcode_M0(self, cmd):
+		self.setPause(True)
+		return "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+	_gcode_M0M1 = _gcode_M0
+
+	def _gcode_M104(self, cmd):
+		self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+
+	def _gcode_M140(self, cmd):
+		self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+
+	def _gcode_M109(self, cmd):
+		self._heatupWaitStartTime = time.time()
+		self._gcode_M104(cmd)
+
+	def _gcode_M190(self, cmd):
+		self._heatupWaitStartTime = time.time()
+		self._gcode_M140(cmd)
+
+	def _gcode_M110(self, cmd):
+		newLineNumber = None
+		if " N" in cmd:
+			try:
+				newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+			except:
+				pass
+		else:
+			newLineNumber = 0
+
+		# send M110 command with new line number
+		self._doSendWithChecksum(cmd, newLineNumber)
+		self._currentLine = newLineNumber + 1
+
+		# after a reset of the line number we have no way to determine what line exactly the printer now wants
+		self._lastLines.clear()
+		self._resendDelta = None
+		return ""
 
 	def _addToLastLines(self, cmd):
 		self._lastLines.append(cmd)
-		if len(self._lastLines) > 50:
-			self._lastLines = self._lastLines[-50:] # only keep the last 50 lines in memory
 		self._logger.debug("Got %d lines of history in memory" % len(self._lastLines))
 
 	def _doSend(self, cmd, sendChecksum=False):
@@ -980,8 +985,9 @@ class MachineCom(object):
 	def _doSendWithChecksum(self, cmd, lineNumber):
 		self._logger.debug("Sending cmd '%s' with lineNumber %r" % (cmd, lineNumber))
 
-		checksum = reduce(lambda x,y:x^y, map(ord, "N%d %s" % (lineNumber, cmd)))
-		commandToSend = "N%d %s*%d" % (lineNumber, cmd, checksum)
+		commandToSend = "N%d %s" % (lineNumber, cmd)
+		checksum = reduce(lambda x,y:x^y, map(ord, commandToSend))
+		commandToSend = "%s*%d" % (commandToSend, checksum)
 		self._doSendWithoutChecksum(commandToSend)
 
 	def _doSendWithoutChecksum(self, cmd):
@@ -1022,18 +1028,6 @@ class MachineCom(object):
 				self._printSection = line[1]
 				line = line[0]
 
-			if not self.isStreaming():
-				try:
-					if matchesGcode(line, "M0") or matchesGcode(line, "M1"):
-						self.setPause(True)
-						line = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-					if (matchesGcode(line, "G0") or matchesGcode(line, "G1")) and 'Z' in line:
-						z = float(re.search('Z([0-9\.]*)', line).group(1))
-						if self._currentZ != z:
-							self._currentZ = z
-							self._callback.mcZChange(z)
-				except:
-					self._log("Unexpected error: %s" % (getExceptionString()))
 			self._sendCommand(line, True)
 			self._callback.mcProgress()
 	
