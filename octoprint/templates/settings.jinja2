@@ -12,11 +12,29 @@
                 <li><a href="#settings_folder" data-toggle="tab">Folder</a></li>
                 <li><a href="#settings_temperature" data-toggle="tab">Temperature</a></li>
                 <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
+	            <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
                 {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Users</a></li>{% endif %}
             </ul>
 
-            <div class="tab-content span8">
-                <div class="tab-pane active" id="settings_printerParameters">
+        <div class="tab-content span8">
+				<div class="tab-pane active" id="settings_cura">
+					<form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-curaPath">CuraEngine Path</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level">
+                            </div>
+                        </div>
+                         <div class="control-group">
+                            <label class="control-label" for="settings-curaPath">Cura Config</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level">
+                            </div>
+                        </div>
+ 					</form>
+				</div>
+ 
+            <div class="tab-pane active" id="settings_printerParameters">
                     <form class="form-horizontal">
                         <div class="control-group">
                             <label class="control-label" for="settings-movementSpeedX">Movement Speed X Axis</label>

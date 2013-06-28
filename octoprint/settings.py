@@ -79,7 +79,12 @@ default_settings = {
 		"enabled": False,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None
-	}
+	},
+        "curaEngine": {
+                "enabled": False,
+                "cura_path": "",
+                "cura_config": ""
+                }
 }
 
 valid_boolean_trues = ["true", "yes", "y", "1"]
