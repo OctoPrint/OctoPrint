@@ -418,6 +418,7 @@ class MachineCom(object):
 		# print job
 		self._currentFile = None
 
+
 	def _changeState(self, newState):
 		if self._state == newState:
 			return
@@ -917,48 +918,60 @@ class MachineCom(object):
 
 				if gcode in gcodeToEvent:
 					eventManager().fire(gcodeToEvent[gcode])
+				try:
+					cmd = getattr(self, '_gcode_' + gcode)(cmd) or cmd
+				except:
+					pass
 
-				if (gcode == "G0" or gcode == "G1") and 'Z' in cmd:
-					z = float(re.search('Z([0-9\.]*)', cmd).group(1))
-					if self._currentZ != z:
-						self._currentZ = z
-						self._callback.mcZChange(z)
-				elif gcode == "M0" or gcode == "M1":
-					self.setPause(True)
-					cmd = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 
-				elif gcode == "M109" or gcode == "M190":
-					self._heatupWaitStartTime = time.time()
-				elif gcode == "M104" or gcode == "M109":
-					try:
-						self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-					except:
-						pass
-				elif gcode == "M140" or gcode == "M190":
-					try:
-						self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
-					except:
-						pass
+			if cmd != "":
+				self._doSend(cmd, sendChecksum)
 
-				elif gcode == "M110":
-					newLineNumber = None
-					if " N" in cmd:
-						try:
-							newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
-						except:
-							pass
-					else:
-						newLineNumber = 0
+	def _gcode_G0(self, cmd):
+		if 'Z' in cmd:
+			z = float(re.search('Z([0-9\.]*)', cmd).group(1))
+			if self._currentZ != z:
+				self._currentZ = z
+				self._callback.mcZChange(z)
+	_gcode_G1 = _gcode_G0
 
-					# send M110 command with new line number
-					self._doSendWithChecksum(cmd, newLineNumber)
-					self._currentLine = newLineNumber + 1
+	def _gcode_M0(self, cmd):
+		self.setPause(True)
+		return "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+	_gcode_M0M1 = _gcode_M0
 
-					# after a reset of the line number we have no way to determine what line exactly the printer now wants
-					self._lastLines.clear()
-					self._resendDelta = None
-					return
-			self._doSend(cmd, sendChecksum)
+	def _gcode_M104(self, cmd):
+		self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+
+	def _gcode_M140(self, cmd):
+		self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+
+	def _gcode_M109(self, cmd):
+		self._heatupWaitStartTime = time.time()
+		self._gcode_M104(cmd)
+
+	def _gcode_M190(self, cmd):
+		self._heatupWaitStartTime = time.time()
+		self._gcode_M140(cmd)
+
+	def _gcode_M110(self, cmd):
+		newLineNumber = None
+		if " N" in cmd:
+			try:
+				newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+			except:
+				pass
+		else:
+			newLineNumber = 0
+
+		# send M110 command with new line number
+		self._doSendWithChecksum(cmd, newLineNumber)
+		self._currentLine = newLineNumber + 1
+
+		# after a reset of the line number we have no way to determine what line exactly the printer now wants
+		self._lastLines.clear()
+		self._resendDelta = None
+		return ""
 
 	def _addToLastLines(self, cmd):
 		self._lastLines.append(cmd)
