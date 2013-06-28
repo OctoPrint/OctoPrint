@@ -914,9 +914,9 @@ class MachineCom(object):
 				gfunc = re.search('([GM][0-9]+)', cmd)
 				if gfunc:
 					gfunc = gfunc.group(1)
-				for gcode in gcodeToEvent.keys():
-					if gcode == gfunc:
-						eventManager().fire(gcodeToEvent[gcode])
+
+				if gfunc in gcodeToEvent:
+					eventManager().fire(gcodeToEvent[gfunc])
 
 				if (gfunc == "G0" or gfunc == "G1") and 'Z' in cmd:
 					z = float(re.search('Z([0-9\.]*)', cmd).group(1))
