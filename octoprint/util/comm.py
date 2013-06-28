@@ -366,6 +366,8 @@ class MachineCom(object):
 	STATE_TRANSFERING_FILE = 11
 	
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
+		from collections import deque
+
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
 
@@ -400,7 +402,7 @@ class MachineCom(object):
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 0
 		self._resendDelta = None
-		self._lastLines = []
+		self._lastLines = deque([], 50)
 
 		self._sendNextLock = threading.Lock()
 		self._sendingLock = threading.Lock()
@@ -971,15 +973,13 @@ class MachineCom(object):
 					self._currentLine = newLineNumber + 1
 
 					# after a reset of the line number we have no way to determine what line exactly the printer now wants
-					self._lastLines = []
+					self._lastLines.clear()
 					self._resendDelta = None
 					return
 			self._doSend(cmd, sendChecksum)
 
 	def _addToLastLines(self, cmd):
 		self._lastLines.append(cmd)
-		if len(self._lastLines) > 50:
-			self._lastLines = self._lastLines[-50:] # only keep the last 50 lines in memory
 		self._logger.debug("Got %d lines of history in memory" % len(self._lastLines))
 
 	def _doSend(self, cmd, sendChecksum=False):
