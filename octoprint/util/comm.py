@@ -394,7 +394,6 @@ class MachineCom(object):
 		self._targetTemp = 0
 		self._bedTargetTemp = 0
 		self._commandQueue = queue.Queue()
-		self._logQueue = queue.Queue(256)
 		self._currentZ = None
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
@@ -541,14 +540,6 @@ class MachineCom(object):
 	
 	def getBedTemp(self):
 		return self._bedTemp
-	
-	def getLog(self):
-		ret = []
-		while not self._logQueue.empty():
-			ret.append(self._logQueue.get())
-		for line in ret:
-			self._logQueue.put(line, False)
-		return ret
 	
 	def _monitor(self):
 		import cProfile
@@ -863,15 +854,6 @@ class MachineCom(object):
 	def _log(self, message):
 		self._callback.mcLog(message)
 		self._serialLogger.debug(message)
-		try:
-			self._logQueue.put(message, False)
-		except:
-			#If the log queue is full, remove the first message and append the new message again
-			self._logQueue.get()
-			try:
-				self._logQueue.put(message, False)
-			except:
-				pass
 
 	def _readline(self):
 		if self._serial == None:
