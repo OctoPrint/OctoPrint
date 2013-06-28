@@ -543,10 +543,6 @@ class MachineCom(object):
 		return self._bedTemp
 	
 	def _monitor(self):
-		import cProfile
-		cProfile.runctx('self._actMonitor()',globals(),locals(),'/tmp/profile.log')
-
-	def _actMonitor(self):
 		feedbackControls = settings().getFeedbackControls()
 
 		#Open the serial port.
