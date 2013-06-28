@@ -911,36 +911,36 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				gfunc = re.search('([GM][0-9]+)', cmd)
-				if gfunc:
-					gfunc = gfunc.group(1)
+				gcode = re.search('([GM][0-9]+)', cmd)
+				if gcode:
+					gcode = gcode.group(1)
 
-				if gfunc in gcodeToEvent:
-					eventManager().fire(gcodeToEvent[gfunc])
+				if gcode in gcodeToEvent:
+					eventManager().fire(gcodeToEvent[gcode])
 
-				if (gfunc == "G0" or gfunc == "G1") and 'Z' in cmd:
+				if (gcode == "G0" or gcode == "G1") and 'Z' in cmd:
 					z = float(re.search('Z([0-9\.]*)', cmd).group(1))
 					if self._currentZ != z:
 						self._currentZ = z
 						self._callback.mcZChange(z)
-				elif gfunc == "M0" or gfunc == "M1":
+				elif gcode == "M0" or gcode == "M1":
 					self.setPause(True)
 					cmd = "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 
-				elif gfunc == "M109" or gfunc == "M190":
+				elif gcode == "M109" or gcode == "M190":
 					self._heatupWaitStartTime = time.time()
-				elif gfunc == "M104" or gfunc == "M109":
+				elif gcode == "M104" or gcode == "M109":
 					try:
 						self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 					except:
 						pass
-				elif gfunc == "M140" or gfunc == "M190":
+				elif gcode == "M140" or gcode == "M190":
 					try:
 						self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
 					except:
 						pass
 
-				elif gfunc == "M110":
+				elif gcode == "M110":
 					newLineNumber = None
 					if " N" in cmd:
 						try:
