@@ -441,15 +441,22 @@ ul.dropdown-menu li a {
 
 /** Footer */
 .footer {
-  text-align: right;
+  ul {
+    margin: 0;
 
-  ul li {
-    display: inline;
-    margin-left: 1em;
-    font-size: 85%;
-    a {
-      color: #555;
+    li {
+      &:first-child {
+        margin-left: 0;
+      }
+
+      display: inline;
+      margin-left: 1em;
+      font-size: 85%;
+      a {
+        color: #555;
+      }
     }
+
   }
 }
 

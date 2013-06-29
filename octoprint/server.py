@@ -130,6 +130,7 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 @app.route("/")
 def index():
+	branch, commit = util.getGitInfo()
 	return render_template(
 		"index.jinja2",
 		ajaxBaseUrl=BASEURL,
@@ -138,7 +139,9 @@ def index():
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
-		enableSdSupport=settings().get(["feature", "sdSupport"])
+		enableSdSupport=settings().get(["feature", "sdSupport"]),
+		gitBranch=branch,
+		gitCommit=commit
 	)
 
 #~~ Printer control
