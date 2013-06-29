@@ -851,10 +851,13 @@ class MachineCom(object):
 
 	def _gcode_G0(self, cmd):
 		if 'Z' in cmd:
-			z = float(re.search('Z([0-9\.]*)', cmd).group(1))
-			if self._currentZ != z:
-				self._currentZ = z
-				self._callback.mcZChange(z)
+			try:
+				z = float(re.search('Z([0-9\.]*)', cmd).group(1))
+				if self._currentZ != z:
+					self._currentZ = z
+					self._callback.mcZChange(z)
+			except ValueError:
+				pass
 		return cmd
 	_gcode_G1 = _gcode_G0
 
