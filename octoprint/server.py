@@ -573,7 +573,7 @@ def setSettings():
 
 		if "serial" in data.keys():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
-			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial", "port"])
+			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial"]["port"])
 			if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
 
 		if "folder" in data.keys():
@@ -851,7 +851,10 @@ class Server():
 
 		eventManager.fire("Startup")
 		if settings().getBoolean(["serial", "autoconnect"]):
-			printer.connect(settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"]))
+			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
+			connectionOptions = getConnectionOptions()
+			if port in connectionOptions["ports"]:
+				printer.connect(port, baudrate)
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):

@@ -190,6 +190,8 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 data: data
             })
 
+            self.settings.serial_port(self.selectedPort())
+            self.settings.serial_baudrate(self.selectedBaudrate())
             self.settings.saveData();
         } else {
             self.requestData();
