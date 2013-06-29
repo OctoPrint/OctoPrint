@@ -89,10 +89,11 @@ function LoginStateViewModel() {
     }
 }
 
-function ConnectionViewModel(loginStateViewModel) {
+function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.settings = settingsViewModel;
 
     self.portOptions = ko.observableArray(undefined);
     self.baudrateOptions = ko.observableArray(undefined);
@@ -188,6 +189,8 @@ function ConnectionViewModel(loginStateViewModel) {
                 dataType: "json",
                 data: data
             })
+
+            self.settings.saveData();
         } else {
             self.requestData();
             $.ajax({
@@ -1337,6 +1340,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
 
+    self.serial_autoconnect = ko.observable(undefined);
+
     self.folder_uploads = ko.observable(undefined);
     self.folder_timelapse = ko.observable(undefined);
     self.folder_timelapseTmp = ko.observable(undefined);
@@ -1388,6 +1393,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
 
+        self.serial_autoconnect(response.serial.autoconnect);
+
         self.folder_uploads(response.folder.uploads);
         self.folder_timelapse(response.folder.timelapse);
         self.folder_timelapseTmp(response.folder.timelapseTmp);
@@ -1428,6 +1435,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport()
+            },
+            "serial": {
+                "autoconnect": self.serial_autoconnect()
             },
             "folder": {
                 "uploads": self.folder_uploads(),
@@ -1839,11 +1849,11 @@ function AppearanceViewModel(settingsViewModel) {
 $(function() {
 
         //~~ View models
-        var loginStateViewModel = new LoginStateViewModel(loginStateViewModel);
+        var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var connectionViewModel = new ConnectionViewModel(loginStateViewModel);
-        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel);
         var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
+        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);

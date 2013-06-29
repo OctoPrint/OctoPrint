@@ -97,6 +97,9 @@
                                 <label class="checkbox">
                                     <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"> Save connection settings
                                 </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"> Auto-connect on server startup
+                                </label>
                                 <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser">Connect</button>
                             </div>
                         </div>

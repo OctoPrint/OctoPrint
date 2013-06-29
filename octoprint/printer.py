@@ -24,7 +24,8 @@ def getConnectionOptions():
 		"ports": comm.serialList(),
 		"baudrates": comm.baudrateList(),
 		"portPreference": settings().get(["serial", "port"]),
-		"baudratePreference": settings().getInt(["serial", "baudrate"])
+		"baudratePreference": settings().getInt(["serial", "baudrate"]),
+		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
 	}
 
 class Printer():

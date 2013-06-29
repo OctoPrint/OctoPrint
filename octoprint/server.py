@@ -170,6 +170,9 @@ def connect():
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
 			settings().save()
+		if "autoconnect" in request.values.keys():
+			settings().setBoolean(["serial", "autoconnect"], True)
+			settings().save()
 		printer.connect(port=port, baudrate=baudrate)
 	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
 		printer.disconnect()
@@ -507,6 +510,9 @@ def getSettings():
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"])
 		},
+		"serial": {
+			"autoconnect": s.getBoolean(["serial", "autoconnect"])
+		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
 			"timelapse": s.getBaseFolder("timelapse"),
@@ -558,6 +564,9 @@ def setSettings():
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+
+		if "serial" in data.keys():
+			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
