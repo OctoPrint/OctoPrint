@@ -63,3 +63,22 @@ def getExceptionString():
 
 def matchesGcode(line, gcode):
 	return re.search("^%s(\D|$)" % gcode.strip(), line, re.I)
+
+def getGitInfo():
+	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
+	if not os.path.exists(gitPath):
+		return (None, None)
+
+	headref = None
+	with open(os.path.join(gitPath, "HEAD"), "r") as f:
+		headref = f.readline().strip()
+
+	if headref is None:
+		return (None, None)
+
+	headref = headref[len("ref: "):]
+	branch = headref[headref.rfind("/") + 1:]
+	with open(os.path.join(gitPath, headref)) as f:
+		head = f.readline().strip()
+
+	return (branch, head)

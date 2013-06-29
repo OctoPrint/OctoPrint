@@ -568,7 +568,12 @@
                 </div>
             </div>
             <div class="footer">
-                <ul>
+                {% if gitBranch and gitCommit %}
+                    <ul class="pull-left muted">
+                        <li><small>Branch: {{ gitBranch }}, Commit: {{ gitCommit }}</small></li>
+                    </ul>
+                {% endif %}
+                <ul class="pull-right">
                     <li><a href="http://octoprint.org"><i class="icon-home"></i> Homepage</a></li>
                     <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> Sourcecode</a></li>
                     <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> Documentation</a></li>
