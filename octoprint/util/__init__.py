@@ -61,9 +61,6 @@ def getExceptionString():
 	return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
 
 
-def matchesGcode(line, gcode):
-	return re.search("^%s(\D|$)" % gcode.strip(), line, re.I)
-
 def getGitInfo():
 	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
 	if not os.path.exists(gitPath):
