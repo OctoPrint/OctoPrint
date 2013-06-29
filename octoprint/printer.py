@@ -70,10 +70,6 @@ class Printer():
 		self._sdPrinting = False
 		self._sdStreaming = False
 
-		# TODO Still needed?
-		self._sdFile = None
-		self._sdStreamer = None
-
 		self._selectedFile = None
 
 		# comm
@@ -437,7 +433,7 @@ class Printer():
 	def mcReceivedRegisteredMessage(self, command, output):
 		self._sendFeedbackCommandOutput(command, output)
 
-#~~ sd file handling
+	#~~ sd file handling
 
 	def getSdFiles(self):
 		if self._comm is None:
@@ -452,9 +448,6 @@ class Printer():
 	def deleteSdFile(self, filename):
 		if not self._comm:
 			return
-
-		if self._sdFile == filename:
-			self._sdFile = None
 		self._comm.deleteSdFile(filename)
 
 	def initSdCard(self):
@@ -517,7 +510,7 @@ class Printer():
 		return self.isOperational() and not self._comm.isStreaming()
 
 	def isLoading(self):
-		return self._gcodeLoader is not None or self._sdStreamer is not None
+		return self._gcodeLoader is not None
 
 class GcodeLoader(threading.Thread):
 	"""

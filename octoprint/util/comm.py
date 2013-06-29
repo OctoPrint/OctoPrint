@@ -404,7 +404,9 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def deleteSdFile(self, filename):
-		if not self.isOperational() or (self.isBusy() and self._sdFile == filename.lower()):
+		if not self.isOperational() or (self.isBusy() and
+				isinstance(self._currentFile, PrintingSdFileInformation) and
+				self._currentFile.getFilename() == filename):
 			# do not delete a file from sd we are currently printing from
 			return
 
