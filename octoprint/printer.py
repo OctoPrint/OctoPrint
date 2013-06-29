@@ -59,7 +59,7 @@ class Printer():
 
 		self._currentZ = None
 
-		self.peakZ = -1
+		self._peakZ = -1
 		self._progress = None
 		self._printTime = None
 		self._printTimeLeft = None
@@ -184,6 +184,7 @@ class Printer():
 			return
 
 		self._setCurrentZ(None)
+		self._peakZ = -1
 		self._comm.startPrint()
 
 	def togglePausePrint(self):
@@ -386,8 +387,8 @@ class Printer():
 		oldZ = self._currentZ
 		# only do this if we hit a new Z peak level.  Some slicers do a Z-lift when retracting / moving without printing 
 		# and some do anti-backlash up-then-down movement when advancing layers
-		if newZ > self.peakZ:
-			self.peakZ = newZ
+		if newZ > self._peakZ:
+			self._peakZ = newZ
 			eventManager().fire("ZChange", newZ)
 			
 		self._setCurrentZ(newZ)
@@ -602,7 +603,6 @@ class StateMonitor(object):
 		self._gcodeData = None
 		self._sdUploadData = None
 		self._currentZ = None
-		self._peakZ = -1
 		self._progress = None
 
 		self._changeEvent = threading.Event()
