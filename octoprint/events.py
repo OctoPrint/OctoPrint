@@ -185,7 +185,7 @@ class CommandTrigger(GenericEventListener):
 
 		The following substitutions are currently supported:
 
-		  - %(currentZ)s : current Z position of the print head
+		  - %(currentZ)s : current Z position of the print head, or -1 if not available
 		  - %(filename)s : current selected filename, or "NO FILE" if no file is selected
 		  - %(progress)s : current print progress in percent, 0 if no print is in progress
 		  - %(data)s : the string representation of the event's payload
