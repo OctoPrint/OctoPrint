@@ -1340,6 +1340,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
 
+    self.serial_port = ko.observable();
+    self.serial_baudrate = ko.observable();
+    self.serial_portOptions = ko.observableArray([]);
+    self.serial_baudrateOptions = ko.observableArray([]);
     self.serial_autoconnect = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
@@ -1393,6 +1397,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
 
+        self.serial_port(response.serial.port);
+        self.serial_baudrate(response.serial.baudrate);
+        self.serial_portOptions(response.serial.portOptions);
+        self.serial_baudrateOptions(response.serial.baudrateOptions);
         self.serial_autoconnect(response.serial.autoconnect);
 
         self.folder_uploads(response.folder.uploads);
@@ -1437,6 +1445,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "sdSupport": self.feature_sdSupport()
             },
             "serial": {
+                "port": self.serial_port(),
+                "baudrate": self.serial_baudrate(),
                 "autoconnect": self.serial_autoconnect()
             },
             "folder": {

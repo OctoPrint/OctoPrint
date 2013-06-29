@@ -480,6 +480,8 @@ def getSettings():
 
 	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
+	connectionOptions = getConnectionOptions()
+
 	return jsonify({
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
@@ -511,6 +513,10 @@ def getSettings():
 			"sdSupport": s.getBoolean(["feature", "sdSupport"])
 		},
 		"serial": {
+			"port": connectionOptions["portPreference"],
+			"baudrate": connectionOptions["baudratePreference"],
+			"portOptions": connectionOptions["ports"],
+			"baudrateOptions": connectionOptions["baudrates"],
 			"autoconnect": s.getBoolean(["serial", "autoconnect"])
 		},
 		"folder": {
@@ -567,6 +573,8 @@ def setSettings():
 
 		if "serial" in data.keys():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
+			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial", "port"])
+			if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
