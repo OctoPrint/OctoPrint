@@ -111,7 +111,13 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 @app.route("/")
 def index():
-	branch, commit = util.getGitInfo()
+	branch = None
+	commit = None
+	try:
+		branch, commit = util.getGitInfo()
+	except:
+		pass
+
 	return render_template(
 		"index.jinja2",
 		ajaxBaseUrl=BASEURL,
