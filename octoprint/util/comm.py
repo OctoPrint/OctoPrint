@@ -801,18 +801,18 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				gcode = re.search('([GM][0-9]+)', cmd)
+				gcode = re.search("^\s*([GM]\d+)", cmd)
 				if gcode:
 					gcode = gcode.group(1)
 
-				if gcode in gcodeToEvent:
-					eventManager().fire(gcodeToEvent[gcode])
+					if gcode in gcodeToEvent:
+						eventManager().fire(gcodeToEvent[gcode])
 
-				gcodeHandler = "_gcode_" + gcode
-				if hasattr(self, gcodeHandler):
-					cmd = getattr(self, gcodeHandler)(cmd)
+					gcodeHandler = "_gcode_" + gcode
+					if hasattr(self, gcodeHandler):
+						cmd = getattr(self, gcodeHandler)(cmd)
 
-			if cmd:
+			if cmd is not None:
 				self._doSend(cmd, sendChecksum)
 
 	def _doSend(self, cmd, sendChecksum=False):
