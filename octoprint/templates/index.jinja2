@@ -502,6 +502,12 @@
                             <label class="checkbox">
                                 <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
                             </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-filterM105" data-bind="checked: filterM105"> Suppress M105 requests/responses
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-filterM27" data-bind="checked: filterM27"> Suppress M27 requests/responses
+                            </label>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
                                 <input type="text" id="terminal-command" data-bind="enable: isOperational() && loginState.isUser()">
