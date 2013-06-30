@@ -17,23 +17,6 @@
             </ul>
 
         <div class="tab-content span8">
-				<div class="tab-pane active" id="settings_cura">
-					<form class="form-horizontal">
-                        <div class="control-group">
-                            <label class="control-label" for="settings-curaPath">CuraEngine Path</label>
-                            <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: cura_engine_path">
-                            </div>
-                        </div>
-                         <div class="control-group">
-                            <label class="control-label" for="settings-curaPath">Cura Config</label>
-                            <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: cura_config_path">
-                            </div>
-                        </div>
- 					</form>
-				</div>
- 
             <div class="tab-pane active" id="settings_printerParameters">
                     <form class="form-horizontal">
                         <div class="control-group">
@@ -224,7 +207,25 @@
                         </div>
                     </form>
                 </div>
-
+				<div class="tab-pane" id="settings_cura">
+					<form class="form-horizontal">
+						<div class="control-group">
+							<label class="control-label" for="settings-curaPath">Cura Enabled</label>
+							<div class="controls">
+								<input type="checkbox" data-bind="value: cura_enabled">
+							</div>
+							<label class="control-label" for="settings-curaPath">CuraEngine Path</label>
+							<div class="controls">
+								<input type="text" class="input-block-level" data-bind="value: cura_path">
+							</div>
+							<label class="control-label" for="settings-curaPath">Cura Config</label>
+							<div class="controls">
+								<input type="text" class="input-block-level" data-bind="value: cura_config">
+							</div>
+						</div>
+					</form>
+				</div>
+ 
                 {% if enableAccessControl %}
                 <div class="tab-pane" id="settings_users">
                     <table class="table table-condensed table-hover" id="system_users">

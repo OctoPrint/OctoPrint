@@ -452,7 +452,12 @@ def getSettings():
 		},
 		"system": {
 			"actions": s.get(["system", "actions"])
-		}
+		},
+		"cura_engine": {
+			"cura_enabled": s.get(["cura_engine", "cura_enabled"]),
+			"cura_path": s.get(["cura_engine", "cura_path"]),
+			"cura_config": s.get(["cura_engine", "cura_config"])
+			}
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -498,6 +503,22 @@ def setSettings():
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
+
+		cura_engine = data.get("cura_engine", None)
+
+		if cura_engine:
+			
+			cura_enabled = cura_engine.get("cura_enabled")
+			if cura_enabled:
+				s.setBoolean(["cura_engine", "cura_path"], cura_enabled)
+
+			cura_path = cura_engine.get("cura_path")
+			if cura_path:
+				s.set(["cura_engine", "cura_path"], cura_path)
+
+			cura_config = cura_engine.get("cura_config")
+			if cura_config:
+				s.set(["cura_engine", "cura_config"], cura_config)
 
 		s.save()
 

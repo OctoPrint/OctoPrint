@@ -4,6 +4,9 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 import logging
 import subprocess
 
+APPNAME="OctoPrint"
+
+
 class CuraFactory(object):
 
     CURA_PATH = '/home/rosshendrickson/workspaces/opensource/CuraEngine/CuraEngine'
