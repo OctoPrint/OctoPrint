@@ -869,11 +869,21 @@ class MachineCom(object):
 	_gcode_M1 = _gcode_M0
 
 	def _gcode_M104(self, cmd):
-		self._targetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+		match = re.search('S([0-9]+)', cmd)
+		if match:
+			try:
+				self._targetTemp = float(match.group(1))
+			except ValueError:
+				pass
 		return cmd
 
 	def _gcode_M140(self, cmd):
-		self._bedTargetTemp = float(re.search('S([0-9]+)', cmd).group(1))
+		match = re.search('S([0-9]+)', cmd)
+		if match:
+			try:
+				self._bedTargetTemp = float(match.group(1))
+			except ValueError:
+				pass
 		return cmd
 
 	def _gcode_M109(self, cmd):
@@ -886,9 +896,10 @@ class MachineCom(object):
 
 	def _gcode_M110(self, cmd):
 		newLineNumber = None
-		if " N" in cmd:
+		match = re.search("N([0-9]+)", cmd)
+		if match:
 			try:
-				newLineNumber = int(re.search("N([0-9]+)", cmd).group(1))
+				newLineNumber = int(match.group(1))
 			except:
 				pass
 		else:
