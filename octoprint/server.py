@@ -517,7 +517,8 @@ def getSettings():
 			"baudrate": connectionOptions["baudratePreference"],
 			"portOptions": connectionOptions["ports"],
 			"baudrateOptions": connectionOptions["baudrates"],
-			"autoconnect": s.getBoolean(["serial", "autoconnect"])
+			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
+			"log": s.getBoolean(["serial", "log"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -575,6 +576,17 @@ def setSettings():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
 			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial"]["port"])
 			if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+
+			oldLog = s.getBoolean(["serial", "log"])
+			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
+			if oldLog and not s.getBoolean(["serial", "log"]):
+				# disable debug logging to serial.log
+				logging.getLogger("SERIAL").debug("Disabling serial logging")
+				logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
+			elif not oldLog and s.getBoolean(["serial", "log"]):
+				# enable debug logging to serial.log
+				logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+				logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
@@ -901,7 +913,12 @@ class Server():
 				#},
 				#"octoprint.events": {
 				#	"level": "DEBUG"
-				#}
+				#},
+				"SERIAL": {
+					"level": "CRITICAL",
+					"handlers": ["serialFile"],
+					"propagate": False
+				}
 			},
 			"root": {
 				"level": "INFO",
@@ -910,11 +927,7 @@ class Server():
 		}
 
 		if debug:
-			config["loggers"]["SERIAL"] = {
-				"level": "DEBUG",
-				"handlers": ["serialFile"],
-				"propagate": False
-			}
+			config["loggers"]["root"]["level"] = "DEBUG"
 
 		logging.config.dictConfig(config)
 

@@ -1363,6 +1363,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.serial_portOptions = ko.observableArray([]);
     self.serial_baudrateOptions = ko.observableArray([]);
     self.serial_autoconnect = ko.observable(undefined);
+    self.serial_log = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
     self.folder_timelapse = ko.observable(undefined);
@@ -1420,6 +1421,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.serial_portOptions(response.serial.portOptions);
         self.serial_baudrateOptions(response.serial.baudrateOptions);
         self.serial_autoconnect(response.serial.autoconnect);
+        self.serial_log(response.serial.log);
 
         self.folder_uploads(response.folder.uploads);
         self.folder_timelapse(response.folder.timelapse);
@@ -1465,7 +1467,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "serial": {
                 "port": self.serial_port(),
                 "baudrate": self.serial_baudrate(),
-                "autoconnect": self.serial_autoconnect()
+                "autoconnect": self.serial_autoconnect(),
+                "log": self.serial_log()
             },
             "folder": {
                 "uploads": self.folder_uploads(),

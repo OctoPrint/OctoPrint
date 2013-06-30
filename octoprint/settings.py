@@ -26,7 +26,8 @@ default_settings = {
 	"serial": {
 		"port": None,
 		"baudrate": None,
-		"autoconnect": False
+		"autoconnect": False,
+		"log": False
 	},
 	"server": {
 		"host": "0.0.0.0",
