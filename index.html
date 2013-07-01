@@ -57,7 +57,7 @@ title : OctoPrint.org
             <div class="span4">
                 <h4><i class="icon-cogs"></i> Control your printer</h4>
                 Start, pause and stop print jobs, remotely move the print head along all axes, extrude, retract
-                or just define your own custom controls.
+                or just define your own <a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-Custom-Controls">custom controls</a>.
             </div>
             <div class="span4">
                 <h4><i class="icon-eye-open"></i> Monitor your prints</h4>
@@ -83,7 +83,7 @@ title : OctoPrint.org
         </div>
         <div class="row">
             <div class="span12" style="text-align: center">
-                <h4>... and <a href="https://github.com/foosel/OctoPrint/issues?labels=enhancement&page=1&state=open">more</a> to come!</h4>
+                <h4>... and <a href="https://github.com/foosel/OctoPrint/issues?labels=type%3Afeature+request&page=1&state=open">more</a> to come!</h4>
             </div>
         </div>
     </section>
@@ -111,6 +111,24 @@ title : OctoPrint.org
                     <a href="http://www.raspberrypi.org/">Raspberry Pi</a>. It allows you to turn your existing 3D printer
                     into a WiFi enabled one and untether it from your laptop or work station.
                 </p>
+                <h3>What's in the package?</h3>
+                <p>
+                    OctoPrint currently offers the following features, with <a href="https://github.com/foosel/OctoPrint/issues?labels=type%3Afeature+request&page=1&state=open">more on the way</a>:
+                </p>
+                <ul>
+                    <li>uploading .gcode files to the server plus optionally the printer's SD card and managing them via the UI</li>
+                    <li>selecting a file for printing, getting the usual stats regarding filament usage (length and volume, stats not available for SD card files</li>
+                    <li>starting, pausing and cancelling a print job</li>
+                    <li>while connected to the printer getting information regarding the current temperature of both head and bed (if available) in a nice shiny javascript-y temperature graph</li>
+                    <li>access to the communication log (with the temperature and SD progress calls optionally filtered out to avoid clutter) and sending arbitrary codes to be executed by the printer</li>
+                    <li>previewing the gcode of the selected model to be printed (via <a href="https://github.com/hudbrog/gCodeViewer">GCodeVisualizer</a>), including rendering of the progress during printing (not available when SD printing)</li>
+                    <li>visual monitoring of the printer via webcam stream integrated into the UI (using e.g. <a href="http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page">MJPG-Streamer</a>)</li>
+                    <li>creation of <a href="http://www.youtube.com/playlist?list=PL9j2DtsIPVkMTv8MxTej4d3KDTgxFltKs">timelapse recordings</a> of the printjob via webcam stream with shots triggered either by a z-change (not available when SD printing) or every n seconds</li>
+                    <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuring-Access-Control">access control</a> to provide a read-only mode on the web interface, allowing any actions only to logged in users</li>
+                    <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuration">configurable custom controls</a> to add to the "Control" tab (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-Custom-Controls">Examples</a>)</li>
+                    <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuration">configurable system commands</a> made available in a special dropdown, e.g. to shutdown OctoPrint's host or updating the software via git (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-System-Commands">Examples</a>)</a></li>
+                    <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuration">configurable system commands or gcode commands</a> to be triggered on certain system events (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-Useful-Eventhooks">Examples</a>)</li>
+                </ul>
                 <h3>Credit where credit is due</h3>
                 <p>
                     OctoPrint started out as a fork of <a href="http://daid.github.com/Cura/">Cura</a> for adding a
@@ -121,25 +139,27 @@ title : OctoPrint.org
                 <p>
                     It also uses the following libraries and frameworks for backend and frontend:
                     <div class="row">
-                        <ul class="span3">
+                        <ul class="span3 no-style">
                             <li><a href="http://flask.pocoo.org/">Flask</a></li>
+                            <li><a href="http://flask-login.readthedocs.org/en/latest/">Flask-Login</a></li>
+                            <li><a href="http://pythonhosted.org/Flask-Principal/">Flask-Principal</a></li>
                             <li><a href="http://www.tornadoweb.org/">Tornado</a></li>
+                        </ul>
+                        <ul class="span3 no-style">
                             <li><a href="https://github.com/MrJoes/tornadio2">Tornadio2</a></li>
                             <li><a href="http://pyyaml.org/">PyYAML</a></li>
-                        </ul>
-                        <ul class="span3">
                             <li><a href="http://socket.io/">Socket.io</a></li>
                             <li><a href="http://jquery.com/">jQuery</a></li>
+                        </ul>
+                        <ul class="span3 no-style">
                             <li><a href="http://twitter.github.com/bootstrap/">Bootstrap</a></li>
                             <li><a href="http://fortawesome.github.com/Font-Awesome/">Font Awesome</a></li>
-                        </ul>
-                        <ul class="span3">
                             <li><a href="http://knockoutjs.com/">Knockout.js</a></li>
                             <li><a href="http://underscorejs.org/">Underscore.js</a></li>
+                        </ul>
+                        <ul class="span3 no-style">
                             <li><a href="http://www.flotcharts.org/">Flot</a></li>
                             <li><a href="http://blueimp.github.com/jQuery-File-Upload/">jQuery File Upload</a></li>
-                        </ul>
-                        <ul class="span3">
                             <li><a href="http://pinesframework.org/pnotify/">Pines Notify</a></li>
                             <li><a href="https://github.com/hudbrog/gCodeViewer">gCodeVisualizer</a></li>
                         </ul>
