@@ -19,7 +19,7 @@ from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
 from octoprint.events import eventManager
-from octoprint.util import isDevVersion, getExceptionString
+from octoprint.util import isDevVersion, getExceptionString, getNewTimeout
 from octoprint.util.virtual import VirtualPrinter
 
 try:
@@ -467,7 +467,7 @@ class MachineCom(object):
 				if self._baudrate == 0:
 					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
 				else:
-					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=2, writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 			except:
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 		if self._serial == None:
@@ -483,7 +483,7 @@ class MachineCom(object):
 			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
-		timeout = time.time() + 5
+		timeout = getNewTimeout("communication")
 		tempRequestTimeout = timeout
 		sdStatusRequestTimeout = timeout
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
@@ -623,11 +623,11 @@ class MachineCom(object):
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
 								self._serial.baudrate = baudrate
-								self._serial.timeout = 0.5
+								self._serial.timeout = getNewTimeout("detection")
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
 								self._baudrateDetectTestOk = 0
-								timeout = time.time() + 5
+								timeout = getNewTimeout("communication")
 								self._serial.write('\n')
 								self._sendCommand("M105")
 								self._testingBaudrate = True
@@ -640,7 +640,7 @@ class MachineCom(object):
 							self._sendCommand("M105")
 						else:
 							self._sendCommand("M999")
-							self._serial.timeout = 2
+							self._serial.timeout = getNewTimeout("connection")
 							self._changeState(self.STATE_OPERATIONAL)
 							if self._sdAvailable:
 								self.refreshSdFiles()
@@ -672,7 +672,7 @@ class MachineCom(object):
 							self._sendCommand(self._commandQueue.get())
 						else:
 							self._sendCommand("M105")
-						tempRequestTimeout = time.time() + 5
+						tempRequestTimeout = getNewTimeout("communication")
 					# resend -> start resend procedure from requested line
 					elif "resend" in line.lower() or "rs" in line:
 						self._handleResendRequest(line)
@@ -686,22 +686,22 @@ class MachineCom(object):
 					if self.isSdPrinting():
 						if time.time() > tempRequestTimeout and not heatingUp:
 							self._sendCommand("M105")
-							tempRequestTimeout = time.time() + 5
+							tempRequestTimeout = getNewTimeout("communication")
 
 						if time.time() > sdStatusRequestTimeout and not heatingUp:
 							self._sendCommand("M27")
 							sdStatusRequestTimeout = time.time() + 1
 
 						if 'ok' or 'SD printing byte' in line:
-							timeout = time.time() + 5
+							timeout = getNewTimeout("communication")
 					else:
 						# Even when printing request the temperature every 5 seconds.
 						if time.time() > tempRequestTimeout and not self.isStreaming():
 							self._commandQueue.put("M105")
-							tempRequestTimeout = time.time() + 5
+							tempRequestTimeout = getNewTimeout("communication")
 
 						if 'ok' in line:
-							timeout = time.time() + 5
+							timeout = getNewTimeout("communication")
 							if self._resendDelta is not None:
 								self._resendNextCommand()
 							elif not self._commandQueue.empty() and not self.isStreaming():

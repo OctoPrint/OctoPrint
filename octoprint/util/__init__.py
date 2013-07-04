@@ -2,11 +2,12 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-import re
 import os
 import traceback
 import sys
+import time
 
+from octoprint.settings import settings
 
 def getFormattedSize(num):
 	"""
@@ -79,3 +80,12 @@ def getGitInfo():
 		head = f.readline().strip()
 
 	return (branch, head)
+
+
+def getNewTimeout(type):
+	now = time.time()
+
+	if type not in ["connection", "detection", "communication"]:
+		return now # timeout immediately for unknown timeout type
+
+	return now + settings().getFloat(["serial", "timeout", type])

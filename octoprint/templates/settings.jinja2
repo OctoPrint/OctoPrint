@@ -21,14 +21,14 @@
                 <div class="tab-pane active" id="settings_serialConnection">
                     <form class="form-horizontal">
                         <div class="control-group">
+                            <label class="control-label" for="settings-serialPort">Serial Port</label>
                             <div class="controls">
-                                <label for="settings-serialPort">Serial Port</label>
                                 <select id="settings-serialPort" data-bind="options: serial_portOptions, optionsCaption: 'AUTO', value: serial_port"></select>
                             </div>
                         </div>
                         <div class="control-group">
+                            <label class="control-label" for="settings-baudrate">Baudrate</label>
                             <div class="controls">
-                                <label for="settings-baudrate">Baudrate</label>
                                 <select id="settings-baudrate" data-bind="options: serial_baudrateOptions, optionsCaption: 'AUTO', value: serial_baudrate"></select>
                             </div>
                         </div>
@@ -37,6 +37,33 @@
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_autoconnect" id="settings-serialAutoconnect"> Auto-connect to printer on server start
                                 </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-movementSpeedE">Communication timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
+                                    <span class="add-on">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-movementSpeedE">Connection timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutConnection" id="settings-serialTimeoutConnection">
+                                    <span class="add-on">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-movementSpeedE">Autodetection timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutDetection" id="settings-serialTimeoutDetection">
+                                    <span class="add-on">s</span>
+                                </div>
                             </div>
                         </div>
                         <div class="control-group">

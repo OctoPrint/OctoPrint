@@ -518,6 +518,9 @@ def getSettings():
 			"portOptions": connectionOptions["ports"],
 			"baudrateOptions": connectionOptions["baudrates"],
 			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
+			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
+			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
+			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
 			"log": s.getBoolean(["serial", "log"])
 		},
 		"folder": {
@@ -576,6 +579,9 @@ def setSettings():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
 			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial"]["port"])
 			if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+			if "timeoutConnection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
+			if "timeoutDetection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
+			if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
 
 			oldLog = s.getBoolean(["serial", "log"])
 			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])

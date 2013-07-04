@@ -27,7 +27,12 @@ default_settings = {
 		"port": None,
 		"baudrate": None,
 		"autoconnect": False,
-		"log": False
+		"log": False,
+		"timeout": {
+			"detection": 0.5,
+			"connection": 2,
+			"communication": 5
+		}
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -199,6 +204,17 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
+	def getFloat(self, path):
+		value = self.get(path)
+		if value is None:
+			return None
+
+		try:
+			return float(value)
+		except ValueError:
+			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
+			return None
+
 	def getBoolean(self, path):
 		value = self.get(path)
 		if value is None:
@@ -287,6 +303,19 @@ class Settings(object):
 			return
 
 		self.set(path, intValue, force)
+
+	def setFloat(self, path, value, force=False):
+		if value is None:
+			self.set(path, None, force)
+			return
+
+		try:
+			floatValue = float(value)
+		except ValueError:
+			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
+			return
+
+		self.set(path, floatValue, force)
 
 	def setBoolean(self, path, value, force=False):
 		if value is None or isinstance(value, bool):
