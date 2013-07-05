@@ -623,7 +623,7 @@ class MachineCom(object):
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
 								self._serial.baudrate = baudrate
-								self._serial.timeout = getNewTimeout("detection")
+								self._serial.timeout = settings().getFloat(["serial", "timeout", "detection"])
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
 								self._baudrateDetectTestOk = 0
@@ -640,7 +640,7 @@ class MachineCom(object):
 							self._sendCommand("M105")
 						else:
 							self._sendCommand("M999")
-							self._serial.timeout = getNewTimeout("connection")
+							self._serial.timeout = settings().getFloat(["serial", "timeout", "connection"])
 							self._changeState(self.STATE_OPERATIONAL)
 							if self._sdAvailable:
 								self.refreshSdFiles()
