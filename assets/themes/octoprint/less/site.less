@@ -5,6 +5,10 @@
 @import "mixins.less";
 @import "variables.less";
 
+body, html {
+  height: 100%;
+}
+
 .text-align-right  { text-align: right; }
 .text-align-center { text-align: center; }
 
@@ -166,10 +170,31 @@ section {
   background-color: transparent;
 }
 
+#wrap {
+  min-height: 100%;
+}
+
+#main {
+  padding-bottom: 275px;
+
+  .content {
+    padding-top: 50px;
+    padding-bottom: 50px;
+  }
+}
+
 footer {
   #gradient > .vertical(lighten(@octoLight, 3%), @octoDark);
   background-color: @octoDark;
   border-top: 1px solid mix(@octoLight, @octoDark, 50%);
+
+  padding-top: 45px;
+  padding-bottom: 60px;
+  //margin-top: 60px;
+
+  height: 170px;
+  margin-top: -276px;
+
   a {
     color: @white;
     text-shadow: 0 -1px 0 rgba(0,0,0,.25);
@@ -181,10 +206,8 @@ footer {
 
   color: mix(@octoLight, @white, 35%);
   text-shadow: 0 -1px 0 rgba(0,0,0,.25);
-  margin-top: 60px;
-  padding-top: 45px;
-  padding-bottom: 60px;
   *zoom: 1; // ie7 hack
+
   ul {
     line-height: 25px;
   }
