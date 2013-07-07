@@ -477,6 +477,10 @@ class Printer():
 	def getCurrentData(self):
 		return self._stateMonitor.getCurrentData()
 
+	def getCurrentJob(self):
+		currentData = self._stateMonitor.getCurrentData()
+		return currentData["job"]
+
 	def getCurrentTemperatures(self):
 		return {
 			"extruder": {

@@ -345,9 +345,17 @@ def loadGcodeFile():
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
-		if "target" in request.values.keys() and request.values["target"] == "sd":
+		currentJob = printer.getCurrentJob()
+
+		currentFilename = None
+		currentSd = None
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		if "target" in request.values.keys() and request.values["target"] == "sd" and not (currentFilename == filename and currentSd is True):
 			printer.deleteSdFile(filename)
-		else:
+		elif not (currentFilename == filename and currentSd is False):
 			gcodeManager.removeFile(filename)
 	return readGcodeFiles()
 

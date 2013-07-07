@@ -769,9 +769,10 @@ function TerminalViewModel(loginStateViewModel) {
     }
 }
 
-function GcodeFilesViewModel(loginStateViewModel) {
+function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     var self = this;
 
+    self.printerState = printerStateViewModel;
     self.loginState = loginStateViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
@@ -831,6 +832,20 @@ function GcodeFilesViewModel(loginStateViewModel) {
         return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
     });
 
+    self.printerState.filename.subscribe(function(newValue) {
+        self.highlightFilename(newValue);
+    });
+
+    self.highlightFilename = function(filename) {
+        if (filename == undefined) {
+            self.listHelper.selectNone();
+        } else {
+            self.listHelper.selectItem(function(item) {
+                return item.name == filename;
+            })
+        }
+    }
+
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
     }
@@ -868,6 +883,8 @@ function GcodeFilesViewModel(loginStateViewModel) {
             // got a file to scroll to
             self.listHelper.switchToItem(function(item) {return item.name == response.filename});
         }
+
+        self.highlightFilename(self.printerState.filename());
     }
 
     self.loadFile = function(filename, printAfterLoad) {
@@ -1626,17 +1643,41 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.exclusiveFilters = exclusiveFilters;
 
     self.allItems = [];
+
     self.items = ko.observableArray([]);
     self.pageSize = ko.observable(filesPerPage);
     self.currentPage = ko.observable(0);
     self.currentSorting = ko.observable(self.defaultSorting);
     self.currentFilters = ko.observableArray(self.defaultFilters);
+    self.selectedItem = ko.observable(undefined);
 
     //~~ item handling
 
     self.updateItems = function(items) {
         self.allItems = items;
         self._updateItems();
+    }
+
+    self.selectItem = function(matcher) {
+        var itemList = self.items();
+        for (var i = 0; i < itemList.length; i++) {
+            if (matcher(itemList[i])) {
+                self.selectedItem(itemList[i]);
+                break;
+            }
+        }
+    }
+
+    self.selectNone = function() {
+        self.selectedItem(undefined);
+    }
+
+    self.isSelected = function(data) {
+        return self.selectedItem() == data;
+    }
+
+    self.isSelectedByMatcher = function(matcher) {
+        return matcher(self.selectedItem());
     }
 
     //~~ pagination
@@ -1852,7 +1893,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self._initializeLocalStorage = function() {
         if (!Modernizr.localstorage)
-        	return false;
+            return false;
         
         if (localStorage[self.listType + "." + "currentSorting"] !== undefined && localStorage[self.listType + "." + "currentFilters"] !== undefined && JSON.parse(localStorage[self.listType + "." + "currentFilters"]) instanceof Array)
             return true;
@@ -1900,7 +1941,7 @@ $(function() {
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel);
-        var gcodeFilesViewModel = new GcodeFilesViewModel(loginStateViewModel);
+        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
