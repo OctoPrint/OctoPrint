@@ -1771,6 +1771,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         self.currentFilters(filters);
         self._saveCurrentFiltersToLocalStorage();
 
+        self.changePage(0);
         self._updateItems();
     }
 
@@ -1783,6 +1784,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         self.currentFilters(filters);
         self._saveCurrentFiltersToLocalStorage();
 
+        self.changePage(0);
         self._updateItems();
     }
 
