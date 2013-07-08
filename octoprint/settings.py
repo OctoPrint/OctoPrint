@@ -73,7 +73,8 @@ default_settings = {
 			"y": 6000,
 			"z": 200,
 			"e": 300
-		}
+		},
+		"pauseTriggers": []
 	},
 	"appearance": {
 		"name": "",
@@ -258,6 +259,31 @@ class Settings(object):
 			return result
 		else:
 			return []
+
+	def getPauseTriggers(self):
+		triggers = {
+			"enable": [],
+			"disable": [],
+			"toggle": []
+		}
+		for trigger in self.get(["printerParameters", "pauseTriggers"]):
+			try:
+				regex = trigger["regex"]
+				type = trigger["type"]
+				if type in triggers.keys():
+					# make sure regex is valid
+					re.compile(regex)
+					# add to type list
+					triggers[type].append(regex)
+			except:
+				# invalid regex or something like this, we'll just skip this entry
+				pass
+
+		result = {}
+		for type in triggers.keys():
+			if len(triggers[type]) > 0:
+				result[type] = re.compile("|".join(map(lambda x: "(%s)" % x, triggers[type])))
+		return result
 
 	#~~ setter
 

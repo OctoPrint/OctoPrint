@@ -113,6 +113,9 @@ class VirtualPrinter():
 		elif "M114" in data:
 			# send dummy position report
 			self.readList.append("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
+		elif "M117" in data:
+			# we'll just use this to echo a message, to allow playing around with pause triggers
+			self.readList.append("ok %s" % re.search("M117\s+(.*)", data).group(1))
 		elif "M999" in data:
 			# mirror Marlin behaviour
 			self.readList.append("Resend: 1")

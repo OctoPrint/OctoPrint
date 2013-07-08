@@ -439,6 +439,7 @@ class MachineCom(object):
 
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
+		pauseTriggers = settings().getPauseTriggers()
 
 		#Open the serial port.
 		if self._port == 'AUTO':
@@ -601,6 +602,15 @@ class MachineCom(object):
 						except:
 							# ignored on purpose
 							pass
+
+				##~~ Parsing for pause triggers
+				if pauseTriggers:
+					if "enable" in pauseTriggers.keys() and pauseTriggers["enable"].search(line) is not None:
+						self.setPause(True)
+					elif "disable" in pauseTriggers.keys() and pauseTriggers["disable"].search(line) is not None:
+						self.setPause(False)
+					elif "toggle" in pauseTriggers.keys() and pauseTriggers["toggle"].search(line) is not None:
+						self.setPause(not self.isPaused())
 
 				if "ok" in line and heatingUp:
 					heatingUp = False
