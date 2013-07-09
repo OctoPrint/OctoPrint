@@ -6,15 +6,18 @@
     <div class="modal-body">
         <div class="tabbable">
             <ul class="nav nav-list span4" id="settingsTabs">
+                <li class="nav-header">Printer</li>
                 <li class="active"><a href="#settings_serialConnection" data-toggle="tab">Serial Connection</a></li>
                 <li><a href="#settings_printerParameters" data-toggle="tab">Printer Parameters</a></li>
-                <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
-                <li><a href="#settings_features" data-toggle="tab">Features</a></li>
-                <li><a href="#settings_folder" data-toggle="tab">Folders</a></li>
                 <li><a href="#settings_temperature" data-toggle="tab">Temperatures</a></li>
-                <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
+                <li class="nav-header">Features</li>
+                <li><a href="#settings_features" data-toggle="tab">Features</a></li>
+                <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
+                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Access Control</a></li>{% endif %}
                 <li><a href="#settings_api" data-toggle="tab">Api</a></li>
-                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Users</a></li>{% endif %}
+                <li class="nav-header">OctoPrint</li>
+                <li><a href="#settings_folder" data-toggle="tab">Folders</a></li>
+                <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
             </ul>
 
             <div class="tab-content span8">
