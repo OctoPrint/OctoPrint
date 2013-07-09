@@ -941,7 +941,7 @@ class Server():
 		}
 
 		if debug:
-			config["loggers"]["root"]["level"] = "DEBUG"
+			config["root"]["level"] = "DEBUG"
 
 		logging.config.dictConfig(config)
 
