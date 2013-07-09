@@ -303,8 +303,10 @@ class Printer():
 	def _sendInitialStateUpdate(self, callback):
 		try:
 			data = self._stateMonitor.getCurrentData()
+			# convert the dict of deques to a dict of lists
+			temps = {k: list(v) for (k,v) in self._temps.iteritems()}
 			data.update({
-				"temperatureHistory": list(self._temps),
+				"temperatureHistory": temps,
 				"logHistory": list(self._log),
 				"messageHistory": list(self._messages)
 			})
