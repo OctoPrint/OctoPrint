@@ -4,6 +4,9 @@ import sys
 import math
 import re
 import os
+import base64
+import zlib
+import logging
 
 from octoprint.util import util3d
 
@@ -34,9 +37,12 @@ class gcodePath(object):
 
 class gcode(object):
 	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+
 		self.regMatch = {}
 		self.layerList = []
 		self.extrusionAmount = 0
+		self.extrusionVolume = None
 		self.totalMoveTimeMinute = 0
 		self.progressCallback = None
 		self._abort = False
@@ -64,13 +70,13 @@ class gcode(object):
 		currentExtruder = 0
 		extrudeAmountMultiply = 1.0
 		totalMoveTimeMinute = 0.0
+		filamentDiameter = 0.0
 		scale = 1.0
 		posAbs = True
 		posAbsExtruder = True;
 		feedRate = 3600
 		layerThickness = 0.1
 		pathType = 'CUSTOM';
-		startCodeDone = False
 		currentLayer = []
 		unknownGcodes={}
 		unknownMcodes={}
@@ -97,7 +103,7 @@ class gcode(object):
 					startCodeDone = True
 					
 			if ';' in line:
-				#Slic3r GCode comment parser
+				# Slic3r GCode comment parser
 				comment = line[line.find(';')+1:].strip()
 				if comment == 'fill':
 					pathType = 'FILL'
@@ -105,11 +111,21 @@ class gcode(object):
 					pathType = 'WALL-INNER'
 				elif comment == 'skirt':
 					pathType = 'SKIRT'
+				elif comment.startswith("filament_diameter"):
+					filamentDiameter = float(line.split("=", 1)[1].strip())
+
+				# Cura Gcode comment parser
 				if comment.startswith('LAYER:'):
 					self.layerList.append(currentLayer)
 					currentLayer = []
-				if pathType != "CUSTOM":
-					startCodeDone = True
+				elif comment.startswith("CURA_PROFILE_STRING"):
+					curaOptions = self._parseCuraProfileString(comment)
+
+					if "filament_diameter" in curaOptions.keys():
+						try:
+							filamentDiameter = float(curaOptions["filament_diameter"])
+						except:
+							filamentDiameter = 0.0
 				line = line[0:line.find(';')]
 			T = self.getCodeInt(line, 'T')
 			if T is not None:
@@ -223,7 +239,7 @@ class gcode(object):
 						posOffset.z = pos.z - z
 				else:
 					if G not in unknownGcodes:
-						print "Unknown G code:" + str(G)
+						self._logger.info("Unknown G code: %r" % G)
 					unknownGcodes[G] = True
 			else:
 				M = self.getCodeInt(line, 'M')
@@ -272,10 +288,12 @@ class gcode(object):
 							extrudeAmountMultiply = s / 100.0
 					else:
 						if M not in unknownMcodes:
-							print "Unknown M code:" + str(M)
+							self._logger.info("Unknown M code: %r" % M)
 						unknownMcodes[M] = True
 		self.layerList.append(currentLayer)
 		self.extrusionAmount = maxExtrusion
+		if filamentDiameter is not None and filamentDiameter > 0:
+			self.extrusionVolume = math.pi * math.pow(filamentDiameter / 2.0, 2) * maxExtrusion / 1000.0
 		self.totalMoveTimeMinute = totalMoveTimeMinute
 
 	def getCodeInt(self, line, code):
@@ -299,6 +317,9 @@ class gcode(object):
 			return float(m.group(1))
 		except:
 			return None
+
+	def _parseCuraProfileString(self, comment):
+		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
 
 if __name__ == '__main__':
 	for filename in sys.argv[1:]:

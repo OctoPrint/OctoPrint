@@ -2,11 +2,12 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-import ConfigParser
 import sys
 import os
 import yaml
 import logging
+import re
+import uuid
 
 APPNAME="OctoPrint"
 
@@ -24,7 +25,14 @@ def settings(init=False, configfile=None, basedir=None):
 default_settings = {
 	"serial": {
 		"port": None,
-		"baudrate": None
+		"baudrate": None,
+		"autoconnect": False,
+		"log": False,
+		"timeout": {
+			"detection": 0.5,
+			"connection": 2,
+			"communication": 5
+		}
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -35,20 +43,22 @@ default_settings = {
 		"snapshot": None,
 		"ffmpeg": None,
 		"bitrate": "5000k",
-		"watermark": True
+		"watermark": True,
+		"flipH": False,
+		"flipV": False
 	},
 	"feature": {
 		"gCodeVisualizer": True,
 		"waitForStartOnConnect": False,
-		"waitForWaitOnConnect": False,
 		"alwaysSendChecksum": False,
-		"resetLineNumbersWithPrefixedN": False
+		"sdSupport": True
 	},
 	"folder": {
 		"uploads": None,
 		"timelapse": None,
 		"timelapse_tmp": None,
-		"logs": None
+		"logs": None,
+		"virtualSd": None
 	},
 	"temperature": {
 		"profiles":
@@ -63,7 +73,8 @@ default_settings = {
 			"y": 6000,
 			"z": 200,
 			"e": 300
-		}
+		},
+		"pauseTriggers": []
 	},
 	"appearance": {
 		"name": "",
@@ -77,6 +88,18 @@ default_settings = {
 		"enabled": False,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None
+	},
+	"events": {
+		"systemCommandTrigger": {
+			"enabled": False
+		},
+		"gcodeCommandTrigger": {
+			"enabled": False
+		}
+	},
+	"api": {
+		"enabled": False,
+		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	}
 }
 
@@ -118,7 +141,8 @@ class Settings(object):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
-		else:
+		# chamged from else to handle cases where the file exists, but is empty / 0 bytes
+		if not self._config:
 			self._config = {}
 
 	def save(self, force=False):
@@ -181,6 +205,17 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
+	def getFloat(self, path):
+		value = self.get(path)
+		if value is None:
+			return None
+
+		try:
+			return float(value)
+		except ValueError:
+			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
+			return None
+
 	def getBoolean(self, path):
 		value = self.get(path)
 		if value is None:
@@ -201,6 +236,54 @@ class Settings(object):
 			os.makedirs(folder)
 
 		return folder
+
+	def getFeedbackControls(self):
+		feedbackControls = []
+		for control in self.get(["controls"]):
+			feedbackControls.extend(self._getFeedbackControls(control))
+		return feedbackControls
+
+	def _getFeedbackControls(self, control=None):
+		if control["type"] == "feedback_command":
+			pattern = control["regex"]
+			try:
+				matcher = re.compile(pattern)
+				return [(control["name"], matcher, control["template"])]
+			except:
+				# invalid regex or something like this, we'll just skip this entry
+				pass
+		elif control["type"] == "section":
+			result = []
+			for c in control["children"]:
+				result.extend(self._getFeedbackControls(c))
+			return result
+		else:
+			return []
+
+	def getPauseTriggers(self):
+		triggers = {
+			"enable": [],
+			"disable": [],
+			"toggle": []
+		}
+		for trigger in self.get(["printerParameters", "pauseTriggers"]):
+			try:
+				regex = trigger["regex"]
+				type = trigger["type"]
+				if type in triggers.keys():
+					# make sure regex is valid
+					re.compile(regex)
+					# add to type list
+					triggers[type].append(regex)
+			except:
+				# invalid regex or something like this, we'll just skip this entry
+				pass
+
+		result = {}
+		for type in triggers.keys():
+			if len(triggers[type]) > 0:
+				result[type] = re.compile("|".join(map(lambda x: "(%s)" % x, triggers[type])))
+		return result
 
 	#~~ setter
 
@@ -237,6 +320,7 @@ class Settings(object):
 	def setInt(self, path, value, force=False):
 		if value is None:
 			self.set(path, None, force)
+			return
 
 		try:
 			intValue = int(value)
@@ -245,6 +329,19 @@ class Settings(object):
 			return
 
 		self.set(path, intValue, force)
+
+	def setFloat(self, path, value, force=False):
+		if value is None:
+			self.set(path, None, force)
+			return
+
+		try:
+			floatValue = float(value)
+		except ValueError:
+			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
+			return
+
+		self.set(path, floatValue, force)
 
 	def setBoolean(self, path, value, force=False):
 		if value is None or isinstance(value, bool):

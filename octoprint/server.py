@@ -15,20 +15,26 @@ import subprocess
 
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings, valid_boolean_trues
-import octoprint.timelapse as timelapse
+import octoprint.timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 import octoprint.users as users
 
+import octoprint.events as events
+
 SUCCESS = {}
 BASEURL = "/ajax/"
+APIBASEURL = "/api/"
 
 app = Flask("octoprint")
 # Only instantiated by the Server().run() method
 # In order that threads don't start too early when running as a Daemon
-printer = None 
+printer = None
+timelapse = None
+
 gcodeManager = None
 userManager = None
+eventManager = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -37,7 +43,7 @@ user_permission = Permission(RoleNeed("user"))
 #~~ Printer state
 
 class PrinterStateConnection(tornadio2.SocketConnection):
-	def __init__(self, printer, gcodeManager, userManager, session, endpoint=None):
+	def __init__(self, printer, gcodeManager, userManager, eventManager, session, endpoint=None):
 		tornadio2.SocketConnection.__init__(self, session, endpoint)
 
 		self._logger = logging.getLogger(__name__)
@@ -52,18 +58,25 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._printer = printer
 		self._gcodeManager = gcodeManager
 		self._userManager = userManager
+		self._eventManager = eventManager
 
 	def on_open(self, info):
 		self._logger.info("New connection from client")
 		# Use of global here is smelly
-		printer.registerCallback(self)
-		gcodeManager.registerCallback(self)
+		self._printer.registerCallback(self)
+		self._gcodeManager.registerCallback(self)
+
+		self._eventManager.fire("ClientOpened")
+		self._eventManager.subscribe("MovieDone", self._onMovieDone)
 
 	def on_close(self):
 		self._logger.info("Closed client connection")
 		# Use of global here is smelly
-		printer.unregisterCallback(self)
-		gcodeManager.unregisterCallback(self)
+		self._printer.unregisterCallback(self)
+		self._gcodeManager.unregisterCallback(self)
+
+		self._eventManager.fire("ClientClosed")
+		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
 
 	def on_message(self, message):
 		pass
@@ -95,6 +108,9 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def sendUpdateTrigger(self, type):
 		self.emit("updateTrigger", type)
 
+	def sendFeedbackCommandOutput(self, name, output):
+		self.emit("feedbackCommandOutput", {"name": name, "output": output})
+
 	def addLog(self, data):
 		with self._logBacklogMutex:
 			self._logBacklog.append(data)
@@ -107,10 +123,20 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
 
+	def _onMovieDone(self, event, payload):
+		self.sendUpdateTrigger("timelapseFiles")
+
 # Did attempt to make webserver an encapsulated class but ended up with __call__ failures
 
 @app.route("/")
 def index():
+	branch = None
+	commit = None
+	try:
+		branch, commit = util.getGitInfo()
+	except:
+		pass
+
 	return render_template(
 		"index.jinja2",
 		ajaxBaseUrl=BASEURL,
@@ -118,7 +144,10 @@ def index():
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
-		enableAccessControl=userManager is not None
+		enableAccessControl=userManager is not None,
+		enableSdSupport=settings().get(["feature", "sdSupport"]),
+		gitBranch=branch,
+		gitCommit=commit
 	)
 
 #~~ Printer control
@@ -140,6 +169,9 @@ def connect():
 		if "save" in request.values.keys():
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
+			settings().save()
+		if "autoconnect" in request.values.keys():
+			settings().setBoolean(["serial", "autoconnect"], True)
 			settings().save()
 		printer.connect(port=port, baudrate=baudrate)
 	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
@@ -231,33 +263,45 @@ def jog():
 
 	return jsonify(SUCCESS)
 
-@app.route(BASEURL + "control/speed", methods=["GET"])
-def getSpeedValues():
-	return jsonify(feedrate=printer.feedrateState())
-
-@app.route(BASEURL + "control/speed", methods=["POST"])
-@login_required
-def speed():
-	if not printer.isOperational():
-		return jsonify(SUCCESS)
-
-	for key in ["outerWall", "innerWall", "fill", "support"]:
-		if key in request.values.keys():
-			value = int(request.values[key])
-			printer.setFeedrateModifier(key, value)
-
-	return getSpeedValues()
-
 @app.route(BASEURL + "control/custom", methods=["GET"])
 def getCustomControls():
 	customControls = settings().get(["controls"])
 	return jsonify(controls=customControls)
 
+@app.route(BASEURL + "control/sd", methods=["POST"])
+@login_required
+def sdCommand():
+	if not settings().getBoolean(["feature", "sdSupport"]) or not printer.isOperational() or printer.isPrinting():
+		return jsonify(SUCCESS)
+
+	if "command" in request.values.keys():
+		command = request.values["command"]
+		if command == "init":
+			printer.initSdCard()
+		elif command == "refresh":
+			printer.refreshSdFiles()
+		elif command == "release":
+			printer.releaseSdCard()
+
+	return jsonify(SUCCESS)
+
 #~~ GCODE file handling
 
 @app.route(BASEURL + "gcodefiles", methods=["GET"])
 def readGcodeFiles():
-	return jsonify(files=gcodeManager.getAllFileData())
+	files = gcodeManager.getAllFileData()
+
+	sdFileList = printer.getSdFiles()
+	if sdFileList is not None:
+		for sdFile in sdFileList:
+			files.append({
+				"name": sdFile,
+				"size": "n/a",
+				"bytes": 0,
+				"date": "n/a",
+				"origin": "sd"
+			})
+	return jsonify(files=files)
 
 @app.route(BASEURL + "gcodefiles/<path:filename>", methods=["GET"])
 def readGcodeFile(filename):
@@ -270,7 +314,13 @@ def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
 		filename = gcodeManager.addFile(file)
+		if filename and "target" in request.values.keys() and request.values["target"] == "sd":
+			printer.addSdFile(filename, gcodeManager.getAbsolutePath(filename))
+
+		global eventManager
+		eventManager.fire("Upload", filename)
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
+
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
 @login_required
@@ -279,9 +329,15 @@ def loadGcodeFile():
 		printAfterLoading = False
 		if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
 			printAfterLoading = True
-		filename = gcodeManager.getAbsolutePath(request.values["filename"])
-		if filename is not None:
-			printer.loadGcode(filename, printAfterLoading)
+
+		sd = False
+		filename = None
+		if "target" in request.values.keys() and request.values["target"] == "sd":
+			filename = request.values["filename"]
+			sd = True
+		else:
+			filename = gcodeManager.getAbsolutePath(request.values["filename"])
+		printer.selectFile(filename, sd, printAfterLoading)
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
@@ -289,33 +345,100 @@ def loadGcodeFile():
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
-		gcodeManager.removeFile(filename)
+		currentJob = printer.getCurrentJob()
+
+		currentFilename = None
+		currentSd = None
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		if "target" in request.values.keys() and request.values["target"] == "sd" and not (currentFilename == filename and currentSd is True):
+			printer.deleteSdFile(filename)
+		elif not (currentFilename == filename and currentSd is False):
+			gcodeManager.removeFile(filename)
 	return readGcodeFiles()
+
+@app.route(BASEURL + "gcodefiles/refresh", methods=["POST"])
+@login_required
+def refreshFiles():
+	printer.updateSdFiles()
+	return jsonify(SUCCESS)
+
+#-- very simple api routines
+@app.route(APIBASEURL + "load", methods=["POST"])
+def apiLoad():
+	logger = logging.getLogger(__name__)
+
+	if not settings().get(["api", "enabled"]):
+		abort(401)
+
+	if not "apikey" in request.values.keys():
+		abort(401)
+
+	if request.values["apikey"] != settings().get(["api", "key"]):
+		abort(403)
+
+	if not "file" in request.files.keys():
+		abort(400)
+
+	# Perform an upload
+	file = request.files["file"]
+	filename = gcodeManager.addFile(file)
+	if filename is None:
+		logger.warn("Upload via API failed")
+		abort(500)
+
+	# Immediately perform a file select and possibly print too
+	printAfterSelect = False
+	if "print" in request.values.keys() and request.values["print"] in valid_boolean_trues:
+		printAfterSelect = True
+	filepath = gcodeManager.getAbsolutePath(filename)
+	if filepath is not None:
+		printer.selectFile(filepath, False, printAfterSelect)
+	return jsonify(SUCCESS)
+
+@app.route(APIBASEURL + "state", methods=["GET"])
+def apiPrinterState():
+	if not settings().get(["api", "enabled"]):
+		abort(401)
+
+	if not "apikey" in request.values.keys():
+		abort(401)
+
+	if request.values["apikey"] != settings().get(["api", "key"]):
+		abort(403)
+
+	currentData = printer.getCurrentData()
+	currentData.update({
+		"temperatures": printer.getCurrentTemperatures()
+	})
+	return jsonify(currentData)
 
 #~~ timelapse handling
 
 @app.route(BASEURL + "timelapse", methods=["GET"])
 def getTimelapseData():
-	lapse = printer.getTimelapse()
+	global timelapse
 
 	type = "off"
 	additionalConfig = {}
-	if lapse is not None and isinstance(lapse, timelapse.ZTimelapse):
+	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
 		type = "zchange"
-	elif lapse is not None and isinstance(lapse, timelapse.TimedTimelapse):
+	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		type = "timed"
 		additionalConfig = {
-			"interval": lapse.interval()
+			"interval": timelapse.interval()
 		}
 
-	files = timelapse.getFinishedTimelapses()
+	files = octoprint.timelapse.getFinishedTimelapses()
 	for file in files:
 		file["url"] = url_for("downloadTimelapse", filename=file["name"])
 
 	return jsonify({
-	"type": type,
-	"config": additionalConfig,
-	"files": files
+		"type": type,
+		"config": additionalConfig,
+		"files": files
 	})
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["GET"])
@@ -335,11 +458,17 @@ def deleteTimelapse(filename):
 @app.route(BASEURL + "timelapse", methods=["POST"])
 @login_required
 def setTimelapseConfig():
+	global timelapse
+
 	if request.values.has_key("type"):
 		type = request.values["type"]
-		lapse = None
+		if type in ["zchange", "timed"]:
+			# valid timelapse type, check if there is an old one we need to stop first
+			if timelapse is not None:
+				timelapse.unload()
+			timelapse = None
 		if "zchange" == type:
-			lapse = timelapse.ZTimelapse()
+			timelapse = octoprint.timelapse.ZTimelapse()
 		elif "timed" == type:
 			interval = 10
 			if request.values.has_key("interval"):
@@ -347,8 +476,7 @@ def setTimelapseConfig():
 					interval = int(request.values["interval"])
 				except ValueError:
 					pass
-			lapse = timelapse.TimedTimelapse(interval)
-		printer.setTimelapse(lapse)
+			timelapse = octoprint.timelapse.TimedTimelapse(interval)
 
 	return getTimelapseData()
 
@@ -360,7 +488,13 @@ def getSettings():
 
 	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
+	connectionOptions = getConnectionOptions()
+
 	return jsonify({
+		"api": {
+			"enabled": s.getBoolean(["api", "enabled"]),
+			"key": s.get(["api", "key"])
+		},
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"])
@@ -376,13 +510,26 @@ def getSettings():
 			"snapshotUrl": s.get(["webcam", "snapshot"]),
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
 			"bitrate": s.get(["webcam", "bitrate"]),
-			"watermark": s.getBoolean(["webcam", "watermark"])
+			"watermark": s.getBoolean(["webcam", "watermark"]),
+			"flipH": s.getBoolean(["webcam", "flipH"]),
+			"flipV": s.getBoolean(["webcam", "flipV"])
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
-			"resetLineNumbersWithPrefixedN": s.getBoolean(["feature", "resetLineNumbersWithPrefixedN"])
+			"sdSupport": s.getBoolean(["feature", "sdSupport"])
+		},
+		"serial": {
+			"port": connectionOptions["portPreference"],
+			"baudrate": connectionOptions["baudratePreference"],
+			"portOptions": connectionOptions["ports"],
+			"baudrateOptions": connectionOptions["baudrates"],
+			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
+			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
+			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
+			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
+			"log": s.getBoolean(["serial", "log"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -394,8 +541,9 @@ def getSettings():
 			"profiles": s.get(["temperature", "profiles"])
 		},
 		"system": {
-			"actions": s.get(["system", "actions"])
-		}
+			"actions": s.get(["system", "actions"]),
+			"events": s.get(["system", "events"])
+		} 
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -405,6 +553,10 @@ def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
 		s = settings()
+
+		if "api" in data.keys():
+			if "enabled" in data["api"].keys(): s.set(["api", "enabled"], data["api"]["enabled"])
+			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
 
 		if "appearance" in data.keys():
 			if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
@@ -422,12 +574,33 @@ def setSettings():
 			if "ffmpegPath" in data["webcam"].keys(): s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
 			if "bitrate" in data["webcam"].keys(): s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
 			if "watermark" in data["webcam"].keys(): s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
+			if "flipH" in data["webcam"].keys(): s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
+			if "flipV" in data["webcam"].keys(): s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
 
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
-			if "resetLineNumbersWithPrefixedN" in data["feature"].keys(): s.setBoolean(["feature", "resetLineNumbersWithPrefixedN"], data["feature"]["resetLineNumbersWithPrefixedN"])
+			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+
+		if "serial" in data.keys():
+			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
+			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial"]["port"])
+			if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+			if "timeoutConnection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
+			if "timeoutDetection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
+			if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
+
+			oldLog = s.getBoolean(["serial", "log"])
+			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
+			if oldLog and not s.getBoolean(["serial", "log"]):
+				# disable debug logging to serial.log
+				logging.getLogger("SERIAL").debug("Disabling serial logging")
+				logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
+			elif not oldLog and s.getBoolean(["serial", "log"]):
+				# enable debug logging to serial.log
+				logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+				logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
@@ -440,7 +613,7 @@ def setSettings():
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
-
+			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 		s.save()
 
 	return getSettings()
@@ -582,7 +755,7 @@ def login():
 		username = request.values["user"]
 		password = request.values["pass"]
 
-		if "remember" in request.values.keys() and request.values["remember"]:
+		if "remember" in request.values.keys() and request.values["remember"] == "true":
 			remember = True
 		else:
 			remember = False
@@ -597,6 +770,7 @@ def login():
 	elif "passive" in request.values.keys():
 		user = current_user
 		if user is not None and not user.is_anonymous():
+			identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 			return jsonify(user.asDict())
 	return jsonify(SUCCESS)
 
@@ -638,12 +812,14 @@ class Server():
 		self._port = port
 		self._debug = debug
 
+		  
 	def run(self):
 		# Global as I can't work out a way to get it into PrinterStateConnection
 		global printer
 		global gcodeManager
 		global userManager
-
+		global eventManager
+		
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
@@ -656,8 +832,15 @@ class Server():
 		self._initLogging(self._debug)
 		logger = logging.getLogger(__name__)
 
+		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
+
+		# setup system and gcode command triggers
+		events.SystemCommandTrigger(printer)
+		events.GcodeCommandTrigger(printer)
+		if self._debug:
+			events.DebugEventListener()
 
 		if settings().getBoolean(["accessControl", "enabled"]):
 			userManagerName = settings().get(["accessControl", "userManager"])
@@ -691,11 +874,18 @@ class Server():
 		])
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
+
+		eventManager.fire("Startup")
+		if settings().getBoolean(["serial", "autoconnect"]):
+			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
+			connectionOptions = getConnectionOptions()
+			if port in connectionOptions["ports"]:
+				printer.connect(port, baudrate)
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):
-		global printer, gcodeManager, userManager
-		return PrinterStateConnection(printer, gcodeManager, userManager, session, endpoint)
+		global printer, gcodeManager, userManager, eventManager
+		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session, endpoint)
 
 	def _initSettings(self, configfile, basedir):
 		s = settings(init=True, basedir=basedir, configfile=configfile)
@@ -732,6 +922,17 @@ class Server():
 				}
 			},
 			"loggers": {
+				#"octoprint.timelapse": {
+				#	"level": "DEBUG"
+				#},
+				#"octoprint.events": {
+				#	"level": "DEBUG"
+				#},
+				"SERIAL": {
+					"level": "CRITICAL",
+					"handlers": ["serialFile"],
+					"propagate": False
+				}
 			},
 			"root": {
 				"level": "INFO",
@@ -740,11 +941,7 @@ class Server():
 		}
 
 		if debug:
-			config["loggers"]["SERIAL"] = {
-				"level": "DEBUG",
-				"handlers": ["serialFile"],
-				"propagate": False
-			}
+			config["root"]["level"] = "DEBUG"
 
 		logging.config.dictConfig(config)
 

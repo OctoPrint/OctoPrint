@@ -1,0 +1,51 @@
+﻿Merge branch 'devel' of https://github.com/foosel/OctoPrint into foosel-devel
+
+Conflicts:
+	octoprint/static/gcodeviewer/js/Worker.js
+	octoprint/static/gcodeviewer/js/gCodeReader.js
+#
+# It looks like you may be committing a merge.
+# If this is not correct, please remove the file
+#	.git/MERGE_HEAD
+# and try again.
+
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch foosel-devel
+# All conflicts fixed but you are still merging.
+#   (use "git commit" to conclude merge)
+#
+# Changes to be committed:
+#
+#	modified:   .gitignore
+#	new file:   MANIFEST.in
+#	modified:   README.md
+#	new file:   octoprint/events.py
+#	modified:   octoprint/gcodefiles.py
+#	modified:   octoprint/printer.py
+#	modified:   octoprint/server.py
+#	modified:   octoprint/settings.py
+#	modified:   octoprint/static/css/octoprint.less
+#	modified:   octoprint/static/gcodeviewer/js/Worker.js
+#	modified:   octoprint/static/gcodeviewer/js/gCodeReader.js
+#	new file:   octoprint/static/img/icon-sd-black-14.png
+#	new file:   octoprint/static/img/tentacle-20x20-light.png
+#	new file:   octoprint/static/img/tentacle-20x20-light@2x.png
+#	new file:   octoprint/static/img/tentacle-20x20@2x.png
+#	new file:   octoprint/static/js/avltree.js
+#	new file:   octoprint/static/js/jquery/jquery.min.js
+#	modified:   octoprint/static/js/ui.js
+#	modified:   octoprint/templates/dialogs.jinja2
+#	modified:   octoprint/templates/index.jinja2
+#	modified:   octoprint/templates/settings.jinja2
+#	modified:   octoprint/timelapse.py
+#	modified:   octoprint/util/__init__.py
+#	modified:   octoprint/util/comm.py
+#	modified:   octoprint/util/gcodeInterpreter.py
+#	new file:   octoprint/util/virtual.py
+#	modified:   requirements-bbb.txt
+#	modified:   requirements.txt
+#	new file:   setup.py
+#
+

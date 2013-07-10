@@ -1,6 +1,7 @@
-flask>=0.9
-tornado>=2.4.1
-tornadio2>=0.0.4
-PyYAML>=3.10
-Flask-Login>=0.1.3
-Flask-Principal>=0.3.5
+flask==0.9
+werkzeug==0.8.3
+tornado==3.0.2
+tornadio2==0.0.4
+PyYAML==3.10
+Flask-Login==0.2.2
+Flask-Principal==0.3.5
