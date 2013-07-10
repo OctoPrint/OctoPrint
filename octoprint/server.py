@@ -453,10 +453,10 @@ def getSettings():
 		"system": {
 			"actions": s.get(["system", "actions"])
 		},
-		"cura_engine": {
-			"cura_enabled": s.get(["cura_engine", "cura_enabled"]),
-			"cura_path": s.get(["cura_engine", "cura_path"]),
-			"cura_config": s.get(["cura_engine", "cura_config"])
+		"curaEngine": {
+			"enabled": s.getBoolean(["curaEngine", "enabled"]),
+			"path": s.get(["curaEngine", "path"]),
+			"config": s.get(["curaEngine", "config"])
 			}
 	})
 
@@ -504,21 +504,21 @@ def setSettings():
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
 
-		cura_engine = data.get("cura_engine", None)
+		curaEngine = data.get("curaEngine", None)
 
-		if cura_engine:
+		if curaEngine:
 			
-			cura_enabled = cura_engine.get("cura_enabled")
-			if cura_enabled:
-				s.setBoolean(["cura_engine", "cura_path"], cura_enabled)
+			path = curaEngine.get("path")
+			if path:
+				s.set(["curaEngine", "path"], path)
 
-			cura_path = cura_engine.get("cura_path")
-			if cura_path:
-				s.set(["cura_engine", "cura_path"], cura_path)
+			config = curaEngine.get("config")
+			if config:
+				s.set(["curaEngine", "config"], config)
 
-			cura_config = cura_engine.get("cura_config")
-			if cura_config:
-				s.set(["cura_engine", "cura_config"], cura_config)
+			# Enabled is a boolean so we cannot check that we have a result
+			enabled = curaEngine.get("enabled")
+			s.setBoolean(["curaEngine", "enabled"], enabled)
 
 		s.save()
 
