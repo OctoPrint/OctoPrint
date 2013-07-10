@@ -81,9 +81,9 @@ default_settings = {
 		"userfile": None
 	},
 	"curaEngine": {
-		"enabled": True,
-		"config": "/here/there/be/dragons/that/want/to/eat/you/",
-		"path": "/here/there/be/dragons/that/want/to/eat/you/"
+		"enabled": False,
+		"path": "/default/path/to/curaEngine/dir/",
+		"config": "/default/path/to/your/curaEngine/config/file/"
 		}
 }
 
@@ -140,7 +140,6 @@ class Settings(object):
 	#~~ getter
 
 	def get(self, path):
-		logging.info("SETTINGS:GET:%s" % path)
 		if len(path) == 0:
 			return None
 
@@ -167,20 +166,15 @@ class Settings(object):
 		results = []
 		for key in keys:
 			if key in config.keys():
-				logging.info("USERSET")
 				results.append(config[key])
 			elif key in defaults:
-				logging.info("DEFAULT")
 				results.append(defaults[key])
 			else:
 				results.append(None)
 
 		if not isinstance(k, (list, tuple)):
-			result = results.pop()
-			logging.info("SETTINGS:GET:RESULT:%s" % str(result))
-			return result
+			return results.pop()
 		else:
-			logging.info("SETTINGS:GET:RESULTS:%s" % str(results))
 			return results
 
 	def getInt(self, path):
