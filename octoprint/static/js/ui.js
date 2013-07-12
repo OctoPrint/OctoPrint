@@ -2192,7 +2192,20 @@ $(function() {
         });
 
         //~~ UI stuff
-
+		
+		//tab state persistence
+		if( Modernizr.localstorage ) {
+			//try to load the previously active tab from localStorage
+			if( localStorage["activeTab"] !== undefined ) {
+				$("#tabs a[href='" + localStorage["activeTab"] + "']").tab("show");
+			}
+			
+			//add event handler to tabs to save the tab's name in localStorage when activated
+			$("#tabs a").on("shown", function(event) {
+				localStorage["activeTab"] = event.target.attributes["href"].value;
+			} );
+		}
+		
         $.pnotify.defaults.history = false;
 
         $.fn.modal.defaults.maxHeight = function(){
