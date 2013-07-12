@@ -97,6 +97,9 @@
                                 <label class="checkbox">
                                     <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"> Save connection settings
                                 </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"> Auto-connect on server startup
+                                </label>
                                 <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser">Connect</button>
                             </div>
                         </div>
@@ -174,11 +177,11 @@
                                         </tr>
                                     </thead>
                                     <tbody data-bind="foreach: listHelper.paginatedItems">
-                                        <tr data-bind="css: $root.getSuccessClass($data), popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data), html: true }">
+                                        <tr data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data), html: true }">
                                             <td class="gcode_files_name" data-bind="text: name"></td>
                                             <td class="gcode_files_size" data-bind="text: size"></td>
                                             <td class="gcode_files_action">
-                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.loginState.isUser()) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.isLoadActionPossible()) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.isLoadActionPossible()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.isLoadAndPrintActionPossible()) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.isLoadAndPrintActionPossible()}"></a>
+                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.loginState.isUser() && !$root.listHelper.isSelected($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.listHelper.isSelected($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.isLoadActionPossible() && !$root.listHelper.isSelected($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.isLoadActionPossible() || $root.listHelper.isSelected($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.isLoadAndPrintActionPossible() && !$root.listHelper.isSelected($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.isLoadAndPrintActionPossible() || $root.listHelper.isSelected($data)}"></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -498,6 +501,12 @@
                             <pre id="terminal-output" class="pre-scrollable"></pre>
                             <label class="checkbox">
                                 <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-filterM105" data-bind="checked: filterM105"> Suppress M105 requests/responses
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-filterM27" data-bind="checked: filterM27"> Suppress M27 requests/responses
                             </label>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">

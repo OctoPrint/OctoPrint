@@ -170,6 +170,9 @@ def connect():
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
 			settings().save()
+		if "autoconnect" in request.values.keys():
+			settings().setBoolean(["serial", "autoconnect"], True)
+			settings().save()
 		printer.connect(port=port, baudrate=baudrate)
 	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
 		printer.disconnect()
@@ -342,9 +345,17 @@ def loadGcodeFile():
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
-		if "target" in request.values.keys() and request.values["target"] == "sd":
+		currentJob = printer.getCurrentJob()
+
+		currentFilename = None
+		currentSd = None
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		if "target" in request.values.keys() and request.values["target"] == "sd" and not (currentFilename == filename and currentSd is True):
 			printer.deleteSdFile(filename)
-		else:
+		elif not (currentFilename == filename and currentSd is False):
 			gcodeManager.removeFile(filename)
 	return readGcodeFiles()
 
@@ -477,6 +488,8 @@ def getSettings():
 
 	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
+	connectionOptions = getConnectionOptions()
+
 	return jsonify({
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
@@ -506,6 +519,17 @@ def getSettings():
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"])
+		},
+		"serial": {
+			"port": connectionOptions["portPreference"],
+			"baudrate": connectionOptions["baudratePreference"],
+			"portOptions": connectionOptions["ports"],
+			"baudrateOptions": connectionOptions["baudrates"],
+			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
+			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
+			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
+			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
+			"log": s.getBoolean(["serial", "log"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -558,6 +582,25 @@ def setSettings():
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+
+		if "serial" in data.keys():
+			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
+			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial"]["port"])
+			if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+			if "timeoutConnection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
+			if "timeoutDetection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
+			if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
+
+			oldLog = s.getBoolean(["serial", "log"])
+			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
+			if oldLog and not s.getBoolean(["serial", "log"]):
+				# disable debug logging to serial.log
+				logging.getLogger("SERIAL").debug("Disabling serial logging")
+				logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
+			elif not oldLog and s.getBoolean(["serial", "log"]):
+				# enable debug logging to serial.log
+				logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+				logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
@@ -833,6 +876,11 @@ class Server():
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire("Startup")
+		if settings().getBoolean(["serial", "autoconnect"]):
+			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
+			connectionOptions = getConnectionOptions()
+			if port in connectionOptions["ports"]:
+				printer.connect(port, baudrate)
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):
@@ -879,7 +927,12 @@ class Server():
 				#},
 				#"octoprint.events": {
 				#	"level": "DEBUG"
-				#}
+				#},
+				"SERIAL": {
+					"level": "CRITICAL",
+					"handlers": ["serialFile"],
+					"propagate": False
+				}
 			},
 			"root": {
 				"level": "INFO",
@@ -888,11 +941,7 @@ class Server():
 		}
 
 		if debug:
-			config["loggers"]["SERIAL"] = {
-				"level": "DEBUG",
-				"handlers": ["serialFile"],
-				"propagate": False
-			}
+			config["root"]["level"] = "DEBUG"
 
 		logging.config.dictConfig(config)
 

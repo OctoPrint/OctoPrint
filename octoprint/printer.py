@@ -24,11 +24,14 @@ def getConnectionOptions():
 		"ports": comm.serialList(),
 		"baudrates": comm.baudrateList(),
 		"portPreference": settings().get(["serial", "port"]),
-		"baudratePreference": settings().getInt(["serial", "baudrate"])
+		"baudratePreference": settings().getInt(["serial", "baudrate"]),
+		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
 	}
 
 class Printer():
 	def __init__(self, gcodeManager):
+		from collections import deque
+
 		self._gcodeManager = gcodeManager
 
 		# state
@@ -37,19 +40,19 @@ class Printer():
 		self._targetTemp = None
 		self._targetBedTemp = None
 		self._temps = {
-			"actual": [],
-			"target": [],
-			"actualBed": [],
-			"targetBed": []
+			"actual": deque([], 300),
+			"target": deque([], 300),
+			"actualBed": deque([], 300),
+			"targetBed": deque([], 300)
 		}
 		self._tempBacklog = []
 
 		self._latestMessage = None
-		self._messages = []
+		self._messages = deque([], 300)
 		self._messageBacklog = []
 
 		self._latestLog = None
-		self._log = []
+		self._log = deque([], 300)
 		self._logBacklog = []
 
 		self._state = None
@@ -65,10 +68,6 @@ class Printer():
 		# sd handling
 		self._sdPrinting = False
 		self._sdStreaming = False
-
-		# TODO Still needed?
-		self._sdFile = None
-		self._sdStreamer = None
 
 		self._selectedFile = None
 
@@ -232,12 +231,10 @@ class Printer():
 
 	def _addLog(self, log):
 		self._log.append(log)
-		self._log = self._log[-300:]
 		self._stateMonitor.addLog(log)
 
 	def _addMessage(self, message):
 		self._messages.append(message)
-		self._messages = self._messages[-300:]
 		self._stateMonitor.addMessage(message)
 
 	def _setProgressData(self, progress, filepos, printTime, printTimeLeft):
@@ -263,16 +260,9 @@ class Printer():
 		currentTimeUtc = int(time.time() * 1000)
 
 		self._temps["actual"].append((currentTimeUtc, temp))
-		self._temps["actual"] = self._temps["actual"][-300:]
-
 		self._temps["target"].append((currentTimeUtc, targetTemp))
-		self._temps["target"] = self._temps["target"][-300:]
-
 		self._temps["actualBed"].append((currentTimeUtc, bedTemp))
-		self._temps["actualBed"] = self._temps["actualBed"][-300:]
-
 		self._temps["targetBed"].append((currentTimeUtc, bedTargetTemp))
-		self._temps["targetBed"] = self._temps["targetBed"][-300:]
 
 		self._temp = temp
 		self._bedTemp = bedTemp
@@ -314,9 +304,9 @@ class Printer():
 		try:
 			data = self._stateMonitor.getCurrentData()
 			data.update({
-				"temperatureHistory": self._temps,
-				"logHistory": self._log,
-				"messageHistory": self._messages
+				"temperatureHistory": list(self._temps),
+				"logHistory": list(self._log),
+				"messageHistory": list(self._messages)
 			})
 			callback.sendHistoryData(data)
 		except Exception, err:
@@ -441,7 +431,7 @@ class Printer():
 	def mcReceivedRegisteredMessage(self, command, output):
 		self._sendFeedbackCommandOutput(command, output)
 
-#~~ sd file handling
+	#~~ sd file handling
 
 	def getSdFiles(self):
 		if self._comm is None:
@@ -456,9 +446,6 @@ class Printer():
 	def deleteSdFile(self, filename):
 		if not self._comm:
 			return
-
-		if self._sdFile == filename:
-			self._sdFile = None
 		self._comm.deleteSdFile(filename)
 
 	def initSdCard(self):
@@ -489,6 +476,10 @@ class Printer():
 
 	def getCurrentData(self):
 		return self._stateMonitor.getCurrentData()
+
+	def getCurrentJob(self):
+		currentData = self._stateMonitor.getCurrentData()
+		return currentData["job"]
 
 	def getCurrentTemperatures(self):
 		return {
@@ -521,7 +512,7 @@ class Printer():
 		return self.isOperational() and not self._comm.isStreaming()
 
 	def isLoading(self):
-		return self._gcodeLoader is not None or self._sdStreamer is not None
+		return self._gcodeLoader is not None
 
 class GcodeLoader(threading.Thread):
 	"""

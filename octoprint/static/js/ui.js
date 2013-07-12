@@ -89,10 +89,11 @@ function LoginStateViewModel() {
     }
 }
 
-function ConnectionViewModel(loginStateViewModel) {
+function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.settings = settingsViewModel;
 
     self.portOptions = ko.observableArray(undefined);
     self.baudrateOptions = ko.observableArray(undefined);
@@ -188,6 +189,10 @@ function ConnectionViewModel(loginStateViewModel) {
                 dataType: "json",
                 data: data
             })
+
+            self.settings.serial_port(self.selectedPort())
+            self.settings.serial_baudrate(self.selectedBaudrate())
+            self.settings.saveData();
         } else {
             self.requestData();
             $.ajax({
@@ -696,6 +701,19 @@ function TerminalViewModel(loginStateViewModel) {
     self.isLoading = ko.observable(undefined);
 
     self.autoscrollEnabled = ko.observable(true);
+    self.filterM105 = ko.observable(false);
+    self.filterM27 = ko.observable(false);
+
+    self.regexM105 = /(Send: M105)|(Recv: ok T:)/;
+    self.regexM27 = /(Send: M27)|(Recv: SD printing byte)/;
+
+    self.filterM105.subscribe(function(newValue) {
+        self.updateOutput();
+    });
+
+    self.filterM27.subscribe(function(newValue) {
+        self.updateOutput();
+    });
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
@@ -736,6 +754,9 @@ function TerminalViewModel(loginStateViewModel) {
 
         var output = "";
         for (var i = 0; i < self.log.length; i++) {
+            if (self.filterM105() && self.log[i].match(self.regexM105)) continue;
+            if (self.filterM27() && self.log[i].match(self.regexM27)) continue;
+
             output += self.log[i] + "\n";
         }
 
@@ -748,9 +769,10 @@ function TerminalViewModel(loginStateViewModel) {
     }
 }
 
-function GcodeFilesViewModel(loginStateViewModel) {
+function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     var self = this;
 
+    self.printerState = printerStateViewModel;
     self.loginState = loginStateViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
@@ -810,6 +832,20 @@ function GcodeFilesViewModel(loginStateViewModel) {
         return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
     });
 
+    self.printerState.filename.subscribe(function(newValue) {
+        self.highlightFilename(newValue);
+    });
+
+    self.highlightFilename = function(filename) {
+        if (filename == undefined) {
+            self.listHelper.selectNone();
+        } else {
+            self.listHelper.selectItem(function(item) {
+                return item.name == filename;
+            })
+        }
+    }
+
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
     }
@@ -847,6 +883,8 @@ function GcodeFilesViewModel(loginStateViewModel) {
             // got a file to scroll to
             self.listHelper.switchToItem(function(item) {return item.name == response.filename});
         }
+
+        self.highlightFilename(self.printerState.filename());
     }
 
     self.loadFile = function(filename, printAfterLoad) {
@@ -1337,6 +1375,16 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
 
+    self.serial_port = ko.observable();
+    self.serial_baudrate = ko.observable();
+    self.serial_portOptions = ko.observableArray([]);
+    self.serial_baudrateOptions = ko.observableArray([]);
+    self.serial_autoconnect = ko.observable(undefined);
+    self.serial_timeoutConnection = ko.observable(undefined);
+    self.serial_timeoutDetection = ko.observable(undefined);
+    self.serial_timeoutCommunication = ko.observable(undefined);
+    self.serial_log = ko.observable(undefined);
+
     self.folder_uploads = ko.observable(undefined);
     self.folder_timelapse = ko.observable(undefined);
     self.folder_timelapseTmp = ko.observable(undefined);
@@ -1388,6 +1436,16 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
 
+        self.serial_port(response.serial.port);
+        self.serial_baudrate(response.serial.baudrate);
+        self.serial_portOptions(response.serial.portOptions);
+        self.serial_baudrateOptions(response.serial.baudrateOptions);
+        self.serial_autoconnect(response.serial.autoconnect);
+        self.serial_timeoutConnection(response.serial.timeoutConnection);
+        self.serial_timeoutDetection(response.serial.timeoutDetection);
+        self.serial_timeoutCommunication(response.serial.timeoutCommunication);
+        self.serial_log(response.serial.log);
+
         self.folder_uploads(response.folder.uploads);
         self.folder_timelapse(response.folder.timelapse);
         self.folder_timelapseTmp(response.folder.timelapseTmp);
@@ -1428,6 +1486,15 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport()
+            },
+            "serial": {
+                "port": self.serial_port(),
+                "baudrate": self.serial_baudrate(),
+                "autoconnect": self.serial_autoconnect(),
+                "timeoutConnection": self.serial_timeoutConnection(),
+                "timeoutDetection": self.serial_timeoutDetection(),
+                "timeoutCommunication": self.serial_timeoutCommunication(),
+                "log": self.serial_log()
             },
             "folder": {
                 "uploads": self.folder_uploads(),
@@ -1576,17 +1643,41 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.exclusiveFilters = exclusiveFilters;
 
     self.allItems = [];
+
     self.items = ko.observableArray([]);
     self.pageSize = ko.observable(filesPerPage);
     self.currentPage = ko.observable(0);
     self.currentSorting = ko.observable(self.defaultSorting);
     self.currentFilters = ko.observableArray(self.defaultFilters);
+    self.selectedItem = ko.observable(undefined);
 
     //~~ item handling
 
     self.updateItems = function(items) {
         self.allItems = items;
         self._updateItems();
+    }
+
+    self.selectItem = function(matcher) {
+        var itemList = self.items();
+        for (var i = 0; i < itemList.length; i++) {
+            if (matcher(itemList[i])) {
+                self.selectedItem(itemList[i]);
+                break;
+            }
+        }
+    }
+
+    self.selectNone = function() {
+        self.selectedItem(undefined);
+    }
+
+    self.isSelected = function(data) {
+        return self.selectedItem() == data;
+    }
+
+    self.isSelectedByMatcher = function(matcher) {
+        return matcher(self.selectedItem());
     }
 
     //~~ pagination
@@ -1721,6 +1812,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         self.currentFilters(filters);
         self._saveCurrentFiltersToLocalStorage();
 
+        self.changePage(0);
         self._updateItems();
     }
 
@@ -1733,6 +1825,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         self.currentFilters(filters);
         self._saveCurrentFiltersToLocalStorage();
 
+        self.changePage(0);
         self._updateItems();
     }
 
@@ -1800,7 +1893,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self._initializeLocalStorage = function() {
         if (!Modernizr.localstorage)
-        	return false;
+            return false;
         
         if (localStorage[self.listType + "." + "currentSorting"] !== undefined && localStorage[self.listType + "." + "currentFilters"] !== undefined && JSON.parse(localStorage[self.listType + "." + "currentFilters"]) instanceof Array)
             return true;
@@ -1839,16 +1932,16 @@ function AppearanceViewModel(settingsViewModel) {
 $(function() {
 
         //~~ View models
-        var loginStateViewModel = new LoginStateViewModel(loginStateViewModel);
+        var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var connectionViewModel = new ConnectionViewModel(loginStateViewModel);
-        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel);
         var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
+        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel);
-        var gcodeFilesViewModel = new GcodeFilesViewModel(loginStateViewModel);
+        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);

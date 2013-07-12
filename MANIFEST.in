@@ -1,0 +1,2 @@
+recursive-include octoprint/static *
+recursive-include octoprint/templates *
