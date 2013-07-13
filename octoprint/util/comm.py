@@ -356,6 +356,14 @@ class MachineCom(object):
 			eventManager().fire("FileSelected", filename)
 			self._callback.mcFileSelected(filename, self._currentFile.getFilesize(), False)
 
+	def unselectFile(self):
+		if self.isBusy():
+			return
+
+		self._currentFile = None
+		eventManager().fire("FileSelected", None)
+		self._callback.mcFileSelected(None, None, False)
+
 	def cancelPrint(self):
 		if not self.isOperational() or self.isStreaming():
 			return

@@ -171,6 +171,16 @@ class Printer():
 
 		self._printAfterSelect = printAfterSelect
 		self._comm.selectFile(filename, sd)
+		self._setProgressData(0, None, None, None)
+		self._setCurrentZ(None)
+
+	def unselectFile(self):
+		if self._comm is not None and (self._comm.isBusy() or self._comm.isStreaming()):
+			return
+
+		self._comm.unselectFile()
+		self._setProgressData(0, None, None, None)
+		self._setCurrentZ(None)
 
 	def startPrint(self):
 		"""

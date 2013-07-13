@@ -4,7 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 from werkzeug.utils import secure_filename
 import tornadio2
-from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort
+from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort, make_response
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
 
@@ -310,12 +310,39 @@ def readGcodeFile(filename):
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 @login_required
 def uploadGcodeFile():
-	filename = None
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
+		sd = "target" in request.values.keys() and request.values["target"] == "sd";
+
+		currentFilename = None
+		currentSd = None
+		currentJob = printer.getCurrentJob()
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		futureFilename = gcodeManager.getFutureFilename(file)
+		if futureFilename is None:
+			return make_response("Can not upload file %s, wrong format?" % file.filename, 400)
+
+		if futureFilename == currentFilename and sd == currentSd and printer.isPrinting() or printer.isPaused():
+			# trying to overwrite currently selected file, but it is being printed
+			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 403)
+
 		filename = gcodeManager.addFile(file)
-		if filename and "target" in request.values.keys() and request.values["target"] == "sd":
-			printer.addSdFile(filename, gcodeManager.getAbsolutePath(filename))
+		if filename is None:
+			return make_response("Could not upload the file %s" % file.filename, 500)
+
+		absFilename = gcodeManager.getAbsolutePath(filename)
+		if sd:
+			printer.addSdFile(filename, absFilename)
+
+		if currentFilename == filename and currentSd == sd:
+			# reload file as it was updated
+			if sd:
+				printer.selectFile(filename, sd, False)
+			else:
+				printer.selectFile(absFilename, sd, False)
 
 		global eventManager
 		eventManager.fire("Upload", filename)
@@ -331,7 +358,6 @@ def loadGcodeFile():
 			printAfterLoading = True
 
 		sd = False
-		filename = None
 		if "target" in request.values.keys() and request.values["target"] == "sd":
 			filename = request.values["filename"]
 			sd = True
@@ -345,18 +371,23 @@ def loadGcodeFile():
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
-		currentJob = printer.getCurrentJob()
+		sd = "target" in request.values.keys() and request.values["target"] == "sd"
 
+		currentJob = printer.getCurrentJob()
 		currentFilename = None
 		currentSd = None
 		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
 			currentFilename = currentJob["filename"]
 			currentSd = currentJob["sd"]
 
-		if "target" in request.values.keys() and request.values["target"] == "sd" and not (currentFilename == filename and currentSd is True):
-			printer.deleteSdFile(filename)
-		elif not (currentFilename == filename and currentSd is False):
-			gcodeManager.removeFile(filename)
+		if currentFilename is not None and filename == currentFilename and not (printer.isPrinting() or printer.isPaused()):
+			printer.unselectFile()
+
+		if not (currentFilename == filename and currentSd == sd and (printer.isPrinting() or printer.isPaused())):
+			if currentSd:
+				printer.deleteSdFile(filename)
+			else:
+				gcodeManager.removeFile(filename)
 	return readGcodeFiles()
 
 @app.route(BASEURL + "gcodefiles/refresh", methods=["POST"])
