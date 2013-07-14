@@ -123,14 +123,15 @@ class GcodeManager:
 		if absolutePath is None:
 			return None
 
-		if file.filename in self._metadata.keys():
+		basename = os.path.basename(absolutePath)
+		if basename in self._metadata.keys():
 			# delete existing metadata entry, since the file is going to get overwritten
-			del self._metadata[file.filename]
+			del self._metadata[basename]
 			self._metadataDirty = True
 			self._saveMetadata()
 		file.save(absolutePath)
-		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
-		return self._getBasicFilename(absolutePath)
+		self._metadataAnalyzer.addFileToQueue(basename)
+		return basename
 
 	def getFutureFilename(self, file):
 		if not file:
