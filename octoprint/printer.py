@@ -33,6 +33,7 @@ class Printer():
 		from collections import deque
 
 		self._gcodeManager = gcodeManager
+		self._gcodeManager.registerCallback(self)
 
 		# state
 		self._temp = None
@@ -131,6 +132,14 @@ class Printer():
 		for callback in self._callbacks:
 			try: callback.sendFeedbackCommandOutput(name, output)
 			except: pass
+
+	#~~ callback from gcodemanager
+
+	def sendUpdateTrigger(self, type):
+		if type == "gcodeFiles" and self._selectedFile:
+			self._setJobData(self._selectedFile["filename"],
+				self._selectedFile["filesize"],
+				self._selectedFile["sd"])
 
 	#~~ printer commands
 
