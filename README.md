@@ -14,6 +14,13 @@ Reporting bugs
 OctoPrint's issue tracker can be found [on Github](https://github.com/foosel/OctoPrint/issues). **Before opening a new
 ticket please take a look at [this guide on how to file a bug report with OctoPrint](https://github.com/foosel/OctoPrint/wiki/How-to-file-a-bug-report).**
 
+Sending pull requests
+---------------------
+
+Please create all pull requests against the [devel branch](https://github.com/foosel/OctoPrint/tree/devel) of OctoPrint, as that one is used for developing new 
+features and then merged against master when those features are deemed mature enough for general consumption. In case
+of bug fixes I'll take care to cherry pick them against master if the bugs they are fixing are critical.
+
 Dependencies
 ------------
 
