@@ -210,6 +210,8 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.loginState = loginStateViewModel;
 
+	self.accordionStateHelper = new AccordionStateHelper("state_accordion", "shown");
+
     self.stateString = ko.observable(undefined);
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -774,7 +776,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     self.printerState = printerStateViewModel;
     self.loginState = loginStateViewModel;
-
+    
+    self.accordionStateHelper = new AccordionStateHelper("files_accordion", "shown", "#files");
+    
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
@@ -1917,6 +1921,88 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self._loadCurrentSortingFromLocalStorage();
 }
 
+function AccordionStateHelper(accordionID, defaultState, overflowTarget) {
+	var self = this;
+	
+	self.accordionID = accordionID;
+	self.defaultState = defaultState;
+	self.overflowTarget = overflowTarget || undefined;
+	
+	self.currentState = ko.observable(self.defaultState);
+	
+	//called when the accordion is collapsed
+	self.collapseHandler = function() {
+		self.currentState("hidden");
+		self._saveCurrentStateToLocalStorage();
+		
+		if( self.overflowTarget !== undefined )
+			self._toggleOverflow();
+	}
+	
+	//called when the accordion is shown
+	self.uncollapseHandler = function() {
+		self.currentState("shown");
+		self._saveCurrentStateToLocalStorage();
+		
+		if( self.overflowTarget !== undefined )
+			self._toggleOverflow();
+	}
+	
+	self._applyCurrentState = function() {
+		if (self.currentState() == "hidden")
+			$("#"+self.accordionID+" .accordion-body").collapse("hide");
+	}
+	
+	self._toggleOverflow = function() {
+        if ($(self.overflowTarget).hasClass("in")) {
+            $(self.overflowTarget).removeClass("overflow_visible");
+        } else {
+            setTimeout(function() {
+                $(self.overflowTarget).addClass("overflow_visible");
+            }, 1000);
+        }
+    }
+	
+	self._saveCurrentStateToLocalStorage = function() {
+		if ( self._initializeLocalStorage() ) {
+			if ( self.currentState() !== undefined )
+				localStorage[self.accordionID + "." + "currentState"] = self.currentState();
+			else
+				localStorage[self.accordionID + "." + "currentState"] = undefined;
+		}
+	}
+	
+	self._loadCurrentStateFromLocalStorage = function() {
+		if ( self._initializeLocalStorage() ) {
+			if ( localStorage[self.accordionID + "." + "currentState"] == "hidden" )
+				self.currentState("hidden");
+			else
+				self.currentState("shown");
+		}
+	}
+	
+	self._initializeLocalStorage = function() {
+		if (!Modernizr.localstorage)
+			return false;
+		
+		if (localStorage[self.accordionID + "." + "currentState"] !== undefined)
+			return true;
+		
+		localStorage[self.accordionID + "." + "currentState"] = self.defaultState;
+		
+		return true;
+	}
+	
+	self._initializeHandlers = function() {
+		$("#"+self.accordionID).on('hide', self.collapseHandler);
+		$("#"+self.accordionID+" .accordion-body").on('show', self.uncollapseHandler);
+	}
+	
+	self._loadCurrentStateFromLocalStorage();
+	self._initializeHandlers();
+	self._applyCurrentState();
+}
+
 function AppearanceViewModel(settingsViewModel) {
     var self = this;
 
@@ -2208,17 +2294,20 @@ $(function() {
         });
 
         //~~ UI stuff
-
-        $(".accordion-toggle[href='#files']").click(function() {
-            if ($("#files").hasClass("in")) {
-                $("#files").removeClass("overflow_visible");
-            } else {
-                setTimeout(function() {
-                    $("#files").addClass("overflow_visible");
-                }, 1000);
-            }
-        })
-
+		
+		//tab state persistence
+		if( Modernizr.localstorage ) {
+			//try to load the previously active tab from localStorage
+			if( localStorage["activeTab"] !== undefined ) {
+				$("#tabs a[href='" + localStorage["activeTab"] + "']").tab("show");
+			}
+			
+			//add event handler to tabs to save the tab's name in localStorage when activated
+			$("#tabs a").on("shown", function(event) {
+				localStorage["activeTab"] = event.target.attributes["href"].value;
+			} );
+		}
+		
         $.pnotify.defaults.history = false;
 
         $.fn.modal.defaults.maxHeight = function(){
