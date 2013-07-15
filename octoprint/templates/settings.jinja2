@@ -6,18 +6,79 @@
     <div class="modal-body">
         <div class="tabbable">
             <ul class="nav nav-list span4" id="settingsTabs">
-                <li class="active"><a href="#settings_printerParameters" data-toggle="tab">Printer Parameters</a></li>
-                <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
+                <li class="nav-header">Printer</li>
+                <li class="active"><a href="#settings_serialConnection" data-toggle="tab">Serial Connection</a></li>
+                <li><a href="#settings_printerParameters" data-toggle="tab">Printer Parameters</a></li>
+                <li><a href="#settings_temperature" data-toggle="tab">Temperatures</a></li>
+                <li class="nav-header">Features</li>
                 <li><a href="#settings_features" data-toggle="tab">Features</a></li>
-                <li><a href="#settings_folder" data-toggle="tab">Folder</a></li>
-                <li><a href="#settings_temperature" data-toggle="tab">Temperature</a></li>
-                <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
-                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Users</a></li>{% endif %}
+                <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
+                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Access Control</a></li>{% endif %}
                 <li><a href="#settings_api" data-toggle="tab">Api</a></li>
+                <li class="nav-header">OctoPrint</li>
+                <li><a href="#settings_folder" data-toggle="tab">Folders</a></li>
+                <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
             </ul>
 
             <div class="tab-content span8">
-                <div class="tab-pane active" id="settings_printerParameters">
+                <div class="tab-pane active" id="settings_serialConnection">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-serialPort">Serial Port</label>
+                            <div class="controls">
+                                <select id="settings-serialPort" data-bind="options: serial_portOptions, optionsCaption: 'AUTO', value: serial_port"></select>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-baudrate">Baudrate</label>
+                            <div class="controls">
+                                <select id="settings-baudrate" data-bind="options: serial_baudrateOptions, optionsCaption: 'AUTO', value: serial_baudrate"></select>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_autoconnect" id="settings-serialAutoconnect"> Auto-connect to printer on server start
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-movementSpeedE">Communication timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
+                                    <span class="add-on">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-movementSpeedE">Connection timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutConnection" id="settings-serialTimeoutConnection">
+                                    <span class="add-on">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-movementSpeedE">Autodetection timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutDetection" id="settings-serialTimeoutDetection">
+                                    <span class="add-on">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_log" id="settings-serialLog"> Log communication to serial.log (might negatively impact performance) <span class="label label-important">Warning</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="tab-pane" id="settings_printerParameters">
                     <form class="form-horizontal">
                         <div class="control-group">
                             <label class="control-label" for="settings-movementSpeedX">Movement Speed X Axis</label>

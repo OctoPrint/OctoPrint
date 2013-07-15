@@ -116,28 +116,43 @@ class GcodeManager:
 	#~~ file handling
 
 	def addFile(self, file):
-		if file:
-			absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
-			if absolutePath is not None:
-				if file.filename in self._metadata.keys():
-					# delete existing metadata entry, since the file is going to get overwritten
-					del self._metadata[file.filename]
-					self._metadataDirty = True
-					self._saveMetadata()
-				file.save(absolutePath)
-				self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
-				return self._getBasicFilename(absolutePath)
-		return None
+		if not file:
+			return None
+
+		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+		if absolutePath is None:
+			return None
+
+		if file.filename in self._metadata.keys():
+			# delete existing metadata entry, since the file is going to get overwritten
+			del self._metadata[file.filename]
+			self._metadataDirty = True
+			self._saveMetadata()
+		file.save(absolutePath)
+		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
+		return self._getBasicFilename(absolutePath)
+
+	def getFutureFilename(self, file):
+		if not file:
+			return None
+
+		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+		if absolutePath is None:
+			return None
+
+		return self._getBasicFilename(absolutePath)
 
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
 		absolutePath = self.getAbsolutePath(filename)
-		if absolutePath is not None:
-			os.remove(absolutePath)
-			if filename in self._metadata.keys():
-				del self._metadata[filename]
-				self._metadataDirty = True
-				self._saveMetadata()
+		if absolutePath is None:
+			return
+
+		os.remove(absolutePath)
+		if filename in self._metadata.keys():
+			del self._metadata[filename]
+			self._metadataDirty = True
+			self._saveMetadata()
 
 	def getAbsolutePath(self, filename, mustExist=True):
 		"""

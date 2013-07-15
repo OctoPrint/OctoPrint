@@ -4,7 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 from werkzeug.utils import secure_filename
 import tornadio2
-from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort
+from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort, make_response
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
 
@@ -170,6 +170,9 @@ def connect():
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
 			settings().save()
+		if "autoconnect" in request.values.keys():
+			settings().setBoolean(["serial", "autoconnect"], True)
+			settings().save()
 		printer.connect(port=port, baudrate=baudrate)
 	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
 		printer.disconnect()
@@ -307,12 +310,39 @@ def readGcodeFile(filename):
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 @login_required
 def uploadGcodeFile():
-	filename = None
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
+		sd = "target" in request.values.keys() and request.values["target"] == "sd";
+
+		currentFilename = None
+		currentSd = None
+		currentJob = printer.getCurrentJob()
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		futureFilename = gcodeManager.getFutureFilename(file)
+		if futureFilename is None:
+			return make_response("Can not upload file %s, wrong format?" % file.filename, 400)
+
+		if futureFilename == currentFilename and sd == currentSd and printer.isPrinting() or printer.isPaused():
+			# trying to overwrite currently selected file, but it is being printed
+			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 403)
+
 		filename = gcodeManager.addFile(file)
-		if filename and "target" in request.values.keys() and request.values["target"] == "sd":
-			printer.addSdFile(filename, gcodeManager.getAbsolutePath(filename))
+		if filename is None:
+			return make_response("Could not upload the file %s" % file.filename, 500)
+
+		absFilename = gcodeManager.getAbsolutePath(filename)
+		if sd:
+			printer.addSdFile(filename, absFilename)
+
+		if currentFilename == filename and currentSd == sd:
+			# reload file as it was updated
+			if sd:
+				printer.selectFile(filename, sd, False)
+			else:
+				printer.selectFile(absFilename, sd, False)
 
 		global eventManager
 		eventManager.fire("Upload", filename)
@@ -328,7 +358,6 @@ def loadGcodeFile():
 			printAfterLoading = True
 
 		sd = False
-		filename = None
 		if "target" in request.values.keys() and request.values["target"] == "sd":
 			filename = request.values["filename"]
 			sd = True
@@ -342,10 +371,23 @@ def loadGcodeFile():
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
-		if "target" in request.values.keys() and request.values["target"] == "sd":
-			printer.deleteSdFile(filename)
-		else:
-			gcodeManager.removeFile(filename)
+		sd = "target" in request.values.keys() and request.values["target"] == "sd"
+
+		currentJob = printer.getCurrentJob()
+		currentFilename = None
+		currentSd = None
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		if currentFilename is not None and filename == currentFilename and not (printer.isPrinting() or printer.isPaused()):
+			printer.unselectFile()
+
+		if not (currentFilename == filename and currentSd == sd and (printer.isPrinting() or printer.isPaused())):
+			if currentSd:
+				printer.deleteSdFile(filename)
+			else:
+				gcodeManager.removeFile(filename)
 	return readGcodeFiles()
 
 @app.route(BASEURL + "gcodefiles/refresh", methods=["POST"])
@@ -477,6 +519,8 @@ def getSettings():
 
 	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
+	connectionOptions = getConnectionOptions()
+
 	return jsonify({
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
@@ -506,6 +550,17 @@ def getSettings():
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"])
+		},
+		"serial": {
+			"port": connectionOptions["portPreference"],
+			"baudrate": connectionOptions["baudratePreference"],
+			"portOptions": connectionOptions["ports"],
+			"baudrateOptions": connectionOptions["baudrates"],
+			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
+			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
+			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
+			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
+			"log": s.getBoolean(["serial", "log"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -558,6 +613,25 @@ def setSettings():
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+
+		if "serial" in data.keys():
+			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
+			if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial"]["port"])
+			if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+			if "timeoutConnection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
+			if "timeoutDetection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
+			if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
+
+			oldLog = s.getBoolean(["serial", "log"])
+			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
+			if oldLog and not s.getBoolean(["serial", "log"]):
+				# disable debug logging to serial.log
+				logging.getLogger("SERIAL").debug("Disabling serial logging")
+				logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
+			elif not oldLog and s.getBoolean(["serial", "log"]):
+				# enable debug logging to serial.log
+				logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+				logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
@@ -833,6 +907,11 @@ class Server():
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire("Startup")
+		if settings().getBoolean(["serial", "autoconnect"]):
+			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
+			connectionOptions = getConnectionOptions()
+			if port in connectionOptions["ports"]:
+				printer.connect(port, baudrate)
 		IOLoop.instance().start()
 
 	def _createSocketConnection(self, session, endpoint=None):
@@ -879,7 +958,12 @@ class Server():
 				#},
 				#"octoprint.events": {
 				#	"level": "DEBUG"
-				#}
+				#},
+				"SERIAL": {
+					"level": "CRITICAL",
+					"handlers": ["serialFile"],
+					"propagate": False
+				}
 			},
 			"root": {
 				"level": "INFO",
@@ -888,11 +972,7 @@ class Server():
 		}
 
 		if debug:
-			config["loggers"]["SERIAL"] = {
-				"level": "DEBUG",
-				"handlers": ["serialFile"],
-				"propagate": False
-			}
+			config["root"]["level"] = "DEBUG"
 
 		logging.config.dictConfig(config)
 
