@@ -1,9 +1,10 @@
 
 
 import unittest
+from mock import patch
 
-from cura import CuraFactory
-from cura import CuraEngine
+from octoprint.cura import CuraFactory
+from octoprint.cura import CuraEngine
 
 class CuraFactoryTestCase(unittest.TestCase):
 
@@ -15,14 +16,19 @@ class CuraFactoryTestCase(unittest.TestCase):
 
         self.assertEqual(fake_path, result.cura_path)
 
-    def test_cura_engine_process_file(self):
 
-        cura_engine = CuraFactory.create_slicer()
+	@patch('threading.Thread')
+	def test_cura_engine_process_file(self, thread):
+		path = 'rosshendrickson/workspaces/opensource/CuraEngine/'
+		
+		cura_engine = CuraFactory.create_slicer(path)
+		file_path = './cura/tests/test.stl'
+		config_path = './cura/tests/config'
+		gcode_filename= './cura/tests/output.gcode'
 
-        file_path = './cura/tests/test.stl'
-        config_path = './cura/tests/config'
-        gcode_filename= './cura/tests/output.gcode'
+		args = [path, '-s', config_path, '-o', file_path]
+		
+		cura_engine.process_file(config_path, gcode_filename, file_path)
 
-        cura_engine.process_file(config_path, gcode_filename, file_path)
-
+		self.assertTrue(thread.called)
 

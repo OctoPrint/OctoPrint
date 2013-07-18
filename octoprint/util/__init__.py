@@ -44,3 +44,20 @@ def getClass(name):
 
 def matchesGcode(line, gcode):
 	return re.search("^\s*%s\D" % gcode, line, re.I)
+
+def isGcodeFileName(filename):
+	return "." in filename and filename.rsplit(".", 1)[1] in ["gcode", "GCODE"]
+
+def isSTLFileName(filename):
+	return "." in filename and filename.rsplit(".", 1)[1] in ["stl", "STL"]
+
+def genGcodeFileName(filename):
+
+	if not filename:
+		return None
+
+	if "." not in filename:
+		return filename + ".gcode"
+
+	return filename.replace('.stl', '.gcode')
+	

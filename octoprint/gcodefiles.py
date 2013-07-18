@@ -114,18 +114,55 @@ class GcodeManager:
 	#~~ file handling
 
 	def addFile(self, file):
-		if file:
-			absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
-			if absolutePath is not None:
-				if file.filename in self._metadata.keys():
-					# delete existing metadata entry, since the file is going to get overwritten
-					del self._metadata[file.filename]
-					self._metadataDirty = True
-					self._saveMetadata()
-				file.save(absolutePath)
-				self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
-				return self._getBasicFilename(absolutePath)
-		return None
+		from octoprint.filemanager.types import FileTypes
+		if not file:
+			return None
+
+		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+		logging.info("Abs Path %s" % absolutePath)
+		if absolutePath is None:
+			return None
+
+		file.save(absolutePath)
+		fileType = file.filename.rsplit(".", 1)[1]
+
+		if not fileType:
+			return None
+
+		if fileType == FileTypes.GCODE:
+			return self.processGcode(file.filename, absolutePath)
+
+		if fileType == FileTypes.STL:
+			return self.processSTL(file.filename, absolutePath)
+
+	def processSTL(self, filename, absolutePath):
+
+		from octoprint.cura import CuraFactory
+
+		callBack = self.processGcode
+		gcodeFileName = util.genGcodeFileName(filename)
+		gcodePath = util.genGcodeFileName(absolutePath)
+
+		callBackArgs = [gcodeFileName, gcodePath]
+
+		curaEngine = CuraFactory.create_slicer()
+		current_settings = settings()
+
+		config = current_settings.get(["curaEngine", "config"])
+
+		curaEngine.process_file(
+			config, gcodePath, absolutePath, callBack, callBackArgs)
+	
+		return self._getBasicFilename(absolutePath)
+
+	def processGcode(self, filename, absolutePath):
+		if filename in self._metadata.keys():
+			# delete existing metadata entry, since the file is going to get overwritten
+			del self._metadata[filename]
+			self._metadataDirty = True
+			self._saveMetadata()
+		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
+		return self._getBasicFilename(absolutePath)
 
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
@@ -139,11 +176,11 @@ class GcodeManager:
 
 	def getAbsolutePath(self, filename, mustExist=True):
 		"""
-		Returns the absolute path of the given filename in the gcode upload folder.
+		Returns the absolute path of the given filename in the correct upload folder.
 
 		Ensures that the file
 		<ul>
-		  <li>has the extension ".gcode"</li>
+		  <li>has the extension ".gcode" or ".stl"</li>
 		  <li>exists and is a file (not a directory) if "mustExist" is set to True</li>
 		</ul>
 
@@ -153,9 +190,10 @@ class GcodeManager:
 		"""
 		filename = self._getBasicFilename(filename)
 
-		if not util.isAllowedFile(filename, set(["gcode"])):
+		if not util.isAllowedFile(filename, set(["gcode", "stl"])):
 			return None
 
+		# TODO: detect which type of file and add in the extra folder portion 
 		secure = os.path.join(self._uploadFolder, secure_filename(self._getBasicFilename(filename)))
 		if mustExist and (not os.path.exists(secure) or not os.path.isfile(secure)):
 			return None
