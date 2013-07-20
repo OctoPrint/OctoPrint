@@ -123,7 +123,7 @@ class GcodeManager:
 		if absolutePath is None:
 			return None
 
-		basename = os.path.basename(absolutePath)
+		basename = self._getBasicFilename(absolutePath)
 		if basename in self._metadata.keys():
 			# delete existing metadata entry, since the file is going to get overwritten
 			del self._metadata[basename]
