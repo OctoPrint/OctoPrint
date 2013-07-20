@@ -301,7 +301,7 @@ def readGcodeFiles():
 				"date": "n/a",
 				"origin": "sd"
 			})
-	return jsonify(files=files)
+	return jsonify(files=files, free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
 
 @app.route(BASEURL + "gcodefiles/<path:filename>", methods=["GET"])
 def readGcodeFile(filename):

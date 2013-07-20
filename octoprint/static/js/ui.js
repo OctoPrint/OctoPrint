@@ -784,6 +784,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.isLoading = ko.observable(undefined);
     self.isSdReady = ko.observable(undefined);
 
+    self.freeSpace = ko.observable(undefined);
+
     // initialize list helper
     self.listHelper = new ItemListHelper(
         "gcodeFiles",
@@ -883,6 +885,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             // got a file to scroll to
             self.listHelper.switchToItem(function(item) {return item.name == response.filename});
         }
+
+        self.freeSpace(response.free);
 
         self.highlightFilename(self.printerState.filename());
     }

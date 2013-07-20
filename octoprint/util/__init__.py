@@ -11,7 +11,7 @@ from octoprint.settings import settings
 
 def getFormattedSize(num):
 	"""
-	 Taken from http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
+	Taken from http://stackoverflow.com/a/1094933/2028598
 	"""
 	for x in ["bytes","KB","MB","GB"]:
 		if num < 1024.0:
@@ -42,7 +42,7 @@ def getFormattedDateTime(d):
 
 def getClass(name):
 	"""
-	 Taken from http://stackoverflow.com/a/452981/2028598
+	Taken from http://stackoverflow.com/a/452981/2028598
 	"""
 	parts = name.split(".")
 	module = ".".join(parts[:-1])
@@ -89,3 +89,18 @@ def getNewTimeout(type):
 		return now # timeout immediately for unknown timeout type
 
 	return now + settings().getFloat(["serial", "timeout", type])
+
+
+def getFreeBytes(path):
+	"""
+	Taken from http://stackoverflow.com/a/2372171/2028598
+	"""
+	if sys.platform == "win32":
+		import ctypes
+		freeBytes = ctypes.c_ulonglong(0)
+		ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(path), None, None, ctypes.pointer(freeBytes))
+		return freeBytes.value
+	else:
+		st = os.statvfs(path)
+		return st.f_bavail * st.f_frsize
+
