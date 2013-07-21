@@ -1098,6 +1098,7 @@ function GcodeViewModel(loginStateViewModel) {
     self.loginState = loginStateViewModel;
 
     self.loadedFilename = undefined;
+    self.loadedFileMTime = undefined;
     self.status = 'idle';
     self.enabled = false;
 
@@ -1108,16 +1109,18 @@ function GcodeViewModel(loginStateViewModel) {
         GCODE.ui.initHandlers();
     }
 
-    self.loadFile = function(filename){
+    self.loadFile = function(filename, mtime){
         if (self.status == 'idle' && self.errorCount < 3) {
             self.status = 'request';
             $.ajax({
                 url: AJAX_BASEURL + "gcodefiles/" + filename,
+                data: { "mtime": mtime },
                 type: "GET",
                 success: function(response, rstatus) {
                     if(rstatus === 'success'){
                         self.showGCodeViewer(response, rstatus);
                         self.loadedFilename=filename;
+                        self.loadedFileMTime=mtime;
                         self.status = 'idle';
                     }
                 },
@@ -1148,7 +1151,8 @@ function GcodeViewModel(loginStateViewModel) {
         if (!self.enabled) return;
         if (!data.job.filename) return;
 
-        if(self.loadedFilename && self.loadedFilename == data.job.filename) {
+        if(self.loadedFilename && self.loadedFilename == data.job.filename &&
+            self.loadedFileMTime == data.job.mtime) {
             if (data.state.flags && (data.state.flags.printing || data.state.flags.paused)) {
                 var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.progress * 100);
                 if(cmdIndex){
@@ -1158,7 +1162,7 @@ function GcodeViewModel(loginStateViewModel) {
             }
             self.errorCount = 0
         } else if (data.job.filename) {
-            self.loadFile(data.job.filename);
+            self.loadFile(data.job.filename, data.job.mtime);
         }
     }
 
