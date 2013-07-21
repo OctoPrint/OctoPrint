@@ -303,9 +303,15 @@ class Printer():
 		formattedFilename = None
 		formattedFilesize = None
 		estimatedPrintTime = None
+		fileMTime = None
 		filament = None
 		if filename:
 			formattedFilename = os.path.basename(filename)
+
+			# Use a string for mtime because it could be float and the
+			# javascript needs to exact match
+			if not sd:
+				fileMTime = str(os.stat(filename).st_mtime)
 
 			if filesize:
 				formattedFilesize = util.getFormattedSize(filesize)
@@ -317,7 +323,7 @@ class Printer():
 				if "filament" in fileData["gcodeAnalysis"].keys():
 					filament = fileData["gcodeAnalysis"]["filament"]
 
-		self._stateMonitor.setJobData({"filename": formattedFilename, "filesize": formattedFilesize, "estimatedPrintTime": estimatedPrintTime, "filament": filament, "sd": sd})
+		self._stateMonitor.setJobData({"filename": formattedFilename, "filesize": formattedFilesize, "estimatedPrintTime": estimatedPrintTime, "filament": filament, "sd": sd, "mtime": fileMTime})
 
 	def _sendInitialStateUpdate(self, callback):
 		try:
