@@ -217,20 +217,15 @@ class GcodeManager:
 		return files
 
 	def getFileData(self, filename):
-		from octoprint.filemanager.types import FileTypes
-		
+		from octoprint.util import isSTLFileName
+	
 		if not filename:
 			return
 
 		filename = self._getBasicFilename(filename)
 
-		fileType = filename.rsplit(".", 1)[1]
-
-		if not fileType:
-			return None
-
 		# TODO: Make this more robust when STLs will be viewable from the client
-		if fileType != FileTypes.GCODE:
+		if isSTLFileName(filename):
 			return
 	
 		absolutePath = self.getAbsolutePath(filename)
