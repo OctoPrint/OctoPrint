@@ -130,7 +130,6 @@ class GcodeManager:
 		file.save(absolutePath)
 		filename = file.filename
 
-
 		if isGcodeFileName(filename):
 			return self.processGcode(absolutePath)
 
