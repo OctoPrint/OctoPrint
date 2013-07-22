@@ -34,7 +34,7 @@ class FileManipulationTestCase(unittest.TestCase):
 
 		logging.info("RESULT:%s" % str(result))
 
-		self.assertTrue(fake.filename == result)
+		self.assertIsNone(result)
 
 		self.assertTrue(process.called)
 

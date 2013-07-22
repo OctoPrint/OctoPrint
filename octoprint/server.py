@@ -308,12 +308,13 @@ def readGcodeFile(filename):
 @login_required
 def uploadGcodeFile():
 	filename = None
-	logging.info(str(request.files.keys()))
+
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
 		filename = gcodeManager.addFile(file)
 		if filename and "target" in request.values.keys() and request.values["target"] == "sd":
 			printer.addSdFile(filename, gcodeManager.getAbsolutePath(filename))
+
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])

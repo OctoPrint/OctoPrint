@@ -46,11 +46,23 @@ def matchesGcode(line, gcode):
 	return re.search("^\s*%s\D" % gcode, line, re.I)
 
 def isGcodeFileName(filename):
+	"""Simple helper to determine if a filename has the .gcode extension.
+
+	:param filename: :class: `str`
+
+	:returns boolean:
+	"""
 	return "." in filename and filename.rsplit(".", 1)[1] in ["gcode", "GCODE"]
 
 def isSTLFileName(filename):
-	return "." in filename and filename.rsplit(".", 1)[1] in ["stl", "STL"]
+	"""Simple helper to determine if a filename has the .stl extension.
 
+	:param filename: :class: `str`
+
+	:returns boolean:
+	"""
+	return "." in filename and filename.rsplit(".", 1)[1] in ["stl", "STL"]
+	
 def genGcodeFileName(filename):
 
 	if not filename:

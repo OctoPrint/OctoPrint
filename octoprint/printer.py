@@ -467,12 +467,30 @@ class Printer():
 			return
 		return self._comm.getSdFiles()
 
-	def addSdFile(self, filename, file):
+	def addSdFile(self, filename, absolutePath):
+		from octoprint.util import isGcodeFileName
+		from octoprint.util import isSTLFileName
+
 		if not self._comm:
 			return
 
-		self._sdStreamer = SdFileStreamer(self._comm, filename, file, self._onSdFileStreamProgress, self._onSdFileStreamFinish)
+		if isGcodeFileName(filename):
+			self.streamSdFile(filename, absolutePath)
+
+		if isSTLFileName(filename):
+			gcodePath = util.genGcodeFileName(absolutePath)
+			callBackArgs = [filename, absolutePath]
+			callBack = self.streamSdFile
+
+			gcodeManager = GcodeManager()
+			gcodeManager.processSTL(
+				filename, absolutePath, callBack, callBackArgs)
+
+	def streamSdFile(filename, absolutePath):
+
+		self._sdStreamer = SdFileStreamer(self._comm, filename, absolutePath, self._onSdFileStreamProgress, self._onSdFileStreamFinish)
 		self._sdStreamer.start()
+		logging.info("Stream file to SD started")
 
 	def deleteSdFile(self, filename):
 		if not self._comm:

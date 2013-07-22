@@ -114,55 +114,61 @@ class GcodeManager:
 	#~~ file handling
 
 	def addFile(self, file):
-		from octoprint.filemanager.types import FileTypes
+		from octoprint.util import isSTLFileName
+		from octoprint.util import isGcodeFileName
+
 		if not file:
 			return None
 
 		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
-		logging.info("Abs Path %s" % absolutePath)
+		
 		if absolutePath is None:
 			return None
 
 		file.save(absolutePath)
-		fileType = file.filename.rsplit(".", 1)[1]
+		filename = file.filename
 
-		if not fileType:
-			return None
 
-		if fileType == FileTypes.GCODE:
-			return self.processGcode(file.filename, absolutePath)
+		if isGcodeFileName(filename):
+			return self.processGcode(absolutePath)
 
-		if fileType == FileTypes.STL:
-			return self.processSTL(file.filename, absolutePath)
+		if isSTLFileName(filename):
+			gcodePath = util.genGcodeFileName(absolutePath)
+			logging.info("FILENAME: %s" % filename)
 
-	def processSTL(self, filename, absolutePath):
+			callBackArgs = [gcodePath]
+			callBack = self.processGcode
+
+			return self.processSTL(
+				filename, absolutePath, callBack, callBackArgs)
+
+	def processSTL(self, filename, absolutePath, callBack, callBackArgs):
 
 		from octoprint.cura import CuraFactory
 
-		callBack = self.processGcode
-		gcodeFileName = util.genGcodeFileName(filename)
-		gcodePath = util.genGcodeFileName(absolutePath)
-
-		callBackArgs = [gcodeFileName, gcodePath]
-
 		curaEngine = CuraFactory.create_slicer()
 		current_settings = settings()
+
+		gcodePath = util.genGcodeFileName(absolutePath)
 
 		config = current_settings.get(["curaEngine", "config"])
 
 		curaEngine.process_file(
 			config, gcodePath, absolutePath, callBack, callBackArgs)
-	
-		return self._getBasicFilename(absolutePath)
 
-	def processGcode(self, filename, absolutePath):
+	def processGcode(self, absolutePath):
+
+		filename = self._getBasicFilename(absolutePath)
+
 		if filename in self._metadata.keys():
 			# delete existing metadata entry, since the file is going to get overwritten
 			del self._metadata[filename]
 			self._metadataDirty = True
 			self._saveMetadata()
+
 		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
-		return self._getBasicFilename(absolutePath)
+
+		return filename 
 
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
@@ -209,7 +215,22 @@ class GcodeManager:
 		return files
 
 	def getFileData(self, filename):
+		from octoprint.filemanager.types import FileTypes
+		
+		if not filename:
+			return
+
 		filename = self._getBasicFilename(filename)
+
+		fileType = filename.rsplit(".", 1)[1]
+
+		if not fileType:
+			return None
+
+		# TODO: Make this more robust when STLs will be viewable from the client
+		if fileType != FileTypes.GCODE:
+			return
+	
 		absolutePath = self.getAbsolutePath(filename)
 		if absolutePath is None:
 			return None
