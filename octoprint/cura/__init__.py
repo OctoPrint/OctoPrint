@@ -29,7 +29,9 @@ class CuraEngine(object):
 		logging.info('CuraEngine Created')
 
 
-	def process_file(self, config, gcode, file_path, call_back, call_back_args):
+	def process_file(
+			self, config, gcode, file_path, call_back=None, 
+			call_back_args=None):
 		"""Wraps around the main.cpp processFile method.
 		:param config: :class: `string` :path to a cura config file:
 		:param gcode: :class: `string :path to write out the gcode generated:

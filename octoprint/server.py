@@ -509,7 +509,6 @@ def setSettings():
 		curaEngine = data.get("curaEngine", None)
 
 		if curaEngine:
-			
 			path = curaEngine.get("path")
 			if path:
 				s.set(["curaEngine", "path"], path)

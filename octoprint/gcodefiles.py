@@ -128,7 +128,6 @@ class GcodeManager:
 		file.save(absolutePath)
 		filename = file.filename
 
-
 		if isGcodeFileName(filename):
 			return self.processGcode(absolutePath)
 
@@ -143,7 +142,6 @@ class GcodeManager:
 				filename, absolutePath, callBack, callBackArgs)
 
 	def processSTL(self, filename, absolutePath, callBack, callBackArgs):
-
 		from octoprint.cura import CuraFactory
 
 		curaEngine = CuraFactory.create_slicer()
@@ -157,7 +155,6 @@ class GcodeManager:
 			config, gcodePath, absolutePath, callBack, callBackArgs)
 
 	def processGcode(self, absolutePath):
-
 		filename = self._getBasicFilename(absolutePath)
 
 		if filename in self._metadata.keys():

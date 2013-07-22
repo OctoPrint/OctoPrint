@@ -487,7 +487,6 @@ class Printer():
 				filename, absolutePath, callBack, callBackArgs)
 
 	def streamSdFile(filename, absolutePath):
-
 		self._sdStreamer = SdFileStreamer(self._comm, filename, absolutePath, self._onSdFileStreamProgress, self._onSdFileStreamFinish)
 		self._sdStreamer.start()
 		logging.info("Stream file to SD started")

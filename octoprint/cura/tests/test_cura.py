@@ -9,12 +9,12 @@ from octoprint.cura import CuraEngine
 class CuraFactoryTestCase(unittest.TestCase):
 
 
-    def test_cura_factory(self):
+	def test_cura_factory(self):
 
-        fake_path = 'my/temp/path'
-        result = CuraFactory.create_slicer(fake_path)
+		fake_path = 'my/temp/path'
+		result = CuraFactory.create_slicer(fake_path)
 
-        self.assertEqual(fake_path, result.cura_path)
+		self.assertEqual(fake_path, result.cura_path)
 
 
 	@patch('threading.Thread')
@@ -29,6 +29,5 @@ class CuraFactoryTestCase(unittest.TestCase):
 		args = [path, '-s', config_path, '-o', file_path]
 		
 		cura_engine.process_file(config_path, gcode_filename, file_path)
-
 		self.assertTrue(thread.called)
 
