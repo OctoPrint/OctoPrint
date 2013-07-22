@@ -19,7 +19,9 @@ class GcodeManager:
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 
-		self._uploadFolder = settings().getBaseFolder("uploads")
+		self._settings = settings()
+
+		self._uploadFolder = self._settings.getBaseFolder("uploads")
 
 		self._callbacks = []
 
@@ -128,10 +130,13 @@ class GcodeManager:
 		file.save(absolutePath)
 		filename = file.filename
 
+
 		if isGcodeFileName(filename):
 			return self.processGcode(absolutePath)
 
-		if isSTLFileName(filename):
+		curaEnabled = self._settings.get(["curaEngine", "enabled"])
+
+		if isSTLFileName(filename) and curaEnabled:
 			gcodePath = util.genGcodeFileName(absolutePath)
 			logging.info("FILENAME: %s" % filename)
 
@@ -142,19 +147,20 @@ class GcodeManager:
 				filename, absolutePath, callBack, callBackArgs)
 
 	def processSTL(self, filename, absolutePath, callBack, callBackArgs):
+
 		from octoprint.cura import CuraFactory
 
 		curaEngine = CuraFactory.create_slicer()
-		current_settings = settings()
 
 		gcodePath = util.genGcodeFileName(absolutePath)
 
-		config = current_settings.get(["curaEngine", "config"])
+		config = self._settings.get(["curaEngine", "config"])
 
 		curaEngine.process_file(
 			config, gcodePath, absolutePath, callBack, callBackArgs)
 
 	def processGcode(self, absolutePath):
+
 		filename = self._getBasicFilename(absolutePath)
 
 		if filename in self._metadata.keys():
