@@ -143,7 +143,8 @@ class gcode(object):
 					z = lparse.getFloat('Z')
 					e = lparse.getFloat('E')
 					f = lparse.getFloat('F')
-					oldPos = pos.copy()
+					oldPos = pos
+					pos = oldPos.copy()
 					if x is not None:
 						if posAbs:
 							pos.x = x * scale + posOffset.x
@@ -188,10 +189,9 @@ class gcode(object):
 					if currentPath.type != moveType or currentPath.pathType != pathType:
 						currentPath = gcodePath(moveType, pathType, layerThickness, currentPath.list[-1])
 						currentLayer.append(currentPath)
-					newPos = pos.copy()
-					newPos.e = totalExtrusion
-					newPos.extrudeAmountMultiply = extrudeAmountMultiply
-					currentPath.list.append(newPos)
+					pos.e = totalExtrusion
+					pos.extrudeAmountMultiply = extrudeAmountMultiply
+					currentPath.list.append(pos)
 				elif G == 4:	#Delay
 					S = lparse.getFloat('S')
 					if S is not None:
