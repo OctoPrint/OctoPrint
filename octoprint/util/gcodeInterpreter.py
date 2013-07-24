@@ -322,6 +322,11 @@ class gcode(object):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
 
 if __name__ == '__main__':
+	from time import time
+	t = time()
 	for filename in sys.argv[1:]:
-		gcode().load(filename)
+		g = gcode()
+		g.load(filename)
+		print "MoveTimeMinute:", g.totalMoveTimeMinute
+	print "Time:", time() - t
 
