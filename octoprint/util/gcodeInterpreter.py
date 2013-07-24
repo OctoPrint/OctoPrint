@@ -162,7 +162,7 @@ class gcode(object):
 					if f is not None:
 						feedRate = f
 					if x is not None or y is not None or z is not None:
-						totalMoveTimeMinute += (oldPos - pos).vsize() / feedRate
+						totalMoveTimeMinute += pos.dist(oldPos) / feedRate
 					moveType = 'move'
 					if e is not None:
 						if posAbsExtruder:

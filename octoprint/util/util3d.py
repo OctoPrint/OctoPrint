@@ -80,6 +80,12 @@ class Vector3(object):
 	def max(self, v):
 		return Vector3(max(self.x, v.x), max(self.y, v.y), max(self.z, v.z))
 
+	def dist(self, v):
+		xx = self.x - v.x
+		yy = self.y - v.y
+		zz = self.z - v.z
+		return math.sqrt(xx * xx + yy * yy + zz * zz)
+
 class AABB(object):
 	def __init__(self, vMin, vMax):
 		self.vMin = vMin
