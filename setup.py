@@ -38,6 +38,7 @@ def params():
 	include_package_data = True
 	zip_safe = False
 	install_requires = open("requirements.txt").read().split("\n")
+	scripts = ['run']
 
 	return locals()
 
