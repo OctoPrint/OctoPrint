@@ -20,3 +20,4 @@ build
 dist
 pypy
 OctoPrint.egg-info
+*.orig
