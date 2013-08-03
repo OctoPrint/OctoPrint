@@ -18,11 +18,16 @@
                 <li class="nav-header">OctoPrint</li>
                 <li><a href="#settings_folder" data-toggle="tab">Folders</a></li>
                 <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
+<<<<<<< HEAD
 	            <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
+                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Users</a></li>{% endif %}
             </ul>
 
         <div class="tab-content span8">
             <div class="tab-pane active" id="settings_printerParameters">
+=======
+            </ul>
+
             <div class="tab-content span8">
                 <div class="tab-pane active" id="settings_serialConnection">
                     <form class="form-horizontal">
@@ -82,6 +87,7 @@
                     </form>
                 </div>
                 <div class="tab-pane" id="settings_printerParameters">
+>>>>>>> devel
                     <form class="form-horizontal">
                         <div class="control-group">
                             <label class="control-label" for="settings-movementSpeedX">Movement Speed X Axis</label>

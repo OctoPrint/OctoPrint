@@ -4,19 +4,18 @@
 *.pyc
 *.zip
 *.exe
+<<<<<<< HEAD
 *.gcode
 *.swp
 darwin-Cura-*
 win32-Cura-*
 linux-Cura-*
-*.iml
 Printrun
 =======
+*.iml
+>>>>>>> devel
 .idea
 .DS_Store
-Cura/current_profile.ini
-Cura/preferences.ini
 build
 dist
-pypy
 OctoPrint.egg-info

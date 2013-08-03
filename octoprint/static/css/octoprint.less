@@ -358,6 +358,21 @@ ul.dropdown-menu li a {
 
 #webcam_container {
   width: 100%;
+
+  .flipH {
+    -webkit-transform: scaleX(-1);
+    -moz-transform: scaleX(-1);
+  }
+
+  .flipV {
+    -webkit-transform: scaleY(-1);
+    -moz-transform: scaleY(-1);
+  }
+
+  .flipH.flipV {
+    -webkit-transform: scaleX(-1) scaleY(-1);
+    -moz-transform: scaleX(-1) scaleY(-1);
+  }
 }
 
 /** GCODE file manager */
@@ -369,6 +384,10 @@ ul.dropdown-menu li a {
     p:last-child {
       margin-bottom: 0;
     }
+  }
+
+  table {
+    margin-bottom: 0;
   }
 }
 
@@ -420,21 +439,36 @@ ul.dropdown-menu li a {
 
 }
 
+/** Terminal output */
+
+#term {
+  #terminal-output {
+    min-height: 340px;
+  }
+}
+
 /** Settings dialog */
 #settings_dialog {
 }
 
 /** Footer */
 .footer {
-  text-align: right;
+  ul {
+    margin: 0;
 
-  ul li {
-    display: inline;
-    margin-left: 1em;
-    font-size: 85%;
-    a {
-      color: #555;
+    li {
+      &:first-child {
+        margin-left: 0;
+      }
+
+      display: inline;
+      margin-left: 1em;
+      font-size: 85%;
+      a {
+        color: #555;
+      }
     }
+
   }
 }
 
@@ -571,4 +605,10 @@ ul.dropdown-menu li a {
       }
     }
   }
+}
+
+.icon-sd-black-14 {
+  background: url("../img/icon-sd-black-14.png") 0 3px no-repeat;
+  width: 11px;
+  height: 17px;
 }

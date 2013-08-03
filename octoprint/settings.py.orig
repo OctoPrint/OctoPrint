@@ -89,11 +89,13 @@ default_settings = {
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None
 	},
+<<<<<<< HEAD
 	"curaEngine": {
 		"enabled": False,
 		"path": "/default/path/to/curaEngine/dir/",
 		"config": "/default/path/to/your/curaEngine/config/file/"
-	},
+		}
+=======
 	"events": {
 		"systemCommandTrigger": {
 			"enabled": False
@@ -106,6 +108,7 @@ default_settings = {
 		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	}
+>>>>>>> devel
 }
 
 valid_boolean_trues = ["true", "yes", "y", "1"]

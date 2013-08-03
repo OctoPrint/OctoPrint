@@ -90,14 +90,17 @@
                         </div>
                         <div class="accordion-body collapse in" id="connection">
                             <div class="accordion-inner">
-                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser">Serial Port</label>
-                                <select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"></select>
-                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser">Baudrate</label>
-                                <select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"></select>
+                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Serial Port</label>
+                                <select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
+                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Baudrate</label>
+                                <select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
                                 <label class="checkbox">
-                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed}, enable: isErrorOrClosed && loginState.isUser"> Save connection settings
+                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Save connection settings
                                 </label>
-                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser">Connect</button>
+                                <label class="checkbox">
+                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Auto-connect on server startup
+                                </label>
+                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser()">Connect</button>
                             </div>
                         </div>
                     </div>
@@ -108,13 +111,13 @@
                         <div class="accordion-body collapse in" id="state">
                             <div class="accordion-inner">
                                 Machine State: <strong data-bind="text: stateString"></strong><br>
-                                File: <strong data-bind="text: filename"></strong><br>
+                                File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
                                 Estimated Print Time: <strong data-bind="text: estimatedPrintTime"></strong><br>
-                                Line: <strong data-bind="text: lineString"></strong><br>
                                 Height: <strong data-bind="text: heightString"></strong><br>
                                 Print Time: <strong data-bind="text: printTime"></strong><br>
                                 Print Time Left: <strong data-bind="text: printTimeLeft"></strong><br>
+                                Printed: <strong data-bind="text: byteString"></strong><br>
 
                                 <div class="progress">
                                     <div class="bar" id="job_progressBar" data-bind="style: { width: progressString() + '%' }"></div>
@@ -153,7 +156,7 @@
                             {% if enableSdSupport %}
                             <div class="sd-trigger accordion-heading-button btn-group">
                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                    <span class="icon-hdd"></span>
+                                    <span class="icon-sd-black-14"></span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> Initialize SD card</a></li>
@@ -174,15 +177,18 @@
                                         </tr>
                                     </thead>
                                     <tbody data-bind="foreach: listHelper.paginatedItems">
-                                        <tr data-bind="css: $root.getSuccessClass($data), popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data), html: true }">
+                                        <tr data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data), html: true }">
                                             <td class="gcode_files_name" data-bind="text: name"></td>
                                             <td class="gcode_files_size" data-bind="text: size"></td>
                                             <td class="gcode_files_action">
-                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.loginState.isUser()) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.isLoadActionPossible()) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.isLoadActionPossible()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.isLoadAndPrintActionPossible()) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.isLoadAndPrintActionPossible()}"></a>
+                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
+                                <div class="muted text-right">
+                                    <small>Free: <span data-bind="text: freeSpace"></span></small>
+                                </div>
                                 <div class="pagination pagination-mini pagination-centered">
                                     <ul>
                                         <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
@@ -311,7 +317,7 @@
                         <div class="tab-pane" id="control">
                             {% if webcamStream %}
                             <div id="webcam_container">
-                                <img id="webcam_image" src="{{ webcamStream }}">
+                                <img id="webcam_image" src="{{ webcamStream }}" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
                             </div>
                             {% endif %}
 
@@ -388,6 +394,11 @@
                             <script type="text/html" id="customControls_commandTemplate">
                                 <form class="form-inline">
                                     <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
+                                </form>
+                            </script>
+                            <script type="text/html" id="customControls_feedbackCommandTemplate">
+                                <form class="form-inline">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button> <span data-bind="text: output"></span>
                                 </form>
                             </script>
                             <script type="text/html" id="customControls_parametricCommandTemplate">
@@ -494,6 +505,12 @@
                             <label class="checkbox">
                                 <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
                             </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-filterM105" data-bind="checked: filterM105"> Suppress M105 requests/responses
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-filterM27" data-bind="checked: filterM27"> Suppress M27 requests/responses
+                            </label>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
                                 <input type="text" id="terminal-command" data-bind="enable: isOperational() && loginState.isUser()">
@@ -563,7 +580,12 @@
                 </div>
             </div>
             <div class="footer">
-                <ul>
+                {% if gitBranch and gitCommit %}
+                    <ul class="pull-left muted">
+                        <li><small>Branch: {{ gitBranch }}, Commit: {{ gitCommit }}</small></li>
+                    </ul>
+                {% endif %}
+                <ul class="pull-right">
                     <li><a href="http://octoprint.org"><i class="icon-home"></i> Homepage</a></li>
                     <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> Sourcecode</a></li>
                     <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> Documentation</a></li>
@@ -575,7 +597,6 @@
         {% include 'settings.jinja2' %}
         {% include 'dialogs.jinja2' %}
 
-        <!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>-->
         <script type="text/javascript" src="{{ url_for('static', filename='js/jquery/jquery.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/modernizr.custom.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/underscore.js') }}"></script>

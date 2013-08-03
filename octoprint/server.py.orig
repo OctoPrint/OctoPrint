@@ -310,6 +310,11 @@ def readGcodeFile(filename):
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 @login_required
 def uploadGcodeFile():
+<<<<<<< HEAD
+	filename = None
+
+=======
+>>>>>>> devel
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
 		sd = "target" in request.values.keys() and request.values["target"] == "sd";
@@ -330,7 +335,11 @@ def uploadGcodeFile():
 			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 403)
 
 		filename = gcodeManager.addFile(file)
+<<<<<<< HEAD
+		if filename and "target" in request.values.keys() and request.values["target"] == "sd":
+			printer.addSdFile(filename, gcodeManager.getAbsolutePath(filename))
 
+=======
 		if filename is None:
 			return make_response("Could not upload the file %s" % file.filename, 500)
 
@@ -347,6 +356,7 @@ def uploadGcodeFile():
 
 		global eventManager
 		eventManager.fire("Upload", filename)
+>>>>>>> devel
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
 
 

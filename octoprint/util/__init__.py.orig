@@ -51,6 +51,7 @@ def getClass(name):
 		m = getattr(m, comp)
 	return m
 
+<<<<<<< HEAD
 def matchesGcode(line, gcode):
 	return re.search("^\s*%s\D" % gcode, line, re.I)
 
@@ -82,6 +83,7 @@ def genGcodeFileName(filename):
 
 	return filename.replace('.stl', '.gcode')
 	
+=======
 
 def isDevVersion():
 	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
@@ -134,3 +136,5 @@ def getFreeBytes(path):
 	else:
 		st = os.statvfs(path)
 		return st.f_bavail * st.f_frsize
+
+>>>>>>> devel

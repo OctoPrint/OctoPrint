@@ -118,13 +118,17 @@ class GcodeManager:
 	#~~ file handling
 
 	def addFile(self, file):
+<<<<<<< HEAD
 		from octoprint.util import isSTLFileName
 		from octoprint.util import isGcodeFileName
 
+=======
+>>>>>>> devel
 		if not file:
 			return None
 
 		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+<<<<<<< HEAD
 		
 		if absolutePath is None:
 			return None
@@ -146,17 +150,6 @@ class GcodeManager:
 
 			return self.processSTL(
 				filename, absolutePath, callBack, callBackArgs)
-
-	def getFutureFileName(self, file):
-		if not file:
-			return None
-
-		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
-		if absolutePath is None:
-			return None
-
-		return self._getBasicFilename(absolutePath)
-
 
 	def processSTL(self, filename, absolutePath, callBack, callBackArgs):
 
@@ -184,7 +177,7 @@ class GcodeManager:
 		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
 
 		return filename 
-
+=======
 		if absolutePath is None:
 			return None
 
@@ -207,6 +200,7 @@ class GcodeManager:
 			return None
 
 		return self._getBasicFilename(absolutePath)
+>>>>>>> devel
 
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
