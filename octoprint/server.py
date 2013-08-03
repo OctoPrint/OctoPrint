@@ -573,19 +573,14 @@ def getSettings():
 			"profiles": s.get(["temperature", "profiles"])
 		},
 		"system": {
-<<<<<<< HEAD
 			"actions": s.get(["system", "actions"])
+			"events": s.get(["system", "events"])
 		},
 		"curaEngine": {
 			"enabled": s.getBoolean(["curaEngine", "enabled"]),
 			"path": s.get(["curaEngine", "path"]),
 			"config": s.get(["curaEngine", "config"])
 			}
-=======
-			"actions": s.get(["system", "actions"]),
-			"events": s.get(["system", "events"])
-		} 
->>>>>>> devel
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -655,7 +650,8 @@ def setSettings():
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
-<<<<<<< HEAD
+
+		if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
 		curaEngine = data.get("curaEngine", None)
 
@@ -672,9 +668,6 @@ def setSettings():
 			enabled = curaEngine.get("enabled")
 			s.setBoolean(["curaEngine", "enabled"], enabled)
 
-=======
-			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
->>>>>>> devel
 		s.save()
 
 	return getSettings()
