@@ -4,6 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 import logging
 
 from octoprint.settings import settings
+from octoprint.gcodefiles import GcodeManager
 
 class CuraFactory(object):
 
@@ -47,7 +48,10 @@ class CuraEngine(object):
 			logging.info("Subprocess args: %s" % str(call_args))
 			process = subprocess.call(call_args)
 			call_back(*call_back_args)
-			logging.info("Slicing call back complete")
+			# TODO: Figure out a better way to have the file manager refresh
+			manager = GcodeManager()
+			manager.processGcode(call_args[4])
+			logging.info("Slicing call back complete:%s" % str(call_back))
 
 		args = [self.cura_path, '-s', config, '-o',  gcode, file_path]
 		logging.info('CuraEngine args:%s' % str(args))

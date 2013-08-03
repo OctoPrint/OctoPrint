@@ -332,10 +332,13 @@ class MachineCom(object):
 			eventManager().fire("Error", self.getErrorString())
 
 	def startFileTransfer(self, filename, remoteFilename):
+		logging.info("Starting File Transfer:%s" % filename)
 		if not self.isOperational() or self.isBusy():
+			logging.info("Printer is not operation or busy")
 			return
 
 		self._currentFile = StreamingGcodeFileInformation(filename)
+		logging.info("Starting to send currentfile:%s" % str(self._currentFile))
 		self._currentFile.start()
 
 		self.sendCommand("M28 %s" % remoteFilename)
@@ -350,6 +353,7 @@ class MachineCom(object):
 			if not self.isOperational():
 				# printer is not connected, can't use SD
 				return
+			logging.info("Select SD file: %s" % filename)
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename)

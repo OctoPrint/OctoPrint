@@ -117,14 +117,19 @@ class GcodeManager:
 
 	#~~ file handling
 
-	def addFile(self, file):
+	def addFile(self, file, destination):
 		from octoprint.util import isSTLFileName
 		from octoprint.util import isGcodeFileName
+		from octoprint.filemanager.destinations import FileDestinations
 
-		if not file:
+		if not file or not destination:
 			return None
 
+		local = True if destination == FileDestinations.LOCAL else False
+
 		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+
+		logging.info("Adding file:%s" % absolutePath)
 		
 		if absolutePath is None:
 			return None
@@ -133,19 +138,22 @@ class GcodeManager:
 		filename = file.filename
 
 		if isGcodeFileName(filename):
+			logging.info("File is Gcode File")
 			return self.processGcode(absolutePath)
 
 		curaEnabled = self._settings.get(["curaEngine", "enabled"])
+		logging.info("Cura Enabled %s" % str(curaEnabled))
 
-		if isSTLFileName(filename) and curaEnabled:
+		if isSTLFileName(filename) and curaEnabled and local:
+			logging.info("File is STL - Needs to be sliced")
 			gcodePath = util.genGcodeFileName(absolutePath)
 			logging.info("FILENAME: %s" % filename)
 
 			callBackArgs = [gcodePath]
 			callBack = self.processGcode
 
-			return self.processSTL(
-				filename, absolutePath, callBack, callBackArgs)
+			self.processSTL(absolutePath, callBack, callBackArgs)
+		return filename
 
 	def getFutureFileName(self, file):
 		if not file:
@@ -157,21 +165,21 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
-
-	def processSTL(self, filename, absolutePath, callBack, callBackArgs):
+	def processSTL(self, absolutePath, callBack, callBackArgs):
 
 		from octoprint.cura import CuraFactory
 
 		curaEngine = CuraFactory.create_slicer()
-
 		gcodePath = util.genGcodeFileName(absolutePath)
-
 		config = self._settings.get(["curaEngine", "config"])
 
 		curaEngine.process_file(
 			config, gcodePath, absolutePath, callBack, callBackArgs)
 
 	def processGcode(self, absolutePath):
+		logging.info("Processing Gcode:%s" % str(absolutePath))
+		if absolutePath is None:
+			return None
 
 		filename = self._getBasicFilename(absolutePath)
 
@@ -184,19 +192,6 @@ class GcodeManager:
 		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
 
 		return filename 
-
-		if absolutePath is None:
-			return None
-
-		basename = self._getBasicFilename(absolutePath)
-		if basename in self._metadata.keys():
-			# delete existing metadata entry, since the file is going to get overwritten
-			del self._metadata[basename]
-			self._metadataDirty = True
-			self._saveMetadata()
-		file.save(absolutePath)
-		self._metadataAnalyzer.addFileToQueue(basename)
-		return basename
 
 	def getFutureFilename(self, file):
 		if not file:

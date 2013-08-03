@@ -7,6 +7,7 @@ import datetime
 import threading
 import copy
 import os
+import logging
 
 #import logging, logging.config
 
@@ -462,31 +463,35 @@ class Printer():
 	def addSdFile(self, filename, absolutePath):
 		from octoprint.util import isGcodeFileName
 		from octoprint.util import isSTLFileName
+		from octoprint.gcodefiles import GcodeManager
 
+		logging.info("Adding SD Card file:%s" % filename)
 		if not self._comm or self._comm.isBusy():
+			logging.error("No connection to printer or printer is busy")
 			return
 
 		if isGcodeFileName(filename):
+			logging.info("Sending Gcode to SD card")
 			self.streamSdFile(filename, absolutePath)
 
 		if isSTLFileName(filename):
+			logging.info("Slicing stl and then sending to SD card")
 			gcodePath = util.genGcodeFileName(absolutePath)
-			callBackArgs = [filename, absolutePath]
+			gcodeFileName = util.genGcodeFileName(filename)
+			callBackArgs = [gcodeFileName, gcodePath]
 			callBack = self.streamSdFile
 
 			gcodeManager = GcodeManager()
 			gcodeManager.processSTL(
-				filename, absolutePath, callBack, callBackArgs)
+				absolutePath, callBack, callBackArgs)
 
-	def streamSdFile(filename, absolutePath):
-		self._sdStreamer = SdFileStreamer(self._comm, filename, absolutePath, self._onSdFileStreamProgress, self._onSdFileStreamFinish)
-		self._sdStreamer.start()
-		logging.info("Stream file to SD started")
-
-	def addSdFile(self, filename, path):
+	def streamSdFile(self, filename, path):
+		logging.info("Stream SD file called:%s" % filename)
 		if not self._comm or self._comm.isBusy():
 			return
+		logging.info("Starting to stream file")
 		self._comm.startFileTransfer(path, filename[:8].lower() + ".gco")
+		logging.info("File is streaming to SD Card")
 
 	def deleteSdFile(self, filename):
 		if not self._comm:
