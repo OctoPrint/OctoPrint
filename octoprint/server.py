@@ -573,7 +573,7 @@ def getSettings():
 			"profiles": s.get(["temperature", "profiles"])
 		},
 		"system": {
-			"actions": s.get(["system", "actions"])
+			"actions": s.get(["system", "actions"]),
 			"events": s.get(["system", "events"])
 		},
 		"curaEngine": {
