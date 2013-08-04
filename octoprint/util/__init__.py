@@ -82,7 +82,16 @@ def genGcodeFileName(filename):
 
 	return filename.replace('.stl', '.gcode')
 	
+def genStlFileName(filename):
 
+	if not filename:
+		return None
+
+	if "." not in filename:
+		return filename + ".stl"
+
+	return filename.replace('.gcode', '.stl')
+	
 def isDevVersion():
 	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
 	return os.path.exists(gitPath)

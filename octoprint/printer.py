@@ -484,12 +484,9 @@ class Printer():
 				absolutePath, callBack, callBackArgs)
 
 	def streamSdFile(self, filename, path):
-		logging.info("Stream SD file called:%s" % filename)
 		if not self._comm or self._comm.isBusy():
 			return
-		logging.info("Starting to stream file")
 		self._comm.startFileTransfer(path, filename[:8].lower() + ".gco")
-		logging.info("File is streaming to SD Card")
 
 	def deleteSdFile(self, filename):
 		if not self._comm:

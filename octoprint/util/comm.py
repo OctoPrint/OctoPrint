@@ -353,7 +353,6 @@ class MachineCom(object):
 			if not self.isOperational():
 				# printer is not connected, can't use SD
 				return
-			logging.info("Select SD file: %s" % filename)
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename)
@@ -427,9 +426,7 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
-		logging.info("refresh sd files")
 		if not self.isOperational() or self.isBusy():
-			logging.info("refresh busy")
 			return
 		self.sendCommand("M20")
 
@@ -602,6 +599,8 @@ class MachineCom(object):
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
 					eventManager().fire("PrintDone")
+				elif 'Done saving file' in line:
+					self.refreshSdFiles()
 
 				##~~ Message handling
 				elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
@@ -681,8 +680,8 @@ class MachineCom(object):
 						startSeen = True
 					elif "ok" in line and startSeen:
 						self._changeState(self.STATE_OPERATIONAL)
-						if self._sdAvailable:
-							self.refreshSdFiles()
+						if not self._sdAvailable:
+							self.initSdCard()
 						eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
 					elif time.time() > timeout:
 						self.close()

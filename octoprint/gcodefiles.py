@@ -174,10 +174,8 @@ class GcodeManager:
 		config = self._settings.get(["curaEngine", "config"])
 
 		curaEngine.process_file(
-			config, gcodePath, absolutePath, callBack, callBackArgs)
-
+			config, gcodePath, absolutePath, callBack, callBackArgs) 
 	def processGcode(self, absolutePath):
-		logging.info("Processing Gcode:%s" % str(absolutePath))
 		if absolutePath is None:
 			return None
 
@@ -206,10 +204,16 @@ class GcodeManager:
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
 		absolutePath = self.getAbsolutePath(filename)
+		stlPath = util.genStlFileName(absolutePath)
+
 		if absolutePath is None:
 			return
 
+		if stlPath:
+			os.remove(stlPath)
+
 		os.remove(absolutePath)
+
 		if filename in self._metadata.keys():
 			del self._metadata[filename]
 			self._metadataDirty = True
