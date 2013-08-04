@@ -409,6 +409,7 @@ class MachineCom(object):
 
 	def endSdFileTransfer(self, filename):
 		if not self.isOperational() or self.isBusy():
+			logging.info("endSdFile busy")
 			return
 
 		self.sendCommand("M29 %s" % filename.lower())
@@ -426,7 +427,9 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
+		logging.info("refresh sd files")
 		if not self.isOperational() or self.isBusy():
+			logging.info("refresh busy")
 			return
 		self.sendCommand("M20")
 

@@ -463,7 +463,6 @@ class Printer():
 	def addSdFile(self, filename, absolutePath):
 		from octoprint.util import isGcodeFileName
 		from octoprint.util import isSTLFileName
-		from octoprint.gcodefiles import GcodeManager
 
 		logging.info("Adding SD Card file:%s" % filename)
 		if not self._comm or self._comm.isBusy():
@@ -481,8 +480,7 @@ class Printer():
 			callBackArgs = [gcodeFileName, gcodePath]
 			callBack = self.streamSdFile
 
-			gcodeManager = GcodeManager()
-			gcodeManager.processSTL(
+			self._gcodeManager.processSTL(
 				absolutePath, callBack, callBackArgs)
 
 	def streamSdFile(self, filename, path):
