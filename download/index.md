@@ -36,7 +36,7 @@ OctoPrint plus everything you need to run it:
 * OctoPrint plus its dependencies
 * [MJPG-Streamer](http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page)
 
-You can download the most current version [from here](https://dl.dropboxusercontent.com/u/895101/OctoPi/index.html).
+You can download the most current version [from here](http://www.gitiverse.com/octopi/).
 The source is available [here](https://github.com/guysoft/OctoPi).
 
 After flashing the image to SD and booting your RaspberryPi with it (if you don't know how to do that take a look
