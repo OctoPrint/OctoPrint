@@ -144,9 +144,9 @@ class Timelapse(object):
 		filters = []
 
 		# flip video if configured
-		if settings().getBoolean(["webcam", "flipX"]):
+		if settings().getBoolean(["webcam", "flipH"]):
 			filters.append('hflip')
-		if settings().getBoolean(["webcam", "flipY"]):
+		if settings().getBoolean(["webcam", "flipV"]):
 			filters.append('vflip')
 
 		# add watermark if configured
@@ -178,7 +178,7 @@ class Timelapse(object):
 		command.append(output)
 		try:
 			subprocess.check_call(command)
-			eventManager().fire("MovieDone", output);
+			eventManager().fire("MovieDone", output)
 		except subprocess.CalledProcessError as (e):
 			self._logger.warn("Could not render movie, got return code %r" % e.returncode)
 
