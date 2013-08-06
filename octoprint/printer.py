@@ -7,6 +7,7 @@ import datetime
 import threading
 import copy
 import os
+import logging
 
 #import logging, logging.config
 
@@ -459,7 +460,30 @@ class Printer():
 			return
 		return self._comm.getSdFiles()
 
-	def addSdFile(self, filename, path):
+	def addSdFile(self, filename, absolutePath):
+		from octoprint.util import isGcodeFileName
+		from octoprint.util import isSTLFileName
+
+		logging.info("Adding SD Card file:%s" % filename)
+		if not self._comm or self._comm.isBusy():
+			logging.error("No connection to printer or printer is busy")
+			return
+
+		if isGcodeFileName(filename):
+			logging.info("Sending Gcode to SD card")
+			self.streamSdFile(filename, absolutePath)
+
+		if isSTLFileName(filename):
+			logging.info("Slicing stl and then sending to SD card")
+			gcodePath = util.genGcodeFileName(absolutePath)
+			gcodeFileName = util.genGcodeFileName(filename)
+			callBackArgs = [gcodeFileName, gcodePath]
+			callBack = self.streamSdFile
+
+			self._gcodeManager.processSTL(
+				absolutePath, callBack, callBackArgs)
+
+	def streamSdFile(self, filename, path):
 		if not self._comm or self._comm.isBusy():
 			return
 		self._comm.startFileTransfer(path, filename[:8].lower() + ".gco")

@@ -332,10 +332,13 @@ class MachineCom(object):
 			eventManager().fire("Error", self.getErrorString())
 
 	def startFileTransfer(self, filename, remoteFilename):
+		logging.info("Starting File Transfer:%s" % filename)
 		if not self.isOperational() or self.isBusy():
+			logging.info("Printer is not operation or busy")
 			return
 
 		self._currentFile = StreamingGcodeFileInformation(filename)
+		logging.info("Starting to send currentfile:%s" % str(self._currentFile))
 		self._currentFile.start()
 
 		self.sendCommand("M28 %s" % remoteFilename)
@@ -405,6 +408,7 @@ class MachineCom(object):
 
 	def endSdFileTransfer(self, filename):
 		if not self.isOperational() or self.isBusy():
+			logging.info("endSdFile busy")
 			return
 
 		self.sendCommand("M29 %s" % filename.lower())
@@ -595,6 +599,8 @@ class MachineCom(object):
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
 					eventManager().fire("PrintDone")
+				elif 'Done saving file' in line:
+					self.refreshSdFiles()
 
 				##~~ Message handling
 				elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
@@ -674,8 +680,8 @@ class MachineCom(object):
 						startSeen = True
 					elif "ok" in line and startSeen:
 						self._changeState(self.STATE_OPERATIONAL)
-						if self._sdAvailable:
-							self.refreshSdFiles()
+						if not self._sdAvailable:
+							self.initSdCard()
 						eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
 					elif time.time() > timeout:
 						self.close()

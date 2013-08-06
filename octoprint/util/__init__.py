@@ -51,7 +51,47 @@ def getClass(name):
 		m = getattr(m, comp)
 	return m
 
+def matchesGcode(line, gcode):
+	return re.search("^\s*%s\D" % gcode, line, re.I)
 
+def isGcodeFileName(filename):
+	"""Simple helper to determine if a filename has the .gcode extension.
+
+	:param filename: :class: `str`
+
+	:returns boolean:
+	"""
+	return "." in filename and filename.rsplit(".", 1)[1] in ["gcode", "GCODE"]
+
+def isSTLFileName(filename):
+	"""Simple helper to determine if a filename has the .stl extension.
+
+	:param filename: :class: `str`
+
+	:returns boolean:
+	"""
+	return "." in filename and filename.rsplit(".", 1)[1] in ["stl", "STL"]
+	
+def genGcodeFileName(filename):
+
+	if not filename:
+		return None
+
+	if "." not in filename:
+		return filename + ".gcode"
+
+	return filename.replace('.stl', '.gcode')
+	
+def genStlFileName(filename):
+
+	if not filename:
+		return None
+
+	if "." not in filename:
+		return filename + ".stl"
+
+	return filename.replace('.gcode', '.stl')
+	
 def isDevVersion():
 	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
 	return os.path.exists(gitPath)
@@ -103,4 +143,3 @@ def getFreeBytes(path):
 	else:
 		st = os.statvfs(path)
 		return st.f_bavail * st.f_frsize
-

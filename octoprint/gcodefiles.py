@@ -19,7 +19,9 @@ class GcodeManager:
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 
-		self._uploadFolder = settings().getBaseFolder("uploads")
+		self._settings = settings()
+
+		self._uploadFolder = self._settings.getBaseFolder("uploads")
 
 		self._callbacks = []
 
@@ -115,7 +117,45 @@ class GcodeManager:
 
 	#~~ file handling
 
-	def addFile(self, file):
+	def addFile(self, file, destination):
+		from octoprint.util import isSTLFileName
+		from octoprint.util import isGcodeFileName
+		from octoprint.filemanager.destinations import FileDestinations
+
+		if not file or not destination:
+			return None
+
+		local = True if destination == FileDestinations.LOCAL else False
+
+		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+
+		logging.info("Adding file:%s" % absolutePath)
+		
+		if absolutePath is None:
+			return None
+
+		file.save(absolutePath)
+		filename = file.filename
+
+		if isGcodeFileName(filename):
+			logging.info("File is Gcode File")
+			return self.processGcode(absolutePath)
+
+		curaEnabled = self._settings.get(["curaEngine", "enabled"])
+		logging.info("Cura Enabled %s" % str(curaEnabled))
+
+		if isSTLFileName(filename) and curaEnabled and local:
+			logging.info("File is STL - Needs to be sliced")
+			gcodePath = util.genGcodeFileName(absolutePath)
+			logging.info("FILENAME: %s" % filename)
+
+			callBackArgs = [gcodePath]
+			callBack = self.processGcode
+
+			self.processSTL(absolutePath, callBack, callBackArgs)
+		return filename
+
+	def getFutureFileName(self, file):
 		if not file:
 			return None
 
@@ -123,15 +163,33 @@ class GcodeManager:
 		if absolutePath is None:
 			return None
 
-		basename = self._getBasicFilename(absolutePath)
-		if basename in self._metadata.keys():
+		return self._getBasicFilename(absolutePath)
+
+	def processSTL(self, absolutePath, callBack, callBackArgs):
+
+		from octoprint.cura import CuraFactory
+
+		curaEngine = CuraFactory.create_slicer()
+		gcodePath = util.genGcodeFileName(absolutePath)
+		config = self._settings.get(["curaEngine", "config"])
+
+		curaEngine.process_file(
+			config, gcodePath, absolutePath, callBack, callBackArgs) 
+	def processGcode(self, absolutePath):
+		if absolutePath is None:
+			return None
+
+		filename = self._getBasicFilename(absolutePath)
+
+		if filename in self._metadata.keys():
 			# delete existing metadata entry, since the file is going to get overwritten
-			del self._metadata[basename]
+			del self._metadata[filename]
 			self._metadataDirty = True
 			self._saveMetadata()
-		file.save(absolutePath)
-		self._metadataAnalyzer.addFileToQueue(basename)
-		return basename
+
+		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
+
+		return filename 
 
 	def getFutureFilename(self, file):
 		if not file:
@@ -146,10 +204,16 @@ class GcodeManager:
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
 		absolutePath = self.getAbsolutePath(filename)
+		stlPath = util.genStlFileName(absolutePath)
+
 		if absolutePath is None:
 			return
 
+		if stlPath:
+			os.remove(stlPath)
+
 		os.remove(absolutePath)
+
 		if filename in self._metadata.keys():
 			del self._metadata[filename]
 			self._metadataDirty = True
@@ -157,11 +221,11 @@ class GcodeManager:
 
 	def getAbsolutePath(self, filename, mustExist=True):
 		"""
-		Returns the absolute path of the given filename in the gcode upload folder.
+		Returns the absolute path of the given filename in the correct upload folder.
 
 		Ensures that the file
 		<ul>
-		  <li>has the extension ".gcode"</li>
+		  <li>has the extension ".gcode" or ".stl"</li>
 		  <li>exists and is a file (not a directory) if "mustExist" is set to True</li>
 		</ul>
 
@@ -171,9 +235,10 @@ class GcodeManager:
 		"""
 		filename = self._getBasicFilename(filename)
 
-		if not util.isAllowedFile(filename, set(["gcode"])):
+		if not util.isAllowedFile(filename, set(["gcode", "stl"])):
 			return None
 
+		# TODO: detect which type of file and add in the extra folder portion 
 		secure = os.path.join(self._uploadFolder, secure_filename(self._getBasicFilename(filename)))
 		if mustExist and (not os.path.exists(secure) or not os.path.isfile(secure)):
 			return None
@@ -189,7 +254,17 @@ class GcodeManager:
 		return files
 
 	def getFileData(self, filename):
+		from octoprint.util import isSTLFileName
+	
+		if not filename:
+			return
+
 		filename = self._getBasicFilename(filename)
+
+		# TODO: Make this more robust when STLs will be viewable from the client
+		if isSTLFileName(filename):
+			return
+	
 		absolutePath = self.getAbsolutePath(filename)
 		if absolutePath is None:
 			return None

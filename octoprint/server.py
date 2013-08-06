@@ -19,6 +19,8 @@ import octoprint.timelapse
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 import octoprint.users as users
+from octoprint.filemanager.destinations import FileDestinations
+
 
 import octoprint.events as events
 
@@ -311,12 +313,16 @@ def readGcodeFile(filename):
 @login_required
 def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
+		logging.info("Uploading Gcode File")
 		file = request.files["gcode_file"]
 		sd = "target" in request.values.keys() and request.values["target"] == "sd";
+
+		logging.info("SD:%s" % str(sd))
 
 		currentFilename = None
 		currentSd = None
 		currentJob = printer.getCurrentJob()
+		logging.info("Current Job:%s" % str(currentJob))
 		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
 			currentFilename = currentJob["filename"]
 			currentSd = currentJob["sd"]
@@ -329,12 +335,16 @@ def uploadGcodeFile():
 			# trying to overwrite currently selected file, but it is being printed
 			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 403)
 
-		filename = gcodeManager.addFile(file)
+		destination = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
+
+		filename = gcodeManager.addFile(file, destination)
+
 		if filename is None:
 			return make_response("Could not upload the file %s" % file.filename, 500)
 
 		absFilename = gcodeManager.getAbsolutePath(filename)
 		if sd:
+			logging.info("Add to SD file")
 			printer.addSdFile(filename, absFilename)
 
 		if currentFilename == filename and currentSd == sd:
@@ -574,7 +584,12 @@ def getSettings():
 		"system": {
 			"actions": s.get(["system", "actions"]),
 			"events": s.get(["system", "events"])
-		} 
+		},
+		"curaEngine": {
+			"enabled": s.getBoolean(["curaEngine", "enabled"]),
+			"path": s.get(["curaEngine", "path"]),
+			"config": s.get(["curaEngine", "config"])
+			}
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -644,7 +659,24 @@ def setSettings():
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
-			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
+
+		if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
+
+		curaEngine = data.get("curaEngine", None)
+
+		if curaEngine:
+			path = curaEngine.get("path")
+			if path:
+				s.set(["curaEngine", "path"], path)
+
+			config = curaEngine.get("config")
+			if config:
+				s.set(["curaEngine", "config"], config)
+
+			# Enabled is a boolean so we cannot check that we have a result
+			enabled = curaEngine.get("enabled")
+			s.setBoolean(["curaEngine", "enabled"], enabled)
+
 		s.save()
 
 	return getSettings()

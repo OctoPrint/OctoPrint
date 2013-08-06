@@ -18,8 +18,11 @@
                 <li class="nav-header">OctoPrint</li>
                 <li><a href="#settings_folder" data-toggle="tab">Folders</a></li>
                 <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
+	            <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
             </ul>
 
+        <div class="tab-content span8">
+            <div class="tab-pane active" id="settings_printerParameters">
             <div class="tab-content span8">
                 <div class="tab-pane active" id="settings_serialConnection">
                     <form class="form-horizontal">
@@ -273,6 +276,28 @@
                         </div>
                     </form>
                 </div>
+				<div class="tab-pane" id="settings_cura">
+					<form class="form-horizontal">
+						<div class="control-group">
+							<label class="control-label" for="settings-curaEnabled">Cura Enabled</label>
+							<div class="controls">
+								<input type="checkbox" data-bind="checked: cura_enabled">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="settings-curaPath">CuraEngine Path</label>
+							<div class="controls">
+								<input type="text" class="input-block-level" data-bind="value: cura_path">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="settings-curaConfig">Cura Config</label>
+							<div class="controls">
+								<input type="text" class="input-block-level" data-bind="value: cura_config">
+							</div>
+						</div>
+					</form>
+				</div>
                 <div class="tab-pane" id="settings_api">
                     <form class="form-horizontal">
                         <div class="control-group">

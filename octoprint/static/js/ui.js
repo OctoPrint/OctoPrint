@@ -101,7 +101,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
     self.selectedBaudrate = ko.observable(undefined);
     self.saveSettings = ko.observable(undefined);
 
-    self.isErrorOrClosed = ko.observable(undefined);
+  self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
     self.isPaused = ko.observable(undefined);
@@ -1407,6 +1407,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.folder_timelapseTmp = ko.observable(undefined);
     self.folder_logs = ko.observable(undefined);
 
+	self.cura_enabled = ko.observable(undefined);
+	self.cura_path = ko.observable(undefined);
+	self.cura_config = ko.observable(undefined);
+
     self.temperature_profiles = ko.observableArray(undefined);
 
     self.system_actions = ko.observableArray([]);
@@ -1467,6 +1471,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.folder_timelapse(response.folder.timelapse);
         self.folder_timelapseTmp(response.folder.timelapseTmp);
         self.folder_logs(response.folder.logs);
+		
+		self.cura_enabled(response.curaEngine.enabled);
+		self.cura_path(response.curaEngine.path);
+		self.cura_config(response.curaEngine.config);
 
         self.temperature_profiles(response.temperature.profiles);
 
@@ -1524,7 +1532,13 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             },
             "system": {
                 "actions": self.system_actions()
-            }
+            },
+			"curaEngine": {
+				"enabled": self.cura_enabled(),
+				"path": self.cura_path(),
+				"config": self.cura_config()
+			}
+				
         }
 
         $.ajax({
