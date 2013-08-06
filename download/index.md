@@ -29,7 +29,6 @@ instructions on what to do [on the wiki](https://github.com/foosel/OctoPrint/wik
 OctoPi
 ======
 
-<img src="{{ BASE_PATH }}/assets/img/OctoPi.png" style="float: right">
 [Guy Sheffer](https://github.com/guysoft) maintains "OctoPi", an SD card image for the Raspberry Pi that already includes
 OctoPrint plus everything you need to run it:
 
