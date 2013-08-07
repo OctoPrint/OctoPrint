@@ -105,13 +105,13 @@ class gcode(object):
 		moveType = 'move'
 		layerThickness = 0.1
 		pathType = 'CUSTOM'
-		currentLayer = []
+		#currentLayer = []
 		unknownGcodes = {}
 		unknownMcodes = {}
-		currentPath = gcodePath('move', pathType, layerThickness, pos)
-		currentPath['extruder'] = currentExtruder
+		#currentPath = gcodePath('move', pathType, layerThickness, pos)
+		#currentPath['extruder'] = currentExtruder
 
-		currentLayer.append(currentPath)
+		#currentLayer.append(currentPath)
 		for line in gcodeFile:
 			if self._abort:
 				raise AnalysisAborted()
@@ -136,14 +136,14 @@ class gcode(object):
 					self._filamentDiameter = float(comment.split("=", 1)[1].strip())
 				elif comment.startswith('TYPE:'):
 					pathType = comment[5:]
-				elif comment.startswith('LAYER:'):
-					currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
-					currentPath['extruder'] = currentExtruder
+				#elif comment.startswith('LAYER:'):
+					#currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
+					#currentPath['extruder'] = currentExtruder
 					#for path in currentLayer:
 					#	path['points'] = numpy.array(path['points'], numpy.float32)
 					#	path['extrusion'] = numpy.array(path['extrusion'], numpy.float32)
-					self.layerList.append(currentLayer)
-					currentLayer = [currentPath]
+					#self.layerList.append(currentLayer)
+					#currentLayer = [currentPath]
 				elif comment.startswith("CURA_PROFILE_STRING"):
 					curaOptions = self._parseCuraProfileString(comment)
 					if "filament_diameter" in curaOptions:
@@ -211,13 +211,13 @@ class gcode(object):
 						if oldPos[2] > pos[2] and abs(oldPos[2] - pos[2]) > 5.0 and pos[2] < 1.0:
 							oldPos[2] = 0.0
 						layerThickness = abs(oldPos[2] - pos[2])
-					if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
-						currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
-						currentPath['extruder'] = currentExtruder
-						currentLayer.append(currentPath)
+					#if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
+					#	currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
+					#	currentPath['extruder'] = currentExtruder
+					#	currentLayer.append(currentPath)
 
-					currentPath['points'].append(pos)
-					currentPath['extrusion'].append(e * extrudeAmountMultiply)
+					#currentPath['points'].append(pos)
+					#currentPath['extrusion'].append(e * extrudeAmountMultiply)
 				elif G == 4:	#Delay
 					S = getCodeFloat(line, 'S')
 					if S is not None:
@@ -324,7 +324,7 @@ class gcode(object):
 		#for path in currentLayer:
 		#	path['points'] = numpy.array(path['points'], numpy.float32)
 		#	path['extrusion'] = numpy.array(path['extrusion'], numpy.float32)
-		self.layerList.append(currentLayer)
+		#self.layerList.append(currentLayer)
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
 		self.extrusionAmount = maxExtrusion
