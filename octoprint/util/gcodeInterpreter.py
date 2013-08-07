@@ -118,7 +118,7 @@ class gcode(object):
 			if type(line) is tuple:
 				line = line[0]
 			filePos += 1
-			if self.progressCallback is not None and (filePos % 100 == 0):
+			if self.progressCallback is not None and (filePos % 1000 == 0):
 				if isinstance(gcodeFile, (file)):
 					self.progressCallback(float(gcodeFile.tell()) / float(self._fileSize))
 				elif isinstance(gcodeFile, (list)):
