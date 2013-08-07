@@ -1,14 +1,12 @@
 from __future__ import absolute_import
+__copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
 
 import sys
 import math
-import re
 import os
 import base64
 import zlib
 import logging
-
-from octoprint.util import util3d
 
 preferences = {
 	"extruder_offset_x1": -22.0,
@@ -28,82 +26,105 @@ def getPreference(key, default=None):
 class AnalysisAborted(Exception):
 	pass
 
-class gcodePath(object):
-	def __init__(self, newType, pathType, layerThickness, startPoint):
-		self.type = newType
-		self.pathType = pathType
-		self.layerThickness = layerThickness
-		self.list = [startPoint]
+#class gcodePath(object):
+#	def __init__(self, newType, pathType, layerThickness, startPoint):
+#		self.type = newType
+#		self.pathType = pathType
+#		self.layerThickness = layerThickness
+#		self.points = [startPoint]
+#		self.extrusion = [0.0]
+def gcodePath(newType, pathType, layerThickness, startPoint):
+	return {'type': newType,
+			'pathType': pathType,
+			'layerThickness': layerThickness,
+			'points': [startPoint],
+			'extrusion': [0.0]}
 
 class gcode(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 
-		self.regMatch = {}
-		self.layerList = []
+		self.layerList = None
 		self.extrusionAmount = 0
-		self.extrusionVolume = None
 		self.totalMoveTimeMinute = 0
+		self.filename = None
 		self.progressCallback = None
 		self._abort = False
+		self._filamentDiameter = 0
 	
 	def load(self, filename):
 		if os.path.isfile(filename):
+			self.filename = filename
 			self._fileSize = os.stat(filename).st_size
 			gcodeFile = open(filename, 'r')
 			self._load(gcodeFile)
 			gcodeFile.close()
 	
 	def loadList(self, l):
+		self.filename = None
 		self._load(l)
 
 	def abort(self):
 		self._abort = True
+
+	def calculateVolumeCm3(self):
+		radius = self._filamentDiameter / 2
+		return (self.extrusionAmount * (math.pi * radius * radius)) / 1000
+			
+	def calculateWeight(self):
+		#Calculates the weight of the filament in kg
+		volumeM3 = calculateVolumeCm3 /(1000*1000)
+		return volumeM3 * getPreference('filament_physical_density')
+	
+	def calculateCost(self):
+		cost_kg = getPreference('filament_cost_kg')
+		cost_meter = getPreference('filament_cost_meter')
+		if cost_kg > 0.0 and cost_meter > 0.0:
+			return "%.2f / %.2f" % (self.calculateWeight() * cost_kg, self.extrusionAmount / 1000 * cost_meter)
+		elif cost_kg > 0.0:
+			return "%.2f" % (self.calculateWeight() * cost_kg)
+		elif cost_meter > 0.0:
+			return "%.2f" % (self.extrusionAmount / 1000 * cost_meter)
+		return None
 	
 	def _load(self, gcodeFile):
 		filePos = 0
-		pos = util3d.Vector3()
-		posOffset = util3d.Vector3()
+		self.layerList = []
+		pos = [0.0, 0.0, 0.0]
+		posOffset = [0.0, 0.0, 0.0]
 		currentE = 0.0
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
 		currentExtruder = 0
 		extrudeAmountMultiply = 1.0
 		totalMoveTimeMinute = 0.0
-		filamentDiameter = 0.0
+		absoluteE = True
 		scale = 1.0
 		posAbs = True
-		posAbsExtruder = True;
-		feedRate = 3600
+		feedRate = 3600.0
+		moveType = 'move'
 		layerThickness = 0.1
-		pathType = 'CUSTOM';
+		pathType = 'CUSTOM'
 		currentLayer = []
-		unknownGcodes={}
-		unknownMcodes={}
-		currentPath = gcodePath('move', pathType, layerThickness, pos.copy())
-		currentPath.list[0].e = totalExtrusion
-		currentPath.list[0].extrudeAmountMultiply = extrudeAmountMultiply
+		unknownGcodes = {}
+		unknownMcodes = {}
+		currentPath = gcodePath('move', pathType, layerThickness, pos)
+		currentPath['extruder'] = currentExtruder
+
 		currentLayer.append(currentPath)
 		for line in gcodeFile:
 			if self._abort:
 				raise AnalysisAborted()
 			if type(line) is tuple:
 				line = line[0]
-			if self.progressCallback != None:
+			filePos += 1
+			if self.progressCallback is not None and (filePos % 100 == 0):
 				if isinstance(gcodeFile, (file)):
-					self.progressCallback(float(filePos) / float(self._fileSize))
+					self.progressCallback(float(gcodeFile.tell()) / float(self._fileSize))
 				elif isinstance(gcodeFile, (list)):
 					self.progressCallback(float(filePos) / float(len(gcodeFile)))
-					filePos += 1
 
-			#Parse Cura_SF comments
-			if line.startswith(';TYPE:'):
-				pathType = line[6:].strip()
-				if pathType != "CUSTOM":
-					startCodeDone = True
-					
 			if ';' in line:
-				# Slic3r GCode comment parser
 				comment = line[line.find(';')+1:].strip()
 				if comment == 'fill':
 					pathType = 'FILL'
@@ -112,148 +133,156 @@ class gcode(object):
 				elif comment == 'skirt':
 					pathType = 'SKIRT'
 				elif comment.startswith("filament_diameter"):
-					filamentDiameter = float(line.split("=", 1)[1].strip())
-
-				# Cura Gcode comment parser
-				if comment.startswith('LAYER:'):
+					self._filamentDiameter = float(comment.split("=", 1)[1].strip())
+				elif comment.startswith('TYPE:'):
+					pathType = comment[5:]
+				elif comment.startswith('LAYER:'):
+					currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
+					currentPath['extruder'] = currentExtruder
+					#for path in currentLayer:
+					#	path['points'] = numpy.array(path['points'], numpy.float32)
+					#	path['extrusion'] = numpy.array(path['extrusion'], numpy.float32)
 					self.layerList.append(currentLayer)
-					currentLayer = []
+					currentLayer = [currentPath]
 				elif comment.startswith("CURA_PROFILE_STRING"):
 					curaOptions = self._parseCuraProfileString(comment)
-
-					if "filament_diameter" in curaOptions.keys():
+					if "filament_diameter" in curaOptions:
 						try:
-							filamentDiameter = float(curaOptions["filament_diameter"])
+							self._filamentDiameter = float(curaOptions["filament_diameter"])
 						except:
-							filamentDiameter = 0.0
+							self._filamentDiameter = 0.0
 				line = line[0:line.find(';')]
-			T = self.getCodeInt(line, 'T')
+
+			T = getCodeInt(line, 'T')
 			if T is not None:
 				if currentExtruder > 0:
-					posOffset.x -= getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
-					posOffset.y -= getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
+					posOffset[0] -= getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
+					posOffset[1] -= getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
 				currentExtruder = T
 				if currentExtruder > 0:
-					posOffset.x += getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
-					posOffset.y += getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
+					posOffset[0] += getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
+					posOffset[1] += getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
 			
-			G = self.getCodeInt(line, 'G')
+			G = getCodeInt(line, 'G')
 			if G is not None:
 				if G == 0 or G == 1:	#Move
-					x = self.getCodeFloat(line, 'X')
-					y = self.getCodeFloat(line, 'Y')
-					z = self.getCodeFloat(line, 'Z')
-					e = self.getCodeFloat(line, 'E')
-					f = self.getCodeFloat(line, 'F')
-					oldPos = pos.copy()
-					if x is not None:
-						if posAbs:
-							pos.x = x * scale + posOffset.x
-						else:
-							pos.x += x * scale
-					if y is not None:
-						if posAbs:
-							pos.y = y * scale + posOffset.y
-						else:
-							pos.y += y * scale
-					if z is not None:
-						if posAbs:
-							pos.z = z * scale + posOffset.z
-						else:
-							pos.z += z * scale
+					x = getCodeFloat(line, 'X')
+					y = getCodeFloat(line, 'Y')
+					z = getCodeFloat(line, 'Z')
+					e = getCodeFloat(line, 'E')
+					f = getCodeFloat(line, 'F')
+					oldPos = pos
+					pos = pos[:]
+					if posAbs:
+						if x is not None:
+							pos[0] = x * scale + posOffset[0]
+						if y is not None:
+							pos[1] = y * scale + posOffset[1]
+						if z is not None:
+							pos[2] = z * scale + posOffset[2]
+					else:
+						if x is not None:
+							pos[0] += x * scale
+						if y is not None:
+							pos[1] += y * scale
+						if z is not None:
+							pos[2] += z * scale
 					if f is not None:
 						feedRate = f
 					if x is not None or y is not None or z is not None:
-						totalMoveTimeMinute += (oldPos - pos).vsize() / feedRate
+						diffX = oldPos[0] - pos[0]
+						diffY = oldPos[1] - pos[1]
+						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY) / feedRate
 					moveType = 'move'
 					if e is not None:
-						if posAbsExtruder:
-							if e > currentE:
-								moveType = 'extrude'
-							if e < currentE:
-								moveType = 'retract'
-							totalExtrusion += e - currentE
-							currentE = e
-						else:
-							if e > 0:
-								moveType = 'extrude'
-							if e < 0:
-								moveType = 'retract'
-							totalExtrusion += e
-							currentE += e
+						if absoluteE:
+							e -= currentE
+						if e > 0.0:
+							moveType = 'extrude'
+						if e < 0.0:
+							moveType = 'retract'
+						totalExtrusion += e
+						currentE += e
 						if totalExtrusion > maxExtrusion:
 							maxExtrusion = totalExtrusion
-					if moveType == 'move' and oldPos.z != pos.z:
-						if oldPos.z > pos.z and abs(oldPos.z - pos.z) > 5.0 and pos.z < 1.0:
-							oldPos.z = 0.0
-						layerThickness = abs(oldPos.z - pos.z)
-					if currentPath.type != moveType or currentPath.pathType != pathType:
-						currentPath = gcodePath(moveType, pathType, layerThickness, currentPath.list[-1])
+					else:
+						e = 0.0
+					if moveType == 'move' and oldPos[2] != pos[2]:
+						if oldPos[2] > pos[2] and abs(oldPos[2] - pos[2]) > 5.0 and pos[2] < 1.0:
+							oldPos[2] = 0.0
+						layerThickness = abs(oldPos[2] - pos[2])
+					if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
+						currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
+						currentPath['extruder'] = currentExtruder
 						currentLayer.append(currentPath)
-					newPos = pos.copy()
-					newPos.e = totalExtrusion
-					newPos.extrudeAmountMultiply = extrudeAmountMultiply
-					currentPath.list.append(newPos)
+
+					currentPath['points'].append(pos)
+					currentPath['extrusion'].append(e * extrudeAmountMultiply)
 				elif G == 4:	#Delay
-					S = self.getCodeFloat(line, 'S')
+					S = getCodeFloat(line, 'S')
 					if S is not None:
-						totalMoveTimeMinute += S / 60
-					P = self.getCodeFloat(line, 'P')
+						totalMoveTimeMinute += S / 60.0
+					P = getCodeFloat(line, 'P')
 					if P is not None:
-						totalMoveTimeMinute += P / 60 / 1000
+						totalMoveTimeMinute += P / 60.0 / 1000.0
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
 					scale = 1.0
 				elif G == 28:	#Home
-					x = self.getCodeFloat(line, 'X')
-					y = self.getCodeFloat(line, 'Y')
-					z = self.getCodeFloat(line, 'Z')
-					if x is None and y is None and z is None:
-						pos = util3d.Vector3()
+					x = getCodeFloat(line, 'X')
+					y = getCodeFloat(line, 'Y')
+					z = getCodeFloat(line, 'Z')
+					if getPreference('machine_center_is_zero') == 'True':
+						center = [getPreference('machine_width') / 2, getPreference('machine_depth') / 2,0.0]
 					else:
+						center = [0.0,0.0,0.0]
+					if x is None and y is None and z is None:
+						pos = center
+					else:
+						pos = pos[:]
 						if x is not None:
-							pos.x = 0.0
+							pos[0] = center[0]
 						if y is not None:
-							pos.y = 0.0
+							pos[1] = center[1]
 						if z is not None:
-							pos.z = 0.0
+							pos[2] = center[2]
 				elif G == 90:	#Absolute position
 					posAbs = True
-					posAbsExtruder = True
 				elif G == 91:	#Relative position
 					posAbs = False
-					posAbsExtruder = False
 				elif G == 92:
-					x = self.getCodeFloat(line, 'X')
-					y = self.getCodeFloat(line, 'Y')
-					z = self.getCodeFloat(line, 'Z')
-					e = self.getCodeFloat(line, 'E')
+					x = getCodeFloat(line, 'X')
+					y = getCodeFloat(line, 'Y')
+					z = getCodeFloat(line, 'Z')
+					e = getCodeFloat(line, 'E')
 					if e is not None:
 						currentE = e
 					if x is not None:
-						posOffset.x = pos.x - x
+						posOffset[0] = pos[0] - x
 					if y is not None:
-						posOffset.y = pos.y - y
+						posOffset[1] = pos[1] - y
 					if z is not None:
-						posOffset.z = pos.z - z
+						posOffset[2] = pos[2] - z
 				else:
 					if G not in unknownGcodes:
 						self._logger.info("Unknown G code: %r" % G)
-					unknownGcodes[G] = True
+						unknownGcodes[G] = True
 			else:
-				M = self.getCodeInt(line, 'M')
+				M = getCodeInt(line, 'M')
 				if M is not None:
-					if M == 1:	#Message with possible wait (ignored)
+					if M == 0:	#Message with possible wait (ignored)
+						pass
+					elif M == 1:	#Message with possible wait (ignored)
 						pass
 					elif M == 80:	#Enable power supply
 						pass
 					elif M == 81:	#Suicide/disable power supply
 						pass
-					elif M == 82:	# Use absolute extruder positions
-						posAbsExtruder = True
-					elif M == 83:	# Use relative extruder positions
-						posAbsExtruder = False
+					elif M == 82:   #Absolute E
+						absoluteE = True
+					elif M == 83:   #Relative E
+						absoluteE = False
 					elif M == 84:	#Disable step drivers
 						pass
 					elif M == 92:	#Set steps per unit
@@ -278,50 +307,66 @@ class gcode(object):
 						pass
 					elif M == 113:	#Extruder PWM (these should not be in the final GCode, but they are)
 						pass
+					elif M == 117:	#LCD message
+						pass
 					elif M == 140:	#Set bed temperature
 						pass
 					elif M == 190:	#Set bed temperature & wait
 						pass
 					elif M == 221:	#Extrude amount multiplier
-						s = self.getCodeFloat(line, 'S')
-						if s != None:
+						s = getCodeFloat(line, 'S')
+						if s is not None:
 							extrudeAmountMultiply = s / 100.0
 					else:
 						if M not in unknownMcodes:
 							self._logger.info("Unknown M code: %r" % M)
-						unknownMcodes[M] = True
+							unknownMcodes[M] = True
+		#for path in currentLayer:
+		#	path['points'] = numpy.array(path['points'], numpy.float32)
+		#	path['extrusion'] = numpy.array(path['extrusion'], numpy.float32)
 		self.layerList.append(currentLayer)
+		if self.progressCallback is not None:
+			self.progressCallback(100.0)
 		self.extrusionAmount = maxExtrusion
-		if filamentDiameter is not None and filamentDiameter > 0:
-			self.extrusionVolume = math.pi * math.pow(filamentDiameter / 2.0, 2) * maxExtrusion / 1000.0
 		self.totalMoveTimeMinute = totalMoveTimeMinute
-
-	def getCodeInt(self, line, code):
-		if code not in self.regMatch:
-			self.regMatch[code] = re.compile(code + '([^\s]+)')
-		m = self.regMatch[code].search(line)
-		if m == None:
-			return None
-		try:
-			return int(m.group(1))
-		except:
-			return None
-
-	def getCodeFloat(self, line, code):
-		if code not in self.regMatch:
-			self.regMatch[code] = re.compile(code + '([^\s]+)')
-		m = self.regMatch[code].search(line)
-		if m == None:
-			return None
-		try:
-			return float(m.group(1))
-		except:
-			return None
+		#print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
+		#print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
 	def _parseCuraProfileString(self, comment):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
 
+def getCodeInt(line, code):
+	n = line.find(code) + 1
+	if n < 1:
+		return None
+	m = line.find(' ', n)
+	try:
+		if m < 0:
+			return int(line[n:])
+		return int(line[n:m])
+	except:
+		return None
+
+def getCodeFloat(line, code):
+	n = line.find(code) + 1
+	if n < 1:
+		return None
+	m = line.find(' ', n)
+	try:
+		if m < 0:
+			return float(line[n:])
+		return float(line[n:m])
+	except:
+		return None
+
 if __name__ == '__main__':
+	from time import time
+	t = time()
 	for filename in sys.argv[1:]:
-		gcode().load(filename)
+		g = gcode()
+		g.load(filename)
+		print g.totalMoveTimeMinute
+		print g.extrusionAmount
+		print g.calculateVolumeCm3()
+	print time() - t
 
