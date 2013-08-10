@@ -25,6 +25,7 @@
             var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
             var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
             var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
+            var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
 
             var WEB_SOCKET_SWF_LOCATION = "{{ url_for('static', filename='js/socket.io/WebSocketMain.swf') }}";
             var WEB_SOCKET_DEBUG = true;

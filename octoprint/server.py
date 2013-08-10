@@ -8,6 +8,8 @@ from flask import Flask, request, render_template, jsonify, send_from_directory,
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
 
+from functools import wraps
+
 import os
 import threading
 import logging, logging.config
@@ -35,6 +37,7 @@ timelapse = None
 gcodeManager = None
 userManager = None
 eventManager = None
+loginManager = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -126,6 +129,26 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 	def _onMovieDone(self, event, payload):
 		self.sendUpdateTrigger("timelapseFiles")
 
+def restricted_access(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup has been
+	done for OctoPrint's Access Control plus that any conditions of the
+	login_required decorator are met.
+
+	If OctoPrint's Access Control has not been setup yet (indicated by the "firstRun"
+	flag from the settings being set to True and the userManager not indicating
+	that it's user database has been customized from default), the decorator
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+
+	Otherwise the result of calling login_required will be returned.
+	"""
+	@wraps(func)
+	def decorated_view(*args, **kwargs):
+		if settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()):
+			return make_response("OctoPrint isn't setup yet", 403)
+		return login_required(func)(*args, **kwargs)
+	return decorated_view
+
 # Did attempt to make webserver an encapsulated class but ended up with __call__ failures
 
 @app.route("/")
@@ -146,6 +169,7 @@ def index():
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
+		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
 		gitBranch=branch,
 		gitCommit=commit
 	)
@@ -157,7 +181,7 @@ def connectionOptions():
 	return jsonify(getConnectionOptions())
 
 @app.route(BASEURL + "control/connection", methods=["POST"])
-@login_required
+@restricted_access
 def connect():
 	if "command" in request.values.keys() and request.values["command"] == "connect":
 		port = None
@@ -180,7 +204,7 @@ def connect():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/command", methods=["POST"])
-@login_required
+@restricted_access
 def printerCommand():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
@@ -204,7 +228,7 @@ def printerCommand():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/job", methods=["POST"])
-@login_required
+@restricted_access
 def printJobControl():
 	if "command" in request.values.keys():
 		if request.values["command"] == "start":
@@ -216,7 +240,7 @@ def printJobControl():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/temperature", methods=["POST"])
-@login_required
+@restricted_access
 def setTargetTemperature():
 	if "temp" in request.values.keys():
 		# set target temperature
@@ -231,7 +255,7 @@ def setTargetTemperature():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/jog", methods=["POST"])
-@login_required
+@restricted_access
 def jog():
 	if not printer.isOperational() or printer.isPrinting():
 		# do not jog when a print job is running or we don't have a connection
@@ -269,7 +293,7 @@ def getCustomControls():
 	return jsonify(controls=customControls)
 
 @app.route(BASEURL + "control/sd", methods=["POST"])
-@login_required
+@restricted_access
 def sdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]) or not printer.isOperational() or printer.isPrinting():
 		return jsonify(SUCCESS)
@@ -308,7 +332,7 @@ def readGcodeFile(filename):
 	return send_from_directory(settings().getBaseFolder("uploads"), filename, as_attachment=True)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
-@login_required
+@restricted_access
 def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
@@ -350,7 +374,7 @@ def uploadGcodeFile():
 
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
-@login_required
+@restricted_access
 def loadGcodeFile():
 	if "filename" in request.values.keys():
 		printAfterLoading = False
@@ -367,7 +391,7 @@ def loadGcodeFile():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "gcodefiles/delete", methods=["POST"])
-@login_required
+@restricted_access
 def deleteGcodeFile():
 	if "filename" in request.values.keys():
 		filename = request.values["filename"]
@@ -391,7 +415,7 @@ def deleteGcodeFile():
 	return readGcodeFiles()
 
 @app.route(BASEURL + "gcodefiles/refresh", methods=["POST"])
-@login_required
+@restricted_access
 def refreshFiles():
 	printer.updateSdFiles()
 	return jsonify(SUCCESS)
@@ -478,7 +502,7 @@ def downloadTimelapse(filename):
 		return send_from_directory(settings().getBaseFolder("timelapse"), filename, as_attachment=True)
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["DELETE"])
-@login_required
+@restricted_access
 def deleteTimelapse(filename):
 	if util.isAllowedFile(filename, set(["mpg"])):
 		secure = os.path.join(settings().getBaseFolder("timelapse"), secure_filename(filename))
@@ -487,7 +511,7 @@ def deleteTimelapse(filename):
 	return getTimelapseData()
 
 @app.route(BASEURL + "timelapse", methods=["POST"])
-@login_required
+@restricted_access
 def setTimelapseConfig():
 	global timelapse
 
@@ -578,7 +602,7 @@ def getSettings():
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
-@login_required
+@restricted_access
 @admin_permission.require(403)
 def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
@@ -649,10 +673,36 @@ def setSettings():
 
 	return getSettings()
 
+@app.route(BASEURL + "setup", methods=["POST"])
+def firstRunSetup():
+	global userManager
+
+	if not settings().getBoolean(["server", "firstRun"]):
+		abort(403)
+
+	if "ac" in request.values.keys() and request.values["ac"] in valid_boolean_trues and \
+					"user" in request.values.keys() and "pass1" in request.values.keys() and \
+					"pass2" in request.values.keys() and request.values["pass1"] == request.values["pass2"]:
+		# configure access control
+		settings().setBoolean(["accessControl", "enabled"], True)
+		userManager.addUser(request.values["user"], request.values["pass1"], True, ["user", "admin"])
+		settings().setBoolean(["server", "firstRun"], False)
+	elif "ac" in request.values.keys() and not request.values["ac"] in valid_boolean_trues:
+		# disable access control
+		settings().setBoolean(["accessControl", "enabled"], False)
+		settings().setBoolean(["server", "firstRun"], False)
+
+		userManager = None
+		loginManager.anonymous_user = users.DummyUser
+		principals.identity_loaders.appendleft(users.dummy_identity_loader)
+
+	settings().save()
+	return jsonify(SUCCESS)
+
 #~~ user settings
 
 @app.route(BASEURL + "users", methods=["GET"])
-@login_required
+@restricted_access
 @admin_permission.require(403)
 def getUsers():
 	if userManager is None:
@@ -661,7 +711,7 @@ def getUsers():
 	return jsonify({"users": userManager.getAllUsers()})
 
 @app.route(BASEURL + "users", methods=["POST"])
-@login_required
+@restricted_access
 @admin_permission.require(403)
 def addUser():
 	if userManager is None:
@@ -685,7 +735,7 @@ def addUser():
 	return getUsers()
 
 @app.route(BASEURL + "users/<username>", methods=["GET"])
-@login_required
+@restricted_access
 def getUser(username):
 	if userManager is None:
 		return jsonify(SUCCESS)
@@ -700,7 +750,7 @@ def getUser(username):
 		abort(403)
 
 @app.route(BASEURL + "users/<username>", methods=["PUT"])
-@login_required
+@restricted_access
 @admin_permission.require(403)
 def updateUser(username):
 	if userManager is None:
@@ -725,7 +775,7 @@ def updateUser(username):
 		abort(404)
 
 @app.route(BASEURL + "users/<username>", methods=["DELETE"])
-@login_required
+@restricted_access
 @admin_permission.require(http_exception=403)
 def removeUser(username):
 	if userManager is None:
@@ -738,7 +788,7 @@ def removeUser(username):
 		abort(404)
 
 @app.route(BASEURL + "users/<username>/password", methods=["PUT"])
-@login_required
+@restricted_access
 def changePasswordForUser(username):
 	if userManager is None:
 		return jsonify(SUCCESS)
@@ -758,7 +808,7 @@ def changePasswordForUser(username):
 #~~ system control
 
 @app.route(BASEURL + "system", methods=["POST"])
-@login_required
+@restricted_access
 @admin_permission.require(403)
 def performSystemAction():
 	logger = logging.getLogger(__name__)
@@ -806,7 +856,7 @@ def login():
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "logout", methods=["POST"])
-@login_required
+@restricted_access
 def logout():
 	# Remove session keys set by Flask-Principal
 	for key in ('identity.id', 'identity.auth_type'):
@@ -836,20 +886,25 @@ def load_user(id):
 
 #~~ startup code
 class Server():
-	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False):
+	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False):
 		self._configfile = configfile
 		self._basedir = basedir
 		self._host = host
 		self._port = port
 		self._debug = debug
+		self._allowRoot = allowRoot
 
 		  
 	def run(self):
+		if not self._allowRoot:
+			self._checkForRoot()
+
 		# Global as I can't work out a way to get it into PrinterStateConnection
 		global printer
 		global gcodeManager
 		global userManager
 		global eventManager
+		global loginManager
 		
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
@@ -882,13 +937,13 @@ class Server():
 				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
 
 		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
-		login_manager = LoginManager()
-		login_manager.session_protection = "strong"
-		login_manager.user_callback = load_user
+		loginManager = LoginManager()
+		loginManager.session_protection = "strong"
+		loginManager.user_callback = load_user
 		if userManager is None:
-			login_manager.anonymous_user = users.DummyUser
+			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
-		login_manager.init_app(app)
+		loginManager.init_app(app)
 
 		if self._host is None:
 			self._host = settings().get(["server", "host"])
@@ -917,6 +972,10 @@ class Server():
 	def _createSocketConnection(self, session, endpoint=None):
 		global printer, gcodeManager, userManager, eventManager
 		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session, endpoint)
+
+	def _checkForRoot(self):
+		if "geteuid" in dir(os) and os.geteuid() == 0:
+			exit("You should not run OctoPrint as root!")
 
 	def _initSettings(self, configfile, basedir):
 		s = settings(init=True, basedir=basedir, configfile=configfile)

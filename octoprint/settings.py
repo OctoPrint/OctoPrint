@@ -36,7 +36,8 @@ default_settings = {
 	},
 	"server": {
 		"host": "0.0.0.0",
-		"port": 5000
+		"port": 5000,
+		"firstRun": True
 	},
 	"webcam": {
 		"stream": None,
@@ -85,7 +86,7 @@ default_settings = {
 		"actions": []
 	},
 	"accessControl": {
-		"enabled": False,
+		"enabled": True,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None
 	},
