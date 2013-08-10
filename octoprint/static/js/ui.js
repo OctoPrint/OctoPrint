@@ -1970,6 +1970,8 @@ function FirstRunViewModel() {
     });
 
     self.keepAccessControl = function() {
+        if (!self.validData()) return;
+
         var data = {
             "ac": true,
             "user": self.username(),
