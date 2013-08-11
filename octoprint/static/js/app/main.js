@@ -1,0 +1,305 @@
+$(function() {
+
+        //~~ Initialize view models
+        var loginStateViewModel = new LoginStateViewModel();
+        var usersViewModel = new UsersViewModel(loginStateViewModel);
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
+        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel);
+        var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
+        var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
+        var terminalViewModel = new TerminalViewModel(loginStateViewModel);
+        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
+        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
+        var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
+        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+
+        var dataUpdater = new DataUpdater(
+            loginStateViewModel,
+            connectionViewModel, 
+            printerStateViewModel, 
+            temperatureViewModel, 
+            controlViewModel,
+            terminalViewModel,
+            gcodeFilesViewModel,
+            timelapseViewModel,
+            gcodeViewModel
+        );
+        
+        // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
+        // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
+        $.ajaxSetup({
+            type: 'POST',
+            headers: { "cache-control": "no-cache" }
+        });
+
+        //~~ Show settings - to ensure centered
+        $('#navbar_show_settings').click(function() {
+            $('#settings_dialog').modal()
+                 .css({
+                     width: 'auto',
+                     'margin-left': function() { return -($(this).width() /2); }
+                  });
+            return false;
+        })
+
+        //~~ Temperature control (should really move to knockout click binding)
+
+        $("#temp_newTemp_set").click(function() {
+            var newTemp = $("#temp_newTemp").val();
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { temp: newTemp },
+                success: function() {$("#temp_newTemp").val("")}
+            })
+        })
+        $("#temp_newBedTemp_set").click(function() {
+            var newBedTemp = $("#temp_newBedTemp").val();
+            $.ajax({
+                url: AJAX_BASEURL + "control/temperature",
+                type: "POST",
+                dataType: "json",
+                data: { bedTemp: newBedTemp },
+                success: function() {$("#temp_newBedTemp").val("")}
+            })
+        })
+        $('#tabs a[data-toggle="tab"]').on('shown', function (e) {
+            temperatureViewModel.updatePlot();
+            terminalViewModel.updateOutput();
+        });
+
+        //~~ Terminal
+
+        $("#terminal-send").click(function () {
+            var command = $("#terminal-command").val();
+
+            /*
+            var re = /^([gm][0-9]+)(\s.*)?/;
+            var commandMatch = command.match(re);
+            if (commandMatch != null) {
+                command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
+            }
+            */
+
+            if (command) {
+                $.ajax({
+                    url: AJAX_BASEURL + "control/command",
+                    type: "POST",
+                    dataType: "json",
+                    contentType: "application/json; charset=UTF-8",
+                    data: JSON.stringify({"command": command})
+                })
+                $("#terminal-command").val('')
+            }
+
+        })
+
+        $("#terminal-command").keyup(function (event) {
+            if (event.keyCode == 13) {
+                $("#terminal-send").click()
+            }
+        })
+
+        //~~ Gcode upload
+
+        function gcode_upload_done(e, data) {
+            gcodeFilesViewModel.fromResponse(data.result);
+            $("#gcode_upload_progress .bar").css("width", "0%");
+            $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+            $("#gcode_upload_progress .bar").text("");
+        }
+
+        function gcode_upload_progress(e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+            $("#gcode_upload_progress .bar").css("width", progress + "%");
+            $("#gcode_upload_progress .bar").text("Uploading ...");
+            if (progress >= 100) {
+                $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
+                $("#gcode_upload_progress .bar").text("Saving ...");
+            }
+        }
+
+        var localTarget;
+        if (CONFIG_SD_SUPPORT) {
+            localTarget = $("#drop_locally");
+        } else {
+            localTarget = $("#drop");
+        }
+
+        $("#gcode_upload").fileupload({
+            dataType: "json",
+            dropZone: localTarget,
+            formData: {target: "local"},
+            done: gcode_upload_done,
+            progressall: gcode_upload_progress
+        });
+
+        if (CONFIG_SD_SUPPORT) {
+            $("#gcode_upload_sd").fileupload({
+                dataType: "json",
+                dropZone: $("#drop_sd"),
+                formData: {target: "sd"},
+                done: gcode_upload_done,
+                progressall: gcode_upload_progress
+            });
+        }
+
+        $(document).bind("dragover", function (e) {
+            var dropOverlay = $("#drop_overlay");
+            var dropZone = $("#drop");
+            var dropZoneLocal = $("#drop_locally");
+            var dropZoneSd = $("#drop_sd");
+            var dropZoneBackground = $("#drop_background");
+            var dropZoneLocalBackground = $("#drop_locally_background");
+            var dropZoneSdBackground = $("#drop_sd_background");
+            var timeout = window.dropZoneTimeout;
+
+            if (!timeout) {
+                dropOverlay.addClass('in');
+            } else {
+                clearTimeout(timeout);
+            }
+
+            var foundLocal = false;
+            var foundSd = false;
+            var found = false
+            var node = e.target;
+            do {
+                if (dropZoneLocal && node === dropZoneLocal[0]) {
+                    foundLocal = true;
+                    break;
+                } else if (dropZoneSd && node === dropZoneSd[0]) {
+                    foundSd = true;
+                    break;
+                } else if (dropZone && node === dropZone[0]) {
+                    found = true;
+                    break;
+                }
+                node = node.parentNode;
+            } while (node != null);
+
+            if (foundLocal) {
+                dropZoneLocalBackground.addClass("hover");
+                dropZoneSdBackground.removeClass("hover");
+            } else if (foundSd) {
+                dropZoneSdBackground.addClass("hover");
+                dropZoneLocalBackground.removeClass("hover");
+            } else if (found) {
+                dropZoneBackground.addClass("hover");
+            } else {
+                if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
+                if (dropZoneBackground) dropZoneBackground.removeClass("hover");
+            }
+
+            window.dropZoneTimeout = setTimeout(function () {
+                window.dropZoneTimeout = null;
+                dropOverlay.removeClass("in");
+                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
+                if (dropZone) dropZoneBackground.removeClass("hover");
+            }, 100);
+        });
+
+        //~~ Offline overlay
+        $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
+
+        //~~ knockout.js bindings
+
+        ko.bindingHandlers.popover = {
+            init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+                var val = ko.utils.unwrapObservable(valueAccessor());
+
+                var options = {
+                    title: val.title,
+                    animation: val.animation,
+                    placement: val.placement,
+                    trigger: val.trigger,
+                    delay: val.delay,
+                    content: val.content,
+                    html: val.html
+                };
+                $(element).popover(options);
+            }
+        }
+
+        ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+        ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
+        ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
+        ko.applyBindings(controlViewModel, document.getElementById("control"));
+        ko.applyBindings(terminalViewModel, document.getElementById("term"));
+        ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
+        ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+        ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
+        ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+
+        var timelapseElement = document.getElementById("timelapse");
+        if (timelapseElement) {
+            ko.applyBindings(timelapseViewModel, timelapseElement);
+        }
+        var gCodeVisualizerElement = document.getElementById("gcode");
+        if (gCodeVisualizerElement) {
+            gcodeViewModel.initialize();
+        }
+
+        //~~ startup commands
+
+        loginStateViewModel.requestData();
+        connectionViewModel.requestData();
+        controlViewModel.requestData();
+        gcodeFilesViewModel.requestData();
+        timelapseViewModel.requestData();
+
+        loginStateViewModel.subscribe(function(change, data) {
+            if ("login" == change) {
+                $("#gcode_upload").fileupload("enable");
+
+                settingsViewModel.requestData();
+                if (data.admin) {
+                    usersViewModel.requestData();
+                }
+            } else {
+                $("#gcode_upload").fileupload("disable");
+            }
+        });
+
+        //~~ UI stuff
+
+        $(".accordion-toggle[href='#files']").click(function() {
+            if ($("#files").hasClass("in")) {
+                $("#files").removeClass("overflow_visible");
+            } else {
+                setTimeout(function() {
+                    $("#files").addClass("overflow_visible");
+                }, 1000);
+            }
+        })
+
+        $.pnotify.defaults.history = false;
+
+        $.fn.modal.defaults.maxHeight = function(){
+            // subtract the height of the modal header and footer
+            return $(window).height() - 165;
+        }
+
+        // Fix input element click problem on login dialog
+        $(".dropdown input, .dropdown label").click(function(e) {
+            e.stopPropagation();
+        });
+
+        $(document).bind("drop dragover", function (e) {
+            e.preventDefault();
+        });
+
+        if (CONFIG_FIRST_RUN) {
+            var firstRunViewModel = new FirstRunViewModel();
+            ko.applyBindings(firstRunViewModel, document.getElementById("first_run_dialog"));
+            firstRunViewModel.showDialog();
+        }
+    }
+);
+
