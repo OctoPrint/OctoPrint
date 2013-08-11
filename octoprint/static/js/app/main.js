@@ -42,66 +42,14 @@ $(function() {
                      'margin-left': function() { return -($(this).width() /2); }
                   });
             return false;
-        })
+        });
 
-        //~~ Temperature control (should really move to knockout click binding)
+        //~~ Temperature
 
-        $("#temp_newTemp_set").click(function() {
-            var newTemp = $("#temp_newTemp").val();
-            $.ajax({
-                url: AJAX_BASEURL + "control/temperature",
-                type: "POST",
-                dataType: "json",
-                data: { temp: newTemp },
-                success: function() {$("#temp_newTemp").val("")}
-            })
-        })
-        $("#temp_newBedTemp_set").click(function() {
-            var newBedTemp = $("#temp_newBedTemp").val();
-            $.ajax({
-                url: AJAX_BASEURL + "control/temperature",
-                type: "POST",
-                dataType: "json",
-                data: { bedTemp: newBedTemp },
-                success: function() {$("#temp_newBedTemp").val("")}
-            })
-        })
         $('#tabs a[data-toggle="tab"]').on('shown', function (e) {
             temperatureViewModel.updatePlot();
             terminalViewModel.updateOutput();
         });
-
-        //~~ Terminal
-
-        $("#terminal-send").click(function () {
-            var command = $("#terminal-command").val();
-
-            /*
-            var re = /^([gm][0-9]+)(\s.*)?/;
-            var commandMatch = command.match(re);
-            if (commandMatch != null) {
-                command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
-            }
-            */
-
-            if (command) {
-                $.ajax({
-                    url: AJAX_BASEURL + "control/command",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json; charset=UTF-8",
-                    data: JSON.stringify({"command": command})
-                })
-                $("#terminal-command").val('')
-            }
-
-        })
-
-        $("#terminal-command").keyup(function (event) {
-            if (event.keyCode == 13) {
-                $("#terminal-send").click()
-            }
-        })
 
         //~~ Gcode upload
 

@@ -8,6 +8,9 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.targetTemp = ko.observable(undefined);
     self.bedTargetTemp = ko.observable(undefined);
 
+    self.newTemp = ko.observable(undefined);
+    self.newBedTemp = ko.observable(undefined);
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
@@ -17,38 +20,6 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.isLoading = ko.observable(undefined);
 
     self.temperature_profiles = settingsViewModel.temperature_profiles;
-
-    self.setTempFromProfile = function(profile) {
-        if (!profile)
-            return;
-        self.setTemp(profile.extruder);
-    }
-
-    self.setTemp = function(temp) {
-        $.ajax({
-            url: AJAX_BASEURL + "control/temperature",
-            type: "POST",
-            dataType: "json",
-            data: { temp: temp },
-            success: function() {$("#temp_newTemp").val("")}
-        })
-    };
-
-    self.setBedTempFromProfile = function(profile) {
-        if (!profile)
-            return;
-        self.setBedTemp(profile.bed);
-    }
-
-    self.setBedTemp = function(bedTemp) {
-        $.ajax({
-            url: AJAX_BASEURL + "control/temperature",
-            type: "POST",
-            dataType: "json",
-            data: { bedTemp: bedTemp },
-            success: function() {$("#temp_newBedTemp").val("")}
-        })
-    };
 
     self.tempString = ko.computed(function() {
         if (!self.temp())
@@ -171,5 +142,46 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             {label: "Bed Target", color: "#A0A0FF", data: self.temperatures.targetBed}
         ]
         $.plot($("#temperature-graph"), data, self.plotOptions);
+    }
+
+    self.setTempFromProfile = function(profile) {
+        if (!profile)
+            return;
+        self._updateTemperature(profile.extruder, "temp");
+    }
+
+    self.setTemp = function() {
+        self._updateTemperature(self.newTemp(), "temp", function(){self.targetTemp(self.newTemp()); self.newTemp("");});
+    };
+
+    self.setBedTempFromProfile = function(profile) {
+        self._updateTemperature(profile.bed, "bedTemp");
+    }
+
+    self.setBedTemp = function() {
+        self._updateTemperature(self.newBedTemp(), "bedTemp", function() {self.bedTargetTemp(self.newBedTemp()); self.newBedTemp("");});
+    };
+
+    self._updateTemperature = function(temp, type, callback) {
+        var data = {};
+        data[type] = temp;
+
+        $.ajax({
+            url: AJAX_BASEURL + "control/temperature",
+            type: "POST",
+            dataType: "json",
+            data: data,
+            success: function() { if (callback !== undefined) callback(); }
+        })
+    }
+
+    self.handleEnter = function(event, type) {
+        if (event.keyCode == 13) {
+            if (type == "temp") {
+                self.setTemp();
+            } else if (type == "bedTemp") {
+                self.setBedTemp();
+            }
+        }
     }
 }

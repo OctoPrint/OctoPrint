@@ -259,11 +259,11 @@
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
                                         <label for="temp_newTemp">New Target</label>
                                         <div class="input-append">
-                                            <input type="text" id="temp_newTemp" data-bind="attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
+                                            <input type="text" class="input-mini text-right" data-bind="value: newTemp, attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'temp');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
                                         </div>
                                         <div class="btn-group">
-                                            <button type="submit" class="btn" id="temp_newTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
+                                            <button type="submit" class="btn" data-bind="click: setTemp, enable: isOperational() && loginState.isUser()">Set</button>
                                             <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
                                                 <span class="caret"></span>
                                             </button>
@@ -291,11 +291,11 @@
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
                                         <label for="temp_newBedTemp">New Target</label>
                                         <div class="input-append">
-                                            <input type="text" id="temp_newBedTemp" data-bind="attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser()" class="tempInput">
+                                            <input type="text" class="input-mini text-right" data-bind="value: newBedTemp, attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(event, 'bedTemp');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
                                         </div>
                                         <div class="btn-group">
-                                            <button type="submit" class="btn" id="temp_newBedTemp_set" data-bind="enable: isOperational() && loginState.isUser()">Set</button>
+                                            <button type="submit" class="btn" data-bind="click: setBedTemp, enable: isOperational() && loginState.isUser()">Set</button>
                                             <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
                                                 <span class="caret"></span>
                                             </button>
@@ -514,8 +514,8 @@
                             </label>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
-                                <input type="text" id="terminal-command" data-bind="enable: isOperational() && loginState.isUser()">
-                                <button class="btn" type="button" id="terminal-send" data-bind="enable: isOperational() && loginState.isUser()">Send</button>
+                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">
+                                <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
                             </div>
                         </div>
                         {% if enableTimelapse %}

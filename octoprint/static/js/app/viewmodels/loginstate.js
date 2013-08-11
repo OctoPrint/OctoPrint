@@ -18,6 +18,7 @@ function LoginStateViewModel() {
 
     self.subscribers = [];
     self.subscribe = function(callback) {
+        if (callback === undefined) return;
         self.subscribers.push(callback);
     }
 

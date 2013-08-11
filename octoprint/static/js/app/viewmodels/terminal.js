@@ -5,6 +5,8 @@ function TerminalViewModel(loginStateViewModel) {
 
     self.log = [];
 
+    self.command = ko.observable(undefined);
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
@@ -78,6 +80,34 @@ function TerminalViewModel(loginStateViewModel) {
 
         if (self.autoscrollEnabled()) {
             container.scrollTop(container[0].scrollHeight - container.height())
+        }
+    }
+
+    self.sendCommand = function() {
+        /*
+         var re = /^([gm][0-9]+)(\s.*)?/;
+         var commandMatch = command.match(re);
+         if (commandMatch != null) {
+         command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
+         }
+         */
+
+        var command = self.command();
+        if (command) {
+            $.ajax({
+                url: AJAX_BASEURL + "control/command",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify({"command": command})
+            });
+            self.command("");
+        }
+    }
+
+    self.handleEnter = function(event) {
+        if (event.keyCode == 13) {
+            self.sendCommand();
         }
     }
 }
