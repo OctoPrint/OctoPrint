@@ -174,6 +174,10 @@ def index():
 		gitCommit=commit
 	)
 
+@app.route("/robots.txt")
+def robotsTxt():
+	return send_from_directory(app.static_folder, "robots.txt")
+
 #~~ Printer control
 
 @app.route(BASEURL + "control/connection/options", methods=["GET"])
