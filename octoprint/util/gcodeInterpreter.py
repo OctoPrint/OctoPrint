@@ -26,13 +26,6 @@ def getPreference(key, default=None):
 class AnalysisAborted(Exception):
 	pass
 
-#class gcodePath(object):
-#	def __init__(self, newType, pathType, layerThickness, startPoint):
-#		self.type = newType
-#		self.pathType = pathType
-#		self.layerThickness = layerThickness
-#		self.points = [startPoint]
-#		self.extrusion = [0.0]
 def gcodePath(newType, pathType, layerThickness, startPoint):
 	return {'type': newType,
 			'pathType': pathType,
@@ -73,7 +66,7 @@ class gcode(object):
 			
 	def calculateWeight(self):
 		#Calculates the weight of the filament in kg
-		volumeM3 = calculateVolumeCm3 /(1000*1000)
+		volumeM3 = self.calculateVolumeCm3() /(1000*1000)
 		return volumeM3 * getPreference('filament_physical_density')
 	
 	def calculateCost(self):
@@ -96,22 +89,14 @@ class gcode(object):
 		totalExtrusion = 0.0
 		maxExtrusion = 0.0
 		currentExtruder = 0
-		extrudeAmountMultiply = 1.0
 		totalMoveTimeMinute = 0.0
 		absoluteE = True
 		scale = 1.0
 		posAbs = True
 		feedRate = 3600.0
-		moveType = 'move'
-		layerThickness = 0.1
-		pathType = 'CUSTOM'
-		#currentLayer = []
 		unknownGcodes = {}
 		unknownMcodes = {}
-		#currentPath = gcodePath('move', pathType, layerThickness, pos)
-		#currentPath['extruder'] = currentExtruder
 
-		#currentLayer.append(currentPath)
 		for line in gcodeFile:
 			if self._abort:
 				raise AnalysisAborted()
@@ -126,24 +111,8 @@ class gcode(object):
 
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
-				if comment == 'fill':
-					pathType = 'FILL'
-				elif comment == 'perimeter':
-					pathType = 'WALL-INNER'
-				elif comment == 'skirt':
-					pathType = 'SKIRT'
-				elif comment.startswith("filament_diameter"):
+				if comment.startswith("filament_diameter"):
 					self._filamentDiameter = float(comment.split("=", 1)[1].strip())
-				elif comment.startswith('TYPE:'):
-					pathType = comment[5:]
-				#elif comment.startswith('LAYER:'):
-					#currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
-					#currentPath['extruder'] = currentExtruder
-					#for path in currentLayer:
-					#	path['points'] = numpy.array(path['points'], numpy.float32)
-					#	path['extrusion'] = numpy.array(path['extrusion'], numpy.float32)
-					#self.layerList.append(currentLayer)
-					#currentLayer = [currentPath]
 				elif comment.startswith("CURA_PROFILE_STRING"):
 					curaOptions = self._parseCuraProfileString(comment)
 					if "filament_diameter" in curaOptions:
@@ -210,14 +179,6 @@ class gcode(object):
 					if moveType == 'move' and oldPos[2] != pos[2]:
 						if oldPos[2] > pos[2] and abs(oldPos[2] - pos[2]) > 5.0 and pos[2] < 1.0:
 							oldPos[2] = 0.0
-						layerThickness = abs(oldPos[2] - pos[2])
-					#if currentPath['type'] != moveType or currentPath['pathType'] != pathType:
-					#	currentPath = gcodePath(moveType, pathType, layerThickness, currentPath['points'][-1])
-					#	currentPath['extruder'] = currentExtruder
-					#	currentLayer.append(currentPath)
-
-					#currentPath['points'].append(pos)
-					#currentPath['extrusion'].append(e * extrudeAmountMultiply)
 				elif G == 4:	#Delay
 					S = getCodeFloat(line, 'S')
 					if S is not None:
@@ -315,22 +276,14 @@ class gcode(object):
 						pass
 					elif M == 221:	#Extrude amount multiplier
 						s = getCodeFloat(line, 'S')
-						if s is not None:
-							extrudeAmountMultiply = s / 100.0
 					else:
 						if M not in unknownMcodes:
 							self._logger.info("Unknown M code: %r" % M)
 							unknownMcodes[M] = True
-		#for path in currentLayer:
-		#	path['points'] = numpy.array(path['points'], numpy.float32)
-		#	path['extrusion'] = numpy.array(path['extrusion'], numpy.float32)
-		#self.layerList.append(currentLayer)
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
 		self.extrusionAmount = maxExtrusion
 		self.totalMoveTimeMinute = totalMoveTimeMinute
-		#print "Extruded a total of: %d mm of filament" % (self.extrusionAmount)
-		#print "Estimated print duration: %.2f minutes" % (self.totalMoveTimeMinute)
 
 	def _parseCuraProfileString(self, comment):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
