@@ -9,6 +9,10 @@ class CuraFactory(object):
 
 	@staticmethod
 	def create_slicer(path=None):
+		"""Utilizes the factory pattern to setup a CuraEngine object
+
+		:param path: :class: `str`
+		"""
 		if path:
 			return CuraEngine(path)
 		current_settings = settings(init=True)
@@ -33,6 +37,7 @@ class CuraEngine(object):
 			self, config, gcode, file_path, call_back=None, 
 			call_back_args=None):
 		"""Wraps around the main.cpp processFile method.
+
 		:param config: :class: `string` :path to a cura config file:
 		:param gcode: :class: `string :path to write out the gcode generated:
 		:param file_path: :class: `string :path to the STL to be sliced:
