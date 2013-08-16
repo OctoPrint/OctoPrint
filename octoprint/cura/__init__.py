@@ -52,7 +52,7 @@ class CuraEngine(object):
 			logging.info("Subprocess args: %s" % str(call_args))
 			process = subprocess.call(call_args)
 			call_back(*call_back_args)
-			logging.info("Slicing call back complete")
+			logging.info("Slicing call back complete:%s" % str(call_back))
 
 		args = [self.cura_path, '-s', config, '-o',  gcode, file_path]
 		logging.info('CuraEngine args:%s' % str(args))
