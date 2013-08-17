@@ -9,40 +9,64 @@ def process_profile_ini(filename):
 	:note: The filename should be the full path to the profile.ini
 	"""
 
+	if not filename:
+		raise ValueError("No file name to process")
 
-	profile = open(filename, 'r')
+	# This made it easier to mock and test
+	profile = read_filename(filename)
 	data = {}
 
+	logging.info("Processing %s" % filename)
 	for line in profile:
 
 		if _is_multi_start(line):
+			read_multi_line(line, profile, data)
 			
-			multi_line = line
-
-			while(not _is_multi_end(line)):
-				line = profile.readline()
-				multi_line += next_line
-
-			data = process_multi_setting_line(data, multi_line)
-
 		if _is_single(line):
-			data = process_setting_line(data, setting_line)
-
-	profile.close()
+			data = process_setting_line(data, line)
 
 	return format_data_for_command(data)
 
+def read_multi_line(line, profile, data):
 
-def _is_multi_start(line):
-	pass
+	multi_line = line
+
+	line = profile.readline()
+
+	if _is_multi_continue(line):
+		multi_line += line
+	
+	if _is_single(line):
+		data = process_setting_line(data, multi_line)
+		data = process_setting_line(data, line)
+		return
+
+	while(_is_multi_continue(line)):
+
+		line = profile.readline()
+
+		if not line:
+			break
+
+		if _is_single(line):
+			data = process_setting_line(data, line)
+			break
+
+		if _is_multi_start(line):
+			read_multi_line(line, profile, data)
+			break
+
+		multi_line += line
+
+	data = process_multi_setting_line(data, multi_line)
 
 
-def _is_multi_end(line):
-	pass
 
 
-def _is_single(line):
-	pass
+def process_multi_setting_line(data, multi_line):
+
+	data = process_setting_line(data, multi_line)
+	return data
 
 
 def process_setting_line(data, setting_line):
@@ -61,13 +85,21 @@ def process_setting_line(data, setting_line):
 
 	# TODO: Make this more fault tolerant
 
+	# Changes var_with_underscore to varWithUnderscore
 	split = setting_line.split("=")
 	variable_parts = split[0].split("_")
 	end_variable_parts = ''.join(word.title() for word in variable_parts[1:])
 
-	new_name = str(variable_parts[0]) + end_variable_parts
+	new_name = (str(variable_parts[0]) + end_variable_parts).strip()
+	new_value = split[1].strip()
 
-	data[new_name] = split[1].strip()
+	if '.gcode' in new_name:
+		new_name = new_name.replace('.gcode', 'Code')
+
+		# might need to surround the value in quotes?
+		#new_value = "'" + new_value + "'"
+
+	data[new_name] = new_value
 
 	return data
 
@@ -89,3 +121,29 @@ def format_data_for_command(data):
 		result.extend(['-s', '%s=%s' %  (key, str(value))])
 
 	return result
+
+
+def read_filename(filename):
+	
+	lines = open(filename, 'r').read()
+	return lines
+
+def _is_multi_start(line):
+
+	if '.gcode' in line or "=" in line and "(lp" in line:
+		return True
+
+def _is_multi_continue(line):
+
+	if '=' not in line:
+		return True
+		
+	if '.gcode' not in line and '=' not in line:
+		return True
+
+def _is_single(line):
+	
+	if '=' in line and '.gcode' not in line:
+		return True
+
+

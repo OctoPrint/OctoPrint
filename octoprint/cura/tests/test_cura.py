@@ -17,8 +17,9 @@ class CuraFactoryTestCase(unittest.TestCase):
 		self.assertEqual(fake_path, result.cura_path)
 
 
+	@patch('octoprint.cura.parser.process_profile_ini')
 	@patch('threading.Thread')
-	def test_cura_engine_process_file(self, thread):
+	def test_cura_engine_process_file(self, thread, process):
 		path = 'rosshendrickson/workspaces/opensource/CuraEngine/'
 		
 		cura_engine = CuraFactory.create_slicer(path)
@@ -26,8 +27,6 @@ class CuraFactoryTestCase(unittest.TestCase):
 		config_path = './cura/tests/config'
 		gcode_filename= './cura/tests/output.gcode'
 
-		args = [path, '-s', config_path, '-o', file_path]
-		
 		cura_engine.process_file(config_path, gcode_filename, file_path)
 		self.assertTrue(thread.called)
 

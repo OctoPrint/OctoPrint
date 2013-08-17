@@ -36,6 +36,8 @@ class CuraEngine(object):
 	def process_file(
 			self, config, gcode, file_path, call_back=None, 
 			call_back_args=None):
+
+		from octoprint.cura import parser
 		"""Wraps around the main.cpp processFile method.
 
 		:param config: :class: `string` :path to a cura config file:
@@ -54,7 +56,13 @@ class CuraEngine(object):
 			call_back(*call_back_args)
 			logging.info("Slicing call back complete:%s" % str(call_back))
 
-		args = [self.cura_path, '-s', config, '-o',  gcode, file_path]
+
+		args = [self.cura_path, '-o',  gcode, file_path]
+
+		settings = parser.process_profile_ini(config)
+
+		args.extend(settings)
+
 		logging.info('CuraEngine args:%s' % str(args))
 
 		thread = threading.Thread(target=start_thread, args=(call_back,
