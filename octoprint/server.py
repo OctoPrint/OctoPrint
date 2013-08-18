@@ -1054,6 +1054,11 @@ class Server():
 
 		logging.config.dictConfig(config)
 
+		if settings().getBoolean(["serial", "log"]):
+			# enable debug logging to serial.log
+			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+			logging.getLogger("SERIAL").debug("Enabling serial logging")
+
 if __name__ == "__main__":
 	octoprint = Server()
 	octoprint.run()
