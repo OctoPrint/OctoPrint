@@ -57,11 +57,13 @@ class CuraEngine(object):
 			logging.info("Slicing call back complete:%s" % str(call_back))
 
 
-		args = [self.cura_path, '-o',  gcode, file_path]
+		args = [self.cura_path, '-o',  gcode]
 
 		settings = parser.process_profile_ini(config)
 
 		args.extend(settings)
+
+		args.extend([file_path])
 
 		logging.info('CuraEngine args:%s' % str(args))
 

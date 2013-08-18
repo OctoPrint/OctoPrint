@@ -1,4 +1,5 @@
 import logging
+from StringIO import StringIO
 
 
 def process_profile_ini(filename):
@@ -18,7 +19,6 @@ def process_profile_ini(filename):
 
 	logging.info("Processing %s" % filename)
 	for line in profile:
-
 		if _is_multi_start(line):
 			read_multi_line(line, profile, data)
 			
@@ -32,7 +32,6 @@ def read_multi_line(line, profile, data):
 	multi_line = line
 
 	line = profile.readline()
-
 	if _is_multi_continue(line):
 		multi_line += line
 	
@@ -44,7 +43,6 @@ def read_multi_line(line, profile, data):
 	while(_is_multi_continue(line)):
 
 		line = profile.readline()
-
 		if not line:
 			break
 
@@ -126,7 +124,7 @@ def format_data_for_command(data):
 def read_filename(filename):
 	
 	lines = open(filename, 'r').read()
-	return lines
+	return StringIO(lines)
 
 def _is_multi_start(line):
 
