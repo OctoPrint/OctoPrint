@@ -692,7 +692,7 @@ class MachineCom(object):
 							self._sendCommand("M105")
 						tempRequestTimeout = getNewTimeout("communication")
 					# resend -> start resend procedure from requested line
-					elif "resend" in line.lower() or "rs" in line:
+					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						self._handleResendRequest(line)
 
 				### Printing
@@ -726,7 +726,7 @@ class MachineCom(object):
 								self._sendCommand(self._commandQueue.get())
 							else:
 								self._sendNext()
-						elif "resend" in line.lower() or "rs" in line:
+						elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 							self._handleResendRequest(line)
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
