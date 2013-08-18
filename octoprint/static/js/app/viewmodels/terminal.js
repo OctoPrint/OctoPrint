@@ -19,6 +19,8 @@ function TerminalViewModel(loginStateViewModel) {
     self.filterM105 = ko.observable(false);
     self.filterM27 = ko.observable(false);
 
+    self.filters = ko.observableArray();
+
     self.regexM105 = /(Send: M105)|(Recv: ok T:)/;
     self.regexM27 = /(Send: M27)|(Recv: SD printing byte)/;
 
@@ -27,6 +29,10 @@ function TerminalViewModel(loginStateViewModel) {
     });
 
     self.filterM27.subscribe(function(newValue) {
+        self.updateOutput();
+    });
+
+    self.filters.subscribe(function(newValue) {
         self.updateOutput();
     });
 
@@ -69,6 +75,17 @@ function TerminalViewModel(loginStateViewModel) {
 
         var output = "";
         for (var i = 0; i < self.log.length; i++) {
+            var filters = self.filters();
+            var filtered = false;
+            for (var j = 0; j < filters.length; j++) {
+                var filter = filters[j];
+                if (self.log[i].match(filter.regex)) {
+                    filtered = true;
+                    break;
+                }
+            }
+            if (filtered) continue;
+
             if (self.filterM105() && self.log[i].match(self.regexM105)) continue;
             if (self.filterM27() && self.log[i].match(self.regexM27)) continue;
 
