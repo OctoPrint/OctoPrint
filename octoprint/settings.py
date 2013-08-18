@@ -88,7 +88,10 @@ default_settings = {
 	"accessControl": {
 		"enabled": True,
 		"userManager": "octoprint.users.FilebasedUserManager",
-		"userfile": None
+		"userfile": None,
+		"autologinLocal": False,
+		"localNetwork": "127.0.0.1",
+		"autologinAs": None
 	},
 	"events": {
 		"systemCommandTrigger": {

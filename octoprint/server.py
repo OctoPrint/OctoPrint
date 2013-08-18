@@ -14,6 +14,7 @@ import os
 import threading
 import logging, logging.config
 import subprocess
+import netaddr
 
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings, valid_boolean_trues
@@ -64,8 +65,7 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._eventManager = eventManager
 
 	def on_open(self, info):
-		self._logger.info("New connection from client")
-		# Use of global here is smelly
+		self._logger.info("New connection from client: %s" % info.ip)
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
 
@@ -74,7 +74,6 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 	def on_close(self):
 		self._logger.info("Closed client connection")
-		# Use of global here is smelly
 		self._printer.unregisterCallback(self)
 		self._gcodeManager.unregisterCallback(self)
 
@@ -857,6 +856,22 @@ def login():
 		if user is not None and not user.is_anonymous():
 			identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 			return jsonify(user.asDict())
+		elif settings().getBoolean(["accessControl", "autologinLocal"]) \
+				and settings().get(["accessControl", "autologinAs"]) is not None \
+				and settings().get(["accessControl", "localNetwork"]) is not None:
+			autologinAs = settings().get(["accessControl", "autologinAs"])
+			localNetwork = settings().get(["accessControl", "localNetwork"])
+			try:
+				remoteAddr = util.getRemoteAddress(request)
+				if netaddr.IPAddress(remoteAddr) in netaddr.IPNetwork(localNetwork):
+					user = userManager.findUser(autologinAs)
+					if user is not None:
+						login_user(user)
+						identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
+						return jsonify(user.asDict())
+			except:
+				logger = logging.getLogger(__name__)
+				logger.exception("Could not autologin user %s for network %s" % (autologinAs, localNetwork))
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "logout", methods=["POST"])
