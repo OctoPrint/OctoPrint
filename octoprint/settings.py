@@ -90,7 +90,7 @@ default_settings = {
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": False,
-		"localNetwork": "127.0.0.1",
+		"localNetworks": ["127.0.0.0/8"],
 		"autologinAs": None
 	},
 	"events": {

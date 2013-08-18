@@ -858,12 +858,16 @@ def login():
 			return jsonify(user.asDict())
 		elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 				and settings().get(["accessControl", "autologinAs"]) is not None \
-				and settings().get(["accessControl", "localNetwork"]) is not None:
+				and settings().get(["accessControl", "localNetworks"]) is not None:
+
 			autologinAs = settings().get(["accessControl", "autologinAs"])
-			localNetwork = settings().get(["accessControl", "localNetwork"])
+			localNetworks = netaddr.IPSet([])
+			for ip in settings().get(["accessControl", "localNetworks"]):
+				localNetworks.add(ip)
+
 			try:
 				remoteAddr = util.getRemoteAddress(request)
-				if netaddr.IPAddress(remoteAddr) in netaddr.IPNetwork(localNetwork):
+				if netaddr.IPAddress(remoteAddr) in localNetworks:
 					user = userManager.findUser(autologinAs)
 					if user is not None:
 						login_user(user)
@@ -871,7 +875,7 @@ def login():
 						return jsonify(user.asDict())
 			except:
 				logger = logging.getLogger(__name__)
-				logger.exception("Could not autologin user %s for network %s" % (autologinAs, localNetwork))
+				logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "logout", methods=["POST"])
@@ -986,7 +990,11 @@ class Server():
 			connectionOptions = getConnectionOptions()
 			if port in connectionOptions["ports"]:
 				printer.connect(port, baudrate)
-		IOLoop.instance().start()
+		try:
+			IOLoop.instance().start()
+		except:
+			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
+			logger.exception("Stacktrace follows:")
 
 	def _createSocketConnection(self, session, endpoint=None):
 		global printer, gcodeManager, userManager, eventManager
