@@ -248,7 +248,7 @@ class Settings(object):
 		return feedbackControls
 
 	def _getFeedbackControls(self, control=None):
-		if control["type"] == "feedback_command":
+		if control["type"] == "feedback_command" or control["type"] == "feedback":
 			pattern = control["regex"]
 			try:
 				matcher = re.compile(pattern)

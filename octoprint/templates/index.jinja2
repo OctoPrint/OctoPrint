@@ -402,6 +402,11 @@
                                     <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button> <span data-bind="text: output"></span>
                                 </form>
                             </script>
+                            <script type="text/html" id="customControls_feedbackTemplate">
+                                <div>
+                                    <strong data-bind="text: name"></strong>: <span data-bind="text: output"></span>
+                                </div>
+                            </script>
                             <script type="text/html" id="customControls_parametricCommandTemplate">
                                 <form class="form-inline">
                                     <!-- ko foreach: input -->
