@@ -473,6 +473,49 @@ def apiPrinterState():
 	})
 	return jsonify(currentData)
 
+@app.route(APIBASEURL + "control/jog", methods=["GET"])
+def apiJog():
+	if not printer.isOperational() or printer.isPrinting():
+		# do not jog when a print job is running or we don't have a connection
+		return jsonify(SUCCESS)
+
+	(movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE) = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
+	if "x" in request.values.keys():
+		# jog x
+		x = request.values["x"]
+		printer.commands(["G91", "G1 X%s F%d" % (x, movementSpeedX), "G90"])
+	if "y" in request.values.keys():
+		# jog y
+		y = request.values["y"]
+		printer.commands(["G91", "G1 Y%s F%d" % (y, movementSpeedY), "G90"])
+	if "z" in request.values.keys():
+		# jog z
+		z = request.values["z"]
+		printer.commands(["G91", "G1 Z%s F%d" % (z, movementSpeedZ), "G90"])
+	if "homeXY" in request.values.keys():
+		# home x/y
+		printer.command("G28 X0 Y0")
+	if "homeZ" in request.values.keys():
+		# home z
+		printer.command("G28 Z0")
+	if "extrude" in request.values.keys():
+		# extrude/retract
+		length = request.values["extrude"]
+		printer.commands(["G91", "G1 E%s F%d" % (length, movementSpeedE), "G90"])
+
+	return jsonify(SUCCESS)
+
+@app.route(APIBASEURL + "control/job", methods=["GET"])
+def apiPrintJobControl():
+	if "command" in request.values.keys():
+		if request.values["command"] == "start":
+			printer.startPrint()
+		elif request.values["command"] == "pause":
+			printer.togglePausePrint()
+		elif request.values["command"] == "cancel":
+			printer.cancelPrint()
+	return jsonify(SUCCESS)
+
 #~~ timelapse handling
 
 @app.route(BASEURL + "timelapse", methods=["GET"])
