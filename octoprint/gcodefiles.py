@@ -15,6 +15,8 @@ from octoprint.settings import settings
 
 from werkzeug.utils import secure_filename
 
+SUPPORTED_EXTENSIONS=["gcode", "gco"]
+
 class GcodeManager:
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
@@ -171,7 +173,7 @@ class GcodeManager:
 		"""
 		filename = self._getBasicFilename(filename)
 
-		if not util.isAllowedFile(filename, set(["gcode"])):
+		if not util.isAllowedFile(filename.lower(), set(SUPPORTED_EXTENSIONS)):
 			return None
 
 		secure = os.path.join(self._uploadFolder, secure_filename(self._getBasicFilename(filename)))
