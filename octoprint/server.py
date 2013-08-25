@@ -3,7 +3,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from werkzeug.utils import secure_filename
-import tornadio2
+from sockjs.tornado import SockJSRouter, SockJSConnection
 from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort, make_response
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
@@ -34,6 +34,7 @@ app = Flask("octoprint")
 # In order that threads don't start too early when running as a Daemon
 printer = None
 timelapse = None
+debug = False
 
 gcodeManager = None
 userManager = None
@@ -46,9 +47,9 @@ user_permission = Permission(RoleNeed("user"))
 
 #~~ Printer state
 
-class PrinterStateConnection(tornadio2.SocketConnection):
-	def __init__(self, printer, gcodeManager, userManager, eventManager, session, endpoint=None):
-		tornadio2.SocketConnection.__init__(self, session, endpoint)
+class PrinterStateConnection(SockJSConnection):
+	def __init__(self, printer, gcodeManager, userManager, eventManager, session):
+		SockJSConnection.__init__(self, session)
 
 		self._logger = logging.getLogger(__name__)
 
@@ -64,8 +65,14 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._userManager = userManager
 		self._eventManager = eventManager
 
+	def _getRemoteAddress(self, info):
+		forwardedFor = info.headers.get("X-Forwarded-For")
+		if forwardedFor is not None:
+			return forwardedFor.split(",")[0]
+		return info.ip
+
 	def on_open(self, info):
-		self._logger.info("New connection from client: %s" % info.ip)
+		self._logger.info("New connection from client: %s" % self._getRemoteAddress(info))
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
 
@@ -102,16 +109,16 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 			"logs": logs,
 			"messages": messages
 		})
-		self.emit("current", data)
+		self._emit("current", data)
 
 	def sendHistoryData(self, data):
-		self.emit("history", data)
+		self._emit("history", data)
 
 	def sendUpdateTrigger(self, type):
-		self.emit("updateTrigger", type)
+		self._emit("updateTrigger", type)
 
 	def sendFeedbackCommandOutput(self, name, output):
-		self.emit("feedbackCommandOutput", {"name": name, "output": output})
+		self._emit("feedbackCommandOutput", {"name": name, "output": output})
 
 	def addLog(self, data):
 		with self._logBacklogMutex:
@@ -127,6 +134,9 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 	def _onMovieDone(self, event, payload):
 		self.sendUpdateTrigger("timelapseFiles")
+
+	def _emit(self, type, payload):
+		self.send({type: payload})
 
 def restricted_access(func):
 	"""
@@ -159,6 +169,8 @@ def index():
 	except:
 		pass
 
+	global debug
+
 	return render_template(
 		"index.jinja2",
 		ajaxBaseUrl=BASEURL,
@@ -169,6 +181,7 @@ def index():
 		enableAccessControl=userManager is not None,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
+		debug=debug,
 		gitBranch=branch,
 		gitCommit=commit
 	)
@@ -928,11 +941,14 @@ class Server():
 		global userManager
 		global eventManager
 		global loginManager
+		global debug
 		
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
 		from tornado.web import Application, FallbackHandler
+
+		debug = self._debug
 
 		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
 		self._initSettings(self._configfile, self._basedir)
@@ -976,7 +992,7 @@ class Server():
 		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
-		self._router = tornadio2.TornadioRouter(self._createSocketConnection)
+		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
 		self._tornado_app = Application(self._router.urls + [
 			(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
@@ -996,9 +1012,9 @@ class Server():
 			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			logger.exception("Stacktrace follows:")
 
-	def _createSocketConnection(self, session, endpoint=None):
+	def _createSocketConnection(self, session):
 		global printer, gcodeManager, userManager, eventManager
-		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session, endpoint)
+		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session)
 
 	def _checkForRoot(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
