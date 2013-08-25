@@ -52,7 +52,8 @@ default_settings = {
 		"gCodeVisualizer": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"sdSupport": True
+		"sdSupport": True,
+		"swallowOkAfterResend": False
 	},
 	"folder": {
 		"uploads": None,
@@ -104,6 +105,14 @@ default_settings = {
 	"api": {
 		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+	},
+	"devel": {
+		"virtualPrinter": {
+			"enabled": False,
+			"okAfterResend": False,
+			"forceChecksum": False,
+			"okWithLinenumber": False
+		}
 	}
 }
 
