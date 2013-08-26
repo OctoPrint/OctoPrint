@@ -448,6 +448,7 @@ class MachineCom(object):
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
 		pauseTriggers = settings().getPauseTriggers()
+		feedbackErrors = []
 
 		#Open the serial port.
 		if self._port == 'AUTO':
@@ -606,9 +607,18 @@ class MachineCom(object):
 						try:
 							match = matcher.search(line)
 							if match is not None:
-								self._callback.mcReceivedRegisteredMessage(name, str.format(template, *(match.groups("n/a"))))
+								format = None
+								if isinstance(template, str):
+									format = str.format
+								elif isinstance(template, unicode):
+									format = unicode.format
+
+								if format is not None:
+									self._callback.mcReceivedRegisteredMessage(name, format(template, *(match.groups("n/a"))))
 						except:
-							# ignored on purpose
+							if not name in feedbackErrors:
+								self._logger.info("Something went wrong with feedbackControl \"%s\": " % name, exc_info=True)
+								feedbackErrors.append(name)
 							pass
 
 				##~~ Parsing for pause triggers

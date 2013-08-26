@@ -68,7 +68,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             for (var i = 0; i < control.input.length; i++) {
                 control.input[i].value = control.input[i].default;
             }
-        } else if (control.type == "feedback_command") {
+        } else if (control.type == "feedback_command" || control.type == "feedback") {
             control.output = ko.observable("");
             self.feedbackControlLookup[control.name] = control.output;
         } else if (control.type == "section") {
@@ -162,6 +162,8 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
                 return "customControls_parametricCommandTemplate";
             case "feedback_command":
                 return "customControls_feedbackCommandTemplate";
+            case "feedback":
+                return "customControls_feedbackTemplate";
             default:
                 return "customControls_emptyTemplate";
         }

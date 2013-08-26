@@ -60,6 +60,18 @@ $(function() {
             $("#gcode_upload_progress .bar").text("");
         }
 
+        function gcode_upload_fail(e, data) {
+            $.pnotify({
+                title: "Upload failed",
+                text: "<p>Could not upload the file. Make sure it is a GCODE file and has one of the following extensions: .gcode, .gco</p><p>Server reported: <pre>" + data.jqXHR.responseText + "</pre></p>",
+                type: "error",
+                hide: false
+            });
+            $("#gcode_upload_progress .bar").css("width", "0%");
+            $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+            $("#gcode_upload_progress .bar").text("");
+        }
+
         function gcode_upload_progress(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             $("#gcode_upload_progress .bar").css("width", progress + "%");
@@ -82,6 +94,7 @@ $(function() {
             dropZone: localTarget,
             formData: {target: "local"},
             done: gcode_upload_done,
+            fail: gcode_upload_fail,
             progressall: gcode_upload_progress
         });
 
@@ -91,6 +104,7 @@ $(function() {
                 dropZone: $("#drop_sd"),
                 formData: {target: "sd"},
                 done: gcode_upload_done,
+                fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
             });
         }
