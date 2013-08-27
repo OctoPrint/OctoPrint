@@ -51,6 +51,7 @@ class Timelapse(object):
 		eventManager().subscribe("PrintStarted", self.onPrintStarted)
 		eventManager().subscribe("PrintFailed", self.onPrintDone)
 		eventManager().subscribe("PrintDone", self.onPrintDone)
+		eventManager().subscribe("PrintResumed", self.onPrintResumed)
 		for (event, callback) in self.eventSubscriptions():
 			eventManager().subscribe(event, callback)
 
@@ -62,6 +63,7 @@ class Timelapse(object):
 		eventManager().unsubscribe("PrintStarted", self.onPrintStarted)
 		eventManager().unsubscribe("PrintFailed", self.onPrintDone)
 		eventManager().unsubscribe("PrintDone", self.onPrintDone)
+		eventManager().unsubscribe("PrintResumed", self.onPrintResumed)
 		for (event, callback) in self.eventSubscriptions():
 			eventManager().unsubscribe(event, callback)
 
@@ -77,12 +79,20 @@ class Timelapse(object):
 		"""
 		self.stopTimelapse()
 
+	def onPrintResumed(self, event, payload):
+		"""
+		Override this to perform additional actions upon the pausing of a print job.
+		"""
+		if not self._inTimelapse:
+			self.startTimelapse(payload)
+
 	def eventSubscriptions(self):
 		"""
 		Override this method to subscribe to additional events by returning an array of (event, callback) tuples.
 
 		Events that are already subscribed:
 		  * PrintStarted - self.onPrintStarted
+		  * PrintResumed - self.onPrintResumed
 		  * PrintFailed - self.onPrintDone
 		  * PrintDone - self.onPrintDone
 		"""

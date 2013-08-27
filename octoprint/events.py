@@ -46,7 +46,10 @@ class EventManager(object):
 		eventListeners = self._registeredListeners[event]
 		for listener in eventListeners:
 			self._logger.debug("Sending action to %r" % listener)
-			listener(event, payload)
+			try:
+				listener(event, payload)
+			except:
+				self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
 
 	
 	def subscribe(self, event, callback):
