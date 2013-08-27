@@ -614,7 +614,8 @@ def getSettings():
 		"system": {
 			"actions": s.get(["system", "actions"]),
 			"events": s.get(["system", "events"])
-		} 
+		},
+		"terminalFilters": s.get(["terminalFilters"])
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -681,6 +682,9 @@ def setSettings():
 
 		if "temperature" in data.keys():
 			if "profiles" in data["temperature"].keys(): s.set(["temperature", "profiles"], data["temperature"]["profiles"])
+
+		if "terminalFilters" in data.keys():
+			s.set(["terminalFilters"], data["terminalFilters"])
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])

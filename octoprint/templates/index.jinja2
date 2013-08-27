@@ -511,12 +511,11 @@
                             <label class="checkbox">
                                 <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
                             </label>
-                            <label class="checkbox">
-                                <input type="checkbox" id="terminal-filterM105" data-bind="checked: filterM105"> Suppress M105 requests/responses
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" id="terminal-filterM27" data-bind="checked: filterM27"> Suppress M27 requests/responses
-                            </label>
+                            <div data-bind="foreach: filters">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="attr: { value: regex }, checked: $parent.activeFilters"> <span data-bind="text: name"></span>
+                                </label>
+                            </div>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
                                 <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">

@@ -104,7 +104,11 @@ default_settings = {
 	"api": {
 		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
-	}
+	},
+	"terminalFilters": [
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T:)" },
+		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
+	]
 }
 
 valid_boolean_trues = ["true", "yes", "y", "1"]

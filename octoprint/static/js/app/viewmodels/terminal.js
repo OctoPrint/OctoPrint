@@ -1,7 +1,8 @@
-function TerminalViewModel(loginStateViewModel) {
+function TerminalViewModel(loginStateViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.settings = settingsViewModel;
 
     self.log = [];
 
@@ -16,23 +17,13 @@ function TerminalViewModel(loginStateViewModel) {
     self.isLoading = ko.observable(undefined);
 
     self.autoscrollEnabled = ko.observable(true);
-    self.filterM105 = ko.observable(false);
-    self.filterM27 = ko.observable(false);
 
-    self.filters = ko.observableArray();
+    self.filters = self.settings.terminalFilters;
+    self.filterRegex = undefined;
 
-    self.regexM105 = /(Send: M105)|(Recv: ok T:)/;
-    self.regexM27 = /(Send: M27)|(Recv: SD printing byte)/;
-
-    self.filterM105.subscribe(function(newValue) {
-        self.updateOutput();
-    });
-
-    self.filterM27.subscribe(function(newValue) {
-        self.updateOutput();
-    });
-
-    self.filters.subscribe(function(newValue) {
+    self.activeFilters = ko.observableArray([]);
+    self.activeFilters.subscribe(function(e) {
+        self.updateFilterRegex();
         self.updateOutput();
     });
 
@@ -69,26 +60,23 @@ function TerminalViewModel(loginStateViewModel) {
         self.isLoading(data.flags.loading);
     }
 
+    self.updateFilterRegex = function() {
+        var filterRegexStr = self.activeFilters().join("|").trim();
+        if (filterRegexStr == "") {
+            self.filterRegex = undefined;
+        } else {
+            self.filterRegex = new RegExp(filterRegexStr);
+        }
+        console.log("Terminal filter regex: " + filterRegexStr);
+    }
+
     self.updateOutput = function() {
         if (!self.log)
             return;
 
         var output = "";
         for (var i = 0; i < self.log.length; i++) {
-            var filters = self.filters();
-            var filtered = false;
-            for (var j = 0; j < filters.length; j++) {
-                var filter = filters[j];
-                if (self.log[i].match(filter.regex)) {
-                    filtered = true;
-                    break;
-                }
-            }
-            if (filtered) continue;
-
-            if (self.filterM105() && self.log[i].match(self.regexM105)) continue;
-            if (self.filterM27() && self.log[i].match(self.regexM27)) continue;
-
+            if (self.filterRegex !== undefined && self.log[i].match(self.filterRegex)) continue;
             output += self.log[i] + "\n";
         }
 
@@ -127,4 +115,5 @@ function TerminalViewModel(loginStateViewModel) {
             self.sendCommand();
         }
     }
+
 }
