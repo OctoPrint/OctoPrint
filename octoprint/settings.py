@@ -109,8 +109,7 @@ default_settings = {
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T:)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
-	]
-	},
+	],
 	"devel": {
 		"virtualPrinter": {
 			"enabled": False,
