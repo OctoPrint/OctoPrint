@@ -198,6 +198,7 @@ $(function() {
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+        ko.applyBindings(loginStateViewModel, document.getElementById("drop_overlay"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
