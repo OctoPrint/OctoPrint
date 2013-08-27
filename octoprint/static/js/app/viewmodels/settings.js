@@ -51,12 +51,22 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.system_actions = ko.observableArray([]);
 
+    self.terminalFilters = ko.observableArray([]);
+
     self.addTemperatureProfile = function() {
         self.temperature_profiles.push({name: "New", extruder:0, bed:0});
     };
 
     self.removeTemperatureProfile = function(profile) {
         self.temperature_profiles.remove(profile);
+    };
+
+    self.addTerminalFilter = function() {
+        self.terminalFilters.push({name: "New", regex: "(Send: M105)|(Recv: ok T:)"})
+    };
+
+    self.removeTerminalFilter = function(filter) {
+        self.terminalFilters.remove(filter);
     };
 
     self.requestData = function() {
@@ -112,6 +122,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.temperature_profiles(response.temperature.profiles);
 
         self.system_actions(response.system.actions);
+
+        self.terminalFilters(response.terminalFilters);
     }
 
     self.saveData = function() {
@@ -166,7 +178,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             },
             "system": {
                 "actions": self.system_actions()
-            }
+            },
+            "terminalFilters": self.terminalFilters()
         }
 
         $.ajax({

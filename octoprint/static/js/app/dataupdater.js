@@ -11,8 +11,32 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
     self.timelapseViewModel = timelapseViewModel;
     self.gcodeViewModel = gcodeViewModel;
 
-    self._socket = io.connect();
-    self._socket.on("connect", function() {
+    self._socket = undefined;
+    self._autoReconnecting = false;
+    self._autoReconnectTrial = 0;
+    self._autoReconnectTimeouts = [1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
+
+    self.connect = function() {
+        var options = {};
+        if (SOCKJS_DEBUG) {
+            options["debug"] = true;
+        }
+
+        self._socket = new SockJS(SOCKJS_URI, undefined, options);
+        self._socket.onopen = self._onconnect;
+        self._socket.onclose = self._onclose;
+        self._socket.onmessage = self._onmessage;
+    }
+
+    self.reconnect = function() {
+        delete self._socket;
+        self.connect();
+    }
+
+    self._onconnect = function() {
+        self._autoReconnecting = false;
+        self._autoReconnectTrial = 0;
+
         if ($("#offline_overlay").is(":visible")) {
             $("#offline_overlay").hide();
             self.timelapseViewModel.requestData();
@@ -20,8 +44,9 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
             self.loginStateViewModel.requestData();
             self.gcodeFilesViewModel.requestData();
         }
-    });
-    self._socket.on("disconnect", function() {
+    }
+
+    self._onclose = function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect " +
                 "automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect " +
@@ -29,45 +54,66 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         );
         if (!$("#offline_overlay").is(":visible"))
             $("#offline_overlay").show();
-    });
-    self._socket.on("reconnect_failed", function() {
+
+        if (self._autoReconnectTrial < self._autoReconnectTimeouts.length) {
+            var timeout = self._autoReconnectTimeouts[self._autoReconnectTrial];
+            console.log("Reconnect trial #" + self._autoReconnectTrial + ", waiting " + timeout + "s");
+            setTimeout(self.reconnect, timeout * 1000);
+            self._autoReconnectTrial++;
+        } else {
+            self._onreconnectfailed();
+        }
+    }
+
+    self._onreconnectfailed = function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
                 "but you may try a manual reconnect using the button below."
         );
-    });
-    self._socket.on("history", function(data) {
-        self.connectionViewModel.fromHistoryData(data);
-        self.printerStateViewModel.fromHistoryData(data);
-        self.temperatureViewModel.fromHistoryData(data);
-        self.controlViewModel.fromHistoryData(data);
-        self.terminalViewModel.fromHistoryData(data);
-        self.timelapseViewModel.fromHistoryData(data);
-        self.gcodeViewModel.fromHistoryData(data);
-        self.gcodeFilesViewModel.fromCurrentData(data);
-    });
-    self._socket.on("current", function(data) {
-        self.connectionViewModel.fromCurrentData(data);
-        self.printerStateViewModel.fromCurrentData(data);
-        self.temperatureViewModel.fromCurrentData(data);
-        self.controlViewModel.fromCurrentData(data);
-        self.terminalViewModel.fromCurrentData(data);
-        self.timelapseViewModel.fromCurrentData(data);
-        self.gcodeViewModel.fromCurrentData(data);
-        self.gcodeFilesViewModel.fromCurrentData(data);
-    });
-    self._socket.on("updateTrigger", function(type) {
-        if (type == "gcodeFiles") {
-            gcodeFilesViewModel.requestData();
-        } else if (type == "timelapseFiles") {
-            timelapseViewModel.requestData();
-        }
-    });
-    self._socket.on("feedbackCommandOutput", function(data) {
-        self.controlViewModel.fromFeedbackCommandData(data);
-    });
-
-    self.reconnect = function() {
-        self._socket.socket.connect();
     }
+
+    self._onmessage = function(e) {
+        for (var prop in e.data) {
+            var payload = e.data[prop];
+
+            switch (prop) {
+                case "history": {
+                    self.connectionViewModel.fromHistoryData(payload);
+                    self.printerStateViewModel.fromHistoryData(payload);
+                    self.temperatureViewModel.fromHistoryData(payload);
+                    self.controlViewModel.fromHistoryData(payload);
+                    self.terminalViewModel.fromHistoryData(payload);
+                    self.timelapseViewModel.fromHistoryData(payload);
+                    self.gcodeViewModel.fromHistoryData(payload);
+                    self.gcodeFilesViewModel.fromCurrentData(payload);
+                    break;
+                }
+                case "current": {
+                    self.connectionViewModel.fromCurrentData(payload);
+                    self.printerStateViewModel.fromCurrentData(payload);
+                    self.temperatureViewModel.fromCurrentData(payload);
+                    self.controlViewModel.fromCurrentData(payload);
+                    self.terminalViewModel.fromCurrentData(payload);
+                    self.timelapseViewModel.fromCurrentData(payload);
+                    self.gcodeViewModel.fromCurrentData(payload);
+                    self.gcodeFilesViewModel.fromCurrentData(payload);
+                    break;
+                }
+                case "updateTrigger": {
+                    if (payload == "gcodeFiles") {
+                        gcodeFilesViewModel.requestData();
+                    } else if (payload == "timelapseFiles") {
+                        timelapseViewModel.requestData();
+                    }
+                    break;
+                }
+                case "feedbackCommandOutput": {
+                    self.controlViewModel.fromFeedbackCommandData(payload);
+                    break
+                }
+            }
+        }
+    }
+
+    self.connect();
 }

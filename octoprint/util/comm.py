@@ -386,6 +386,7 @@ class MachineCom(object):
 				self.sendCommand("M24")
 			else:
 				self._sendNext()
+			eventManager().fire("PrintResumed", self._currentFile.getFilename())
 		if pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
 			if self.isSdFileSelected():

@@ -106,6 +106,11 @@ default_settings = {
 		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	},
+	"terminalFilters": [
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T:)" },
+		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
+	]
+	},
 	"devel": {
 		"virtualPrinter": {
 			"enabled": False,

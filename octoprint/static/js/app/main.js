@@ -9,7 +9,7 @@ $(function() {
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
-        var terminalViewModel = new TerminalViewModel(loginStateViewModel);
+        var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
@@ -198,6 +198,7 @@ $(function() {
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+        ko.applyBindings(loginStateViewModel, document.getElementById("drop_overlay"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
