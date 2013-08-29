@@ -194,7 +194,10 @@ $(function() {
         ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
         ko.applyBindings(controlViewModel, document.getElementById("control"));
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
-        ko.applyBindings(gcodeViewModel, document.getElementById("gcode"));
+        var gcode = document.getElementById("gcode");
+        if (gcode) {
+            ko.applyBindings(gcodeViewModel, gcode);
+        }
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);

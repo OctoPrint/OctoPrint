@@ -26,6 +26,7 @@
             var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
             var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
             var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
+            var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
 
             var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + "/sockjs";
             var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
@@ -245,9 +246,11 @@
 
                     <div class="tab-content">
                         <div class="tab-pane active" id="temp">
+                            {% if enableTemperatureGraph %}
                             <div class="row" style="padding-left: 20px">
                                 <div id="temperature-graph"></div>
                             </div>
+                            {% endif %}
                             <div class="row-fluid" style="margin-bottom: 20px">
                                 <div class="form-horizontal span6">
                                     <h1>Temperature</h1>
@@ -419,6 +422,7 @@
                             <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
                             <!-- End of templates for custom controls -->
                         </div>
+                        {% if enableGCodeVisualizer %}
                         <div class="tab-pane" id="gcode">
                             <canvas id="canvas" width="572" height="588"></canvas>
                             <div id="slider-vertical"></div>
@@ -506,6 +510,7 @@
                             </div>
 
                         </div>
+                        {% endif %}
                         <div class="tab-pane" id="term">
                             <pre id="terminal-output" class="pre-scrollable"></pre>
                             <label class="checkbox">

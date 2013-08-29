@@ -177,6 +177,7 @@ def index():
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
+		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
@@ -587,6 +588,7 @@ def getSettings():
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
+			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"])
@@ -651,6 +653,7 @@ def setSettings():
 
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
+			if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])

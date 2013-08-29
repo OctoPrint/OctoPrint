@@ -104,6 +104,8 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self.targetTemp(data[data.length - 1].targetTemp);
         self.bedTargetTemp(data[data.length - 1].targetBedTemp);
 
+        if (!CONFIG_TEMPERATURE_GRAPH) return;
+
         if (!self.temperatures)
             self.temperatures = [];
         if (!self.temperatures.actual)
@@ -115,12 +117,14 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         if (!self.temperatures.targetBed)
             self.temperatures.targetBed = [];
 
-        for (var i = 0; i < data.length; i++) {
-            self.temperatures.actual.push([data[i].currentTime, data[i].temp])
-            self.temperatures.target.push([data[i].currentTime, data[i].targetTemp])
-            self.temperatures.actualBed.push([data[i].currentTime, data[i].bedTemp])
-            self.temperatures.targetBed.push([data[i].currentTime, data[i].targetBedTemp])
-        }
+        _.each(data, function(d) {
+            var time = d.currentTime;
+            self.temperatures.actual.push([currentTime, d.temp]);
+            self.temperatures.target.push([currentTime, d.targetTemp]);
+            self.temperatures.actualBed.push([currentTime, d.bedTemp]);
+            self.temperatures.targetBed.push([currentTime, d.targetBedTemp]);
+        });
+
         self.temperatures.actual = self.temperatures.actual.slice(-300);
         self.temperatures.target = self.temperatures.target.slice(-300);
         self.temperatures.actualBed = self.temperatures.actualBed.slice(-300);
@@ -135,13 +139,17 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     }
 
     self.updatePlot = function() {
-        var data = [
-            {label: "Actual", color: "#FF4040", data: self.temperatures.actual},
-            {label: "Target", color: "#FFA0A0", data: self.temperatures.target},
-            {label: "Bed Actual", color: "#4040FF", data: self.temperatures.actualBed},
-            {label: "Bed Target", color: "#A0A0FF", data: self.temperatures.targetBed}
-        ]
-        $.plot($("#temperature-graph"), data, self.plotOptions);
+        var graph = $("#temperature-graph");
+        if (graph.length) {
+            var data = [
+                {label: "Actual", color: "#FF4040", data: self.temperatures.actual},
+                {label: "Target", color: "#FFA0A0", data: self.temperatures.target},
+                {label: "Bed Actual", color: "#4040FF", data: self.temperatures.actualBed},
+                {label: "Bed Target", color: "#A0A0FF", data: self.temperatures.targetBed}
+            ]
+
+            $.plot(graph, data, self.plotOptions);
+        }
     }
 
     self.setTempFromProfile = function(profile) {

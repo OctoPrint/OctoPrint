@@ -27,6 +27,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.webcam_flipV = ko.observable(undefined);
 
     self.feature_gcodeViewer = ko.observable(undefined);
+    self.feature_temperatureGraph = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
@@ -98,6 +99,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.webcam_flipV(response.webcam.flipV);
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
+        self.feature_temperatureGraph(response.feature.temperatureGraph);
         self.feature_waitForStart(response.feature.waitForStart);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
@@ -151,6 +153,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             },
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
+                "temperatureGraph": self.feature_temperatureGraph(),
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport()
