@@ -154,6 +154,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self._updateTemperature(self.newTemp(), "temp", function(){self.targetTemp(self.newTemp()); self.newTemp("");});
     };
 
+    self.setTempToZero = function() {
+        self._updateTemperature(0, "temp", function(){self.targetTemp(0); self.newTemp("");});
+    }
+
     self.setBedTempFromProfile = function(profile) {
         self._updateTemperature(profile.bed, "bedTemp");
     }
@@ -161,6 +165,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.setBedTemp = function() {
         self._updateTemperature(self.newBedTemp(), "bedTemp", function() {self.bedTargetTemp(self.newBedTemp()); self.newBedTemp("");});
     };
+
+    self.setBedTempToZero = function() {
+        self._updateTemperature(0, "bedTemp", function() {self.bedTargetTemp(0); self.newBedTemp("");});
+    }
 
     self._updateTemperature = function(temp, type, callback) {
         var data = {};
