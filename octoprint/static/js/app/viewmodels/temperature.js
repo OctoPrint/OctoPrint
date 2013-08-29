@@ -119,10 +119,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
         _.each(data, function(d) {
             var time = d.currentTime;
-            self.temperatures.actual.push([currentTime, d.temp]);
-            self.temperatures.target.push([currentTime, d.targetTemp]);
-            self.temperatures.actualBed.push([currentTime, d.bedTemp]);
-            self.temperatures.targetBed.push([currentTime, d.targetBedTemp]);
+            self.temperatures.actual.push([time, d.temp]);
+            self.temperatures.target.push([time, d.targetTemp]);
+            self.temperatures.actualBed.push([time, d.bedTemp]);
+            self.temperatures.targetBed.push([time, d.targetBedTemp]);
         });
 
         self.temperatures.actual = self.temperatures.actual.slice(-300);
