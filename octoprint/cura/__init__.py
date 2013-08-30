@@ -37,7 +37,6 @@ class CuraEngine(object):
 			self, config, gcode, file_path, call_back=None, 
 			call_back_args=None):
 
-		from octoprint.cura import parser
 		"""Wraps around the main.cpp processFile method.
 
 		:param config: :class: `string` :path to a cura config file:
@@ -48,27 +47,21 @@ class CuraEngine(object):
 		"""
 		import threading
 
-		def start_thread(call_back, call_back_args, call_args):
+		def start_thread(call_back, call_back_args, call_args, cwd):
 			import subprocess
-			logging.info("Starting SubProcess in Thread")
+			logging.info("Starting SubProcess in Thread %s", str(cwd))
 			logging.info("Subprocess args: %s" % str(call_args))
-			process = subprocess.call(call_args)
+			process = subprocess.call(call_args, cwd=cwd)
 			call_back(*call_back_args)
 			logging.info("Slicing call back complete:%s" % str(call_back))
 
 
-		args = [self.cura_path, '-o',  gcode]
+		args = ['python', '-m', 'Cura.cura', '-i', config, '-s', file_path, '-o',  gcode]
 
-		settings = parser.process_profile_ini(config)
-
-		args.extend(settings)
-
-		args.extend([file_path])
-
-		logging.info('CuraEngine args:%s' % str(args))
+		logging.info('Cura args:%s' % str(args))
 
 		thread = threading.Thread(target=start_thread, args=(call_back,
-			call_back_args, args))
+			call_back_args, args, self.cura_path))
 
 		thread.start()
-		logging.info('CuraEngine Slicing File:%s' % file_path)
+		logging.info('Cura Slicing File:%s' % file_path)
