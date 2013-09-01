@@ -3,8 +3,9 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from werkzeug.utils import secure_filename
+from werkzeug.datastructures import Headers
 from sockjs.tornado import SockJSRouter, SockJSConnection
-from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort, make_response
+from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort, make_response, Response
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
 
@@ -346,7 +347,8 @@ def readGcodeFiles():
 
 @app.route(BASEURL + "gcodefiles/<path:filename>", methods=["GET"])
 def readGcodeFile(filename):
-	return send_from_directory(settings().getBaseFolder("uploads"), filename, as_attachment=True)
+	path = os.path.join(settings().getBaseFolder("uploads"), filename)
+	return _streamBinaryFile(path, mimeType="text/plain", asAttachment=True)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 @restricted_access
@@ -516,7 +518,8 @@ def getTimelapseData():
 @app.route(BASEURL + "timelapse/<filename>", methods=["GET"])
 def downloadTimelapse(filename):
 	if util.isAllowedFile(filename, set(["mpg"])):
-		return send_from_directory(settings().getBaseFolder("timelapse"), filename, as_attachment=True)
+		path = os.path.join(settings().getBaseFolder("timelapse"), filename)
+		return _streamBinaryFile(path, mimeType="video/mpeg", asAttachment=True)
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["DELETE"])
 @restricted_access
@@ -926,6 +929,29 @@ def load_user(id):
 	if userManager is not None:
 		return userManager.findUser(id)
 	return users.DummyUser()
+
+def _streamBinaryFile(filename, mimeType=None, asAttachment=False, attachmentFilename=None):
+	if not os.path.exists(filename) or not os.path.isfile(filename):
+		return app.make_response(("No such file: %s" % filename, 404, []))
+
+	def generator(path):
+		with open(path, "rb") as f:
+			while True:
+				data = f.read(4096)
+				if not data:
+					break
+				yield data
+
+	headers = Headers()
+	if asAttachment:
+		if attachmentFilename is None:
+			attachmentFilename = os.path.basename(filename)
+		headers.add("Content-Disposition", "attachment", filename=attachmentFilename)
+
+	if mimeType is None:
+		mimeType = "application/octet-stream"
+
+	return Response(generator(filename), mimetype=mimeType, headers=headers)
 
 #~~ startup code
 class Server():
