@@ -934,10 +934,10 @@ def _streamBinaryFile(filename, mimeType=None, asAttachment=False, attachmentFil
 	if not os.path.exists(filename) or not os.path.isfile(filename):
 		return app.make_response(("No such file: %s" % filename, 404, []))
 
-	def generator(path):
+	def generator(path, chunkSize=4096):
 		with open(path, "rb") as f:
 			while True:
-				data = f.read(4096)
+				data = f.read(chunkSize)
 				if not data:
 					break
 				yield data
@@ -947,6 +947,7 @@ def _streamBinaryFile(filename, mimeType=None, asAttachment=False, attachmentFil
 		if attachmentFilename is None:
 			attachmentFilename = os.path.basename(filename)
 		headers.add("Content-Disposition", "attachment", filename=attachmentFilename)
+	headers.add("Content-Length", os.stat(filename).st_size)
 
 	if mimeType is None:
 		mimeType = "application/octet-stream"
