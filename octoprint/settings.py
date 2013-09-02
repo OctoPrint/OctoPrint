@@ -53,7 +53,8 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"sdSupport": True
+		"sdSupport": True,
+		"swallowOkAfterResend": False
 	},
 	"folder": {
 		"uploads": None,
@@ -109,7 +110,15 @@ default_settings = {
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T:)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
-	]
+	],
+	"devel": {
+		"virtualPrinter": {
+			"enabled": False,
+			"okAfterResend": False,
+			"forceChecksum": False,
+			"okWithLinenumber": False
+		}
+	}
 }
 
 valid_boolean_trues = ["true", "yes", "y", "1"]

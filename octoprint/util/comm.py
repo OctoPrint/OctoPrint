@@ -49,7 +49,7 @@ def serialList():
 	if prev in baselist:
 		baselist.remove(prev)
 		baselist.insert(0, prev)
-	if isDevVersion():
+	if settings().getBoolean(["devel", "virtualPrinter", "enabled"]):
 		baselist.append("VIRTUAL")
 	return baselist
 
@@ -121,7 +121,7 @@ class MachineCom(object):
 		self._heatupWaitTimeLost = 0.0
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-		self._currentLine = 0
+		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
 
@@ -499,6 +499,7 @@ class MachineCom(object):
 		sdStatusRequestTimeout = timeout
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		heatingUp = False
+		swallowOk = False
 		while True:
 			try:
 				line = self._readline()
@@ -704,6 +705,8 @@ class MachineCom(object):
 						tempRequestTimeout = getNewTimeout("communication")
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
+						if settings().get(["feature", "swallowOkAfterResend"]):
+							swallowOk = True
 						self._handleResendRequest(line)
 
 				### Printing
@@ -729,7 +732,9 @@ class MachineCom(object):
 							self._commandQueue.put("M105")
 							tempRequestTimeout = getNewTimeout("communication")
 
-						if 'ok' in line:
+						if "ok" in line and swallowOk:
+							swallowOk = False
+						elif "ok" in line:
 							timeout = getNewTimeout("communication")
 							if self._resendDelta is not None:
 								self._resendNextCommand()
@@ -738,6 +743,8 @@ class MachineCom(object):
 							else:
 								self._sendNext()
 						elif line.lower().startswith("resend") or line.lower().startswith("rs"):
+							if settings().get(["feature", "swallowOkAfterResend"]):
+								swallowOk = True
 							self._handleResendRequest(line)
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
@@ -799,7 +806,7 @@ class MachineCom(object):
 
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
-			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0:
+			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta <= 0:
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(self._errorValue)
 				if self.isPrinting():
