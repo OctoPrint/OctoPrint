@@ -194,7 +194,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     }
 
     self.enableSelect = function(data, printAfterSelect) {
-        var isLoadActionPossible = self.loginState.isUser() && !(self.isPrinting() || self.isPaused() || self.isLoading());
+        var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
         return isLoadActionPossible && !self.listHelper.isSelected(data);
     }
 
