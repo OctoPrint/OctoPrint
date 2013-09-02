@@ -505,7 +505,7 @@ def getTimelapseData():
 
 	files = octoprint.timelapse.getFinishedTimelapses()
 	for file in files:
-		file["url"] = url_for("downloadTimelapse", filename=file["name"])
+		file["url"] = "/downloads/timelapse/" + file["name"]
 
 	return jsonify({
 		"type": type,
@@ -945,6 +945,10 @@ class LargeResponseHandler(StaticFileHandler):
 
 	CHUNK_SIZE = 16 * 1024
 
+	def initialize(self, path, default_filename=None, as_attachment=False):
+		StaticFileHandler.initialize(self, path, default_filename)
+		self._as_attachment = as_attachment
+
 	def get(self, path, include_body=True):
 		path = self.parse_url_path(path)
 		abspath = os.path.abspath(os.path.join(self.root, path))
@@ -1004,6 +1008,10 @@ class LargeResponseHandler(StaticFileHandler):
 						break
 					self.write(data)
 					self.flush()
+
+	def set_extra_headers(self, path):
+		if self._as_attachment:
+			self.set_header("Content-Disposition", "attachment")
 
 #~~ startup code
 class Server():
@@ -1080,8 +1088,8 @@ class Server():
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
 		self._tornado_app = Application(self._router.urls + [
-			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse")}),
-			(r"/downloads/gcode/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads")}),
+			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),
+			(r"/downloads/gcode/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
 			(r".*", FallbackHandler, {"fallback": WSGIContainer(app)})
 		])
 		self._server = HTTPServer(self._tornado_app)
