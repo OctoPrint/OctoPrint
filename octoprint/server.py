@@ -936,6 +936,75 @@ def redirectToTornado(request, target):
 		redirectUrl += fragment
 	return redirect(redirectUrl)
 
+#~~ customized large response handler
+
+from tornado.web import StaticFileHandler, HTTPError
+import datetime, stat, mimetypes, email, time
+
+class LargeResponseHandler(StaticFileHandler):
+
+	CHUNK_SIZE = 16 * 1024
+
+	def get(self, path, include_body=True):
+		path = self.parse_url_path(path)
+		abspath = os.path.abspath(os.path.join(self.root, path))
+		# os.path.abspath strips a trailing /
+		# it needs to be temporarily added back for requests to root/
+		if not (abspath + os.path.sep).startswith(self.root):
+			raise HTTPError(403, "%s is not in root static directory", path)
+		if os.path.isdir(abspath) and self.default_filename is not None:
+			# need to look at the request.path here for when path is empty
+			# but there is some prefix to the path that was already
+			# trimmed by the routing
+			if not self.request.path.endswith("/"):
+				self.redirect(self.request.path + "/")
+				return
+			abspath = os.path.join(abspath, self.default_filename)
+		if not os.path.exists(abspath):
+			raise HTTPError(404)
+		if not os.path.isfile(abspath):
+			raise HTTPError(403, "%s is not a file", path)
+
+		stat_result = os.stat(abspath)
+		modified = datetime.datetime.fromtimestamp(stat_result[stat.ST_MTIME])
+
+		self.set_header("Last-Modified", modified)
+
+		mime_type, encoding = mimetypes.guess_type(abspath)
+		if mime_type:
+			self.set_header("Content-Type", mime_type)
+
+		cache_time = self.get_cache_time(path, modified, mime_type)
+
+		if cache_time > 0:
+			self.set_header("Expires", datetime.datetime.utcnow() +
+									   datetime.timedelta(seconds=cache_time))
+			self.set_header("Cache-Control", "max-age=" + str(cache_time))
+
+		self.set_extra_headers(path)
+
+		# Check the If-Modified-Since, and don't send the result if the
+		# content has not been modified
+		ims_value = self.request.headers.get("If-Modified-Since")
+		if ims_value is not None:
+			date_tuple = email.utils.parsedate(ims_value)
+			if_since = datetime.datetime.fromtimestamp(time.mktime(date_tuple))
+			if if_since >= modified:
+				self.set_status(304)
+				return
+
+		if not include_body:
+			assert self.request.method == "HEAD"
+			self.set_header("Content-Length", stat_result[stat.ST_SIZE])
+		else:
+			with open(abspath, "rb") as file:
+				while True:
+					data = file.read(LargeResponseHandler.CHUNK_SIZE)
+					if not data:
+						break
+					self.write(data)
+					self.flush()
+
 #~~ startup code
 class Server():
 	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False):
@@ -1011,8 +1080,8 @@ class Server():
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
 		self._tornado_app = Application(self._router.urls + [
-			(r"/downloads/timelapse/([^/]*\.mpg)", StaticFileHandler, {"path": settings().getBaseFolder("timelapse")}),
-			(r"/downloads/gcode/([^/]*\.(gco|gcode))", StaticFileHandler, {"path": settings().getBaseFolder("uploads")}),
+			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse")}),
+			(r"/downloads/gcode/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads")}),
 			(r".*", FallbackHandler, {"fallback": WSGIContainer(app)})
 		])
 		self._server = HTTPServer(self._tornado_app)
