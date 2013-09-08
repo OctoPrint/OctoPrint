@@ -208,11 +208,13 @@ class GcodeManager:
 
 		if absolutePath is None:
 			return
-
-		if stlPath:
+	
+		# The files may or may not actually exits on the HD.
+		try:
+			os.remove(absolutePath)
 			os.remove(stlPath)
-
-		os.remove(absolutePath)
+		except OSError:
+			pass
 
 		if filename in self._metadata.keys():
 			del self._metadata[filename]
