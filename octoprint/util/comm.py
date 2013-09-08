@@ -45,6 +45,11 @@ def serialList():
 			   + glob.glob("/dev/tty.usb*") \
 			   + glob.glob("/dev/cu.*") \
 			   + glob.glob("/dev/rfcomm*")
+
+	additionalPorts = settings().get(["serial", "additionalPorts"])
+	for additional in additionalPorts:
+		baselist += glob.glob(additional)
+
 	prev = settings().get(["serial", "port"])
 	if prev in baselist:
 		baselist.remove(prev)

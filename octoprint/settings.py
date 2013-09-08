@@ -32,7 +32,8 @@ default_settings = {
 			"detection": 0.5,
 			"connection": 2,
 			"communication": 5
-		}
+		},
+		"additionalPorts": []
 	},
 	"server": {
 		"host": "0.0.0.0",
