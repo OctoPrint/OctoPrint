@@ -1078,6 +1078,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		self._filehandle = open(self._filename, "r")
 		self._lineCount = None
 		self._prevLineType = "CUSTOM"
+		self._startTime = None
 
 	def getNext(self):
 		"""
