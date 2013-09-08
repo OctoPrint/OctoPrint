@@ -129,8 +129,6 @@ class GcodeManager:
 
 		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
 
-		logging.info("Adding file:%s" % absolutePath)
-		
 		if absolutePath is None:
 			return None
 
@@ -138,16 +136,12 @@ class GcodeManager:
 		filename = file.filename
 
 		if isGcodeFileName(filename):
-			logging.info("File is Gcode File")
 			return self.processGcode(absolutePath)
 
 		curaEnabled = self._settings.get(["curaEngine", "enabled"])
-		logging.info("Cura Enabled %s" % str(curaEnabled))
 
 		if isSTLFileName(filename) and curaEnabled and local:
-			logging.info("File is STL - Needs to be sliced")
 			gcodePath = util.genGcodeFileName(absolutePath)
-			logging.info("FILENAME: %s" % filename)
 
 			callBackArgs = [gcodePath]
 			callBack = self.processGcode

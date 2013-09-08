@@ -464,17 +464,14 @@ class Printer():
 		from octoprint.util import isGcodeFileName
 		from octoprint.util import isSTLFileName
 
-		logging.info("Adding SD Card file:%s" % filename)
 		if not self._comm or self._comm.isBusy():
 			logging.error("No connection to printer or printer is busy")
 			return
 
 		if isGcodeFileName(filename):
-			logging.info("Sending Gcode to SD card")
 			self.streamSdFile(filename, absolutePath)
 
 		if isSTLFileName(filename):
-			logging.info("Slicing stl and then sending to SD card")
 			gcodePath = util.genGcodeFileName(absolutePath)
 			gcodeFileName = util.genGcodeFileName(filename)
 			callBackArgs = [gcodeFileName, gcodePath]

@@ -30,8 +30,6 @@ class CuraEngine(object):
 		
 		self.cura_path = cura_path
 		
-		logging.info('CuraEngine Created')
-
 
 	def process_file(
 			self, config, gcode, file_path, call_back=None, 
@@ -49,19 +47,12 @@ class CuraEngine(object):
 
 		def start_thread(call_back, call_back_args, call_args, cwd):
 			import subprocess
-			logging.info("Starting SubProcess in Thread %s", str(cwd))
-			logging.info("Subprocess args: %s" % str(call_args))
 			process = subprocess.call(call_args, cwd=cwd)
 			call_back(*call_back_args)
-			logging.info("Slicing call back complete:%s" % str(call_back))
-
 
 		args = ['python', '-m', 'Cura.cura', '-i', config, '-s', file_path, '-o',  gcode]
-
-		logging.info('Cura args:%s' % str(args))
 
 		thread = threading.Thread(target=start_thread, args=(call_back,
 			call_back_args, args, self.cura_path))
 
 		thread.start()
-		logging.info('Cura Slicing File:%s' % file_path)

@@ -313,16 +313,12 @@ def readGcodeFile(filename):
 @login_required
 def uploadGcodeFile():
 	if "gcode_file" in request.files.keys():
-		logging.info("Uploading Gcode File")
 		file = request.files["gcode_file"]
 		sd = "target" in request.values.keys() and request.values["target"] == "sd";
-
-		logging.info("SD:%s" % str(sd))
 
 		currentFilename = None
 		currentSd = None
 		currentJob = printer.getCurrentJob()
-		logging.info("Current Job:%s" % str(currentJob))
 		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
 			currentFilename = currentJob["filename"]
 			currentSd = currentJob["sd"]
@@ -344,7 +340,6 @@ def uploadGcodeFile():
 
 		absFilename = gcodeManager.getAbsolutePath(filename)
 		if sd:
-			logging.info("Add to SD file")
 			printer.addSdFile(filename, absFilename)
 
 		if currentFilename == filename and currentSd == sd:
