@@ -1,9 +1,10 @@
 flask==0.9
 werkzeug==0.8.3
 tornado==3.0.2
-tornadio2==0.0.4
+sockjs-tornado>=1.0.0
 PyYAML==3.10
 Flask-Login==0.2.2
 Flask-Principal==0.3.5
 numpy>=1.6.2
 pyserial>=2.6
+netaddr>=0.7.10

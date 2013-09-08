@@ -32,7 +32,8 @@ default_settings = {
 			"detection": 0.5,
 			"connection": 2,
 			"communication": 5
-		}
+		},
+		"additionalPorts": []
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -46,13 +47,19 @@ default_settings = {
 		"bitrate": "5000k",
 		"watermark": True,
 		"flipH": False,
-		"flipV": False
+		"flipV": False,
+		"timelapse": {
+			"type": "off",
+			"options": {}
+		}
 	},
 	"feature": {
 		"gCodeVisualizer": True,
+		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"sdSupport": True
+		"sdSupport": True,
+		"swallowOkAfterResend": False
 	},
 	"folder": {
 		"uploads": None,
@@ -88,7 +95,10 @@ default_settings = {
 	"accessControl": {
 		"enabled": True,
 		"userManager": "octoprint.users.FilebasedUserManager",
-		"userfile": None
+		"userfile": None,
+		"autologinLocal": False,
+		"localNetworks": ["127.0.0.0/8"],
+		"autologinAs": None
 	},
 	"events": {
 		"systemCommandTrigger": {
@@ -101,6 +111,18 @@ default_settings = {
 	"api": {
 		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+	},
+	"terminalFilters": [
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T:)" },
+		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
+	],
+	"devel": {
+		"virtualPrinter": {
+			"enabled": False,
+			"okAfterResend": False,
+			"forceChecksum": False,
+			"okWithLinenumber": False
+		}
 	}
 }
 
@@ -245,7 +267,7 @@ class Settings(object):
 		return feedbackControls
 
 	def _getFeedbackControls(self, control=None):
-		if control["type"] == "feedback_command":
+		if control["type"] == "feedback_command" or control["type"] == "feedback":
 			pattern = control["regex"]
 			try:
 				matcher = re.compile(pattern)

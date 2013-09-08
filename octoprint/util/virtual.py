@@ -32,6 +32,7 @@ class VirtualPrinter():
 		self._newSdFilePos = None
 
 		self.currentLine = 0
+		self.lastN = 0
 
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
@@ -40,18 +41,49 @@ class VirtualPrinter():
 		if self.readList is None:
 			return
 
-		# strip checksum
 		data = data.strip()
+
+		# strip checksum
 		if "*" in data:
 			data = data[:data.rfind("*")]
 			self.currentLine += 1
+		elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
+			self.readList.append("Error: Missing checksum")
+			return
+
+		# track N = N + 1
+		if data.startswith("N") and "M110" in data:
+			linenumber = int(re.search("N([0-9]+)", data).group(1))
+			self.lastN = linenumber
+			self.currentLine = linenumber
+			return
+		elif data.startswith("N"):
+			linenumber = int(re.search("N([0-9]+)", data).group(1))
+			expected = self.lastN + 1
+			if linenumber != expected:
+				self.readList.append("Error: expected line %d got %d" % (expected, linenumber))
+				self.readList.append("Resend:%d" % expected)
+				if settings().getBoolean(["devel", "virtualPrinter", "okAfterResend"]):
+					self.readList.append("ok")
+				return
+			elif self.currentLine == 100:
+				# simulate a resend at line 100 of the last 5 lines
+				self.lastN = 94
+				self.readList.append("Error: Line Number is not Last Line Number\n")
+				self.readList.append("rs %d\n" % (self.currentLine - 5))
+				if settings().getBoolean(["devel", "virtualPrinter", "okAfterResend"]):
+					self.readList.append("ok")
+				return
+			else:
+				self.lastN = linenumber
+
 		data += "\n"
 
 		# shortcut for writing to SD
 		if self._writingToSd and not self._selectedSdFile is None and not "M29" in data:
 			with open(self._selectedSdFile, "a") as f:
 				f.write(data)
-			self.readList.append("ok")
+			self._sendOk()
 			return
 
 		#print "Send: %s" % (data.rstrip())
@@ -105,11 +137,6 @@ class VirtualPrinter():
 			if self._sdCardReady:
 				filename = data.split(None, 1)[1].strip()
 				self._deleteSdFile(filename)
-		elif "M110" in data:
-			# reset current line
-			self.currentLine = int(re.search('^N([0-9]+)', data).group(1))
-			self.readList.append("reset line to %r\n" % self.currentLine)
-			self.readList.append("ok\n")
 		elif "M114" in data:
 			# send dummy position report
 			self.readList.append("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
@@ -119,19 +146,15 @@ class VirtualPrinter():
 		elif "M999" in data:
 			# mirror Marlin behaviour
 			self.readList.append("Resend: 1")
-		elif self.currentLine == 100:
-			# simulate a resend at line 100 of the last 5 lines
-			self.readList.append("Error: Line Number is not Last Line Number\n")
-			self.readList.append("rs %d\n" % (self.currentLine - 5))
 		elif len(data.strip()) > 0:
-			self.readList.append("ok\n")
+			self._sendOk()
 
 	def _listSd(self):
 		self.readList.append("Begin file list")
 		for osFile in os.listdir(self._virtualSd):
 			self.readList.append(osFile.upper())
 		self.readList.append("End file list")
-		self.readList.append("ok")
+		self._sendOk()
 
 	def _selectSdFile(self, filename):
 		file = os.path.join(self._virtualSd, filename).lower()
@@ -149,11 +172,11 @@ class VirtualPrinter():
 				self._sdPrinter = threading.Thread(target=self._sdPrintingWorker)
 				self._sdPrinter.start()
 		self._sdPrintingSemaphore.set()
-		self.readList.append("ok")
+		self._sendOk()
 
 	def _pauseSdPrint(self):
 		self._sdPrintingSemaphore.clear()
-		self.readList.append("ok")
+		self._sendOk()
 
 	def _setSdPos(self, pos):
 		self._newSdFilePos = pos
@@ -175,12 +198,12 @@ class VirtualPrinter():
 		self._writingToSd = True
 		self._selectedSdFile = file
 		self.readList.append("Writing to file: %s" % filename)
-		self.readList.append("ok")
+		self._sendOk()
 
 	def _finishSdFile(self):
 		self._writingToSd = False
 		self._selectedSdFile = None
-		self.readList.append("ok")
+		self._sendOk()
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
@@ -220,7 +243,7 @@ class VirtualPrinter():
 		file = os.path.join(self._virtualSd, filename)
 		if os.path.exists(file) and os.path.isfile(file):
 			os.remove(file)
-		self.readList.append("ok")
+		self._sendOk()
 
 	def readline(self):
 		if self.readList is None:
@@ -249,7 +272,14 @@ class VirtualPrinter():
 	def close(self):
 		self.readList = None
 
+	def _sendOk(self):
+		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
+			self.readList.append("ok %d" % self.lastN)
+		else:
+			self.readList.append("ok")
+
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
-		self.readList.append("wait")
+		if self.readList is not None:
+			self.readList.append("wait")
 
