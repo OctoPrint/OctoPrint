@@ -277,6 +277,24 @@ def setTargetTemperature():
 		bedTemp = request.values["bedTemp"]
 		printer.command("M140 S" + bedTemp)
 
+	if "tempOffset" in request.values.keys():
+		# set target temperature offset
+		try:
+			tempOffset = float(request.values["tempOffset"])
+			if tempOffset >= -50 and tempOffset <= 50:
+				printer.setTemperatureOffset(tempOffset, None)
+		except:
+			pass
+
+	if "bedTempOffset" in request.values.keys():
+		# set target bed temperature offset
+		try:
+			bedTempOffset = float(request.values["bedTempOffset"])
+			if bedTempOffset >= -50 and bedTempOffset <= 50:
+				printer.setTemperatureOffset(None, bedTempOffset)
+		except:
+			pass
+
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/jog", methods=["POST"])

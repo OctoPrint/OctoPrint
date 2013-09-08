@@ -120,6 +120,8 @@ class MachineCom(object):
 		self._bedTemp = 0
 		self._targetTemp = 0
 		self._bedTargetTemp = 0
+		self._tempOffset = 0
+		self._bedTempOffset = 0
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
 		self._heatupWaitStartTime = 0
@@ -285,6 +287,9 @@ class MachineCom(object):
 	def getBedTemp(self):
 		return self._bedTemp
 
+	def getOffsets(self):
+		return (self._tempOffset, self._bedTempOffset)
+
 	##~~ external interface
 
 	def close(self, isError = False):
@@ -303,6 +308,13 @@ class MachineCom(object):
 		if printing:
 			eventManager().fire("PrintFailed")
 		eventManager().fire("Disconnected")
+
+	def setTemperatureOffset(self, extruder=None, bed=None):
+		if extruder is not None:
+			self._tempOffset = extruder
+
+		if bed is not None:
+			self._bedTempOffset = bed
 
 	def sendCommand(self, cmd):
 		cmd = cmd.encode('ascii', 'replace')
@@ -357,7 +369,7 @@ class MachineCom(object):
 				return
 			self.sendCommand("M23 %s" % filename)
 		else:
-			self._currentFile = PrintingGcodeFileInformation(filename)
+			self._currentFile = PrintingGcodeFileInformation(filename, self.getOffsets)
 			eventManager().fire("FileSelected", filename)
 			self._callback.mcFileSelected(filename, self._currentFile.getFilesize(), False)
 
@@ -794,10 +806,6 @@ class MachineCom(object):
 					eventManager().fire("PrintDone", self._currentFile.getFilename())
 				return
 
-			if type(line) is tuple:
-				self._printSection = line[1]
-				line = line[0]
-
 			self._sendCommand(line, True)
 			self._callback.mcProgress()
 
@@ -1065,12 +1073,14 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 	that the file is closed in case of an error.
 	"""
 
-	def __init__(self, filename):
+	def __init__(self, filename, offsetCallback):
 		PrintingFileInformation.__init__(self, filename)
 		self._filehandle = None
 		self._lineCount = None
 		self._firstLine = None
-		self._prevLineType = None
+
+		self._offsetCallback = offsetCallback
+		self._tempCommandPattern = re.compile("^\s*M(104|109|140|190)\s+S([0-9\.]+)")
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
@@ -1082,7 +1092,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		self._filehandle = open(self._filename, "r")
 		self._lineCount = None
-		self._prevLineType = "CUSTOM"
 		self._startTime = None
 
 	def getNext(self):
@@ -1121,17 +1130,28 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			raise e
 
 	def _processLine(self, line):
-		lineType = self._prevLineType
-		if line.startswith(";TYPE:"):
-			lineType = line[6:].strip()
 		if ";" in line:
 			line = line[0:line.find(";")]
 		line = line.strip()
 		if len(line) > 0:
-			if self._prevLineType != lineType:
-				return line, lineType
-			else:
-				return line
+			(tempOffset, bedTempOffset) = self._offsetCallback()
+			if tempOffset != 0 or bedTempOffset != 0:
+				tempMatch = self._tempCommandPattern.match(line)
+				if tempMatch is not None:
+					if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
+						offset = tempOffset
+					elif tempMatch.group(1) == "140" or tempMatch.group(1) == "190":
+						offset = bedTempOffset
+					else:
+						offset = 0
+
+					try:
+						temp = float(tempMatch.group(2))
+						newTemp = temp + offset
+						line = line.replace("S" + tempMatch.group(2), "S%f" % newTemp)
+					except ValueError:
+						pass
+			return line
 		else:
 			return None
 

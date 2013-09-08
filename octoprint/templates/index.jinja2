@@ -256,12 +256,12 @@
                                 <div class="form-horizontal span6">
                                     <h1>Temperature</h1>
 
-                                    <label>Current: <strong data-bind="html: tempString"></strong></label>
+                                    <label title="Current extruder temperature">Current: <strong data-bind="html: tempString"></strong></label>
 
-                                    <label>Target: <strong data-bind="html: targetTempString"></strong></label>
+                                    <label title="Target extruder temperature">Target: <strong data-bind="html: targetTempString"></strong></label>
 
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label for="temp_newTemp">New Target</label>
+                                        <label for="temp_newTemp" title="Sets the new target temperature for the extruder">New Target</label>
                                         <div class="input-append">
                                             <input type="text" class="input-mini text-right" data-bind="value: newTemp, valueUpdate: 'afterkeydown', attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'temp');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
@@ -284,16 +284,24 @@
                                             </ul>
                                         </div>
                                     </div>
+                                    <div style="display: none;" data-bind="visible: loginState.isUser">
+                                        <label title="Sets a temperature offset to apply to temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Offset</label>
+                                        <div class="input-append">
+                                            <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: tempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'tempOffset');} }" class="tempInput">
+                                            <span class="add-on">&deg;C</span>
+                                        </div>
+                                        <button type="submit" class="btn" data-bind="click: setTempOffset, enable: newTempOffset() && isOperational() && loginState.isUser()">Set</button>
+                                    </div>
                                 </div>
                                 <div class="form-horizontal span6">
                                     <h1>Bed Temperature</h1>
 
-                                    <label>Current: <strong data-bind="html: bedTempString"></strong></label>
+                                    <label title="Current bed temperature">Current: <strong data-bind="html: bedTempString"></strong></label>
 
-                                    <label>Target: <strong data-bind="html: bedTargetTempString"></strong></label>
+                                    <label title="Target bed temperature">Target: <strong data-bind="html: bedTargetTempString"></strong></label>
 
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label for="temp_newBedTemp">New Target</label>
+                                        <label for="temp_newBedTemp" title="Sets the new target temperature for the bed">New Target</label>
                                         <div class="input-append">
                                             <input type="text" class="input-mini text-right" data-bind="value: newBedTemp, valueUpdate: 'afterkeydown', attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(event, 'bedTemp');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
@@ -315,6 +323,14 @@
                                                  </li>
                                             </ul>
                                         </div>
+                                    </div>
+                                    <div style="display: none;" data-bind="visible: loginState.isUser">
+                                        <label title="Sets a temperature offset to apply to bed temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Offset</label>
+                                        <div class="input-append">
+                                            <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newBedTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: bedTempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'bedTempOffset');} }" class="tempInput">
+                                            <span class="add-on">&deg;C</span>
+                                        </div>
+                                        <button type="submit" class="btn" data-bind="click: setBedTempOffset, enable: newBedTempOffset() && isOperational() && loginState.isUser()">Set</button>
                                     </div>
                                 </div>
                             </div>

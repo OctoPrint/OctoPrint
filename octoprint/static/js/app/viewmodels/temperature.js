@@ -11,6 +11,11 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.newTemp = ko.observable(undefined);
     self.newBedTemp = ko.observable(undefined);
 
+    self.newTempOffset = ko.observable(undefined);
+    self.tempOffset = ko.observable(0);
+    self.newBedTempOffset = ko.observable(undefined);
+    self.bedTempOffset = ko.observable(0);
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
@@ -78,11 +83,13 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
         self._processTemperatureUpdateData(data.temperatures);
+        self._processOffsetData(data.offsets);
     }
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
         self._processTemperatureHistoryData(data.temperatureHistory);
+        self._processOffsetData(data.offsets);
     }
 
     self._processStateData = function(data) {
@@ -138,6 +145,11 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self.updatePlot();
     }
 
+    self._processOffsetData = function(data) {
+        self.tempOffset(data[0]);
+        self.bedTempOffset(data[1]);
+    }
+
     self.updatePlot = function() {
         var graph = $("#temperature-graph");
         if (graph.length) {
@@ -166,6 +178,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self._updateTemperature(0, "temp", function(){self.targetTemp(0); self.newTemp("");});
     }
 
+    self.setTempOffset = function() {
+        self._updateTemperature(self.newTempOffset(), "tempOffset", function() {self.tempOffset(self.newTempOffset()); self.newTempOffset("");});
+    }
+
     self.setBedTempFromProfile = function(profile) {
         self._updateTemperature(profile.bed, "bedTemp");
     }
@@ -178,6 +194,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self._updateTemperature(0, "bedTemp", function() {self.bedTargetTemp(0); self.newBedTemp("");});
     }
 
+    self.setBedTempOffset = function() {
+        self._updateTemperature(self.newBedTempOffset(), "bedTempOffset", function() {self.bedTempOffset(self.newBedTempOffset()); self.newBedTempOffset("");});
+    }
+
     self._updateTemperature = function(temp, type, callback) {
         var data = {};
         data[type] = temp;
@@ -185,10 +205,9 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         $.ajax({
             url: AJAX_BASEURL + "control/temperature",
             type: "POST",
-            dataType: "json",
             data: data,
             success: function() { if (callback !== undefined) callback(); }
-        })
+        });
     }
 
     self.handleEnter = function(event, type) {
