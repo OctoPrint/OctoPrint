@@ -20,6 +20,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     self.printTime = ko.observable(undefined);
     self.printTimeLeft = ko.observable(undefined);
     self.sd = ko.observable(undefined);
+    self.timelapse = ko.observable(undefined);
 
     self.filament = ko.observable(undefined);
     self.estimatedPrintTime = ko.observable(undefined);
@@ -49,12 +50,32 @@ function PrinterStateViewModel(loginStateViewModel) {
             return "Pause";
     });
 
+    self.timelapseString = ko.computed(function() {
+        var timelapse = self.timelapse();
+
+        if (!timelapse || !timelapse.hasOwnProperty("type"))
+            return "-";
+
+        var type = timelapse["type"];
+        if (type == "zchange") {
+            return "On Z Change";
+        } else if (type == "timed") {
+            return "Timed (" + timelapse["options"]["interval"] + "s)";
+        } else {
+            return "-";
+        }
+    });
+
     self.fromCurrentData = function(data) {
         self._fromData(data);
     }
 
     self.fromHistoryData = function(data) {
         self._fromData(data);
+    }
+
+    self.fromTimelapseData = function(data) {
+        self.timelapse(data);
     }
 
     self._fromData = function(data) {

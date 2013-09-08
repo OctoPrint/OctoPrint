@@ -5,13 +5,13 @@ $(function() {
         var usersViewModel = new UsersViewModel(loginStateViewModel);
         var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
         var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
-        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel);
+        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
+        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
-        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
 

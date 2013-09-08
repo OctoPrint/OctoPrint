@@ -116,6 +116,7 @@
                                 File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
                                 Estimated Print Time: <strong data-bind="text: estimatedPrintTime"></strong><br>
+                                Timelapse: <strong data-bind="text: timelapseString"></strong><br>
                                 Height: <strong data-bind="text: heightString"></strong><br>
                                 Print Time: <strong data-bind="text: printTime"></strong><br>
                                 Print Time Left: <strong data-bind="text: printTimeLeft"></strong><br>
@@ -542,13 +543,19 @@
                                 <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
                                     <label for="webcam_timelapse_interval">Interval</label>
                                     <div class="input-append">
-                                        <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, enable: isOperational() && !isPrinting() && loginState.isUser()">
+                                        <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
                                         <span class="add-on">sec</span>
                                     </div>
                                 </div>
 
+                                <div data-bind="visible: loginState.isAdmin">
+                                    <label class="checkbox">
+                                        <input type="checkbox" data-bind="checked: persist"> Save as default
+                                    </label>
+                                </div>
+
                                 <div>
-                                    <button class="btn" data-bind="click: save, enable: isOperational() && !isPrinting() && loginState.isUser()">Save Settings</button>
+                                    <button class="btn" data-bind="click: save, enable: saveButtonEnabled">Save config</button>
                                 </div>
                             </div>
 

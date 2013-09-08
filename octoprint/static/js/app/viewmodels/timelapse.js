@@ -6,6 +6,9 @@ function TimelapseViewModel(loginStateViewModel) {
     self.timelapseType = ko.observable(undefined);
     self.timelapseTimedInterval = ko.observable(undefined);
 
+    self.persist = ko.observable(false);
+    self.isDirty = ko.observable(false);
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
@@ -16,11 +19,21 @@ function TimelapseViewModel(loginStateViewModel) {
 
     self.intervalInputEnabled = ko.computed(function() {
         return ("timed" == self.timelapseType());
-    })
+    });
+    self.saveButtonEnabled = ko.computed(function() {
+        return self.isDirty() && self.isOperational() && !self.isPrinting() && self.loginState.isUser();
+    });
 
     self.isOperational.subscribe(function(newValue) {
         self.requestData();
-    })
+    });
+
+    self.timelapseType.subscribe(function(newValue) {
+        self.isDirty(true);
+    });
+    self.timelapseTimedInterval.subscribe(function(newValue) {
+        self.isDirty(true);
+    });
 
     // initialize list helper
     self.listHelper = new ItemListHelper(
@@ -51,7 +64,7 @@ function TimelapseViewModel(loginStateViewModel) {
         [],
         [],
         CONFIG_TIMELAPSEFILESPERPAGE
-    )
+    );
 
     self.requestData = function() {
         $.ajax({
@@ -60,17 +73,20 @@ function TimelapseViewModel(loginStateViewModel) {
             dataType: "json",
             success: self.fromResponse
         });
-    }
+    };
 
     self.fromResponse = function(response) {
         self.timelapseType(response.type);
         self.listHelper.updateItems(response.files);
 
         if (response.type == "timed" && response.config && response.config.interval) {
-            self.timelapseTimedInterval(response.config.interval)
+            self.timelapseTimedInterval(response.config.interval);
         } else {
-            self.timelapseTimedInterval(undefined)
+            self.timelapseTimedInterval(undefined);
         }
+
+        self.persist(false);
+        self.isDirty(false);
     }
 
     self.fromCurrentData = function(data) {
@@ -97,12 +113,13 @@ function TimelapseViewModel(loginStateViewModel) {
             type: "DELETE",
             dataType: "json",
             success: self.requestData
-        })
+        });
     }
 
-    self.save = function() {
+    self.save = function(data, event) {
         var data = {
-            "type": self.timelapseType()
+            "type": self.timelapseType(),
+            "save": self.persist()
         }
 
         if (self.timelapseType() == "timed") {
@@ -115,6 +132,6 @@ function TimelapseViewModel(loginStateViewModel) {
             dataType: "json",
             data: data,
             success: self.fromResponse
-        })
+        });
     }
 }

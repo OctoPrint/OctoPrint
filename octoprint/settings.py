@@ -46,7 +46,11 @@ default_settings = {
 		"bitrate": "5000k",
 		"watermark": True,
 		"flipH": False,
-		"flipV": False
+		"flipV": False,
+		"timelapse": {
+			"type": "off",
+			"options": {}
+		}
 	},
 	"feature": {
 		"gCodeVisualizer": True,

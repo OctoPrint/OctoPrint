@@ -75,14 +75,19 @@ class PrinterStateConnection(SockJSConnection):
 		self._logger.info("New connection from client: %s" % self._getRemoteAddress(info))
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
+		octoprint.timelapse.registerCallback(self)
 
 		self._eventManager.fire("ClientOpened")
 		self._eventManager.subscribe("MovieDone", self._onMovieDone)
+
+		global timelapse
+		octoprint.timelapse.notifyCallbacks(timelapse)
 
 	def on_close(self):
 		self._logger.info("Closed client connection")
 		self._printer.unregisterCallback(self)
 		self._gcodeManager.unregisterCallback(self)
+		octoprint.timelapse.unregisterCallback(self)
 
 		self._eventManager.fire("ClientClosed")
 		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
@@ -119,6 +124,9 @@ class PrinterStateConnection(SockJSConnection):
 
 	def sendFeedbackCommandOutput(self, name, output):
 		self._emit("feedbackCommandOutput", {"name": name, "output": output})
+
+	def sendTimelapseConfig(self, timelapseConfig):
+		self._emit("timelapse", timelapseConfig)
 
 	def addLog(self, data):
 		with self._logBacklogMutex:
@@ -529,27 +537,55 @@ def deleteTimelapse(filename):
 @app.route(BASEURL + "timelapse", methods=["POST"])
 @restricted_access
 def setTimelapseConfig():
-	global timelapse
-
 	if request.values.has_key("type"):
-		type = request.values["type"]
-		if type in ["zchange", "timed"]:
-			# valid timelapse type, check if there is an old one we need to stop first
-			if timelapse is not None:
-				timelapse.unload()
-			timelapse = None
-		if "zchange" == type:
-			timelapse = octoprint.timelapse.ZTimelapse()
-		elif "timed" == type:
+		config = {
+			"type": request.values["type"],
+			"options": {}
+		}
+
+		if request.values.has_key("interval"):
 			interval = 10
-			if request.values.has_key("interval"):
-				try:
-					interval = int(request.values["interval"])
-				except ValueError:
-					pass
-			timelapse = octoprint.timelapse.TimedTimelapse(interval)
+			try:
+				interval = int(request.values["interval"])
+			except ValueError:
+				pass
+
+			config["options"] = {
+				"interval": interval
+			}
+
+		if admin_permission.can() and request.values.has_key("save") and request.values["save"] in valid_boolean_trues:
+			_configureTimelapse(config, True)
+		else:
+			_configureTimelapse(config)
 
 	return getTimelapseData()
+
+def _configureTimelapse(config=None, persist=False):
+	global timelapse
+
+	if config is None:
+		config = settings().get(["webcam", "timelapse"])
+
+	if timelapse is not None:
+		timelapse.unload()
+
+	type = config["type"]
+	if type is None or "off" == type:
+		timelapse = None
+	elif "zchange" == type:
+		timelapse = octoprint.timelapse.ZTimelapse()
+	elif "timed" == type:
+		interval = 10
+		if "options" in config and "interval" in config["options"]:
+			interval = config["options"]["interval"]
+		timelapse = octoprint.timelapse.TimedTimelapse(interval)
+
+	octoprint.timelapse.notifyCallbacks(timelapse)
+
+	if persist:
+		settings().set(["webcam", "timelapse"], config)
+		settings().save()
 
 #~~ settings
 
@@ -1055,6 +1091,9 @@ class Server():
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
+
+		# configure timelapse
+		_configureTimelapse()
 
 		# setup system and gcode command triggers
 		events.SystemCommandTrigger(printer)

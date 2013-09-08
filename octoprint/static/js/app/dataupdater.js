@@ -109,7 +109,11 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                 }
                 case "feedbackCommandOutput": {
                     self.controlViewModel.fromFeedbackCommandData(payload);
-                    break
+                    break;
+                }
+                case "timelapse": {
+                    self.printerStateViewModel.fromTimelapseData(payload);
+                    break;
                 }
             }
         }

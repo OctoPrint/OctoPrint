@@ -33,6 +33,26 @@ def getFinishedTimelapses():
 		})
 	return files
 
+validTimelapseTypes = ["off", "timed", "zchange"]
+
+updateCallbacks = []
+def registerCallback(callback):
+	if not callback in updateCallbacks:
+		updateCallbacks.append(callback)
+
+def unregisterCallback(callback):
+	if callback in updateCallbacks:
+		updateCallbacks.remove(callback)
+
+def notifyCallbacks(timelapse):
+	for callback in updateCallbacks:
+		if timelapse is None:
+			config = None
+		else:
+			config = timelapse.configData()
+		try: callback.sendTimelapseConfig(config)
+		except: pass
+
 class Timelapse(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
@@ -97,6 +117,16 @@ class Timelapse(object):
 		  * PrintDone - self.onPrintDone
 		"""
 		return []
+
+	def configData(self):
+		"""
+		Override this method to return the current timelapse configuration data. The data should have the following
+		form:
+
+		    type: "<type of timelapse>",
+		    options: { <additional options> }
+		"""
+		return None
 
 	def startTimelapse(self, gcodeFile):
 		self._logger.debug("Starting timelapse for %s" % gcodeFile)
@@ -212,6 +242,11 @@ class ZTimelapse(Timelapse):
 			("ZChange", self._onZChange)
 		]
 
+	def configData(self):
+		return {
+			"type": "zchange"
+		}
+
 	def _onZChange(self, event, payload):
 		self.captureImage()
 
@@ -226,6 +261,14 @@ class TimedTimelapse(Timelapse):
 
 	def interval(self):
 		return self._interval
+
+	def configData(self):
+		return {
+			"type": "timed",
+			"options": {
+				"interval": self._interval
+			}
+		}
 
 	def onPrintStarted(self, event, payload):
 		Timelapse.onPrintStarted(self, event, payload)
