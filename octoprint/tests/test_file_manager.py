@@ -8,9 +8,9 @@ from octoprint.filemanager.destinations import FileDestinations
 
 
 class FileManipulationTestCase(unittest.TestCase):
- 
+
 	def setUp(self):
-		
+
 		from octoprint.settings import settings
 		from octoprint.gcodefiles import GcodeManager
 		self.settings = settings(True)
@@ -25,8 +25,11 @@ class FileManipulationTestCase(unittest.TestCase):
 
 		logging.info("REMOVED %s filenames" % str(len(self.filenames)))
 
+	@patch('octoprint.settings.Settings.getBoolean')
 	@patch('octoprint.slicers.cura.Cura.process_file')
-	def test_add_stl_file(self, process):
+	def test_add_stl_file_curaDisabled(self, process, getterMock):
+
+		getterMock.return_value = False
 
 		fake = Mock()
 		fake.filename = "test_stl.stl"
@@ -37,6 +40,26 @@ class FileManipulationTestCase(unittest.TestCase):
 
 		logging.info("RESULT:%s" % str(result))
 
+		self.assertFalse(process.called)
+		self.assertIsNone(result)
+		self.assertTrue(done)
+
+	@patch('octoprint.settings.Settings.getBoolean')
+	@patch('octoprint.slicers.cura.Cura.process_file')
+	def test_add_stl_file_curaEnabled(self, process, getterMock):
+
+		getterMock.return_value = True
+
+		fake = Mock()
+		fake.filename = "test_stl.stl"
+		self.filenames.append(fake.filename)
+		fake.__getitem__ = "SOMETHING"
+
+		result, done = self.manager.addFile(fake, FileDestinations.LOCAL)
+
+		logging.info("RESULT:%s" % str(result))
+
+		getterMock.assert_called_once_with(["cura", "enabled"])
 		self.assertTrue(process.called)
 		self.assertTrue(fake.filename == result)
 		self.assertFalse(done)
