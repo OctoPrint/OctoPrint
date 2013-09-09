@@ -200,12 +200,18 @@ body {
 table {
   table-layout: fixed;
 
+  .popover-title {
+    text-overflow: ellipsis;
+    word-break: break-all;
+  }
+
   th, td {
     overflow: hidden;
 
     // gcode files
     &.gcode_files_name {
       text-overflow: ellipsis;
+      white-space: nowrap;
       text-align: left;
     }
 

@@ -33,6 +33,26 @@ def getFinishedTimelapses():
 		})
 	return files
 
+validTimelapseTypes = ["off", "timed", "zchange"]
+
+updateCallbacks = []
+def registerCallback(callback):
+	if not callback in updateCallbacks:
+		updateCallbacks.append(callback)
+
+def unregisterCallback(callback):
+	if callback in updateCallbacks:
+		updateCallbacks.remove(callback)
+
+def notifyCallbacks(timelapse):
+	for callback in updateCallbacks:
+		if timelapse is None:
+			config = None
+		else:
+			config = timelapse.configData()
+		try: callback.sendTimelapseConfig(config)
+		except: pass
+
 class Timelapse(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
@@ -51,6 +71,7 @@ class Timelapse(object):
 		eventManager().subscribe("PrintStarted", self.onPrintStarted)
 		eventManager().subscribe("PrintFailed", self.onPrintDone)
 		eventManager().subscribe("PrintDone", self.onPrintDone)
+		eventManager().subscribe("PrintResumed", self.onPrintResumed)
 		for (event, callback) in self.eventSubscriptions():
 			eventManager().subscribe(event, callback)
 
@@ -62,6 +83,7 @@ class Timelapse(object):
 		eventManager().unsubscribe("PrintStarted", self.onPrintStarted)
 		eventManager().unsubscribe("PrintFailed", self.onPrintDone)
 		eventManager().unsubscribe("PrintDone", self.onPrintDone)
+		eventManager().unsubscribe("PrintResumed", self.onPrintResumed)
 		for (event, callback) in self.eventSubscriptions():
 			eventManager().unsubscribe(event, callback)
 
@@ -77,16 +99,34 @@ class Timelapse(object):
 		"""
 		self.stopTimelapse()
 
+	def onPrintResumed(self, event, payload):
+		"""
+		Override this to perform additional actions upon the pausing of a print job.
+		"""
+		if not self._inTimelapse:
+			self.startTimelapse(payload)
+
 	def eventSubscriptions(self):
 		"""
 		Override this method to subscribe to additional events by returning an array of (event, callback) tuples.
 
 		Events that are already subscribed:
 		  * PrintStarted - self.onPrintStarted
+		  * PrintResumed - self.onPrintResumed
 		  * PrintFailed - self.onPrintDone
 		  * PrintDone - self.onPrintDone
 		"""
 		return []
+
+	def configData(self):
+		"""
+		Override this method to return the current timelapse configuration data. The data should have the following
+		form:
+
+		    type: "<type of timelapse>",
+		    options: { <additional options> }
+		"""
+		return None
 
 	def startTimelapse(self, gcodeFile):
 		self._logger.debug("Starting timelapse for %s" % gcodeFile)
@@ -144,9 +184,9 @@ class Timelapse(object):
 		filters = []
 
 		# flip video if configured
-		if settings().getBoolean(["webcam", "flipX"]):
+		if settings().getBoolean(["webcam", "flipH"]):
 			filters.append('hflip')
-		if settings().getBoolean(["webcam", "flipY"]):
+		if settings().getBoolean(["webcam", "flipV"]):
 			filters.append('vflip')
 
 		# add watermark if configured
@@ -178,7 +218,7 @@ class Timelapse(object):
 		command.append(output)
 		try:
 			subprocess.check_call(command)
-			eventManager().fire("MovieDone", output);
+			eventManager().fire("MovieDone", output)
 		except subprocess.CalledProcessError as (e):
 			self._logger.warn("Could not render movie, got return code %r" % e.returncode)
 
@@ -202,6 +242,11 @@ class ZTimelapse(Timelapse):
 			("ZChange", self._onZChange)
 		]
 
+	def configData(self):
+		return {
+			"type": "zchange"
+		}
+
 	def _onZChange(self, event, payload):
 		self.captureImage()
 
@@ -216,6 +261,14 @@ class TimedTimelapse(Timelapse):
 
 	def interval(self):
 		return self._interval
+
+	def configData(self):
+		return {
+			"type": "timed",
+			"options": {
+				"interval": self._interval
+			}
+		}
 
 	def onPrintStarted(self, event, payload):
 		Timelapse.onPrintStarted(self, event, payload)

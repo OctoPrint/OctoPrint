@@ -44,6 +44,9 @@ class UserManager(object):
 	def getAllUsers(self):
 		return []
 
+	def hasBeenCustomized(self):
+		return False
+
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
 class FilebasedUserManager(UserManager):
@@ -57,17 +60,19 @@ class FilebasedUserManager(UserManager):
 		self._users = {}
 		self._dirty = False
 
+		self._customized = None
 		self._load()
 
 	def _load(self):
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
+			self._customized = True
 			with open(self._userfile, "r") as f:
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]
 					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"])
 		else:
-			self._users["admin"] = User("admin", "7557160613d5258f883014a7c3c0428de53040fc152b1791f1cc04a62b428c0c2a9c46ed330cdce9689353ab7a5352ba2b2ceb459b96e9c8ed7d0cb0b2c0c076", True, ["user", "admin"])
+			self._customized = False
 
 	def _save(self, force=False):
 		if not self._dirty and not force:
@@ -168,6 +173,9 @@ class FilebasedUserManager(UserManager):
 
 	def getAllUsers(self):
 		return map(lambda x: x.asDict(), self._users.values())
+
+	def hasBeenCustomized(self):
+		return self._customized
 
 ##~~ Exceptions
 

@@ -15,6 +15,8 @@ from octoprint.settings import settings
 
 from werkzeug.utils import secure_filename
 
+SUPPORTED_EXTENSIONS=["gcode", "gco", "stl"]
+
 class GcodeManager:
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
@@ -65,8 +67,8 @@ class GcodeManager:
 			dirty = True
 		if gcode.extrusionAmount:
 			analysisResult["filament"] = "%.2fm" % (gcode.extrusionAmount / 1000)
-			if gcode.extrusionVolume:
-				 analysisResult["filament"] += " / %.2fcm³" % gcode.extrusionVolume
+			if gcode.calculateVolumeCm3():
+				 analysisResult["filament"] += " / %.2fcm³" % gcode.calculateVolumeCm3()
 			dirty = True
 
 		if dirty:
@@ -231,7 +233,7 @@ class GcodeManager:
 		"""
 		filename = self._getBasicFilename(filename)
 
-		if not util.isAllowedFile(filename, set(["gcode", "stl"])):
+		if not util.isAllowedFile(filename.lower(), set(SUPPORTED_EXTENSIONS)):
 			return None
 
 		# TODO: detect which type of file and add in the extra folder portion 

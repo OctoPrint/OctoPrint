@@ -39,6 +39,10 @@ def main():
 		help="Daemonize/control daemonized OctoPrint instance (only supported under Linux right now)")
 	parser.add_argument("--pid", action="store", type=str, dest="pidfile", default="/tmp/octoprint.pid",
 		help="Pidfile to use for daemonizing, defaults to /tmp/octoprint.pid")
+
+	parser.add_argument("--iknowwhatimdoing", action="store_true", dest="allowRoot",
+		help="Allow OctoPrint to run as user root")
+
 	args = parser.parse_args()
 
 	if args.daemon:
@@ -54,7 +58,7 @@ def main():
 		elif "restart" == args.daemon:
 			daemon.restart()
 	else:
-		octoprint = Server(args.config, args.basedir, args.host, args.port, args.debug)
+		octoprint = Server(args.config, args.basedir, args.host, args.port, args.debug, args.allowRoot)
 		octoprint.run()
 
 if __name__ == "__main__":
