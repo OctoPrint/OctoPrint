@@ -161,7 +161,7 @@ class GcodeManager:
 
 	def processSTL(self, absolutePath, callBack, callBackArgs):
 
-		from octoprint.cura import CuraFactory
+		from octoprint.slicers.cura import CuraFactory
 
 		cura = CuraFactory.create_slicer()
 		gcodePath = util.genGcodeFileName(absolutePath)
