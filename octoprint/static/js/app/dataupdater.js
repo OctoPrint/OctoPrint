@@ -109,7 +109,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     } else if (type == "slicingStarted") {
                         $.pnotify({title: "Slicing started", text: "Slicing " + payload.stl + " to " + payload.gcode});
                     } else if (type == "slicingDone") {
-                        $.pnotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode});
+                        $.pnotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + payload.time + " seconds"});
                         gcodeFilesViewModel.requestData(payload.gcode);
                     }
                     break;

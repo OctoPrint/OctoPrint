@@ -166,8 +166,10 @@ class GcodeManager:
 		gcodePath = util.genGcodeFileName(absolutePath)
 		config = self._settings.get(["cura", "config"])
 
+		slicingStart = time.time()
 		def stlProcessed(stlPath, gcodePath):
-			eventManager().fire("SlicingDone", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath)})
+			slicingStop = time.time()
+			eventManager().fire("SlicingDone", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": "%.2f" % (slicingStop - slicingStart)})
 			self.processGcode(gcodePath)
 
 		eventManager().fire("SlicingStarted", {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})
