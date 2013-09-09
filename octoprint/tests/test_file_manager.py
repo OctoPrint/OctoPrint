@@ -33,11 +33,13 @@ class FileManipulationTestCase(unittest.TestCase):
 		self.filenames.append(fake.filename)
 		fake.__getitem__ = "SOMETHING"
 
-		result = self.manager.addFile(fake, FileDestinations.LOCAL)
+		result, done = self.manager.addFile(fake, FileDestinations.LOCAL)
 
 		logging.info("RESULT:%s" % str(result))
 
 		self.assertTrue(process.called)
+		self.assertTrue(fake.filename == result)
+		self.assertFalse(done)
 
 	def test_add_gcode_file(self):
 		fake = Mock()
@@ -45,11 +47,12 @@ class FileManipulationTestCase(unittest.TestCase):
 		self.filenames.append(fake.filename)
 		fake.__getitem__ = "SOMETHING"
 
-		result = self.manager.addFile(fake, FileDestinations.LOCAL)
+		result, done = self.manager.addFile(fake, FileDestinations.LOCAL)
 
 		logging.info("RESULT:%s" % str(result))
 
 		self.assertTrue(fake.filename == result)
+		self.assertTrue(done)
 
 
 class FileUtilTestCase(unittest.TestCase):

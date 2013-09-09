@@ -127,25 +127,25 @@ class GcodeManager:
 		from octoprint.filemanager.destinations import FileDestinations
 
 		if not file or not destination:
-			return None
+			return None, True
 
 		local = True if destination == FileDestinations.LOCAL else False
 
 		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
 
 		if absolutePath is None:
-			return None
+			return None, True
 
 		file.save(absolutePath)
 		filename = file.filename
 
 		if isGcodeFileName(filename):
-			return self.processGcode(absolutePath)
+			return self.processGcode(absolutePath), True
 
 		curaEnabled = self._settings.get(["cura", "enabled"])
 		if curaEnabled and isSTLFileName(filename) and local:
 			self.processStl(absolutePath)
-		return filename
+		return filename, False
 
 
 	def getFutureFileName(self, file):
@@ -167,10 +167,15 @@ class GcodeManager:
 		config = self._settings.get(["cura", "config"])
 
 		slicingStart = time.time()
-		def stlProcessed(stlPath, gcodePath):
-			slicingStop = time.time()
-			eventManager().fire("SlicingDone", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": "%.2f" % (slicingStop - slicingStart)})
-			self.processGcode(gcodePath)
+		def stlProcessed(stlPath, gcodePath, error=None):
+			if error:
+				eventManager().fire("SlicingFailed", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "reason": error})
+				if os.path.exists(stlPath):
+					os.remove(stlPath)
+			else:
+				slicingStop = time.time()
+				eventManager().fire("SlicingDone", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": "%.2f" % (slicingStop - slicingStart)})
+				self.processGcode(gcodePath)
 
 		eventManager().fire("SlicingStarted", {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})
 		cura.process_file(config, gcodePath, absolutePath, stlProcessed, [absolutePath, gcodePath])

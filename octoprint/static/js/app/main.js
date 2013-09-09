@@ -55,9 +55,11 @@ $(function() {
 
         function gcode_upload_done(e, data) {
             gcodeFilesViewModel.fromResponse(data.result);
-            $("#gcode_upload_progress .bar").css("width", "0%");
-            $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-            $("#gcode_upload_progress .bar").text("");
+            if (data.result.done) {
+                $("#gcode_upload_progress .bar").css("width", "0%");
+                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                $("#gcode_upload_progress .bar").text("");
+            }
         }
 
         function gcode_upload_fail(e, data) {

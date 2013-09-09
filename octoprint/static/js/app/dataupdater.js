@@ -107,10 +107,20 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     } else if (type == "timelapseFiles") {
                         timelapseViewModel.requestData();
                     } else if (type == "slicingStarted") {
-                        $.pnotify({title: "Slicing started", text: "Slicing " + payload.stl + " to " + payload.gcode});
+                        $("#gcode_upload_progress .bar").css("width", "100%");
+                        $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
+                        $("#gcode_upload_progress .bar").text("Slicing ...");
                     } else if (type == "slicingDone") {
+                        $("#gcode_upload_progress .bar").css("width", "0%");
+                        $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                        $("#gcode_upload_progress .bar").text("");
                         $.pnotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + payload.time + " seconds"});
                         gcodeFilesViewModel.requestData(payload.gcode);
+                    } else if (type == "slicingFailed") {
+                        $("#gcode_upload_progress .bar").css("width", "0%");
+                        $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                        $("#gcode_upload_progress .bar").text("");
+                        $.pnotify({title: "Slicing failed", text: "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason, type: "error"});
                     }
                     break;
                 }

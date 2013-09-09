@@ -83,6 +83,7 @@ class PrinterStateConnection(SockJSConnection):
 		self._eventManager.subscribe("MovieDone", self._onMovieDone)
 		self._eventManager.subscribe("SlicingStarted", self._onSlicingStarted)
 		self._eventManager.subscribe("SlicingDone", self._onSlicingDone)
+		self._eventManager.subscribe("SlicingFailed", self._onSlicingFailed)
 
 		global timelapse
 		octoprint.timelapse.notifyCallbacks(timelapse)
@@ -97,6 +98,7 @@ class PrinterStateConnection(SockJSConnection):
 		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
 		self._eventManager.unsubscribe("SlicingStarted", self._onSlicingStarted)
 		self._eventManager.unsubscribe("SlicingDone", self._onSlicingDone)
+		self._eventManager.unsubscribe("SlicingFailed", self._onSlicingFailed)
 
 	def on_message(self, message):
 		pass
@@ -154,6 +156,9 @@ class PrinterStateConnection(SockJSConnection):
 
 	def _onSlicingDone(self, event, payload):
 		self.sendUpdateTrigger("slicingDone", payload)
+
+	def _onSlicingFailed(self, event, payload):
+		self.sendUpdateTrigger("slicingFailed", payload)
 
 	def _emit(self, type, payload):
 		self.send({type: payload})
@@ -410,7 +415,7 @@ def uploadGcodeFile():
 
 		destination = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
 
-		filename = gcodeManager.addFile(file, destination)
+		filename, done = gcodeManager.addFile(file, destination)
 
 		if filename is None:
 			return make_response("Could not upload the file %s" % file.filename, 500)
@@ -428,7 +433,7 @@ def uploadGcodeFile():
 
 		global eventManager
 		eventManager.fire("Upload", filename)
-	return jsonify(files=gcodeManager.getAllFileData(), filename=filename)
+	return jsonify(files=gcodeManager.getAllFileData(), filename=filename, done=done)
 
 
 @app.route(BASEURL + "gcodefiles/load", methods=["POST"])
@@ -497,7 +502,10 @@ def apiLoad():
 
 	# Perform an upload
 	file = request.files["file"]
-	filename = gcodeManager.addFile(file)
+	if not util.isGcodeFileName(file.filename):
+		abort(400)
+
+	filename, done = gcodeManager.addFile(file)
 	if filename is None:
 		logger.warn("Upload via API failed")
 		abort(500)

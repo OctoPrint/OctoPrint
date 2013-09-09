@@ -56,6 +56,8 @@ class Cura(object):
 				call_back(*call_back_args)
 			except subprocess.CalledProcessError as (e):
 				self._logger.warn("Could not slice via Cura, got return code %r" % e.returncode)
+				call_back_args.append("Got returncode %r" % e.returncode)
+				call_back(*call_back_args)
 
 		executable = self.cura_path
 		(workingDir, ignored) = os.path.split(executable)
