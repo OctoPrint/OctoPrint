@@ -24,7 +24,7 @@ class CuraFactoryTestCase(unittest.TestCase):
 		cura = CuraFactory.create_slicer(path)
 		file_path = './cura/tests/test.stl'
 		config_path = './cura/tests/config'
-		gcode_filename= './cura/tests/output.gcode'
+		gcode_filename = './cura/tests/output.gcode'
 
 		cura.process_file(config_path, gcode_filename, file_path)
 		self.assertTrue(thread.called)
