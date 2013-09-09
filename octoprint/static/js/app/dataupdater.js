@@ -74,45 +74,52 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
 
     self._onmessage = function(e) {
         for (var prop in e.data) {
-            var payload = e.data[prop];
+            var data = e.data[prop];
 
             switch (prop) {
                 case "history": {
-                    self.connectionViewModel.fromHistoryData(payload);
-                    self.printerStateViewModel.fromHistoryData(payload);
-                    self.temperatureViewModel.fromHistoryData(payload);
-                    self.controlViewModel.fromHistoryData(payload);
-                    self.terminalViewModel.fromHistoryData(payload);
-                    self.timelapseViewModel.fromHistoryData(payload);
-                    self.gcodeViewModel.fromHistoryData(payload);
-                    self.gcodeFilesViewModel.fromCurrentData(payload);
+                    self.connectionViewModel.fromHistoryData(data);
+                    self.printerStateViewModel.fromHistoryData(data);
+                    self.temperatureViewModel.fromHistoryData(data);
+                    self.controlViewModel.fromHistoryData(data);
+                    self.terminalViewModel.fromHistoryData(data);
+                    self.timelapseViewModel.fromHistoryData(data);
+                    self.gcodeViewModel.fromHistoryData(data);
+                    self.gcodeFilesViewModel.fromCurrentData(data);
                     break;
                 }
                 case "current": {
-                    self.connectionViewModel.fromCurrentData(payload);
-                    self.printerStateViewModel.fromCurrentData(payload);
-                    self.temperatureViewModel.fromCurrentData(payload);
-                    self.controlViewModel.fromCurrentData(payload);
-                    self.terminalViewModel.fromCurrentData(payload);
-                    self.timelapseViewModel.fromCurrentData(payload);
-                    self.gcodeViewModel.fromCurrentData(payload);
-                    self.gcodeFilesViewModel.fromCurrentData(payload);
+                    self.connectionViewModel.fromCurrentData(data);
+                    self.printerStateViewModel.fromCurrentData(data);
+                    self.temperatureViewModel.fromCurrentData(data);
+                    self.controlViewModel.fromCurrentData(data);
+                    self.terminalViewModel.fromCurrentData(data);
+                    self.timelapseViewModel.fromCurrentData(data);
+                    self.gcodeViewModel.fromCurrentData(data);
+                    self.gcodeFilesViewModel.fromCurrentData(data);
                     break;
                 }
                 case "updateTrigger": {
-                    if (payload == "gcodeFiles") {
+                    var type = data["type"];
+                    var payload = data["payload"];
+                    if (type == "gcodeFiles") {
                         gcodeFilesViewModel.requestData();
-                    } else if (payload == "timelapseFiles") {
+                    } else if (type == "timelapseFiles") {
                         timelapseViewModel.requestData();
+                    } else if (type == "slicingStarted") {
+                        $.pnotify({title: "Slicing started", text: "Slicing " + payload.stl + " to " + payload.gcode});
+                    } else if (type == "slicingDone") {
+                        $.pnotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode});
+                        gcodeFilesViewModel.requestData(payload.gcode);
                     }
                     break;
                 }
                 case "feedbackCommandOutput": {
-                    self.controlViewModel.fromFeedbackCommandData(payload);
+                    self.controlViewModel.fromFeedbackCommandData(data);
                     break;
                 }
                 case "timelapse": {
-                    self.printerStateViewModel.fromTimelapseData(payload);
+                    self.printerStateViewModel.fromTimelapseData(data);
                     break;
                 }
             }

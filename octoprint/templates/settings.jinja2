@@ -14,7 +14,7 @@
                 <li class="nav-header">Features</li>
                 <li><a href="#settings_features" data-toggle="tab">Features</a></li>
                 <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
-	            <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
+                <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
                 {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Access Control</a></li>{% endif %}
                 <li><a href="#settings_api" data-toggle="tab">Api</a></li>
                 <li class="nav-header">OctoPrint</li>
@@ -22,8 +22,6 @@
                 <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
             </ul>
 
-        <div class="tab-content span8">
-            <div class="tab-pane active" id="settings_printerParameters">
             <div class="tab-content span8">
                 <div class="tab-pane active" id="settings_serialConnection">
                     <form class="form-horizontal">
@@ -317,28 +315,28 @@
                         </div>
                     </form>
                 </div>
-				<div class="tab-pane" id="settings_cura">
-					<form class="form-horizontal">
-						<div class="control-group">
-							<label class="control-label" for="settings-curaEnabled">Cura Enabled</label>
-							<div class="controls">
-								<input type="checkbox" data-bind="checked: cura_enabled">
-							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="settings-curaPath">CuraEngine Path</label>
-							<div class="controls">
-								<input type="text" class="input-block-level" data-bind="value: cura_path">
-							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="settings-curaConfig">Cura Config</label>
-							<div class="controls">
-								<input type="text" class="input-block-level" data-bind="value: cura_config">
-							</div>
-						</div>
-					</form>
-				</div>
+                <div class="tab-pane" id="settings_cura">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-curaEnabled">Enable slicing via Cura</label>
+                            <div class="controls">
+                                <input type="checkbox" data-bind="checked: cura_enabled">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-curaPath">Path to Cura</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: cura_path">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-curaConfig">Path to Cura config</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: cura_config">
+                            </div>
+                        </div>
+                    </form>
+                </div>
                 <div class="tab-pane" id="settings_api">
                     <form class="form-horizontal">
                         <div class="control-group">

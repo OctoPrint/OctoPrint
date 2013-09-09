@@ -2,6 +2,7 @@ __author__ = "Ross Hendrickson savorywatt"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import logging
+import os
 
 from octoprint.settings import settings
 
@@ -30,6 +31,7 @@ class Cura(object):
 			raise Exception("Unable to create CuraEngine - no path specified")
 		
 		self.cura_path = cura_path
+		self._logger = logging.getLogger(__name__)
 		
 
 	def process_file(
@@ -48,12 +50,18 @@ class Cura(object):
 
 		def start_thread(call_back, call_back_args, call_args, cwd):
 			import subprocess
-			process = subprocess.call(call_args, cwd=cwd)
-			call_back(*call_back_args)
+			self._logger.info("Running %r in %s" % (call_args, cwd))
+			try:
+				subprocess.check_call(call_args, cwd=cwd)
+				call_back(*call_back_args)
+			except subprocess.CalledProcessError as (e):
+				self._logger.warn("Could not slice via Cura, got return code %r" % e.returncode)
 
-		args = ['python', '-m', 'Cura.cura', '-i', config, '-s', file_path, '-o',  gcode]
+		executable = self.cura_path
+		(workingDir, ignored) = os.path.split(executable)
+		args = [executable, '-i', config, '-s', file_path, '-o',  gcode]
 
 		thread = threading.Thread(target=start_thread, args=(call_back,
-			call_back_args, args, self.cura_path))
+			call_back_args, args, workingDir))
 
 		thread.start()

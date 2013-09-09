@@ -81,6 +81,8 @@ class PrinterStateConnection(SockJSConnection):
 
 		self._eventManager.fire("ClientOpened")
 		self._eventManager.subscribe("MovieDone", self._onMovieDone)
+		self._eventManager.subscribe("SlicingStarted", self._onSlicingStarted)
+		self._eventManager.subscribe("SlicingDone", self._onSlicingDone)
 
 		global timelapse
 		octoprint.timelapse.notifyCallbacks(timelapse)
@@ -93,6 +95,8 @@ class PrinterStateConnection(SockJSConnection):
 
 		self._eventManager.fire("ClientClosed")
 		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
+		self._eventManager.unsubscribe("SlicingStarted", self._onSlicingStarted)
+		self._eventManager.unsubscribe("SlicingDone", self._onSlicingDone)
 
 	def on_message(self, message):
 		pass
@@ -121,8 +125,8 @@ class PrinterStateConnection(SockJSConnection):
 	def sendHistoryData(self, data):
 		self._emit("history", data)
 
-	def sendUpdateTrigger(self, type):
-		self._emit("updateTrigger", type)
+	def sendUpdateTrigger(self, type, payload=None):
+		self._emit("updateTrigger", {"type": type, "payload": payload})
 
 	def sendFeedbackCommandOutput(self, name, output):
 		self._emit("feedbackCommandOutput", {"name": name, "output": output})
@@ -144,6 +148,12 @@ class PrinterStateConnection(SockJSConnection):
 
 	def _onMovieDone(self, event, payload):
 		self.sendUpdateTrigger("timelapseFiles")
+
+	def _onSlicingStarted(self, event, payload):
+		self.sendUpdateTrigger("slicingStarted", payload)
+
+	def _onSlicingDone(self, event, payload):
+		self.sendUpdateTrigger("slicingDone", payload)
 
 	def _emit(self, type, payload):
 		self.send({type: payload})
@@ -756,11 +766,9 @@ def setSettings():
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
-
-		if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
+			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
 		cura = data.get("cura", None)
-
 		if cura:
 			path = cura.get("path")
 			if path:

@@ -190,9 +190,6 @@ class Printer():
 			logging.info("Cannot load file: printer not connected or currently busy")
 			return
 
-		if self._comm.isBusy() or self._comm.isStreaming():
-			return
-
 		self._printAfterSelect = printAfterSelect
 		self._comm.selectFile(filename, sd)
 		self._setProgressData(0, None, None, None)
@@ -491,7 +488,7 @@ class Printer():
 			callBackArgs = [gcodeFileName, gcodePath]
 			callBack = self.streamSdFile
 
-			self._gcodeManager.processSTL(
+			self._gcodeManager.processStl(
 				absolutePath, callBack, callBackArgs)
 
 	def streamSdFile(self, filename, path):

@@ -9,6 +9,7 @@ import time
 
 from octoprint.settings import settings
 
+
 def getFormattedSize(num):
 	"""
 	Taken from http://stackoverflow.com/a/1094933/2028598
@@ -51,8 +52,6 @@ def getClass(name):
 		m = getattr(m, comp)
 	return m
 
-def matchesGcode(line, gcode):
-	return re.search("^\s*%s\D" % gcode, line, re.I)
 
 def isGcodeFileName(filename):
 	"""Simple helper to determine if a filename has the .gcode extension.
@@ -61,7 +60,8 @@ def isGcodeFileName(filename):
 
 	:returns boolean:
 	"""
-	return "." in filename and filename.rsplit(".", 1)[1] in ["gcode", "GCODE"]
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in ["gcode", "gco"]
+
 
 def isSTLFileName(filename):
 	"""Simple helper to determine if a filename has the .stl extension.
@@ -70,10 +70,10 @@ def isSTLFileName(filename):
 
 	:returns boolean:
 	"""
-	return "." in filename and filename.rsplit(".", 1)[1] in ["stl", "STL"]
-	
-def genGcodeFileName(filename):
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in ["stl"]
 
+
+def genGcodeFileName(filename):
 	if not filename:
 		return None
 
@@ -81,9 +81,9 @@ def genGcodeFileName(filename):
 		return filename + ".gcode"
 
 	return filename.replace('.stl', '.gcode')
-	
-def genStlFileName(filename):
 
+
+def genStlFileName(filename):
 	if not filename:
 		return None
 
@@ -91,7 +91,8 @@ def genStlFileName(filename):
 		return filename + ".stl"
 
 	return filename.replace('.gcode', '.stl')
-	
+
+
 def isDevVersion():
 	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
 	return os.path.exists(gitPath)
@@ -143,3 +144,10 @@ def getFreeBytes(path):
 	else:
 		st = os.statvfs(path)
 		return st.f_bavail * st.f_frsize
+
+
+def getRemoteAddress(request):
+	forwardedFor = request.headers.get("X-Forwarded-For", None)
+	if forwardedFor is not None:
+		return forwardedFor.split(",")[0]
+	return request.remote_addr

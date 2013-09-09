@@ -96,12 +96,15 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isSdReady(data.flags.sdReady);
     }
 
-    self.requestData = function() {
+    self.requestData = function(filenameOverride) {
         $.ajax({
             url: AJAX_BASEURL + "gcodefiles",
             method: "GET",
             dataType: "json",
             success: function(response) {
+                if (filenameOverride) {
+                    response.filename = filenameOverride
+                }
                 self.fromResponse(response);
             }
         });

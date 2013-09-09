@@ -11,7 +11,9 @@ import time
 import logging
 import octoprint.util as util
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
+
 from octoprint.settings import settings
+from octoprint.events import eventManager
 
 from werkzeug.utils import secure_filename
 
@@ -141,15 +143,10 @@ class GcodeManager:
 			return self.processGcode(absolutePath)
 
 		curaEnabled = self._settings.get(["cura", "enabled"])
-
-		if isSTLFileName(filename) and curaEnabled and local:
-			gcodePath = util.genGcodeFileName(absolutePath)
-
-			callBackArgs = [gcodePath]
-			callBack = self.processGcode
-
-			self.processSTL(absolutePath, callBack, callBackArgs)
+		if curaEnabled and isSTLFileName(filename) and local:
+			self.processStl(absolutePath)
 		return filename
+
 
 	def getFutureFileName(self, file):
 		if not file:
@@ -161,16 +158,22 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
-	def processSTL(self, absolutePath, callBack, callBackArgs):
 
+	def processStl(self, absolutePath):
 		from octoprint.slicers.cura import CuraFactory
 
 		cura = CuraFactory.create_slicer()
 		gcodePath = util.genGcodeFileName(absolutePath)
 		config = self._settings.get(["cura", "config"])
 
-		cura.process_file(
-			config, gcodePath, absolutePath, callBack, callBackArgs) 
+		def stlProcessed(stlPath, gcodePath):
+			eventManager().fire("SlicingDone", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath)})
+			self.processGcode(gcodePath)
+
+		eventManager().fire("SlicingStarted", {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})
+		cura.process_file(config, gcodePath, absolutePath, stlProcessed, [absolutePath, gcodePath])
+
+
 	def processGcode(self, absolutePath):
 		if absolutePath is None:
 			return None
@@ -205,12 +208,9 @@ class GcodeManager:
 		if absolutePath is None:
 			return
 	
-		# The files may or may not actually exits on the HD.
-		try:
-			os.remove(absolutePath)
+		os.remove(absolutePath)
+		if os.path.exists(stlPath):
 			os.remove(stlPath)
-		except OSError:
-			pass
 
 		if filename in self._metadata.keys():
 			del self._metadata[filename]
@@ -223,7 +223,7 @@ class GcodeManager:
 
 		Ensures that the file
 		<ul>
-		  <li>has the extension ".gcode" or ".stl"</li>
+		  <li>has any of the extensions listed in SUPPORTED_EXTENSIONS</li>
 		  <li>exists and is a file (not a directory) if "mustExist" is set to True</li>
 		</ul>
 
