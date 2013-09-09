@@ -138,7 +138,7 @@ class GcodeManager:
 		if isGcodeFileName(filename):
 			return self.processGcode(absolutePath)
 
-		curaEnabled = self._settings.get(["curaEngine", "enabled"])
+		curaEnabled = self._settings.get(["cura", "enabled"])
 
 		if isSTLFileName(filename) and curaEnabled and local:
 			gcodePath = util.genGcodeFileName(absolutePath)
@@ -163,11 +163,11 @@ class GcodeManager:
 
 		from octoprint.cura import CuraFactory
 
-		curaEngine = CuraFactory.create_slicer()
+		cura = CuraFactory.create_slicer()
 		gcodePath = util.genGcodeFileName(absolutePath)
-		config = self._settings.get(["curaEngine", "config"])
+		config = self._settings.get(["cura", "config"])
 
-		curaEngine.process_file(
+		cura.process_file(
 			config, gcodePath, absolutePath, callBack, callBackArgs) 
 	def processGcode(self, absolutePath):
 		if absolutePath is None:

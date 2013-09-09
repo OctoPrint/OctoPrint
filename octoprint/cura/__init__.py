@@ -16,7 +16,7 @@ class CuraFactory(object):
 		if path:
 			return CuraEngine(path)
 		current_settings = settings(init=True)
-		path = current_settings.get(["curaEngine", "path"])
+		path = current_settings.get(["cura", "path"])
 
 		return CuraEngine(path)
 

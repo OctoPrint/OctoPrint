@@ -1472,9 +1472,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.folder_timelapseTmp(response.folder.timelapseTmp);
         self.folder_logs(response.folder.logs);
 		
-		self.cura_enabled(response.curaEngine.enabled);
-		self.cura_path(response.curaEngine.path);
-		self.cura_config(response.curaEngine.config);
+		self.cura_enabled(response.cura.enabled);
+		self.cura_path(response.cura.path);
+		self.cura_config(response.cura.config);
 
         self.temperature_profiles(response.temperature.profiles);
 
@@ -1533,7 +1533,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "system": {
                 "actions": self.system_actions()
             },
-			"curaEngine": {
+			"cura": {
 				"enabled": self.cura_enabled(),
 				"path": self.cura_path(),
 				"config": self.cura_config()

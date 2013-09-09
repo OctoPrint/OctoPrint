@@ -89,10 +89,10 @@ default_settings = {
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None
 	},
-	"curaEngine": {
+	"cura": {
 		"enabled": False,
-		"path": "/default/path/to/curaEngine/dir/",
-		"config": "/default/path/to/your/curaEngine/config/file/"
+		"path": "/default/path/to/cura",
+		"config": "/default/path/to/your/cura/config.ini"
 	},
 	"events": {
 		"systemCommandTrigger": {

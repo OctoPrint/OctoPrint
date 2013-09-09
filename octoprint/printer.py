@@ -176,7 +176,12 @@ class Printer():
 			self._comm.sendCommand(command)
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
-		if self._comm is not None and (self._comm.isBusy() or self._comm.isStreaming()):
+
+		if not self._comm:
+			logging.info("No printer is connected, cannot load file")
+			return
+
+		if self._comm.isBusy() or self._comm.isStreaming():
 			return
 
 		self._printAfterSelect = printAfterSelect
