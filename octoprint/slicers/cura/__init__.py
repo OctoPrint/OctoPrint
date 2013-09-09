@@ -14,14 +14,15 @@ class CuraFactory(object):
 		:param path: :class: `str`
 		"""
 		if path:
-			return CuraEngine(path)
+			return Cura(path)
+		
 		current_settings = settings(init=True)
 		path = current_settings.get(["cura", "path"])
 
-		return CuraEngine(path)
+		return Cura(path)
 
 
-class CuraEngine(object):
+class Cura(object):
 
 	def  __init__(self, cura_path):
 

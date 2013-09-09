@@ -4,6 +4,9 @@ from mock import patch
 
 import logging
 
+from octoprint.filemanager.destinations import FileDestinations
+
+
 class FileManipulationTestCase(unittest.TestCase):
  
 	def setUp(self):
@@ -22,7 +25,7 @@ class FileManipulationTestCase(unittest.TestCase):
 
 		logging.info("REMOVED %s filenames" % str(len(self.filenames)))
 
-	@patch('octoprint.cura.CuraEngine.process_file')
+	@patch('octoprint.slicers.cura.Cura.process_file')
 	def test_add_stl_file(self, process):
 
 		fake = Mock()
@@ -30,11 +33,9 @@ class FileManipulationTestCase(unittest.TestCase):
 		self.filenames.append(fake.filename)
 		fake.__getitem__ = "SOMETHING"
 
-		result = self.manager.addFile(fake)
+		result = self.manager.addFile(fake, FileDestinations.LOCAL)
 
 		logging.info("RESULT:%s" % str(result))
-
-		self.assertIsNone(result)
 
 		self.assertTrue(process.called)
 
@@ -44,7 +45,7 @@ class FileManipulationTestCase(unittest.TestCase):
 		self.filenames.append(fake.filename)
 		fake.__getitem__ = "SOMETHING"
 
-		result = self.manager.addFile(fake)
+		result = self.manager.addFile(fake, FileDestinations.LOCAL)
 
 		logging.info("RESULT:%s" % str(result))
 

@@ -3,8 +3,8 @@
 import unittest
 from mock import patch
 
-from octoprint.cura import CuraFactory
-from octoprint.cura import CuraEngine
+from octoprint.slicers.cura import CuraFactory
+from octoprint.slicers.cura import Cura
 
 class CuraFactoryTestCase(unittest.TestCase):
 
@@ -17,9 +17,8 @@ class CuraFactoryTestCase(unittest.TestCase):
 		self.assertEqual(fake_path, result.cura_path)
 
 
-	@patch('octoprint.cura.parser.process_profile_ini')
 	@patch('threading.Thread')
-	def test_cura_engine_process_file(self, thread, process):
+	def test_cura_engine_process_file(self, thread):
 		path = 'rosshendrickson/workspaces/opensource/CuraEngine/'
 		
 		cura = CuraFactory.create_slicer(path)
