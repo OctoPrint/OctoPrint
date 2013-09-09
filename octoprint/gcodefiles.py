@@ -129,23 +129,24 @@ class GcodeManager:
 		if not file or not destination:
 			return None, True
 
-		local = True if destination == FileDestinations.LOCAL else False
+		curaEnabled = self._settings.getBoolean(["cura", "enabled"])
+		filename = file.filename
 
-		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+		absolutePath = self.getAbsolutePath(filename, mustExist=False)
+		gcode = isGcodeFileName(filename)
 
-		if absolutePath is None:
+		if absolutePath is None or (not curaEnabled and not gcode):
 			return None, True
 
 		file.save(absolutePath)
-		filename = file.filename
 
-		if isGcodeFileName(filename):
+		if gcode:
 			return self.processGcode(absolutePath), True
-
-		curaEnabled = self._settings.get(["cura", "enabled"])
-		if curaEnabled and isSTLFileName(filename) and local:
-			self.processStl(absolutePath)
-		return filename, False
+		else:
+			local = (destination == FileDestinations.LOCAL)
+			if curaEnabled and isSTLFileName(filename) and local:
+				self.processStl(absolutePath)
+			return filename, False
 
 
 	def getFutureFileName(self, file):
@@ -214,7 +215,7 @@ class GcodeManager:
 
 		if absolutePath is None:
 			return
-	
+
 		os.remove(absolutePath)
 		if os.path.exists(stlPath):
 			os.remove(stlPath)
@@ -455,7 +456,7 @@ class MetadataAnalyzer:
 
 	def _analyzeGcode(self, filename):
 		path = self._getPathCallback(filename)
-		if path is None:
+		if path is None or not os.path.exists(path):
 			return
 
 		self._currentFile = filename

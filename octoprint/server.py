@@ -406,7 +406,7 @@ def uploadGcodeFile():
 			currentSd = currentJob["sd"]
 
 		futureFilename = gcodeManager.getFutureFilename(file)
-		if futureFilename is None:
+		if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not util.isGcodeFileName(futureFilename)):
 			return make_response("Can not upload file %s, wrong format?" % file.filename, 400)
 
 		if futureFilename == currentFilename and sd == currentSd and printer.isPrinting() or printer.isPaused():

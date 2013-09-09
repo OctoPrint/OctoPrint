@@ -65,7 +65,7 @@ $(function() {
         function gcode_upload_fail(e, data) {
             $.pnotify({
                 title: "Upload failed",
-                text: "<p>Could not upload the file. Make sure it is a GCODE file and has one of the following extensions: .gcode, .gco</p><p>Server reported: <pre>" + data.jqXHR.responseText + "</pre></p>",
+                text: "<p>Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and Cura support is enabled and configured.</p><p>Server reported: <pre>" + data.jqXHR.responseText + "</pre></p>",
                 type: "error",
                 hide: false
             });
