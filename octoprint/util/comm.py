@@ -1137,26 +1137,28 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			line = line[0:line.find(";")]
 		line = line.strip()
 		if len(line) > 0:
-			(tempOffset, bedTempOffset) = self._offsetCallback()
-			if tempOffset != 0 or bedTempOffset != 0:
-				tempMatch = self._tempCommandPattern.match(line)
-				if tempMatch is not None:
-					if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
-						offset = tempOffset
-					elif tempMatch.group(1) == "140" or tempMatch.group(1) == "190":
-						offset = bedTempOffset
-					else:
-						offset = 0
+			if self._offsetCallback is not None:
+				(tempOffset, bedTempOffset) = self._offsetCallback()
+				if tempOffset != 0 or bedTempOffset != 0:
+					tempMatch = self._tempCommandPattern.match(line)
+					if tempMatch is not None:
+						if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
+							offset = tempOffset
+						elif tempMatch.group(1) == "140" or tempMatch.group(1) == "190":
+							offset = bedTempOffset
+						else:
+							offset = 0
 
-					try:
-						temp = float(tempMatch.group(2))
-						newTemp = temp + offset
-						line = line.replace("S" + tempMatch.group(2), "S%f" % newTemp)
-					except ValueError:
-						pass
+						try:
+							temp = float(tempMatch.group(2))
+							newTemp = temp + offset
+							line = line.replace("S" + tempMatch.group(2), "S%f" % newTemp)
+						except ValueError:
+							pass
 			return line
 		else:
 			return None
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
-	pass
+	def __init__(self, filename):
+		PrintingGcodeFileInformation.__init__(self, filename, None)
