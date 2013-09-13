@@ -645,6 +645,7 @@ def getSettings():
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
+                        "sdSmoothie": s.getBoolean(["feature","sdSmoothie"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"])
 		},
 		"serial": {
@@ -711,6 +712,7 @@ def setSettings():
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+                        if "sdSmoothie" in data["feature"].keys(): s.setBoolean(["feature", "sdSmoothie"], data["feature"]["sdSmoothie"])
 			if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 
 		if "serial" in data.keys():
