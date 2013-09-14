@@ -21,10 +21,19 @@ Please create all pull requests against the [devel branch](https://github.com/fo
 features and then merged against master when those features are deemed mature enough for general consumption. In case
 of bug fixes I'll take care to cherry pick them against master if the bugs they are fixing are critical.
 
+Install
+-------
+
+Should use a python virtualenv.
+
+    sudo apt-get install -y python2.7 python-dev python-pip python-virtualenv
+    cd <octoprint_dir>
+    virtualenv octoprint_env
+    source octoprint_env/bin/activate
+    pip install -r requirements.txt
+    
 Dependencies
 ------------
-
-    sudo apt-get install -y python2.7 python-dev python-pip
 
 OctoPrint depends on a couple of python modules to do its job. Those are listed in requirements.txt and can be
 installed using `pip`:
