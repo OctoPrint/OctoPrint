@@ -24,6 +24,8 @@ of bug fixes I'll take care to cherry pick them against master if the bugs they 
 Dependencies
 ------------
 
+    sudo apt-get install -y python2.7 python-dev python-pip
+
 OctoPrint depends on a couple of python modules to do its job. Those are listed in requirements.txt and can be
 installed using `pip`:
 
