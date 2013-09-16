@@ -1,2 +1,2 @@
-recursive-include octoprint/static *
-recursive-include octoprint/templates *
+recursive-include src/octoprint/static *
+recursive-include src/octoprint/templates *
