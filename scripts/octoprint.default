@@ -1,0 +1,19 @@
+# Configuration for /etc/init.d/octoprint
+
+# The init.d script will only run if this variable non-empty.
+OCTOPRINT_USER=pi
+
+# On what port to run daemon, default is 5000
+PORT=5000
+
+# Path to the OctoPrint executable, use this to override the default setting "/usr/bin/octoprint"
+#DAEMON=/path/to/octoprint/executable
+
+# What arguments to pass to octoprint, usually no need to touch this
+DAEMON_ARGS="--port=$PORT"
+
+# Umask of files octoprint generates, Change this to 000 if running octoprint as its own, separate user
+UMASK=022
+
+# Should we run at startup?
+START=yes
