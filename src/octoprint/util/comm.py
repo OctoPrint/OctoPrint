@@ -143,6 +143,7 @@ class MachineCom(object):
 
 		# SD status data
 		self._sdAvailable = False
+		self._sdSmoothie = settings().getBoolean(["feature", "sdSmoothie"])
 		self._sdFileList = False
 		self._sdFiles = []
 
@@ -448,7 +449,12 @@ class MachineCom(object):
 	def initSdCard(self):
 		if not self.isOperational():
 			return
-		self.sendCommand("M21")
+		if not self._sdSmoothie:
+			self.sendCommand("M21")
+		else:
+			self._sdAvailable = True
+			self.sendCommand("M20")
+			self._callback.mcSdStateChange(self._sdAvailable)
 
 	def releaseSdCard(self):
 		if not self.isOperational() or (self.isBusy() and self.isSdFileSelected()):
