@@ -59,6 +59,7 @@ default_settings = {
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
+                "sdSmoothie": False,
 		"swallowOkAfterResend": False
 	},
 	"folder": {
