@@ -171,8 +171,18 @@ class Printer():
 		"""
 		 Sends multiple gcode commands (provided as a list) to the printer.
 		"""
+		if self._comm is None:
+			return
+
 		for command in commands:
 			self._comm.sendCommand(command)
+
+	def setTemperatureOffset(self, extruder, bed):
+		if self._comm is None:
+			return
+
+		self._comm.setTemperatureOffset(extruder, bed)
+		self._stateMonitor.setTempOffsets(extruder, bed)
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
@@ -503,14 +513,22 @@ class Printer():
 		return currentData["job"]
 
 	def getCurrentTemperatures(self):
+		if self._comm is not None:
+			(tempOffset, bedTempOffset) = self._comm.getOffsets()
+		else:
+			tempOffset = 0
+			bedTempOffset = 0
+
 		return {
 			"extruder": {
 				"current": self._temp,
-				"target": self._targetTemp
+				"target": self._targetTemp,
+				"offset": tempOffset
 			},
 			"bed": {
 				"current": self._bedTemp,
-				"target": self._targetBedTemp
+				"target": self._targetBedTemp,
+				"offset": bedTempOffset
 			}
 		}
 
@@ -627,6 +645,9 @@ class StateMonitor(object):
 		self._currentZ = None
 		self._progress = None
 
+		self._tempOffset = 0
+		self._bedTempOffset = 0
+
 		self._changeEvent = threading.Event()
 
 		self._lastUpdate = time.time()
@@ -668,6 +689,13 @@ class StateMonitor(object):
 		self._progress = progress
 		self._changeEvent.set()
 
+	def setTempOffsets(self, tempOffset, bedTempOffset):
+		if tempOffset is not None:
+			self._tempOffset = tempOffset
+		if bedTempOffset is not None:
+			self._bedTempOffset = bedTempOffset
+		self._changeEvent.set()
+
 	def _work(self):
 		while True:
 			self._changeEvent.wait()
@@ -688,6 +716,7 @@ class StateMonitor(object):
 			"state": self._state,
 			"job": self._jobData,
 			"currentZ": self._currentZ,
-			"progress": self._progress
+			"progress": self._progress,
+			"offsets": (self._tempOffset, self._bedTempOffset)
 		}
 

@@ -104,3 +104,9 @@ def getFreeBytes(path):
 		st = os.statvfs(path)
 		return st.f_bavail * st.f_frsize
 
+
+def getRemoteAddress(request):
+	forwardedFor = request.headers.get("X-Forwarded-For", None)
+	if forwardedFor is not None:
+		return forwardedFor.split(",")[0]
+	return request.remote_addr

@@ -2,8 +2,8 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from werkzeug.utils import secure_filename
-import tornadio2
+from werkzeug.utils import secure_filename, redirect
+from sockjs.tornado import SockJSRouter, SockJSConnection
 from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app, session, abort, make_response
 from flask.ext.login import LoginManager, login_user, logout_user, login_required, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, Identity, identity_changed, AnonymousIdentity, identity_loaded, UserNeed
@@ -14,6 +14,7 @@ import os
 import threading
 import logging, logging.config
 import subprocess
+import netaddr
 
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings, valid_boolean_trues
@@ -33,6 +34,7 @@ app = Flask("octoprint")
 # In order that threads don't start too early when running as a Daemon
 printer = None
 timelapse = None
+debug = False
 
 gcodeManager = None
 userManager = None
@@ -45,9 +47,9 @@ user_permission = Permission(RoleNeed("user"))
 
 #~~ Printer state
 
-class PrinterStateConnection(tornadio2.SocketConnection):
-	def __init__(self, printer, gcodeManager, userManager, eventManager, session, endpoint=None):
-		tornadio2.SocketConnection.__init__(self, session, endpoint)
+class PrinterStateConnection(SockJSConnection):
+	def __init__(self, printer, gcodeManager, userManager, eventManager, session):
+		SockJSConnection.__init__(self, session)
 
 		self._logger = logging.getLogger(__name__)
 
@@ -63,20 +65,29 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 		self._userManager = userManager
 		self._eventManager = eventManager
 
+	def _getRemoteAddress(self, info):
+		forwardedFor = info.headers.get("X-Forwarded-For")
+		if forwardedFor is not None:
+			return forwardedFor.split(",")[0]
+		return info.ip
+
 	def on_open(self, info):
-		self._logger.info("New connection from client")
-		# Use of global here is smelly
+		self._logger.info("New connection from client: %s" % self._getRemoteAddress(info))
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
+		octoprint.timelapse.registerCallback(self)
 
 		self._eventManager.fire("ClientOpened")
 		self._eventManager.subscribe("MovieDone", self._onMovieDone)
 
+		global timelapse
+		octoprint.timelapse.notifyCallbacks(timelapse)
+
 	def on_close(self):
 		self._logger.info("Closed client connection")
-		# Use of global here is smelly
 		self._printer.unregisterCallback(self)
 		self._gcodeManager.unregisterCallback(self)
+		octoprint.timelapse.unregisterCallback(self)
 
 		self._eventManager.fire("ClientClosed")
 		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
@@ -103,16 +114,19 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 			"logs": logs,
 			"messages": messages
 		})
-		self.emit("current", data)
+		self._emit("current", data)
 
 	def sendHistoryData(self, data):
-		self.emit("history", data)
+		self._emit("history", data)
 
 	def sendUpdateTrigger(self, type):
-		self.emit("updateTrigger", type)
+		self._emit("updateTrigger", type)
 
 	def sendFeedbackCommandOutput(self, name, output):
-		self.emit("feedbackCommandOutput", {"name": name, "output": output})
+		self._emit("feedbackCommandOutput", {"name": name, "output": output})
+
+	def sendTimelapseConfig(self, timelapseConfig):
+		self._emit("timelapse", timelapseConfig)
 
 	def addLog(self, data):
 		with self._logBacklogMutex:
@@ -128,6 +142,9 @@ class PrinterStateConnection(tornadio2.SocketConnection):
 
 	def _onMovieDone(self, event, payload):
 		self.sendUpdateTrigger("timelapseFiles")
+
+	def _emit(self, type, payload):
+		self.send({type: payload})
 
 def restricted_access(func):
 	"""
@@ -160,16 +177,20 @@ def index():
 	except:
 		pass
 
+	global debug
+
 	return render_template(
 		"index.jinja2",
 		ajaxBaseUrl=BASEURL,
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
+		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
+		debug=debug,
 		gitBranch=branch,
 		gitCommit=commit
 	)
@@ -256,6 +277,24 @@ def setTargetTemperature():
 		bedTemp = request.values["bedTemp"]
 		printer.command("M140 S" + bedTemp)
 
+	if "tempOffset" in request.values.keys():
+		# set target temperature offset
+		try:
+			tempOffset = float(request.values["tempOffset"])
+			if tempOffset >= -50 and tempOffset <= 50:
+				printer.setTemperatureOffset(tempOffset, None)
+		except:
+			pass
+
+	if "bedTempOffset" in request.values.keys():
+		# set target bed temperature offset
+		try:
+			bedTempOffset = float(request.values["bedTempOffset"])
+			if bedTempOffset >= -50 and bedTempOffset <= 50:
+				printer.setTemperatureOffset(None, bedTempOffset)
+		except:
+			pass
+
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "control/jog", methods=["POST"])
@@ -333,7 +372,7 @@ def readGcodeFiles():
 
 @app.route(BASEURL + "gcodefiles/<path:filename>", methods=["GET"])
 def readGcodeFile(filename):
-	return send_from_directory(settings().getBaseFolder("uploads"), filename, as_attachment=True)
+	return redirectToTornado(request, "/downloads/gcode/" + filename)
 
 @app.route(BASEURL + "gcodefiles/upload", methods=["POST"])
 @restricted_access
@@ -492,7 +531,7 @@ def getTimelapseData():
 
 	files = octoprint.timelapse.getFinishedTimelapses()
 	for file in files:
-		file["url"] = url_for("downloadTimelapse", filename=file["name"])
+		file["url"] = "/downloads/timelapse/" + file["name"]
 
 	return jsonify({
 		"type": type,
@@ -502,8 +541,7 @@ def getTimelapseData():
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["GET"])
 def downloadTimelapse(filename):
-	if util.isAllowedFile(filename, set(["mpg"])):
-		return send_from_directory(settings().getBaseFolder("timelapse"), filename, as_attachment=True)
+	return redirectToTornado(request, "/downloads/timelapse/" + filename)
 
 @app.route(BASEURL + "timelapse/<filename>", methods=["DELETE"])
 @restricted_access
@@ -517,27 +555,55 @@ def deleteTimelapse(filename):
 @app.route(BASEURL + "timelapse", methods=["POST"])
 @restricted_access
 def setTimelapseConfig():
-	global timelapse
-
 	if request.values.has_key("type"):
-		type = request.values["type"]
-		if type in ["zchange", "timed"]:
-			# valid timelapse type, check if there is an old one we need to stop first
-			if timelapse is not None:
-				timelapse.unload()
-			timelapse = None
-		if "zchange" == type:
-			timelapse = octoprint.timelapse.ZTimelapse()
-		elif "timed" == type:
+		config = {
+			"type": request.values["type"],
+			"options": {}
+		}
+
+		if request.values.has_key("interval"):
 			interval = 10
-			if request.values.has_key("interval"):
-				try:
-					interval = int(request.values["interval"])
-				except ValueError:
-					pass
-			timelapse = octoprint.timelapse.TimedTimelapse(interval)
+			try:
+				interval = int(request.values["interval"])
+			except ValueError:
+				pass
+
+			config["options"] = {
+				"interval": interval
+			}
+
+		if admin_permission.can() and request.values.has_key("save") and request.values["save"] in valid_boolean_trues:
+			_configureTimelapse(config, True)
+		else:
+			_configureTimelapse(config)
 
 	return getTimelapseData()
+
+def _configureTimelapse(config=None, persist=False):
+	global timelapse
+
+	if config is None:
+		config = settings().get(["webcam", "timelapse"])
+
+	if timelapse is not None:
+		timelapse.unload()
+
+	type = config["type"]
+	if type is None or "off" == type:
+		timelapse = None
+	elif "zchange" == type:
+		timelapse = octoprint.timelapse.ZTimelapse()
+	elif "timed" == type:
+		interval = 10
+		if "options" in config and "interval" in config["options"]:
+			interval = config["options"]["interval"]
+		timelapse = octoprint.timelapse.TimedTimelapse(interval)
+
+	octoprint.timelapse.notifyCallbacks(timelapse)
+
+	if persist:
+		settings().set(["webcam", "timelapse"], config)
+		settings().save()
 
 #~~ settings
 
@@ -575,9 +641,11 @@ def getSettings():
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
+			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
-			"sdSupport": s.getBoolean(["feature", "sdSupport"])
+			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
+			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -602,7 +670,8 @@ def getSettings():
 		"system": {
 			"actions": s.get(["system", "actions"]),
 			"events": s.get(["system", "events"])
-		} 
+		},
+		"terminalFilters": s.get(["terminalFilters"])
 	})
 
 @app.route(BASEURL + "settings", methods=["POST"])
@@ -638,9 +707,11 @@ def setSettings():
 
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
+			if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+			if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 
 		if "serial" in data.keys():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
@@ -669,6 +740,9 @@ def setSettings():
 
 		if "temperature" in data.keys():
 			if "profiles" in data["temperature"].keys(): s.set(["temperature", "profiles"], data["temperature"]["profiles"])
+
+		if "terminalFilters" in data.keys():
+			s.set(["terminalFilters"], data["terminalFilters"])
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
@@ -857,6 +931,26 @@ def login():
 		if user is not None and not user.is_anonymous():
 			identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 			return jsonify(user.asDict())
+		elif settings().getBoolean(["accessControl", "autologinLocal"]) \
+				and settings().get(["accessControl", "autologinAs"]) is not None \
+				and settings().get(["accessControl", "localNetworks"]) is not None:
+
+			autologinAs = settings().get(["accessControl", "autologinAs"])
+			localNetworks = netaddr.IPSet([])
+			for ip in settings().get(["accessControl", "localNetworks"]):
+				localNetworks.add(ip)
+
+			try:
+				remoteAddr = util.getRemoteAddress(request)
+				if netaddr.IPAddress(remoteAddr) in localNetworks:
+					user = userManager.findUser(autologinAs)
+					if user is not None:
+						login_user(user)
+						identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
+						return jsonify(user.asDict())
+			except:
+				logger = logging.getLogger(__name__)
+				logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 	return jsonify(SUCCESS)
 
 @app.route(BASEURL + "logout", methods=["POST"])
@@ -888,6 +982,93 @@ def load_user(id):
 		return userManager.findUser(id)
 	return users.DummyUser()
 
+def redirectToTornado(request, target):
+	requestUrl = request.url
+	appBaseUrl = requestUrl[:requestUrl.find(BASEURL)]
+
+	redirectUrl = appBaseUrl + target
+	if "?" in requestUrl:
+		fragment = requestUrl[requestUrl.rfind("?"):]
+		redirectUrl += fragment
+	return redirect(redirectUrl)
+
+#~~ customized large response handler
+
+from tornado.web import StaticFileHandler, HTTPError
+import datetime, stat, mimetypes, email, time
+
+class LargeResponseHandler(StaticFileHandler):
+
+	CHUNK_SIZE = 16 * 1024
+
+	def initialize(self, path, default_filename=None, as_attachment=False):
+		StaticFileHandler.initialize(self, path, default_filename)
+		self._as_attachment = as_attachment
+
+	def get(self, path, include_body=True):
+		path = self.parse_url_path(path)
+		abspath = os.path.abspath(os.path.join(self.root, path))
+		# os.path.abspath strips a trailing /
+		# it needs to be temporarily added back for requests to root/
+		if not (abspath + os.path.sep).startswith(self.root):
+			raise HTTPError(403, "%s is not in root static directory", path)
+		if os.path.isdir(abspath) and self.default_filename is not None:
+			# need to look at the request.path here for when path is empty
+			# but there is some prefix to the path that was already
+			# trimmed by the routing
+			if not self.request.path.endswith("/"):
+				self.redirect(self.request.path + "/")
+				return
+			abspath = os.path.join(abspath, self.default_filename)
+		if not os.path.exists(abspath):
+			raise HTTPError(404)
+		if not os.path.isfile(abspath):
+			raise HTTPError(403, "%s is not a file", path)
+
+		stat_result = os.stat(abspath)
+		modified = datetime.datetime.fromtimestamp(stat_result[stat.ST_MTIME])
+
+		self.set_header("Last-Modified", modified)
+
+		mime_type, encoding = mimetypes.guess_type(abspath)
+		if mime_type:
+			self.set_header("Content-Type", mime_type)
+
+		cache_time = self.get_cache_time(path, modified, mime_type)
+
+		if cache_time > 0:
+			self.set_header("Expires", datetime.datetime.utcnow() +
+									   datetime.timedelta(seconds=cache_time))
+			self.set_header("Cache-Control", "max-age=" + str(cache_time))
+
+		self.set_extra_headers(path)
+
+		# Check the If-Modified-Since, and don't send the result if the
+		# content has not been modified
+		ims_value = self.request.headers.get("If-Modified-Since")
+		if ims_value is not None:
+			date_tuple = email.utils.parsedate(ims_value)
+			if_since = datetime.datetime.fromtimestamp(time.mktime(date_tuple))
+			if if_since >= modified:
+				self.set_status(304)
+				return
+
+		if not include_body:
+			assert self.request.method == "HEAD"
+			self.set_header("Content-Length", stat_result[stat.ST_SIZE])
+		else:
+			with open(abspath, "rb") as file:
+				while True:
+					data = file.read(LargeResponseHandler.CHUNK_SIZE)
+					if not data:
+						break
+					self.write(data)
+					self.flush()
+
+	def set_extra_headers(self, path):
+		if self._as_attachment:
+			self.set_header("Content-Disposition", "attachment")
+
 #~~ startup code
 class Server():
 	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False):
@@ -909,11 +1090,14 @@ class Server():
 		global userManager
 		global eventManager
 		global loginManager
+		global debug
 		
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
-		from tornado.web import Application, FallbackHandler
+		from tornado.web import Application, FallbackHandler, StaticFileHandler
+
+		debug = self._debug
 
 		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
 		self._initSettings(self._configfile, self._basedir)
@@ -925,6 +1109,9 @@ class Server():
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
+
+		# configure timelapse
+		_configureTimelapse()
 
 		# setup system and gcode command triggers
 		events.SystemCommandTrigger(printer)
@@ -957,10 +1144,12 @@ class Server():
 		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
-		self._router = tornadio2.TornadioRouter(self._createSocketConnection)
+		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
 		self._tornado_app = Application(self._router.urls + [
-			(".*", FallbackHandler, {"fallback": WSGIContainer(app)})
+			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),
+			(r"/downloads/gcode/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
+			(r".*", FallbackHandler, {"fallback": WSGIContainer(app)})
 		])
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
@@ -971,11 +1160,15 @@ class Server():
 			connectionOptions = getConnectionOptions()
 			if port in connectionOptions["ports"]:
 				printer.connect(port, baudrate)
-		IOLoop.instance().start()
+		try:
+			IOLoop.instance().start()
+		except:
+			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
+			logger.exception("Stacktrace follows:")
 
-	def _createSocketConnection(self, session, endpoint=None):
+	def _createSocketConnection(self, session):
 		global printer, gcodeManager, userManager, eventManager
-		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session, endpoint)
+		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session)
 
 	def _checkForRoot(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
