@@ -604,8 +604,9 @@ class MachineCom(object):
 					self._currentFile = PrintingSdFileInformation(match.group(1), int(match.group(2)))
 				elif 'File selected' in line:
 					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
-					self._callback.mcFileSelected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
-					eventManager().fire("FileSelected", self._currentFile.getFilename())
+					if self._currentFile is not None:
+						self._callback.mcFileSelected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
+						eventManager().fire("FileSelected", self._currentFile.getFilename())
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 					self._printSection = "CUSTOM"
