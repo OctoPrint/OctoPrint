@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>OctoPrint</title>
+
+		<meta name="description" content="A responsive web interface for controlling 3D printers">
+		<meta name="author" content="Gina Häußge">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/octoprint.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Font Awesome -->
+		<link href="lib/css/font-awesome.min.css" rel="stylesheet">
+
+		<!-- If the query includes 'print-pdf', use the PDF print sheet -->
+		<script>
+			document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+		</script>
+ 
+		<!--[if lt IE 9]>
+			<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+		<!--[if IE 7]>
+			<link rel="stylesheet" href="lib/css/font-awesome-ie7.min.css">
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>OctoPrint</h1>
+					<h3>3D printing unchained</h3>
+					<p>
+						<img class="nobox" src="img/logo.png">
+					</p>
+					<p>
+						<small>Created by <a href="http://foosel.org/+">Gina Häußge</a> / <a href="http://twitter.com/foosel">@foosel</a></small>
+					</p>
+				</section>
+
+				<section>
+					<h3>Who am I?</h3>
+					<ul>
+						<li>Software engineer by day</li>
+						<li>Passionate code monkey by night</li>
+						<li>Proud owner of a 3D printer since late November 2012</li>
+						<li>Developer of OctoPrint since Christmas 2012 (that's what holidays are for, right?)
+					</ul>
+				</section>
+
+				<section>
+					<section>
+						<h2>Why another host software?</h2>
+					</section>
+
+					<section>
+						<h3>The Problem</h3>
+						<ul>
+							<li>PLA/ABS/yourFavoritePolymer fumes</li>
+							<li>Stepper motors can produce quite the racket</li>
+							<li>Takes up a lot of space in the office (printer, cable salad, ...)</li>
+							<li>Takes up the office computer (or the laptop)</li>
+						</ul>
+					</section>
+
+					<section>
+						<h3>The Solution</h3>
+						<p>
+							Just put the printer somewhere it doesn't disturb anyone, like the <strong>shed</strong>, the <strong>basement</strong> or 
+							a <strong>spare bathroom</strong>.
+						</p>
+						<blockquote class="fragment">
+							But actually watching it print is so mesmerizing and calming, and I also want to make sure nothing goes wrong!
+						</blockquote>
+					</section>
+
+					<section>
+						<h2>And thus the idea of OctoPrint was born!</h2>
+						<img src="img/octoprint-baby.png">
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>What was the vision?</h2>
+					</section>
+
+					<section>
+						<h3>Run on a Wifi-enabled Raspberry Pi</h3>
+						<p>
+							So I can just put it somewhere within my Wifi's range and be able to access it without spending too much money on this convenience.
+						</p>
+						<img src="img/raspberry_pi.png">
+					</section>
+
+					<section>
+						<h3>Provide feedback regarding the current printer state (temperature, print job, etc)</h3>
+						<p>
+							So I can always be sure that it's doing what it's supposed to be doing.
+						</p>
+					</section>
+
+					<section>
+						<h3>Include a webcam feed</h3>
+						<p>
+							So I can still watch the printer do its magic.
+						</p>
+					</section>
+
+					<section>
+						<h2>And do all that in the browser!</h2>
+						<p>
+							So that I can quickly check up on it from any of my devices without the need to install anything.
+						</p>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h3>What's in the package?</h3>
+						<ul>
+							<li><strong>Uploading and managing</strong> GCODE files on the host or the SD card</li>
+							<li><strong>Printing</strong> GCODE files stored on the host or the SD, <strong>pausing</strong> and <strong>cancelling</strong>
+							running print jobs</li>
+							<li><strong>Monitoring</strong> the current progress, temperature and printer communication and <strong>visualizing</strong>
+							the object being printed</li>
+						</ul>
+					</section>
+
+					<section>
+						<ul>
+							<li><strong>Watching</strong> the print via the integrated webcam feed and creating <strong>timelapse movies</strong> of the prints</li>
+							<li><strong>Remote controlling</strong> the printer functions</li>
+							<li><strong>Customizing</strong> the available controls</li>
+						</ul>
+					</section>
+
+					<section>
+						<ul>
+							<li><strong>Getting notifications</strong> and <strong>triggering actions</strong> based on certain events, like a print being done</li>
+							<li><strong>Access control</strong> and <strong>user management</strong> so that you can make your printer accessible over the internet (also great for shared printers e.g. in hackerspaces)</li>
+						</ul>
+
+						<aside class="notes">
+							<p>
+								Examples for custom controls:
+								<ul>
+									<li>Calibration controls</li>
+									<li>EEPROM configuration</li>
+								</ul>
+							</p>
+							<p>
+								<ul>
+									<li>Send an email when the print is done</li>
+									<li>automatically upload a timelapse when it's done rendering</li>
+									<li>send a notification to your mobile phone</li>
+								</ul>
+							</p>
+						</aside>
+					</section>
+
+					<section>
+						<p>
+							All this in a <strong>responsive</strong> web interface using <strong>modern web technologies</strong> that ensure an experience
+							<strong>just like on the desktop</strong>.
+						</p>
+						<img src="img/html5.png">
+					</section>
+				</section>
+
+				<section>
+					<h3>Demo time!</h3>
+
+					<img src="img/screenie_application.png">
+				</section>
+
+				<section>
+					<section>
+						<h2>What's to come?</h2>
+					</section>
+
+					<section>
+						<ul>
+							<li><strong>Slicing</strong> STL files to GCODE (using Cura SteamEngine, big kudos to <a href="https://plus.google.com/u/0/112236532345781660620/posts">+Ross Hendrickson</a>)</li>
+							<li>An interface <strong>optimized for mobile devices</strong></li>
+							<li><strong>Plugin system</strong> for adding more specialized functionality to the core application</li>
+						</ul>
+					</section>
+
+					<section>
+						<h3>Google Glass integration</h3>
+
+						<img src="img/google_glass.png">
+
+						(big kudos to <a href="https://plus.google.com/u/0/112290466286434001427/posts">+Adam Bryam</a>)
+					</section>
+
+					<section>
+						<p>
+							... and much <a href="https://github.com/foosel/OctoPrint/issues?labels=type%3Afeature+request&state=open">more</a></li>
+						</p>
+
+						<img src="img/feature_requests.png">
+
+						<p>
+							<small>Patches welcome! :)</small>
+						</p>
+					</section>
+				</section>
+
+				<section>
+					<h3>Want to try it?</h3>
+					<p>
+						With <strong>OctoPi</strong> there's a <strong>dedicated distribution for the Raspberry Pi</strong>, created by 
+						<a href="https://plus.google.com/u/0/100346828637989638992/posts">+Guy Sheffer</a>:
+					</p>
+					<p><a href="https://github.com/guysoft/OctoPi">github.com/guysoft/OctoPi</a></p>
+					<p>Or you can always <strong>install from source</strong>:</p>
+					<p><a href="https://www.octoprint.org/download/">octoprint.org/download</a>
+				</section>
+
+				<section>
+					<h2>Questions?</h2>
+					<p>Website:<br><a href="http://octoprint.org">octoprint.org</a></p>
+					<p>Github (Source, Bugtracker, Wiki):<br><a href="https://github.com/foosel/OctoPrint">github.com/foosel/OctoPrint</a>
+				</section>
+
+				<section>
+					<section>
+						<h2>Backup</h2>
+					</section>
+				</section>
+
+				<section>
+					<section><h3>What you can do with events...</h3></section>
+
+					<section>
+						<h3>Automatically upload timelapses to Youtube</h3>
+
+						<pre><code data-trim>
+events:
+  systemCommandTrigger:
+  - event: MovieDone
+    command: 'youtube-upload --email="&lt;yourUser&gt;" 
+      --password="&lt;yourPassword&gt;" 
+      --title="Timelapse: %(filename)s" 
+      --description="Timelapse of %(filename)s, printed and recorded 
+        via OctoPrint" 
+      --category="Tech" 
+      --keywords=OctoPrint "%(data)s"'
+						</code></pre>
+
+						<p>(Using <a href="https://code.google.com/p/youtube-upload/">youtube-upload</a>)</p>
+					</section>
+
+					<section>
+						<h3>Push notifications for Android and iOS</h3>
+
+						<pre><code data-trim>
+- event: PrintDone
+  command:  curl -s 
+    -F "token=&lt;yourApiToken&gt;" 
+    -F "user=&lt;yourUserToken&gt;" 
+    -F "message=Completed %(filename)s" 
+    -F "title=OctoPrint" 
+    https://api.pushover.net/1/messages.json
+						</code></pre>
+
+						<p>(Using <a href="https://pushover.net/">Pushover</a>)
+					</section>
+
+					<section>
+						<h3>Send a notification to Pebble</h3>
+
+						<pre><code data-trim>
+- event: PrintDone
+  command: curl -s
+    -F "userId=&lt;yourUserId&gt;"
+    -F "userToken=&lt;yourUserToken&gt;"
+    -F "title=OctoPrint"
+    -F "body=Print of %(filename)s completed"
+    -F "type=notification"
+    https://ofkorth.net/pebble/send
+						</code></pre>
+
+						<p>(Using <a href="https://play.google.com/store/apps/details?id=com.lukekorth.httpebble">Pebble Connect with httpebble</a>)
+					</section>
+				</section>
+
+				<section>
+					<h3>Under the hood</h3>
+					<ul>
+						<li>Written in Python (2.7) and loads of Javascript</li>
+						<li>Communication to the backend via AJAX and Sock.js</li>
+						<li>REST API is a work in progress</li>
+					</ul>
+				</section>
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'linear', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
