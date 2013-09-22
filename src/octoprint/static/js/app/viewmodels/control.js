@@ -80,6 +80,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
             distance = $('#jog_distance button.active').data('distance');
+
+        if (axis == "z" && self.settings.feature_invertZ()) {
+            multiplier *= -1;
+        }
+
         $.ajax({
             url: AJAX_BASEURL + "control/jog",
             type: "POST",
