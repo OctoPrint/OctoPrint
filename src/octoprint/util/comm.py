@@ -19,7 +19,7 @@ from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
 from octoprint.events import eventManager
-from octoprint.util import isDevVersion, getExceptionString, getNewTimeout
+from octoprint.util import getExceptionString, getNewTimeout
 from octoprint.util.virtual import VirtualPrinter
 
 try:
@@ -574,7 +574,7 @@ class MachineCom(object):
 							self._heatupWaitStartTime = t
 
 				##~~ SD Card handling
-				elif 'SD init fail' in line:
+				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
 					self._sdAvailable = False
 					self._sdFiles = []
 					self._callback.mcSdStateChange(self._sdAvailable)
