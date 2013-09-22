@@ -494,7 +494,10 @@ class Printer():
 	def streamSdFile(self, filename, path):
 		if not self._comm or self._comm.isBusy():
 			return
-		self._comm.startFileTransfer(path, filename[:8].lower() + ".gco")
+		sdFilename = filename[:filename.find(".")].lower()
+		if len(sdFilename) > 8:
+			sdFilename = sdFilename[:8]
+		self._comm.startFileTransfer(path, sdFilename + ".gco")
 
 	def deleteSdFile(self, filename):
 		if not self._comm:
