@@ -76,6 +76,7 @@ class VirtualPrinter():
 				return
 			else:
 				self.lastN = linenumber
+			data = data.split(None, 1)[1].strip()
 
 		data += "\n"
 

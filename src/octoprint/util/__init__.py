@@ -6,6 +6,7 @@ import os
 import traceback
 import sys
 import time
+import re
 
 from octoprint.settings import settings
 
@@ -151,3 +152,30 @@ def getRemoteAddress(request):
 	if forwardedFor is not None:
 		return forwardedFor.split(",")[0]
 	return request.remote_addr
+
+
+def getDosFilename(input, existingFilenames, extension=None):
+	if input is None:
+		return None
+
+	if extension is None:
+		extension = "gco"
+
+	filename, ext = input.rsplit(".", 1)
+	return findCollisionfreeName(filename, extension, existingFilenames)
+
+
+def findCollisionfreeName(input, extension, existingFilenames):
+	filename = re.sub(r"\s+", "_", input.lower().translate(None, ".\"/\\[]:;=,"))
+
+	counter = 1
+	power = 1
+	while counter < (10 * power):
+		result = filename[:(6 - power + 1)] + "~" + str(counter) + "." + extension
+		if result not in existingFilenames:
+			return result
+		counter += 1
+		if counter == 10 * power:
+			power += 1
+
+	raise ValueError("Can't create a collision free filename")

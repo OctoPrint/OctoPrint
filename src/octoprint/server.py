@@ -471,7 +471,7 @@ def deleteGcodeFile():
 			printer.unselectFile()
 
 		if not (currentFilename == filename and currentSd == sd and (printer.isPrinting() or printer.isPaused())):
-			if currentSd:
+			if sd:
 				printer.deleteSdFile(filename)
 			else:
 				gcodeManager.removeFile(filename)
@@ -665,6 +665,7 @@ def getSettings():
 		"feature": {
 			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
+			"invertZ": s.getBoolean(["feature", "invertZ"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
@@ -736,6 +737,7 @@ def setSettings():
 		if "feature" in data.keys():
 			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
 			if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
+			if "invertZ" in data["feature"].keys(): s.setBoolean(["feature", "invertZ"], data["feature"]["invertZ"])
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])

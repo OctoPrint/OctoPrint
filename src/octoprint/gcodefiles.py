@@ -17,7 +17,7 @@ from octoprint.events import eventManager
 
 from werkzeug.utils import secure_filename
 
-SUPPORTED_EXTENSIONS=["gcode", "gco", "stl"]
+SUPPORTED_EXTENSIONS=["gcode", "gco", "stl", "g"]
 
 class GcodeManager:
 	def __init__(self):
