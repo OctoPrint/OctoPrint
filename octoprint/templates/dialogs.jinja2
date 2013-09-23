@@ -17,13 +17,13 @@
     </div>
 </div>
 
-<div id="drop_overlay" data-bind="visible: isUser()">
+<div id="drop_overlay" data-bind="visible: loginState.isUser()">
     <div id="drop_overlay_background"></div>
     <div id="drop_overlay_wrapper">
         {% if enableSdSupport %}
             <div class="dropzone" id="drop_locally"><span class="centered"><i class="icon-upload-alt"></i><br>Upload locally</span></div>
             <div class="dropzone_background" id="drop_locally_background"></div>
-            <div class="dropzone" id="drop_sd"><span class="centered"><i class="icon-upload-alt"></i><br>Upload to SD</span></div>
+            <div class="dropzone" id="drop_sd"><span class="centered"><i class="icon-upload-alt"></i><br>Upload to SD<br><small data-bind="visible: !isSdReady()">(SD not initialized)</small></span></div>
             <div class="dropzone_background" id="drop_sd_background"></div>
         {% else %}
             <div class="dropzone" id="drop"><span class="centered"><i class="icon-upload-alt"></i><br>Upload</span></div>

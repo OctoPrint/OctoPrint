@@ -69,6 +69,7 @@ class Printer():
 		# sd handling
 		self._sdPrinting = False
 		self._sdStreaming = False
+		self._sdFilelistAvailable = threading.Event()
 
 		self._selectedFile = None
 
@@ -432,6 +433,7 @@ class Printer():
 
 	def mcSdFiles(self, files):
 		self._sendTriggerUpdateCallbacks("gcodeFiles")
+		self._sdFilelistAvailable.set()
 
 	def mcFileSelected(self, filename, filesize, sd):
 		self._setJobData(filename, filesize, sd)
@@ -465,34 +467,47 @@ class Printer():
 	#~~ sd file handling
 
 	def getSdFiles(self):
-		if self._comm is None:
-			return
+		if self._comm is None or not self._comm.isSdReady():
+			return []
 		return self._comm.getSdFiles()
 
 	def addSdFile(self, filename, path):
-		if not self._comm or self._comm.isBusy():
+		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			return
-		self._comm.startFileTransfer(path, filename[:8].lower() + ".gco")
+
+		self.refreshSdFiles(blocking=True)
+		existingSdFiles = self._comm.getSdFiles()
+
+		sdFilename = util.getDosFilename(filename, existingSdFiles)
+		self._comm.startFileTransfer(path, sdFilename)
 
 	def deleteSdFile(self, filename):
-		if not self._comm:
+		if not self._comm or not self._comm.isSdReady():
 			return
 		self._comm.deleteSdFile(filename)
 
 	def initSdCard(self):
-		if not self._comm:
+		if not self._comm or self._comm.isSdReady():
 			return
 		self._comm.initSdCard()
 
 	def releaseSdCard(self):
-		if not self._comm:
+		if not self._comm or not self._comm.isSdReady():
 			return
 		self._comm.releaseSdCard()
 
-	def refreshSdFiles(self):
-		if not self._comm:
+	def refreshSdFiles(self, blocking=False):
+		"""
+		Refreshs the list of file stored on the SD card attached to printer (if available and printer communication
+		available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
+		received (and can be accessed via self._comm.getSdFiles()). Defaults to a asynchronous operation.
+		"""
+		if not self._comm or not self._comm.isSdReady():
 			return
+		self._sdFilelistAvailable.clear()
 		self._comm.refreshSdFiles()
+		if blocking:
+			self._sdFilelistAvailable.wait(10000)
 
 	#~~ state reports
 
