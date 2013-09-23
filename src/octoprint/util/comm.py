@@ -611,6 +611,7 @@ class MachineCom(object):
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 					self._printSection = "CUSTOM"
 					self._changeState(self.STATE_PRINTING)
+					line = "ok"
 				elif 'Done printing file' in line:
 					# printer is reporting file finished printing
 					self._sdFilePos = 0
@@ -645,7 +646,7 @@ class MachineCom(object):
 							pass
 
 				##~~ Parsing for pause triggers
-				if pauseTriggers:
+				if pauseTriggers and not self.isStreaming():
 					if "enable" in pauseTriggers.keys() and pauseTriggers["enable"].search(line) is not None:
 						self.setPause(True)
 					elif "disable" in pauseTriggers.keys() and pauseTriggers["disable"].search(line) is not None:
@@ -804,6 +805,7 @@ class MachineCom(object):
 					self._callback.mcFileTransferDone()
 					self._changeState(self.STATE_OPERATIONAL)
 					eventManager().fire("TransferDone", filename)
+					self.refreshSdFiles()
 				else:
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)

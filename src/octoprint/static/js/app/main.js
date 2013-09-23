@@ -84,23 +84,29 @@ $(function() {
             }
         }
 
-        var localTarget;
-        if (CONFIG_SD_SUPPORT) {
-            localTarget = $("#drop_locally");
-        } else {
-            localTarget = $("#drop");
+        function enable_local_dropzone() {
+            $("#gcode_upload").fileupload({
+                dataType: "json",
+                dropZone: localTarget,
+                formData: {target: "local"},
+                done: gcode_upload_done,
+                fail: gcode_upload_fail,
+                progressall: gcode_upload_progress
+            });
         }
 
-        $("#gcode_upload").fileupload({
-            dataType: "json",
-            dropZone: localTarget,
-            formData: {target: "local"},
-            done: gcode_upload_done,
-            fail: gcode_upload_fail,
-            progressall: gcode_upload_progress
-        });
+        function disable_local_dropzone() {
+            $("#gcode_upload").fileupload({
+                dataType: "json",
+                dropZone: null,
+                formData: {target: "local"},
+                done: gcode_upload_done,
+                fail: gcode_upload_fail,
+                progressall: gcode_upload_progress
+            });
+        }
 
-        if (CONFIG_SD_SUPPORT) {
+        function enable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
                 dataType: "json",
                 dropZone: $("#drop_sd"),
@@ -109,6 +115,62 @@ $(function() {
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
             });
+        }
+
+        function disable_sd_dropzone() {
+            $("#gcode_upload_sd").fileupload({
+                dataType: "json",
+                dropZone: null,
+                formData: {target: "sd"},
+                done: gcode_upload_done,
+                fail: gcode_upload_fail,
+                progressall: gcode_upload_progress
+            });
+        }
+
+        var localTarget;
+        if (CONFIG_SD_SUPPORT) {
+            localTarget = $("#drop_locally");
+        } else {
+            localTarget = $("#drop");
+        }
+
+        loginStateViewModel.isUser.subscribe(function(newValue) {
+            if (newValue === true) {
+                enable_local_dropzone();
+            } else {
+                disable_local_dropzone();
+            }
+        });
+
+        if (loginStateViewModel.isUser()) {
+            enable_local_dropzone();
+        } else {
+            disable_local_dropzone();
+        }
+
+        if (CONFIG_SD_SUPPORT) {
+            printerStateViewModel.isSdReady.subscribe(function(newValue) {
+                if (newValue === true && loginStateViewModel.isUser()) {
+                    enable_sd_dropzone();
+                } else {
+                    disable_sd_dropzone();
+                }
+            });
+
+            loginStateViewModel.isUser.subscribe(function(newValue) {
+                if (newValue === true && printerStateViewModel.isSdReady()) {
+                    enable_sd_dropzone();
+                } else {
+                    disable_sd_dropzone();
+                }
+            });
+
+            if (printerStateViewModel.isSdReady() && loginStateViewModel.isUser()) {
+                enable_sd_dropzone();
+            } else {
+                disable_sd_dropzone();
+            }
         }
 
         $(document).bind("dragover", function (e) {
@@ -148,7 +210,7 @@ $(function() {
             if (foundLocal) {
                 dropZoneLocalBackground.addClass("hover");
                 dropZoneSdBackground.removeClass("hover");
-            } else if (foundSd) {
+            } else if (foundSd && printerStateViewModel.isSdReady()) {
                 dropZoneSdBackground.addClass("hover");
                 dropZoneLocalBackground.removeClass("hover");
             } else if (found) {
@@ -203,7 +265,7 @@ $(function() {
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
-        ko.applyBindings(loginStateViewModel, document.getElementById("drop_overlay"));
+        ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {

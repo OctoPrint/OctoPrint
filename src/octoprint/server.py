@@ -471,7 +471,7 @@ def deleteGcodeFile():
 			printer.unselectFile()
 
 		if not (currentFilename == filename and currentSd == sd and (printer.isPrinting() or printer.isPaused())):
-			if currentSd:
+			if sd:
 				printer.deleteSdFile(filename)
 			else:
 				gcodeManager.removeFile(filename)
