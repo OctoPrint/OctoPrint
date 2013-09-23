@@ -19,11 +19,7 @@ from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
 from octoprint.events import eventManager
-<<<<<<< HEAD
-from octoprint.util import isDevVersion, getExceptionString, getNewTimeout, isGcodeFileName
-=======
-from octoprint.util import getExceptionString, getNewTimeout
->>>>>>> 4b05f125a089840fe4dfb08a6d9748563e1cf694
+from octoprint.util import getExceptionString, getNewTimeout, isGcodeFileName
 from octoprint.util.virtual import VirtualPrinter
 
 try:
