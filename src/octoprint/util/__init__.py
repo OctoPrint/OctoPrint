@@ -61,7 +61,7 @@ def isGcodeFileName(filename):
 
 	:returns boolean:
 	"""
-	return "." in filename and filename.rsplit(".", 1)[1].lower() in ["gcode", "gco"]
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in ["gcode", "gco", "g"]
 
 
 def isSTLFileName(filename):
