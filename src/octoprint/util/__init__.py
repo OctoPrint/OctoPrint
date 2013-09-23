@@ -54,46 +54,6 @@ def getClass(name):
 	return m
 
 
-def isGcodeFileName(filename):
-	"""Simple helper to determine if a filename has the .gcode extension.
-
-	:param filename: :class: `str`
-
-	:returns boolean:
-	"""
-	return "." in filename and filename.rsplit(".", 1)[1].lower() in ["gcode", "gco"]
-
-
-def isSTLFileName(filename):
-	"""Simple helper to determine if a filename has the .stl extension.
-
-	:param filename: :class: `str`
-
-	:returns boolean:
-	"""
-	return "." in filename and filename.rsplit(".", 1)[1].lower() in ["stl"]
-
-
-def genGcodeFileName(filename):
-	if not filename:
-		return None
-
-	if "." not in filename:
-		return filename + ".gcode"
-
-	return filename.replace('.stl', '.gcode')
-
-
-def genStlFileName(filename):
-	if not filename:
-		return None
-
-	if "." not in filename:
-		return filename + ".stl"
-
-	return filename.replace('.gcode', '.stl')
-
-
 def isDevVersion():
 	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
 	return os.path.exists(gitPath)

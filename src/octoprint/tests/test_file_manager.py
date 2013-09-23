@@ -82,7 +82,7 @@ class FileUtilTestCase(unittest.TestCase):
 
 	def test_isGcode(self):
 
-		from octoprint.util import isGcodeFileName
+		from octoprint.gcodefiles import isGcodeFileName
 
 		filename = "/asdj/wefasdf/junk.stl"
 
@@ -98,7 +98,7 @@ class FileUtilTestCase(unittest.TestCase):
 
 	def test_isSTLFileName(self):
 
-		from octoprint.util import isSTLFileName
+		from octoprint.gcodefiles import isSTLFileName
 		filename = "/asdj/wefasdf/junk.stl"
 
 		result = isSTLFileName(filename)
@@ -113,7 +113,7 @@ class FileUtilTestCase(unittest.TestCase):
 
 	def test_genGcodeFileName(self):
 
-		from octoprint.util import genGcodeFileName
+		from octoprint.gcodefiles import genGcodeFileName
 
 		filename = "test.stl"
 

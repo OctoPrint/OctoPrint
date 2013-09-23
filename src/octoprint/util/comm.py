@@ -19,6 +19,7 @@ from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
 from octoprint.events import eventManager
+from octoprint.gcodefiles import isGcodeFileName
 from octoprint.util import getExceptionString, getNewTimeout
 from octoprint.util.virtual import VirtualPrinter
 
@@ -549,7 +550,7 @@ class MachineCom(object):
 
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
-				if self._sdFileList and not 'End file list' in line:
+				if self._sdFileList and isGcodeFileName(line.strip().lower()) and not 'End file list' in line:
 					self._sdFiles.append(line.strip().lower())
 					continue
 

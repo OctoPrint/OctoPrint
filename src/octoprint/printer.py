@@ -474,8 +474,8 @@ class Printer():
 		return self._comm.getSdFiles()
 
 	def addSdFile(self, filename, absolutePath):
-		from octoprint.util import isGcodeFileName
-		from octoprint.util import isSTLFileName
+		from octoprint.gcodefiles import isGcodeFileName
+		from octoprint.gcodefiles import isSTLFileName
 
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			logging.error("No connection to printer or printer is busy")

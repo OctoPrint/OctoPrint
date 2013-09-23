@@ -17,7 +17,45 @@ from octoprint.events import eventManager
 
 from werkzeug.utils import secure_filename
 
-SUPPORTED_EXTENSIONS=["gcode", "gco", "stl", "g"]
+GCODE_EXTENSIONS = ["gcode", "gco", "g"]
+STL_EXTENSIONS = ["stl"]
+SUPPORTED_EXTENSIONS = GCODE_EXTENSIONS + STL_EXTENSIONS
+
+def isGcodeFileName(filename):
+	"""Simple helper to determine if a filename has the .gcode extension.
+
+	:param filename: :class: `str`
+
+	:returns boolean:
+	"""
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in GCODE_EXTENSIONS
+
+
+def isSTLFileName(filename):
+	"""Simple helper to determine if a filename has the .stl extension.
+
+	:param filename: :class: `str`
+
+	:returns boolean:
+	"""
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in STL_EXTENSIONS
+
+
+def genGcodeFileName(filename):
+	if not filename:
+		return None
+
+	name, ext = filename.rsplit(".", 1)
+	return name + ".gcode"
+
+
+def genStlFileName(filename):
+	if not filename:
+		return None
+
+	name, ext = filename.rsplit(".", 1)
+	return name + ".stl"
+
 
 class GcodeManager:
 	def __init__(self):
@@ -122,8 +160,6 @@ class GcodeManager:
 	#~~ file handling
 
 	def addFile(self, file, destination):
-		from octoprint.util import isSTLFileName
-		from octoprint.util import isGcodeFileName
 		from octoprint.filemanager.destinations import FileDestinations
 
 		if not file or not destination:
@@ -164,7 +200,7 @@ class GcodeManager:
 		from octoprint.slicers.cura import CuraFactory
 
 		cura = CuraFactory.create_slicer()
-		gcodePath = util.genGcodeFileName(absolutePath)
+		gcodePath = genGcodeFileName(absolutePath)
 		config = self._settings.get(["cura", "config"])
 
 		slicingStart = time.time()
@@ -211,7 +247,7 @@ class GcodeManager:
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
 		absolutePath = self.getAbsolutePath(filename)
-		stlPath = util.genStlFileName(absolutePath)
+		stlPath = genStlFileName(absolutePath)
 
 		if absolutePath is None:
 			return
@@ -260,8 +296,6 @@ class GcodeManager:
 		return files
 
 	def getFileData(self, filename):
-		from octoprint.util import isSTLFileName
-	
 		if not filename:
 			return
 
