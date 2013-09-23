@@ -331,6 +331,7 @@ class MachineCom(object):
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
 
+		wasPaused = self.isPaused()
 		self._printSection = "CUSTOM"
 		self._changeState(self.STATE_PRINTING)
 		eventManager().fire("PrintStarted", self._currentFile.getFilename())
@@ -338,7 +339,7 @@ class MachineCom(object):
 		try:
 			self._currentFile.start()
 			if self.isSdFileSelected():
-				if self.isPaused():
+				if wasPaused:
 					self.sendCommand("M26 S0")
 					self._currentFile.setFilepos(0)
 				self.sendCommand("M24")
