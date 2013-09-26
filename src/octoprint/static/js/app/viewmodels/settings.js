@@ -28,7 +28,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_temperatureGraph = ko.observable(undefined);
-    self.feature_invertZ = ko.observable(undefined);
+    self.feature_invertAxes = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
@@ -75,6 +75,29 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.terminalFilters.remove(filter);
     };
 
+	self.getFeature_InvertAxis = function(axis) {
+		return (self.feature_invertAxes() || "").indexOf(axis) != -1;
+	};
+
+	self.setFeature_InvertAxis = function(axis, value) {
+		var currInvert = self.feature_invertAxes() || "";
+		var currValue = self.getFeature_InvertAxis(axis);
+		if (value && !currValue)
+			self.feature_invertAxes(currInvert + axis);
+		else if (!value && currValue)
+			self.feature_invertAxes(currInvert.replace(axis, ""));
+	};
+
+	self.koInvertAxis = function (axis) { return ko.computed({
+		read: function () { return self.getFeature_InvertAxis(axis); },
+		write: function (value) { self.setFeature_InvertAxis(axis, value); },
+		owner: self
+	})};
+
+	self.feature_invertX = self.koInvertAxis('x');
+	self.feature_invertY = self.koInvertAxis('y');
+	self.feature_invertZ = self.koInvertAxis('z');
+
     self.requestData = function() {
         $.ajax({
             url: AJAX_BASEURL + "settings",
@@ -106,7 +129,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_temperatureGraph(response.feature.temperatureGraph);
-        self.feature_invertZ(response.feature.invertZ);
+        self.feature_invertAxes(response.feature.invertAxes);
         self.feature_waitForStart(response.feature.waitForStart);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
@@ -166,7 +189,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
                 "temperatureGraph": self.feature_temperatureGraph(),
-                "invertZ": self.feature_invertZ(),
+                "invertAxes": self.feature_invertAxes(),
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport(),
