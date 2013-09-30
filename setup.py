@@ -3,7 +3,7 @@
 
 from setuptools import setup, find_packages
 
-VERSION = "0.1.0"
+VERSION = "1.1.0-dev"
 
 def params():
 	name = "OctoPrint"
@@ -34,10 +34,22 @@ def params():
 	url = "http://octoprint.org"
 	license = "AGPLv3"
 
-	packages = find_packages()
+	packages = find_packages(where="src")
+	package_dir = {"octoprint": "src/octoprint"}
+
 	include_package_data = True
 	zip_safe = False
 	install_requires = open("requirements.txt").read().split("\n")
+
+	entry_points = {
+		"console_scripts": [
+			"octoprint = octoprint:main"
+		]
+	}
+
+	#scripts = {
+	#	"scripts/octoprint.init": "/etc/init.d/octoprint"
+	#}
 
 	return locals()
 
