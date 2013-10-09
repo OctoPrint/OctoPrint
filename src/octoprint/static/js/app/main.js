@@ -1,4 +1,9 @@
 $(function() {
+        //Detect mobile browsers and remove gcode pane
+        //from http://stackoverflow.com/questions/3514784/what-is-the-best-way-to-detect-a-handheld-device-in-jquery
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            $("#gcode, a[href='#gcode']").remove();
+        }
 
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
