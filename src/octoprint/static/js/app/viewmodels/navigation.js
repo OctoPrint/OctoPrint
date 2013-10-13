@@ -23,7 +23,12 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
         }
         if (action.confirm) {
             $("#confirmation_dialog .confirmation_dialog_message").text(action.confirm);
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); callback(); });
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").bind("click", function(e) {
+                e.preventDefault();
+                $("#confirmation_dialog").modal("hide");
+                callback();
+            });
             $("#confirmation_dialog").modal("show");
         } else {
             callback();
