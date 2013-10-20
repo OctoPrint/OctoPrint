@@ -56,7 +56,7 @@ default_settings = {
 	"feature": {
 		"gCodeVisualizer": True,
 		"temperatureGraph": True,
-		"invertZ": False,
+		"invertAxes": "",
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
