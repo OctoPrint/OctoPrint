@@ -118,6 +118,20 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                Invert controls
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertX" id="settings-printerInvertX"> X axis
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertY" id="settings-printerInvertY"> Y axis
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertZ" id="settings-printerInvertZ"> Z axis
+                                </label>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="tab-pane" id="settings_webcam">
@@ -207,21 +221,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_swallowOkAfterResend" id="settings-swallowOkAfterResend"> Swallow the first "ok" after a resend response  <span class="label">Repetier</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <div class="controls">
-                                Invert controls 
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_invertX" id="settings-featureInvertX"> X axis
-                                </label>
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_invertY" id="settings-featureInvertY"> Y axis
-                                </label>
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_invertZ" id="settings-featureInvertZ"> Z axis
+                                    <input type="checkbox" data-bind="checked: feature_swallowOkAfterResend" id="settings-swallowOkAfterResend"> Swallow the first "ok" after a resend response
                                 </label>
                             </div>
                         </div>

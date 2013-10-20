@@ -56,7 +56,6 @@ default_settings = {
 	"feature": {
 		"gCodeVisualizer": True,
 		"temperatureGraph": True,
-		"invertAxes": "",
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
@@ -83,7 +82,8 @@ default_settings = {
 			"z": 200,
 			"e": 300
 		},
-		"pauseTriggers": []
+		"pauseTriggers": [],
+		"invertAxes": []
 	},
 	"appearance": {
 		"name": "",
