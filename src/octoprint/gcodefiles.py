@@ -80,6 +80,9 @@ class GcodeManager:
 	def _processAnalysisBacklog(self):
 		for osFile in os.listdir(self._uploadFolder):
 			filename = self._getBasicFilename(osFile)
+			if not isGcodeFileName(filename):
+				continue
+
 			absolutePath = self.getAbsolutePath(filename)
 			if absolutePath is None:
 				continue
