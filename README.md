@@ -21,6 +21,18 @@ Please create all pull requests against the [devel branch](https://github.com/fo
 features and then merged against master when those features are deemed mature enough for general consumption. In case
 of bug fixes I'll take care to cherry pick them against master if the bugs they are fixing are critical.
 
+Install
+-------
+
+Should use a python virtualenv to prevent from messing with global pyhton installation.
+
+    sudo apt-get install -y python2.7 python-dev python-pip python-virtualenv
+    cd <octoprint_dir>
+    virtualenv octoprint_env
+    source octoprint_env/bin/activate
+
+Once this is done, you can got to the Dependencies section of this README.
+    
 Dependencies
 ------------
 
