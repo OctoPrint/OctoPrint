@@ -82,6 +82,10 @@ class EventManager(object):
 		self._logger.debug("Subscribed listener %r for event %s" % (callback, event))
 
 	def unsubscribe (self, event, callback):
+		"""
+		Unsubscribe a listener from an event -- pass in the event name (as string) and the callback object
+		"""
+
 		if not event in self._registeredListeners:
 			# no callback registered for callback, just return
 			return
