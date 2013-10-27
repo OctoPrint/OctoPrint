@@ -28,7 +28,7 @@ class Daemon:
 		# decouple from parent environment
 		os.chdir('/') 
 		os.setsid() 
-		os.umask(022)
+		os.umask(002)
 	
 		# do second fork
 		try: 
