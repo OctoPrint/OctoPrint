@@ -502,7 +502,7 @@ def apiLoad():
 
 	# Perform an upload
 	file = request.files["file"]
-	if not gcodefiles.isGcodeFileName(file.filename):
+	if (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(file.filename)):
 		abort(400)
 
 	filename, done = gcodeManager.addFile(file)
