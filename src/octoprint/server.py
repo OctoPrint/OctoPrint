@@ -505,7 +505,10 @@ def apiLoad():
 	if (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(file.filename)):
 		abort(400)
 
-	filename, done = gcodeManager.addFile(file)
+	destination = FileDestinations.LOCAL
+
+	filename, done = gcodeManager.addFile(file, destination)
+
 	if filename is None:
 		logger.warn("Upload via API failed")
 		abort(500)
