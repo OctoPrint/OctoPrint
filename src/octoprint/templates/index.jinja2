@@ -115,7 +115,7 @@
                                 Stav tiskárny: <strong data-bind="text: stateString"></strong><br>
                                 Soubor: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
-                                Odhadované doba tisku: <strong data-bind="text: estimatedPrintTime"></strong><br>
+                                Odhadovaná doba tisku: <strong data-bind="text: estimatedPrintTime"></strong><br>
                                 Časosběr: <strong data-bind="text: timelapseString"></strong><br>
                                 Výška: <strong data-bind="text: heightString"></strong><br>
                                 Doba tisku: <strong data-bind="text: printTime"></strong><br>
@@ -242,7 +242,7 @@
                         <li><a href="#control" data-toggle="tab">Ovládání</a></li>
                         {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">Prohlížeč GCode</a></li>{% endif %}
                         <li><a href="#term" data-toggle="tab">Terminál</a></li>
-                        {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Timelapse</a></li>{% endif %}
+                        {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Záznam videa</a></li>{% endif %}
                     </ul>
 
                     <div class="tab-content">
@@ -301,7 +301,7 @@
                                     <label title="Target bed temperature">Cílová: <strong data-bind="html: bedTargetTempString"></strong></label>
 
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label for="temp_newBedTemp" title="Sets the new target temperature for the bed">New Target</label>
+                                        <label for="temp_newBedTemp" title="Sets the new target temperature for the bed">Nastavit teplotu</label>
                                         <div class="input-append">
                                             <input type="text" class="input-mini text-right" data-bind="value: newBedTemp, valueUpdate: 'afterkeydown', attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(event, 'bedTemp');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
