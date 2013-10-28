@@ -17,7 +17,8 @@
         <link href="{{ url_for('static', filename='gcodeviewer/css/style.css') }}" rel="stylesheet" media="screen">
 
         <script lang="javascript">
-            var AJAX_BASEURL = "{{ ajaxBaseUrl }}";
+            var BASEURL = "{{ url_for('index') }}";
+            var AJAX_BASEURL = BASEURL + "ajax/";
 
             var CONFIG_GCODEFILESPERPAGE = 5;
             var CONFIG_TIMELAPSEFILESPERPAGE = 10;

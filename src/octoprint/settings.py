@@ -38,7 +38,9 @@ default_settings = {
 	"server": {
 		"host": "0.0.0.0",
 		"port": 5000,
-		"firstRun": True
+		"firstRun": True,
+		"baseUrl": "",
+		"scheme": ""
 	},
 	"webcam": {
 		"stream": None,

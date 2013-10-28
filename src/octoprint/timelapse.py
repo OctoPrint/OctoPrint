@@ -18,6 +18,10 @@ import octoprint.util as util
 from octoprint.settings import settings
 from octoprint.events import eventManager
 
+# currently configured timelapse
+current = None
+
+
 def getFinishedTimelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse")
@@ -36,22 +40,54 @@ def getFinishedTimelapses():
 validTimelapseTypes = ["off", "timed", "zchange"]
 
 updateCallbacks = []
+
+
 def registerCallback(callback):
 	if not callback in updateCallbacks:
 		updateCallbacks.append(callback)
+
 
 def unregisterCallback(callback):
 	if callback in updateCallbacks:
 		updateCallbacks.remove(callback)
 
+
 def notifyCallbacks(timelapse):
+	if timelapse is None:
+		config = None
+	else:
+		config = timelapse.configData()
 	for callback in updateCallbacks:
-		if timelapse is None:
-			config = None
-		else:
-			config = timelapse.configData()
 		try: callback.sendTimelapseConfig(config)
 		except: pass
+
+
+def configureTimelapse(config=None, persist=False):
+	global current
+
+	if config is None:
+		config = settings().get(["webcam", "timelapse"])
+
+	if current is not None:
+		current.unload()
+
+	type = config["type"]
+	if type is None or "off" == type:
+		current = None
+	elif "zchange" == type:
+		current = ZTimelapse()
+	elif "timed" == type:
+		interval = 10
+		if "options" in config and "interval" in config["options"]:
+			interval = config["options"]["interval"]
+		current = TimedTimelapse(interval)
+
+	notifyCallbacks(current)
+
+	if persist:
+		settings().set(["webcam", "timelapse"], config)
+		settings().save()
+
 
 class Timelapse(object):
 	def __init__(self):
@@ -232,6 +268,7 @@ class Timelapse(object):
 				continue
 			os.remove(os.path.join(self._captureDir, filename))
 
+
 class ZTimelapse(Timelapse):
 	def __init__(self):
 		Timelapse.__init__(self)
@@ -249,6 +286,7 @@ class ZTimelapse(Timelapse):
 
 	def _onZChange(self, event, payload):
 		self.captureImage()
+
 
 class TimedTimelapse(Timelapse):
 	def __init__(self, interval=1):

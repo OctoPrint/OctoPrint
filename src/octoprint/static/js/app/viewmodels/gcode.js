@@ -19,7 +19,7 @@ function GcodeViewModel(loginStateViewModel) {
         if (self.status == 'idle' && self.errorCount < 3) {
             self.status = 'request';
             $.ajax({
-                url: "/downloads/gcode/" + filename,
+                url: BASEURL + "downloads/gcode/" + filename,
                 data: { "mtime": mtime },
                 type: "GET",
                 success: function(response, rstatus) {
