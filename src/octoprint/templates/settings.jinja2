@@ -230,25 +230,25 @@
                 <div class="tab-pane" id="settings_folder">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderUploads">Upload Folder</label>
+                            <label class="control-label" for="settings-folderUploads">Složka pro upload</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_uploads" id="settings-folderUploads">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderTimelapse">Timelapse Folder</label>
+                            <label class="control-label" for="settings-folderTimelapse">Složka pro videa</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_timelapse" id="settings-folderTimelapse">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderTimelapseTemp">Timelapse Temp Folder</label>
+                            <label class="control-label" for="settings-folderTimelapseTemp">Složka pro dočasné soubory</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_timelapseTmp" id="settings-folderTimelapseTemp">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderLogs">Logs Folder</label>
+                            <label class="control-label" for="settings-folderLogs">Složka pro logy</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_logs" id="settings-folderLogs">
                             </div>
@@ -315,13 +315,13 @@
                 <div class="tab-pane" id="settings_appearance">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-appearanceName">Title</label>
+                            <label class="control-label" for="settings-appearanceName">Název</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: appearance_name" id="settings-appearanceName">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-appearanceColor">Color</label>
+                            <label class="control-label" for="settings-appearanceColor">Barva</label>
                             <div class="controls">
                                 <select id="settings-appearanceColor" data-bind="value: appearance_color, options: appearance_available_colors">
                                 </select>
@@ -374,10 +374,10 @@
                     <table class="table table-condensed table-hover" id="system_users">
                         <thead>
                             <tr>
-                                <th class="settings_users_name">Name</th>
-                                <th class="settings_users_active">Active</th>
+                                <th class="settings_users_name">Jméno</th>
+                                <th class="settings_users_active">Aktivní</th>
                                 <th class="settings_users_admin">Admin</th>
-                                <th class="settings_users_actions">Action</th>
+                                <th class="settings_users_actions">Akce</th>
                             </tr>
                         </thead>
                         <tbody data-bind="foreach: users.listHelper.paginatedItems">
@@ -450,8 +450,8 @@
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button class="btn" data-dismiss="modal" aria-hidden="true">Abort</button>
-                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmAddUser(); }, enable: !$root.users.editorPasswordMismatch()">Povolit</button>
+                            <button class="btn" data-dismiss="modal" aria-hidden="true">Zrušit</button>
+                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmAddUser(); }, enable: !$root.users.editorPasswordMismatch()">Potvrdit</button>
                         </div>
                     </div>
 
@@ -473,7 +473,7 @@
                                     <div class="controls">
                                         <label class="checkbox">
                                             <input type="checkbox" id="settings-usersDialogEditUserAdmin" data-bind="checked: $root.users.editorAdmin"> Admin
-                                        </label>
+                                        </label> 
                                     </div>
                                 </div>
                             </form>
