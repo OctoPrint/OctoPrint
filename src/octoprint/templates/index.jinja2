@@ -31,7 +31,7 @@
             var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + "/sockjs";
             var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
         </script>
-        <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
+        <script src="{{ url_for('static', filename='js/lib/less-1.3.3.min.js') }}" type="text/javascript"></script>
     </head>
     <body>
         <div id="navbar" class="navbar navbar-fixed-top">
@@ -42,13 +42,13 @@
                         <ul class="nav pull-right">
                             <li style="display: none;" data-bind="visible: loginState.isAdmin">
                                 <a id="navbar_show_settings" class="pull-right" href="#settings_dialog">
-                                    <i class="icon-wrench"></i> Settings
+                                    <i class="icon-wrench"></i> Nastavení
                                 </a>
                             </li>
                             {% if enableSystemMenu %}
                             <li class="dropdown" style="display: none" data-bind="visible: loginState.isAdmin">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="icon-off"></i> System
+                                    <i class="icon-off"></i> Systém
                                     <b class="caret"></b>
                                 </a>
                                 <ul class="dropdown-menu" data-bind="foreach: systemActions">
@@ -63,18 +63,18 @@
                                     <b class="caret"></b>
                                 </a>
                                 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
-                                    <label for="login_user">Username</label>
+                                    <label for="login_user">Jméno</label>
                                     <input type="text" id="login_user" placeholder="Username">
-                                    <label for="login_pass">Password</label>
+                                    <label for="login_pass">Heslo</label>
                                     <input type="password" id="login_pass" placeholder="Password">
                                     <label class="checkbox">
-                                        <input type="checkbox" id="login_remember"> Remember me
+                                        <input type="checkbox" id="login_remember"> Pamatuj si mě
                                     </label>
-                                    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">Login</button>
+                                    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">Přihlásit</button>
                                 </div>
                                 <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
-                                    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">Change Password</a></li>
-                                    <li><a href="#" id="logout_button" data-bind="click: loginState.logout">Logout</a></li>
+                                    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">Změnit heslo</a></li>
+                                    <li><a href="#" id="logout_button" data-bind="click: loginState.logout">Odhlásit</a></li>
                                 </ul>
                             </li>
                             {% endif %}
@@ -88,21 +88,21 @@
                 <div class="accordion span4">
                     <div class="accordion-group" data-bind="visible: loginState.isUser" id="connection_accordion">
                         <div class="accordion-heading">
-                            <a class="accordion-toggle" data-toggle="collapse" href="#connection"><i class="icon-signal"></i> Connection</a>
+                            <a class="accordion-toggle" data-toggle="collapse" href="#connection"><i class="icon-signal"></i> Spojení</a>
                         </div>
                         <div class="accordion-body collapse in" id="connection">
                             <div class="accordion-inner">
-                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Serial Port</label>
+                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Port</label>
                                 <select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
-                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Baudrate</label>
+                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Rychlost</label>
                                 <select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
                                 <label class="checkbox">
-                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Save connection settings
+                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Uložit nastavení
                                 </label>
                                 <label class="checkbox">
-                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Auto-connect on server startup
+                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Automaticky připojit po startu
                                 </label>
-                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser()">Connect</button>
+                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser()">Připojit</button>
                             </div>
                         </div>
                     </div>
@@ -112,47 +112,47 @@
                         </div>
                         <div class="accordion-body collapse in" id="state">
                             <div class="accordion-inner">
-                                Machine State: <strong data-bind="text: stateString"></strong><br>
-                                File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
+                                Stav tiskárny: <strong data-bind="text: stateString"></strong><br>
+                                Soubor: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
-                                Estimated Print Time: <strong data-bind="text: estimatedPrintTime"></strong><br>
-                                Timelapse: <strong data-bind="text: timelapseString"></strong><br>
-                                Height: <strong data-bind="text: heightString"></strong><br>
-                                Print Time: <strong data-bind="text: printTime"></strong><br>
-                                Print Time Left: <strong data-bind="text: printTimeLeft"></strong><br>
-                                Printed: <strong data-bind="text: byteString"></strong><br>
+                                Odhadované doba tisku: <strong data-bind="text: estimatedPrintTime"></strong><br>
+                                Časosběr: <strong data-bind="text: timelapseString"></strong><br>
+                                Výška: <strong data-bind="text: heightString"></strong><br>
+                                Doba tisku: <strong data-bind="text: printTime"></strong><br>
+                                Zbývá do konce: <strong data-bind="text: printTimeLeft"></strong><br>
+                                Vytisknuto: <strong data-bind="text: byteString"></strong><br>
 
                                 <div class="progress">
                                     <div class="bar" id="job_progressBar" data-bind="style: { width: progressString() + '%' }"></div>
                                 </div>
 
                                 <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
-                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
-                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>Pause</span></button>
-                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()"><i class="icon-stop"></i> Cancel</button>
+                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Tisk')">Tisk</span></button>
+                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>Pauza</span></button>
+                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()"><i class="icon-stop"></i> Zrušit</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="accordion-group" id="files_accordion">
                         <div class="accordion-heading">
-                            <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> Files</a>
+                            <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> Soubory</a>
 
                             <div class="settings-trigger accordion-heading-button btn-group">
                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                                     <span class="icon-wrench"></span>
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Sort by name (ascending)</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Sort by upload date (descending)</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> Sort by file size (descending)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Řadit podle jména (a-z)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Řadit podle data (od nejmladšího)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> Řadit podle velikosti (od největšího)</a></li>
                                     {% if enableSdSupport %}
                                     <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> Only show files stored locally</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> Only show files stored on SD</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> Zobazovat pouze lokální soubory</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> Zobrazovat jen soubory na SD kartě</a></li>
                                     {% endif %}
                                     <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Schovat úspěšně vytisknuté soubory</a></li>
                                 </ul>
                             </div>
 
@@ -162,9 +162,9 @@
                                     <span class="icon-sd-black-14"></span>
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> Initialize SD card</a></li>
-                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> Refresh SD files</a></li>
-                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> Release SD card</a></li>
+                                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> Inicializace SD karty</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> Obnovit</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> Odebrat</a></li>
                                 </ul>
                             </div>
                             {% endif %}
@@ -174,9 +174,9 @@
                                 <table class="table table-condensed table-hover" id="gcode_files">
                                     <thead>
                                         <tr>
-                                            <th class="gcode_files_name">Name</th>
-                                            <th class="gcode_files_size">Size</th>
-                                            <th class="gcode_files_action">Action</th>
+                                            <th class="gcode_files_name">Jméno</th>
+                                            <th class="gcode_files_size">Velikost</th>
+                                            <th class="gcode_files_action">Akce</th>
                                         </tr>
                                     </thead>
                                     <tbody data-bind="foreach: listHelper.paginatedItems">
@@ -184,13 +184,13 @@
                                             <td class="gcode_files_name" data-bind="text: name"></td>
                                             <td class="gcode_files_size" data-bind="text: size"></td>
                                             <td class="gcode_files_action">
-                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>
+                                                <a href="#" class="icon-trash" title="Odstranit" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Nahrát" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Nahraj a tiskni" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
                                 <div class="muted text-right">
-                                    <small>Free: <span data-bind="text: freeSpace"></span></small>
+                                    <small>Fr: <span data-bind="text: freeSpace"></span></small>
                                 </div>
                                 <div class="pagination pagination-mini pagination-centered">
                                     <ul>
@@ -208,18 +208,18 @@
                                         {% if enableSdSupport %}
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
-                                            <span>Upload</span>
+                                            <span>Nahrát</span>
                                             <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
                                         </span>
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
-                                            <span>Upload to SD</span>
+                                            <span>Nahrát na SD</span>
                                             <input id="gcode_upload_sd" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser() && isSdReady()">
                                         </span>
                                         {% else %}
                                         <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
-                                            <span>Upload</span>
+                                            <span>Nahrát</span>
                                             <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
                                         </span>
                                         {% endif %}
@@ -228,7 +228,7 @@
                                         <div class="bar" style="width: 0%"></div>
                                     </div>
                                     <div>
-                                        <small>Hint: You can also drag and drop files on this page to upload them.</small>
+                                        <small>Pro nahrání souborů lze použít drag and drop.</small>
                                     </div>
                                 </div>
                             </div>
@@ -238,10 +238,10 @@
 
                 <div class="span8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
-                        <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
-                        <li><a href="#control" data-toggle="tab">Control</a></li>
-                        {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">GCode Viewer</a></li>{% endif %}
-                        <li><a href="#term" data-toggle="tab">Terminal</a></li>
+                        <li class="active"><a href="#temp" data-toggle="tab">Teplota</a></li>
+                        <li><a href="#control" data-toggle="tab">Ovládání</a></li>
+                        {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">Prohlížeč GCode</a></li>{% endif %}
+                        <li><a href="#term" data-toggle="tab">Terminál</a></li>
                         {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Timelapse</a></li>{% endif %}
                     </ul>
 
@@ -254,20 +254,20 @@
                             {% endif %}
                             <div class="row-fluid" style="margin-bottom: 20px">
                                 <div class="form-horizontal span6">
-                                    <h1>Temperature</h1>
+                                    <h1>Teplota</h1>
 
-                                    <label title="Current extruder temperature">Current: <strong data-bind="html: tempString"></strong></label>
+                                    <label title="Current extruder temperature">Aktuální: <strong data-bind="html: tempString"></strong></label>
 
-                                    <label title="Target extruder temperature">Target: <strong data-bind="html: targetTempString"></strong></label>
+                                    <label title="Target extruder temperature">Cílová: <strong data-bind="html: targetTempString"></strong></label>
 
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label for="temp_newTemp" title="Sets the new target temperature for the extruder">New Target</label>
+                                        <label for="temp_newTemp" title="Sets the new target temperature for the extruder">Nastavit teplotu</label>
                                         <div class="input-append">
                                             <input type="text" class="input-mini text-right" data-bind="value: newTemp, valueUpdate: 'afterkeydown', attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'temp');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
                                         </div>
                                         <div class="btn-group">
-                                            <button type="submit" class="btn" data-bind="click: setTemp, enable: isOperational() && loginState.isUser() && newTemp()">Set</button>
+                                            <button type="submit" class="btn" data-bind="click: setTemp, enable: isOperational() && loginState.isUser() && newTemp()">Nastavit</button>
                                             <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
                                                 <span class="caret"></span>
                                             </button>
@@ -279,26 +279,26 @@
                                                 <!-- /ko -->
                                                 <li class="divider"></li>
                                                 <li>
-                                                    <a href="#" data-bind="click: function() { $root.setTempToZero(); }">Off</a>
+                                                    <a href="#" data-bind="click: function() { $root.setTempToZero(); }">Vypnout</a>
                                                 </li>
                                             </ul>
                                         </div>
                                     </div>
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label title="Sets a temperature offset to apply to temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Offset</label>
+                                        <label title="Posunutí ">Posun</label>
                                         <div class="input-append">
                                             <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: tempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'tempOffset');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
                                         </div>
-                                        <button type="submit" class="btn" data-bind="click: setTempOffset, enable: newTempOffset() && isOperational() && loginState.isUser()">Set</button>
+                                        <button type="submit" class="btn" data-bind="click: setTempOffset, enable: newTempOffset() && isOperational() && loginState.isUser()">Nastavit</button>
                                     </div>
                                 </div>
                                 <div class="form-horizontal span6">
-                                    <h1>Bed Temperature</h1>
+                                    <h1>Teplota podložky</h1>
 
-                                    <label title="Current bed temperature">Current: <strong data-bind="html: bedTempString"></strong></label>
+                                    <label title="Current bed temperature">Aktuální: <strong data-bind="html: bedTempString"></strong></label>
 
-                                    <label title="Target bed temperature">Target: <strong data-bind="html: bedTargetTempString"></strong></label>
+                                    <label title="Target bed temperature">Cílová: <strong data-bind="html: bedTargetTempString"></strong></label>
 
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
                                         <label for="temp_newBedTemp" title="Sets the new target temperature for the bed">New Target</label>
@@ -307,7 +307,7 @@
                                             <span class="add-on">&deg;C</span>
                                         </div>
                                         <div class="btn-group">
-                                            <button type="submit" class="btn" data-bind="click: setBedTemp, enable: isOperational() && loginState.isUser() && newBedTemp()">Set</button>
+                                            <button type="submit" class="btn" data-bind="click: setBedTemp, enable: isOperational() && loginState.isUser() && newBedTemp()">Nastavit</button>
                                             <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
                                                 <span class="caret"></span>
                                             </button>
@@ -319,18 +319,18 @@
                                                  <!-- /ko -->
                                                  <li class="divider"></li>
                                                  <li>
-                                                     <a href="#" data-bind="click: function(){ $root.setBedTempToZero(); }">Off</a>
+                                                     <a href="#" data-bind="click: function(){ $root.setBedTempToZero(); }">Vypnout</a>
                                                  </li>
                                             </ul>
                                         </div>
                                     </div>
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label title="Sets a temperature offset to apply to bed temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Offset</label>
+                                        <label title="Sets a temperature offset to apply to bed temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Posun</label>
                                         <div class="input-append">
                                             <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newBedTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: bedTempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'bedTempOffset');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
                                         </div>
-                                        <button type="submit" class="btn" data-bind="click: setBedTempOffset, enable: newBedTempOffset() && isOperational() && loginState.isUser()">Set</button>
+                                        <button type="submit" class="btn" data-bind="click: setBedTempOffset, enable: newBedTempOffset() && isOperational() && loginState.isUser()">Nastavit</button>
                                     </div>
                                 </div>
                             </div>
@@ -389,17 +389,17 @@
                                         <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: 5}">
                                         <span class="add-on">mm</span>
                                     </div>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">Retract</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">Vytlačit</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">Nasát</button>
                                 </div>
                             </div>
                             <!-- General control panel -->
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
                                 <h1>General</h1>
                                 <div>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Vypnout motory</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Zapnout větráky</button>
+                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Vypnout větráky</button>
                                 </div>
                             </div>
 
@@ -449,7 +449,7 @@
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
                                         <a class="accordion-toggle" data-toggle="collapse" href="#progressAccordionTab">
-                                            Progress indicators
+                                            Hotovo
                                         </a>
                                     </div>
                                     <div id="progressAccordionTab" class="accordion-body collapse in">
@@ -468,7 +468,7 @@
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
                                         <a class="accordion-toggle" data-toggle="collapse" href="#infoAccordionTab">
-                                            Model info
+                                            Informace o modelu
                                         </a>
                                     </div>
                                     <div id="infoAccordionTab" class="accordion-body collapse in">
@@ -480,7 +480,7 @@
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
                                         <a class="accordion-toggle" data-toggle="collapse" href="#layerAccordionTab">
-                                            Layer Info
+                                            Informace o vrstvě
                                         </a>
                                     </div>
                                     <div id="layerAccordionTab" class="accordion-body collapse in">
@@ -492,7 +492,7 @@
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
                                         <a class="accordion-toggle" data-toggle="collapse" href="#options2DAccordionTab">
-                                            2D Render options
+                                            Nastavení 2D zobrazení
                                         </a>
                                     </div>
                                     <div id="options2DAccordionTab" class="accordion-body collapse in">
