@@ -154,10 +154,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         var graph = $("#temperature-graph");
         if (graph.length) {
             var data = [
-                {label: "Actual", color: "#FF4040", data: self.temperatures.actual},
-                {label: "Target", color: "#FFA0A0", data: self.temperatures.target},
-                {label: "Bed Actual", color: "#4040FF", data: self.temperatures.actualBed},
-                {label: "Bed Target", color: "#A0A0FF", data: self.temperatures.targetBed}
+                {label: "Aktuální", color: "#FF4040", data: self.temperatures.actual},
+                {label: "Cílová", color: "#FFA0A0", data: self.temperatures.target},
+                {label: "Podložka aktuální", color: "#4040FF", data: self.temperatures.actualBed},
+                {label: "Podložka cílová", color: "#A0A0FF", data: self.temperatures.targetBed}
             ]
 
             $.plot(graph, data, self.plotOptions);

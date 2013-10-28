@@ -170,16 +170,16 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     }
 
     self.getPopoverContent = function(data) {
-        var output = "<p><strong>Uploaded:</strong> " + data["date"] + "</p>";
+        var output = "<p><strong>Nahráno:</strong> " + data["date"] + "</p>";
         if (data["gcodeAnalysis"]) {
             output += "<p>";
             output += "<strong>Filament:</strong> " + data["gcodeAnalysis"]["filament"] + "<br>";
-            output += "<strong>Estimated Print Time:</strong> " + data["gcodeAnalysis"]["estimatedPrintTime"];
+            output += "<strong>Odhadovaná doba tisku:</strong> " + data["gcodeAnalysis"]["estimatedPrintTime"];
             output += "</p>";
         }
         if (data["prints"] && data["prints"]["last"]) {
             output += "<p>";
-            output += "<strong>Last Print:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + data["prints"]["last"]["date"] + "</span>";
+            output += "<strong>Datum posledního tisku:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + data["prints"]["last"]["date"] + "</span>";
             output += "</p>";
         }
         return output;
