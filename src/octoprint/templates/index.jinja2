@@ -190,7 +190,7 @@
                                     </tbody>
                                 </table>
                                 <div class="muted text-right">
-                                    <small>Fr: <span data-bind="text: freeSpace"></span></small>
+                                    <small>Volno <span data-bind="text: freeSpace"></span></small>
                                 </div>
                                 <div class="pagination pagination-mini pagination-centered">
                                     <ul>
@@ -285,7 +285,7 @@
                                         </div>
                                     </div>
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label title="Posunutí ">Posun</label>
+                                        <label title="Posunutí teploty ve směru nahoru nebo dolů, mění přímo GCODE. Nastavení nevydrží restart OctoPrintu">Posun</label>
                                         <div class="input-append">
                                             <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: tempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'tempOffset');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
@@ -325,7 +325,7 @@
                                         </div>
                                     </div>
                                     <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label title="Sets a temperature offset to apply to bed temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Posun</label>
+                                        <label title="Posunutí teploty ve směru nahoru nebo dolů, mění přímo GCODE. Nastavení nevydrží restart OctoPrintu">Posun</label>
                                         <div class="input-append">
                                             <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newBedTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: bedTempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'bedTempOffset');} }" class="tempInput">
                                             <span class="add-on">&deg;C</span>
@@ -395,7 +395,7 @@
                             </div>
                             <!-- General control panel -->
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>General</h1>
+                                <h1>Hlavní</h1>
                                 <div>
                                     <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Vypnout motory</button>
                                     <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Zapnout větráky</button>
@@ -497,13 +497,13 @@
                                     </div>
                                     <div id="options2DAccordionTab" class="accordion-body collapse in">
                                         <div class="accordion-inner">
-                                            <input type="checkbox" id="showMovesCheckbox" value="1"  onclick="GCODE.ui.processOptions()" checked>Show non-extrusion moves</input><br>
-                                            <input type="checkbox" id="showRetractsCheckbox" value="2"  onclick="GCODE.ui.processOptions()" checked>Show retracts and restarts</input><br>
-                                            <input type="checkbox" id="moveModelCheckbox" value="3"  onclick="GCODE.ui.processOptions()" checked>Move model to the center of the grid</input><br>
-                                            <input type="checkbox" id="differentiateColorsCheckbox" value="7"  onclick="GCODE.ui.processOptions()" checked>Show different speeds with different colors</input><br>
-                                            <input type="checkbox" id="thickExtrusionCheckbox" value="8"  onclick="GCODE.ui.processOptions()">Emulate extrusion width</input><br>
-                                            Width modifier: <input type="text" value="2" id="widthModifier" onchange="GCODE.ui.processOptions()"/><br>
-                                            <input type="checkbox" id="showNextLayer" value="9"  onclick="GCODE.ui.processOptions()" >Show +1 layer</input><br>
+                                            <input type="checkbox" id="showMovesCheckbox" value="1"  onclick="GCODE.ui.processOptions()" checked>Zobrazovat přesuny</input><br>
+                                            <input type="checkbox" id="showRetractsCheckbox" value="2"  onclick="GCODE.ui.processOptions()" checked>Zobrazovat retrakce a restarty</input><br>
+                                            <input type="checkbox" id="moveModelCheckbox" value="3"  onclick="GCODE.ui.processOptions()" checked>Model přesunout na střed</input><br>
+                                            <input type="checkbox" id="differentiateColorsCheckbox" value="7"  onclick="GCODE.ui.processOptions()" checked>Odlišovat rychlosti barevně</input><br>
+                                            <input type="checkbox" id="thickExtrusionCheckbox" value="8"  onclick="GCODE.ui.processOptions()">Emulovat šířku vlákna</input><br>
+                                            Násobek velikosti: <input type="text" value="2" id="widthModifier" onchange="GCODE.ui.processOptions()"/><br>
+                                            <input type="checkbox" id="showNextLayer" value="9"  onclick="GCODE.ui.processOptions()" >Zobrazit o jednu vrstvu víc</input><br>
                                         </div>
                                     </div>
                                 </div>
@@ -511,15 +511,15 @@
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
                                         <a class="accordion-toggle" data-toggle="collapse" href="#analyzeOptionsAccordioinTab">
-                                            GCode analyzer options
+                                            Možnosti analýzy G-kódu
                                         </a>
                                     </div>
                                     <div id="analyzeOptionsAccordioinTab" class="accordion-body collapse in">
                                         <div class="accordion-inner">
-                                            These require re-analyzing file:<br>
-                                            <input type="checkbox" id="sortLayersCheckbox" value="4" onclick="GCODE.ui.processOptions()" checked>Sort layers by Z</input><br>
-                                            <input type="checkbox" id="purgeEmptyLayersCheckbox" value="5"  onclick="GCODE.ui.processOptions()" checked>Hide empty layers</input><br>
-                                            <input type="checkbox" id="showGCodeCheckbox" value="6" onclick="GCODE.ui.processOptions()" checked>Show GCode in GCode tab (memory intensive!)</input><br>
+					    Tato nastavení vyžadují znovu analyzovat soubor:<br>
+                                            <input type="checkbox" id="sortLayersCheckbox" value="4" onclick="GCODE.ui.processOptions()" checked>Seřadit vstvy podle Z</input><br>
+                                            <input type="checkbox" id="purgeEmptyLayersCheckbox" value="5"  onclick="GCODE.ui.processOptions()" checked>Skrýt prázdné vrstvy</input><br>
+                                            <input type="checkbox" id="showGCodeCheckbox" value="6" onclick="GCODE.ui.processOptions()" checked>Zobrazovat G-kód (paměťově náročné!)</input><br>
                                         </div>
                                     </div>
                                 </div>
@@ -541,51 +541,51 @@
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
                                 <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">
-                                <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
+                                <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Odeslat</button>
                             </div>
                         </div>
                         {% if enableTimelapse %}
                         <div class="tab-pane" id="timelapse">
                             <div style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>Timelapse Configuration</h1>
+                                <h1>Konfigurace časosběrného videa</h1>
 
-                                <label for="webcam_timelapse_mode">Timelapse Mode</label>
+                                <label for="webcam_timelapse_mode">Mód časosběru</label>
                                 <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
-                                    <option value="off">Off</option>
-                                    <option value="zchange">On Z Change</option>
-                                    <option value="timed">Timed</option>
+                                    <option value="off">Vypnutý</option>
+                                    <option value="zchange">Při změně Z</option>
+                                    <option value="timed">V intervalech</option>
                                 </select>
 
                                 <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
                                     <label for="webcam_timelapse_interval">Interval</label>
                                     <div class="input-append">
                                         <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
-                                        <span class="add-on">sec</span>
+                                        <span class="add-on">sekund</span>
                                     </div>
                                 </div>
 
                                 <div data-bind="visible: loginState.isAdmin">
                                     <label class="checkbox">
-                                        <input type="checkbox" data-bind="checked: persist"> Save as default
+                                        <input type="checkbox" data-bind="checked: persist"> Uložit jako základní
                                     </label>
                                 </div>
 
                                 <div>
-                                    <button class="btn" data-bind="click: save, enable: saveButtonEnabled">Save config</button>
+                                    <button class="btn" data-bind="click: save, enable: saveButtonEnabled">Uložit konfiguraci</button>
                                 </div>
                             </div>
 
-                            <h1>Finished Timelapses</h1>
+                            <h1>Uložená videa</h1>
 
                             <div class="pull-right">
-                                <small>Sort by: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">Name (ascending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">Creation date (descending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">Size (descending)</a></small>
+                                <small>Seřadit podle: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">Jména (vzestupně)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">Data vytvoření (sestupně)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">Velikosti (sestupně)</a></small>
                             </div>
                             <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
                                 <thead>
                                     <tr>
-                                        <th class="timelapse_files_name">Name</th>
-                                        <th class="timelapse_files_size">Size</th>
-                                        <th class="timelapse_files_action">Action</th>
+                                        <th class="timelapse_files_name">Jméno</th>
+                                        <th class="timelapse_files_size">Velikost</th>
+                                        <th class="timelapse_files_action">Akce</th>
                                     </tr>
                                 </thead>
                                 <tbody data-bind="foreach: listHelper.paginatedItems">
@@ -619,10 +619,10 @@
                     </ul>
                 {% endif %}
                 <ul class="pull-right">
-                    <li><a href="http://octoprint.org"><i class="icon-home"></i> Homepage</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> Sourcecode</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> Documentation</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> Bugs and Requests</a></li>
+                    <li><a href="http://octoprint.org"><i class="icon-home"></i> Octoprint</a></li>
+                    <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> Zdrojový kód</a></li>
+                    <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> Dokumentace</a></li>
+                    <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> Chyby a požadavky</a></li>
                 </ul>
             </div>
         </div>
