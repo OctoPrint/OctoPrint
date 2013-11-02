@@ -819,11 +819,26 @@ class MachineCom(object):
 
 	def _handleResendRequest(self, line):
 		lineToResend = None
-		try:
-			lineToResend = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
-		except:
-			if "rs" in line:
-				lineToResend = int(line.split()[1])
+
+		# Find the first word on the line that looks like a line
+		# number.  Something "looks like" a line number if it's
+		# an integer, possibly prefixed with N or N:
+		line = line.lstrip("rs")
+		words = line.split()
+		for w in words:
+			if not w.startswith("N"):
+                                continue
+
+                        w = w.replace("N", "")
+			if w.startswith(":"):
+				w = w.replace(":", "")
+			try:
+				lineToResend = int(w)
+			except:
+				pass
+
+			if lineToResend is not None:
+				break
 
 		if lineToResend is not None:
 			self._resendDelta = self._currentLine - lineToResend
