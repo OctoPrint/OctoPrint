@@ -178,7 +178,7 @@ class Timelapse(object):
 
 		# prepare ffmpeg command
 		command = [
-			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '25', '-y', '-b:v', bitrate,
+			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', '24', '-s', '800x600', '-y', '-b:v', bitrate,
 			'-f', 'vob']
 
 		filters = []
@@ -221,6 +221,23 @@ class Timelapse(object):
 			eventManager().fire("MovieDone", output)
 		except subprocess.CalledProcessError as (e):
 			self._logger.warn("Could not render movie, got return code %r" % e.returncode)
+
+		if not settings().getBoolean(["youtube", "enabled"]):
+			self._logger.debug("Youtube disabled")
+			return
+
+		# send to YouTube
+		email = settings().get(["youtube", "email"])
+		password = settings().get(["youtube", "password"])
+		uploader = settings().get(["youtube", "uploader"])
+		command = [ uploader, '--email=%s' % email,  '--password=%s' % password, '--title=reprap: %s' % output, '--description=%s' % output, '--category=Tech', '--keywords=reprap,3D' ]
+		command.append(output)
+
+		try:
+			subprocess.check_call(command)
+			self._logger.debug("Uploaded to Youtube - command: %s" % command)
+		except subprocess.CalledProcessError as (e):
+			self._logger.warn("Could not upload movie, got return code %r, command: %s" % (e.returncode, command))
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):
