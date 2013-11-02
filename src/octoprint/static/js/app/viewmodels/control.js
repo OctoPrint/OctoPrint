@@ -81,7 +81,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         if (typeof distance === "undefined")
             distance = $('#jog_distance button.active').data('distance');
 
-        if (axis == "z" && self.settings.feature_invertZ()) {
+        if (self.settings.getPrinterInvertAxis(axis)) {
             multiplier *= -1;
         }
 

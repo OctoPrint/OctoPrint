@@ -17,6 +17,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedY = ko.observable(undefined);
     self.printer_movementSpeedZ = ko.observable(undefined);
     self.printer_movementSpeedE = ko.observable(undefined);
+    self.printer_invertAxes = ko.observable(undefined);
 
     self.webcam_streamUrl = ko.observable(undefined);
     self.webcam_snapshotUrl = ko.observable(undefined);
@@ -28,7 +29,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.feature_gcodeViewer = ko.observable(undefined);
     self.feature_temperatureGraph = ko.observable(undefined);
-    self.feature_invertZ = ko.observable(undefined);
     self.feature_waitForStart = ko.observable(undefined);
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
@@ -75,6 +75,31 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.terminalFilters.remove(filter);
     };
 
+    self.getPrinterInvertAxis = function(axis) {
+        return _.contains((self.printer_invertAxes() || []), axis.toLowerCase());
+    };
+
+    self.setPrinterInvertAxis = function(axis, value) {
+        var currInvert = self.printer_invertAxes() || [];
+        var currValue = self.getPrinterInvertAxis(axis);
+        if (value && !currValue) {
+            currInvert.push(axis.toLowerCase());
+        } else if (!value && currValue) {
+            currInvert = _.without(currInvert, axis.toLowerCase());
+        }
+        self.printer_invertAxes(currInvert);
+    };
+
+    self.koInvertAxis = function (axis) { return ko.computed({
+        read: function () { return self.getPrinterInvertAxis(axis); },
+        write: function (value) { self.setPrinterInvertAxis(axis, value); },
+        owner: self
+    })};
+
+    self.printer_invertX = self.koInvertAxis('x');
+    self.printer_invertY = self.koInvertAxis('y');
+    self.printer_invertZ = self.koInvertAxis('z');
+
     self.requestData = function() {
         $.ajax({
             url: AJAX_BASEURL + "settings",
@@ -95,6 +120,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_movementSpeedY(response.printer.movementSpeedY);
         self.printer_movementSpeedZ(response.printer.movementSpeedZ);
         self.printer_movementSpeedE(response.printer.movementSpeedE);
+        self.printer_invertAxes(response.printer.invertAxes);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -106,7 +132,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
         self.feature_gcodeViewer(response.feature.gcodeViewer);
         self.feature_temperatureGraph(response.feature.temperatureGraph);
-        self.feature_invertZ(response.feature.invertZ);
         self.feature_waitForStart(response.feature.waitForStart);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
@@ -152,7 +177,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "movementSpeedX": self.printer_movementSpeedX(),
                 "movementSpeedY": self.printer_movementSpeedY(),
                 "movementSpeedZ": self.printer_movementSpeedZ(),
-                "movementSpeedE": self.printer_movementSpeedE()
+                "movementSpeedE": self.printer_movementSpeedE(),
+                "invertAxes": self.printer_invertAxes()
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),
@@ -166,7 +192,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "feature": {
                 "gcodeViewer": self.feature_gcodeViewer(),
                 "temperatureGraph": self.feature_temperatureGraph(),
-                "invertZ": self.feature_invertZ(),
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport(),

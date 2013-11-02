@@ -56,11 +56,10 @@ default_settings = {
 	"feature": {
 		"gCodeVisualizer": True,
 		"temperatureGraph": True,
-		"invertZ": False,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
-		"swallowOkAfterResend": False
+		"swallowOkAfterResend": True
 	},
 	"folder": {
 		"uploads": None,
@@ -83,7 +82,8 @@ default_settings = {
 			"z": 200,
 			"e": 300
 		},
-		"pauseTriggers": []
+		"pauseTriggers": [],
+		"invertAxes": []
 	},
 	"appearance": {
 		"name": "",

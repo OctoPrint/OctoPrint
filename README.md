@@ -21,6 +21,14 @@ Please create all pull requests against the [devel branch](https://github.com/fo
 features and then merged against master when those features are deemed mature enough for general consumption. In case
 of bug fixes I'll take care to cherry pick them against master if the bugs they are fixing are critical.
 
+Installation
+------------
+
+Installation instructions for installing from source for different operating systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
+
+If you want to run OctoPrint on a Raspberry Pi you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
+which is a custom SD card image that includes OctoPrint plus dependencies.
+
 Dependencies
 ------------
 
