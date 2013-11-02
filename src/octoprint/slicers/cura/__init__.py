@@ -3,6 +3,9 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import logging
 import os
+import pdb
+import base64
+import zlib
 
 from octoprint.settings import settings
 
@@ -61,6 +64,19 @@ class Cura(object):
 
 		executable = self.cura_path
 		(workingDir, ignored) = os.path.split(executable)
+
+
+		if "CURA_PROFILE_STRING:" in config:
+			config = config.replace("CURA_PROFILE_STRING:", "")
+			config = config.replace("\n","")
+			config = config.replace(" ","")
+
+			file = open("/tmp/cura.ini", "w")
+			file.write(zlib.decompress(base64.b64decode(config)))
+			file.close()
+
+			config = "/tmp/cura.ini"
+
 		args = [executable, '-i', config, '-s', file_path, '-o',  gcode]
 
 		thread = threading.Thread(target=start_thread, args=(call_back,
