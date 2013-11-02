@@ -15,6 +15,7 @@
                 <li><a href="#settings_features" data-toggle="tab">Možnosti</a></li>
                 <li><a href="#settings_webcam" data-toggle="tab">Kamera</a></li>
                 <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
+                <li><a href="#settings_youtube" data-toggle="tab">YouTube</a></li>
                 {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Přístupy</a></li>{% endif %}
                 <li><a href="#settings_api" data-toggle="tab">Api</a></li>
                 <li class="nav-header">OctoPrint</li>
@@ -255,6 +256,8 @@
                         </div>
                     </form>
                 </div>
+
+
                 <div class="tab-pane" id="settings_temperature">
                     <form class="form-horizontal">
                         <div class="row-fluid">
@@ -329,6 +332,7 @@
                         </div>
                     </form>
                 </div>
+
                 <div class="tab-pane" id="settings_cura">
                     <form class="form-horizontal">
                         <div class="control-group">
@@ -351,6 +355,37 @@
                         </div>
                     </form>
                 </div>
+
+                <div class="tab-pane" id="settings_youtube">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubeEnabled">Povolit odesílání na YouTube</label>
+                            <div class="controls">
+                                <input type="checkbox" data-bind="checked: youtube_enabled">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubeEmail">Email</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: youtube_email">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubePassword">Heslo</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: youtube_password">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubeUploader">Cesta k youtube-upload</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: youtube_uploader">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+
                 <div class="tab-pane" id="settings_api">
                     <form class="form-horizontal">
                         <div class="control-group">

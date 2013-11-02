@@ -274,7 +274,7 @@
                                             <ul class="dropdown-menu">
                                                 <!-- ko foreach: temperature_profiles -->
                                                 <li>
-                                                    <a href="#" data-bind="click: $parent.setTempFromProfile, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
+                                                    <a href="#" data-bind="click: $parent.setTempFromProfile, text: name + ' (' + extruder + '&deg;C)'"></a>
                                                 </li>
                                                 <!-- /ko -->
                                                 <li class="divider"></li>
@@ -314,7 +314,7 @@
                                             <ul class="dropdown-menu">
                                                  <!-- ko foreach: temperature_profiles -->
                                                  <li>
-                                                     <a href="#" data-bind="click: $parent.setBedTempFromProfile, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
+                                                     <a href="#" data-bind="click: $parent.setBedTempFromProfile, text: name + ' (' + bed + '&deg;C)'"></a>
                                                  </li>
                                                  <!-- /ko -->
                                                  <li class="divider"></li>
