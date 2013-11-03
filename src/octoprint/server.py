@@ -537,6 +537,7 @@ def apiPrinterState():
 	currentData.update({
 		"temperatures": printer.getCurrentTemperatures()
 	})
+    
 	return jsonify(currentData)
 
 #~~ timelapse handling

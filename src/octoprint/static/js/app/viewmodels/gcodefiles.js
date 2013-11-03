@@ -4,6 +4,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.printerState = printerStateViewModel;
     self.loginState = loginStateViewModel;
 
+    self.accordionStateHelper = new AccordionStateHelper("files_accordion", "shown", "#files");
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);

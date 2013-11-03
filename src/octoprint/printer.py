@@ -8,6 +8,7 @@ import threading
 import copy
 import os
 import logging
+import psutil
 
 #import logging, logging.config
 
@@ -57,6 +58,7 @@ class Printer():
 		self._log = deque([], 300)
 		self._logBacklog = []
 
+		self._load = None
 		self._state = None
 
 		self._currentZ = None
@@ -89,7 +91,7 @@ class Printer():
 			addMessageCallback=self._sendAddMessageCallbacks
 		)
 		self._stateMonitor.reset(
-			state={"state": None, "stateString": self.getStateString(), "flags": self._getStateFlags()},
+			state={"load": None, "state": None, "stateString": self.getStateString(), "flags": self._getStateFlags()},
 			jobData={"filename": None, "filesize": None, "estimatedPrintTime": None, "filament": None},
 			progress={"progress": None, "filepos": None, "printTime": None, "printTimeLeft": None},
 			currentZ=None
@@ -598,6 +600,7 @@ class StateMonitor(object):
 		self._addLogCallback = addLogCallback
 		self._addMessageCallback = addMessageCallback
 
+		self._load = None
 		self._state = None
 		self._jobData = None
 		self._gcodeData = None
@@ -637,6 +640,10 @@ class StateMonitor(object):
 		self._currentZ = currentZ
 		self._changeEvent.set()
 
+	def setLoad(self, load):
+		self._load = load
+		self._changeEvent.set()
+
 	def setState(self, state):
 		self._state = state
 		self._changeEvent.set()
@@ -673,6 +680,7 @@ class StateMonitor(object):
 
 	def getCurrentData(self):
 		return {
+			"load": psutil.cpu_percent(),
 			"state": self._state,
 			"job": self._jobData,
 			"currentZ": self._currentZ,

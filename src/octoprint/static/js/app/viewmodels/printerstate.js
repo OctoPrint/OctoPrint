@@ -3,6 +3,9 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.loginState = loginStateViewModel;
 
+    self.accordionStateHelper = new AccordionStateHelper("state_accordion", "shown");
+
+    self.systemLoad = ko.observable(undefined);
     self.stateString = ko.observable(undefined);
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -79,10 +82,16 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self._fromData = function(data) {
-        self._processStateData(data.state)
+        self._processStateData(data.state);
+        self._processSystemData(data.load);
         self._processJobData(data.job);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
+    }
+
+    self._processSystemData = function(data) {
+	console.log(data);
+	self.systemLoad(data);
     }
 
     self._processStateData = function(data) {

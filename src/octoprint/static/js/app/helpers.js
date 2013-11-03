@@ -273,3 +273,85 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self._loadCurrentFiltersFromLocalStorage();
     self._loadCurrentSortingFromLocalStorage();
 }
+
+function AccordionStateHelper(accordionID, defaultState, overflowTarget) {
+  var self = this;
+  
+  self.accordionID = accordionID;
+  self.defaultState = defaultState;
+  self.overflowTarget = overflowTarget || undefined;
+  
+  self.currentState = ko.observable(self.defaultState);
+  
+  //called when the accordion is collapsed
+  self.collapseHandler = function() {
+    self.currentState("hidden");
+    self._saveCurrentStateToLocalStorage();
+    
+    if( self.overflowTarget !== undefined )
+      self._toggleOverflow();
+  }
+  
+  //called when the accordion is shown
+  self.uncollapseHandler = function() {
+    self.currentState("shown");
+    self._saveCurrentStateToLocalStorage();
+    
+    if( self.overflowTarget !== undefined )
+      self._toggleOverflow();
+  }
+  
+  self._applyCurrentState = function() {
+    if (self.currentState() == "hidden")
+      $("#"+self.accordionID+" .accordion-body").collapse("hide");
+  }
+  
+  self._toggleOverflow = function() {
+        if ($(self.overflowTarget).hasClass("in")) {
+            $(self.overflowTarget).removeClass("overflow_visible");
+        } else {
+            setTimeout(function() {
+                $(self.overflowTarget).addClass("overflow_visible");
+            }, 1000);
+        }
+    }
+  
+  self._saveCurrentStateToLocalStorage = function() {
+    if ( self._initializeLocalStorage() ) {
+      if ( self.currentState() !== undefined )
+        localStorage[self.accordionID + "." + "currentState"] = self.currentState();
+      else
+        localStorage[self.accordionID + "." + "currentState"] = undefined;
+    }
+  }
+  
+  self._loadCurrentStateFromLocalStorage = function() {
+    if ( self._initializeLocalStorage() ) {
+      if ( localStorage[self.accordionID + "." + "currentState"] == "hidden" )
+        self.currentState("hidden");
+      else
+        self.currentState("shown");
+    }
+  }
+  
+  self._initializeLocalStorage = function() {
+    if (!Modernizr.localstorage)
+      return false;
+    
+    if (localStorage[self.accordionID + "." + "currentState"] !== undefined)
+      return true;
+    
+    localStorage[self.accordionID + "." + "currentState"] = self.defaultState;
+    
+    return true;
+  }
+  
+  self._initializeHandlers = function() {
+    $("#"+self.accordionID).on('hide', self.collapseHandler);
+    $("#"+self.accordionID+" .accordion-body").on('show', self.uncollapseHandler);
+  }
+  
+  self._loadCurrentStateFromLocalStorage();
+  self._initializeHandlers();
+  self._applyCurrentState();
+}
