@@ -235,7 +235,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             },
             "youtube": {
                 "enabled": self.youtube_enabled(),
-                "login": self.youtube_email(),
+                "email": self.youtube_email(),
                 "password": self.youtube_password(),
                 "uploader": self.youtube_uploader()
             },
