@@ -106,6 +106,12 @@ default_settings = {
 		"path": "/default/path/to/cura",
 		"config": "/default/path/to/your/cura/config.ini"
 	},
+	"youtube": {
+		"enabled": False,
+		"email": "jmeno@domena.cz",
+		"password": "heslo",
+		"uploader": "/usr/local/bin/youtube-upload"
+	},
 	"events": {
 		"systemCommandTrigger": {
 			"enabled": False

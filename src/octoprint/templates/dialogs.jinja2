@@ -3,14 +3,12 @@
     <div id="offline_overlay_wrapper">
         <div class="container">
             <div class="hero-unit">
-                <h1>Server is offline</h1>
+                <h1>Server není dostupný</h1>
                 <p id="offline_overlay_message">
-                    The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect
-                    automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect
-                    anytime using the button below.
+		    Server se zdá být nedostupný. Příštích pár minut se budu pokoušet připojit automaticky. Tlačítkem "Znovu se připojit" můžeš akci kdykoli provést ručně.
                 </p>
                 <p>
-                    <a class="btn btn-primary btn-large" id="offline_overlay_reconnect">Attempt to reconnect</a>
+                    <a class="btn btn-primary btn-large" id="offline_overlay_reconnect">Znovu se připojit</a>
                 </p>
             </div>
         </div>
@@ -21,12 +19,12 @@
     <div id="drop_overlay_background"></div>
     <div id="drop_overlay_wrapper">
         {% if enableSdSupport %}
-            <div class="dropzone" id="drop_locally"><span class="centered"><i class="icon-upload-alt"></i><br>Upload locally</span></div>
+            <div class="dropzone" id="drop_locally"><span class="centered"><i class="icon-upload-alt"></i><br>Nahrát lokálně</span></div>
             <div class="dropzone_background" id="drop_locally_background"></div>
-            <div class="dropzone" id="drop_sd"><span class="centered"><i class="icon-upload-alt"></i><br>Upload to SD<br><small data-bind="visible: !isSdReady()">(SD not initialized)</small></span></div>
+            <div class="dropzone" id="drop_sd"><span class="centered"><i class="icon-upload-alt"></i><br>Nahrát na SD kartu<br><small data-bind="visible: !isSdReady()">(SD karta není inicializovaná)</small></span></div>
             <div class="dropzone_background" id="drop_sd_background"></div>
         {% else %}
-            <div class="dropzone" id="drop"><span class="centered"><i class="icon-upload-alt"></i><br>Upload</span></div>
+            <div class="dropzone" id="drop"><span class="centered"><i class="icon-upload-alt"></i><br>Nahrát</span></div>
             <div class="dropzone_background" id="drop_background"></div>
         {% endif %}
     </div>
@@ -35,69 +33,57 @@
 <div id="confirmation_dialog" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>Are you sure?</h3>
+        <h3>Jsi si jist?</h3>
     </div>
     <div class="modal-body">
         <p class="confirmation_dialog_message"></p>
-        <p>Are you sure you want to proceed?</p>
+        <p>Pokračovat?</p>
     </div>
     <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
-        <a href="#" class="btn btn-danger confirmation_dialog_acknowledge">Proceed</a>
+        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Zrušit</a>
+        <a href="#" class="btn btn-danger confirmation_dialog_acknowledge">Potvrdit</a>
     </div>
 </div>
 
 <div id="first_run_dialog" class="modal hide fade" data-backdrop="static" data-keyboard="false">
     <div class="modal-header">
-        <h3><i class="icon-warning-sign"></i> Configure Access Control</h3>
+        <h3><i class="icon-warning-sign"></i> Konfigurace přístupu</h3>
     </div>
     <div class="modal-body">
         <p>
-            <strong>Please read the following, it is very important for your printer's health!</strong>
-        </p>
-        <p>
-            OctoPrint by default now ships with Access Control enabled, meaning you won't be able to do anything with the
-            printer unless you login first as a configured user. This is to <strong>prevent strangers - possibly with
-            malicious intent - to gain access to your printer</strong> via the internet or another untrustworthy network
-            and using it in such a way that it is damaged or worse (i.e. causes a fire).
-        </p>
-        <p>
-            It looks like you haven't configured access control yet. Please <strong>set up an username and password</strong> for the
-            initial administrator account who will have full access to both the printer and OctoPrint's settings, then click
-            on "Keep Access Control Enabled":
+	    Je třeba nastavit přístup. Standardně OctoPrint nepovolí veřejný přístup. Proto je potřeba založit uživatelské jméno a heslo pro Administrátora, který získá plná práva.
         </p>
         <form class="form-horizontal">
             <div class="control-group" data-bind="css: {success: validUsername()}">
-                <label class="control-label" for="first_run_username">Username</label>
+                <label class="control-label" for="first_run_username">Jméno</label>
                 <div class="controls">
                     <input type="text" class="input-medium" data-bind="value: username, valueUpdate: 'afterkeydown'">
                 </div>
             </div>
             <div class="control-group" data-bind="css: {success: validPassword()}">
-                <label class="control-label" for="first_run_username">Password</label>
+                <label class="control-label" for="first_run_username">Heslo</label>
                 <div class="controls">
                     <input type="password" class="input-medium" data-bind="value: password, valueUpdate: 'afterkeydown'">
                 </div>
             </div>
             <div class="control-group" data-bind="css: {error: passwordMismatch(), success: validPassword() && !passwordMismatch()}">
-                <label class="control-label" for="first_run_username">Confirm Password</label>
+                <label class="control-label" for="first_run_username">Heslo znovu</label>
                 <div class="controls">
                     <input type="password" class="input-medium" data-bind="value: confirmedPassword, valueUpdate: 'afterkeydown'">
-                    <span class="help-inline" data-bind="visible: passwordMismatch()">Passwords don't match</span>
+                    <span class="help-inline" data-bind="visible: passwordMismatch()">Hesla nesouhlasí</span>
                 </div>
             </div>
         </form>
         <p>
-            <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy network and you don't
-            need Access Control for other reasons, you may alternatively disable Access Control. You should only
-            do this if you are absolutely certain that only people you know and trust will be able to connect to it.
+            <strong>Poznámka:</strong> 
+		Pouze v případě, že je OctoPrint dostupný pouze s důvěyhodné sítě a není potřeba řízení přístupů. Vypnout řízení přístupů si můžete dovolit pouze v případě, že jste si naprosto jist, že k OctoPrint mají přístup pouze důvěryhodní uživatelé.
         </p>
         <p>
-            <strong>Do NOT underestimate the risk of an unsecured access from the internet to your printer!</strong>
+            <strong>NEPODCEŇUJTE riziko nezabezpečeného přístupu k vaší tiskáně z Internetu!</strong>
         </p>
     </div>
     <div class="modal-footer">
-        <a href="#" class="btn btn-danger" data-bind="click: disableAccessControl">Disable Access Control</a>
-        <a href="#" class="btn btn-primary" data-bind="click: keepAccessControl, enable: validData(), css: {disabled: !validData()}">Keep Access Control Enabled</a>
+        <a href="#" class="btn btn-danger" data-bind="click: disableAccessControl">Vypnout řízení přístupu</a>
+        <a href="#" class="btn btn-primary" data-bind="click: keepAccessControl, enable: validData(), css: {disabled: !validData()}">Potvrdit</a>
     </div>
 </div>

@@ -3,6 +3,9 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.loginState = loginStateViewModel;
 
+    self.accordionStateHelper = new AccordionStateHelper("state_accordion", "shown");
+
+    self.systemLoad = ko.observable(undefined);
     self.stateString = ko.observable(undefined);
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -45,9 +48,9 @@ function PrinterStateViewModel(loginStateViewModel) {
     });
     self.pauseString = ko.computed(function() {
         if (self.isPaused())
-            return "Continue";
+            return "Pokračovat";
         else
-            return "Pause";
+            return "Pauza";
     });
 
     self.timelapseString = ko.computed(function() {
@@ -58,9 +61,9 @@ function PrinterStateViewModel(loginStateViewModel) {
 
         var type = timelapse["type"];
         if (type == "zchange") {
-            return "On Z Change";
+            return "Při změně Z";
         } else if (type == "timed") {
-            return "Timed (" + timelapse["options"]["interval"] + "s)";
+            return "V intervalu " + timelapse["options"]["interval"] + "s";
         } else {
             return "-";
         }
@@ -79,10 +82,15 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self._fromData = function(data) {
-        self._processStateData(data.state)
+        self._processStateData(data.state);
+        self._processSystemData(data.load);
         self._processJobData(data.job);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
+    }
+
+    self._processSystemData = function(data) {
+	self.systemLoad(data);
     }
 
     self._processStateData = function(data) {

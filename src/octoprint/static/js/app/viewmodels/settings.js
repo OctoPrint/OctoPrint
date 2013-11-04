@@ -53,6 +53,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.cura_path = ko.observable(undefined);
     self.cura_config = ko.observable(undefined);
 
+    self.youtube_enabled = ko.observable(undefined);
+    self.youtube_email = ko.observable(undefined);
+    self.youtube_password = ko.observable(undefined);
+    self.youtube_uploader = ko.observable(undefined);
+
     self.temperature_profiles = ko.observableArray(undefined);
 
     self.system_actions = ko.observableArray([]);
@@ -156,6 +161,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.cura_path(response.cura.path);
         self.cura_config(response.cura.config);
 
+        self.youtube_enabled(response.youtube.enabled);
+        self.youtube_email(response.youtube.email);
+        self.youtube_password(response.youtube.password);
+        self.youtube_uploader(response.youtube.uploader);
+
         self.temperature_profiles(response.temperature.profiles);
 
         self.system_actions(response.system.actions);
@@ -222,6 +232,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "enabled": self.cura_enabled(),
                 "path": self.cura_path(),
                 "config": self.cura_config()
+            },
+            "youtube": {
+                "enabled": self.youtube_enabled(),
+                "email": self.youtube_email(),
+                "password": self.youtube_password(),
+                "uploader": self.youtube_uploader()
             },
             "terminalFilters": self.terminalFilters()
         }

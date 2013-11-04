@@ -502,10 +502,13 @@ def apiLoad():
 
 	# Perform an upload
 	file = request.files["file"]
-	if not gcodefiles.isGcodeFileName(file.filename):
+	if (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(file.filename)):
 		abort(400)
 
-	filename, done = gcodeManager.addFile(file)
+	destination = FileDestinations.LOCAL
+
+	filename, done = gcodeManager.addFile(file, destination)
+
 	if filename is None:
 		logger.warn("Upload via API failed")
 		abort(500)
@@ -534,6 +537,7 @@ def apiPrinterState():
 	currentData.update({
 		"temperatures": printer.getCurrentTemperatures()
 	})
+    
 	return jsonify(currentData)
 
 #~~ timelapse handling
@@ -700,6 +704,12 @@ def getSettings():
 			"enabled": s.getBoolean(["cura", "enabled"]),
 			"path": s.get(["cura", "path"]),
 			"config": s.get(["cura", "config"])
+		},
+		"youtube": {
+			"enabled": s.getBoolean(["youtube", "enabled"]),
+			"email": s.get(["youtube", "email"]),
+			"password": s.get(["youtube", "password"]),
+			"uploader": s.get(["youtube", "uploader"])
 		}
 	})
 
@@ -791,6 +801,13 @@ def setSettings():
 			# Enabled is a boolean so we cannot check that we have a result
 			enabled = cura.get("enabled")
 			s.setBoolean(["cura", "enabled"], enabled)
+
+		if "youtube" in data.keys():
+			if "enabled"  in data["youtube"].keys(): s.set(["youtube", "enabled"],  data["youtube"]["enabled"])
+			if "email"    in data["youtube"].keys(): s.set(["youtube", "email"],    data["youtube"]["email"])
+			if "password" in data["youtube"].keys(): s.set(["youtube", "password"], data["youtube"]["password"])
+			if "uploader" in data["youtube"].keys(): s.set(["youtube", "uploader"], data["youtube"]["uploader"])
+
 
 		s.save()
 

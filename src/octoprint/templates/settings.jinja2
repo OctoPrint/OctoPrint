@@ -1,38 +1,39 @@
 <div id="settings_dialog" class="modal hide fade container" tabindex="-1" role="dialog" aria-labelledby="settings_dialog_label" aria-hidden="true">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h3 id="settings_dialog_label">OctoPrint Settings</h3>
+        <h3 id="settings_dialog_label">Nastavení OctoPrint</h3>
     </div>
     <div class="modal-body">
         <div class="tabbable">
             <ul class="nav nav-list span4" id="settingsTabs">
-                <li class="nav-header">Printer</li>
-                <li class="active"><a href="#settings_serialConnection" data-toggle="tab">Serial Connection</a></li>
-                <li><a href="#settings_printerParameters" data-toggle="tab">Printer Parameters</a></li>
-                <li><a href="#settings_temperature" data-toggle="tab">Temperatures</a></li>
-                <li><a href="#settings_terminalFilters" data-toggle="tab">Terminal filters</a></li>
-                <li class="nav-header">Features</li>
-                <li><a href="#settings_features" data-toggle="tab">Features</a></li>
-                <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
+                <li class="nav-header">Tiskárna</li>
+                <li class="active"><a href="#settings_serialConnection" data-toggle="tab">Připojení</a></li>
+                <li><a href="#settings_printerParameters" data-toggle="tab">Parametry tiskárny</a></li>
+                <li><a href="#settings_temperature" data-toggle="tab">Teploty</a></li>
+                <li><a href="#settings_terminalFilters" data-toggle="tab">Filtry pro terminál</a></li>
+                <li class="nav-header">Možnosti</li>
+                <li><a href="#settings_features" data-toggle="tab">Možnosti</a></li>
+                <li><a href="#settings_webcam" data-toggle="tab">Kamera</a></li>
                 <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
-                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Access Control</a></li>{% endif %}
+                <li><a href="#settings_youtube" data-toggle="tab">YouTube</a></li>
+                {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">Přístupy</a></li>{% endif %}
                 <li><a href="#settings_api" data-toggle="tab">Api</a></li>
                 <li class="nav-header">OctoPrint</li>
-                <li><a href="#settings_folder" data-toggle="tab">Folders</a></li>
-                <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
+                <li><a href="#settings_folder" data-toggle="tab">Složky</a></li>
+                <li><a href="#settings_appearance" data-toggle="tab">Vzhled</a></li>
             </ul>
 
             <div class="tab-content span8">
                 <div class="tab-pane active" id="settings_serialConnection">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-serialPort">Serial Port</label>
+                            <label class="control-label" for="settings-serialPort">Port</label>
                             <div class="controls">
                                 <select id="settings-serialPort" data-bind="options: serial_portOptions, optionsCaption: 'AUTO', value: serial_port"></select>
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-baudrate">Baudrate</label>
+                            <label class="control-label" for="settings-baudrate">Rychlost</label>
                             <div class="controls">
                                 <select id="settings-baudrate" data-bind="options: serial_baudrateOptions, optionsCaption: 'AUTO', value: serial_baudrate"></select>
                             </div>
@@ -40,12 +41,12 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: serial_autoconnect" id="settings-serialAutoconnect"> Auto-connect to printer on server start
+                                    <input type="checkbox" data-bind="checked: serial_autoconnect" id="settings-serialAutoconnect"> Automaticky připojit tiskárnu při startu
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Communication timeout</label>
+                            <label class="control-label" for="settings-movementSpeedE">Timeout pro komunikaci</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
@@ -54,7 +55,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Connection timeout</label>
+                            <label class="control-label" for="settings-movementSpeedE">Timeout pro spojení</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutConnection" id="settings-serialTimeoutConnection">
@@ -63,7 +64,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Autodetection timeout</label>
+                            <label class="control-label" for="settings-movementSpeedE">Timeout pro autodetekci</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutDetection" id="settings-serialTimeoutDetection">
@@ -74,7 +75,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: serial_log" id="settings-serialLog"> Log communication to serial.log (might negatively impact performance) <span class="label label-important">Warning</span>
+                                    <input type="checkbox" data-bind="checked: serial_log" id="settings-serialLog"> Zaznamenávat sériovou komunikaci do serial.log (může mít negativní vliv na výkon) <span class="label label-important">Varování</span>
                                 </label>
                             </div>
                         </div>
@@ -83,7 +84,7 @@
                 <div class="tab-pane" id="settings_printerParameters">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedX">Movement Speed X Axis</label>
+                            <label class="control-label" for="settings-movementSpeedX">Rychlost osy X</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedX" id="settings-movementSpeedX">
@@ -92,7 +93,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedY">Movement Speed Y Axis</label>
+                            <label class="control-label" for="settings-movementSpeedY">Rychlost osy Y</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedY" id="settings-movementSpeedY">
@@ -101,7 +102,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedZ">Movement Speed Z Axis</label>
+                            <label class="control-label" for="settings-movementSpeedZ">Rychlost osy Z Axis</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedZ" id="settings-movementSpeedZ">
@@ -110,7 +111,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Movement Speed Extruder</label>
+                            <label class="control-label" for="settings-movementSpeedE">Rychlost extrudéru</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedE" id="settings-movementSpeedE">
@@ -120,15 +121,15 @@
                         </div>
                         <div class="control-group">
                             <div class="controls">
-                                Invert controls
+                                Otočit osy
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertX" id="settings-printerInvertX"> X axis
+                                    <input type="checkbox" data-bind="checked: printer_invertX" id="settings-printerInvertX"> osa X 
                                 </label>
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertY" id="settings-printerInvertY"> Y axis
+                                    <input type="checkbox" data-bind="checked: printer_invertY" id="settings-printerInvertY"> osa Y
                                 </label>
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertZ" id="settings-printerInvertZ"> Z axis
+                                    <input type="checkbox" data-bind="checked: printer_invertZ" id="settings-printerInvertZ"> osa Z
                                 </label>
                             </div>
                         </div>
@@ -137,25 +138,25 @@
                 <div class="tab-pane" id="settings_webcam">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-webcamStreamUrl">Stream URL</label>
+                            <label class="control-label" for="settings-webcamStreamUrl">Adresa streamu</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: webcam_streamUrl" id="settings-webcamStreamUrl">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-webcamStreamUrl">Snapshot URL</label>
+                            <label class="control-label" for="settings-webcamStreamUrl">Adresa pro snímky</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: webcam_snapshotUrl" id="settings-webcamSnapshotUrl">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-webcamStreamUrl">Path to FFMPEG</label>
+                            <label class="control-label" for="settings-webcamStreamUrl">Cesta k FFMPEGu</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: webcam_ffmpegPath" id="settings-webcamFfmpegPath">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-webcamBitrate">Timelapse bitrate</label>
+                            <label class="control-label" for="settings-webcamBitrate">Bitrate časosběrného videa</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: webcam_bitrate" id="settings-webcamBitrate">
                             </div>
@@ -163,19 +164,19 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: webcam_watermark" id="settings-webcamWatermark"> Enable OctoPrint watermark in timelapse movies
+                                    <input type="checkbox" data-bind="checked: webcam_watermark" id="settings-webcamWatermark"> Vložit do videa logo OctoPrint
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: webcam_flipH" id="settings-webcamFlipH"> Flip webcam horizontally
+                                    <input type="checkbox" data-bind="checked: webcam_flipH" id="settings-webcamFlipH"> Otočit obraz horizontálně
                                 </label>
                             </div>
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: webcam_flipV" id="settings-webcamFlipV"> Flip webcam vertically
+                                    <input type="checkbox" data-bind="checked: webcam_flipV" id="settings-webcamFlipV"> Otočit obraz vertikálně
                                 </label>
                             </div>
                         </div>
@@ -186,42 +187,42 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_temperatureGraph" id="settings-featureTemperatureGraph"> Enable Temperature Graph
+                                    <input type="checkbox" data-bind="checked: feature_temperatureGraph" id="settings-featureTemperatureGraph"> Povolit graf teplot
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_gcodeViewer" id="settings-featureGcodeViewer"> Enable GCode Visualizer
+                                    <input type="checkbox" data-bind="checked: feature_gcodeViewer" id="settings-featureGcodeViewer"> Povolit zobrazení G-kódu
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> Enable SD support
+                                    <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> povolit podporu SD karty
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> Wait for <code>start</code> on connect
+                                    <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> Čekat na <code>start</code> při připojení
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> Send a checksum with <strong>every</strong> command  <span class="label">Repetier</span>
+                                    <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> Odesílat kontrolní součet s <strong>každým</strong> příkazem  <span class="label">Repetier</span>
                                 </label>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_swallowOkAfterResend" id="settings-swallowOkAfterResend"> Swallow the first "ok" after a resend response
+                                    <input type="checkbox" data-bind="checked: feature_swallowOkAfterResend" id="settings-swallowOkAfterResend"> Ignorovat prní "ok" po příkazu znovuodeslání řádku
                                 </label>
                             </div>
                         </div>
@@ -230,36 +231,38 @@
                 <div class="tab-pane" id="settings_folder">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderUploads">Upload Folder</label>
+                            <label class="control-label" for="settings-folderUploads">Složka pro upload</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_uploads" id="settings-folderUploads">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderTimelapse">Timelapse Folder</label>
+                            <label class="control-label" for="settings-folderTimelapse">Složka pro videa</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_timelapse" id="settings-folderTimelapse">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderTimelapseTemp">Timelapse Temp Folder</label>
+                            <label class="control-label" for="settings-folderTimelapseTemp">Složka pro dočasné soubory</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_timelapseTmp" id="settings-folderTimelapseTemp">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-folderLogs">Logs Folder</label>
+                            <label class="control-label" for="settings-folderLogs">Složka pro logy</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: folder_logs" id="settings-folderLogs">
                             </div>
                         </div>
                     </form>
                 </div>
+
+
                 <div class="tab-pane" id="settings_temperature">
                     <form class="form-horizontal">
                         <div class="row-fluid">
                             <div class="offset3 span3"><h4>Extruder</h4></div>
-                            <div class="span3"><h4>Bed</h4></div>
+                            <div class="span3"><h4>Podložka</h4></div>
                         </div>
                         <div data-bind="foreach: temperature_profiles">
                             <div class="row-fluid" style="margin-bottom: 5px">
@@ -275,13 +278,13 @@
                                     <span class="add-on">&deg;C</span>
                                 </div>
                                 <div class="span2">
-                                    <button title="Remove profile" class="btn btn-danger" data-bind="click: $parent.removeTemperatureProfile"><i class="icon-trash"></i></button>
+                                    <button title="Odstranit profil" class="btn btn-danger" data-bind="click: $parent.removeTemperatureProfile"><i class="icon-trash"></i></button>
                                 </div>
                             </div>
                         </div>
                         <div class="row-fluid">
                             <div class="offset9 span2">
-                                <button title="Add Profile" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="icon-plus"></i></button>
+                                <button title="Přidat profil" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="icon-plus"></i></button>
                             </div>
                         </div>
                     </form>
@@ -289,7 +292,7 @@
                 <div class="tab-pane" id="settings_terminalFilters">
                     <form class="form-horizontal">
                         <div class="row-fluid">
-                            <div class="span4"><h4>Name</h4></div>
+                            <div class="span4"><h4>Jméno</h4></div>
                             <div class="span6"><h4>RegExp <small><a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions">?</a></small></h4></div>
                         </div>
                         <div data-bind="foreach: terminalFilters">
@@ -301,13 +304,13 @@
                                     <input type="text" class="span12" data-bind="value: regex">
                                 </div>
                                 <div class="span2">
-                                    <button title="Remove Filter" class="btn btn-danger" data-bind="click: $parent.removeTerminalFilter"><i class="icon-trash"></i></button>
+                                    <button title="Odstranit filtr" class="btn btn-danger" data-bind="click: $parent.removeTerminalFilter"><i class="icon-trash"></i></button>
                                 </div>
                             </div>
                         </div>
                         <div class="row-fluid">
                             <div class="offset10 span2">
-                                <button title="Add Filter" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="icon-plus"></i></button>
+                                <button title="Přidat filtr" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="icon-plus"></i></button>
                             </div>
                         </div>
                     </form>
@@ -315,13 +318,13 @@
                 <div class="tab-pane" id="settings_appearance">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-appearanceName">Title</label>
+                            <label class="control-label" for="settings-appearanceName">Název</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: appearance_name" id="settings-appearanceName">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-appearanceColor">Color</label>
+                            <label class="control-label" for="settings-appearanceColor">Barva</label>
                             <div class="controls">
                                 <select id="settings-appearanceColor" data-bind="value: appearance_color, options: appearance_available_colors">
                                 </select>
@@ -329,34 +332,66 @@
                         </div>
                     </form>
                 </div>
+
                 <div class="tab-pane" id="settings_cura">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="settings-curaEnabled">Enable slicing via Cura</label>
+                            <label class="control-label" for="settings-curaEnabled">Povolit zpracování Curou</label>
                             <div class="controls">
                                 <input type="checkbox" data-bind="checked: cura_enabled">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-curaPath">Path to Cura</label>
+                            <label class="control-label" for="settings-curaPath">Cesta k Cura</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: cura_path">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-curaConfig">Path to Cura config</label>
+                            <label class="control-label" for="settings-curaConfig">Cesta k profilu Cura</label>
                             <div class="controls">
                                 <input type="text" class="input-block-level" data-bind="value: cura_config">
                             </div>
                         </div>
                     </form>
                 </div>
+
+                <div class="tab-pane" id="settings_youtube">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubeEnabled">Povolit odesílání na YouTube</label>
+                            <div class="controls">
+                                <input type="checkbox" data-bind="checked: youtube_enabled">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubeEmail">Email</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: youtube_email">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubePassword">Heslo</label>
+                            <div class="controls">
+                                <input type="password" class="input-block-level" data-bind="value: youtube_password">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-youtubeUploader">Cesta k youtube-upload</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: youtube_uploader">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+
                 <div class="tab-pane" id="settings_api">
                     <form class="form-horizontal">
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" id="settings-apiEnabled" data-bind="checked: api_enabled"> Enable
+                                    <input type="checkbox" id="settings-apiEnabled" data-bind="checked: api_enabled"> Povolit
                                 </label>
                             </div>
                         </div>
@@ -374,10 +409,10 @@
                     <table class="table table-condensed table-hover" id="system_users">
                         <thead>
                             <tr>
-                                <th class="settings_users_name">Name</th>
-                                <th class="settings_users_active">Active</th>
+                                <th class="settings_users_name">Jméno</th>
+                                <th class="settings_users_active">Aktivní</th>
                                 <th class="settings_users_admin">Admin</th>
-                                <th class="settings_users_actions">Action</th>
+                                <th class="settings_users_actions">Akce</th>
                             </tr>
                         </thead>
                         <tbody data-bind="foreach: users.listHelper.paginatedItems">
@@ -403,40 +438,40 @@
                         </ul>
                     </div>
 
-                    <button title="Add user" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="icon-plus"></i> Create new user</button>
+                    <button title="Přidat uživatele" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="icon-plus"></i> Nový uživatel</button>
 
                     <!-- Modals for user management -->
 
                     <div id="settings-usersDialogAddUser" class="modal hide fade">
                         <div class="modal-header">
                             <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-                            <h3>Create new user</h3>
+                            <h3>Nový uživatel</h3>
                         </div>
                         <div class="modal-body">
                             <form class="form-horizontal">
                                 <div class="control-group">
-                                    <label class="control-label" for="settings-usersDialogAddUserName">Username</label>
+                                    <label class="control-label" for="settings-usersDialogAddUserName">Uživatel</label>
                                     <div class="controls">
                                         <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="value: $root.users.editorUsername" required>
                                     </div>
                                 </div>
                                 <div class="control-group">
-                                    <label class="control-label" for="settings-usersDialogAddUserPassword1">Password</label>
+                                    <label class="control-label" for="settings-usersDialogAddUserPassword1">Heslo</label>
                                     <div class="controls">
                                         <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword1" data-bind="value: $root.users.editorPassword" required>
                                     </div>
                                 </div>
                                 <div class="control-group" data-bind="css: {error: $root.users.editorPasswordMismatch()}">
-                                    <label class="control-label" for="settings-usersDialogAddUserPassword2">Repeat Password</label>
+                                    <label class="control-label" for="settings-usersDialogAddUserPassword2">Heslo znovu</label>
                                     <div class="controls">
                                         <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword2" data-bind="value: $root.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
-                                        <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Passwords do not match</span>
+                                        <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Hesla nesouhlasí</span>
                                     </div>
                                 </div>
                                 <div class="control-group">
                                     <div class="controls">
                                         <label class="checkbox">
-                                            <input type="checkbox" id="settings-usersDialogAddUserActive" data-bind="checked: $root.users.editorActive"> Active
+                                            <input type="checkbox" id="settings-usersDialogAddUserActive" data-bind="checked: $root.users.editorActive"> Aktivní
                                         </label>
                                     </div>
                                 </div>
@@ -450,22 +485,22 @@
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button class="btn" data-dismiss="modal" aria-hidden="true">Abort</button>
-                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmAddUser(); }, enable: !$root.users.editorPasswordMismatch()">Confirm</button>
+                            <button class="btn" data-dismiss="modal" aria-hidden="true">Zrušit</button>
+                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmAddUser(); }, enable: !$root.users.editorPasswordMismatch()">Potvrdit</button>
                         </div>
                     </div>
 
                     <div id="settings-usersDialogEditUser" class="modal hide fade">
                         <div class="modal-header">
                             <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-                            <h3>Edit user "<span data-bind="text: $root.users.editorUsername"></span>"</h3>
+                            <h3>Editovat uživatele "<span data-bind="text: $root.users.editorUsername"></span>"</h3>
                         </div>
                         <div class="modal-body">
                             <form class="form-horizontal">
                                 <div class="control-group">
                                     <div class="controls">
                                         <label class="checkbox">
-                                            <input type="checkbox" id="settings-usersDialogEditUserActive" data-bind="checked: $root.users.editorActive"> Active
+                                            <input type="checkbox" id="settings-usersDialogEditUserActive" data-bind="checked: $root.users.editorActive"> Aktivní
                                         </label>
                                     </div>
                                 </div>
@@ -473,42 +508,42 @@
                                     <div class="controls">
                                         <label class="checkbox">
                                             <input type="checkbox" id="settings-usersDialogEditUserAdmin" data-bind="checked: $root.users.editorAdmin"> Admin
-                                        </label>
+                                        </label> 
                                     </div>
                                 </div>
                             </form>
                         </div>
                         <div class="modal-footer">
                             <button class="btn" data-dismiss="modal" aria-hidden="true">Abort</button>
-                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmEditUser(); }">Confirm</button>
+                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmEditUser(); }">Potvrdit</button>
                         </div>
                     </div>
 
                     <div id="settings-usersDialogChangePassword" class="modal hide fade">
                         <div class="modal-header">
                             <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-                            <h3>Change password for user "<span data-bind="text: $root.users.editorUsername"></span>"</h3>
+                            <h3>Změnit heslo uživateli "<span data-bind="text: $root.users.editorUsername"></span>"</h3>
                         </div>
                         <div class="modal-body">
                             <form class="form-horizontal">
                                 <div class="control-group">
-                                    <label class="control-label" for="settings-usersDialogChangePasswordPassword1">New Password</label>
+                                    <label class="control-label" for="settings-usersDialogChangePasswordPassword1">Nové heslo</label>
                                     <div class="controls">
                                         <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword1" data-bind="value: $root.users.editorPassword" required>
                                     </div>
                                 </div>
                                 <div class="control-group" data-bind="css: {error: $root.users.editorPasswordMismatch()}">
-                                    <label class="control-label" for="settings-usersDialogChangePasswordPassword2">Repeat Password</label>
+                                    <label class="control-label" for="settings-usersDialogChangePasswordPassword2">Heslo znovu</label>
                                     <div class="controls">
                                         <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword2" data-bind="value: $root.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
-                                        <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Passwords do not match</span>
+                                        <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Hesla nesouhlasí</span>
                                     </div>
                                 </div>
                             </form>
                         </div>
                         <div class="modal-footer">
                             <button class="btn" data-dismiss="modal" aria-hidden="true">Abort</button>
-                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmChangePassword(); }, enable: !$root.users.editorPasswordMismatch()">Confirm</button>
+                            <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmChangePassword(); }, enable: !$root.users.editorPasswordMismatch()">Potvrdit</button>
                         </div>
                     </div>
                 </div>
@@ -518,7 +553,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
-        <button class="btn btn-primary" data-bind="click: saveData">Save</button>
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Zrušit</button>
+        <button class="btn btn-primary" data-bind="click: saveData">Uložit</button>
     </div>
 </div>
