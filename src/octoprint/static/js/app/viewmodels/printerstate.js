@@ -90,7 +90,6 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self._processSystemData = function(data) {
-	console.log(data);
 	self.systemLoad(data);
     }
 

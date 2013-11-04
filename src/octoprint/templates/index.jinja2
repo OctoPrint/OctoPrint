@@ -112,7 +112,10 @@
                         </div>
                         <div class="accordion-body collapse in" id="state">
                             <div class="accordion-inner">
-                                Vytížení systému: <strong data-bind="text: systemLoad"></strong>%<br>
+                                Vytížení systému:<br />
+                                <div class="progress">
+                                    <div class="bar" id="job_loadBar" data-bind="text: systemLoad() + '%', style: { width: systemLoad() + '%' }"></div>
+                                </div>
                                 Stav tiskárny: <strong data-bind="text: stateString"></strong><br>
                                 Soubor: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
@@ -124,7 +127,7 @@
                                 Vytisknuto: <strong data-bind="text: byteString"></strong><br>
 
                                 <div class="progress">
-                                    <div class="bar" id="job_progressBar" data-bind="style: { width: progressString() + '%' }"></div>
+                                    <div class="bar" id="job_progressBar" data-bind="text: progressString() + '%', style: { width: progressString() + '%' }"></div>
                                 </div>
 
                                 <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
@@ -409,9 +412,11 @@
 
                             <!-- Templates for custom controls -->
                             <script type="text/html" id="customControls_sectionTemplate">
+				<div class="section">
                                 <h1 data-bind="text: name"></h1>
 
                                 <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+				</div>
                             </script>
                             <script type="text/html" id="customControls_commandTemplate">
                                 <form class="form-inline">
