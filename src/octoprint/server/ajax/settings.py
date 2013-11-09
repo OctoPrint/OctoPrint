@@ -20,73 +20,74 @@ from octoprint.server.ajax import ajax
 def getSettings():
 	s = settings()
 
-	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] = s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
+	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] \
+		= s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
 
 	connectionOptions = getConnectionOptions()
 
 	return jsonify({
-	"api": {
-	"enabled": s.getBoolean(["api", "enabled"]),
-	"key": s.get(["api", "key"])
-	},
-	"appearance": {
-	"name": s.get(["appearance", "name"]),
-	"color": s.get(["appearance", "color"])
-	},
-	"printer": {
-	"movementSpeedX": movementSpeedX,
-	"movementSpeedY": movementSpeedY,
-	"movementSpeedZ": movementSpeedZ,
-	"movementSpeedE": movementSpeedE,
-	"invertAxes": s.get(["printerParameters", "invertAxes"])
-	},
-	"webcam": {
-	"streamUrl": s.get(["webcam", "stream"]),
-	"snapshotUrl": s.get(["webcam", "snapshot"]),
-	"ffmpegPath": s.get(["webcam", "ffmpeg"]),
-	"bitrate": s.get(["webcam", "bitrate"]),
-	"watermark": s.getBoolean(["webcam", "watermark"]),
-	"flipH": s.getBoolean(["webcam", "flipH"]),
-	"flipV": s.getBoolean(["webcam", "flipV"])
-	},
-	"feature": {
-	"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
-	"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
-	"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
-	"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
-	"sdSupport": s.getBoolean(["feature", "sdSupport"]),
-	"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"])
-	},
-	"serial": {
-	"port": connectionOptions["portPreference"],
-	"baudrate": connectionOptions["baudratePreference"],
-	"portOptions": connectionOptions["ports"],
-	"baudrateOptions": connectionOptions["baudrates"],
-	"autoconnect": s.getBoolean(["serial", "autoconnect"]),
-	"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
-	"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
-	"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
-	"log": s.getBoolean(["serial", "log"])
-	},
-	"folder": {
-	"uploads": s.getBaseFolder("uploads"),
-	"timelapse": s.getBaseFolder("timelapse"),
-	"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
-	"logs": s.getBaseFolder("logs")
-	},
-	"temperature": {
-	"profiles": s.get(["temperature", "profiles"])
-	},
-	"system": {
-	"actions": s.get(["system", "actions"]),
-	"events": s.get(["system", "events"])
-	},
-	"terminalFilters": s.get(["terminalFilters"]),
-	"cura": {
-	"enabled": s.getBoolean(["cura", "enabled"]),
-	"path": s.get(["cura", "path"]),
-	"config": s.get(["cura", "config"])
-	}
+		"api": {
+			"enabled": s.getBoolean(["api", "enabled"]),
+			"key": s.get(["api", "key"])
+		},
+		"appearance": {
+			"name": s.get(["appearance", "name"]),
+			"color": s.get(["appearance", "color"])
+		},
+		"printer": {
+			"movementSpeedX": movementSpeedX,
+			"movementSpeedY": movementSpeedY,
+			"movementSpeedZ": movementSpeedZ,
+			"movementSpeedE": movementSpeedE,
+			"invertAxes": s.get(["printerParameters", "invertAxes"])
+		},
+		"webcam": {
+			"streamUrl": s.get(["webcam", "stream"]),
+			"snapshotUrl": s.get(["webcam", "snapshot"]),
+			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
+			"bitrate": s.get(["webcam", "bitrate"]),
+			"watermark": s.getBoolean(["webcam", "watermark"]),
+			"flipH": s.getBoolean(["webcam", "flipH"]),
+			"flipV": s.getBoolean(["webcam", "flipV"])
+		},
+		"feature": {
+			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
+			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
+			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
+			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
+			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
+			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"])
+		},
+		"serial": {
+			"port": connectionOptions["portPreference"],
+			"baudrate": connectionOptions["baudratePreference"],
+			"portOptions": connectionOptions["ports"],
+			"baudrateOptions": connectionOptions["baudrates"],
+			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
+			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
+			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
+			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
+			"log": s.getBoolean(["serial", "log"])
+		},
+		"folder": {
+			"uploads": s.getBaseFolder("uploads"),
+			"timelapse": s.getBaseFolder("timelapse"),
+			"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
+			"logs": s.getBaseFolder("logs")
+		},
+		"temperature": {
+			"profiles": s.get(["temperature", "profiles"])
+		},
+		"system": {
+			"actions": s.get(["system", "actions"]),
+			"events": s.get(["system", "events"])
+		},
+		"terminalFilters": s.get(["terminalFilters"]),
+		"cura": {
+			"enabled": s.getBoolean(["cura", "enabled"]),
+			"path": s.get(["cura", "path"]),
+			"config": s.get(["cura", "config"])
+		}
 	})
 
 

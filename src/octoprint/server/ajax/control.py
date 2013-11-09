@@ -6,7 +6,6 @@ from flask import request, jsonify
 
 from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
-
 from octoprint.server import printer, restricted_access, SUCCESS
 from octoprint.server.ajax import ajax
 

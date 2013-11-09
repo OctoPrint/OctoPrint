@@ -8,8 +8,7 @@ import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
-
-from octoprint.server import printer, gcodeManager, restricted_access, SUCCESS
+from octoprint.server import printer, gcodeManager, eventManager, restricted_access, SUCCESS
 from octoprint.server.util import redirectToTornado
 from octoprint.server.ajax import ajax
 
@@ -25,11 +24,11 @@ def readGcodeFiles():
 	if sdFileList is not None:
 		for sdFile in sdFileList:
 			files.append({
-			"name": sdFile,
-			"size": "n/a",
-			"bytes": 0,
-			"date": "n/a",
-			"origin": "sd"
+				"name": sdFile,
+				"size": "n/a",
+				"bytes": 0,
+				"date": "n/a",
+				"origin": "sd"
 			})
 	return jsonify(files=files, free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
 
@@ -79,7 +78,6 @@ def uploadGcodeFile():
 			else:
 				printer.selectFile(absFilename, sd, False)
 
-		global eventManager
 		eventManager.fire("Upload", filename)
 	return jsonify(files=gcodeManager.getAllFileData(), filename=filename, done=done)
 

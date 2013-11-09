@@ -46,8 +46,6 @@ def index():
 	except:
 		pass
 
-	global debug
-
 	return render_template(
 		"index.jinja2",
 		webcamStream=settings().get(["webcam", "stream"]),
@@ -111,7 +109,7 @@ class Server():
 		global eventManager
 		global loginManager
 		global debug
-		
+
 		from tornado.wsgi import WSGIContainer
 		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
@@ -203,7 +201,7 @@ class Server():
 			exit("You should not run OctoPrint as root!")
 
 	def _initSettings(self, configfile, basedir):
-		s = settings(init=True, basedir=basedir, configfile=configfile)
+		settings(init=True, basedir=basedir, configfile=configfile)
 
 	def _initLogging(self, debug):
 		config = {
