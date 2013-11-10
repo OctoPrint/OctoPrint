@@ -488,27 +488,33 @@ class MachineCom(object):
 				except:
 					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
 				programmer.close()
+			if self._serial is None:
+				self._log("Failed to autodetect serial port")
+				self._errorValue = 'Failed to autodetect serial port.'
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire("Error", self.getErrorString())
+				return
 		elif self._port == 'VIRTUAL':
 			self._changeState(self.STATE_OPEN_SERIAL)
 			self._serial = VirtualPrinter()
 		else:
 			self._changeState(self.STATE_OPEN_SERIAL)
 			try:
-				self._log("Connecting to: %s" % (self._port))
+				self._log("Connecting to: %s" % self._port)
 				if self._baudrate == 0:
 					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
 				else:
 					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 			except:
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
-		if self._serial == None:
-			self._log("Failed to open serial port (%s)" % (self._port))
-			self._errorValue = 'Failed to autodetect serial port.'
-			self._changeState(self.STATE_ERROR)
-			eventManager().fire("Error", self.getErrorString())
-			return
-		self._log("Connected to: %s, starting monitor" % (self._serial))
+				self._errorValue = "Failed to open serial port, permissions correct?"
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire("Error", self.getErrorString())
+				return
+
+		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
+			self._log("Starting baud rate detection")
 			self._changeState(self.STATE_DETECT_BAUDRATE)
 		else:
 			self._changeState(self.STATE_CONNECTING)
@@ -523,7 +529,7 @@ class MachineCom(object):
 		while True:
 			try:
 				line = self._readline()
-				if line == None:
+				if line is None:
 					break
 
 				##~~ Error handling
