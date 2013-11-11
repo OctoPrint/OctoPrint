@@ -472,45 +472,8 @@ class MachineCom(object):
 		feedbackErrors = []
 
 		#Open the serial port.
-		if self._port == 'AUTO':
-			self._changeState(self.STATE_DETECT_SERIAL)
-			programmer = stk500v2.Stk500v2()
-			self._log("Serial port list: %s" % (str(serialList())))
-			for p in serialList():
-				try:
-					self._log("Connecting to: %s" % (p))
-					programmer.connect(p)
-					self._serial = programmer.leaveISP()
-					break
-				except ispBase.IspError as (e):
-					self._log("Error while connecting to %s: %s" % (p, str(e)))
-					pass
-				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
-				programmer.close()
-			if self._serial is None:
-				self._log("Failed to autodetect serial port")
-				self._errorValue = 'Failed to autodetect serial port.'
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire("Error", self.getErrorString())
-				return
-		elif self._port == 'VIRTUAL':
-			self._changeState(self.STATE_OPEN_SERIAL)
-			self._serial = VirtualPrinter()
-		else:
-			self._changeState(self.STATE_OPEN_SERIAL)
-			try:
-				self._log("Connecting to: %s" % self._port)
-				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
-				else:
-					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
-			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
-				self._errorValue = "Failed to open serial port, permissions correct?"
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire("Error", self.getErrorString())
-				return
+		if not self._openSerial():
+			return
 
 		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
@@ -533,27 +496,7 @@ class MachineCom(object):
 					break
 
 				##~~ Error handling
-				# No matter the state, if we see an error, goto the error state and store the error for reference.
-				if line.startswith('Error:'):
-					#Oh YEAH, consistency.
-					# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
-					#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
-					#	So we can have an extra newline in the most common case. Awesome work people.
-					if re.match('Error:[0-9]\n', line):
-						line = line.rstrip() + self._readline()
-					#Skip the communication errors, as those get corrected.
-					if 'checksum mismatch' in line \
-							or 'Wrong checksum' in line \
-							or 'Line Number is not Last Line Number' in line \
-							or 'expected line' in line \
-							or 'No Line Number with checksum' in line \
-							or 'No Checksum with line number' in line \
-							or 'Missing checksum' in line:
-						pass
-					elif not self.isError():
-						self._errorValue = line[6:]
-						self._changeState(self.STATE_ERROR)
-						eventManager().fire("Error", self.getErrorString())
+				line = self._handleErrors(line)
 
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
@@ -630,23 +573,30 @@ class MachineCom(object):
 					self.refreshSdFiles()
 
 				##~~ Message handling
-				elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
+				elif line.strip() != '' \
+						and line.strip() != 'ok' and not line.startswith("wait") \
+						and not line.startswith('Resend:') \
+						and line != 'echo:Unknown command:""\n' \
+						and self.isOperational():
 					self._callback.mcMessage(line)
 
 				##~~ Parsing for feedback commands
 				if feedbackControls:
 					for name, matcher, template in feedbackControls:
+						if name in feedbackErrors:
+							# we previously had an error with that one, so we'll skip it now
+							continue
 						try:
 							match = matcher.search(line)
 							if match is not None:
-								format = None
+								formatFunction = None
 								if isinstance(template, str):
-									format = str.format
+									formatFunction = str.format
 								elif isinstance(template, unicode):
-									format = unicode.format
+									formatFunction = unicode.format
 
-								if format is not None:
-									self._callback.mcReceivedRegisteredMessage(name, format(template, *(match.groups("n/a"))))
+								if formatFunction is not None:
+									self._callback.mcReceivedRegisteredMessage(name, formatFunction(template, *(match.groups("n/a"))))
 						except:
 							if not name in feedbackErrors:
 								self._logger.info("Something went wrong with feedbackControl \"%s\": " % name, exc_info=True)
@@ -785,6 +735,72 @@ class MachineCom(object):
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire("Error", self.getErrorString())
 		self._log("Connection closed, closing down monitor")
+
+	def _openSerial(self):
+		if self._port == 'AUTO':
+			self._changeState(self.STATE_DETECT_SERIAL)
+			programmer = stk500v2.Stk500v2()
+			self._log("Serial port list: %s" % (str(serialList())))
+			for p in serialList():
+				try:
+					self._log("Connecting to: %s" % (p))
+					programmer.connect(p)
+					self._serial = programmer.leaveISP()
+					break
+				except ispBase.IspError as (e):
+					self._log("Error while connecting to %s: %s" % (p, str(e)))
+					pass
+				except:
+					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
+				programmer.close()
+			if self._serial is None:
+				self._log("Failed to autodetect serial port")
+				self._errorValue = 'Failed to autodetect serial port.'
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire("Error", self.getErrorString())
+				return False
+		elif self._port == 'VIRTUAL':
+			self._changeState(self.STATE_OPEN_SERIAL)
+			self._serial = VirtualPrinter()
+		else:
+			self._changeState(self.STATE_OPEN_SERIAL)
+			try:
+				self._log("Connecting to: %s" % self._port)
+				if self._baudrate == 0:
+					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
+				else:
+					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
+			except:
+				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
+				self._errorValue = "Failed to open serial port, permissions correct?"
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire("Error", self.getErrorString())
+				return False
+		return True
+
+	def _handleErrors(self, line):
+		# No matter the state, if we see an error, goto the error state and store the error for reference.
+		if line.startswith('Error:'):
+			#Oh YEAH, consistency.
+			# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
+			#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
+			#	So we can have an extra newline in the most common case. Awesome work people.
+			if re.match('Error:[0-9]\n', line):
+				line = line.rstrip() + self._readline()
+			#Skip the communication errors, as those get corrected.
+			if 'checksum mismatch' in line \
+				or 'Wrong checksum' in line \
+				or 'Line Number is not Last Line Number' in line \
+				or 'expected line' in line \
+				or 'No Line Number with checksum' in line \
+				or 'No Checksum with line number' in line \
+				or 'Missing checksum' in line:
+				pass
+			elif not self.isError():
+				self._errorValue = line[6:]
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire("Error", self.getErrorString())
+		return line
 
 	def _readline(self):
 		if self._serial == None:
