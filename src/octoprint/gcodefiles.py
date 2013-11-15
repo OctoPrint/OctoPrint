@@ -70,6 +70,7 @@ class GcodeManager:
 		self._metadata = {}
 		self._metadataDirty = False
 		self._metadataFile = os.path.join(self._uploadFolder, "metadata.yaml")
+		self._metadataTempFile = os.path.join(self._uploadFolder, "metadata.yaml.tmp")
 		self._metadataFileAccessMutex = threading.Lock()
 
 		self._metadataAnalyzer = MetadataAnalyzer(getPathCallback=self.getAbsolutePath, loadedCallback=self._onMetadataAnalysisFinished)
@@ -111,7 +112,7 @@ class GcodeManager:
 		if gcode.extrusionAmount:
 			analysisResult["filament"] = "%.2fm" % (gcode.extrusionAmount / 1000)
 			if gcode.calculateVolumeCm3():
-				 analysisResult["filament"] += " / %.2fcm³" % gcode.calculateVolumeCm3()
+				analysisResult["filament"] += " / %.2fcm³" % gcode.calculateVolumeCm3()
 			dirty = True
 
 		if dirty:
@@ -134,9 +135,11 @@ class GcodeManager:
 			return
 
 		with self._metadataFileAccessMutex:
-			with open(self._metadataFile, "wb") as f:
+			with open(self._metadataTempFile, "wb") as f:
 				yaml.safe_dump(self._metadata, f, default_flow_style=False, indent="    ", allow_unicode=True)
 				self._metadataDirty = False
+			util.safeRename(self._metadataTempFile, self._metadataFile)
+
 		self._loadMetadata()
 		self._sendUpdateTrigger("gcodeFiles")
 
@@ -326,7 +329,7 @@ class GcodeManager:
 				if key == "prints":
 					val = self._metadata[filename][key]
 					formattedLast = None
-					if val["last"] is not None:
+					if "last" in val and val["last"] is not None:
 						formattedLast = {
 							"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(val["last"]["date"])),
 							"success": val["last"]["success"]
