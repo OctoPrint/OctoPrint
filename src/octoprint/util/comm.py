@@ -1178,8 +1178,9 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 						try:
 							temp = float(tempMatch.group(2))
-							newTemp = temp + offset
-							line = line.replace("S" + tempMatch.group(2), "S%f" % newTemp)
+							if temp > 0:
+								newTemp = temp + offset
+								line = line.replace("S" + tempMatch.group(2), "S%f" % newTemp)
 						except ValueError:
 							pass
 			return line
