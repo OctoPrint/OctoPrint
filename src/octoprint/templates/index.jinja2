@@ -210,18 +210,18 @@
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload</span>
-                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
+                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                                         </span>
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload to SD</span>
-                                            <input id="gcode_upload_sd" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser() && isSdReady()">
+                                            <input id="gcode_upload_sd" type="file" name="gcode_file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
                                         </span>
                                         {% else %}
                                         <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload</span>
-                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-url="/ajax/gcodefiles/upload" data-bind="enable: loginState.isUser()">
+                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                                         </span>
                                         {% endif %}
                                     </div>
@@ -352,7 +352,7 @@
                                     </div>
                                     <div>
                                         <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand('XY') }"><i class="icon-home"></i></button>
+                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="icon-home"></i></button>
                                         <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
                                     </div>
                                     <div>
@@ -366,7 +366,7 @@
                                         <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand('Z') }"><i class="icon-home"></i></button>
+                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['z']) }"><i class="icon-home"></i></button>
                                     </div>
                                     <div>
                                         <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>

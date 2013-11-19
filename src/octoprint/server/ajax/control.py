@@ -2,148 +2,255 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import request, jsonify
+from flask import request, jsonify, make_response
 
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 from octoprint.printer import getConnectionOptions
 from octoprint.server import printer, restricted_access, SUCCESS
 from octoprint.server.ajax import ajax
-
+import octoprint.util as util
 
 #~~ Printer control
 
 
-@ajax.route("/control/connection/options", methods=["GET"])
+@ajax.route("/control/connection", methods=["GET"])
 def connectionOptions():
-	return jsonify(getConnectionOptions())
+	state, port, baudrate = printer.getCurrentConnection()
+	current = {
+		"state": state,
+		"port": port,
+		"baudrate": baudrate
+	}
+	return jsonify({"current": current, "options": getConnectionOptions()})
 
 
 @ajax.route("/control/connection", methods=["POST"])
 @restricted_access
-def connect():
-	if "command" in request.values.keys() and request.values["command"] == "connect":
+def connectionCommand():
+	valid_commands = {
+		"connect": ["autoconnect"],
+		"disconnect": []
+	}
+
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	if command == "connect":
+		options = getConnectionOptions()
+
 		port = None
 		baudrate = None
-		if "port" in request.values.keys():
-			port = request.values["port"]
-		if "baudrate" in request.values.keys():
-			baudrate = request.values["baudrate"]
-		if "save" in request.values.keys():
+		if "port" in data.keys():
+			port = data["port"]
+			if port not in options["ports"]:
+				return make_response("Invalid port: %s" % port, 400)
+		if "baudrate" in data.keys():
+			baudrate = data["baudrate"]
+			if baudrate not in options["baudrates"]:
+				return make_response("Invalid baudrate: %d" % baudrate, 400)
+		if "save" in data.keys() and data["save"]:
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
-			settings().save()
-		if "autoconnect" in request.values.keys():
-			settings().setBoolean(["serial", "autoconnect"], True)
-			settings().save()
+		settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
+		settings().save()
 		printer.connect(port=port, baudrate=baudrate)
-	elif "command" in request.values.keys() and request.values["command"] == "disconnect":
+	elif command == "disconnect":
 		printer.disconnect()
 
 	return jsonify(SUCCESS)
 
 
-@ajax.route("/control/command", methods=["POST"])
+@ajax.route("/control/printer/command", methods=["POST"])
 @restricted_access
 def printerCommand():
-	if "application/json" in request.headers["Content-Type"]:
-		data = request.json
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 403)
 
-		parameters = {}
-		if "parameters" in data.keys(): parameters = data["parameters"]
+	if not "application/json" in request.headers["Content-Type"]:
+		return make_response("Expected content type JSON", 400)
 
-		commands = []
-		if "command" in data.keys(): commands = [data["command"]]
-		elif "commands" in data.keys(): commands = data["commands"]
+	data = request.json
 
-		commandsToSend = []
-		for command in commands:
-			commandToSend = command
-			if len(parameters) > 0:
-				commandToSend = command % parameters
-			commandsToSend.append(commandToSend)
+	parameters = {}
+	if "parameters" in data.keys(): parameters = data["parameters"]
 
-		printer.commands(commandsToSend)
+	commands = []
+	if "command" in data.keys(): commands = [data["command"]]
+	elif "commands" in data.keys(): commands = data["commands"]
+
+	commandsToSend = []
+	for command in commands:
+		commandToSend = command
+		if len(parameters) > 0:
+			commandToSend = command % parameters
+		commandsToSend.append(commandToSend)
+
+	printer.commands(commandsToSend)
 
 	return jsonify(SUCCESS)
 
 
 @ajax.route("/control/job", methods=["POST"])
 @restricted_access
-def printJobControl():
-	if "command" in request.values.keys():
-		if request.values["command"] == "start":
-			printer.startPrint()
-		elif request.values["command"] == "pause":
-			printer.togglePausePrint()
-		elif request.values["command"] == "cancel":
-			printer.cancelPrint()
+def controlJob():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 403)
+
+	valid_commands = {
+		"start": [],
+		"pause": [],
+		"cancel": []
+	}
+
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	if command == "start":
+		printer.startPrint()
+	elif command == "pause":
+		printer.togglePausePrint()
+	elif command == "cancel":
+		printer.cancelPrint()
 	return jsonify(SUCCESS)
 
 
-@ajax.route("/control/temperature", methods=["POST"])
+@ajax.route("/control/printer/hotend", methods=["POST"])
 @restricted_access
-def setTargetTemperature():
-	if "temp" in request.values.keys():
-		# set target temperature
-		temp = request.values["temp"]
-		printer.command("M104 S" + temp)
+def controlPrinterHotend():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 403)
 
-	if "bedTemp" in request.values.keys():
-		# set target bed temperature
-		bedTemp = request.values["bedTemp"]
-		printer.command("M140 S" + bedTemp)
+	valid_commands = {
+		"temp": ["temps"],
+		"offset": ["offsets"]
+	}
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
 
-	if "tempOffset" in request.values.keys():
-		# set target temperature offset
-		try:
-			tempOffset = float(request.values["tempOffset"])
-			if tempOffset >= -50 and tempOffset <= 50:
-				printer.setTemperatureOffset(tempOffset, None)
-		except:
-			pass
+	valid_targets = ["hotend", "bed"]
 
-	if "bedTempOffset" in request.values.keys():
-		# set target bed temperature offset
-		try:
-			bedTempOffset = float(request.values["bedTempOffset"])
-			if bedTempOffset >= -50 and bedTempOffset <= 50:
-				printer.setTemperatureOffset(None, bedTempOffset)
-		except:
-			pass
+	##~~ temperature
+	if command == "temp":
+		temps = data["temps"]
+
+		# make sure the targets are valid and the values are numbers
+		validated_values = {}
+		for type, value in temps.iteritems():
+			if not type in valid_targets:
+				return make_response("Invalid target for setting temperature: %s" % type, 400)
+			if not isinstance(value, (int, long, float)):
+				return make_response("Not a number for %s: %r" % (type, value), 400)
+			validated_values[type] = value
+
+		# perform the actual temperature commands
+		# TODO make this a generic method call (printer.setTemperature(type, value)) to get rid of gcode here
+		if "hotend" in validated_values:
+			printer.command("M104 S%f" % validated_values["hotend"])
+		if "bed" in validated_values:
+			printer.command("M140 S%f" % validated_values["bed"])
+
+	##~~ temperature offset
+	elif command == "offset":
+		offsets = data["offsets"]
+
+		# make sure the targets are valid, the values are numbers and in the range [-50, 50]
+		validated_values = {}
+		for type, value in offsets.iteritems():
+			if not type in valid_targets:
+				return make_response("Invalid target for setting temperature: %s" % type, 400)
+			if not isinstance(value, (int, long, float)):
+				return make_response("Not a number for %s: %r" % (type, value), 400)
+			if not -50 <= value <= 50:
+				return make_response("Offset %s not in range [-50, 50]: %f" % (type, value), 400)
+			validated_values[type] = value
+
+		# set the offsets
+		if "hotend" in validated_values and "bed" in validated_values:
+			printer.setTemperatureOffset(validated_values["hotend"], validated_values["bed"])
+		elif "hotend" in validated_values:
+			printer.setTemperatureOffset(validated_values["hotend"], None)
+		elif "bed" in validated_values:
+			printer.setTemperatureOffset(None, validated_values["bed"])
 
 	return jsonify(SUCCESS)
 
 
-@ajax.route("/control/jog", methods=["POST"])
+@ajax.route("/control/printer/printhead", methods=["POST"])
 @restricted_access
-def jog():
+def controlPrinterPrinthead():
 	if not printer.isOperational() or printer.isPrinting():
 		# do not jog when a print job is running or we don't have a connection
-		return jsonify(SUCCESS)
+		return make_response("Printer is not operational or currently printing", 403)
 
-	(movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE) = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
-	if "x" in request.values.keys():
-		# jog x
-		x = request.values["x"]
-		printer.commands(["G91", "G1 X%s F%d" % (x, movementSpeedX), "G90"])
-	if "y" in request.values.keys():
-		# jog y
-		y = request.values["y"]
-		printer.commands(["G91", "G1 Y%s F%d" % (y, movementSpeedY), "G90"])
-	if "z" in request.values.keys():
-		# jog z
-		z = request.values["z"]
-		printer.commands(["G91", "G1 Z%s F%d" % (z, movementSpeedZ), "G90"])
-	if "homeXY" in request.values.keys():
-		# home x/y
-		printer.command("G28 X0 Y0")
-	if "homeZ" in request.values.keys():
-		# home z
-		printer.command("G28 Z0")
-	if "extrude" in request.values.keys():
-		# extrude/retract
-		length = request.values["extrude"]
-		printer.commands(["G91", "G1 E%s F%d" % (length, movementSpeedE), "G90"])
+	valid_commands = {
+		"jog": [],
+		"home": ["axes"]
+	}
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
+
+	valid_axes = ["x", "y", "z"]
+	##~~ jog command
+	if command == "jog":
+		# validate all jog instructions, make sure that the values are numbers
+		validated_values = {}
+		for axis in valid_axes:
+			if axis in data:
+				value = data[axis]
+				if not isinstance(value, (int, long, float)):
+					return make_response("Not a number for axis %s: %r" % (axis, value), 400)
+				validated_values[axis] = value
+
+		# execute the jog commands
+		for axis, value in validated_values.iteritems():
+			# TODO make this a generic method call (printer.jog(axis, value)) to get rid of gcode here
+			printer.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), value, movementSpeed[axis]), "G90"])
+
+	##~~ home command
+	elif command == "home":
+		validated_values = []
+		axes = data["axes"]
+		for axis in axes:
+			if not axis in valid_axes:
+				return make_response("Invalid axis: %s" % axis, 400)
+			validated_values.append(axis)
+
+		# execute the home command
+		# TODO make this a generic method call (printer.home(axis, ...)) to get rid of gcode here
+		printer.commands(["G91", "G1 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_values)), "G90"])
+
+	return jsonify(SUCCESS)
+
+
+@ajax.route("/control/printer/feeder", methods=["POST"])
+@restricted_access
+def controlPrinterFeeder():
+	if not printer.isOperational() or printer.isPrinting():
+		# do not jog when a print job is running or we don't have a connection
+		return make_response("Printer is not operational or currently printing", 403)
+
+	valid_commands = {
+		"extrude": ["amount"]
+	}
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
+
+	if command == "extrude":
+		amount = data["amount"]
+		if not isinstance(amount, (int, long, float)):
+			return make_response("Not a number for extrusion amount: %r" % amount, 400)
+
+		# TODO make this a generic method call (printer.extruder([hotend,] amount)) to get rid of gcode here
+		printer.commands(["G91", "G1 E%s F%d" % (data["amount"], extrusionSpeed), "G90"])
 
 	return jsonify(SUCCESS)
 
@@ -158,16 +265,23 @@ def getCustomControls():
 @restricted_access
 def sdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]) or not printer.isOperational() or printer.isPrinting():
-		return jsonify(SUCCESS)
+		return make_response("SD support is disabled", 403)
 
-	if "command" in request.values.keys():
-		command = request.values["command"]
-		if command == "init":
-			printer.initSdCard()
-		elif command == "refresh":
-			printer.refreshSdFiles()
-		elif command == "release":
-			printer.releaseSdCard()
+	valid_commands = {
+		"init": [],
+		"refresh": [],
+		"release": []
+	}
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	if command == "init":
+		printer.initSdCard()
+	elif command == "refresh":
+		printer.refreshSdFiles()
+	elif command == "release":
+		printer.releaseSdCard()
 
 	return jsonify(SUCCESS)
 

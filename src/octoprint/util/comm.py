@@ -291,6 +291,9 @@ class MachineCom(object):
 	def getOffsets(self):
 		return (self._tempOffset, self._bedTempOffset)
 
+	def getConnection(self):
+		return self._port, self._baudrate
+
 	##~~ external interface
 
 	def close(self, isError = False):
@@ -826,8 +829,8 @@ class MachineCom(object):
 					self._sendCommand("M29")
 					filename = self._currentFile.getFilename()
 					self._currentFile = None
-					self._callback.mcFileTransferDone()
 					self._changeState(self.STATE_OPERATIONAL)
+					self._callback.mcFileTransferDone(filename)
 					eventManager().fire("TransferDone", filename)
 					self.refreshSdFiles()
 				else:

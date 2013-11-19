@@ -8,6 +8,7 @@ import sys
 import time
 import re
 import tempfile
+from flask import make_response
 
 from octoprint.settings import settings
 
@@ -188,3 +189,20 @@ def silentRemove(file):
 		os.remove(file)
 	except OSError:
 		pass
+
+
+def getJsonCommandFromRequest(request, valid_commands):
+	if not "application/json" in request.headers["Content-Type"]:
+		return None, None, make_response("Expected content-type JSON", 400)
+
+	data = request.json
+	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
+		return None, None, make_response("Expected valid command", 400)
+
+	command = data["command"]
+	for parameter in valid_commands[command]:
+		if not parameter in data:
+			return None, None, make_response("Mandatory parameter %s missing for command %s" % (parameter, command), 400)
+
+	return command, data, None
+

@@ -382,7 +382,7 @@
                         </thead>
                         <tbody data-bind="foreach: users.listHelper.paginatedItems">
                             <tr>
-                                <td class="settings_users_name" data-bind="text: name"></td>
+                                <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>Apikey: <span data-bind="text: apikey"></span></small></span></td>
                                 <td class="settings_users_active"><i data-bind="css: { 'icon-check': active, 'icon-check-empty': !active }"></i></td>
                                 <td class="settings_users_admin"><i data-bind="css: { 'icon-check': admin, 'icon-check-empty': !admin }"></i></td>
                                 <td class="settings_users_actions" class="system_users_action">
@@ -504,6 +504,20 @@
                                         <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Passwords do not match</span>
                                     </div>
                                 </div>
+                                <fieldset data-bind="visible: api_enabled">
+                                    <legend>Apikey</legend>
+                                    <div class="control-group">
+                                        <label class="control-label">Current Apikey</label>
+                                        <div class="controls">
+                                            <div class="input-append">
+                                                <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.users.editorApikey, attr: {placeholder: 'N/A'}">
+                                                <a class="btn" title="Generate new Apikey" data-bind="click: function() { $root.users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
+                                                <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { $root.users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </fieldset>
                             </form>
                         </div>
                         <div class="modal-footer">
@@ -511,6 +525,7 @@
                             <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmChangePassword(); }, enable: !$root.users.editorPasswordMismatch()">Confirm</button>
                         </div>
                     </div>
+
                 </div>
                 {% endif %}
 

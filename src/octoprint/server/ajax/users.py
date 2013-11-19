@@ -123,3 +123,34 @@ def changePasswordForUser(username):
 	else:
 		return make_response(("Forbidden", 403, []))
 
+
+@ajax.route("/users/<username>/apikey", methods=["DELETE"])
+@restricted_access
+def deleteApikeyForUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+		try:
+			userManager.deleteApikey(username)
+		except users.UnknownUser:
+			return make_response(("Unknown user: %s" % username, 404, []))
+		return jsonify(SUCCESS)
+	else:
+		return make_response(("Forbidden", 403, []))
+
+
+@ajax.route("/users/<username>/apikey", methods=["POST"])
+@restricted_access
+def generateApikeyForUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+		try:
+			apikey = userManager.generateApiKey(username)
+		except users.UnknownUser:
+			return make_response(("Unknown user: %s" % username, 404, []))
+		return jsonify({"apikey": apikey})
+	else:
+		return make_response(("Forbidden", 403, []))

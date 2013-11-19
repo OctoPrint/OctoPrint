@@ -147,7 +147,8 @@ function PrinterStateViewModel(loginStateViewModel) {
             url: AJAX_BASEURL + "control/job",
             type: "POST",
             dataType: "json",
-            data: {command: command}
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify({command: command})
         });
     }
 }

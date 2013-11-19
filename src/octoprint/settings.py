@@ -187,7 +187,7 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path):
+	def get(self, path, asdict=False):
 		if len(path) == 0:
 			return None
 
@@ -211,17 +211,28 @@ class Settings(object):
 		else:
 			keys = k
 
-		results = []
+		if asdict:
+			results = {}
+		else:
+			results = []
 		for key in keys:
 			if key in config.keys():
-				results.append(config[key])
+				value = config[key]
 			elif key in defaults:
-				results.append(defaults[key])
+				value = defaults[key]
 			else:
-				results.append(None)
+				value = None
+
+			if asdict:
+				results[key] = value
+			else:
+				results.append(value)
 
 		if not isinstance(k, (list, tuple)):
-			return results.pop()
+			if asdict:
+				return results.values().pop()
+			else:
+				return results.pop()
 		else:
 			return results
 

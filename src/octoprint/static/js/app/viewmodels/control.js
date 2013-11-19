@@ -80,26 +80,37 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
             distance = $('#jog_distance button.active').data('distance');
-
         if (self.settings.getPrinterInvertAxis(axis)) {
             multiplier *= -1;
         }
 
+        var data = {
+            "command": "jog"
+        }
+        data[axis] = distance * multiplier;
+
         $.ajax({
-            url: AJAX_BASEURL + "control/jog",
+            url: AJAX_BASEURL + "control/printer/printhead",
             type: "POST",
             dataType: "json",
-            data: axis + "=" + ( distance * multiplier )
-        })
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        });
     }
 
     self.sendHomeCommand = function(axis) {
+        var data = {
+            "command": "home",
+            "axes": axis
+        }
+
         $.ajax({
-            url: AJAX_BASEURL + "control/jog",
+            url: AJAX_BASEURL + "control/printer/printhead",
             type: "POST",
             dataType: "json",
-            data: "home" + axis
-        })
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        });
     }
 
     self.sendExtrudeCommand = function() {
@@ -114,12 +125,14 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         var length = self.extrusionAmount();
         if (!length)
             length = 5;
+
         $.ajax({
-            url: AJAX_BASEURL + "control/jog",
+            url: AJAX_BASEURL + "control/printer/feeder",
             type: "POST",
             dataType: "json",
-            data: "extrude=" + (dir * length)
-        })
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify({command: "extrude", amount: (dir * length)})
+        });
     }
 
     self.sendCustomCommand = function(command) {
@@ -143,11 +156,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             }
         }
 
-        if (!data)
+        if (data === undefined)
             return;
 
         $.ajax({
-            url: AJAX_BASEURL + "control/command",
+            url: AJAX_BASEURL + "control/printer/command",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

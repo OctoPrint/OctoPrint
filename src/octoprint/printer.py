@@ -9,13 +9,13 @@ import copy
 import os
 import logging
 
-#import logging, logging.config
-
 import octoprint.util.comm as comm
 import octoprint.util as util
 
 from octoprint.settings import settings
 from octoprint.events import eventManager
+
+from octoprint.filemanager.destinations import FileDestinations
 
 def getConnectionOptions():
 	"""
@@ -71,6 +71,8 @@ class Printer():
 		self._sdPrinting = False
 		self._sdStreaming = False
 		self._sdFilelistAvailable = threading.Event()
+		self._sdRemoteName = None
+		self._streamingFinishedCallback = None
 
 		self._selectedFile = None
 
@@ -455,9 +457,13 @@ class Printer():
 		self._setProgressData(0.0, 0, 0, None)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
-	def mcFileTransferDone(self):
+	def mcFileTransferDone(self, filename):
 		self._sdStreaming = False
 
+		if self._streamingFinishedCallback is not None:
+			self._streamingFinishedCallback(self._sdRemoteName, FileDestinations.SDCARD)
+
+		self._sdRemoteName = None
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
 		self._setProgressData(None, None, None, None)
@@ -473,35 +479,18 @@ class Printer():
 			return []
 		return self._comm.getSdFiles()
 
-	def addSdFile(self, filename, absolutePath):
-		from octoprint.gcodefiles import isGcodeFileName
-		from octoprint.gcodefiles import isSTLFileName
-
+	def addSdFile(self, filename, absolutePath, streamingFinishedCallback):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			logging.error("No connection to printer or printer is busy")
 			return
 
-		if isGcodeFileName(filename):
-			self.streamSdFile(filename, absolutePath)
-
-		if isSTLFileName(filename):
-			gcodePath = util.genGcodeFileName(absolutePath)
-			gcodeFileName = util.genGcodeFileName(filename)
-			callBackArgs = [gcodeFileName, gcodePath]
-			callBack = self.streamSdFile
-
-			self._gcodeManager.processStl(
-				absolutePath, callBack, callBackArgs)
-
-	def streamSdFile(self, filename, path):
-		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
-			return
+		self._streamingFinishedCallback = streamingFinishedCallback
 
 		self.refreshSdFiles(blocking=True)
 		existingSdFiles = self._comm.getSdFiles()
 
-		sdFilename = util.getDosFilename(filename, existingSdFiles)
-		self._comm.startFileTransfer(path, sdFilename)
+		self._sdRemoteName = util.getDosFilename(filename, existingSdFiles)
+		self._comm.startFileTransfer(absolutePath, self._sdRemoteName)
 
 	def deleteSdFile(self, filename):
 		if not self._comm or not self._comm.isSdReady():
@@ -568,6 +557,13 @@ class Printer():
 				"offset": bedTempOffset
 			}
 		}
+
+	def getCurrentConnection(self):
+		if self._comm is None:
+			return "Closed", None, None
+
+		port, baudrate = self._comm.getConnection()
+		return self._comm.getStateString(), port, baudrate
 
 	def isClosedOrError(self):
 		return self._comm is None or self._comm.isClosedOrError()

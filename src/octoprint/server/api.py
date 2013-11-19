@@ -7,36 +7,30 @@ import logging
 from flask import Blueprint, request, jsonify, abort
 
 from octoprint.server import printer, gcodeManager, SUCCESS
-from octoprint.settings import settings, valid_boolean_trues
+from octoprint.server.util import api_access
+from octoprint.settings import valid_boolean_trues
 from octoprint.filemanager.destinations import FileDestinations
 import octoprint.gcodefiles as gcodefiles
 
 api = Blueprint("api", __name__)
 
-#-- very simple api routines
+
+
 @api.route("/load", methods=["POST"])
+@api_access
 def apiLoad():
 	logger = logging.getLogger(__name__)
-
-	if not settings().get(["api", "enabled"]):
-		abort(401)
-
-	if not "apikey" in request.values.keys():
-		abort(401)
-
-	if request.values["apikey"] != settings().get(["api", "key"]):
-		abort(403)
 
 	if not "file" in request.files.keys():
 		abort(400)
 
 	# Perform an upload
-	file = request.files["file"]
-	if not gcodefiles.isGcodeFileName(file.filename):
+	f = request.files["file"]
+	if not gcodefiles.isGcodeFileName(f.filename):
 		abort(400)
 
 	destination = FileDestinations.LOCAL
-	filename, done = gcodeManager.addFile(file, destination)
+	filename, done = gcodeManager.addFile(f, destination)
 	if filename is None:
 		logger.warn("Upload via API failed")
 		abort(500)
@@ -51,19 +45,11 @@ def apiLoad():
 	return jsonify(SUCCESS)
 
 @api.route("/state", methods=["GET"])
+@api_access
 def apiPrinterState():
-	if not settings().get(["api", "enabled"]):
-		abort(401)
-
-	if not "apikey" in request.values.keys():
-		abort(401)
-
-	if request.values["apikey"] != settings().get(["api", "key"]):
-		abort(403)
-
 	currentData = printer.getCurrentData()
 	currentData.update({
-	"temperatures": printer.getCurrentTemperatures()
+		"temperatures": printer.getCurrentTemperatures()
 	})
 	return jsonify(currentData)
 

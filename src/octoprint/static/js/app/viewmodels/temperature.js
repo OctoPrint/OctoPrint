@@ -167,47 +167,64 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.setTempFromProfile = function(profile) {
         if (!profile)
             return;
-        self._updateTemperature(profile.extruder, "temp");
+        self._sendHotendCommand("temp", "hotend", profile.extruder);
     }
 
     self.setTemp = function() {
-        self._updateTemperature(self.newTemp(), "temp", function(){self.targetTemp(self.newTemp()); self.newTemp("");});
+        self._sendHotendCommand("temp", "hotend", self.newTemp(), function() {self.targetTemp(self.newTemp()); self.newTemp("");});
     };
 
     self.setTempToZero = function() {
-        self._updateTemperature(0, "temp", function(){self.targetTemp(0); self.newTemp("");});
+        self._sendHotendCommand("temp", "hotend", 0, function() {self.targetTemp(0); self.newTemp("");});
     }
 
     self.setTempOffset = function() {
-        self._updateTemperature(self.newTempOffset(), "tempOffset", function() {self.tempOffset(self.newTempOffset()); self.newTempOffset("");});
+        self._sendHotendCommand("offset", "hotend", self.newTempOffset(), function() {self.tempOffset(self.newTempOffset()); self.newTempOffset("");});
     }
 
     self.setBedTempFromProfile = function(profile) {
-        self._updateTemperature(profile.bed, "bedTemp");
+        if (!profile)
+            return;
+        self._sendHotendCommand("temp", "bed", profile.bed);
     }
 
     self.setBedTemp = function() {
-        self._updateTemperature(self.newBedTemp(), "bedTemp", function() {self.bedTargetTemp(self.newBedTemp()); self.newBedTemp("");});
+        self._sendHotendCommand("temp", "bed", self.newBedTemp(), function() {self.bedTargetTemp(self.newBedTemp()); self.newBedTemp("");});
     };
 
     self.setBedTempToZero = function() {
-        self._updateTemperature(0, "bedTemp", function() {self.bedTargetTemp(0); self.newBedTemp("");});
+        self._sendHotendCommand("temp", "bed", 0, function() {self.bedTargetTemp(0); self.newBedTemp("");});
     }
 
     self.setBedTempOffset = function() {
-        self._updateTemperature(self.newBedTempOffset(), "bedTempOffset", function() {self.bedTempOffset(self.newBedTempOffset()); self.newBedTempOffset("");});
+        self._sendHotendCommand("offset", "bed", self.newBedTempOffset(), function() {self.bedTempOffset(self.newBedTempOffset()); self.newBedTempOffset("");});
     }
 
-    self._updateTemperature = function(temp, type, callback) {
-        var data = {};
-        data[type] = temp;
+    self._sendHotendCommand = function(command, type, temp, callback) {
+        var group;
+        if ("temp" == command) {
+            group = "temps";
+        } else if ("offset" == command) {
+            group = "offsets";
+        } else {
+            return;
+        }
+
+        var data = {
+            "command": command
+        };
+        data[group] = {};
+        data[group][type] = parseInt(temp);
 
         $.ajax({
-            url: AJAX_BASEURL + "control/temperature",
+            url: AJAX_BASEURL + "control/printer/hotend",
             type: "POST",
-            data: data,
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data),
             success: function() { if (callback !== undefined) callback(); }
         });
+
     }
 
     self.handleEnter = function(event, type) {

@@ -43,10 +43,10 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
             },
             "sd": function(file) {
-                return file["origin"] && file["origin"] == "sd";
+                return file["origin"] && file["origin"] == "sdcard";
             },
             "local": function(file) {
-                return !(file["origin"] && file["origin"] == "sd");
+                return !(file["origin"] && file["origin"] == "sdcard");
             }
         },
         "name",
@@ -127,11 +127,19 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         var file = self.listHelper.getItem(function(item) {return item.name == filename});
         if (!file) return;
 
+        var origin;
+        if (file.origin === undefined) {
+            origin = "local";
+        } else {
+            origin = file.origin;
+        }
+
         $.ajax({
-            url: AJAX_BASEURL + "gcodefiles/load",
+            url: AJAX_BASEURL + "gcodefiles/" + origin + "/" + filename,
             type: "POST",
             dataType: "json",
-            data: {filename: filename, print: printAfterLoad, target: file.origin}
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify({command: "load", print: printAfterLoad})
         })
     }
 
@@ -139,11 +147,16 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         var file = self.listHelper.getItem(function(item) {return item.name == filename});
         if (!file) return;
 
+        var origin;
+        if (file.origin === undefined) {
+            origin = "local";
+        } else {
+            origin = file.origin;
+        }
+
         $.ajax({
-            url: AJAX_BASEURL + "gcodefiles/delete",
-            type: "POST",
-            dataType: "json",
-            data: {filename: filename, target: file.origin},
+            url: AJAX_BASEURL + "gcodefiles/" + origin + "/" + filename,
+            type: "DELETE",
             success: self.fromResponse
         })
     }

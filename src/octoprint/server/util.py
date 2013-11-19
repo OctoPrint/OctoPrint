@@ -1,7 +1,7 @@
-
+from flask.ext.principal import identity_changed, Identity
 from tornado.web import StaticFileHandler, HTTPError
-from flask import url_for, make_response
-from flask.ext.login import login_required
+from flask import url_for, make_response, request, current_app
+from flask.ext.login import login_required, login_user
 from werkzeug.utils import redirect
 from sockjs.tornado import SockJSConnection
 
@@ -15,31 +15,69 @@ import threading
 import logging
 from functools import wraps
 
-from octoprint.server import userManager
 from octoprint.settings import settings
 import octoprint.timelapse
+import octoprint.server
+from octoprint.users import ApiUser
 
-
-def restricted_access(func):
+def restricted_access(func, apiEnabled=True):
 	"""
 	If you decorate a view with this, it will ensure that first setup has been
 	done for OctoPrint's Access Control plus that any conditions of the
-	login_required decorator are met.
+	login_required decorator are met. It also allows to login using the masterkey or any
+	of the user's apikeys if API access is enabled globally and for the decorated view.
 
 	If OctoPrint's Access Control has not been setup yet (indicated by the "firstRun"
 	flag from the settings being set to True and the userManager not indicating
 	that it's user database has been customized from default), the decorator
 	will cause a HTTP 403 status code to be returned by the decorated resource.
 
+	If an API key is provided and it matches a known key, the user will be logged in and
+	the view will be called directly. If the provided key doesn't match any known key,
+	a HTTP 403 status code will be returned by the decorated resource.
+
 	Otherwise the result of calling login_required will be returned.
 	"""
 	@wraps(func)
 	def decorated_view(*args, **kwargs):
-		if settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()):
+		# if OctoPrint hasn't been set up yet, abort
+		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return make_response("OctoPrint isn't setup yet", 403)
+
+		# if API is globally enabled, enabled for this request and an api key is provided, try to use that
+		if settings().get(["api", "enabled"]) and apiEnabled and "apikey" in request.values.keys():
+			apikey = request.values["apikey"]
+			user = None
+
+			if apikey == settings().get(["api", "key"]):
+				# master key was used
+				user = ApiUser()
+			else:
+				# user key might have been used
+				user = octoprint.server.userManager.findUser(apikey=apikey)
+
+			if user is None:
+				make_response("Invalid API key", 403)
+			if login_user(user, remember=False):
+				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
+				return func(*args, **kwargs)
+
+		# call regular login_required decorator
 		return login_required(func)(*args, **kwargs)
 	return decorated_view
 
+
+def api_access(func):
+	@wraps(func)
+	def decorated_view(*args, **kwargs):
+		if not settings().get(["api", "enabled"]):
+			make_response("API disabled", 401)
+		if not "apikey" in request.values.keys():
+			make_response("No API key provided", 401)
+		if request.values["apikey"] != settings().get(["api", "key"]):
+			make_response("Invalid API key", 403)
+		return func(args, kwargs)
+	return decorated_view
 
 #~~ Printer state
 
@@ -286,7 +324,7 @@ class ReverseProxied(object):
 
 def redirectToTornado(request, target):
 	requestUrl = request.url
-	appBaseUrl = requestUrl[:requestUrl.find(url_for("ajax.base"))]
+	appBaseUrl = requestUrl[:requestUrl.find(url_for("index") + "/ajax")]
 
 	redirectUrl = appBaseUrl + target
 	if "?" in requestUrl:

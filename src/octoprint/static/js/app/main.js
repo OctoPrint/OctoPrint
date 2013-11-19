@@ -86,9 +86,9 @@ $(function() {
 
         function enable_local_dropzone() {
             $("#gcode_upload").fileupload({
+                url: AJAX_BASEURL + "gcodefiles/local",
                 dataType: "json",
                 dropZone: localTarget,
-                formData: {target: "local"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -97,9 +97,9 @@ $(function() {
 
         function disable_local_dropzone() {
             $("#gcode_upload").fileupload({
+                url: AJAX_BASEURL + "gcodefiles/local",
                 dataType: "json",
                 dropZone: null,
-                formData: {target: "local"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -108,9 +108,9 @@ $(function() {
 
         function enable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
+                url: AJAX_BASEURL + "gcodefiles/sdcard",
                 dataType: "json",
                 dropZone: $("#drop_sd"),
-                formData: {target: "sd"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -119,6 +119,7 @@ $(function() {
 
         function disable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
+                url: AJAX_BASEURL + "gcodefiles/sdcard",
                 dataType: "json",
                 dropZone: null,
                 formData: {target: "sd"},

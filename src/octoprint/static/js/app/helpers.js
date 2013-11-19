@@ -19,6 +19,10 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     //~~ item handling
 
+    self.refresh = function() {
+        self._updateItems();
+    }
+
     self.updateItems = function(items) {
         self.allItems = items;
         self._updateItems();

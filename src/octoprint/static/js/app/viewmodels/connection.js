@@ -9,6 +9,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
     self.selectedPort = ko.observable(undefined);
     self.selectedBaudrate = ko.observable(undefined);
     self.saveSettings = ko.observable(undefined);
+    self.autoconnect = ko.observable(undefined);
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -29,7 +30,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "control/connection/options",
+            url: AJAX_BASEURL + "control/connection",
             method: "GET",
             dataType: "json",
             success: function(response) {
@@ -39,13 +40,18 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
     }
 
     self.fromResponse = function(response) {
-        self.portOptions(response.ports);
-        self.baudrateOptions(response.baudrates);
+        var ports = response.options.ports;
+        var baudrates = response.options.baudrates;
+        var portPreference = response.options.portPreference;
+        var baudratePreference = response.options.baudratePreference;
 
-        if (!self.selectedPort() && response.ports && response.ports.indexOf(response.portPreference) >= 0)
-            self.selectedPort(response.portPreference);
-        if (!self.selectedBaudrate() && response.baudrates && response.baudrates.indexOf(response.baudratePreference) >= 0)
-            self.selectedBaudrate(response.baudratePreference);
+        self.portOptions(ports);
+        self.baudrateOptions(baudrates);
+
+        if (!self.selectedPort() && ports && ports.indexOf(portPreference) >= 0)
+            self.selectedPort(portPreference);
+        if (!self.selectedBaudrate() && baudrates && baudrates.indexOf(baudratePreference) >= 0)
+            self.selectedBaudrate(baudratePreference);
 
         self.saveSettings(false);
     }
@@ -86,7 +92,8 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
             var data = {
                 "command": "connect",
                 "port": self.selectedPort(),
-                "baudrate": self.selectedBaudrate()
+                "baudrate": self.selectedBaudrate(),
+                "autoconnect": self.settings.serial_autoconnect()
             };
 
             if (self.saveSettings())
@@ -96,19 +103,20 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 url: AJAX_BASEURL + "control/connection",
                 type: "POST",
                 dataType: "json",
-                data: data
-            })
-
-            self.settings.serial_port(self.selectedPort())
-            self.settings.serial_baudrate(self.selectedBaudrate())
-            self.settings.saveData();
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify(data),
+                success: function(response) {
+                    self.settings.requestData()
+                }
+            });
         } else {
             self.requestData();
             $.ajax({
                 url: AJAX_BASEURL + "control/connection",
                 type: "POST",
                 dataType: "json",
-                data: {"command": "disconnect"}
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify({"command": "disconnect"})
             })
         }
     }

@@ -165,9 +165,15 @@ class GcodeManager:
 
 	#~~ file handling
 
-	def addFile(self, file, destination):
-		from octoprint.filemanager.destinations import FileDestinations
+	def addFile(self, file, destination, uploadCallback=None):
+		"""
+		Adds the given file for the given destination to the systems. Takes care of slicing if enabled and
+		necessary.
 
+		If the file's processing won't be finished directly with the return from this method but happen
+		asynchronously in the background (e.g. due to slicing), returns a tuple containing the just added file's
+		filename and False. Otherwise returns a tuple (filename, True).
+		"""
 		if not file or not destination:
 			return None, True
 
@@ -183,13 +189,11 @@ class GcodeManager:
 		file.save(absolutePath)
 
 		if gcode:
-			return self.processGcode(absolutePath), True
+			return self.processGcode(absolutePath, destination, uploadCallback), True
 		else:
-			local = (destination == FileDestinations.LOCAL)
-			if curaEnabled and isSTLFileName(filename) and local:
-				self.processStl(absolutePath)
+			if curaEnabled and isSTLFileName(filename):
+				self.processStl(absolutePath, destination, uploadCallback)
 			return filename, False
-
 
 	def getFutureFileName(self, file):
 		if not file:
@@ -201,8 +205,7 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
-
-	def processStl(self, absolutePath):
+	def processStl(self, absolutePath, destination, uploadCallback=None):
 		from octoprint.slicers.cura import CuraFactory
 
 		cura = CuraFactory.create_slicer()
@@ -210,6 +213,7 @@ class GcodeManager:
 		config = self._settings.get(["cura", "config"])
 
 		slicingStart = time.time()
+
 		def stlProcessed(stlPath, gcodePath, error=None):
 			if error:
 				eventManager().fire("SlicingFailed", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "reason": error})
@@ -218,13 +222,12 @@ class GcodeManager:
 			else:
 				slicingStop = time.time()
 				eventManager().fire("SlicingDone", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": "%.2f" % (slicingStop - slicingStart)})
-				self.processGcode(gcodePath)
+				self.processGcode(gcodePath, destination, uploadCallback)
 
 		eventManager().fire("SlicingStarted", {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})
 		cura.process_file(config, gcodePath, absolutePath, stlProcessed, [absolutePath, gcodePath])
 
-
-	def processGcode(self, absolutePath):
+	def processGcode(self, absolutePath, destination, uploadCallback=None):
 		if absolutePath is None:
 			return None
 
@@ -238,6 +241,8 @@ class GcodeManager:
 
 		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
 
+		if uploadCallback is not None:
+			uploadCallback(filename, absolutePath, destination)
 		return filename 
 
 	def getFutureFilename(self, file):

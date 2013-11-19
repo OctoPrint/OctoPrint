@@ -28,6 +28,7 @@ function UsersViewModel(loginStateViewModel) {
     self.editorUsername = ko.observable(undefined);
     self.editorPassword = ko.observable(undefined);
     self.editorRepeatedPassword = ko.observable(undefined);
+    self.editorApikey = ko.observable(undefined);
     self.editorAdmin = ko.observable(undefined);
     self.editorActive = ko.observable(undefined);
 
@@ -36,10 +37,12 @@ function UsersViewModel(loginStateViewModel) {
             self.editorUsername(undefined);
             self.editorAdmin(undefined);
             self.editorActive(undefined);
+            self.editorApikey(undefined);
         } else {
             self.editorUsername(newValue.name);
             self.editorAdmin(newValue.admin);
             self.editorActive(newValue.active);
+            self.editorApikey(newValue.apikey);
         }
         self.editorPassword(undefined);
         self.editorRepeatedPassword(undefined);
@@ -122,6 +125,27 @@ function UsersViewModel(loginStateViewModel) {
         });
     }
 
+    self.confirmGenerateApikey = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        self.generateApikey(self.currentUser().name, function(response) {
+            self._updateApikey(response.apikey);
+        })
+    }
+
+    self.confirmDeleteApikey = function() {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        self.deleteApikey(self.currentUser().name, function() {
+            self._updateApikey(undefined);
+        })
+    }
+
+    self._updateApikey = function(apikey) {
+        self.editorApikey(apikey);
+        self.requestData();
+    }
+
     //~~ AJAX calls
 
     self.addUser = function(user, callback) {
@@ -184,6 +208,26 @@ function UsersViewModel(loginStateViewModel) {
             type: "PUT",
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify({password: password}),
+            success: callback
+        });
+    }
+
+    self.generateApikey = function(username, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        $.ajax({
+            url: AJAX_BASEURL + "users/" + username + "/apikey",
+            type: "POST",
+            success: callback
+        });
+    }
+
+    self.deleteApikey = function(username, callback) {
+        if (!CONFIG_ACCESS_CONTROL) return;
+
+        $.ajax({
+            url: AJAX_BASEURL + "users/" + username + "/apikey",
+            type: "DELETE",
             success: callback
         });
     }
