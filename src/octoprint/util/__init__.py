@@ -31,7 +31,7 @@ def isAllowedFile(filename, extensions):
 def getFormattedTimeDelta(d):
 	if d is None:
 		return None
-	hours = d.seconds // 3600
+	hours = d.days * 24 + d.seconds // 3600
 	minutes = (d.seconds % 3600) // 60
 	seconds = d.seconds % 60
 	return "%02d:%02d:%02d" % (hours, minutes, seconds)
