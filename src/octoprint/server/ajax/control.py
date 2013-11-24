@@ -223,7 +223,7 @@ def controlPrinterPrinthead():
 
 		# execute the home command
 		# TODO make this a generic method call (printer.home(axis, ...)) to get rid of gcode here
-		printer.commands(["G91", "G1 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_values)), "G90"])
+		printer.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_values)), "G90"])
 
 	return jsonify(SUCCESS)
 
