@@ -145,6 +145,38 @@ def jog():
 		length = request.values["extrude"]
 		printer.commands(["G91", "G1 E%s F%d" % (length, movementSpeedE), "G90"])
 
+	movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
+
+	valid_axes = ["x", "y", "z"]
+	##~~ jog command
+	if command == "jog":
+		# validate all jog instructions, make sure that the values are numbers
+		validated_values = {}
+		for axis in valid_axes:
+			if axis in data:
+				value = data[axis]
+				if not isinstance(value, (int, long, float)):
+					return make_response("Not a number for axis %s: %r" % (axis, value), 400)
+				validated_values[axis] = value
+
+		# execute the jog commands
+		for axis, value in validated_values.iteritems():
+			# TODO make this a generic method call (printer.jog(axis, value)) to get rid of gcode here
+			printer.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), value, movementSpeed[axis]), "G90"])
+
+	##~~ home command
+	elif command == "home":
+		validated_values = []
+		axes = data["axes"]
+		for axis in axes:
+			if not axis in valid_axes:
+				return make_response("Invalid axis: %s" % axis, 400)
+			validated_values.append(axis)
+
+		# execute the home command
+		# TODO make this a generic method call (printer.home(axis, ...)) to get rid of gcode here
+		printer.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_values)), "G90"])
+
 	return jsonify(SUCCESS)
 
 
