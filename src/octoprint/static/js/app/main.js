@@ -51,6 +51,17 @@ $(function() {
             terminalViewModel.updateOutput();
         });
 
+        $('#tabs a[data-toggle="tab"]').on('show', function (e) {
+            var current = e.target;
+            var previous = e.relatedTarget;
+
+            if (current.hash == "#control") {
+                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+            } else if (previous.hash == "#control") {
+                $("#webcam_image").attr("src", "#");
+            }
+        });
+
         //~~ Gcode upload
 
         function gcode_upload_done(e, data) {
