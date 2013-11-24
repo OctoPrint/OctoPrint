@@ -40,9 +40,12 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         if ($("#offline_overlay").is(":visible")) {
             $("#offline_overlay").hide();
             self.timelapseViewModel.requestData();
-            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
             self.loginStateViewModel.requestData();
             self.gcodeFilesViewModel.requestData();
+
+            if ($('#tabs li[class="active"] a').attr("href") == "#control") {
+                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+            }
         }
     }
 

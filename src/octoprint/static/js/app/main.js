@@ -51,14 +51,24 @@ $(function() {
             terminalViewModel.updateOutput();
         });
 
+        var webcamDisableTimeout;
         $('#tabs a[data-toggle="tab"]').on('show', function (e) {
             var current = e.target;
             var previous = e.relatedTarget;
 
             if (current.hash == "#control") {
-                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                clearTimeout(webcamDisableTimeout);
+                var webcamImage = $("#webcam_image");
+                var currentSrc = webcamImage.attr("src");
+                if (currentSrc === undefined || currentSrc.trim() == "") {
+                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                }
             } else if (previous.hash == "#control") {
-                $("#webcam_image").attr("src", "#");
+                // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
+                // more load by the constant connection creation than by the actual webcam stream
+                webcamDisableTimeout = setTimeout(function() {
+                    $("#webcam_image").attr("src", "");
+                }, 5000);
             }
         });
 
