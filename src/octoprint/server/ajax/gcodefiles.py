@@ -141,7 +141,7 @@ def gcodeFileCommand(filename, target):
 	if command == "load":
 		# selects/loads a file
 		printAfterLoading = False
-		if "print" in data.keys() and data["print"] in valid_boolean_trues:
+		if "print" in data.keys() and data["print"]:
 			printAfterLoading = True
 
 		sd = False
