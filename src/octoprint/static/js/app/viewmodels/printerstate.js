@@ -144,7 +144,7 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self._jobCommand = function(command) {
         $.ajax({
-            url: AJAX_BASEURL + "control/job",
+            url: API_BASEURL + "control/job",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

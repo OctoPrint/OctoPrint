@@ -135,7 +135,8 @@ class DebugEventListener(GenericEventListener):
 		events = ["Startup", "Connected", "Disconnected", "ClientOpen", "ClientClosed", "PowerOn", "PowerOff", "Upload",
 				  "FileSelected", "TransferStarted", "TransferDone", "PrintStarted", "PrintDone", "PrintFailed",
 				  "Cancelled", "Home", "ZChange", "Paused", "Waiting", "Cooling", "Alert", "Conveyor", "Eject",
-				  "CaptureStart", "CaptureDone", "MovieDone", "EStop", "Error"]
+				  "CaptureStart", "CaptureDone", "MovieRendering", "MovieDone", "MovieFailed", "EStop", "Error",
+				  "SlicingStarted", "SlicingDone", "SlicingFailed", "UpdatedFiles"]
 		self.subscribe(events)
 
 	def eventCallback(self, event, payload):
@@ -191,8 +192,11 @@ class CommandTrigger(GenericEventListener):
 			return
 
 		for command in self._subscriptions[event]:
-			processedCommand = self._processCommand(command, payload)
-			self.executeCommand(processedCommand)
+			try:
+				processedCommand = self._processCommand(command, payload)
+				self.executeCommand(processedCommand)
+			except KeyError:
+				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command):
 		"""
@@ -206,33 +210,39 @@ class CommandTrigger(GenericEventListener):
 
 		The following substitutions are currently supported:
 
-		  - %(currentZ)s : current Z position of the print head, or -1 if not available
-		  - %(filename)s : current selected filename, or "NO FILE" if no file is selected
-		  - %(progress)s : current print progress in percent, 0 if no print is in progress
-		  - %(data)s : the string representation of the event's payload
-		  - %(now)s : ISO 8601 representation of the current date and time
+		  - {__currentZ} : current Z position of the print head, or -1 if not available
+		  - {__filename} : current selected filename, or "NO FILE" if no file is selected
+		  - {__progress} : current print progress in percent, 0 if no print is in progress
+		  - {__data} : the string representation of the event's payload
+		  - {__now} : ISO 8601 representation of the current date and time
+
+		Additionally, the keys of the event's payload can also be used as placeholder.
 		"""
 
 		params = {
-			"currentZ": "-1",
-			"filename": "NO FILE",
-			"progress": "0",
-			"data": str(payload),
-			"now": datetime.datetime.now().isoformat()
+			"__currentZ": "-1",
+			"__filename": "NO FILE",
+			"__progress": "0",
+			"__data": str(payload),
+			"__now": datetime.datetime.now().isoformat()
 		}
 
 		currentData = self._printer.getCurrentData()
 
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
-			params["currentZ"] = str(currentData["currentZ"])
+			params["__currentZ"] = str(currentData["currentZ"])
 
 		if "job" in currentData.keys() and currentData["job"] is not None:
-			params["filename"] = currentData["job"]["filename"]
+			params["__filename"] = currentData["job"]["filename"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
 				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None:
-				params["progress"] = str(round(currentData["progress"]["progress"] * 100))
+				params["__progress"] = str(round(currentData["progress"]["progress"] * 100))
 
-		return command % params
+		# now add the payload keys as well
+		if isinstance(payload, dict):
+			params.update(payload)
+
+		return command.format(**params)
 
 class SystemCommandTrigger(CommandTrigger):
 	"""

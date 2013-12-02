@@ -98,7 +98,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     self.requestData = function(filenameOverride) {
         $.ajax({
-            url: AJAX_BASEURL + "gcodefiles",
+            url: API_BASEURL + "gcodefiles",
             method: "GET",
             dataType: "json",
             success: function(response) {
@@ -135,7 +135,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "gcodefiles/" + origin + "/" + filename,
+            url: API_BASEURL + "gcodefiles/" + origin + "/" + filename,
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -155,7 +155,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "gcodefiles/" + origin + "/" + filename,
+            url: API_BASEURL + "gcodefiles/" + origin + "/" + filename,
             type: "DELETE",
             success: self.fromResponse
         })
@@ -175,7 +175,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     self._sendSdCommand = function(command) {
         $.ajax({
-            url: AJAX_BASEURL + "control/sd",
+            url: API_BASEURL + "control/sd",
             type: "POST",
             dataType: "json",
             data: {command: command}

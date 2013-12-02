@@ -252,11 +252,13 @@ class Timelapse(object):
 		# finalize command with output file
 		self._logger.debug("Rendering movie to %s" % output)
 		command.append(output)
+		eventManager().fire("MovieRendering", {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
 		try:
 			subprocess.check_call(command)
-			eventManager().fire("MovieDone", output)
+			eventManager().fire("MovieDone", {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
 		except subprocess.CalledProcessError as (e):
 			self._logger.warn("Could not render movie, got return code %r" % e.returncode)
+			eventManager().fire("MovieFailed", {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output), "returncode": e.returncode})
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):

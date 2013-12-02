@@ -121,6 +121,7 @@ class GcodeManager:
 			self._metadata[basename] = metadata
 			self._metadataDirty = True
 			self._saveMetadata()
+			eventManager().fire("MetadataAnalysisFinished", {"filename": basename, "result": analysisResult})
 
 	def _loadMetadata(self):
 		if os.path.exists(self._metadataFile) and os.path.isfile(self._metadataFile):
@@ -141,7 +142,6 @@ class GcodeManager:
 			util.safeRename(self._metadataTempFile, self._metadataFile)
 
 		self._loadMetadata()
-		self._sendUpdateTrigger("gcodeFiles")
 
 	def _getBasicFilename(self, filename):
 		if filename.startswith(self._uploadFolder):
@@ -160,7 +160,7 @@ class GcodeManager:
 
 	def _sendUpdateTrigger(self, type):
 		for callback in self._callbacks:
-			try: callback.sendUpdateTrigger(type)
+			try: callback.sendEvent(type)
 			except: pass
 
 	#~~ file handling

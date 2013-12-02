@@ -68,7 +68,7 @@ function TimelapseViewModel(loginStateViewModel) {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "timelapse",
+            url: API_BASEURL + "timelapse",
             type: "GET",
             dataType: "json",
             success: self.fromResponse
@@ -109,7 +109,7 @@ function TimelapseViewModel(loginStateViewModel) {
 
     self.removeFile = function(filename) {
         $.ajax({
-            url: AJAX_BASEURL + "timelapse/" + filename,
+            url: API_BASEURL + "timelapse/" + filename,
             type: "DELETE",
             dataType: "json",
             success: self.requestData
@@ -127,7 +127,7 @@ function TimelapseViewModel(loginStateViewModel) {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "timelapse",
+            url: API_BASEURL + "timelapse",
             type: "POST",
             dataType: "json",
             data: data,

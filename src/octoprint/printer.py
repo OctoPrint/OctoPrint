@@ -129,7 +129,7 @@ class Printer():
 
 	def _sendTriggerUpdateCallbacks(self, type):
 		for callback in self._callbacks:
-			try: callback.sendUpdateTrigger(type)
+			try: callback.sendEvent(type)
 			except: pass
 
 	def _sendFeedbackCommandOutput(self, name, output):
@@ -436,7 +436,7 @@ class Printer():
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def mcSdFiles(self, files):
-		self._sendTriggerUpdateCallbacks("gcodeFiles")
+		eventManager().fire("UpdatedFiles", {"type": "gcode", "files": files})
 		self._sdFilelistAvailable.set()
 
 	def mcFileSelected(self, filename, filesize, sd):

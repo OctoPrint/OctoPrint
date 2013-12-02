@@ -102,7 +102,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "settings",
+            url: API_BASEURL + "settings",
             type: "GET",
             dataType: "json",
             success: self.fromResponse
@@ -227,7 +227,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "settings",
+            url: API_BASEURL + "settings",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

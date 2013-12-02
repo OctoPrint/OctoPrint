@@ -56,7 +56,7 @@ function UsersViewModel(loginStateViewModel) {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         $.ajax({
-            url: AJAX_BASEURL + "users",
+            url: API_BASEURL + "users",
             type: "GET",
             dataType: "json",
             success: self.fromResponse
@@ -153,7 +153,7 @@ function UsersViewModel(loginStateViewModel) {
         if (user === undefined) return;
 
         $.ajax({
-            url: AJAX_BASEURL + "users",
+            url: API_BASEURL + "users",
             type: "POST",
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(user),
@@ -175,7 +175,7 @@ function UsersViewModel(loginStateViewModel) {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "users/" + user.name,
+            url: API_BASEURL + "users/" + user.name,
             type: "DELETE",
             success: function(response) {
                 self.fromResponse(response);
@@ -189,7 +189,7 @@ function UsersViewModel(loginStateViewModel) {
         if (user === undefined) return;
 
         $.ajax({
-            url: AJAX_BASEURL + "users/" + user.name,
+            url: API_BASEURL + "users/" + user.name,
             type: "PUT",
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(user),
@@ -204,7 +204,7 @@ function UsersViewModel(loginStateViewModel) {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         $.ajax({
-            url: AJAX_BASEURL + "users/" + username + "/password",
+            url: API_BASEURL + "users/" + username + "/password",
             type: "PUT",
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify({password: password}),
@@ -216,7 +216,7 @@ function UsersViewModel(loginStateViewModel) {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         $.ajax({
-            url: AJAX_BASEURL + "users/" + username + "/apikey",
+            url: API_BASEURL + "users/" + username + "/apikey",
             type: "POST",
             success: callback
         });
@@ -226,7 +226,7 @@ function UsersViewModel(loginStateViewModel) {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         $.ajax({
-            url: AJAX_BASEURL + "users/" + username + "/apikey",
+            url: API_BASEURL + "users/" + username + "/apikey",
             type: "DELETE",
             success: callback
         });
