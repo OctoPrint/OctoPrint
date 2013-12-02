@@ -3,7 +3,7 @@
 
 from setuptools import setup, find_packages
 
-VERSION = "1.1.0-dev"
+VERSION = open("VERSION").read().strip()
 
 def params():
 	name = "OctoPrint"
