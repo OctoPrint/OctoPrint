@@ -76,7 +76,7 @@ def api_access(func):
 			make_response("No API key provided", 401)
 		if request.values["apikey"] != settings().get(["api", "key"]):
 			make_response("Invalid API key", 403)
-		return func(args, kwargs)
+		return func(*args, **kwargs)
 	return decorated_view
 
 #~~ Printer state
