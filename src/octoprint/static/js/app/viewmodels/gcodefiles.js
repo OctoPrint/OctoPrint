@@ -178,7 +178,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             url: AJAX_BASEURL + "control/sd",
             type: "POST",
             dataType: "json",
-            data: {command: command}
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify({command: command})
         });
     }
 
