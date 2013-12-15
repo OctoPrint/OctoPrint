@@ -7,6 +7,10 @@
 Welcome to OctoPrint's documentation!
 #####################################
 
+This is a work in progress. The goal is to document OctoPrint's REST API, event system, configuration etc in way that
+allows different documentation per development branch in Git, which so far did not scale well with the Github-Wiki-based
+approach.
+
 Contents:
 
 .. toctree::
