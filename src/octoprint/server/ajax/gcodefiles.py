@@ -23,16 +23,16 @@ def readGcodeFiles():
 	return jsonify(files=files, free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
 
 
-@ajax.route("/gcodefiles/<string:target>", methods=["GET"])
-def readGcodeFilesForTarget(target):
-	if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-		return make_response("Invalid target: %s" % target, 400)
+@ajax.route("/gcodefiles/<string:origin>", methods=["GET"])
+def readGcodeFilesForTarget(origin):
+	if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+		return make_response("Invalid target: %s" % origin, 400)
 
-	return jsonify(files=_getFileList(target), free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
+	return jsonify(files=_getFileList(origin), free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
 
 
-def _getFileList(target):
-	if target == FileDestinations.SDCARD:
+def _getFileList(origin):
+	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.getSdFiles()
 
 		files = []
