@@ -323,7 +323,7 @@ Issue a file command
 Delete file
 ===========
 
-.. http:post:: /api/files/(string:target)/(path:filename)
+.. http:delete:: /api/files/(string:target)/(path:filename)
 
    Delete the selected `filename` on the selected `target`.
 
