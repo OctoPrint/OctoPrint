@@ -67,6 +67,7 @@ Issue a print head command
    :statuscode 200: No error
    :statuscode 400: Invalid axis specified, invalid value for travel amount for a jog command or otherwise invalid
                     request.
+   :statuscode 403: If the printer is not operational or currently printing.
 
 .. _sec-api-printer-hotend:
 
@@ -139,9 +140,56 @@ Issue a heater command
    :statuscode 400: If ``temps`` or ``offsets`` contains a property other than ``hotend`` or ``bed``, the
                     target or offset temperature is not a valid number or outside of the supported range, or if the
                     request is otherwise invalid.
+   :statuscode 403: If the printer is not operational.
 
 .. _sec-api-printer-feeder:
 
-Feeder Control
-==============
+Issue a feeder command
+======================
 
+.. http:post:: /api/control/printer/feeder
+
+   Feeder commands allow extrusion/extraction of filament. Available commands are:
+
+   extrude
+     Extrudes the given amount of filament. Additional parameters:
+
+     * ``amount``: The amount of filament to extrude in mm. May be negative to retract.
+
+   **Example Extrude Request**
+
+   Extrudes 1mm of filament
+
+   .. sourcecode:: http
+
+      POST /api/control/printer/feeder HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "extrude",
+        "amount": 1
+      }
+
+   **Example Retract Request**
+
+   Retracts 3mm of filament
+
+   .. sourcecode:: http
+
+      POST /api/control/printer/feeder HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "extrude",
+        "amount": -3
+      }
+
+   :json string command: The command to issue, only ``extrude`` is supported right now.
+   :json number amount:  ``extrude`` command: The amount of filament to extrude/retract in mm.
+   :statuscode 200: No error
+   :statuscode 400: If the value given for `amount` is not a valid number or the request is otherwise invalid.
+   :statuscode 403: If the printer is not operational or currently printing.
