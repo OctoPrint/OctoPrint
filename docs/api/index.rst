@@ -9,3 +9,6 @@ API Documentation
 
    general.rst
    fileops.rst
+   connection.rst
+   printer.rst
+

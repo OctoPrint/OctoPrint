@@ -10,19 +10,28 @@ Authorization
 =============
 
 OctoPrint's API expects an API key to be supplied with each request. This API key can be either the globally
-configured one (compare :ref:`fig-api-general-globalapikey`) or a user specific one if "Access Control" is enabled
-(compare :ref:`fig-api-general-userapikey`). Users are able to generate and revoke their custom API key via the
-"Change password" dialog (compare :ref:`fig-api-general-changepassword`).
+configured one or a user specific one if "Access Control" is enabled. Users are able to generate and revoke their
+custom API key via the "Change password" dialog.
 
-The API key must be supplied as query parameter ``apikey`` to each request, e.g.
+The API key must be supplied in the custom HTTP header ``X-Api-Key``, e.g.
 
 .. sourcecode:: http
 
-   GET /api/gcodefiles/local?apikey=abcdef HTTP/1.1
+   GET /api/files HTTP/1.1
+   Host: example.com
+   X-Api-Key: abcdef...
+
+If it is missing, OctoPrint will directly return a response with status :http:statuscode:`401`. If it is included in
+the request but invalid, OctoPrint will directly return a response with status :http:statuscode:`403`.
+
+For testing purposes it is also possible to supply the API key via a query parameter ``apikey``, e.g.
+
+.. sourcecode:: http
+
+   GET /api/files?apikey=abcdef... HTTP/1.1
    Host: example.com
 
-.. todo::
-   Look into allowing to supply the API key as a custom ``Authorization`` scheme.
+Please be advised that clients should use the header field variant if at all possible.
 
 .. _fig-api-general-globalapikey:
 .. figure:: ../images/settings-global-api-key.png
@@ -45,3 +54,16 @@ The API key must be supplied as query parameter ``apikey`` to each request, e.g.
 
    The API key options in the "Change password" dialog. Users can generate and revoke their custom API key here.
 
+.. _sec-api-general-contenttype:
+
+Content Type
+============
+
+If not otherwise stated OctoPrint's API expects request bodies and issues response bodies as ``Content-Type: application/json``.
+
+.. _sec-api-general-encoding:
+
+Encoding
+========
+
+OctoPrint uses UTF-8 as charset.
