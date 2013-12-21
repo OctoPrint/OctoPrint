@@ -33,18 +33,19 @@ def readGcodeFiles():
 	return jsonify(files=files, free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
 
 
-@ajax.route("/gcodefiles/<path:filename>", methods=["GET"])
-def readGcodeFile(filename):
-	return redirectToTornado(request, url_for("index") + "downloads/gcode/" + filename)
-
-
-@ajax.route("/gcodefiles/upload", methods=["POST"])
+@ajax.route("/gcodefiles/<string:target>", methods=["POST"])
 @restricted_access
-def uploadGcodeFile():
+def uploadGcodeFile(target):
+	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+		return make_response("Invalid target: %s" % target, 400)
+
 	if "gcode_file" in request.files.keys():
 		file = request.files["gcode_file"]
-		sd = "target" in request.values.keys() and request.values["target"] == "sd";
+		sd = target == FileDestinations.SDCARD
+		selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues
+		printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues
 
+		# determine current job
 		currentFilename = None
 		currentSd = None
 		currentJob = printer.getCurrentJob()
@@ -52,34 +53,52 @@ def uploadGcodeFile():
 			currentFilename = currentJob["filename"]
 			currentSd = currentJob["sd"]
 
+		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		futureFilename = gcodeManager.getFutureFilename(file)
 		if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
 			return make_response("Can not upload file %s, wrong format?" % file.filename, 400)
 
+		# prohibit overwriting currently selected file while it's being printed
 		if futureFilename == currentFilename and sd == currentSd and printer.isPrinting() or printer.isPaused():
-			# trying to overwrite currently selected file, but it is being printed
 			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 403)
 
+		filename = None
+
+		def fileProcessingFinished(filename, absFilename, destination):
+			"""
+			Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
+			finished.
+
+			Depending on the file's destination triggers either streaming to SD card or directly calls selectOrPrint.
+			"""
+			sd = destination == FileDestinations.SDCARD
+			if sd:
+				printer.addSdFile(filename, absFilename, selectAndOrPrint)
+			else:
+				selectAndOrPrint(absFilename, destination)
+
+		def selectAndOrPrint(nameToSelect, destination):
+			"""
+			Callback for when the file is ready to be selected and optionally printed. For SD file uploads this only
+			the case after they have finished streaming to the printer, which is why this callback is also used
+			for the corresponding call to addSdFile.
+
+			Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
+			exact file is already selected, such reloading it.
+			"""
+			sd = destination == FileDestinations.SDCARD
+			if selectAfterUpload or printAfterSelect or (currentFilename == filename and currentSd == sd):
+				printer.selectFile(nameToSelect, sd, printAfterSelect)
+
 		destination = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
-
-		filename, done = gcodeManager.addFile(file, destination)
-
+		filename, done = gcodeManager.addFile(file, destination, fileProcessingFinished)
 		if filename is None:
 			return make_response("Could not upload the file %s" % file.filename, 500)
 
-		absFilename = gcodeManager.getAbsolutePath(filename)
-		if sd:
-			printer.addSdFile(filename, absFilename)
-
-		if currentFilename == filename and currentSd == sd:
-			# reload file as it was updated
-			if sd:
-				printer.selectFile(filename, sd, False)
-			else:
-				printer.selectFile(absFilename, sd, False)
-
 		eventManager.fire("Upload", filename)
-	return jsonify(files=gcodeManager.getAllFileData(), filename=filename, done=done)
+		return jsonify(files=gcodeManager.getAllFileData(), filename=filename, done=done)
+	else:
+		return make_response("No gcode_file included", 400)
 
 
 @ajax.route("/gcodefiles/load", methods=["POST"])

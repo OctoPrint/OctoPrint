@@ -43,10 +43,10 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
             },
             "sd": function(file) {
-                return file["origin"] && file["origin"] == "sd";
+                return file["origin"] && file["origin"] == "sdcard";
             },
             "local": function(file) {
-                return !(file["origin"] && file["origin"] == "sd");
+                return !(file["origin"] && file["origin"] == "sdcard");
             }
         },
         "name",
