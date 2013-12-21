@@ -19,6 +19,7 @@ from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
 from octoprint.users import ApiUser
+from octoprint.events import Events
 
 def restricted_access(func, apiEnabled=True):
 	"""
@@ -45,10 +46,8 @@ def restricted_access(func, apiEnabled=True):
 			return make_response("OctoPrint isn't setup yet", 403)
 
 		# if API is globally enabled, enabled for this request and an api key is provided, try to use that
-		if settings().get(["api", "enabled"]) and apiEnabled and "apikey" in request.values.keys():
-			apikey = request.values["apikey"]
-			user = None
-
+		apikey = _getApiKey(request)
+		if settings().get(["api", "enabled"]) and apiEnabled and apikey is not None:
 			if apikey == settings().get(["api", "key"]):
 				# master key was used
 				user = ApiUser()
@@ -57,7 +56,7 @@ def restricted_access(func, apiEnabled=True):
 				user = octoprint.server.userManager.findUser(apikey=apikey)
 
 			if user is None:
-				make_response("Invalid API key", 403)
+				make_response("Invalid API key", 401)
 			if login_user(user, remember=False):
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 				return func(*args, **kwargs)
@@ -72,19 +71,30 @@ def api_access(func):
 	def decorated_view(*args, **kwargs):
 		if not settings().get(["api", "enabled"]):
 			make_response("API disabled", 401)
-		if not "apikey" in request.values.keys():
+		apikey = _getApiKey(request)
+		if apikey is None:
 			make_response("No API key provided", 401)
-		if request.values["apikey"] != settings().get(["api", "key"]):
+		if apikey != settings().get(["api", "key"]):
 			make_response("Invalid API key", 403)
 		return func(*args, **kwargs)
 	return decorated_view
+
+
+def _getApiKey(request):
+	if "apikey" in request.values:
+		return request.values["apikey"]
+	if "X-Api-Key" in request.headers.keys():
+		return request.headers.get("X-Api-Key")
+	return None
+
 
 #~~ Printer state
 
 
 class PrinterStateConnection(SockJSConnection):
-	EVENTS = ["UpdatedFiles", "MetadataAnalysisFinished", "MovieRendering", "MovieDone",
-			  "MovieFailed", "SlicingStarted", "SlicingDone", "SlicingFailed"]
+	EVENTS = [Events.UPDATED_FILES, Events.METADATA_ANALYSIS_FINISHED, Events.MOVIE_RENDERING, Events.MOVIE_DONE,
+			  Events.MOVIE_FAILED, Events.SLICING_STARTED, Events.SLICING_DONE, Events.SLICING_FAILED,
+			  Events.TRANSFER_STARTED, Events.TRANSFER_DONE]
 
 	def __init__(self, printer, gcodeManager, userManager, eventManager, session):
 		SockJSConnection.__init__(self, session)
@@ -110,24 +120,25 @@ class PrinterStateConnection(SockJSConnection):
 		return info.ip
 
 	def on_open(self, info):
-		self._logger.info("New connection from client: %s" % self._getRemoteAddress(info))
+		remoteAddress = self._getRemoteAddress(info)
+		self._logger.info("New connection from client: %s" % remoteAddress)
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
 		octoprint.timelapse.registerCallback(self)
 
-		self._eventManager.fire("ClientOpened")
+		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": remoteAddress})
 		for event in PrinterStateConnection.EVENTS:
 			self._eventManager.subscribe(event, self._onEvent)
 
 		octoprint.timelapse.notifyCallbacks(octoprint.timelapse.current)
 
 	def on_close(self):
-		self._logger.info("Closed client connection")
+		self._logger.info("Client connection closed")
 		self._printer.unregisterCallback(self)
 		self._gcodeManager.unregisterCallback(self)
 		octoprint.timelapse.unregisterCallback(self)
 
-		self._eventManager.fire("ClientClosed")
+		self._eventManager.fire(Events.CLIENT_CLOSED)
 		for event in PrinterStateConnection.EVENTS:
 			self._eventManager.unsubscribe(event, self._onEvent)
 
@@ -314,11 +325,15 @@ class ReverseProxied(object):
 
 def redirectToTornado(request, target):
 	requestUrl = request.url
-	appBaseUrl = requestUrl[:requestUrl.find(url_for("index") + "/ajax")]
+	appBaseUrl = requestUrl[:requestUrl.find(url_for("index") + "api")]
 
 	redirectUrl = appBaseUrl + target
 	if "?" in requestUrl:
 		fragment = requestUrl[requestUrl.rfind("?"):]
 		redirectUrl += fragment
 	return redirect(redirectUrl)
+
+
+def urlForDownload(origin, filename):
+	return url_for("index", _external=True) + "downloads/files/" + origin + "/" + filename
 

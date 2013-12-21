@@ -120,16 +120,17 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self.print = function() {
-        var printAction = function() {
-            self._jobCommand("start");
+        var restartCommand = function() {
+            self._jobCommand("restart");
         }
 
         if (self.isPaused()) {
             $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); printAction(); });
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); restartCommand(); });
             $("#confirmation_dialog").modal("show");
         } else {
-            printAction();
+            self._jobCommand("start");
         }
 
     }

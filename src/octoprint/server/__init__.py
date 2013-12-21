@@ -3,7 +3,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, make_response
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 
@@ -12,6 +12,7 @@ import logging
 import logging.config
 
 SUCCESS = {}
+NO_CONTENT = ("", 204)
 
 app = Flask("octoprint")
 debug = False
@@ -164,23 +165,21 @@ class Server():
 		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
-		from octoprint.server.ajax import ajax
 		from octoprint.server.api import api
 
-		app.register_blueprint(ajax, url_prefix="/ajax")
 		app.register_blueprint(api, url_prefix="/api")
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
 		self._tornado_app = Application(self._router.urls + [
 			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),
-			(r"/downloads/gcode/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
+			(r"/downloads/files/local/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
 			(r".*", FallbackHandler, {"fallback": WSGIContainer(app.wsgi_app)})
 		])
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
 
-		eventManager.fire("Startup")
+		eventManager.fire(events.Events.STARTUP)
 		if settings().getBoolean(["serial", "autoconnect"]):
 			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
 			connectionOptions = getConnectionOptions()

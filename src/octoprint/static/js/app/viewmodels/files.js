@@ -96,56 +96,56 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isSdReady(data.flags.sdReady);
     }
 
-    self.requestData = function(filenameOverride) {
+    self.requestData = function(filenameToFocus, locationToFocus) {
         $.ajax({
-            url: API_BASEURL + "gcodefiles",
+            url: API_BASEURL + "files",
             method: "GET",
             dataType: "json",
             success: function(response) {
-                if (filenameOverride) {
-                    response.filename = filenameOverride
-                }
-                self.fromResponse(response);
+                self.fromResponse(response, filenameToFocus, locationToFocus);
             }
         });
     }
 
-    self.fromResponse = function(response) {
-        self.listHelper.updateItems(response.files);
+    self.fromResponse = function(response, filenameToFocus, locationToFocus) {
+        var files = response.files;
+        _.each(files, function(element, index, list) {
+            if (!element.hasOwnProperty("size")) element.size = "n/a";
+            if (!element.hasOwnProperty("date")) element.date = "n/a";
+        });
+        self.listHelper.updateItems(files);
 
-        if (response.filename) {
+        if (filenameToFocus) {
             // got a file to scroll to
-            self.listHelper.switchToItem(function(item) {return item.name == response.filename});
+            if (locationToFocus === undefined) {
+                locationToFocus = "local";
+            }
+            self.listHelper.switchToItem(function(item) {return item.name == filenameToFocus && item.origin == locationToFocus});
         }
 
-        self.freeSpace(response.free);
+        if (response.free) {
+            self.freeSpace(response.free);
+        }
 
         self.highlightFilename(self.printerState.filename());
     }
 
     self.loadFile = function(filename, printAfterLoad) {
         var file = self.listHelper.getItem(function(item) {return item.name == filename});
-        if (!file) return;
-
-        var origin;
-        if (file.origin === undefined) {
-            origin = "local";
-        } else {
-            origin = file.origin;
-        }
+        if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
         $.ajax({
-            url: API_BASEURL + "gcodefiles/" + origin + "/" + filename,
+            url: file.refs.resource,
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify({command: "load", print: printAfterLoad})
+            data: JSON.stringify({command: "select", print: printAfterLoad})
         })
     }
 
     self.removeFile = function(filename) {
         var file = self.listHelper.getItem(function(item) {return item.name == filename});
-        if (!file) return;
+        if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
         var origin;
         if (file.origin === undefined) {
@@ -155,9 +155,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
 
         $.ajax({
-            url: API_BASEURL + "gcodefiles/" + origin + "/" + filename,
-            type: "DELETE",
-            success: self.fromResponse
+            url: file.refs.resource,
+            type: "DELETE"
         })
     }
 
@@ -175,7 +174,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     self._sendSdCommand = function(command) {
         $.ajax({
-            url: API_BASEURL + "control/sd",
+            url: API_BASEURL + "control/printer/sd",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

@@ -13,7 +13,7 @@ import octoprint.util.comm as comm
 import octoprint.util as util
 
 from octoprint.settings import settings
-from octoprint.events import eventManager
+from octoprint.events import eventManager, Events
 
 from octoprint.filemanager.destinations import FileDestinations
 
@@ -163,7 +163,7 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = None
-		eventManager().fire("Disconnected")
+		eventManager().fire(Events.DISCONNECTED)
 
 	def command(self, command):
 		"""
@@ -247,7 +247,13 @@ class Printer():
 		# mark print as failure
 		if self._selectedFile is not None:
 			self._gcodeManager.printFailed(self._selectedFile["filename"])
-			eventManager().fire("PrintFailed", self._selectedFile["filename"])
+			payload = {
+				"file": self._selectedFile["filename"],
+				"origin": FileDestinations.LOCAL
+			}
+			if self._selectedFile["sd"]:
+				payload["origin"] = FileDestinations.SDCARD
+			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	#~~ state monitoring
 
@@ -357,11 +363,6 @@ class Printer():
 			pass
 
 	def _getStateFlags(self):
-		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
-			sdReady = False
-		else:
-			sdReady = self._comm.isSdReady()
-
 		return {
 			"operational": self.isOperational(),
 			"printing": self.isPrinting(),
@@ -369,7 +370,7 @@ class Printer():
 			"error": self.isError(),
 			"paused": self.isPaused(),
 			"ready": self.isReady(),
-			"sdReady": sdReady
+			"sdReady": self.isSdReady()
 		}
 
 	def getCurrentData(self):
@@ -428,7 +429,7 @@ class Printer():
 		if newZ != oldZ:
 			# we have to react to all z-changes, even those that might "go backward" due to a slicer's retraction or
 			# anti-backlash-routines. Event subscribes should individually take care to filter out "wrong" z-changes
-			eventManager().fire("ZChange", newZ)
+			eventManager().fire(Events.Z_CHANGE, {"new": newZ, "old": oldZ})
 
 		self._setCurrentZ(newZ)
 
@@ -436,7 +437,7 @@ class Printer():
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def mcSdFiles(self, files):
-		eventManager().fire("UpdatedFiles", {"type": "gcode", "files": files})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode", "files": files})
 		self._sdFilelistAvailable.set()
 
 	def mcFileSelected(self, filename, filesize, sd):
@@ -489,8 +490,10 @@ class Printer():
 		self.refreshSdFiles(blocking=True)
 		existingSdFiles = self._comm.getSdFiles()
 
-		self._sdRemoteName = util.getDosFilename(filename, existingSdFiles)
-		self._comm.startFileTransfer(absolutePath, self._sdRemoteName)
+		remoteName = util.getDosFilename(filename, existingSdFiles)
+		self._comm.startFileTransfer(absolutePath, filename, remoteName)
+
+		return remoteName
 
 	def deleteSdFile(self, filename):
 		if not self._comm or not self._comm.isSdReady():
@@ -582,6 +585,12 @@ class Printer():
 
 	def isReady(self):
 		return self.isOperational() and not self._comm.isStreaming()
+
+	def isSdReady(self):
+		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
+			return False
+		else:
+			return self._comm.isSdReady()
 
 	def isLoading(self):
 		return self._gcodeLoader is not None

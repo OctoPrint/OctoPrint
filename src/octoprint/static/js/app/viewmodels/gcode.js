@@ -19,7 +19,7 @@ function GcodeViewModel(loginStateViewModel) {
         if (self.status == 'idle' && self.errorCount < 3) {
             self.status = 'request';
             $.ajax({
-                url: BASEURL + "downloads/gcode/" + filename,
+                url: BASEURL + "downloads/files/local/" + filename,
                 data: { "mtime": mtime },
                 type: "GET",
                 success: function(response, rstatus) {
@@ -67,7 +67,7 @@ function GcodeViewModel(loginStateViewModel) {
                 }
             }
             self.errorCount = 0
-        } else if (data.job.filename) {
+        } else if (data.job.filename && !data.job.sd) {
             self.loadFile(data.job.filename, data.job.mtime);
         }
     }

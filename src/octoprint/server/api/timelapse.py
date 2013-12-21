@@ -13,43 +13,42 @@ from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import restricted_access, admin_permission
 from octoprint.server.util import redirectToTornado
-from octoprint.server.ajax import ajax
+from octoprint.server.api import api
 
 
 #~~ timelapse handling
 
 
-@ajax.route("/timelapse", methods=["GET"])
+@api.route("/timelapse", methods=["GET"])
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
 
 	type = "off"
-	additionalConfig = {}
+	config = {"type": "off"}
 	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
-		type = "zchange"
+		config["type"] = "zchange"
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
-		type = "timed"
-		additionalConfig = {
+		config["type"] = "timed"
+		config.update({
 			"interval": timelapse.interval()
-		}
+		})
 
 	files = octoprint.timelapse.getFinishedTimelapses()
 	for file in files:
 		file["url"] = url_for("index") + "downloads/timelapse/" + file["name"]
 
 	return jsonify({
-		"type": type,
-		"config": additionalConfig,
+		"config": config,
 		"files": files
 	})
 
 
-@ajax.route("/timelapse/<filename>", methods=["GET"])
+@api.route("/timelapse/<filename>", methods=["GET"])
 def downloadTimelapse(filename):
 	return redirectToTornado(request, url_for("index") + "downloads/timelapse/" + filename)
 
 
-@ajax.route("/timelapse/<filename>", methods=["DELETE"])
+@api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
 def deleteTimelapse(filename):
 	if util.isAllowedFile(filename, {"mpg"}):
@@ -59,7 +58,7 @@ def deleteTimelapse(filename):
 	return getTimelapseData()
 
 
-@ajax.route("/timelapse", methods=["POST"])
+@api.route("/timelapse", methods=["POST"])
 @restricted_access
 def setTimelapseConfig():
 	if "type" in request.values:

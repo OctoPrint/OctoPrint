@@ -18,7 +18,8 @@ from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
-from octoprint.events import eventManager
+from octoprint.events import eventManager, Events
+from octoprint.filemanager.destinations import FileDestinations
 from octoprint.gcodefiles import isGcodeFileName
 from octoprint.util import getExceptionString, getNewTimeout
 from octoprint.util.virtual import VirtualPrinter
@@ -68,17 +69,32 @@ def baudrateList():
 	return ret
 
 gcodeToEvent = {
-	"M226": "Waiting",  # pause for user input
-	"M0": "Waiting",
-	"M1": "Waiting",
-	"M245": "Cooling",  # part cooler
-	"M240": "Conveyor", # part conveyor
-	"M40": "Eject",     # part ejector
-	"M300": "Alert",    # user alert
-	"G28": "Home",      # home print head
-	"M112": "EStop",
-	"M80": "PowerOn",
-	"M81": "PowerOff"
+	# pause for user input
+	"M226": Events.WAITING,
+	"M0": Events.WAITING,
+	"M1": Events.WAITING,
+
+	# part cooler
+	"M245": Events.COOLING,
+
+	# part conveyor
+	"M240": Events.CONVEYOR,
+
+	# part ejector
+	"M40": Events.EJECT,
+
+	# user alert
+	"M300": Events.ALERT,
+
+	# home print head
+	"G28": Events.HOME,
+
+	# emergency stop
+	"M112": Events.E_STOP,
+
+	# motors on/off
+	"M80": Events.POWER_ON,
+	"M81": Events.POWER_OFF,
 }
 
 class MachineCom(object):
@@ -310,8 +326,14 @@ class MachineCom(object):
 			self._sdFileList = []
 
 		if printing:
-			eventManager().fire("PrintFailed")
-		eventManager().fire("Disconnected")
+			payload = None
+			if self._currentFile is not None:
+				payload = {
+					"file": self._currentFile.getFilename(),
+					"origin": self._currentFile.getFileLocation()
+				}
+			eventManager().fire(Events.PRINT_FAILED, payload)
+		eventManager().fire(Events.DISCONNECTED)
 
 	def setTemperatureOffset(self, extruder=None, bed=None):
 		if extruder is not None:
@@ -337,7 +359,10 @@ class MachineCom(object):
 		wasPaused = self.isPaused()
 		self._printSection = "CUSTOM"
 		self._changeState(self.STATE_PRINTING)
-		eventManager().fire("PrintStarted", self._currentFile.getFilename())
+		eventManager().fire(Events.PRINT_STARTED, {
+			"file": self._currentFile.getFilename(),
+			"origin": self._currentFile.getFileLocation()
+		})
 
 		try:
 			self._currentFile.start()
@@ -351,18 +376,18 @@ class MachineCom(object):
 		except:
 			self._errorValue = getExceptionString()
 			self._changeState(self.STATE_ERROR)
-			eventManager().fire("Error", self.getErrorString())
+			eventManager().fire(Events.ERROR, self.getErrorString())
 
-	def startFileTransfer(self, filename, remoteFilename):
+	def startFileTransfer(self, filename, localFilename, remoteFilename):
 		if not self.isOperational() or self.isBusy():
 			logging.info("Printer is not operation or busy")
 			return
 
-		self._currentFile = StreamingGcodeFileInformation(filename)
+		self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
 		self._currentFile.start()
 
 		self.sendCommand("M28 %s" % remoteFilename)
-		eventManager().fire("TransferStart", remoteFilename)
+		eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
 		self._callback.mcFileTransferStarted(remoteFilename, self._currentFile.getFilesize())
 
 	def selectFile(self, filename, sd):
@@ -376,7 +401,10 @@ class MachineCom(object):
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename, self.getOffsets)
-			eventManager().fire("FileSelected", filename)
+			eventManager().fire(Events.FILE_SELECTED, {
+				"file": self._currentFile.getFilename(),
+				"origin": self._currentFile.getFileLocation()
+			})
 			self._callback.mcFileSelected(filename, self._currentFile.getFilesize(), False)
 
 	def unselectFile(self):
@@ -384,7 +412,7 @@ class MachineCom(object):
 			return
 
 		self._currentFile = None
-		eventManager().fire("FileSelected", None)
+		eventManager().fire(Events.FILE_DESELECTED)
 		self._callback.mcFileSelected(None, None, False)
 
 	def cancelPrint(self):
@@ -397,7 +425,10 @@ class MachineCom(object):
 			self.sendCommand("M25")    # pause print
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 
-		eventManager().fire("PrintCancelled")
+		eventManager().fire(Events.PRINT_CANCELLED, {
+			"file": self._currentFile.getFilename(),
+			"origin": self._currentFile.getFileLocation()
+		})
 
 	def setPause(self, pause):
 		if self.isStreaming():
@@ -409,13 +440,20 @@ class MachineCom(object):
 				self.sendCommand("M24")
 			else:
 				self._sendNext()
-			eventManager().fire("PrintResumed", self._currentFile.getFilename())
-		if pause and self.isPrinting():
+
+			eventManager().fire(Events.PRINT_RESUMED, {
+				"file": self._currentFile.getFilename(),
+				"origin": self._currentFile.getFileLocation()
+			})
+		elif pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
 
-			eventManager().fire("Paused")
+			eventManager().fire(Events.PRINT_PAUSED, {
+				"file": self._currentFile.getFilename(),
+				"origin": self._currentFile.getFileLocation()
+			})
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -560,7 +598,10 @@ class MachineCom(object):
 					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 					if self._currentFile is not None:
 						self._callback.mcFileSelected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
-						eventManager().fire("FileSelected", self._currentFile.getFilename())
+						eventManager().fire(Events.FILE_SELECTED, {
+							"file": self._currentFile.getFilename(),
+							"origin": self._currentFile.getFileLocation()
+						})
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 					self._printSection = "CUSTOM"
@@ -571,7 +612,10 @@ class MachineCom(object):
 					self._sdFilePos = 0
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire("PrintDone")
+					eventManager().fire(Events.PRINT_DONE, {
+						"file": self._currentFile.getFilename(),
+						"origin": self._currentFile.getFileLocation()
+					})
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
 
@@ -625,7 +669,7 @@ class MachineCom(object):
 							self.close()
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
 							self._changeState(self.STATE_ERROR)
-							eventManager().fire("Error", self.getErrorString())
+							eventManager().fire(Events.ERROR, self.getErrorString())
 						elif self._baudrateDetectRetry > 0:
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
@@ -657,7 +701,7 @@ class MachineCom(object):
 							self._changeState(self.STATE_OPERATIONAL)
 							if self._sdAvailable:
 								self.refreshSdFiles()
-							eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
+							eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
 					else:
 						self._testingBaudrate = False
 
@@ -671,7 +715,7 @@ class MachineCom(object):
 						self._changeState(self.STATE_OPERATIONAL)
 						if not self._sdAvailable:
 							self.initSdCard()
-						eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
+						eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
 					elif time.time() > timeout:
 						self.close()
 
@@ -736,7 +780,7 @@ class MachineCom(object):
 				self._log(errorMsg)
 				self._errorValue = errorMsg
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire("Error", self.getErrorString())
+				eventManager().fire(Events.ERROR, self.getErrorString())
 		self._log("Connection closed, closing down monitor")
 
 	def _openSerial(self):
@@ -760,7 +804,7 @@ class MachineCom(object):
 				self._log("Failed to autodetect serial port")
 				self._errorValue = 'Failed to autodetect serial port.'
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire("Error", self.getErrorString())
+				eventManager().fire(Events.ERROR, self.getErrorString())
 				return False
 		elif self._port == 'VIRTUAL':
 			self._changeState(self.STATE_OPEN_SERIAL)
@@ -777,7 +821,7 @@ class MachineCom(object):
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 				self._errorValue = "Failed to open serial port, permissions correct?"
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire("Error", self.getErrorString())
+				eventManager().fire(Events.ERROR, self.getErrorString())
 				return False
 		return True
 
@@ -802,7 +846,7 @@ class MachineCom(object):
 			elif not self.isError():
 				self._errorValue = line[6:]
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire("Error", self.getErrorString())
+				eventManager().fire(Events.ERROR, self.getErrorString())
 		return line
 
 	def _readline(self):
@@ -827,16 +871,27 @@ class MachineCom(object):
 			if line is None:
 				if self.isStreaming():
 					self._sendCommand("M29")
+
 					filename = self._currentFile.getFilename()
+					payload = {
+						"local": self._currentFile.getLocalFilename(),
+						"remote": self._currentFile.getRemoteFilename(),
+						"time": "%.2f" % (time.time() - self._currentFile.getStartTime())
+					}
+
 					self._currentFile = None
 					self._changeState(self.STATE_OPERATIONAL)
 					self._callback.mcFileTransferDone(filename)
-					eventManager().fire("TransferDone", filename)
+					eventManager().fire(Events.TRANSFER_DONE, payload)
 					self.refreshSdFiles()
 				else:
+					payload = {
+						"file": self._currentFile.getFilename(),
+						"origin": self._currentFile.getFileLocation()
+					}
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire("PrintDone", self._currentFile.getFilename())
+					eventManager().fire(Events.PRINT_DONE, payload)
 				return
 
 			self._sendCommand(line, True)
@@ -845,7 +900,7 @@ class MachineCom(object):
 	def _handleResendRequest(self, line):
 		lineToResend = None
 		try:
-			lineToResend = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
+			lineToResend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
 		except:
 			if "rs" in line:
 				lineToResend = int(line.split()[1])
@@ -858,7 +913,7 @@ class MachineCom(object):
 				if self.isPrinting():
 					# abort the print, there's nothing we can do to rescue it now
 					self._changeState(self.STATE_ERROR)
-					eventManager().fire("Error", self.getErrorString())
+					eventManager().fire(Events.ERROR, self.getErrorString())
 				else:
 					# reset resend delta, we can't do anything about it
 					self._resendDelta = None
@@ -1064,6 +1119,9 @@ class PrintingFileInformation(object):
 	def getFilepos(self):
 		return self._filepos
 
+	def getFileLocation(self):
+		return FileDestinations.LOCAL
+
 	def getProgress(self):
 		"""
 		The current progress of the file, calculated as relation between file position and absolute size. Returns -1
@@ -1099,6 +1157,9 @@ class PrintingSdFileInformation(PrintingFileInformation):
 		Sets the current file position.
 		"""
 		self._filepos = filepos
+
+	def getFileLocation(self):
+		return FileDestinations.SDCARD
 
 class PrintingGcodeFileInformation(PrintingFileInformation):
 	"""
@@ -1191,5 +1252,17 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			return None
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
-	def __init__(self, filename):
-		PrintingGcodeFileInformation.__init__(self, filename, None)
+	def __init__(self, path, localFilename, remoteFilename):
+		PrintingGcodeFileInformation.__init__(self, path, None)
+		self._localFilename = localFilename
+		self._remoteFilename = remoteFilename
+
+	def start(self):
+		PrintingGcodeFileInformation.start(self)
+		self._startTime = time.time()
+
+	def getLocalFilename(self):
+		return self._localFilename
+
+	def getRemoteFilename(self):
+		return self._remoteFilename

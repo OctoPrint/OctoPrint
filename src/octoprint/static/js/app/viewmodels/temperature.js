@@ -217,7 +217,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         data[group][type] = parseInt(temp);
 
         $.ajax({
-            url: API_BASEURL + "control/printer/hotend",
+            url: API_BASEURL + "control/printer/heater",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

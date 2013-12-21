@@ -133,6 +133,16 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
                         $.pnotify({title: "Slicing failed", text: "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason, type: "error"});
+                    } else if (type == "TransferStarted") {
+                        gcodeUploadProgress.addClass("progress-striped").addClass("active");
+                        gcodeUploadProgressBar.css("width", "100%");
+                        gcodeUploadProgressBar.text("Streaming ...");
+                    } else if (type == "TransferDone") {
+                        gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
+                        gcodeUploadProgressBar.css("width", "0%");
+                        gcodeUploadProgressBar.text("");
+                        $.pnotify({title: "Streaming done", text: "Streamed " + payload.local + " to " + payload.remote + " on SD, took " + payload.time + " seconds"});
+                        gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
                     break;
                 }

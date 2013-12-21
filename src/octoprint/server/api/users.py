@@ -8,13 +8,13 @@ from flask.ext.login import current_user
 import octoprint.users as users
 
 from octoprint.server import restricted_access, SUCCESS, admin_permission, userManager
-from octoprint.server.ajax import ajax
+from octoprint.server.api import api
 
 
 #~~ user settings
 
 
-@ajax.route("/users", methods=["GET"])
+@api.route("/users", methods=["GET"])
 @restricted_access
 @admin_permission.require(403)
 def getUsers():
@@ -24,7 +24,7 @@ def getUsers():
 	return jsonify({"users": userManager.getAllUsers()})
 
 
-@ajax.route("/users", methods=["POST"])
+@api.route("/users", methods=["POST"])
 @restricted_access
 @admin_permission.require(403)
 def addUser():
@@ -49,7 +49,7 @@ def addUser():
 	return getUsers()
 
 
-@ajax.route("/users/<username>", methods=["GET"])
+@api.route("/users/<username>", methods=["GET"])
 @restricted_access
 def getUser(username):
 	if userManager is None:
@@ -65,7 +65,7 @@ def getUser(username):
 		abort(403)
 
 
-@ajax.route("/users/<username>", methods=["PUT"])
+@api.route("/users/<username>", methods=["PUT"])
 @restricted_access
 @admin_permission.require(403)
 def updateUser(username):
@@ -91,7 +91,7 @@ def updateUser(username):
 		abort(404)
 
 
-@ajax.route("/users/<username>", methods=["DELETE"])
+@api.route("/users/<username>", methods=["DELETE"])
 @restricted_access
 @admin_permission.require(http_exception=403)
 def removeUser(username):
@@ -105,7 +105,7 @@ def removeUser(username):
 		abort(404)
 
 
-@ajax.route("/users/<username>/password", methods=["PUT"])
+@api.route("/users/<username>/password", methods=["PUT"])
 @restricted_access
 def changePasswordForUser(username):
 	if userManager is None:
@@ -124,7 +124,7 @@ def changePasswordForUser(username):
 		return make_response(("Forbidden", 403, []))
 
 
-@ajax.route("/users/<username>/apikey", methods=["DELETE"])
+@api.route("/users/<username>/apikey", methods=["DELETE"])
 @restricted_access
 def deleteApikeyForUser(username):
 	if userManager is None:
@@ -140,7 +140,7 @@ def deleteApikeyForUser(username):
 		return make_response(("Forbidden", 403, []))
 
 
-@ajax.route("/users/<username>/apikey", methods=["POST"])
+@api.route("/users/<username>/apikey", methods=["POST"])
 @restricted_access
 def generateApikeyForUser(username):
 	if userManager is None:

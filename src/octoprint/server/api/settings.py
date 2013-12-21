@@ -10,13 +10,13 @@ from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
 
 from octoprint.server import restricted_access, admin_permission
-from octoprint.server.ajax import ajax
+from octoprint.server.api import api
 
 
 #~~ settings
 
 
-@ajax.route("/settings", methods=["GET"])
+@api.route("/settings", methods=["GET"])
 def getSettings():
 	s = settings()
 
@@ -91,7 +91,7 @@ def getSettings():
 	})
 
 
-@ajax.route("/settings", methods=["POST"])
+@api.route("/settings", methods=["POST"])
 @restricted_access
 @admin_permission.require(403)
 def setSettings():

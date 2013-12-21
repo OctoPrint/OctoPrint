@@ -75,7 +75,17 @@ $(function() {
         //~~ Gcode upload
 
         function gcode_upload_done(e, data) {
-            gcodeFilesViewModel.fromResponse(data.result);
+            var filename = undefined;
+            var location = undefined;
+            if (data.result.files.hasOwnProperty("sdcard")) {
+                filename = data.result.files.sdcard.name;
+                location = "sdcard";
+            } else if (data.result.files.hasOwnProperty("local")) {
+                filename = data.result.files.local.name;
+                location = "local";
+            }
+            gcodeFilesViewModel.requestData(filename, location);
+
             if (data.result.done) {
                 $("#gcode_upload_progress .bar").css("width", "0%");
                 $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
@@ -107,7 +117,7 @@ $(function() {
 
         function enable_local_dropzone() {
             $("#gcode_upload").fileupload({
-                url: API_BASEURL + "gcodefiles/local",
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: localTarget,
                 done: gcode_upload_done,
@@ -118,7 +128,7 @@ $(function() {
 
         function disable_local_dropzone() {
             $("#gcode_upload").fileupload({
-                url: API_BASEURL + "gcodefiles/local",
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: null,
                 done: gcode_upload_done,
@@ -129,7 +139,7 @@ $(function() {
 
         function enable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
-                url: API_BASEURL + "gcodefiles/sdcard",
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: $("#drop_sd"),
                 done: gcode_upload_done,
@@ -140,10 +150,9 @@ $(function() {
 
         function disable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
-                url: API_BASEURL + "gcodefiles/sdcard",
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: null,
-                formData: {target: "sd"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -282,6 +291,7 @@ $(function() {
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         var gcode = document.getElementById("gcode");
         if (gcode) {
+            gcodeViewModel.initialize();
             ko.applyBindings(gcodeViewModel, gcode);
         }
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
@@ -292,10 +302,6 @@ $(function() {
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
             ko.applyBindings(timelapseViewModel, timelapseElement);
-        }
-        var gCodeVisualizerElement = document.getElementById("gcode");
-        if (gCodeVisualizerElement) {
-            gcodeViewModel.initialize();
         }
 
         //~~ startup commands

@@ -12,24 +12,24 @@ from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.util as util
 import octoprint.users
-from octoprint.server import restricted_access, SUCCESS, admin_permission, loginManager, principals
+from octoprint.server import printer, restricted_access, SUCCESS, admin_permission, loginManager, principals
 from octoprint.settings import settings as s, valid_boolean_trues
 
-#~~ init ajax blueprint, including sub modules
+#~~ init api blueprint, including sub modules
 
-ajax = Blueprint("ajax", __name__)
+api = Blueprint("api", __name__)
 
-from . import control as ajax_control
-from . import gcodefiles as ajax_gcodefiles
-from . import settings as ajax_settings
-from . import timelapse as ajax_timelapse
-from . import users as ajax_users
+from . import control as api_control
+from . import files as api_files
+from . import settings as api_settings
+from . import timelapse as api_timelapse
+from . import users as api_users
 
 
 #~~ first run setup
 
 
-@ajax.route("/setup", methods=["POST"])
+@api.route("/setup", methods=["POST"])
 def firstRunSetup():
 	if not s().getBoolean(["server", "firstRun"]):
 		abort(403)
@@ -52,11 +52,23 @@ def firstRunSetup():
 	s().save()
 	return jsonify(SUCCESS)
 
+#~~ system state
+
+
+@api.route("/state", methods=["GET"])
+@restricted_access
+def apiPrinterState():
+	currentData = printer.getCurrentData()
+	currentData.update({
+		"temperatures": printer.getCurrentTemperatures()
+	})
+	return jsonify(currentData)
+
 
 #~~ system control
 
 
-@ajax.route("/system", methods=["POST"])
+@api.route("/system", methods=["POST"])
 @restricted_access
 @admin_permission.require(403)
 def performSystemAction():
@@ -81,7 +93,7 @@ def performSystemAction():
 #~~ Login/user handling
 
 
-@ajax.route("/login", methods=["POST"])
+@api.route("/login", methods=["POST"])
 def login():
 	if octoprint.server.userManager is not None and "user" in request.values.keys() and "pass" in request.values.keys():
 		username = request.values["user"]
@@ -127,7 +139,7 @@ def login():
 	return jsonify(SUCCESS)
 
 
-@ajax.route("/logout", methods=["POST"])
+@api.route("/logout", methods=["POST"])
 @restricted_access
 def logout():
 	# Remove session keys set by Flask-Principal

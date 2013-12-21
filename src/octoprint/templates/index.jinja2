@@ -18,7 +18,7 @@
 
         <script lang="javascript">
             var BASEURL = "{{ url_for('index') }}";
-            var API_BASEURL = BASEURL + "ajax/";
+            var API_BASEURL = BASEURL + "api/";
 
             var CONFIG_GCODEFILESPERPAGE = 5;
             var CONFIG_TIMELAPSEFILESPERPAGE = 10;
@@ -210,18 +210,18 @@
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload</span>
-                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                            <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                                         </span>
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload to SD</span>
-                                            <input id="gcode_upload_sd" type="file" name="gcode_file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
+                                            <input id="gcode_upload_sd" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
                                         </span>
                                         {% else %}
                                         <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
                                             <span>Upload</span>
-                                            <input id="gcode_upload" type="file" name="gcode_file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                            <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                                         </span>
                                         {% endif %}
                                     </div>
@@ -656,7 +656,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/control.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/firstrun.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/gcode.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/gcodefiles.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/files.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/loginstate.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/navigation.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/printerstate.js') }}"></script>

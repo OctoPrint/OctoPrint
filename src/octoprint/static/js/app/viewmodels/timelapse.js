@@ -76,10 +76,13 @@ function TimelapseViewModel(loginStateViewModel) {
     };
 
     self.fromResponse = function(response) {
-        self.timelapseType(response.type);
+        var config = response.config;
+        if (config === undefined) return;
+
+        self.timelapseType(config.type);
         self.listHelper.updateItems(response.files);
 
-        if (response.type == "timed" && response.config && response.config.interval) {
+        if (config.type == "timed" && response.config.interval) {
             self.timelapseTimedInterval(response.config.interval);
         } else {
             self.timelapseTimedInterval(undefined);

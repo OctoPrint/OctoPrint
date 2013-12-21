@@ -6,15 +6,16 @@ from flask import request, jsonify, make_response
 
 from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
-from octoprint.server import printer, restricted_access, SUCCESS
-from octoprint.server.ajax import ajax
+from octoprint.server import printer, restricted_access, NO_CONTENT
+from octoprint.server.api import api
 import octoprint.util as util
+
 
 #~~ Printer control
 
 
-@ajax.route("/control/connection", methods=["GET"])
-def connectionOptions():
+@api.route("/control/connection", methods=["GET"])
+def connectionState():
 	state, port, baudrate = printer.getCurrentConnection()
 	current = {
 		"state": state,
@@ -24,7 +25,7 @@ def connectionOptions():
 	return jsonify({"current": current, "options": getConnectionOptions()})
 
 
-@ajax.route("/control/connection", methods=["POST"])
+@api.route("/control/connection", methods=["POST"])
 @restricted_access
 def connectionCommand():
 	valid_commands = {
@@ -52,20 +53,22 @@ def connectionCommand():
 		if "save" in data.keys() and data["save"]:
 			settings().set(["serial", "port"], port)
 			settings().setInt(["serial", "baudrate"], baudrate)
-		settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
+		if "autoconnect" in data.keys():
+			settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
 		settings().save()
 		printer.connect(port=port, baudrate=baudrate)
 	elif command == "disconnect":
 		printer.disconnect()
 
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 
-@ajax.route("/control/printer/command", methods=["POST"])
+@api.route("/control/printer/command", methods=["POST"])
 @restricted_access
 def printerCommand():
+	# TODO: document me
 	if not printer.isOperational():
-		return make_response("Printer is not operational", 403)
+		return make_response("Printer is not operational", 409)
 
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content type JSON", 400)
@@ -88,17 +91,18 @@ def printerCommand():
 
 	printer.commands(commandsToSend)
 
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 
-@ajax.route("/control/job", methods=["POST"])
+@api.route("/control/job", methods=["POST"])
 @restricted_access
 def controlJob():
 	if not printer.isOperational():
-		return make_response("Printer is not operational", 403)
+		return make_response("Printer is not operational", 409)
 
 	valid_commands = {
 		"start": [],
+		"restart": [],
 		"pause": [],
 		"cancel": []
 	}
@@ -107,20 +111,32 @@ def controlJob():
 	if response is not None:
 		return response
 
+	activePrintjob = printer.isPrinting() or printer.isPaused()
+
 	if command == "start":
+		if activePrintjob:
+			return make_response("Printer already has an active print job, did you mean 'restart'?", 409)
+		printer.startPrint()
+	elif command == "restart":
+		if not printer.isPaused():
+			return make_response("Printer does not have an active print job or is not paused", 409)
 		printer.startPrint()
 	elif command == "pause":
+		if not activePrintjob:
+			return make_response("Printer is neither printing nor paused, 'pause' command cannot be performed", 409)
 		printer.togglePausePrint()
 	elif command == "cancel":
+		if not activePrintjob:
+			return make_response("Printer is neither printing nor paused, 'cancel' command cannot be performed", 409)
 		printer.cancelPrint()
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 
-@ajax.route("/control/printer/hotend", methods=["POST"])
+@api.route("/control/printer/heater", methods=["POST"])
 @restricted_access
 def controlPrinterHotend():
 	if not printer.isOperational():
-		return make_response("Printer is not operational", 403)
+		return make_response("Printer is not operational", 409)
 
 	valid_commands = {
 		"temp": ["temps"],
@@ -175,15 +191,15 @@ def controlPrinterHotend():
 		elif "bed" in validated_values:
 			printer.setTemperatureOffset(None, validated_values["bed"])
 
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 
-@ajax.route("/control/printer/printhead", methods=["POST"])
+@api.route("/control/printer/printhead", methods=["POST"])
 @restricted_access
 def controlPrinterPrinthead():
 	if not printer.isOperational() or printer.isPrinting():
 		# do not jog when a print job is running or we don't have a connection
-		return make_response("Printer is not operational or currently printing", 403)
+		return make_response("Printer is not operational or currently printing", 409)
 
 	valid_commands = {
 		"jog": [],
@@ -225,15 +241,15 @@ def controlPrinterPrinthead():
 		# TODO make this a generic method call (printer.home(axis, ...)) to get rid of gcode here
 		printer.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_values)), "G90"])
 
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 
-@ajax.route("/control/printer/feeder", methods=["POST"])
+@api.route("/control/printer/feeder", methods=["POST"])
 @restricted_access
 def controlPrinterFeeder():
 	if not printer.isOperational() or printer.isPrinting():
 		# do not jog when a print job is running or we don't have a connection
-		return make_response("Printer is not operational or currently printing", 403)
+		return make_response("Printer is not operational or currently printing", 409)
 
 	valid_commands = {
 		"extrude": ["amount"]
@@ -252,20 +268,23 @@ def controlPrinterFeeder():
 		# TODO make this a generic method call (printer.extruder([hotend,] amount)) to get rid of gcode here
 		printer.commands(["G91", "G1 E%s F%d" % (data["amount"], extrusionSpeed), "G90"])
 
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
-
-@ajax.route("/control/custom", methods=["GET"])
+@api.route("/control/custom", methods=["GET"])
 def getCustomControls():
+	# TODO: document me
 	customControls = settings().get(["controls"])
 	return jsonify(controls=customControls)
 
 
-@ajax.route("/control/sd", methods=["POST"])
+@api.route("/control/printer/sd", methods=["POST"])
 @restricted_access
 def sdCommand():
-	if not settings().getBoolean(["feature", "sdSupport"]) or not printer.isOperational() or printer.isPrinting():
-		return make_response("SD support is disabled", 403)
+	if not settings().getBoolean(["feature", "sdSupport"]):
+		return make_response("SD support is disabled", 404)
+
+	if not printer.isOperational() or printer.isPrinting() or printer.isPaused():
+		return make_response("Printer is not operational or currently busy", 409)
 
 	valid_commands = {
 		"init": [],
@@ -283,6 +302,12 @@ def sdCommand():
 	elif command == "release":
 		printer.releaseSdCard()
 
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
+@api.route("/control/printer/sd", methods=["GET"])
+def sdState():
+	if not settings().getBoolean(["feature", "sdSupport"]):
+		return make_response("SD support is disabled", 404)
+
+	return jsonify(ready=printer.isSdReady())
 
