@@ -4,8 +4,7 @@
 Connection handling
 *******************
 
-.. toctree::
-   :maxdepth: 2
+.. contents::
 
 .. _sec-api-connection-current:
 

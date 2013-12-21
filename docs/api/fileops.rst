@@ -4,8 +4,7 @@
 File operations
 ***************
 
-.. toctree::
-   :maxdepth: 5
+.. contents::
 
 .. _sec-api-fileops-retrieveall:
 
@@ -25,7 +24,6 @@ Retrieve all files
 
       GET /api/files HTTP/1.1
       Host: example.com
-      X-Api-Key: abcdef...
 
    **Example response**:
 
@@ -39,9 +37,13 @@ Retrieve all files
           {
             "name": "whistle_v2.gcode",
             "bytes": 1468987,
-            "size": "1.4MB"
+            "size": "1.4MB",
             "date": "2013-05-21 23:15",
             "origin": "local",
+            "refs": {
+              "resource": "http://example.com/api/files/local/whistle_v2.gcode",
+              "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
+            },
             "gcodeAnalysis": {
               "estimatedPrintTime": "00:31:40",
               "filament": "0.79m"
@@ -57,10 +59,10 @@ Retrieve all files
           },
           {
             "name": "whistle_.gco",
-            "bytes": 0,
-            "size": "n/a",
-            "date": "n/a",
-            "origin": "sdcard"
+            "origin": "sdcard",
+            "refs": {
+              "resource": "http://example.com/api/files/sdcard/whistle_.gco"
+            }
           }
         ],
         "free": "3.2GB"
@@ -68,15 +70,15 @@ Retrieve all files
 
    :statuscode 200: No error
 
-.. _sec-api-fileops-retrievetarget:
+.. _sec-api-fileops-retrievespecific:
 
-Retrieve files from specific origin
-===================================
+Retrieve files from specific location
+=====================================
 
-.. http:get:: /api/files/(string:origin)
+.. http:get:: /api/files/(string:location)
 
-   Retrieve information regarding the files currently available on the selected `origin` and regarding the
-   disk space still available locally in the system.
+   Retrieve information regarding the files currently available on the selected `location` and -- if targeting
+   the ``local`` location -- regarding the disk space still available locally in the system.
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
@@ -86,7 +88,6 @@ Retrieve files from specific origin
 
       GET /api/files/local HTTP/1.1
       Host: example.com
-      X-Api-Key: abcdef...
 
    **Example response**:
 
@@ -103,6 +104,10 @@ Retrieve files from specific origin
             "size": "1.4MB"
             "date": "2013-05-21 23:15",
             "origin": "local",
+            "refs": {
+              "resource": "http://example.com/api/files/local/whistle_v2.gcode",
+              "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
+            },
             "gcodeAnalysis": {
               "estimatedPrintTime": "00:31:40",
               "filament": "0.79m"
@@ -120,31 +125,32 @@ Retrieve files from specific origin
         "free": "3.2GB"
       }
 
-   :param origin: The origin location from which to retrieve the files. Currently only ``local`` and ``sdcard`` are
-                  supported, with ``local`` referring to files stored in OctoPrint's ``uploads`` folder and ``sdcard``
-                  referring to files stored on the printer's SD card (if available).
+   :param location: The origin location from which to retrieve the files. Currently only ``local`` and ``sdcard`` are
+                    supported, with ``local`` referring to files stored in OctoPrint's ``uploads`` folder and ``sdcard``
+                    referring to files stored on the printer's SD card (if available).
    :statuscode 200: No error
-   :statuscode 400: If `origin` is neither ``local`` nor ``sdcard`` or the request is otherwise invalid.
+   :statuscode 404: If `location` is neither ``local`` nor ``sdcard``
 
 .. _sec-api-fileops-uploadfile:
 
 Upload file
 ===========
 
-.. http:post:: /api/files/(string:target)
+.. http:post:: /api/files/(string:location)
 
-   Upload a file to the selected `target`.
+   Upload a file to the selected `location`.
 
    Other than most of the other requests on OctoPrint's API which are expected as JSON, this request is expected as
    ``Content-Type: multipart/form-data`` due to the included file upload.
 
-   Returns an :ref:`Upload Response <sec-api-fileops-datamodel-uploadresponse>` upon successful completion.
+   Returns a :http:statuscode:`201` response with a ``Location`` header set to the management URL of the uploaded
+   file and an :ref:`Upload Response <sec-api-fileops-datamodel-uploadresponse>` as the body upon successful completion.
 
    **Example request**
 
    .. sourcecode:: http
 
-      POST /api/files/local HTTP/1.1
+      POST /api/files/sdcard HTTP/1.1
       Host: example.com
       X-Api-Key: abcdef...
       Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMC
@@ -182,48 +188,60 @@ Upload file
 
       HTTP/1.1 200 OK
       Content-Type: application/json
+      Location:
 
       {
-        "files": [
-          ...
-          {
+        "files": {
+          "local": {
             "name": "whistle_v2.gcode",
-            "bytes": 1468987,
-            "size": "1.4MB"
-            "date": "2013-05-21 23:15",
-            "origin": "local"
+            "origin": "local",
+            "refs": {
+              "resource": "http://example.com/api/files/local/whistle_v2.gcode",
+              "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
+            }
           },
-          ...
-        ],
-        "done": true,
-        "filename": "whistle_v2.gcode"
+          "sdcard": {
+            "name": "whistle_.gco",
+            "origin": "sdcard",
+            "refs": {
+              "resource": "http://example.com/api/files/sdcard/whistle_.gco"
+            }
+          }
+        },
+        "done": true
       }
 
-   :param target: The target location to which to upload the file. Currently only ``local`` and ``sdcard`` are supported
-                  here, with ``local`` referring to OctoPrint's ``uploads`` folder and ``sdcard`` referring to
-                  the printer's SD card. If an upload targets the SD card, it will also be stored locally first.
-   :form file:    The file to upload, including a valid ``filename``.
-   :form select:  Whether to select the file directly after upload (``true``) or not (``false``). Optional, defaults
-                  to ``false``.
-   :form print:   Whether to start printing the file directly after upload (``true``) or not (``false``). If set, `select`
-                  is implicitely ``true`` as well. Optional, defaults to ``false``.
-   :statuscode 200: No error
-   :statuscode 400: If `target` is neither ``local`` nor ``sdcard``, no `file` is included in the request, the file is
-                    neither a ``gcode`` nor an ``stl`` file (or it is an ``stl`` file but slicing support is
-                    disabled) or the request is otherwise invalid.
-   :statuscode 403: If the upload of the file would override the file that is currently being printed
+   :param location: The target location to which to upload the file. Currently only ``local`` and ``sdcard`` are supported
+                    here, with ``local`` referring to OctoPrint's ``uploads`` folder and ``sdcard`` referring to
+                    the printer's SD card. If an upload targets the SD card, it will also be stored locally first.
+   :form file:      The file to upload, including a valid ``filename``.
+   :form select:    Whether to select the file directly after upload (``true``) or not (``false``). Optional, defaults
+                    to ``false``.
+   :form print:     Whether to start printing the file directly after upload (``true``) or not (``false``). If set, `select`
+                    is implicitely ``true`` as well. Optional, defaults to ``false``.
+   :statuscode 201: No error
+   :statuscode 400: If no `file` is included in the request, or the request is otherwise invalid.
+   :statuscode 404: If `location` is neither ``local`` nor ``sdcard`` or trying to upload to SD card and SD card support
+                    is disabled
+   :statuscode 409: If the upload of the file would override the file that is currently being printed or if an upload
+                    to SD card was requested and the printer is either not operational or currently busy with a print job.
+   :statuscode 415: If the file is neither a ``gcode`` nor an ``stl`` file (or it is an ``stl`` file but slicing support
+                    is disabled)
    :statuscode 500: If the upload failed internally
 
-.. _sec-api-fileops-retrievefile:
+.. _sec-api-fileops-retrievefileinfo:
 
-Retrieve a file's contents
-==========================
+Retrieve a specific file's information
+======================================
 
-.. http:get:: /api/files/local/(path:filename)
+.. http:get:: /api/files/(string:location)/(path:filename)
 
-   Downloads the selected file's contents. Only available for locally stored files, hence no `target` parameter.
+   Retrieves the selected file's information.
 
-   Will actually redirect to serve the download via a static context directly from the filesystem.
+   If the file is unknown, a :http:statuscode:`404` is returned.
+
+   On success, a :http:statuscode:`200` is returned, with a :ref:`file information item <sec-api-fileops-datamodel-fileinfo>`
+   as the response body.
 
    **Example Request**
 
@@ -236,40 +254,38 @@ Retrieve a file's contents
 
    .. sourcecode:: http
 
-      HTTP/1.1 302 Found
-      Location: /downloads/files/whistle_v2.gcode
+      HTTP/1.1 200 Ok
+      Content-Type: application/json
 
-   **Redirect Request**
+      {
+        "name": "whistle_v2.gcode",
+        "bytes": 1468987,
+        "size": "1.4MB"
+        "date": "2013-05-21 23:15",
+        "origin": "local",
+        "refs": {
+          "resource": "http://example.com/api/files/local/whistle_v2.gcode",
+          "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
+        },
+        "gcodeAnalysis": {
+          "estimatedPrintTime": "00:31:40",
+          "filament": "0.79m"
+        },
+        "print": {
+          "failure": 4,
+          "success": 23,
+          "last": {
+            "date": "2013-11-18 18:00",
+            "success": true
+          }
+        }
+      }
 
-   .. sourcecode:: http
-
-      GET /downloads/files/whistle_v2.gcode HTTP/1.1
-      Host: example.com
-
-   **Redirect Response**
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/octet-stream
-
-      ;Generated with Cura_SteamEngine 13.11.2
-      M109 T0 S220.000000
-      T0
-      ;Sliced at: Wed 11-12-2013 16:53:12
-      ;Basic settings: Layer height: 0.2 Walls: 0.8 Fill: 20
-      ;Print time: #P_TIME#
-      ;Filament used: #F_AMNT#m #F_WGHT#g
-      ;Filament cost: #F_COST#
-      ;M190 S70 ;Uncomment to add your own bed temperature line
-      ;M109 S220 ;Uncomment to add your own temperature line
-      G21        ;metric values
-      G90        ;absolute positioning
-      ...
-
-   :param filename: The filename of the file for which to retrieve the contents
-   :resheader Location: The statically served download location for the file of the format ``/downloads/files/<filename>``
-   :statuscode 302: No error, regular redirect to statically served download location
+   :param location: The location of the file for which to retrieve the information, either ``local`` or ``sdcard``.
+   :param filename: The filename of the file for which to retrieve the information
+   :statuscode 200: No error
+   :statuscode 404: If `target` is neither ``local`` nor ``sdcard``, ``sdcard`` but SD card support is disabled or the
+                    requested file was not found
 
 .. _sec-api-fileops-filecommand:
 
@@ -280,12 +296,16 @@ Issue a file command
 
    Issue a file command to an existing file. Currently supported commands are:
 
-   load
+   select
      Selects a file for printing. Additional parameters are:
 
-     * ``print``: Optional, if set to ``true`` the file will start printing directly after selection.
+     * ``print``: Optional, if set to ``true`` the file will start printing directly after selection. If the printer
+       is not operational when this parameter is present and set to ``true``, the request will fail with a response
+       of ``409 Conflict``.
 
-   **Example Request**
+   Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+
+   **Example Select Request**
 
    .. sourcecode:: http
 
@@ -295,28 +315,20 @@ Issue a file command
       X-Api-Key: abcdef...
 
       {
-        "command": "load",
+        "command": "select",
         "print": true
       }
-
-   **Example Response**
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {}
 
    :param target:        The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
                          folder) or ``sdcard`` for the printer's SD card (if available)
    :param filename:      The filename of the file for which to issue the command
-   :json string command: The command to issue for the file, currently only ``load`` is supported
-   :json boolean print:  ``load`` command: Optional, whether to start printing the file directly after selection,
+   :json string command: The command to issue for the file, currently only ``select`` is supported
+   :json boolean print:  ``select`` command: Optional, whether to start printing the file directly after selection,
                          defaults to ``false``.
    :statuscode 200:      No error
-   :statuscode 400:      If `target` is neither ``local`` nor ``sdcard``, the `command` is unknown or the request is
-                         otherwise invalid
+   :statuscode 400:      If the `command` is unknown or the request is otherwise invalid
+   :statuscode 404:      If `target` is neither ``local`` nor ``sdcard`` or the requested file was not found
+   :statuscode 409:      If a selected file is supposed to start printing directly but the printer is not operational.
 
 .. _sec-api-fileops-delete:
 
@@ -327,8 +339,9 @@ Delete file
 
    Delete the selected `filename` on the selected `target`.
 
-   Returns a :ref:`Retrieve Response <sec-api-fileops-datamodel-retrieveresponse>` corresponding to the updated
-   file list after successful deletion.
+   If the file to be deleted is currently being printed, a :http:statuscode:`409` will be returned.
+
+   Returns a :http:statuscode:`204` after successful deletion.
 
    **Example Request**
 
@@ -338,26 +351,12 @@ Delete file
       Host: example.com
       X-Api-Key: abcdef...
 
-   **Example Response**
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 Ok
-      Content-Type: application/json
-
-      {
-        "files": [
-          ...
-        ],
-        "free": "3.2GB"
-      }
-
    :param target:   The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
                     folder) or ``sdcard`` for the printer's SD card (if available)
    :param filename: The filename of the file to delete
-       :statuscode 200: No error
-       :statuscode 400: If `target` is neither ``local`` nor ``sdcard`` or the request is otherwise invalid
-   :statuscode 403: If the file to be deleted is currently being printed
+   :statuscode 204: No error
+   :statuscode 404: If `target` is neither ``local`` nor ``sdcard`` or the requested file was not found
+   :statuscode 409: If the file to be deleted is currently being printed
 
 .. _sec-api-fileops-datamodel:
 
@@ -382,9 +381,10 @@ Retrieve response
      - Array of :ref:`File information items <sec-api-fileops-datamodel-fileinfo>`
      - The list of requested files. Might be an empty list if no files are available
    * - ``free``
-     - 1
+     - 0..1
      - String
-     - The amount of disk space available in the local disk space (refers to OctoPrint's ``uploads`` folder)
+     - The amount of disk space available in the local disk space (refers to OctoPrint's ``uploads`` folder). Only
+       returned if file list was requested for origin ``local`` or all origins.
 
 .. _sec-api-fileops-datamodel-uploadresponse:
 
@@ -400,18 +400,26 @@ Upload response
      - Type
      - Description
    * - ``files``
-     - 0..*
-     - Array of :ref:`File information items <sec-api-fileops-datamodel-fileinfo>`
-     - The list of files available in the system. Might be an empty list if no files are available
+     - 1
+     - Object
+     - Abridged information regarding the file that was just uploaded. If only uploaded to ``local`` this will only
+       contain the ``local`` property. If uploaded to SD card, this will contain both ``local`` and ``sdcard`` properties.
+   * - ``files.local``
+     - 1
+     - :ref:`sec-api-fileops-datamodel-fileinfo`
+     - The information regarding the file that was just uploaded to the local storage (only the fields ``name``,
+       ``origin`` and ``refs`` will be set).
+   * - ``files.sdcard``
+     - 0..1
+     - :ref:`sec-api-fileops-datamodel-fileinfo`
+     - The information regarding the file that was just uploaded to the printer's SD card (only the fields ``name``,
+       ``origin`` and ``refs`` will be set).
    * - ``done``
      - 1
      - Boolean
-     - Whether the file is directly available for printing after receiving the response (``true``) or not, e.g. due
-       to first needing to be sliced into GCODE (``false``)
-   * - ``filename``
-     - 1
-     - String
-     - The name of the file that was just uploaded
+     - Whether the file processing after upload has already finished (``true``) or not, e.g. due to first needing
+       to perform a slicing step (``false``). Clients may use this information to direct progress displays related to
+       the upload.
 
 .. _sec-api-fileops-datamodel-fileinfo:
 
@@ -431,24 +439,26 @@ File information
      - String
      - The name of the file
    * - ``bytes``
-     - 1
-     - Number
-     - The size of the file in bytes. Only available for ``local`` files, always ``0`` for files stored on ``sdcard``.
-   * - ``size``
-     - 1
-     - String
-     - The size of the file in a human readable format. Only available for ``local`` files, set to ``n/a`` for files
-       stored on ``sdcard``.
-   * - ``date``
-     - 1
-     - String representing a date and time in the format ``YYYY-MM-DD HH:mm``
-     - The date and time this files was uploaded. Only available for ``local`` files,
-       set to ``n/a`` for files stored on ``sdcard``.
-   * - ``origin``
      - 0..1
+     - Number
+     - The size of the file in bytes. Only available for ``local`` files.
+   * - ``size``
+     - 0..1
+     - String
+     - The size of the file in a human readable format. Only available for ``local`` files.
+   * - ``date``
+     - 0..1
+     - String representing a date and time in the format ``YYYY-MM-DD HH:mm``
+     - The date and time this files was uploaded. Only available for ``local`` files.
+   * - ``origin``
+     - 1
      - String, either ``local`` or ``sdcard``
      - The origin of the file, ``local`` when stored in OctoPrint's ``uploads`` folder, ``sdcard`` when stored on the
        printer's SD card (if available)
+   * - ``refs``
+     - 0..1
+     - :ref:`<sec-api-fileops-datamodel-ref>`
+     - References relevant to this file
    * - ``gcodeAnalysis``
      - 0..1
      - :ref:`GCODE analysis information <sec-api-fileops-datamodel-gcodeanalysis>`
@@ -457,10 +467,6 @@ File information
      - 0..1
      - :ref:`Print information <sec-api-fileops-datamodel-prints>`
      - Information regarding prints of this file, if available.
-
-.. todo::
-   Make fields which are not available for ``sdcard`` (``bytes``, ``size``, ``date``) optional and don't include them
-   in the output if not available. Clients should be able to decide on their own what to display in such a case.
 
 .. _sec-api-fileops-datamodel-gcodeanalysis:
 
@@ -519,3 +525,29 @@ Print information
      - 1
      - Boolean
      - Whether the last print on record was a success (``true``) or not (``false``)
+
+.. _sec-api-fileops-datamodel-ref:
+
+References
+----------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``resource``
+     - 1
+     - URL
+     - The resource that represents the file (e.g. for issuing commands to or for deleting)
+   * - ``download``
+     - 0..1
+     - URL
+     - The download URL for the file
+   * - ``model``
+     - 0..1
+     - URL
+     - The model from which this file was generated (e.g. an STL, currently not used)
