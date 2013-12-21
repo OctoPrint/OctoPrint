@@ -30,7 +30,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "control/connection",
+            url: API_BASEURL + "control/connection",
             method: "GET",
             dataType: "json",
             success: function(response) {
@@ -100,7 +100,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 data["save"] = true;
 
             $.ajax({
-                url: AJAX_BASEURL + "control/connection",
+                url: API_BASEURL + "control/connection",
                 type: "POST",
                 dataType: "json",
                 contentType: "application/json; charset=UTF-8",
@@ -112,7 +112,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
         } else {
             self.requestData();
             $.ajax({
-                url: AJAX_BASEURL + "control/connection",
+                url: API_BASEURL + "control/connection",
                 type: "POST",
                 dataType: "json",
                 contentType: "application/json; charset=UTF-8",

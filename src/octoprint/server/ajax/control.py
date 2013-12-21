@@ -4,7 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 from flask import request, jsonify, make_response
 
-from octoprint.settings import settings, valid_boolean_trues
+from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
 from octoprint.server import printer, restricted_access, SUCCESS
 from octoprint.server.ajax import ajax

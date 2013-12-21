@@ -99,7 +99,7 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
 
         if (command) {
             $.ajax({
-                url: AJAX_BASEURL + "control/printer/command",
+                url: API_BASEURL + "control/printer/command",
                 type: "POST",
                 dataType: "json",
                 contentType: "application/json; charset=UTF-8",

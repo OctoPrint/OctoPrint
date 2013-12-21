@@ -54,7 +54,7 @@ function FirstRunViewModel() {
 
     self._sendData = function(data, callback) {
         $.ajax({
-            url: AJAX_BASEURL + "setup",
+            url: API_BASEURL + "setup",
             type: "POST",
             dataType: "json",
             data: data,

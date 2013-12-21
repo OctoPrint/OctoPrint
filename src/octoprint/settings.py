@@ -134,7 +134,7 @@ default_settings = {
 	}
 }
 
-valid_boolean_trues = ["true", "yes", "y", "1"]
+valid_boolean_trues = [True, "true", "yes", "y", "1"]
 
 class Settings(object):
 

@@ -83,6 +83,9 @@ def api_access(func):
 
 
 class PrinterStateConnection(SockJSConnection):
+	EVENTS = ["UpdatedFiles", "MetadataAnalysisFinished", "MovieRendering", "MovieDone",
+			  "MovieFailed", "SlicingStarted", "SlicingDone", "SlicingFailed"]
+
 	def __init__(self, printer, gcodeManager, userManager, eventManager, session):
 		SockJSConnection.__init__(self, session)
 
@@ -113,10 +116,8 @@ class PrinterStateConnection(SockJSConnection):
 		octoprint.timelapse.registerCallback(self)
 
 		self._eventManager.fire("ClientOpened")
-		self._eventManager.subscribe("MovieDone", self._onMovieDone)
-		self._eventManager.subscribe("SlicingStarted", self._onSlicingStarted)
-		self._eventManager.subscribe("SlicingDone", self._onSlicingDone)
-		self._eventManager.subscribe("SlicingFailed", self._onSlicingFailed)
+		for event in PrinterStateConnection.EVENTS:
+			self._eventManager.subscribe(event, self._onEvent)
 
 		octoprint.timelapse.notifyCallbacks(octoprint.timelapse.current)
 
@@ -127,10 +128,8 @@ class PrinterStateConnection(SockJSConnection):
 		octoprint.timelapse.unregisterCallback(self)
 
 		self._eventManager.fire("ClientClosed")
-		self._eventManager.unsubscribe("MovieDone", self._onMovieDone)
-		self._eventManager.unsubscribe("SlicingStarted", self._onSlicingStarted)
-		self._eventManager.unsubscribe("SlicingDone", self._onSlicingDone)
-		self._eventManager.unsubscribe("SlicingFailed", self._onSlicingFailed)
+		for event in PrinterStateConnection.EVENTS:
+			self._eventManager.unsubscribe(event, self._onEvent)
 
 	def on_message(self, message):
 		pass
@@ -150,17 +149,17 @@ class PrinterStateConnection(SockJSConnection):
 			self._messageBacklog = []
 
 		data.update({
-		"temperatures": temperatures,
-		"logs": logs,
-		"messages": messages
+			"temperatures": temperatures,
+			"logs": logs,
+			"messages": messages
 		})
 		self._emit("current", data)
 
 	def sendHistoryData(self, data):
 		self._emit("history", data)
 
-	def sendUpdateTrigger(self, type, payload=None):
-		self._emit("updateTrigger", {"type": type, "payload": payload})
+	def sendEvent(self, type, payload=None):
+		self._emit("event", {"type": type, "payload": payload})
 
 	def sendFeedbackCommandOutput(self, name, output):
 		self._emit("feedbackCommandOutput", {"name": name, "output": output})
@@ -180,17 +179,8 @@ class PrinterStateConnection(SockJSConnection):
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
 
-	def _onMovieDone(self, event, payload):
-		self.sendUpdateTrigger("timelapseFiles")
-
-	def _onSlicingStarted(self, event, payload):
-		self.sendUpdateTrigger("slicingStarted", payload)
-
-	def _onSlicingDone(self, event, payload):
-		self.sendUpdateTrigger("slicingDone", payload)
-
-	def _onSlicingFailed(self, event, payload):
-		self.sendUpdateTrigger("slicingFailed", payload)
+	def _onEvent(self, event, payload):
+		self.sendEvent(event, payload)
 
 	def _emit(self, type, payload):
 		self.send({type: payload})
