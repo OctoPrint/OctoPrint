@@ -14,6 +14,11 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.isSdReady = ko.observable(undefined);
 
     self.freeSpace = ko.observable(undefined);
+    self.freeSpaceString = ko.computed(function() {
+        if (!self.freeSpace())
+            return "-";
+        return formatSize(self.freeSpace());
+    });
 
     // initialize list helper
     self.listHelper = new ItemListHelper(
@@ -174,7 +179,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     self._sendSdCommand = function(command) {
         $.ajax({
-            url: API_BASEURL + "control/printer/sd",
+            url: API_BASEURL + "printer/sd",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -183,16 +188,18 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     }
 
     self.getPopoverContent = function(data) {
-        var output = "<p><strong>Uploaded:</strong> " + data["date"] + "</p>";
+        var output = "<p><strong>Uploaded:</strong> " + formatDate(data["date"]) + "</p>";
         if (data["gcodeAnalysis"]) {
             output += "<p>";
-            output += "<strong>Filament:</strong> " + data["gcodeAnalysis"]["filament"] + "<br>";
-            output += "<strong>Estimated Print Time:</strong> " + data["gcodeAnalysis"]["estimatedPrintTime"];
+            if (data["gcodeAnalysis"]["filament"]) {
+                output += "<strong>Filament:</strong> " + formatFilament(data["gcodeAnalysis"]["filament"]) + "<br>";
+            }
+            output += "<strong>Estimated Print Time:</strong> " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
             output += "</p>";
         }
         if (data["prints"] && data["prints"]["last"]) {
             output += "<p>";
-            output += "<strong>Last Print:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + data["prints"]["last"]["date"] + "</span>";
+            output += "<strong>Last Print:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + formatDate(data["prints"]["last"]["date"]) + "</span>";
             output += "</p>";
         }
         return output;

@@ -254,7 +254,7 @@ class CommandTrigger(GenericEventListener):
 			try:
 				processedCommand = self._processCommand(command, payload)
 				self.executeCommand(processedCommand)
-			except KeyError:
+			except KeyError, e:
 				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command):
@@ -292,7 +292,7 @@ class CommandTrigger(GenericEventListener):
 			params["__currentZ"] = str(currentData["currentZ"])
 
 		if "job" in currentData.keys() and currentData["job"] is not None:
-			params["__filename"] = currentData["job"]["filename"]
+			params["__filename"] = currentData["job"]["file"]["name"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
 				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None:
 				params["__progress"] = str(round(currentData["progress"]["progress"] * 100))

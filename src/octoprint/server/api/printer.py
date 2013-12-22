@@ -11,128 +11,10 @@ from octoprint.server.api import api
 import octoprint.util as util
 
 
-#~~ Printer control
+#~~ Heater
 
 
-@api.route("/control/connection", methods=["GET"])
-def connectionState():
-	state, port, baudrate = printer.getCurrentConnection()
-	current = {
-		"state": state,
-		"port": port,
-		"baudrate": baudrate
-	}
-	return jsonify({"current": current, "options": getConnectionOptions()})
-
-
-@api.route("/control/connection", methods=["POST"])
-@restricted_access
-def connectionCommand():
-	valid_commands = {
-		"connect": ["autoconnect"],
-		"disconnect": []
-	}
-
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
-	if response is not None:
-		return response
-
-	if command == "connect":
-		options = getConnectionOptions()
-
-		port = None
-		baudrate = None
-		if "port" in data.keys():
-			port = data["port"]
-			if port not in options["ports"]:
-				return make_response("Invalid port: %s" % port, 400)
-		if "baudrate" in data.keys():
-			baudrate = data["baudrate"]
-			if baudrate not in options["baudrates"]:
-				return make_response("Invalid baudrate: %d" % baudrate, 400)
-		if "save" in data.keys() and data["save"]:
-			settings().set(["serial", "port"], port)
-			settings().setInt(["serial", "baudrate"], baudrate)
-		if "autoconnect" in data.keys():
-			settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
-		settings().save()
-		printer.connect(port=port, baudrate=baudrate)
-	elif command == "disconnect":
-		printer.disconnect()
-
-	return NO_CONTENT
-
-
-@api.route("/control/printer/command", methods=["POST"])
-@restricted_access
-def printerCommand():
-	# TODO: document me
-	if not printer.isOperational():
-		return make_response("Printer is not operational", 409)
-
-	if not "application/json" in request.headers["Content-Type"]:
-		return make_response("Expected content type JSON", 400)
-
-	data = request.json
-
-	parameters = {}
-	if "parameters" in data.keys(): parameters = data["parameters"]
-
-	commands = []
-	if "command" in data.keys(): commands = [data["command"]]
-	elif "commands" in data.keys(): commands = data["commands"]
-
-	commandsToSend = []
-	for command in commands:
-		commandToSend = command
-		if len(parameters) > 0:
-			commandToSend = command % parameters
-		commandsToSend.append(commandToSend)
-
-	printer.commands(commandsToSend)
-
-	return NO_CONTENT
-
-
-@api.route("/control/job", methods=["POST"])
-@restricted_access
-def controlJob():
-	if not printer.isOperational():
-		return make_response("Printer is not operational", 409)
-
-	valid_commands = {
-		"start": [],
-		"restart": [],
-		"pause": [],
-		"cancel": []
-	}
-
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
-	if response is not None:
-		return response
-
-	activePrintjob = printer.isPrinting() or printer.isPaused()
-
-	if command == "start":
-		if activePrintjob:
-			return make_response("Printer already has an active print job, did you mean 'restart'?", 409)
-		printer.startPrint()
-	elif command == "restart":
-		if not printer.isPaused():
-			return make_response("Printer does not have an active print job or is not paused", 409)
-		printer.startPrint()
-	elif command == "pause":
-		if not activePrintjob:
-			return make_response("Printer is neither printing nor paused, 'pause' command cannot be performed", 409)
-		printer.togglePausePrint()
-	elif command == "cancel":
-		if not activePrintjob:
-			return make_response("Printer is neither printing nor paused, 'cancel' command cannot be performed", 409)
-		printer.cancelPrint()
-	return NO_CONTENT
-
-
-@api.route("/control/printer/heater", methods=["POST"])
+@api.route("/printer/heater", methods=["POST"])
 @restricted_access
 def controlPrinterHotend():
 	if not printer.isOperational():
@@ -194,7 +76,10 @@ def controlPrinterHotend():
 	return NO_CONTENT
 
 
-@api.route("/control/printer/printhead", methods=["POST"])
+##~~ Print head
+
+
+@api.route("/printer/printhead", methods=["POST"])
 @restricted_access
 def controlPrinterPrinthead():
 	if not printer.isOperational() or printer.isPrinting():
@@ -244,7 +129,10 @@ def controlPrinterPrinthead():
 	return NO_CONTENT
 
 
-@api.route("/control/printer/feeder", methods=["POST"])
+##~~ Feeder
+
+
+@api.route("/printer/feeder", methods=["POST"])
 @restricted_access
 def controlPrinterFeeder():
 	if not printer.isOperational() or printer.isPrinting():
@@ -270,14 +158,11 @@ def controlPrinterFeeder():
 
 	return NO_CONTENT
 
-@api.route("/control/custom", methods=["GET"])
-def getCustomControls():
-	# TODO: document me
-	customControls = settings().get(["controls"])
-	return jsonify(controls=customControls)
+
+##~~ SD Card
 
 
-@api.route("/control/printer/sd", methods=["POST"])
+@api.route("/printer/sd", methods=["POST"])
 @restricted_access
 def sdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]):
@@ -304,10 +189,52 @@ def sdCommand():
 
 	return NO_CONTENT
 
-@api.route("/control/printer/sd", methods=["GET"])
+@api.route("/printer/sd", methods=["GET"])
 def sdState():
 	if not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD support is disabled", 404)
 
 	return jsonify(ready=printer.isSdReady())
+
+
+##~~ Commands
+
+
+@api.route("/printer/command", methods=["POST"])
+@restricted_access
+def printerCommand():
+	# TODO: document me
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
+	if not "application/json" in request.headers["Content-Type"]:
+		return make_response("Expected content type JSON", 400)
+
+	data = request.json
+
+	parameters = {}
+	if "parameters" in data.keys(): parameters = data["parameters"]
+
+	commands = []
+	if "command" in data.keys(): commands = [data["command"]]
+	elif "commands" in data.keys(): commands = data["commands"]
+
+	commandsToSend = []
+	for command in commands:
+		commandToSend = command
+		if len(parameters) > 0:
+			commandToSend = command % parameters
+		commandsToSend.append(commandToSend)
+
+	printer.commands(commandsToSend)
+
+	return NO_CONTENT
+
+
+@api.route("/printer/command/custom", methods=["GET"])
+def getCustomControls():
+	# TODO: document me
+	customControls = settings().get(["controls"])
+	return jsonify(controls=customControls)
+
 

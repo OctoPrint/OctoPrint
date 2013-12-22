@@ -1,8 +1,8 @@
 .. _sec-api-printer:
 
-***************
-Printer Control
-***************
+******************
+Printer operations
+******************
 
 .. contents::
 
@@ -25,7 +25,7 @@ SD card
 Issue a print head command
 ==========================
 
-.. http:post:: /api/control/printer/printhead
+.. http:post:: /api/printer/printhead
 
    Print head commands allow jogging and homing the print head in all three axes. Available commands are:
 
@@ -52,7 +52,7 @@ Issue a print head command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/printhead HTTP/1.1
+      POST /api/printer/printhead HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -70,7 +70,7 @@ Issue a print head command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/printhead HTTP/1.1
+      POST /api/printer/printhead HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -95,7 +95,7 @@ Issue a print head command
 Issue a heater command
 ======================
 
-.. http:post:: /api/control/printer/heater
+.. http:post:: /api/printer/heater
 
    Heater commands allow setting the temperature and temperature offsets for the printer's hotend and bed. Available
    commands are:
@@ -127,7 +127,7 @@ Issue a heater command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/heater HTTP/1.1
+      POST /api/printer/heater HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -146,7 +146,7 @@ Issue a heater command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/heater HTTP/1.1
+      POST /api/printer/heater HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -173,7 +173,7 @@ Issue a heater command
 Issue a feeder command
 ======================
 
-.. http:post:: /api/control/printer/feeder
+.. http:post:: /api/printer/feeder
 
    Feeder commands allow extrusion/extraction of filament. Available commands are:
 
@@ -193,7 +193,7 @@ Issue a feeder command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/feeder HTTP/1.1
+      POST /api/printer/feeder HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -209,7 +209,7 @@ Issue a feeder command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/feeder HTTP/1.1
+      POST /api/printer/feeder HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -230,7 +230,7 @@ Issue a feeder command
 Issue a SD command
 ==================
 
-.. http:post:: /api/control/printer/sd
+.. http:post:: /api/printer/sd
 
    SD commands allow initialization, refresh and release of the printer's SD card (if available).
 
@@ -239,7 +239,7 @@ Issue a SD command
    init
      Initializes the printer's SD card, making it available for use. This also includes an initial retrieval of the
      list of files currently stored on the SD card, so after issueing that command a :ref:`retrieval of the files
-     on SD card <sec-api-fileops-retrieveorigin>` will return a successful result.
+     on SD card <sec-api-fileops-retrievelocation>` will return a successful result.
 
      .. note::
         If OctoPrint detects the availability of a SD card on the printer during connection, it will automatically attempt
@@ -260,7 +260,7 @@ Issue a SD command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/sd HTTP/1.1
+      POST /api/printer/sd HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -273,7 +273,7 @@ Issue a SD command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/sd HTTP/1.1
+      POST /api/printer/sd HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -286,7 +286,7 @@ Issue a SD command
 
    .. sourcecode:: http
 
-      POST /api/control/printer/sd HTTP/1.1
+      POST /api/printer/sd HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -305,7 +305,7 @@ Issue a SD command
 Retrieve the current SD state
 =============================
 
-.. http:get:: /api/control/printer/sd
+.. http:get:: /api/printer/sd
 
    Retrieves the current state of the printer's SD card. For this request no authentication is needed.
 
@@ -318,7 +318,7 @@ Retrieve the current SD state
 
    .. sourcecode:: http
 
-      GET /api/control/printer/sd HTTP/1.1
+      GET /api/printer/sd HTTP/1.1
       Host: example.com
 
    **Example Response**

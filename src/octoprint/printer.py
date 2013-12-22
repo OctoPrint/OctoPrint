@@ -92,8 +92,20 @@ class Printer():
 		)
 		self._stateMonitor.reset(
 			state={"state": None, "stateString": self.getStateString(), "flags": self._getStateFlags()},
-			jobData={"filename": None, "filesize": None, "estimatedPrintTime": None, "filament": None},
-			progress={"progress": None, "filepos": None, "printTime": None, "printTimeLeft": None},
+			jobData={
+				"file": {
+					"name": None,
+					"size": None,
+					"origin": None,
+					"date": None
+				},
+				"estimatedPrintTime": None,
+				"filament": {
+					"length": None,
+					"volume": None
+				}
+			},
+			progress={"completion": None, "filepos": None, "printTime": None, "printTimeLeft": None},
 			currentZ=None
 		)
 
@@ -259,11 +271,7 @@ class Printer():
 
 	def _setCurrentZ(self, currentZ):
 		self._currentZ = currentZ
-
-		formattedCurrentZ = None
-		if self._currentZ:
-			formattedCurrentZ = "%.2f mm" % (self._currentZ)
-		self._stateMonitor.setCurrentZ(formattedCurrentZ)
+		self._stateMonitor.setCurrentZ(self._currentZ)
 
 	def _setState(self, state):
 		self._state = state
@@ -282,22 +290,15 @@ class Printer():
 		self._printTime = printTime
 		self._printTimeLeft = printTimeLeft
 
-		formattedPrintTime = None
-		if (self._printTime):
-			formattedPrintTime = util.getFormattedTimeDelta(datetime.timedelta(seconds=self._printTime))
-
-		formattedPrintTimeLeft = None
-		if (self._printTimeLeft):
-			formattedPrintTimeLeft = util.getFormattedTimeDelta(datetime.timedelta(minutes=self._printTimeLeft))
-
-		formattedFilePos = None
-		if (filepos):
-			formattedFilePos = util.getFormattedSize(filepos)
-
-		self._stateMonitor.setProgress({"progress": self._progress, "filepos": formattedFilePos, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
+		self._stateMonitor.setProgress({
+			"completion": int(self._progress * 100) if self._progress is not None else None,
+			"filepos": filepos,
+			"printTime": int(self._printTime) if self._printTime is not None else None,
+			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
+		})
 
 	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		currentTimeUtc = int(time.time() * 1000)
+		currentTimeUtc = int(time.time())
 
 		self._temps["actual"].append((currentTimeUtc, temp))
 		self._temps["target"].append((currentTimeUtc, targetTemp))
@@ -321,21 +322,14 @@ class Printer():
 		else:
 			self._selectedFile = None
 
-		formattedFilename = None
-		formattedFilesize = None
 		estimatedPrintTime = None
-		fileMTime = None
+		date = None
 		filament = None
 		if filename:
-			formattedFilename = os.path.basename(filename)
-
 			# Use a string for mtime because it could be float and the
 			# javascript needs to exact match
 			if not sd:
-				fileMTime = str(os.stat(filename).st_mtime)
-
-			if filesize:
-				formattedFilesize = util.getFormattedSize(filesize)
+				date = int(os.stat(filename).st_ctime)
 
 			fileData = self._gcodeManager.getFileData(filename)
 			if fileData is not None and "gcodeAnalysis" in fileData.keys():
@@ -344,7 +338,16 @@ class Printer():
 				if "filament" in fileData["gcodeAnalysis"].keys():
 					filament = fileData["gcodeAnalysis"]["filament"]
 
-		self._stateMonitor.setJobData({"filename": formattedFilename, "filesize": formattedFilesize, "estimatedPrintTime": estimatedPrintTime, "filament": filament, "sd": sd, "mtime": fileMTime})
+		self._stateMonitor.setJobData({
+			"file": {
+				"name": os.path.basename(filename),
+				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+				"size": filesize,
+				"date": date
+			},
+			"estimatedPrintTime": estimatedPrintTime,
+			"filament": filament,
+		})
 
 	def _sendInitialStateUpdate(self, callback):
 		try:

@@ -264,6 +264,10 @@ $(function() {
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
+        //~~ Underscore setup
+
+        _.mixin(_.str.exports());
+
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {

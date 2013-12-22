@@ -11,7 +11,7 @@ Connection handling
 Get connection settings
 =======================
 
-.. http:get:: /api/control/connection
+.. http:get:: /api/connection
 
    Retrieve the current connection settings, including information regarding the available baudrates and
    serial ports and the current connection state.
@@ -54,7 +54,7 @@ Get connection settings
 Issue a connection command
 ==========================
 
-.. http:post:: /api/control/connection
+.. http:post:: /api/connection
 
    Issue a connection command. Currently available command are:
 

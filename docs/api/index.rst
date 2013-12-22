@@ -11,5 +11,5 @@ API Documentation
    fileops.rst
    connection.rst
    printer.rst
-   jobs.rst
+   job.rst
 

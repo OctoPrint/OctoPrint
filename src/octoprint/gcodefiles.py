@@ -1,11 +1,12 @@
 # coding=utf-8
+import re
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import os
 import Queue
 import threading
-import datetime
 import yaml
 import time
 import logging
@@ -14,6 +15,7 @@ import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
+from octoprint.filemanager.destinations import FileDestinations
 
 from werkzeug.utils import secure_filename
 
@@ -107,12 +109,16 @@ class GcodeManager:
 		analysisResult = {}
 		dirty = False
 		if gcode.totalMoveTimeMinute:
-			analysisResult["estimatedPrintTime"] = util.getFormattedTimeDelta(datetime.timedelta(minutes=gcode.totalMoveTimeMinute))
+			analysisResult["estimatedPrintTime"] = gcode.totalMoveTimeMinute * 60
 			dirty = True
 		if gcode.extrusionAmount:
-			analysisResult["filament"] = "%.2fm" % (gcode.extrusionAmount / 1000)
+			analysisResult["filament"] = {
+				"length": gcode.extrusionAmount
+			}
 			if gcode.calculateVolumeCm3():
-				analysisResult["filament"] += " / %.2fcm³" % gcode.calculateVolumeCm3()
+				analysisResult["filament"].update({
+					"volume": gcode.calculateVolumeCm3()
+				})
 			dirty = True
 
 		if dirty:
@@ -128,8 +134,57 @@ class GcodeManager:
 			with self._metadataFileAccessMutex:
 				with open(self._metadataFile, "r") as f:
 					self._metadata = yaml.safe_load(f)
+
 		if self._metadata is None:
 			self._metadata = {}
+
+		# TODO: Remove in a couple of versions (2013-12-21)
+		self._migrateMetadata()
+
+	def _migrateMetadata(self):
+		self._logger.info("Migrating metadata if necessary...")
+
+		printTimeRe = r"(\d+):(\d{2}):(\d{2})"
+		filamentRe = r"(\d*\.\d+)m(\s/\s(\d*\.\d+)cm.)?"
+
+		hoursToSeconds = 60 * 60
+		minutesToSeconds = 60
+
+		updateCount = 0
+		for metadata in self._metadata.values():
+			if not "gcodeAnalysis" in metadata:
+				continue
+
+			updated = False
+			if "estimatedPrintTime" in metadata["gcodeAnalysis"]:
+				estimatedPrintTime = metadata["gcodeAnalysis"]["estimatedPrintTime"]
+				if isinstance(estimatedPrintTime, (str, unicode)):
+					match = re.match(printTimeRe, estimatedPrintTime)
+					if match:
+						metadata["gcodeAnalysis"]["estimatedPrintTime"] = int(match.group(1)) * hoursToSeconds + int(match.group(2)) * minutesToSeconds + int(match.group(3))
+						self._metadataDirty = True
+						updated = True
+			if "filament" in metadata["gcodeAnalysis"]:
+				filament = metadata["gcodeAnalysis"]["filament"]
+				if isinstance(filament, (str, unicode)):
+					match = re.match(filamentRe, filament)
+					if match:
+						metadata["gcodeAnalysis"]["filament"] = {
+							"length": int(float(match.group(1)) * 1000)
+						}
+						if match.group(3) is not None:
+							metadata["gcodeAnalysis"]["filament"].update({
+								"volume": float(match.group(3))
+							})
+						self._metadataDirty = True
+						updated = True
+
+			if updated:
+				updateCount += 1
+
+		self._saveMetadata()
+
+		self._logger.info("Updated %d sets of metadata to new format" % updateCount)
 
 	def _saveMetadata(self, force=False):
 		if not self._metadataDirty and not force:
@@ -330,9 +385,9 @@ class GcodeManager:
 		statResult = os.stat(absolutePath)
 		fileData = {
 			"name": filename,
-			"size": util.getFormattedSize(statResult.st_size),
-			"bytes": statResult.st_size,
-			"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(statResult.st_ctime))
+			"size": statResult.st_size,
+			"origin": FileDestinations.LOCAL,
+			"date": int(statResult.st_ctime)
 		}
 
 		# enrich with additional metadata from analysis if available
@@ -340,18 +395,18 @@ class GcodeManager:
 			for key in self._metadata[filename].keys():
 				if key == "prints":
 					val = self._metadata[filename][key]
-					formattedLast = None
+					last = None
 					if "last" in val and val["last"] is not None:
-						formattedLast = {
-							"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(val["last"]["date"])),
+						last = {
+							"date": val["last"]["date"],
 							"success": val["last"]["success"]
 						}
-					formattedPrints = {
+					prints = {
 						"success": val["success"],
 						"failure": val["failure"],
-						"last": formattedLast
+						"last": last
 					}
-					fileData["prints"] = formattedPrints
+					fileData["prints"] = prints
 				else:
 					fileData[key] = self._metadata[filename][key]
 

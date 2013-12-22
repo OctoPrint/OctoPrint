@@ -4,7 +4,7 @@ function GcodeViewModel(loginStateViewModel) {
     self.loginState = loginStateViewModel;
 
     self.loadedFilename = undefined;
-    self.loadedFileMTime = undefined;
+    self.loadedFileDate = undefined;
     self.status = 'idle';
     self.enabled = false;
 
@@ -15,18 +15,18 @@ function GcodeViewModel(loginStateViewModel) {
         GCODE.ui.initHandlers();
     }
 
-    self.loadFile = function(filename, mtime){
+    self.loadFile = function(filename, date){
         if (self.status == 'idle' && self.errorCount < 3) {
             self.status = 'request';
             $.ajax({
                 url: BASEURL + "downloads/files/local/" + filename,
-                data: { "mtime": mtime },
+                data: { "ctime": date },
                 type: "GET",
                 success: function(response, rstatus) {
                     if(rstatus === 'success'){
                         self.showGCodeViewer(response, rstatus);
-                        self.loadedFilename=filename;
-                        self.loadedFileMTime=mtime;
+                        self.loadedFilename = filename;
+                        self.loadedFileDate = date;
                         self.status = 'idle';
                     }
                 },
@@ -55,20 +55,20 @@ function GcodeViewModel(loginStateViewModel) {
 
     self._processData = function(data) {
         if (!self.enabled) return;
-        if (!data.job.filename) return;
+        if (!data.job.file || !data.job.file.name) return;
 
-        if(self.loadedFilename && self.loadedFilename == data.job.filename &&
-            self.loadedFileMTime == data.job.mtime) {
+        if(self.loadedFilename && self.loadedFilename == data.job.file.name &&
+            self.loadedFileDate == data.job.file.date) {
             if (data.state.flags && (data.state.flags.printing || data.state.flags.paused)) {
-                var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.progress * 100);
+                var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
                 if(cmdIndex){
                     GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
                     GCODE.ui.updateLayerInfo(cmdIndex.layer);
                 }
             }
             self.errorCount = 0
-        } else if (data.job.filename && !data.job.sd) {
-            self.loadFile(data.job.filename, data.job.mtime);
+        } else if (data.job.file.name && data.job.file.origin != "sdcard") {
+            self.loadFile(data.job.file.name, data.job.file.date);
         }
     }
 

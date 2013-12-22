@@ -19,7 +19,9 @@ from octoprint.settings import settings as s, valid_boolean_trues
 
 api = Blueprint("api", __name__)
 
-from . import control as api_control
+from . import printer as api_printer
+from . import job as api_job
+from . import connection as api_connection
 from . import files as api_files
 from . import settings as api_settings
 from . import timelapse as api_timelapse

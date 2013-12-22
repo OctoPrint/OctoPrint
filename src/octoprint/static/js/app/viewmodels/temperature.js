@@ -126,10 +126,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
         _.each(data, function(d) {
             var time = d.currentTime;
-            self.temperatures.actual.push([time, d.temp]);
-            self.temperatures.target.push([time, d.targetTemp]);
-            self.temperatures.actualBed.push([time, d.bedTemp]);
-            self.temperatures.targetBed.push([time, d.targetBedTemp]);
+            self.temperatures.actual.push([time * 1000, d.temp]);
+            self.temperatures.target.push([time * 1000, d.targetTemp]);
+            self.temperatures.actualBed.push([time * 1000, d.bedTemp]);
+            self.temperatures.targetBed.push([time * 1000, d.targetBedTemp]);
         });
 
         self.temperatures.actual = self.temperatures.actual.slice(-300);
@@ -141,7 +141,17 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     }
 
     self._processTemperatureHistoryData = function(data) {
-        self.temperatures = data;
+        var toJsTimestamp = function(d) {
+            return [d[0] * 1000, d[1]];
+        }
+
+        var processedData = {
+            actual: _.map(data.actual, toJsTimestamp),
+            target: _.map(data.target, toJsTimestamp),
+            actualBed: _.map(data.actualBed, toJsTimestamp),
+            targetBed: _.map(data.targetBed, toJsTimestamp)
+        };
+        self.temperatures = processedData;
         self.updatePlot();
     }
 
@@ -217,7 +227,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         data[group][type] = parseInt(temp);
 
         $.ajax({
-            url: API_BASEURL + "control/printer/heater",
+            url: API_BASEURL + "printer/heater",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

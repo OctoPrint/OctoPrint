@@ -27,16 +27,36 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.currentHeight = ko.observable(undefined);
 
+    self.estimatedPrintTimeString = ko.computed(function() {
+        if (!self.estimatedPrintTime())
+            return "-";
+        return formatDuration(self.estimatedPrintTime());
+    });
+    self.filamentString = ko.computed(function() {
+        if (!self.filament())
+            return "-";
+        return formatFilament(self.filament());
+    });
     self.byteString = ko.computed(function() {
         if (!self.filesize())
             return "-";
-        var filepos = self.filepos() ? self.filepos() : "-";
-        return filepos + " / " + self.filesize();
+        var filepos = self.filepos() ? formatSize(self.filepos()) : "-";
+        return filepos + " / " + formatSize(self.filesize());
     });
     self.heightString = ko.computed(function() {
         if (!self.currentHeight())
             return "-";
-        return self.currentHeight();
+        return _.sprintf("%.02fmm", self.currentHeight());
+    });
+    self.printTimeString = ko.computed(function() {
+        if (!self.printTime())
+            return "-";
+        return formatDuration(self.printTime());
+    });
+    self.printTimeLeftString = ko.computed(function() {
+        if (!self.printTimeLeft())
+            return "-";
+        return formatDuration(self.printTimeLeft());
     })
     self.progressString = ko.computed(function() {
         if (!self.progress())
@@ -97,16 +117,22 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self._processJobData = function(data) {
-        self.filename(data.filename);
-        self.filesize(data.filesize);
+        if (data.file) {
+            self.filename(data.file.name);
+            self.filesize(data.file.size);
+            self.sd(data.file.origin == "sdcard");
+        } else {
+            self.filename(undefined);
+            self.filesize(undefined);
+            self.sd(undefined);
+        }
         self.estimatedPrintTime(data.estimatedPrintTime);
         self.filament(data.filament);
-        self.sd(data.sd);
     }
 
     self._processProgressData = function(data) {
-        if (data.progress) {
-            self.progress(Math.round(data.progress * 100));
+        if (data.completion) {
+            self.progress(data.completion);
         } else {
             self.progress(undefined);
         }
@@ -145,7 +171,7 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self._jobCommand = function(command) {
         $.ajax({
-            url: API_BASEURL + "control/job",
+            url: API_BASEURL + "job",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

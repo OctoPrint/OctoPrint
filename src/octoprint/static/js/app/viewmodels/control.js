@@ -43,7 +43,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.requestData = function() {
         $.ajax({
-            url: API_BASEURL + "control/custom",
+            url: API_BASEURL + "printer/command/custom",
             method: "GET",
             dataType: "json",
             success: function(response) {
@@ -90,7 +90,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         data[axis] = distance * multiplier;
 
         $.ajax({
-            url: API_BASEURL + "control/printer/printhead",
+            url: API_BASEURL + "printer/printhead",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -105,7 +105,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
 
         $.ajax({
-            url: API_BASEURL + "control/printer/printhead",
+            url: API_BASEURL + "printer/printhead",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -127,7 +127,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             length = 5;
 
         $.ajax({
-            url: API_BASEURL + "control/printer/feeder",
+            url: API_BASEURL + "printer/feeder",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -160,7 +160,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             return;
 
         $.ajax({
-            url: API_BASEURL + "control/printer/command",
+            url: API_BASEURL + "printer/command",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

@@ -22,7 +22,7 @@ from octoprint.server.api import api
 def readGcodeFiles():
 	files = _getFileList(FileDestinations.LOCAL)
 	files.extend(_getFileList(FileDestinations.SDCARD))
-	return jsonify(files=files, free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
+	return jsonify(files=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
@@ -33,7 +33,7 @@ def readGcodeFilesForOrigin(origin):
 	files = _getFileList(origin)
 
 	if origin == FileDestinations.LOCAL:
-		return jsonify(files=files, free=util.getFormattedSize(util.getFreeBytes(settings().getBaseFolder("uploads"))))
+		return jsonify(files=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
 	else:
 		return jsonify(files=files)
 
@@ -64,7 +64,6 @@ def _getFileList(origin):
 		files = gcodeManager.getAllFileData()
 		for file in files:
 			file.update({
-				"origin": FileDestinations.LOCAL,
 				"refs": {
 					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["name"], _external=True),
 					"download": urlForDownload(FileDestinations.LOCAL, file["name"])

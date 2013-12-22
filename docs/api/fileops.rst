@@ -36,23 +36,25 @@ Retrieve all files
         "files": [
           {
             "name": "whistle_v2.gcode",
-            "bytes": 1468987,
-            "size": "1.4MB",
-            "date": "2013-05-21 23:15",
+            "size": 1468987,
+            "date": 1378847754,
             "origin": "local",
             "refs": {
               "resource": "http://example.com/api/files/local/whistle_v2.gcode",
               "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
             },
             "gcodeAnalysis": {
-              "estimatedPrintTime": "00:31:40",
-              "filament": "0.79m"
+              "estimatedPrintTime": 1188,
+              "filament": {
+                "length": 810,
+                "volume": 5.36
+              }
             },
             "print": {
               "failure": 4,
               "success": 23,
               "last": {
-                "date": "2013-11-18 18:00",
+                "date": 1387144346,
                 "success": true
               }
             }
@@ -70,7 +72,7 @@ Retrieve all files
 
    :statuscode 200: No error
 
-.. _sec-api-fileops-retrievespecific:
+.. _sec-api-fileops-retrievelocation:
 
 Retrieve files from specific location
 =====================================
@@ -100,23 +102,25 @@ Retrieve files from specific location
         "files": [
           {
             "name": "whistle_v2.gcode",
-            "bytes": 1468987,
-            "size": "1.4MB"
-            "date": "2013-05-21 23:15",
+            "size": 1468987,
+            "date": 1378847754,
             "origin": "local",
             "refs": {
               "resource": "http://example.com/api/files/local/whistle_v2.gcode",
               "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
             },
             "gcodeAnalysis": {
-              "estimatedPrintTime": "00:31:40",
-              "filament": "0.79m"
+              "estimatedPrintTime": 1188,
+              "filament": {
+                "length": 810,
+                "volume": 5.36
+              }
             },
             "print": {
               "failure": 4,
               "success": 23,
               "last": {
-                "date": "2013-11-18 18:00",
+                "date": 1387144346,
                 "success": true
               }
             }
@@ -259,23 +263,25 @@ Retrieve a specific file's information
 
       {
         "name": "whistle_v2.gcode",
-        "bytes": 1468987,
-        "size": "1.4MB"
-        "date": "2013-05-21 23:15",
+        "size": 1468987,
+        "date": 1378847754,
         "origin": "local",
         "refs": {
           "resource": "http://example.com/api/files/local/whistle_v2.gcode",
           "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
         },
         "gcodeAnalysis": {
-          "estimatedPrintTime": "00:31:40",
-          "filament": "0.79m"
+          "estimatedPrintTime": 1188,
+          "filament": {
+            "length": 810,
+            "volume": 5.36
+          }
         },
         "print": {
           "failure": 4,
           "success": 23,
           "last": {
-            "date": "2013-11-18 18:00",
+            "date": 1387144346,
             "success": true
           }
         }
@@ -383,7 +389,7 @@ Retrieve response
    * - ``free``
      - 0..1
      - String
-     - The amount of disk space available in the local disk space (refers to OctoPrint's ``uploads`` folder). Only
+     - The amount of disk space in bytes available in the local disk space (refers to OctoPrint's ``uploads`` folder). Only
        returned if file list was requested for origin ``local`` or all origins.
 
 .. _sec-api-fileops-datamodel-uploadresponse:
@@ -438,18 +444,14 @@ File information
      - 1
      - String
      - The name of the file
-   * - ``bytes``
+   * - ``size``
      - 0..1
      - Number
      - The size of the file in bytes. Only available for ``local`` files.
-   * - ``size``
-     - 0..1
-     - String
-     - The size of the file in a human readable format. Only available for ``local`` files.
    * - ``date``
      - 0..1
-     - String representing a date and time in the format ``YYYY-MM-DD HH:mm``
-     - The date and time this files was uploaded. Only available for ``local`` files.
+     - Unix timestamp
+     - The timestamp when this file was uploaded. Only available for ``local`` files.
    * - ``origin``
      - 1
      - String, either ``local`` or ``sdcard``
@@ -457,7 +459,7 @@ File information
        printer's SD card (if available)
    * - ``refs``
      - 0..1
-     - :ref:`<sec-api-fileops-datamodel-ref>`
+     - :ref:`sec-api-fileops-datamodel-ref`
      - References relevant to this file
    * - ``gcodeAnalysis``
      - 0..1
@@ -482,14 +484,21 @@ GCODE analysis information
      - Type
      - Description
    * - ``estimatedPrintTime``
-     - 1
-     - String representing a duration in the format ``HH:mm:ss``
-     - The estimated print time of the file
+     - 0..1
+     - Integer
+     - The estimated print time of the file, in seconds
    * - ``filament``
-     - 1
-     - String
-     - The estimated usage of filament (length in meters and volume in cubic centimeters) in a human readable format.
-       Example: ``1.89m / 11.90cm³``
+     - 0..1
+     - Object
+     - The estimated usage of filament
+   * - ``filament.length``
+     - 0..1
+     - Integer
+     - The length of filament used, in mm
+   * - ``filament.volume``
+     - 0..1
+     - Float
+     - The volume of filament used, in cm³
 
 
 .. _sec-api-fileops-datamodel-prints:
@@ -519,8 +528,8 @@ Print information
      - Information regarding the last print on record for the file
    * - ``last.date``
      - 1
-     - String representing a date and time in the format ``YYYY-MM-DD HH:mm``
-     - Date and time when the file was printed last
+     - Unix timestamp
+     - Timestamp when this file was printed last
    * - ``last.success``
      - 1
      - Boolean
