@@ -5,7 +5,6 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 from flask import request, jsonify, make_response
 
 from octoprint.settings import settings
-from octoprint.printer import getConnectionOptions
 from octoprint.server import printer, restricted_access, NO_CONTENT
 from octoprint.server.api import api
 import octoprint.util as util
@@ -188,6 +187,7 @@ def sdCommand():
 		printer.releaseSdCard()
 
 	return NO_CONTENT
+
 
 @api.route("/printer/sd", methods=["GET"])
 def sdState():

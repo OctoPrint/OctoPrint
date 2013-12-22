@@ -12,7 +12,8 @@ from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.util as util
 import octoprint.users
-from octoprint.server import printer, restricted_access, SUCCESS, admin_permission, loginManager, principals
+import octoprint.server
+from octoprint.server import restricted_access, admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 
 #~~ init api blueprint, including sub modules
@@ -48,11 +49,11 @@ def firstRunSetup():
 		s().setBoolean(["accessControl", "enabled"], False)
 		s().setBoolean(["server", "firstRun"], False)
 
-		loginManager.anonymous_user = octoprint.users.DummyUser
-		principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
+		octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
+		octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
 
 	s().save()
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 #~~ system state
 
@@ -60,9 +61,9 @@ def firstRunSetup():
 @api.route("/state", methods=["GET"])
 @restricted_access
 def apiPrinterState():
-	currentData = printer.getCurrentData()
+	currentData = octoprint.server.printer.getCurrentData()
 	currentData.update({
-		"temperatures": printer.getCurrentTemperatures()
+		"temperatures": octoprint.server.printer.getCurrentTemperatures()
 	})
 	return jsonify(currentData)
 
@@ -89,7 +90,7 @@ def performSystemAction():
 				except Exception, ex:
 					logger.exception("Command failed")
 					return make_response(("Command failed: %r" % ex, 500, []))
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 
 #~~ Login/user handling
@@ -138,7 +139,7 @@ def login():
 			except:
 				logger = logging.getLogger(__name__)
 				logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
 
 @api.route("/logout", methods=["POST"])
@@ -151,5 +152,5 @@ def logout():
 
 	logout_user()
 
-	return jsonify(SUCCESS)
+	return NO_CONTENT
 
