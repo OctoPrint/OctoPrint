@@ -291,7 +291,7 @@ class Printer():
 		self._printTimeLeft = printTimeLeft
 
 		self._stateMonitor.setProgress({
-			"completion": int(self._progress * 100) if self._progress is not None else None,
+			"completion": self._progress * 100 if self._progress is not None else None,
 			"filepos": filepos,
 			"printTime": int(self._printTime) if self._printTime is not None else None,
 			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
@@ -563,6 +563,9 @@ class Printer():
 				"offset": bedTempOffset
 			}
 		}
+
+	def getTemperatureHistory(self):
+		return self._temps
 
 	def getCurrentConnection(self):
 		if self._comm is None:

@@ -130,7 +130,7 @@ Retrieve information about the current job
           }
         },
         "progress": {
-          "completion": 23,
+          "completion": 0.2298468264184775,
           "filepos": 337942,
           "printTime": 276,
           "printTimeLeft": 912
@@ -231,7 +231,7 @@ Progress information
      - Description
    * - ``completion``
      - 1
-     - Integer
+     - Float
      - Percentage of completion of the current print job
    * - ``filepos``
      - 1

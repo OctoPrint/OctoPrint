@@ -11,7 +11,7 @@ import octoprint.util as util
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, gcodeManager, eventManager, restricted_access, NO_CONTENT
-from octoprint.server.util import redirectToTornado, urlForDownload
+from octoprint.server.util import urlForDownload
 from octoprint.server.api import api
 
 
