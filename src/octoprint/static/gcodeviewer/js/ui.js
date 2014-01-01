@@ -21,67 +21,27 @@ GCODE.ui = (function(){
     };
 
     var chooseAccordion = function(id){
-//        debugger;
         $('#'+id).collapse("show");
     };
-
-    var setLinesColor = function(toggle){
-//        var i=0;
-//        for(i=gCodeLines.first;i<gCodeLines.last; i++){
-//            if(toggle){
-//                myCodeMirror.setLineClass(Number(i), null, "activeline");
-//            }else{
-//                myCodeMirror.setLineClass(Number(i), null, null);
-//            }
-//        }
-    }
-
 
     var printLayerInfo = function(layerNum){
         var z = GCODE.renderer.getZ(layerNum);
         var segments = GCODE.renderer.getLayerNumSegments(layerNum);
         var filament = GCODE.gCodeReader.getLayerFilament(z);
-        var layerSpeeds = GCODE.gCodeReader.getModelInfo().speedsByLayer;
-        var renderOptions = GCODE.renderer.getOptions();
-        var colors = renderOptions["colorLine"];
-        var speedIndex = 0;
-        var keys, type;
-        var showMove=false;
-        var i = 0;
         var output = [];
         output.push("Layer number: " + layerNum);
         output.push("Layer height (mm): " + z);
         output.push("GCODE commands in layer: " + segments);
-        output.push("Filament used by layer (mm): " + filament.toFixed(2));
-        output.push("Print time for layer: " + parseFloat(GCODE.gCodeReader.getModelInfo().printTimeByLayer[z]).toFixed(1) + "sec");
-        output.push("Extrude speeds:");
-        for(i=0;i<layerSpeeds['extrude'][z].length;i++){
-            if(typeof(layerSpeeds['extrude'][z][i])==='undefined'){continue;}
-            speedIndex = i;
-            if(speedIndex > colors.length -1){speedIndex = speedIndex % (colors.length-1);}
-            output.push("<div id='colorBox"+i+"' class='colorBox' style='background-color: "+colors[speedIndex] + "'></div>  = " + (parseFloat(layerSpeeds['extrude'][z][i])/60).toFixed(2)+"mm/s");
-        }
-        if(typeof(layerSpeeds['move'][z]) !== 'undefined'){
-            output.push("Move speeds:");
-            for(i=0;i<layerSpeeds['move'][z].length;i++){
-                if(typeof(layerSpeeds['move'][z][i])==='undefined'){continue;}
-                speedIndex = i;
-                if(speedIndex > colors.length -1){speedIndex = speedIndex % (colors.length-1);}
-                output.push("<div id='colorBox"+i+"' class='colorBox' style='background-color: "+renderOptions['colorMove'] + "'></div>  = " + (parseFloat(layerSpeeds['move'][z][i])/60).toFixed(2)+"mm/s");
-            }
-        }
-        if(typeof(layerSpeeds['retract'][z]) !== 'undefined'){
-            output.push("Retract speeds:");
-            for(i=0;i<layerSpeeds['retract'][z].length;i++){
-                if(typeof(layerSpeeds['retract'][z][i])==='undefined'){continue;}
-                speedIndex = i;
-                if(speedIndex > colors.length -1){speedIndex = speedIndex % (colors.length-1);}
-                output.push("<span style='color: " + renderOptions['colorRetract'] +"'>&#9679;</span> <span style='color: " + renderOptions['colorRestart'] +"'>&#9679;</span> = " +(parseFloat(layerSpeeds['retract'][z][i])/60).toFixed(2)+"mm/s");
+        if (filament.length == 1) {
+            output.push("Filament used by layer: " + filament[0].toFixed(2)) + "mm";
+        } else {
+            for (var i = 0; i < filament.length; i++) {
+                output.push("Filament used by layer (Tool " + i + "): " + filament[i].toFixed(2) + "mm");
             }
         }
 
+        output.push("Print time for layer: " + parseFloat(GCODE.gCodeReader.getModelInfo().printTimeByLayer[z]).toFixed(1) + "sec");
         $('#layerInfo').html(output.join('<br>'));
-//        chooseAccordion('layerAccordionTab');
     };
 
     var handleFileSelect = function(evt) {
@@ -136,9 +96,7 @@ GCODE.ui = (function(){
             var progress = GCODE.renderer.getLayerNumSegments(val)-1;
             GCODE.renderer.render(val,0, progress);
             sliderHor.slider({max: progress, values: [0,progress]});
-            setLinesColor(false); //clear current selection
             gCodeLines = GCODE.gCodeReader.getGCodeLines(val, sliderHor.slider("values",0), sliderHor.slider("values",1));
-            setLinesColor(true); // highlight lines
             printLayerInfo(val);
         };
 
@@ -193,8 +151,7 @@ GCODE.ui = (function(){
                 setProgress('loadProgress', 100);
                 worker.postMessage({
                         "cmd":"analyzeModel",
-                        "msg":{
-                        }
+                        "msg":{}
                     }
                 );
                 break;
@@ -205,14 +162,19 @@ GCODE.ui = (function(){
                 GCODE.gCodeReader.processAnalyzeModelDone(data.msg);
                 GCODE.gCodeReader.passDataToRenderer();
                 initSliders();
-                resultSet.push("Model size is: " + data.msg.modelSize.x.toFixed(2) + 'x' + data.msg.modelSize.y.toFixed(2) + 'x' + data.msg.modelSize.z.toFixed(2)+'mm<br>');
-                resultSet.push("Total filament used: " + data.msg.totalFilament.toFixed(2) + "mm<br>");
-                resultSet.push("Estimated print time: " + parseInt(parseFloat(data.msg.printTime)/60/60) + ":" + parseInt((parseFloat(data.msg.printTime)/60)%60) + ":" + parseInt(parseFloat(data.msg.printTime)%60) + "<br>");
+                resultSet.push("Model size is: " + data.msg.modelSize.x.toFixed(2) + 'mm &times; ' + data.msg.modelSize.y.toFixed(2) + 'mm &times; ' + data.msg.modelSize.z.toFixed(2)+'mm<br>');
+                if (data.msg.totalFilament.length == 0) {
+                    resultSet.push("Total filament used: " + data.msg.totalFilament.toFixed(2) + "mm<br>");
+                } else {
+                    for (var i = 0; i < data.msg.totalFilament.length; i++) {
+                        resultSet.push("Total filament used (Tool " + i + "): " + data.msg.totalFilament[i].toFixed(2) + "mm<br>");
+                    }
+                }
+
+                resultSet.push("Estimated print time: " + formatDuration(data.msg.printTime) + "<br>");
                 resultSet.push("Estimated layer height: " + data.msg.layerHeight.toFixed(2) + "mm<br>");
-                resultSet.push("Layer count: " + data.msg.layerCnt.toFixed(0) + "printed, " + data.msg.layerTotal.toFixed(0) + 'visited<br>');
+                resultSet.push("Layer count: " + data.msg.layerCnt.toFixed(0) + " printed, " + data.msg.layerTotal.toFixed(0) + " visited<br>");
                 document.getElementById('list').innerHTML =  resultSet.join('');
-                chooseAccordion('infoAccordionTab');
-                $('#myTab a[href="#tab2d"]').tab('show');
                 break;
             case 'returnLayer':
                 GCODE.gCodeReader.processLayerFromWorker(data.msg);
@@ -239,7 +201,6 @@ GCODE.ui = (function(){
         });
 
         if(!Modernizr.canvas)fatal.push("<li>Your browser doesn't seem to support HTML5 Canvas, this application won't work without it.</li>");
-        //if(!Modernizr.filereader)fatal.push("<li>Your browser doesn't seem to support HTML5 File API, this application won't work without it.</li>");
         if(!Modernizr.webworkers)fatal.push("<li>Your browser doesn't seem to support HTML5 Web Workers, this application won't work without it.</li>");
         if(!Modernizr.svg)fatal.push("<li>Your browser doesn't seem to support HTML5 SVG, this application won't work without it.</li>");
 
@@ -307,20 +268,6 @@ GCODE.ui = (function(){
             if(document.getElementById('purgeEmptyLayersCheckbox').checked)GCODE.gCodeReader.setOption({purgeEmptyLayers: true});
             else GCODE.gCodeReader.setOption({purgeEmptyLayers: false});
 
-            if(document.getElementById('showGCodeCheckbox').checked)showGCode = true;
-            else showGCode = false;
-
-
-//            if(document.getElementById('sortLayersCheckbox').checked) worker.postMessage({"cmd":"setOption", "msg":{sortLayers: true}});
-//            else  worker.postMessage({"cmd":"setOption", "msg":{sortLayers: false}});
-//
-//            if(document.getElementById('purgeEmptyLayersCheckbox').checked)worker.postMessage({"cmd":"setOption", "msg":{purgeEmptyLayers: true}});
-//            else worker.postMessage({"cmd":"setOption", "msg":{purgeEmptyLayers: false}});
-
-//            if(document.getElementById('analyzeModelCheckbox').checked)worker.postMessage({"cmd":"setOption", "msg":{analyzeModel: true}});
-//            else worker.postMessage({"cmd":"setOption", "msg":{analyzeModel: false}});
-
-
             if(document.getElementById('moveModelCheckbox').checked)GCODE.renderer.setOption({moveModel: true});
             else GCODE.renderer.setOption({moveModel: false});
 
@@ -329,9 +276,6 @@ GCODE.ui = (function(){
 
             if(document.getElementById('showRetractsCheckbox').checked)GCODE.renderer.setOption({showRetracts: true});
             else GCODE.renderer.setOption({showRetracts: false});
-
-            if(document.getElementById('differentiateColorsCheckbox').checked)GCODE.renderer.setOption({differentiateColors: true});
-            else GCODE.renderer.setOption({differentiateColors: false});
 
             var widthMod = 2;
             if(Number($('#widthModifier').attr('value'))) {widthMod = Number($('#widthModifier').attr('value'));}
