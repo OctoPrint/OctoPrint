@@ -279,6 +279,8 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 }
 
 function formatSize(bytes) {
+    if (!bytes) return "-";
+
     var units = ["bytes", "KB", "MB", "GB"];
     for (var i = 0; i < units.length; i++) {
         if (bytes < 1024) {
@@ -290,6 +292,8 @@ function formatSize(bytes) {
 }
 
 function formatDuration(seconds) {
+    if (!seconds) return "-";
+
     var s = seconds % 60;
     var m = (seconds % 3600) / 60;
     var h = seconds / 3600;
@@ -298,13 +302,25 @@ function formatDuration(seconds) {
 }
 
 function formatDate(unixTimestamp) {
+    if (!unixTimestamp) return "-";
     return moment.unix(unixTimestamp).format("YYYY-MM-DD HH:mm");
 }
 
 function formatFilament(filament) {
+    if (!filament || !filament["length"]) return "-";
     var result = _.sprintf("%.02fm", (filament["length"] / 1000));
-    if (filament.hasOwnProperty("volume")) {
+    if (filament.hasOwnProperty("volume") && filament.volume) {
         result += " / " + _.sprintf("%.02fcm³", filament["volume"]);
     }
     return result;
+}
+
+function cleanTemperature(temp) {
+    if (!temp || temp < 10) return "off";
+    return temp;
+}
+
+function formatTemperature(temp) {
+    if (!temp || temp < 10) return "off";
+    return _.sprintf("%.1f&deg;C", temp);
 }

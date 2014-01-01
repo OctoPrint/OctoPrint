@@ -41,12 +41,7 @@ class Printer():
 		self._bedTemp = None
 		self._targetTemp = None
 		self._targetBedTemp = None
-		self._temps = {
-			"actual": deque([], 300),
-			"target": deque([], 300),
-			"actualBed": deque([], 300),
-			"targetBed": deque([], 300)
-		}
+		self._temps = deque([], 300)
 		self._tempBacklog = []
 
 		self._latestMessage = None
@@ -193,12 +188,57 @@ class Printer():
 		for command in commands:
 			self._comm.sendCommand(command)
 
-	def setTemperatureOffset(self, extruder, bed):
+	def jog(self, axis, amount):
+		movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
+		self.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), amount, movementSpeed[axis]), "G90"])
+
+	def home(self, axes):
+		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), axes)), "G90"])
+
+	def extrude(self, amount):
+		extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
+		self.commands(["G91", "G1 E%s F%d" % (amount, extrusionSpeed), "G90"])
+
+	def changeTool(self, tool):
+		try:
+			toolNum = int(tool[len("tool"):])
+			self.command("T%d" % toolNum)
+		except ValueError:
+			pass
+
+	def setTemperature(self, type, value):
+		if type.startswith("tool"):
+			try:
+				toolNum = int(type[len("tool"):])
+				self.command("M104 T%d S%f" % (toolNum, value))
+			except ValueError:
+				pass
+		elif type == "bed":
+			self.command("M140 S%f" % value)
+
+	def setTemperatureOffset(self, offsets={}):
 		if self._comm is None:
 			return
 
-		self._comm.setTemperatureOffset(extruder, bed)
-		self._stateMonitor.setTempOffsets(extruder, bed)
+		tool, bed = self._comm.getOffsets()
+
+		validatedOffsets = {}
+
+		for key in offsets:
+			value = offsets[key]
+			if key == "bed":
+				bed = value
+				validatedOffsets[key] = value
+			elif key.startswith("tool"):
+				try:
+					toolNum = int(key[len("tool"):])
+					tool[toolNum] = value
+					validatedOffsets[key] = value
+				except ValueError:
+					pass
+
+		self._comm.setTemperatureOffset(tool, bed)
+		self._stateMonitor.setTempOffsets(validatedOffsets)
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
@@ -297,20 +337,28 @@ class Printer():
 			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
 		})
 
-	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
+	def _addTemperatureData(self, temp, bedTemp):
 		currentTimeUtc = int(time.time())
 
-		self._temps["actual"].append((currentTimeUtc, temp))
-		self._temps["target"].append((currentTimeUtc, targetTemp))
-		self._temps["actualBed"].append((currentTimeUtc, bedTemp))
-		self._temps["targetBed"].append((currentTimeUtc, bedTargetTemp))
+		data = {
+			"time": currentTimeUtc
+		}
+		for tool in temp.keys():
+			data["tool%d" % tool] = {
+				"actual": temp[tool][0],
+				"target": temp[tool][1]
+			}
+		data["bed"] = {
+			"actual": bedTemp[0],
+			"target": bedTemp[1]
+		}
+
+		self._temps.append(data)
 
 		self._temp = temp
 		self._bedTemp = bedTemp
-		self._targetTemp = targetTemp
-		self._targetBedTemp = bedTargetTemp
 
-		self._stateMonitor.addTemperature({"currentTime": currentTimeUtc, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp})
+		self._stateMonitor.addTemperature(data)
 
 	def _setJobData(self, filename, filesize, sd):
 		if filename is not None:
@@ -352,10 +400,8 @@ class Printer():
 	def _sendInitialStateUpdate(self, callback):
 		try:
 			data = self._stateMonitor.getCurrentData()
-			# convert the dict of deques to a dict of lists
-			temps = {k: list(v) for (k,v) in self._temps.iteritems()}
 			data.update({
-				"temperatureHistory": temps,
+				"tempHistory": list(self._temps),
 				"logHistory": list(self._log),
 				"messageHistory": list(self._messages)
 			})
@@ -387,8 +433,8 @@ class Printer():
 		"""
 		self._addLog(message)
 
-	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		self._addTemperatureData(temp, bedTemp, targetTemp, bedTargetTemp)
+	def mcTempUpdate(self, temp, bedTemp):
+		self._addTemperatureData(temp, bedTemp)
 
 	def mcStateChange(self, state):
 		"""
@@ -546,23 +592,25 @@ class Printer():
 
 	def getCurrentTemperatures(self):
 		if self._comm is not None:
-			(tempOffset, bedTempOffset) = self._comm.getOffsets()
+			tempOffset, bedTempOffset = self._comm.getOffsets()
 		else:
-			tempOffset = 0
-			bedTempOffset = 0
+			tempOffset = {}
+			bedTempOffset = None
 
-		return {
-			"extruder": {
-				"current": self._temp,
-				"target": self._targetTemp,
-				"offset": tempOffset
-			},
-			"bed": {
-				"current": self._bedTemp,
-				"target": self._targetBedTemp,
-				"offset": bedTempOffset
+		result = {}
+		for tool in self._temp.keys():
+			result["tool%d" % tool] = {
+				"actual": self._temp[tool][0],
+				"target": self._temp[tool][1],
+				"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
 			}
+		result["bed"] = {
+			"actual": self._bedTemp[0],
+			"target": self._bedTemp[1],
+			"offset": bedTempOffset
 		}
+
+		return result
 
 	def getTemperatureHistory(self):
 		return self._temps
@@ -616,8 +664,7 @@ class StateMonitor(object):
 		self._currentZ = None
 		self._progress = None
 
-		self._tempOffset = 0
-		self._bedTempOffset = 0
+		self._offsets = {}
 
 		self._changeEvent = threading.Event()
 
@@ -660,11 +707,8 @@ class StateMonitor(object):
 		self._progress = progress
 		self._changeEvent.set()
 
-	def setTempOffsets(self, tempOffset, bedTempOffset):
-		if tempOffset is not None:
-			self._tempOffset = tempOffset
-		if bedTempOffset is not None:
-			self._bedTempOffset = bedTempOffset
+	def setTempOffsets(self, offsets):
+		self._offsets = offsets
 		self._changeEvent.set()
 
 	def _work(self):
@@ -688,6 +732,6 @@ class StateMonitor(object):
 			"job": self._jobData,
 			"currentZ": self._currentZ,
 			"progress": self._progress,
-			"offsets": (self._tempOffset, self._bedTempOffset)
+			"offsets": self._offsets
 		}
 

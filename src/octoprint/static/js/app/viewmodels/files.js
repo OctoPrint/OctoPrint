@@ -115,8 +115,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.fromResponse = function(response, filenameToFocus, locationToFocus) {
         var files = response.files;
         _.each(files, function(element, index, list) {
-            if (!element.hasOwnProperty("size")) element.size = "n/a";
-            if (!element.hasOwnProperty("date")) element.date = "n/a";
+            if (!element.hasOwnProperty("size")) element.size = undefined;
+            if (!element.hasOwnProperty("date")) element.date = undefined;
         });
         self.listHelper.updateItems(files);
 

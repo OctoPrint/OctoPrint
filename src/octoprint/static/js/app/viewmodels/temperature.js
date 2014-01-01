@@ -2,19 +2,24 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.settingsViewModel = settingsViewModel;
 
-    self.temp = ko.observable(undefined);
-    self.bedTemp = ko.observable(undefined);
-    self.targetTemp = ko.observable(undefined);
-    self.bedTargetTemp = ko.observable(undefined);
+    self._createToolEntry = function() {
+        return {
+            name: ko.observable(),
+            key: ko.observable(),
+            actual: ko.observable(0),
+            target: ko.observable(0),
+            offset: ko.observable(0),
+            newTarget: ko.observable(),
+            newOffset: ko.observable()
+        }
+    };
 
-    self.newTemp = ko.observable(undefined);
-    self.newBedTemp = ko.observable(undefined);
-
-    self.newTempOffset = ko.observable(undefined);
-    self.tempOffset = ko.observable(0);
-    self.newBedTempOffset = ko.observable(undefined);
-    self.bedTempOffset = ko.observable(0);
+    self.tools = ko.observableArray([]);
+    self.bedTemp = self._createToolEntry();
+    self.bedTemp["name"]("Bed");
+    self.bedTemp["key"]("bed");
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -26,25 +31,46 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
     self.temperature_profiles = settingsViewModel.temperature_profiles;
 
-    self.tempString = ko.computed(function() {
-        if (!self.temp())
-            return "-";
-        return self.temp() + " &deg;C";
-    });
-    self.bedTempString = ko.computed(function() {
-        if (!self.bedTemp())
-            return "-";
-        return self.bedTemp() + " &deg;C";
-    });
-    self.targetTempString = ko.computed(function() {
-        if (!self.targetTemp())
-            return "-";
-        return self.targetTemp() + " &deg;C";
-    });
-    self.bedTargetTempString = ko.computed(function() {
-        if (!self.bedTargetTemp())
-            return "-";
-        return self.bedTargetTemp() + " &deg;C";
+    self.heaterOptions = ko.observable(undefined);
+
+    self.settingsViewModel.printer_numExtruders.subscribe(function(oldVal, newVal) {
+        var graphColors = ["red", "orange", "green", "brown", "purple"];
+        var heaterOptions = {};
+        var tools = self.tools();
+
+        // tools
+        var numExtruders = self.settingsViewModel.printer_numExtruders();
+        if (numExtruders > 1) {
+            // multiple extruders
+            for (var extruder = 0; extruder < numExtruders; extruder++) {
+                var color = graphColors.shift();
+                if (!color) color = "black";
+                heaterOptions["tool" + extruder] = {name: "T" + extruder, color: color};
+
+                if (tools.length <= extruder || !tools[extruder]) {
+                    tools[extruder] = self._createToolEntry();
+                }
+                tools[extruder]["name"]("Tool " + extruder);
+                tools[extruder]["key"]("tool" + extruder);
+            }
+        } else {
+            // only one extruder, no need to add numbers
+            var color = graphColors[0];
+            heaterOptions["tool0"] = {name: "T", color: color};
+
+            if (tools.length < 1 || !tools[0]) {
+                tools[0] = self._createToolEntry();
+            }
+            tools[0]["name"]("Hotend");
+            tools[0]["key"]("tool0");
+        }
+
+        // print bed
+        heaterOptions["bed"] = {name: "Bed", color: "blue"};
+
+        // write back
+        self.heaterOptions(heaterOptions);
+        self.tools(tools);
     });
 
     self.temperatures = [];
@@ -76,19 +102,21 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             }
         },
         legend: {
-            noColumns: 4
+            position: "sw",
+            noColumns: 2,
+            backgroundOpacity: 0
         }
     }
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
-        self._processTemperatureUpdateData(data.temperatures);
+        self._processTemperatureUpdateData(data.temps);
         self._processOffsetData(data.offsets);
     }
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-        self._processTemperatureHistoryData(data.temperatureHistory);
+        self._processTemperatureHistoryData(data.tempHistory);
         self._processOffsetData(data.offsets);
     }
 
@@ -106,144 +134,204 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         if (data.length == 0)
             return;
 
-        self.temp(data[data.length - 1].temp);
-        self.bedTemp(data[data.length - 1].bedTemp);
-        self.targetTemp(data[data.length - 1].targetTemp);
-        self.bedTargetTemp(data[data.length - 1].targetBedTemp);
+        var lastData = data[data.length - 1];
+
+        var tools = self.tools();
+        for (var i = 0; i < tools.length; i++) {
+            if (lastData.hasOwnProperty("tool" + i)) {
+                tools[i]["actual"](lastData["tool" + i].actual);
+                tools[i]["target"](lastData["tool" + i].target);
+            }
+        }
+
+        self.bedTemp["actual"](lastData.bed.actual);
+        self.bedTemp["target"](lastData.bed.target);
 
         if (!CONFIG_TEMPERATURE_GRAPH) return;
 
-        if (!self.temperatures)
-            self.temperatures = [];
-        if (!self.temperatures.actual)
-            self.temperatures.actual = [];
-        if (!self.temperatures.target)
-            self.temperatures.target = [];
-        if (!self.temperatures.actualBed)
-            self.temperatures.actualBed = [];
-        if (!self.temperatures.targetBed)
-            self.temperatures.targetBed = [];
-
-        _.each(data, function(d) {
-            var time = d.currentTime;
-            self.temperatures.actual.push([time * 1000, d.temp]);
-            self.temperatures.target.push([time * 1000, d.targetTemp]);
-            self.temperatures.actualBed.push([time * 1000, d.bedTemp]);
-            self.temperatures.targetBed.push([time * 1000, d.targetBedTemp]);
+        self.temperatures = self._processTemperatureData(data, self.temperatures);
+        _.each(_.keys(self.heaterOptions()), function(d) {
+            self.temperatures[d].actual = self.temperatures[d].actual.slice(-300);
+            self.temperatures[d].target = self.temperatures[d].target.slice(-300);
         });
-
-        self.temperatures.actual = self.temperatures.actual.slice(-300);
-        self.temperatures.target = self.temperatures.target.slice(-300);
-        self.temperatures.actualBed = self.temperatures.actualBed.slice(-300);
-        self.temperatures.targetBed = self.temperatures.targetBed.slice(-300);
 
         self.updatePlot();
     }
 
     self._processTemperatureHistoryData = function(data) {
-        var toJsTimestamp = function(d) {
-            return [d[0] * 1000, d[1]];
-        }
-
-        var processedData = {
-            actual: _.map(data.actual, toJsTimestamp),
-            target: _.map(data.target, toJsTimestamp),
-            actualBed: _.map(data.actualBed, toJsTimestamp),
-            targetBed: _.map(data.targetBed, toJsTimestamp)
-        };
-        self.temperatures = processedData;
+        self.temperatures = self._processTemperatureData(data);
         self.updatePlot();
     }
 
     self._processOffsetData = function(data) {
-        self.tempOffset(data[0]);
-        self.bedTempOffset(data[1]);
+        var tools = self.tools();
+        for (var i = 0; i < tools.length; i++) {
+            if (data.hasOwnProperty("tool" + i)) {
+                tools[i]["offset"](data["tool" + i]);
+            }
+        }
+
+        if (data.hasOwnProperty("bed")) {
+            self.bedTemp["offset"](data["bed"]);
+        }
+    }
+
+    self._processTemperatureData = function(data, result) {
+        var types = _.keys(self.heaterOptions());
+
+        // make sure result is properly initialized
+        if (!result) {
+            result = {};
+        }
+        _.each(types, function(type) {
+            if (!result.hasOwnProperty(type)) {
+                result[type] = {actual: [], target: []};
+            }
+            if (!result[type].hasOwnProperty("actual")) result[type]["actual"] = [];
+            if (!result[type].hasOwnProperty("target")) result[type]["target"] = [];
+        });
+
+        // convert data
+        _.each(data, function(d) {
+            var time = d.time * 1000;
+            _.each(types, function(type) {
+                if (!d[type]) return;
+                result[type].actual.push([time, d[type].actual]);
+                result[type].target.push([time, d[type].target]);
+            })
+        });
+
+        return result;
     }
 
     self.updatePlot = function() {
         var graph = $("#temperature-graph");
         if (graph.length) {
-            var data = [
-                {label: "Actual", color: "#FF4040", data: self.temperatures.actual},
-                {label: "Target", color: "#FFA0A0", data: self.temperatures.target},
-                {label: "Bed Actual", color: "#4040FF", data: self.temperatures.actualBed},
-                {label: "Bed Target", color: "#A0A0FF", data: self.temperatures.targetBed}
-            ]
+            var data = [];
+            var heaterOptions = self.heaterOptions();
+            _.each(_.keys(heaterOptions), function(type) {
+                var actuals = [];
+                var targets = [];
+
+                if (self.temperatures[type]) {
+                    actuals = self.temperatures[type].actual;
+                    targets = self.temperatures[type].target;
+                }
+
+                var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1]) : "-";
+                var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1]) : "-";
+
+                data.push({
+                    label: "Actual " + heaterOptions[type].name + ": " + actualTemp,
+                    color: heaterOptions[type].color,
+                    data: actuals
+                });
+                data.push({
+                    label: "Target " + heaterOptions[type].name + ": " + targetTemp,
+                    color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
+                    data: targets
+                });
+            });
 
             $.plot(graph, data, self.plotOptions);
         }
     }
 
-    self.setTempFromProfile = function(profile) {
-        if (!profile)
-            return;
-        self._sendHotendCommand("temp", "hotend", profile.extruder);
-    }
+    self.setTarget = function(item) {
+        var value = item.newTarget();
+        if (!value) return;
 
-    self.setTemp = function() {
-        self._sendHotendCommand("temp", "hotend", self.newTemp(), function() {self.targetTemp(self.newTemp()); self.newTemp("");});
+        self._sendToolCommand("target",
+            item.key(),
+            item.newTarget(),
+            function() {item.newTarget("");}
+        );
     };
 
-    self.setTempToZero = function() {
-        self._sendHotendCommand("temp", "hotend", 0, function() {self.targetTemp(0); self.newTemp("");});
-    }
+    self.setTargetFromProfile = function(item, profile) {
+        if (!profile) return;
 
-    self.setTempOffset = function() {
-        self._sendHotendCommand("offset", "hotend", self.newTempOffset(), function() {self.tempOffset(self.newTempOffset()); self.newTempOffset("");});
-    }
-
-    self.setBedTempFromProfile = function(profile) {
-        if (!profile)
-            return;
-        self._sendHotendCommand("temp", "bed", profile.bed);
-    }
-
-    self.setBedTemp = function() {
-        self._sendHotendCommand("temp", "bed", self.newBedTemp(), function() {self.bedTargetTemp(self.newBedTemp()); self.newBedTemp("");});
-    };
-
-    self.setBedTempToZero = function() {
-        self._sendHotendCommand("temp", "bed", 0, function() {self.bedTargetTemp(0); self.newBedTemp("");});
-    }
-
-    self.setBedTempOffset = function() {
-        self._sendHotendCommand("offset", "bed", self.newBedTempOffset(), function() {self.bedTempOffset(self.newBedTempOffset()); self.newBedTempOffset("");});
-    }
-
-    self._sendHotendCommand = function(command, type, temp, callback) {
-        var group;
-        if ("temp" == command) {
-            group = "temps";
-        } else if ("offset" == command) {
-            group = "offsets";
+        var value = undefined;
+        if (item.key() == "bed") {
+            value = profile.bed;
         } else {
-            return;
+            value = profile.extruder;
         }
 
+        self._sendToolCommand("target",
+            item.key(),
+            value,
+            function() {item.newTarget("");}
+        );
+    };
+
+    self.setTargetToZero = function(item) {
+        self._sendToolCommand("target",
+            item.key(),
+            0,
+            function() {item.newTarget("");}
+        );
+    };
+
+    self.setOffset = function(item) {
+        self._sendToolCommand("offset",
+            item.key(),
+            item.newOffset(),
+            function() {item.newOffset("");}
+        );
+    };
+
+    self._sendToolCommand = function(command, type, temp, successCb, errorCb) {
         var data = {
-            "command": command
+            command: command
         };
-        data[group] = {};
-        data[group][type] = parseInt(temp);
+
+        var endpoint;
+        if (type == "bed") {
+            if ("target" == command) {
+                data["target"] = parseInt(temp);
+            } else if ("offset" == command) {
+                data["offset"] = parseInt(temp);
+            } else {
+                return;
+            }
+
+            endpoint = "bed";
+        } else {
+            var group;
+            if ("target" == command) {
+                group = "targets";
+            } else if ("offset" == command) {
+                group = "offsets";
+            } else {
+                return;
+            }
+            data[group] = {};
+            data[group][type] = parseInt(temp);
+
+            endpoint = "tool";
+        }
 
         $.ajax({
-            url: API_BASEURL + "printer/heater",
+            url: API_BASEURL + "printer/" + endpoint,
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data),
-            success: function() { if (callback !== undefined) callback(); }
+            success: function() { if (successCb !== undefined) successCb(); },
+            error: function() { if (errorCb !== undefined) errorCb(); }
         });
 
-    }
+    };
 
-    self.handleEnter = function(event, type) {
+    self.handleEnter = function(event, type, item) {
         if (event.keyCode == 13) {
-            if (type == "temp") {
-                self.setTemp();
-            } else if (type == "bedTemp") {
-                self.setBedTemp();
+            if (type == "target") {
+                self.setTarget(item);
+            } else if (type == "offset") {
+                self.setOffset(item);
             }
         }
-    }
+    };
+
 }

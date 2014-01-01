@@ -160,7 +160,7 @@ class PrinterStateConnection(SockJSConnection):
 			self._messageBacklog = []
 
 		data.update({
-			"temperatures": temperatures,
+			"temps": temperatures,
 			"logs": logs,
 			"messages": messages
 		})

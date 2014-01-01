@@ -4,6 +4,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.loginState = loginStateViewModel;
     self.settings = settingsViewModel;
 
+    self._createToolEntry = function() {
+        return {
+            name: ko.observable(),
+            key: ko.observable()
+        }
+    };
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
@@ -15,7 +22,30 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
 
+    self.tools = ko.observableArray([]);
+
     self.feedbackControlLookup = {};
+
+    self.settings.printer_numExtruders.subscribe(function(oldVal, newVal) {
+        var tools = [];
+
+        var numExtruders = self.settings.printer_numExtruders();
+        if (numExtruders > 1) {
+            // multiple extruders
+            for (var extruder = 0; extruder < numExtruders; extruder++) {
+                tools[extruder] = self._createToolEntry();
+                tools[extruder]["name"]("Tool " + extruder);
+                tools[extruder]["key"]("tool" + extruder);
+            }
+        } else {
+            // only one extruder, no need to add numbers
+            tools[0] = self._createToolEntry();
+            tools[0]["name"]("Hotend");
+            tools[0]["key"]("tool0");
+        }
+
+        self.tools(tools);
+    });
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
@@ -115,25 +145,49 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.sendExtrudeCommand = function() {
         self._sendECommand(1);
-    }
+    };
 
     self.sendRetractCommand = function() {
         self._sendECommand(-1);
-    }
+    };
 
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
-        if (!length)
-            length = 5;
+        if (!length) length = 5;
+
+        var data = {
+            command: "extrude",
+            amount: length * dir
+        };
 
         $.ajax({
-            url: API_BASEURL + "printer/feeder",
+            url: API_BASEURL + "printer/tool",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify({command: "extrude", amount: (dir * length)})
+            data: JSON.stringify(data),
+            success: function() {
+                self.extrusionAmount("");
+            }
         });
-    }
+    };
+
+    self.sendSelectToolCommand = function(data) {
+        if (!data || !data.key()) return;
+
+        var data = {
+            command: "select",
+            tool: data.key()
+        }
+
+        $.ajax({
+            url: API_BASEURL + "printer/tool",
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        });
+    };
 
     self.sendCustomCommand = function(command) {
         if (!command)

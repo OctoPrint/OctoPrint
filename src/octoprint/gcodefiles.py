@@ -144,8 +144,8 @@ class GcodeManager:
 	def _migrateMetadata(self):
 		self._logger.info("Migrating metadata if necessary...")
 
-		printTimeRe = r"(\d+):(\d{2}):(\d{2})"
-		filamentRe = r"(\d*\.\d+)m(\s/\s(\d*\.\d+)cm.)?"
+		printTimeRe = re.compile("(\d+):(\d{2}):(\d{2})")
+		filamentRe = re.compile("(\d*\.\d+)m(\s/\s(\d*\.\d+)cm.)?")
 
 		hoursToSeconds = 60 * 60
 		minutesToSeconds = 60

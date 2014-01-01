@@ -18,6 +18,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedZ = ko.observable(undefined);
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
+    self.printer_numExtruders = ko.observable(undefined);
 
     self.webcam_streamUrl = ko.observable(undefined);
     self.webcam_snapshotUrl = ko.observable(undefined);
@@ -121,6 +122,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_movementSpeedZ(response.printer.movementSpeedZ);
         self.printer_movementSpeedE(response.printer.movementSpeedE);
         self.printer_invertAxes(response.printer.invertAxes);
+        self.printer_numExtruders(response.printer.numExtruders);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -178,7 +180,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "movementSpeedY": self.printer_movementSpeedY(),
                 "movementSpeedZ": self.printer_movementSpeedZ(),
                 "movementSpeedE": self.printer_movementSpeedE(),
-                "invertAxes": self.printer_invertAxes()
+                "invertAxes": self.printer_invertAxes(),
+                "numExtruders": self.printer_numExtruders()
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),

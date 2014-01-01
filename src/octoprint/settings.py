@@ -85,7 +85,8 @@ default_settings = {
 			"e": 300
 		},
 		"pauseTriggers": [],
-		"invertAxes": []
+		"invertAxes": [],
+		"numExtruders": 1
 	},
 	"appearance": {
 		"name": "",
@@ -129,7 +130,8 @@ default_settings = {
 			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
-			"okWithLinenumber": False
+			"okWithLinenumber": False,
+			"numExtruders": 1
 		}
 	}
 }

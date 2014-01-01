@@ -133,16 +133,24 @@ class MachineCom(object):
 		self._serial = None
 		self._baudrateDetectList = baudrateList()
 		self._baudrateDetectRetry = 0
-		self._temp = 0
+		self._temp = {}
+		self._targetTemp = {}
+		self._tempOffset = {}
 		self._bedTemp = 0
-		self._targetTemp = 0
 		self._bedTargetTemp = 0
-		self._tempOffset = 0
 		self._bedTempOffset = 0
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
+
+		# Regex matching temperature entries in line. Groups will be as follows:
+		# - 1: whole tool designator incl. optional toolNumber ("T", "Tn", "B")
+		# - 2: toolNumber, if given ("", "n", "")
+		# - 3: actual temperature
+		# - 4: whole target substring, if given (e.g. " / 22.0")
+		# - 5: target temperature
+		self._tempRegex = re.compile("(B|T(\d*)):([-+]?\d*\.?\d*)(\s*\/?\s*([-+]?\d*\.?\d*))?")
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 1
@@ -305,7 +313,7 @@ class MachineCom(object):
 		return self._bedTemp
 
 	def getOffsets(self):
-		return (self._tempOffset, self._bedTempOffset)
+		return self._tempOffset, self._bedTempOffset
 
 	def getConnection(self):
 		return self._port, self._baudrate
@@ -335,9 +343,9 @@ class MachineCom(object):
 			eventManager().fire(Events.PRINT_FAILED, payload)
 		eventManager().fire(Events.DISCONNECTED)
 
-	def setTemperatureOffset(self, extruder=None, bed=None):
-		if extruder is not None:
-			self._tempOffset = extruder
+	def setTemperatureOffset(self, tool=None, bed=None):
+		if tool is not None:
+			self._tempOffset = tool
 
 		if bed is not None:
 			self._bedTempOffset = bed
@@ -507,6 +515,53 @@ class MachineCom(object):
 
 	##~~ communication monitoring and handling
 
+	def _parseTemperatures(self, line):
+		result = {}
+		maxToolNum = 0
+		for match in re.finditer(self._tempRegex, line):
+			tool = match.group(1)
+			toolNumber = int(match.group(2)) if match.group(2) and len(match.group(2)) > 0 else None
+			if toolNumber > maxToolNum:
+				maxToolNum = toolNumber
+
+			try:
+				actual = float(match.group(3))
+				target = None
+				if match.group(4) and match.group(5):
+					target = float(match.group(5))
+
+				result[tool] = (toolNumber, actual, target)
+			except ValueError:
+				# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
+				pass
+
+		if "T0" in result.keys() and "T" in result.keys():
+			del result["T"]
+
+		return maxToolNum, result
+
+	def _processTemperatures(self, line):
+		maxToolNum, parsedTemps = self._parseTemperatures(line)
+
+		# extruder temperatures
+		if not "T0" in parsedTemps.keys() and "T" in parsedTemps.keys():
+			# only single reporting, "T" is our one and only extruder temperature
+			toolNum, actual, target = parsedTemps["T"]
+			self._temp[0] = (actual, target)
+		elif "T0" in parsedTemps.keys():
+			for n in range(maxToolNum + 1):
+				tool = "T%d" % n
+				if not tool in parsedTemps.keys():
+					continue
+
+				toolNum, actual, target = parsedTemps[tool]
+				self._temp[toolNum] = (actual, target)
+
+		# bed temperature
+		if "B" in parsedTemps.keys():
+			toolNum, actual, target = parsedTemps["B"]
+			self._bedTemp = (actual, target)
+
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
 		pauseTriggers = settings().getPauseTriggers()
@@ -547,15 +602,8 @@ class MachineCom(object):
 
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:'):
-					try:
-						self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
-						if ' B:' in line:
-							self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
-
-						self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
-					except ValueError:
-						# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
-						pass
+					self._processTemperatures(line)
+					self._callback.mcTempUpdate(self._temp, self._bedTemp)
 
 					#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
 					if not 'ok' in line:
@@ -1058,7 +1106,7 @@ class MachineComPrintCallback(object):
 	def mcLog(self, message):
 		pass
 
-	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
+	def mcTempUpdate(self, temp, bedTemp):
 		pass
 
 	def mcStateChange(self, state):
@@ -1169,12 +1217,16 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 	def __init__(self, filename, offsetCallback):
 		PrintingFileInformation.__init__(self, filename)
-		self._filehandle = None
+		self._filesetMenuModehandle = None
 		self._lineCount = None
 		self._firstLine = None
+		self._currentTool = 0
 
 		self._offsetCallback = offsetCallback
-		self._tempCommandPattern = re.compile("^\s*M(104|109|140|190)\s+S([0-9\.]+)")
+		self._tempCommandPattern = re.compile("M(104|109|140|190)")
+		self._tempCommandTemperaturePattern = re.compile("S([-+]?\d*\.?\d*)")
+		self._tempCommandToolPattern = re.compile("T(\d+)")
+		self._toolCommandPattern = re.compile("^T(\d+)")
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
@@ -1228,25 +1280,47 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			line = line[0:line.find(";")]
 		line = line.strip()
 		if len(line) > 0:
-			if self._offsetCallback is not None:
-				(tempOffset, bedTempOffset) = self._offsetCallback()
-				if tempOffset != 0 or bedTempOffset != 0:
+			toolMatch = self._toolCommandPattern.match(line)
+			if toolMatch is not None:
+				# track tool changes
+				self._currentTool = int(toolMatch.group(1))
+			else:
+				## apply offsets
+				if self._offsetCallback is not None:
 					tempMatch = self._tempCommandPattern.match(line)
 					if tempMatch is not None:
+						# if we have a temperature command, retrieve current offsets
+						tempOffset, bedTempOffset = self._offsetCallback()
 						if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
-							offset = tempOffset
+							# extruder temperature, determine which one and retrieve corresponding offset
+							toolNum = self._currentTool
+
+							toolNumMatch = self._tempCommandToolPattern.search(line)
+							if toolNumMatch is not None:
+								try:
+									toolNum = int(toolNumMatch.group(1))
+								except ValueError:
+									pass
+
+							offset = tempOffset[toolNum] if toolNum in tempOffset.keys() and tempOffset[toolNum] is not None else 0
 						elif tempMatch.group(1) == "140" or tempMatch.group(1) == "190":
+							# bed temperature
 							offset = bedTempOffset
 						else:
+							# unknown, should never happen
 							offset = 0
 
-						try:
-							temp = float(tempMatch.group(2))
-							if temp > 0:
-								newTemp = temp + offset
-								line = line.replace("S" + tempMatch.group(2), "S%f" % newTemp)
-						except ValueError:
-							pass
+						if not offset == 0:
+							# if we have an offset != 0, we need to get the temperature to be set and apply the offset to it
+							tempValueMatch = self._tempCommandTemperaturePattern.search(line)
+							if tempValueMatch is not None:
+								try:
+									temp = float(tempValueMatch.group(1))
+									if temp > 0:
+										newTemp = temp + offset
+										line = line.replace("S" + tempValueMatch.group(1), "S%f" % newTemp)
+								except ValueError:
+									pass
 			return line
 		else:
 			return None

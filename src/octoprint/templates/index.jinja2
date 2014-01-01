@@ -253,87 +253,55 @@
                                 <div id="temperature-graph"></div>
                             </div>
                             {% endif %}
-                            <div class="row-fluid" style="margin-bottom: 20px">
-                                <div class="form-horizontal span6">
-                                    <h1>Temperature</h1>
+                            <div class="row-fluid">
 
-                                    <label title="Current extruder temperature">Current: <strong data-bind="html: tempString"></strong></label>
+                                <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
+                                    <tr>
+                                        <th style="width: 18%"></th>
+                                        <th style="text-align: right" style="width: 12%">Actual</th>
+                                        <th style="width: 35%">Target</th>
+                                        <th style="width: 35%">Offset</th>
+                                    </tr>
+                                    <!-- ko foreach: tools -->
+                                    <tr data-bind="template: { name: 'temprow-template' }"></tr>
+                                    <!-- /ko -->
+                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }"></tr>
+                                </table>
 
-                                    <label title="Target extruder temperature">Target: <strong data-bind="html: targetTempString"></strong></label>
-
-                                    <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label for="temp_newTemp" title="Sets the new target temperature for the extruder">New Target</label>
+                                <script type="text/html" id="temprow-template">
+                                    <th style="vertical-align: middle" data-bind="text: name"></th>
+                                    <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
+                                    <td style="vertical-align: middle; overflow: visible">
                                         <div class="input-append">
-                                            <input type="text" class="input-mini text-right" data-bind="value: newTemp, valueUpdate: 'afterkeydown', attr: {placeholder: targetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'temp');} }" class="tempInput">
+                                            <input type="text" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
                                             <span class="add-on">&deg;C</span>
+                                            <div class="btn-group">
+                                                <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">Set</button>
+                                                <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
+                                                    <span class="caret"></span>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <!-- ko foreach: $root.temperature_profiles -->
+                                                    <li>
+                                                        <a href="#" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
+                                                    </li>
+                                                    <!-- /ko -->
+                                                    <li class="divider"></li>
+                                                    <li>
+                                                        <a href="#" data-bind="click: $root.setTargetToZero">Off</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
-                                        <div class="btn-group">
-                                            <button type="submit" class="btn" data-bind="click: setTemp, enable: isOperational() && loginState.isUser() && newTemp()">Set</button>
-                                            <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
-                                                <span class="caret"></span>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <!-- ko foreach: temperature_profiles -->
-                                                <li>
-                                                    <a href="#" data-bind="click: $parent.setTempFromProfile, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
-                                                </li>
-                                                <!-- /ko -->
-                                                <li class="divider"></li>
-                                                <li>
-                                                    <a href="#" data-bind="click: function() { $root.setTempToZero(); }">Off</a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label title="Sets a temperature offset to apply to temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Offset</label>
+                                    </td>
+                                    <td style="vertical-align: middle">
                                         <div class="input-append">
-                                            <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: tempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'tempOffset');} }" class="tempInput">
+                                            <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
                                             <span class="add-on">&deg;C</span>
+                                            <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">Set</button>
                                         </div>
-                                        <button type="submit" class="btn" data-bind="click: setTempOffset, enable: newTempOffset() && isOperational() && loginState.isUser()">Set</button>
-                                    </div>
-                                </div>
-                                <div class="form-horizontal span6">
-                                    <h1>Bed Temperature</h1>
-
-                                    <label title="Current bed temperature">Current: <strong data-bind="html: bedTempString"></strong></label>
-
-                                    <label title="Target bed temperature">Target: <strong data-bind="html: bedTargetTempString"></strong></label>
-
-                                    <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label for="temp_newBedTemp" title="Sets the new target temperature for the bed">New Target</label>
-                                        <div class="input-append">
-                                            <input type="text" class="input-mini text-right" data-bind="value: newBedTemp, valueUpdate: 'afterkeydown', attr: {placeholder: bedTargetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(event, 'bedTemp');} }" class="tempInput">
-                                            <span class="add-on">&deg;C</span>
-                                        </div>
-                                        <div class="btn-group">
-                                            <button type="submit" class="btn" data-bind="click: setBedTemp, enable: isOperational() && loginState.isUser() && newBedTemp()">Set</button>
-                                            <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
-                                                <span class="caret"></span>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                 <!-- ko foreach: temperature_profiles -->
-                                                 <li>
-                                                     <a href="#" data-bind="click: $parent.setBedTempFromProfile, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
-                                                 </li>
-                                                 <!-- /ko -->
-                                                 <li class="divider"></li>
-                                                 <li>
-                                                     <a href="#" data-bind="click: function(){ $root.setBedTempToZero(); }">Off</a>
-                                                 </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div style="display: none;" data-bind="visible: loginState.isUser">
-                                        <label title="Sets a temperature offset to apply to bed temperatures set via streamed GCODE, may be positive or negative, will not persist across restarts of OctoPrint">Offset</label>
-                                        <div class="input-append">
-                                            <input type="number" min="-50" max="50" class="input-mini text-right" data-bind="value: newBedTempOffset, valueUpdate: 'afterkeydown', attr: {placeholder: bedTempOffset}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'bedTempOffset');} }" class="tempInput">
-                                            <span class="add-on">&deg;C</span>
-                                        </div>
-                                        <button type="submit" class="btn" data-bind="click: setBedTempOffset, enable: newBedTempOffset() && isOperational() && loginState.isUser()">Set</button>
-                                    </div>
-                                </div>
+                                    </td>
+                                </script>
                             </div>
                         </div>
                         <div class="tab-pane" id="control">
@@ -375,32 +343,41 @@
                                 <!-- Jog distance -->
                                 <div class="distance">
                                     <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
-                                        <button type="button" class="btn" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
-                                        <button type="button" class="btn" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
-                                        <button type="button" class="btn active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
-                                        <button type="button" class="btn" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
+                                        <button type="button" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
+                                        <button type="button" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
+                                        <button type="button" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
+                                        <button type="button" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
                                     </div>
                                 </div>
                             </div>
                             <!-- Extrusion control panel -->
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>E</h1>
+                                <h1>Tool (E)</h1>
                                 <div>
+                                    <div class="btn-group control-box">
+                                        <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && !isPrinting() && !isPaused() && loginState.isUser()">
+                                            Select Tool...
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu" data-bind="foreach: tools">
+                                            <li><a href="#" data-bind="click: $root.sendSelectToolCommand, text: 'Select ' + name(), enable: $root.isOperational() && !$root.isPrinting() && !$root.isPaused() && $root.loginState.isUser()"></a></li>
+                                        </ul>
+                                    </div>
                                     <div class="input-append control-box">
                                         <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: 5}">
                                         <span class="add-on">mm</span>
                                     </div>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">Retract</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">Retract</button>
                                 </div>
                             </div>
                             <!-- General control panel -->
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
                                 <h1>General</h1>
                                 <div>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }"><i class="icon-off"></i>&nbsp;Motors off</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
-                                    <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">Motors off</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
                             </div>
 
@@ -446,86 +423,34 @@
                             <div id="slider-vertical"></div>
                             <div id="slider-horizontal"></div>
 
-                            <div id="gcode_accordion" class="accordion" style="margin-top: 20px">
-                                <div class="accordion-group">
-                                    <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" href="#progressAccordionTab">
-                                            Progress indicators
-                                        </a>
-                                    </div>
-                                    <div id="progressAccordionTab" class="accordion-body collapse in">
-                                        <div class="accordion-inner">
-                                            <div id="progressBlock">
-                                                <div class="progress" >
-                                                    <div id="loadProgress" class="bar" style="width: 0%;"></div>
-                                                </div>
-                                                <div class="progress" >
-                                                    <div id="analyzeProgress" class="bar" style="width: 0%;"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="accordion-group">
-                                    <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" href="#infoAccordionTab">
-                                            Model info
-                                        </a>
-                                    </div>
-                                    <div id="infoAccordionTab" class="accordion-body collapse in">
-                                        <div class="accordion-inner">
-                                            <p id="list"></p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="accordion-group">
-                                    <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" href="#layerAccordionTab">
-                                            Layer Info
-                                        </a>
-                                    </div>
-                                    <div id="layerAccordionTab" class="accordion-body collapse in">
-                                        <div class="accordion-inner">
-                                            <p id="layerInfo"></p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="accordion-group">
-                                    <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" href="#options2DAccordionTab">
-                                            2D Render options
-                                        </a>
-                                    </div>
-                                    <div id="options2DAccordionTab" class="accordion-body collapse in">
-                                        <div class="accordion-inner">
-                                            <input type="checkbox" id="showMovesCheckbox" value="1"  onclick="GCODE.ui.processOptions()" checked>Show non-extrusion moves</input><br>
-                                            <input type="checkbox" id="showRetractsCheckbox" value="2"  onclick="GCODE.ui.processOptions()" checked>Show retracts and restarts</input><br>
-                                            <input type="checkbox" id="moveModelCheckbox" value="3"  onclick="GCODE.ui.processOptions()" checked>Move model to the center of the grid</input><br>
-                                            <input type="checkbox" id="differentiateColorsCheckbox" value="7"  onclick="GCODE.ui.processOptions()" checked>Show different speeds with different colors</input><br>
-                                            <input type="checkbox" id="thickExtrusionCheckbox" value="8"  onclick="GCODE.ui.processOptions()">Emulate extrusion width</input><br>
-                                            Width modifier: <input type="text" value="2" id="widthModifier" onchange="GCODE.ui.processOptions()"/><br>
-                                            <input type="checkbox" id="showNextLayer" value="9"  onclick="GCODE.ui.processOptions()" >Show +1 layer</input><br>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="accordion-group">
-                                    <div class="accordion-heading">
-                                        <a class="accordion-toggle" data-toggle="collapse" href="#analyzeOptionsAccordioinTab">
-                                            GCode analyzer options
-                                        </a>
-                                    </div>
-                                    <div id="analyzeOptionsAccordioinTab" class="accordion-body collapse in">
-                                        <div class="accordion-inner">
-                                            These require re-analyzing file:<br>
-                                            <input type="checkbox" id="sortLayersCheckbox" value="4" onclick="GCODE.ui.processOptions()" checked>Sort layers by Z</input><br>
-                                            <input type="checkbox" id="purgeEmptyLayersCheckbox" value="5"  onclick="GCODE.ui.processOptions()" checked>Hide empty layers</input><br>
-                                            <input type="checkbox" id="showGCodeCheckbox" value="6" onclick="GCODE.ui.processOptions()" checked>Show GCode in GCode tab (memory intensive!)</input><br>
-                                        </div>
-                                    </div>
-                                </div>
-
+                            <h1>Progress indicators</h1>
+                            <div class="progress" >
+                                <div id="loadProgress" class="bar" style="width: 0%;"></div>
                             </div>
+                            <div class="progress" >
+                                <div id="analyzeProgress" class="bar" style="width: 0%;"></div>
+                            </div>
+
+
+                            <h1>Model info</h1>
+                            <p id="list"></p>
+
+                            <h1>Layer info</h1>
+                            <p id="layerInfo"></p>
+
+                            <h1>Render options</h1>
+                            <input type="checkbox" id="showMovesCheckbox" value="1"  onclick="GCODE.ui.processOptions()" checked>Show non-extrusion moves</input><br>
+                            <input type="checkbox" id="showRetractsCheckbox" value="2"  onclick="GCODE.ui.processOptions()" checked>Show retracts and restarts</input><br>
+                            <input type="checkbox" id="moveModelCheckbox" value="3"  onclick="GCODE.ui.processOptions()" checked>Move model to the center of the grid</input><br>
+                            <input type="checkbox" id="thickExtrusionCheckbox" value="8"  onclick="GCODE.ui.processOptions()">Emulate extrusion width</input><br>
+                            Width modifier: <input type="text" value="2" id="widthModifier" onchange="GCODE.ui.processOptions()"/><br>
+                            <input type="checkbox" id="showNextLayer" value="9"  onclick="GCODE.ui.processOptions()" >Show +1 layer</input><br>
+
+                            <h1>GCode analyzer options</h1>
+                            These require re-analyzing file:<br>
+                            <input type="checkbox" id="sortLayersCheckbox" value="4" onclick="GCODE.ui.processOptions()" checked>Sort layers by Z</input><br>
+                            <input type="checkbox" id="purgeEmptyLayersCheckbox" value="5"  onclick="GCODE.ui.processOptions()" checked>Hide empty layers</input><br>
+                            <input type="checkbox" id="showGCodeCheckbox" value="6" onclick="GCODE.ui.processOptions()" checked>Show GCode in GCode tab (memory intensive!)</input><br>
 
                         </div>
                         {% endif %}
@@ -650,6 +575,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.fileupload.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/sockjs-0.3.4.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pusher.color.min.js') }}"></script>
 
         <!-- Include OctoPrint files -->
         <!-- TODO: merge/minimize in the future -->
@@ -677,6 +603,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}"></script>
 
     </body>
 </html>

@@ -3,51 +3,73 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from flask import request, jsonify, make_response
+import re
 
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, restricted_access, NO_CONTENT
 from octoprint.server.api import api
 import octoprint.util as util
 
+#~~ Printer
 
-#~~ Heater
+@api.route("/printer", methods=["GET"])
+def printerState():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
+	result = {}
+	result.update(_getTemperatureData(lambda x: x))
+
+	return jsonify(result)
 
 
-@api.route("/printer/heater", methods=["POST"])
+#~~ Tool
+
+
+@api.route("/printer/tool", methods=["POST"])
 @restricted_access
-def controlPrinterHotend():
+def printerToolCommand():
 	if not printer.isOperational():
 		return make_response("Printer is not operational", 409)
 
 	valid_commands = {
-		"temp": ["temps"],
-		"offset": ["offsets"]
+		"select": ["tool"],
+		"target": ["targets"],
+		"offset": ["offsets"],
+		"extrude": ["amount"]
 	}
 	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
 	if response is not None:
 		return response
 
-	valid_targets = ["hotend", "bed"]
+	validation_regex = re.compile("tool\d+")
+
+	##~~ tool selection
+	if command == "select":
+		tool = data["tool"]
+		if re.match(validation_regex, tool) is None:
+			return make_response("Invalid tool: %s" % tool, 400)
+		if not tool.startswith("tool"):
+			return make_response("Invalid tool for selection: %s" % tool, 400)
+
+		printer.changeTool(tool)
 
 	##~~ temperature
-	if command == "temp":
-		temps = data["temps"]
+	elif command == "target":
+		targets = data["targets"]
 
 		# make sure the targets are valid and the values are numbers
 		validated_values = {}
-		for type, value in temps.iteritems():
-			if not type in valid_targets:
-				return make_response("Invalid target for setting temperature: %s" % type, 400)
+		for tool, value in targets.iteritems():
+			if re.match(validation_regex, tool) is None:
+				return make_response("Invalid target for setting temperature: %s" % tool, 400)
 			if not isinstance(value, (int, long, float)):
-				return make_response("Not a number for %s: %r" % (type, value), 400)
-			validated_values[type] = value
+				return make_response("Not a number for %s: %r" % (tool, value), 400)
+			validated_values[tool] = value
 
 		# perform the actual temperature commands
-		# TODO make this a generic method call (printer.setTemperature(type, value)) to get rid of gcode here
-		if "hotend" in validated_values:
-			printer.command("M104 S%f" % validated_values["hotend"])
-		if "bed" in validated_values:
-			printer.command("M140 S%f" % validated_values["bed"])
+		for tool in validated_values.keys():
+			printer.setTemperature(tool, validated_values[tool])
 
 	##~~ temperature offset
 	elif command == "offset":
@@ -55,24 +77,99 @@ def controlPrinterHotend():
 
 		# make sure the targets are valid, the values are numbers and in the range [-50, 50]
 		validated_values = {}
-		for type, value in offsets.iteritems():
-			if not type in valid_targets:
-				return make_response("Invalid target for setting temperature: %s" % type, 400)
+		for tool, value in offsets.iteritems():
+			if re.match(validation_regex, tool) is None:
+				return make_response("Invalid target for setting temperature: %s" % tool, 400)
 			if not isinstance(value, (int, long, float)):
-				return make_response("Not a number for %s: %r" % (type, value), 400)
+				return make_response("Not a number for %s: %r" % (tool, value), 400)
 			if not -50 <= value <= 50:
-				return make_response("Offset %s not in range [-50, 50]: %f" % (type, value), 400)
-			validated_values[type] = value
+				return make_response("Offset %s not in range [-50, 50]: %f" % (tool, value), 400)
+			validated_values[tool] = value
 
 		# set the offsets
-		if "hotend" in validated_values and "bed" in validated_values:
-			printer.setTemperatureOffset(validated_values["hotend"], validated_values["bed"])
-		elif "hotend" in validated_values:
-			printer.setTemperatureOffset(validated_values["hotend"], None)
-		elif "bed" in validated_values:
-			printer.setTemperatureOffset(None, validated_values["bed"])
+		printer.setTemperatureOffset(validated_values)
+
+	##~~ extrusion
+	elif command == "extrude":
+		if printer.isPrinting():
+			# do not extrude when a print job is running
+			return make_response("Printer is currently printing", 409)
+
+		amount = data["amount"]
+		if not isinstance(amount, (int, long, float)):
+			return make_response("Not a number for extrusion amount: %r" % amount, 400)
+		printer.extrude(amount)
 
 	return NO_CONTENT
+
+
+@api.route("/printer/tool", methods=["GET"])
+def printerToolState():
+	def deleteBed(x):
+		data = dict(x)
+
+		if "bed" in data.keys():
+			del data["bed"]
+		return data
+
+	return jsonify(_getTemperatureData(deleteBed))
+
+
+##~~ Heated bed
+
+
+@api.route("/printer/bed", methods=["POST"])
+@restricted_access
+def printerBedCommand():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
+	valid_commands = {
+		"target": ["target"],
+		"offset": ["offset"]
+	}
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	##~~ temperature
+	if command == "target":
+		target = data["target"]
+
+		# make sure the target is a number
+		if not isinstance(target, (int, long, float)):
+			return make_response("Not a number: %r" % target, 400)
+
+		# perform the actual temperature command
+		printer.setTemperature("bed", target)
+
+	##~~ temperature offset
+	elif command == "offset":
+		offset = data["offsets"]
+
+		# make sure the offset is valid
+		if not isinstance(offset, (int, long, float)):
+			return make_response("Not a number: %r" % offset, 400)
+		if not -50 <= offset <= 50:
+			return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
+
+		# set the offsets
+		printer.setTemperatureOffset({"bed": offset})
+
+	return NO_CONTENT
+
+
+@api.route("/printer/bed", methods=["GET"])
+def printerBedState():
+	def deleteTools(x):
+		data = dict(x)
+
+		for k in data.keys():
+			if k.startswith("tool"):
+				del data[k]
+		return data
+
+	return jsonify(_getTemperatureData(deleteTools))
 
 
 ##~~ Print head
@@ -80,7 +177,7 @@ def controlPrinterHotend():
 
 @api.route("/printer/printhead", methods=["POST"])
 @restricted_access
-def controlPrinterPrinthead():
+def printerPrintheadCommand():
 	if not printer.isOperational() or printer.isPrinting():
 		# do not jog when a print job is running or we don't have a connection
 		return make_response("Printer is not operational or currently printing", 409)
@@ -92,8 +189,6 @@ def controlPrinterPrinthead():
 	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
 	if response is not None:
 		return response
-
-	movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
 
 	valid_axes = ["x", "y", "z"]
 	##~~ jog command
@@ -109,8 +204,7 @@ def controlPrinterPrinthead():
 
 		# execute the jog commands
 		for axis, value in validated_values.iteritems():
-			# TODO make this a generic method call (printer.jog(axis, value)) to get rid of gcode here
-			printer.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), value, movementSpeed[axis]), "G90"])
+			printer.jog(axis, value)
 
 	##~~ home command
 	elif command == "home":
@@ -122,38 +216,7 @@ def controlPrinterPrinthead():
 			validated_values.append(axis)
 
 		# execute the home command
-		# TODO make this a generic method call (printer.home(axis, ...)) to get rid of gcode here
-		printer.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_values)), "G90"])
-
-	return NO_CONTENT
-
-
-##~~ Feeder
-
-
-@api.route("/printer/feeder", methods=["POST"])
-@restricted_access
-def controlPrinterFeeder():
-	if not printer.isOperational() or printer.isPrinting():
-		# do not jog when a print job is running or we don't have a connection
-		return make_response("Printer is not operational or currently printing", 409)
-
-	valid_commands = {
-		"extrude": ["amount"]
-	}
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
-	if response is not None:
-		return response
-
-	extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
-
-	if command == "extrude":
-		amount = data["amount"]
-		if not isinstance(amount, (int, long, float)):
-			return make_response("Not a number for extrusion amount: %r" % amount, 400)
-
-		# TODO make this a generic method call (printer.extruder([hotend,] amount)) to get rid of gcode here
-		printer.commands(["G91", "G1 E%s F%d" % (data["amount"], extrusionSpeed), "G90"])
+		printer.home(validated_values)
 
 	return NO_CONTENT
 
@@ -163,7 +226,7 @@ def controlPrinterFeeder():
 
 @api.route("/printer/sd", methods=["POST"])
 @restricted_access
-def sdCommand():
+def printerSdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD support is disabled", 404)
 
@@ -190,7 +253,7 @@ def sdCommand():
 
 
 @api.route("/printer/sd", methods=["GET"])
-def sdState():
+def printerSdState():
 	if not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD support is disabled", 404)
 
@@ -237,4 +300,29 @@ def getCustomControls():
 	customControls = settings().get(["controls"])
 	return jsonify(controls=customControls)
 
+
+def _getTemperatureData(filter):
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
+	tempData = printer.getCurrentTemperatures()
+	result = {
+		"temps": filter(tempData)
+	}
+
+	if "history" in request.values.keys() and request.values["history"] in valid_boolean_trues:
+		tempHistory = printer.getTemperatureHistory()
+
+		limit = 300
+		if "limit" in request.values.keys() and unicode(request.values["limit"]).isnumeric():
+			limit = int(request.values["limit"])
+
+		history = list(tempHistory)
+		limit = min(limit, len(history))
+
+		result.update({
+			"history": map(lambda x: filter(x), history[-limit:])
+		})
+
+	return result
 
