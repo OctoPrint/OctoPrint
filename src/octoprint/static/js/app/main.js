@@ -315,12 +315,12 @@ $(function() {
         controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
+        settingsViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
                 $("#gcode_upload").fileupload("enable");
 
-                settingsViewModel.requestData();
                 if (data.admin) {
                     usersViewModel.requestData();
                 }
