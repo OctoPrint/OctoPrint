@@ -78,17 +78,17 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         } else {
             self.listHelper.selectItem(function(item) {
                 return item.name == filename;
-            })
+            });
         }
-    }
+    };
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
@@ -99,7 +99,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
         self.isSdReady(data.flags.sdReady);
-    }
+    };
 
     self.requestData = function(filenameToFocus, locationToFocus) {
         $.ajax({
@@ -110,7 +110,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 self.fromResponse(response, filenameToFocus, locationToFocus);
             }
         });
-    }
+    };
 
     self.fromResponse = function(response, filenameToFocus, locationToFocus) {
         var files = response.files;
@@ -133,7 +133,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
 
         self.highlightFilename(self.printerState.filename());
-    }
+    };
 
     self.loadFile = function(filename, printAfterLoad) {
         var file = self.listHelper.getItem(function(item) {return item.name == filename});
@@ -145,8 +145,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify({command: "select", print: printAfterLoad})
-        })
-    }
+        });
+    };
 
     self.removeFile = function(filename) {
         var file = self.listHelper.getItem(function(item) {return item.name == filename});
@@ -161,21 +161,24 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
         $.ajax({
             url: file.refs.resource,
-            type: "DELETE"
-        })
-    }
+            type: "DELETE",
+            success: function() {
+                self.requestData();
+            }
+        });
+    };
 
     self.initSdCard = function() {
         self._sendSdCommand("init");
-    }
+    };
 
     self.releaseSdCard = function() {
         self._sendSdCommand("release");
-    }
+    };
 
     self.refreshSdFiles = function() {
         self._sendSdCommand("refresh");
-    }
+    };
 
     self._sendSdCommand = function(command) {
         $.ajax({
@@ -185,7 +188,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify({command: command})
         });
-    }
+    };
 
     self.getPopoverContent = function(data) {
         var output = "<p><strong>Uploaded:</strong> " + formatDate(data["date"]) + "</p>";
@@ -212,23 +215,23 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             output += "</p>";
         }
         return output;
-    }
+    };
 
     self.getSuccessClass = function(data) {
         if (!data["prints"] || !data["prints"]["last"]) {
             return "";
         }
         return data["prints"]["last"]["success"] ? "text-success" : "text-error";
-    }
+    };
 
     self.enableRemove = function(data) {
         return self.loginState.isUser() && !(self.listHelper.isSelected(data) && (self.isPrinting() || self.isPaused()));
-    }
+    };
 
     self.enableSelect = function(data, printAfterSelect) {
         var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
         return isLoadActionPossible && !self.listHelper.isSelected(data);
-    }
+    };
 
 }
 
