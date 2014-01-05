@@ -11,7 +11,6 @@ GCODE.renderer = (function(){
     var canvas;
     var ctx;
     var zoomFactor= 2.8, zoomFactorDelta = 0.4;
-    var scaleF = 0;
     var gridStep=10;
     var ctxHeight, ctxWidth;
     var prevX=0, prevY=0;
@@ -52,6 +51,7 @@ GCODE.renderer = (function(){
 
     var offsetModelX = 0, offsetModelY = 0;
     var offsetBedX = 0, offsetBedY = 0;
+    var scaleX = 1, scaleY = 1;
     var speeds = [];
     var speedsByLayer = {};
 
@@ -443,10 +443,12 @@ GCODE.renderer = (function(){
             speeds = mdlInfo.speeds;
             speedsByLayer = mdlInfo.speedsByLayer;
 
+            // determine bed and model offsets
             if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
             if (renderOptions["centerViewport"] || renderOptions["zoomInOnModel"]) {
-                offsetModelX = (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
-                offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
+                var canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
+                offsetModelX = canvasCenter.x - (mdlInfo.min.x + mdlInfo.modelSize.x / 2) * zoomFactor;
+                offsetModelY = canvasCenter.y + (mdlInfo.min.y + mdlInfo.modelSize.y / 2) * zoomFactor;
                 offsetBedX = 0;
                 offsetBedY = 0;
             } else if (renderOptions["moveModel"]) {
@@ -464,26 +466,25 @@ GCODE.renderer = (function(){
 
             var pt = ctx.transformedPoint(canvas.width/2,canvas.height/2);
             var transform = ctx.getTransform();
-            var scaleX, scaleY;
-            if (scaleF && transform.a && transform.d) {
-                scaleX = scaleF / transform.a;
-                scaleY = scaleF / transform.d;
+            var scaleF;
+            if (scaleX && scaleY && transform.a && transform.d) {
                 ctx.translate(pt.x, pt.y);
-                ctx.scale(1 / (0.98 * scaleX), 1 / (0.98 * scaleY));
+                ctx.scale(1 / scaleX, 1 / scaleY);
                 ctx.translate(-pt.x, -pt.y);
-                pt = ctx.transformedPoint(canvas.width/2,canvas.height/2);
             }
             if (renderOptions["zoomInOnModel"]) {
-                scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width) / mdlInfo.modelSize.x / zoomFactor : (canvas.height) / mdlInfo.modelSize.y / zoomFactor;
+                scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width - 10) / mdlInfo.modelSize.x : (canvas.height - 10) / mdlInfo.modelSize.y;
+                scaleF /= zoomFactor;
                 if (transform.a && transform.d) {
                     scaleX = scaleF / transform.a;
                     scaleY = scaleF / transform.d;
                     ctx.translate(pt.x,pt.y);
-                    ctx.scale(0.98 * scaleX, 0.98 * scaleY);
+                    ctx.scale(scaleX, scaleY);
                     ctx.translate(-pt.x, -pt.y);
                 }
             } else {
-                scaleF = 0;
+                scaleX = 1;
+                scaleY = 1;
             }
 
             this.render(layerNum, 0, model[layerNum].length);
