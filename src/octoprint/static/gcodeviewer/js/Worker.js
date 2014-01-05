@@ -6,17 +6,11 @@
 
     var gcode;
     var firstReport;
+    var toolOffsets = [
+        {x: 0, y: 0}
+    ];
     var z_heights = {};
     var model = [];
-    var gCodeOptions = {
-        sortLayers: false,
-        purgeEmptyLayers: true,
-        analyzeModel: false,
-        toolOffsets: [
-            {x: 0, y: 0},
-            {x: 0, y: -21.6}
-        ]
-    };
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
     var modelSize = {x: undefined, y: undefined, z: undefined};
@@ -94,18 +88,19 @@
         });
     };
 
-    var purgeLayers = function(){
-        var purge=true;
-        for(var i=0;i<model.length;i++){
-            purge=true;
-            if(!model[i])purge=true;
-            else {
-                for(var j=0;j<model[i].length;j++){
-                    if(model[i][j].extrude)purge=false;
+    var purgeLayers = function () {
+        var purge = true;
+        for (var i = 0; i < model.length; i++) {
+            purge = true;
+            if (!model[i]) {
+                purge = true;
+            } else {
+                for (var j = 0; j < model[i].length; j++) {
+                    if (model[i][j].extrude)purge = false;
                 }
             }
-            if(!purge){
-                layerCnt+=1;
+            if (!purge) {
+                layerCnt += 1;
             }
         }
     };
@@ -169,10 +164,12 @@
                     filamentByLayer[cmds[j].prevZ][tool] += cmds[j].extrusion;
                 }
 
+                var diffX = cmds[j].x - cmds[j].prevX;
+                var diffY = cmds[j].y - cmds[j].prevY;
                 if (x_ok && y_ok) {
-                    printTimeAdd = Math.sqrt(Math.pow(cmds[j].x - cmds[j].prevX, 2) + Math.pow(cmds[j].y - cmds[j].prevY,2)) / (cmds[j].speed / 60);
+                    printTimeAdd = Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
                 } else if (cmds[j].retract === 0 && cmds[j].extrusion !== 0) {
-                    tmp1 = Math.sqrt(Math.pow(cmds[j].x - cmds[j].prevX, 2) + Math.pow(cmds[j].y - cmds[j].prevY, 2)) / (cmds[j].speed/60);
+                    tmp1 = Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
                     tmp2 = Math.abs(cmds[j].extrusion / (cmds[j].speed / 60));
                     printTimeAdd = Math.max(tmp1, tmp2);
                 } else if (cmds[j].retract !== 0) {
@@ -243,7 +240,7 @@
         var tool = 0;
         var prev_extrude = [{a: 0, b: 0, c: 0, e: 0, abs: 0}];
         var prev_retract = [0];
-        var offset = gCodeOptions.toolOffsets[0];
+        var offset = toolOffsets[0];
 
         model = [];
         for (var i=0; i < gcode.length; i++) {
@@ -295,7 +292,10 @@
 
                             break;
 
-                        case 'e' || 'a' || 'b' || 'c':
+                        case 'e':
+                        case 'a':
+                        case 'b':
+                        case 'c':
                             assumeNonDC = true;
                             numSlice = Number(args[j].slice(1));
 
@@ -326,9 +326,6 @@
                         case 'f':
                             numSlice = parseFloat(args[j].slice(1));
                             lastF = numSlice;
-                            break;
-
-                        default:
                             break;
                     }
                 }
@@ -376,22 +373,26 @@
                             case 'x':
                                 x = Number(args[j].slice(1)) + offset.x;
                                 break;
+
                             case 'y':
                                 y = Number(args[j].slice(1)) + offset.y;
                                 break;
+
                             case 'z':
                                 z = Number(args[j].slice(1));
                                 prevZ = z;
                                 break;
-                            case 'e'||'a'||'b'||'c':
+
+                            case 'e':
+                            case 'a':
+                            case 'b':
+                            case 'c':
                                 numSlice = Number(args[j].slice(1));
                                 if(!extrudeRelative)
                                     prev_extrude[tool][argChar] = 0;
                                 else {
                                     prev_extrude[tool][argChar] = numSlice;
                                 }
-                                break;
-                            default:
                                 break;
                         }
                     }
@@ -442,7 +443,8 @@
                 if (!prev_extrude[tool]) prev_extrude[tool] = {a: 0, b: 0, c: 0, e: 0, abs: 0};
                 if (!prev_retract[tool]) prev_retract[tool] = 0;
 
-                offset = gCodeOptions.toolOffsets[tool];
+                offset = toolOffsets[tool];
+                if (!offset) offset = {x: 0, y: 0};
             }
 
             if (typeof(z) !== 'undefined' && z != prevZ) {
@@ -508,15 +510,17 @@
 
 
     var parseGCode = function(message){
-            gcode = message.gcode;
-            firstReport = message.options.firstReport;
+        gcode = message.gcode;
+        firstReport = message.options.firstReport;
+        toolOffsets = message.options.toolOffsets;
+        if (!toolOffsets || toolOffsets.length == 0) toolOffsets = [{x: 0, y: 0}]
 
-            doParse();
-            gcode = [];
-            self.postMessage({
-                "cmd": "returnModel",
-                "msg": {}
-            });
+        doParse();
+        gcode = [];
+        self.postMessage({
+            "cmd": "returnModel",
+            "msg": {}
+        });
     };
 
     var runAnalyze = function(message){
@@ -541,9 +545,9 @@
     };
 
     var setOption = function(options){
-            for(var opt in options){
-                gCodeOptions[opt] = options[opt];
-            }
+        for(var opt in options){
+            gCodeOptions[opt] = options[opt];
+        }
     };
 
 onmessage = function (e){

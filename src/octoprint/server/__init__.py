@@ -59,7 +59,8 @@ def index():
 		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
 		debug=debug,
 		gitBranch=branch,
-		gitCommit=commit
+		gitCommit=commit,
+		stylesheet=settings().get(["devel", "stylesheet"])
 	)
 
 

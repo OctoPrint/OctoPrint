@@ -40,7 +40,9 @@ def getSettings():
 			"movementSpeedZ": movementSpeedZ,
 			"movementSpeedE": movementSpeedE,
 			"invertAxes": s.get(["printerParameters", "invertAxes"]),
-			"numExtruders": s.get(["printerParameters", "numExtruders"])
+			"numExtruders": s.get(["printerParameters", "numExtruders"]),
+			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
+			"bedDimensions": s.get(["printerParameters", "bedDimensions"])
 		},
 		"webcam": {
 			"streamUrl": s.get(["webcam", "stream"]),
@@ -115,6 +117,8 @@ def setSettings():
 			if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
 			if "invertAxes" in data["printer"].keys(): s.set(["printerParameters", "invertAxes"], data["printer"]["invertAxes"])
 			if "numExtruders" in data["printer"].keys(): s.setInt(["printerParameters", "numExtruders"], data["printer"]["numExtruders"])
+			if "extruderOffsets" in data["printer"].keys(): s.set(["printerParameters", "extruderOffsets"], data["printer"]["extruderOffsets"])
+			if "bedDimensions" in data["printer"].keys(): s.set(["printerParameters", "bedDimensions"], data["printer"]["bedDimensions"])
 
 		if "webcam" in data.keys():
 			if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])

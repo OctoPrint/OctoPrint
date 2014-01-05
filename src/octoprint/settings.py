@@ -86,7 +86,13 @@ default_settings = {
 		},
 		"pauseTriggers": [],
 		"invertAxes": [],
-		"numExtruders": 1
+		"numExtruders": 1,
+		"extruderOffsets": [
+			{"x": 0.0, "y": 0.0}
+		],
+		"bedDimensions": {
+			"x": 200.0, "y": 200.0
+		}
 	},
 	"appearance": {
 		"name": "",
@@ -126,6 +132,7 @@ default_settings = {
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
 	"devel": {
+		"stylesheet": "css",
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,

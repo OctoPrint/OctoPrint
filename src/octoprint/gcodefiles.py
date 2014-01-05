@@ -77,7 +77,7 @@ class GcodeManager:
 
 		self._metadataAnalyzer = MetadataAnalyzer(getPathCallback=self.getAbsolutePath, loadedCallback=self._onMetadataAnalysisFinished)
 
-		self._loadMetadata()
+		self._loadMetadata(migrate=True)
 		self._processAnalysisBacklog()
 
 	def _processAnalysisBacklog(self):
@@ -112,13 +112,12 @@ class GcodeManager:
 			analysisResult["estimatedPrintTime"] = gcode.totalMoveTimeMinute * 60
 			dirty = True
 		if gcode.extrusionAmount:
-			analysisResult["filament"] = {
-				"length": gcode.extrusionAmount
-			}
-			if gcode.calculateVolumeCm3():
-				analysisResult["filament"].update({
-					"volume": gcode.calculateVolumeCm3()
-				})
+			analysisResult["filament"] = {}
+			for i in range(len(gcode.extrusionAmount)):
+				analysisResult["filament"]["tool%d" % i] = {
+					"length": gcode.extrusionAmount[i],
+					"volume": gcode.extrusionVolume[i]
+				}
 			dirty = True
 
 		if dirty:
@@ -129,7 +128,7 @@ class GcodeManager:
 			self._saveMetadata()
 		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"file": basename, "result": analysisResult})
 
-	def _loadMetadata(self):
+	def _loadMetadata(self, migrate=False):
 		if os.path.exists(self._metadataFile) and os.path.isfile(self._metadataFile):
 			with self._metadataFileAccessMutex:
 				with open(self._metadataFile, "r") as f:
@@ -139,7 +138,8 @@ class GcodeManager:
 			self._metadata = {}
 
 		# TODO: Remove in a couple of versions (2013-12-21)
-		self._migrateMetadata()
+		if migrate:
+			self._migrateMetadata()
 
 	def _migrateMetadata(self):
 		self._logger.info("Migrating metadata if necessary...")
@@ -170,14 +170,30 @@ class GcodeManager:
 					match = re.match(filamentRe, filament)
 					if match:
 						metadata["gcodeAnalysis"]["filament"] = {
-							"length": int(float(match.group(1)) * 1000)
+							"tool0": {
+								"length": int(float(match.group(1)) * 1000)
+							}
 						}
 						if match.group(3) is not None:
-							metadata["gcodeAnalysis"]["filament"].update({
+							metadata["gcodeAnalysis"]["filament"]["tool0"].update({
 								"volume": float(match.group(3))
 							})
 						self._metadataDirty = True
 						updated = True
+				elif isinstance(filament, dict) and ("length" in filament.keys() or "volume" in filament.keys()):
+					metadata["gcodeAnalysis"]["filament"] = {
+						"tool0": {}
+					}
+					if "length" in filament.keys():
+						metadata["gcodeAnalysis"]["filament"]["tool0"].update({
+							"length": filament["length"]
+						})
+					if "volume" in filament.keys():
+						metadata["gcodeAnalysis"]["filament"]["tool0"].update({
+							"volume": filament["volume"]
+						})
+					self._metadataDirty = True
+					updated = True
 
 			if updated:
 				updateCount += 1

@@ -19,6 +19,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
     self.printer_numExtruders = ko.observable(undefined);
+    self.printer_extruderOffsets = ko.observableArray([]);
+    self.printer_bedDimensions = ko.observable(undefined);
 
     self.webcam_streamUrl = ko.observable(undefined);
     self.webcam_snapshotUrl = ko.observable(undefined);
@@ -101,12 +103,15 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_invertY = self.koInvertAxis('y');
     self.printer_invertZ = self.koInvertAxis('z');
 
-    self.requestData = function() {
+    self.requestData = function(callback) {
         $.ajax({
             url: API_BASEURL + "settings",
             type: "GET",
             dataType: "json",
-            success: self.fromResponse
+            success: function(response) {
+                self.fromResponse(response);
+                if (callback) callback();
+            }
         });
     }
 
@@ -123,6 +128,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_movementSpeedE(response.printer.movementSpeedE);
         self.printer_invertAxes(response.printer.invertAxes);
         self.printer_numExtruders(response.printer.numExtruders);
+        self.printer_extruderOffsets(response.printer.extruderOffsets);
+        self.printer_bedDimensions(response.printer.bedDimensions);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -181,7 +188,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "movementSpeedZ": self.printer_movementSpeedZ(),
                 "movementSpeedE": self.printer_movementSpeedE(),
                 "invertAxes": self.printer_invertAxes(),
-                "numExtruders": self.printer_numExtruders()
+                "numExtruders": self.printer_numExtruders(),
+                "extruderOffsets": self.printer_extruderOffsets(),
+                "bedDimensions": self.printer_bedDimensions()
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),
@@ -227,7 +236,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "config": self.cura_config()
             },
             "terminalFilters": self.terminalFilters()
-        }
+        };
 
         $.ajax({
             url: API_BASEURL + "settings",
@@ -239,7 +248,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 self.fromResponse(response);
                 $("#settings_dialog").modal("hide");
             }
-        })
+        });
     }
 
 }

@@ -22,7 +22,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     self.sd = ko.observable(undefined);
     self.timelapse = ko.observable(undefined);
 
-    self.filament = ko.observable(undefined);
+    self.filament = ko.observableArray([]);
     self.estimatedPrintTime = ko.observable(undefined);
 
     self.currentHeight = ko.observable(undefined);
@@ -31,11 +31,6 @@ function PrinterStateViewModel(loginStateViewModel) {
         if (!self.estimatedPrintTime())
             return "-";
         return formatDuration(self.estimatedPrintTime());
-    });
-    self.filamentString = ko.computed(function() {
-        if (!self.filament())
-            return "-";
-        return formatFilament(self.filament());
     });
     self.byteString = ko.computed(function() {
         if (!self.filesize())
@@ -127,7 +122,20 @@ function PrinterStateViewModel(loginStateViewModel) {
             self.sd(undefined);
         }
         self.estimatedPrintTime(data.estimatedPrintTime);
-        self.filament(data.filament);
+
+        var result = [];
+        if (_.keys(data.filament).length > 0) {
+            var i = 0;
+            do {
+                var key = "tool" + i;
+                result[i] = {
+                    name: ko.observable("Tool " + i),
+                    data: ko.observable(data.filament[key])
+                }
+                i++;
+            } while (data.filament.hasOwnProperty("tool" + i));
+        }
+        self.filament(result);
     }
 
     self._processProgressData = function(data) {

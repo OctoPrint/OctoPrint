@@ -31,7 +31,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
     self.temperature_profiles = settingsViewModel.temperature_profiles;
 
-    self.heaterOptions = ko.observable(undefined);
+    self.heaterOptions = ko.observable({});
 
     self.settingsViewModel.printer_numExtruders.subscribe(function(oldVal, newVal) {
         var graphColors = ["red", "orange", "green", "brown", "purple"];
@@ -209,6 +209,8 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         if (graph.length) {
             var data = [];
             var heaterOptions = self.heaterOptions();
+            if (!heaterOptions) return;
+
             _.each(_.keys(heaterOptions), function(type) {
                 var actuals = [];
                 var targets = [];

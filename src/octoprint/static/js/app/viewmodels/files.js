@@ -192,7 +192,16 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         if (data["gcodeAnalysis"]) {
             output += "<p>";
             if (data["gcodeAnalysis"]["filament"]) {
-                output += "<strong>Filament:</strong> " + formatFilament(data["gcodeAnalysis"]["filament"]) + "<br>";
+                var filament = data["gcodeAnalysis"]["filament"];
+                if (_.keys(filament).length == 1) {
+                    output += "<strong>Filament:</strong> " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+                } else {
+                    var i = 0;
+                    do {
+                        output += "<strong>Filament (Tool " + i + "):</strong> " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
+                        i++;
+                    } while (filament.hasOwnProperty("tool" + i));
+                }
             }
             output += "<strong>Estimated Print Time:</strong> " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
             output += "</p>";
