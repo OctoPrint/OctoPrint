@@ -486,7 +486,7 @@ class Printer():
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def mcSdFiles(self, files):
-		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode", "files": files})
+		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
 		self._sdFilelistAvailable.set()
 
 	def mcFileSelected(self, filename, filesize, sd):

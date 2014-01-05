@@ -120,13 +120,12 @@ GCODE.gCodeReader = (function(){
 // ***** PUBLIC *******
     return {
         clear: function() {
-            delete lines;
-            delete gcode;
+            model = [];
+            z_heights = [];
         },
 
         loadFile: function(reader){
-            model = [];
-            z_heights = [];
+            this.clear();
 
             var totalSize = reader.target.result.length;
             lines = reader.target.result.split(/\n/);
@@ -144,7 +143,6 @@ GCODE.gCodeReader = (function(){
                     }
                 }
             );
-            this.clear();
         },
 
         setOption: function(options){

@@ -7,18 +7,18 @@
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
-        {% if stylesheet == "less" %}
-            <link href="{{ url_for('static', filename='less/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
-            <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
-        {% else %}
-            <link href="{{ url_for('static', filename='css/octoprint.css') }}" rel="stylesheet" type="text/css" media="screen">
-        {% endif %}
         <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/bootstrap-slider.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.pnotify.default.css') }}" rel="stylesheet" media="screen">
+        {% if stylesheet == "less" %}
+            <link href="{{ url_for('static', filename='less/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
+            <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
+        {% else %}
+            <link href="{{ url_for('static', filename='css/octoprint.css') }}" rel="stylesheet" type="text/css" media="screen">
+        {% endif %}
 
         <script lang="javascript">
             var BASEURL = "{{ url_for('index') }}";
@@ -33,6 +33,8 @@
             var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
             var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
             var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
+            var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold }};
+            var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
 
             var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + "/sockjs";
             var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
@@ -425,64 +427,80 @@
                         </div>
                         {% if enableGCodeVisualizer %}
                         <div class="tab-pane" id="gcode">
-                            <input id="gcode_slider_layers" type="text">
-                            <canvas id="gcode_canvas" width="568" height="568"></canvas>
-                            <input id="gcode_slider_commands" type="text" style="width: 554px">
+                            <div data-bind="visible: !waitForApproval()">
+                                <input id="gcode_slider_layers" type="text">
+                                <canvas id="gcode_canvas" width="568" height="568"></canvas>
+                                <input id="gcode_slider_commands" type="text" style="width: 554px">
 
-                            <div class="progress" >
-                                <div class="bar" style="width: 0%;" data-bind="text: ui_progress_text, style: { width: ui_progress_percentage() + '%' }"></div>
+                                <div class="progress" >
+                                    <div class="bar" style="width: 0%;" data-bind="text: ui_progress_text, style: { width: ui_progress_percentage() + '%' }"></div>
+                                </div>
+
+                                <div class="row-fluid">
+                                    <div class="span7">
+                                        <h1>Model info</h1>
+                                        <p data-bind="html: ui_modelInfo"></p>
+
+                                        <h1>Layer info</h1>
+                                        <p data-bind="html: ui_layerInfo"></p>
+                                    </div>
+                                    <div class="span5">
+                                        <h1>Renderer options</h1>
+
+                                        <p>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_syncProgress">Sync with job progress
+                                            </label>
+                                        </p>
+                                        <p>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_centerViewport">Center viewport on model
+                                            </label>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_zoomOnModel">Zoom in on model
+                                            </label>
+                                        </p>
+
+                                        <p>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_showMoves">Show moves
+                                            </label>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_showRetracts">Show retracts
+                                            </label>
+                                        </p>
+
+                                        <p>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_showPrevious">Also show previous layer
+                                            </label>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_showNext">Also show next layer
+                                            </label>
+                                        </p>
+
+                                        <p>
+                                            <button class="btn btn-block" data-bind="click: reload, enable: enableReload">Reload</button>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
+                            <div data-bind="visible: waitForApproval">
+                                <h1>Warning</h1>
 
-                            <div class="row-fluid">
-                                <div class="span7">
-                                    <h1>Model info</h1>
-                                    <p data-bind="html: ui_modelInfo"></p>
+                                <p>
+                                You've selected <strong data-bind="text: selectedFile.name"></strong> for printing which has a size of
+                                <strong data-bind="text: formatSize(selectedFile.size())"></strong>. Depending on your machine this
+                                might be too large for rendering and cause your browser to become unresponsive or crash.
+                                </p>
 
-                                    <h1>Layer info</h1>
-                                    <p data-bind="html: ui_layerInfo"></p>
-                                </div>
-                                <div class="span5">
-                                    <h1>Renderer options</h1>
+                                <p>
+                                Are you sure you want to visualize this file nevertheless?
+                                </p>
 
-                                    <p>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_syncProgress">Sync with job progress
-                                        </label>
-                                    </p>
-                                    <p>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_centerModel">Center model on bed
-                                        </label>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_centerViewport">Center viewport on model
-                                        </label>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_zoomOnModel">Zoom in on model
-                                        </label>
-                                    </p>
-
-                                    <p>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_showMoves">Show moves
-                                        </label>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_showRetracts">Show retracts
-                                        </label>
-                                    </p>
-
-                                    <p>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_showPrevious">Also show previous layer
-                                        </label>
-                                        <label class="checkbox">
-                                            <input type="checkbox" data-bind="checked: renderer_showNext">Also show next layer
-                                        </label>
-                                    </p>
-
-                                    <p>
-                                        <button class="btn btn-block" data-bind="click: refresh">Refresh</button>
-                                    </p>
-                                </div>
+                                <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
+                                    Yes, please visualize <span data-bind="text: selectedFile.name"></span> regardless of its size
+                                </button>
                             </div>
                         </div>
                         {% endif %}
@@ -608,6 +626,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/sockjs-0.3.4.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pusher.color.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/detectmobilebrowser.js') }}"></script>
 
         <!-- Include OctoPrint files -->
         <!-- TODO: merge/minimize in the future -->

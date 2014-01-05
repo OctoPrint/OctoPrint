@@ -54,7 +54,7 @@ def getSettings():
 			"flipV": s.getBoolean(["webcam", "flipV"])
 		},
 		"feature": {
-			"gcodeViewer": s.getBoolean(["feature", "gCodeVisualizer"]),
+			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
@@ -130,7 +130,7 @@ def setSettings():
 			if "flipV" in data["webcam"].keys(): s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
 
 		if "feature" in data.keys():
-			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["feature", "gCodeVisualizer"], data["feature"]["gcodeViewer"])
+			if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
 			if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 			if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])

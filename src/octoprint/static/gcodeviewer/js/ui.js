@@ -7,8 +7,6 @@
 var GCODE = {};
 
 GCODE.ui = (function(){
-    var gCodeLines = {first: 0, last: 0};
-
     var uiOptions = {
         container: undefined,
         toolOffsets: undefined,
@@ -28,7 +26,6 @@ GCODE.ui = (function(){
         if (!onlyInfo) {
             var segmentCount = GCODE.renderer.getLayerNumSegments(layerNum);
             GCODE.renderer.render(layerNum, 0, segmentCount - 1);
-            gCodeLines = GCODE.gCodeReader.getGCodeLines(layerNum, 0, segmentCount - 1);
         }
 
         if (uiOptions["onLayerSelected"]) {
@@ -45,7 +42,6 @@ GCODE.ui = (function(){
     };
 
     var switchCommands = function(layerNum, first, last) {
-        gCodeLines = GCODE.gCodeReader.getGCodeLines(layerNum, first, last);
         GCODE.renderer.render(layerNum, first, last);
     };
 
@@ -166,11 +162,16 @@ GCODE.ui = (function(){
         },
 
         clear: function() {
-            GCODE.renderer.clear();
             GCODE.gCodeReader.clear();
-            delete this.worker;
+            GCODE.renderer.clear();
 
-            this.init(uiOptions);
+            setProgress("", 0);
+            if (uiOptions["onLayerSelected"]) {
+                uiOptions.onLayerSelected();
+            }
+            if (uiOptions["onModelLoaded"]) {
+                uiOptions.onModelLoaded();
+            }
         },
 
         updateLayerInfo: function(layerNum){
@@ -185,12 +186,10 @@ GCODE.ui = (function(){
 
         changeSelectedLayer: function(newLayerNum) {
             switchLayer(newLayerNum);
-            if (callback) callback(newLayerNum, segmentCount);
         },
 
         changeSelectedCommands: function(layerNum, first, last) {
             switchCommands(layerNum, first, last);
-            if (callback) callback(first, last);
         }
     }
 }());

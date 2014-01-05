@@ -51,7 +51,7 @@ def index():
 		"index.jinja2",
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
-		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
+		enableGCodeVisualizer=settings().get(["gcodeViewer", "enabled"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
@@ -60,7 +60,9 @@ def index():
 		debug=debug,
 		gitBranch=branch,
 		gitCommit=commit,
-		stylesheet=settings().get(["devel", "stylesheet"])
+		stylesheet=settings().get(["devel", "stylesheet"]),
+		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
+		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"])
 	)
 
 

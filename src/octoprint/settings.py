@@ -55,8 +55,12 @@ default_settings = {
 			"options": {}
 		}
 	},
+	"gcodeViewer": {
+		"enabled": True,
+		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
+		"sizeThreshold": 20 * 1024 * 1024, # 20MB
+	},
 	"feature": {
-		"gCodeVisualizer": True,
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,

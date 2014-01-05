@@ -28,6 +28,15 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     self.ui_modelInfo = ko.observable("");
     self.ui_layerInfo = ko.observable("");
 
+    self.enableReload = ko.observable(false);
+
+    self.waitForApproval = ko.observable(false);
+    self.selectedFile = {
+        name: ko.observable(undefined),
+        date: ko.observable(undefined),
+        size: ko.observable(undefined)
+    };
+
     self.renderer_centerModel = ko.observable(false);
     self.renderer_centerViewport = ko.observable(false);
     self.renderer_zoomOnModel = ko.observable(false);
@@ -116,6 +125,9 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     self.layerSlider = undefined;
     self.layerCommandSlider = undefined;
 
+    self.currentLayer = undefined;
+    self.currentCommand = undefined;
+
     self.initialize = function() {
         self._configureLayerSlider();
         self._configureLayerCommandSlider();
@@ -136,12 +148,15 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
     self.reinitialize = function() {
         self.enabled = false;
+        self.enableReload(false);
         self.loadedFilename = undefined;
         self.loadedFileDate = undefined;
-        GCODE.ui.clear();
-
-        self.initialize();
+        self.clear();
     };
+
+    self.clear = function() {
+        GCODE.ui.clear();
+    }
 
     self._configureLayerSlider = function() {
         self.layerSlider = $("#gcode_slider_layers").slider({
@@ -172,6 +187,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self.loadFile = function(filename, date){
+        self.enableReload(false);
         if (self.status == "idle" && self.errorCount < 3) {
             self.status = "request";
             $.ajax({
@@ -184,13 +200,14 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
                         self.loadedFilename = filename;
                         self.loadedFileDate = date;
                         self.status = "idle";
+                        self.enableReload(true);
                     }
                 },
                 error: function() {
                     self.status = "idle";
                     self.errorCount++;
                 }
-            })
+            });
         }
     };
 
@@ -206,7 +223,8 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         self.layerCommandSlider.slider("disable");
     };
 
-    self.refresh = function() {
+    self.reload = function() {
+        if (!self.enableReload()) return;
         self.loadFile(self.loadedFilename, self.loadedFileDate);
     };
 
@@ -219,19 +237,25 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self._processData = function(data) {
-        if (!self.enabled) return;
         if (!data.job.file || !data.job.file.name && (self.loadedFilename || self.loadedFileDate)) {
+            self.waitForApproval(false);
+
             self.loadedFilename = undefined;
             self.loadedFileDate = undefined;
-            GCODE.renderer.clear();
+            self.selectedFile.name(undefined);
+            self.selectedFile.date(undefined);
+            self.selectedFile.size(undefined);
+
+            self.clear();
             return;
         }
+        if (!self.enabled) return;
         self.currentlyPrinting = data.state.flags && (data.state.flags.printing || data.state.flags.paused);
 
         if(self.loadedFilename
                 && self.loadedFilename == data.job.file.name
                 && self.loadedFileDate == data.job.file.date) {
-            if (self.currentlyPrinting && self.renderer_syncProgress()) {
+            if (self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                 var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
                 if(cmdIndex){
                     GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
@@ -242,10 +266,30 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
                 }
             }
             self.errorCount = 0
-        } else if (data.job.file.name && data.job.file.origin != "sdcard") {
-            self.loadFile(data.job.file.name, data.job.file.date);
+        } else {
+            self.clear();
+            if (data.job.file.name && data.job.file.origin != "sdcard"
+                    && (!self.waitForApproval() || (self.selectedFile.name() != data.job.file.name || self.selectedFile.date() != data.job.file.date))) {
+                self.selectedFile.name(data.job.file.name);
+                self.selectedFile.date(data.job.file.date);
+                self.selectedFile.size(data.job.file.size);
+
+                if (data.job.file.size > CONFIG_GCODE_SIZE_THRESHOLD || ($.browser.mobile && data.job.file.size > CONFIG_GCODE_MOBILE_SIZE_THRESHOLD)) {
+                    self.waitForApproval(true);
+                    self.loadedFilename = undefined;
+                    self.loadedFileDate = undefined;
+                } else {
+                    self.waitForApproval(false);
+                    self.loadFile(data.job.file.name, data.job.file.date);
+                }
+            }
         }
     };
+
+    self.approveLargeFile = function() {
+        self.waitForApproval(false);
+        self.loadFile(self.selectedFile.name(), self.selectedFile.date());
+    }
 
     self._onProgress = function(type, percentage) {
         self.ui_progress_type(type);
@@ -258,6 +302,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             self.layerSlider.slider("disable");
             self.layerSlider.slider("setMax", 1);
             self.layerSlider.slider("setValue", 0);
+            self.currentLayer = 0;
         } else {
             var output = [];
             output.push("Model size is: " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
@@ -286,6 +331,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             self.layerCommandSlider.slider("disable");
             self.layerCommandSlider.slider("setMax", 1);
             self.layerCommandSlider.slider("setValue", [0, 1]);
+            self.currentCommand = [0, 1];
         } else {
             var output = [];
             output.push("Layer number: " + layer.number);
@@ -312,6 +358,9 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         if (self.currentlyPrinting && self.renderer_syncProgress()) self.renderer_syncProgress(false);
 
         var value = event.value;
+        if (self.currentLayer !== undefined && self.currentLayer == value) return;
+        self.currentLayer = value;
+
         GCODE.ui.changeSelectedLayer(value);
     };
 
@@ -319,6 +368,9 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         if (self.currentlyPrinting && self.renderer_syncProgress()) self.renderer_syncProgress(false);
 
         var tuple = event.value;
+        if (self.currentCommand !== undefined && self.currentCommand[0] == tuple[0] && self.currentCommand[1] == tuple[1]) return;
+        self.currentCommand = tuple;
+
         GCODE.ui.changeSelectedCommands(self.layerSlider.slider("getValue"), tuple[0], tuple[1]);
     };
 }
