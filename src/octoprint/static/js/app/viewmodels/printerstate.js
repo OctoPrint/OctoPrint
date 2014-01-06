@@ -124,7 +124,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.estimatedPrintTime(data.estimatedPrintTime);
 
         var result = [];
-        if (_.keys(data.filament).length > 0) {
+        if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
             var i = 0;
             do {
                 var key = "tool" + i;

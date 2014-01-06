@@ -194,7 +194,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         var output = "<p><strong>Uploaded:</strong> " + formatDate(data["date"]) + "</p>";
         if (data["gcodeAnalysis"]) {
             output += "<p>";
-            if (data["gcodeAnalysis"]["filament"]) {
+            if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                 var filament = data["gcodeAnalysis"]["filament"];
                 if (_.keys(filament).length == 1) {
                     output += "<strong>Filament:</strong> " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
