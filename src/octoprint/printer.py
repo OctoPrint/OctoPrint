@@ -290,7 +290,11 @@ class Printer():
 		self._comm.cancelPrint()
 
 		if disableMotorsAndHeater:
-			self.commands(["M84", "M104 S0", "M140 S0", "M106 S0"]) # disable motors, switch off heaters and fan
+			# disable motors, switch off hotends, bed and fan
+			commands = ["M84"]
+			commands.extend(map(lambda x: "M104 T%d S0" % x, range(settings().getInt(["printerParameters", "numExtruders"]))))
+			commands.extend(["M140 S0", "M106 S0"])
+			self.commands(commands)
 
 		# reset progress, height, print time
 		self._setCurrentZ(None)
