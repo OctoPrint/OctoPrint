@@ -42,7 +42,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
             self.timelapseViewModel.requestData();
             self.loginStateViewModel.requestData();
             self.gcodeFilesViewModel.requestData();
-            self.gcodeViewModel.reinitialize();
+            self.gcodeViewModel.reset();
 
             if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                 $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());

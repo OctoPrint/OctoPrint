@@ -146,8 +146,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         });
     };
 
-    self.reinitialize = function() {
-        self.enabled = false;
+    self.reset = function() {
         self.enableReload(false);
         self.loadedFilename = undefined;
         self.loadedFileDate = undefined;
