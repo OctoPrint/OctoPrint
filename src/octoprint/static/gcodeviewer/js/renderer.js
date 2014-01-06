@@ -288,8 +288,14 @@ GCODE.renderer = (function(){
                 y = -cmds[i].y;
             }
 
+            var tool = cmds[i].tool;
+            if (tool === undefined) tool = 0;
+
+            var lineColor = renderOptions["colorLine"][tool];
+            if (lineColor === undefined) lineColor = renderOptions["colorLine"][0];
+
             var alpha = (renderOptions['showNextLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
-            var shade = cmds[i].tool * 0.15;
+            var shade = tool * 0.15;
             if (!cmds[i].extrude && !cmds[i].noMove) {
                 if (cmds[i].retract == -1) {
                     if (renderOptions["showRetracts"]) {
@@ -310,7 +316,7 @@ GCODE.renderer = (function(){
                 }
             } else if(cmds[i].extrude) {
                 if (cmds[i].retract == 0) {
-                    ctx.strokeStyle = pusher.color(renderOptions["colorLine"][cmds[i].tool]).shade(shade).alpha(alpha).html();
+                    ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool]).shade(shade).alpha(alpha).html();
                     ctx.lineWidth = renderOptions['extrusionWidth'];
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
