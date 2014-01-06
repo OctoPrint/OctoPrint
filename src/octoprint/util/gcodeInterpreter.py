@@ -1,5 +1,9 @@
 from __future__ import absolute_import
-__copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
+# coding=utf-8
+__author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under terms of the AGPLv3 License"
+
 
 import math
 import os
@@ -9,23 +13,10 @@ import logging
 
 from octoprint.settings import settings
 
-preferences = {
-	"extruder_offset_x1": 0.0,
-	"extruder_offset_y1": -21.6,
-	"extruder_offset_x2": 0.0,
-	"extruder_offset_y2": 0.0,
-	"extruder_offset_x3": 0.0,
-	"extruder_offset_y3": 0.0,
-}
-
-def getPreference(key, default=None):
-	if preferences.has_key(key):
-		return preferences[key]
-	else:
-		return default
 
 class AnalysisAborted(Exception):
 	pass
+
 
 class gcode(object):
 	def __init__(self):
@@ -94,13 +85,13 @@ class gcode(object):
 
 			T = getCodeInt(line, 'T')
 			if T is not None:
-				posOffset[0] -= offsets[currentExtruder]["x"]
-				posOffset[1] -= offsets[currentExtruder]["y"]
+				posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
 
 				currentExtruder = T
 
-				posOffset[0] += offsets[currentExtruder]["x"]
-				posOffset[1] += offsets[currentExtruder]["y"]
+				posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
 
 				if len(currentE) <= currentExtruder:
 					for i in range(len(currentE), currentExtruder + 1):
@@ -233,6 +224,7 @@ class gcode(object):
 	def _parseCuraProfileString(self, comment):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
 
+
 def getCodeInt(line, code):
 	n = line.find(code) + 1
 	if n < 1:
@@ -244,6 +236,7 @@ def getCodeInt(line, code):
 		return int(line[n:m])
 	except:
 		return None
+
 
 def getCodeFloat(line, code):
 	n = line.find(code) + 1
