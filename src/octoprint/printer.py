@@ -208,11 +208,14 @@ class Printer():
 
 	def setTemperature(self, type, value):
 		if type.startswith("tool"):
-			try:
-				toolNum = int(type[len("tool"):])
-				self.command("M104 T%d S%f" % (toolNum, value))
-			except ValueError:
-				pass
+			if settings().getInt(["printerParameters", "numExtruders"]) > 1:
+				try:
+					toolNum = int(type[len("tool"):])
+					self.command("M104 T%d S%f" % (toolNum, value))
+				except ValueError:
+					pass
+			else:
+				self.command("M104 S%f" % value)
 		elif type == "bed":
 			self.command("M140 S%f" % value)
 
