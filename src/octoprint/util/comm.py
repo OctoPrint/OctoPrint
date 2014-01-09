@@ -664,7 +664,8 @@ class MachineCom(object):
 					self._changeState(self.STATE_OPERATIONAL)
 					eventManager().fire(Events.PRINT_DONE, {
 						"file": self._currentFile.getFilename(),
-						"origin": self._currentFile.getFileLocation()
+						"origin": self._currentFile.getFileLocation(),
+						"time": time.time() - self._currentFile.getStartTime()
 					})
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
@@ -937,7 +938,8 @@ class MachineCom(object):
 				else:
 					payload = {
 						"file": self._currentFile.getFilename(),
-						"origin": self._currentFile.getFileLocation()
+						"origin": self._currentFile.getFileLocation(),
+						"time": time.time() - self._currentFile.getStartTime()
 					}
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
