@@ -4,7 +4,7 @@ from octoprint.daemon import Daemon
 from octoprint.server import Server
 
 class Main(Daemon):
-	def __init__(self, pidfile, configfile, basedir, host, port, debug):
+	def __init__(self, pidfile, configfile, basedir, host, port, debug, allowRoot):
 		Daemon.__init__(self, pidfile)
 
 		self._configfile = configfile
@@ -12,9 +12,10 @@ class Main(Daemon):
 		self._host = host
 		self._port = port
 		self._debug = debug
+		self._allowRoot = allowRoot
 
 	def run(self):
-		octoprint = Server(self._configfile, self._basedir, self._host, self._port, self._debug)
+		octoprint = Server(self._configfile, self._basedir, self._host, self._port, self._debug, self._allowRoot)
 		octoprint.run()
 
 def main():
@@ -50,7 +51,7 @@ def main():
 			print >> sys.stderr, "Sorry, daemon mode is only supported under Linux right now"
 			sys.exit(2)
 
-		daemon = Main(args.pidfile, args.config, args.basedir, args.host, args.port, args.debug)
+		daemon = Main(args.pidfile, args.config, args.basedir, args.host, args.port, args.debug, args.allowRoot)
 		if "start" == args.daemon:
 			daemon.start()
 		elif "stop" == args.daemon:
