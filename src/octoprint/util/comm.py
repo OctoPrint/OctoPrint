@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 # coding=utf-8
-__author__ = "Gina Häußge <osd@foosel.net>"
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
+__copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
+
 
 import os
 import glob
@@ -384,7 +386,7 @@ class MachineCom(object):
 		except:
 			self._errorValue = getExceptionString()
 			self._changeState(self.STATE_ERROR)
-			eventManager().fire(Events.ERROR, self.getErrorString())
+			eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 
 	def startFileTransfer(self, filename, localFilename, remoteFilename):
 		if not self.isOperational() or self.isBusy():
@@ -717,7 +719,7 @@ class MachineCom(object):
 							self.close()
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
 							self._changeState(self.STATE_ERROR)
-							eventManager().fire(Events.ERROR, self.getErrorString())
+							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 						elif self._baudrateDetectRetry > 0:
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
@@ -828,7 +830,7 @@ class MachineCom(object):
 				self._log(errorMsg)
 				self._errorValue = errorMsg
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, self.getErrorString())
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
 
 	def _openSerial(self):
@@ -852,7 +854,7 @@ class MachineCom(object):
 				self._log("Failed to autodetect serial port")
 				self._errorValue = 'Failed to autodetect serial port.'
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, self.getErrorString())
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				return False
 		elif self._port == 'VIRTUAL':
 			self._changeState(self.STATE_OPEN_SERIAL)
@@ -869,7 +871,7 @@ class MachineCom(object):
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 				self._errorValue = "Failed to open serial port, permissions correct?"
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, self.getErrorString())
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				return False
 		return True
 
@@ -894,7 +896,7 @@ class MachineCom(object):
 			elif not self.isError():
 				self._errorValue = line[6:]
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, self.getErrorString())
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		return line
 
 	def _readline(self):
@@ -961,7 +963,7 @@ class MachineCom(object):
 				if self.isPrinting():
 					# abort the print, there's nothing we can do to rescue it now
 					self._changeState(self.STATE_ERROR)
-					eventManager().fire(Events.ERROR, self.getErrorString())
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				else:
 					# reset resend delta, we can't do anything about it
 					self._resendDelta = None
