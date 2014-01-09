@@ -165,10 +165,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data),
-            success: function() {
-                self.extrusionAmount("");
-            }
+            data: JSON.stringify(data)
         });
     };
 
