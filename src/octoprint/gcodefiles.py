@@ -293,7 +293,7 @@ class GcodeManager:
 					os.remove(stlPath)
 			else:
 				slicingStop = time.time()
-				eventManager().fire(Events.SLICING_DONE, {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": "%.2f" % (slicingStop - slicingStart)})
+				eventManager().fire(Events.SLICING_DONE, {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": slicingStop - slicingStart})
 				self.processGcode(gcodePath, destination, uploadCallback)
 
 		eventManager().fire(Events.SLICING_STARTED, {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})

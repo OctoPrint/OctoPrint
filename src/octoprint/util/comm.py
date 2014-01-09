@@ -927,7 +927,7 @@ class MachineCom(object):
 					payload = {
 						"local": self._currentFile.getLocalFilename(),
 						"remote": self._currentFile.getRemoteFilename(),
-						"time": "%.2f" % (time.time() - self._currentFile.getStartTime())
+						"time": time.time() - self._currentFile.getStartTime()
 					}
 
 					self._currentFile = None
