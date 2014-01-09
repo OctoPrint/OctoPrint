@@ -4,6 +4,12 @@
 Printer operations
 ******************
 
+.. warning::
+
+   This part of the API is still heavily in development, especially anything that has to do with temperature control.
+   If you happen to want to develop against it, you should drop me an email to make sure I can give you a heads-up when
+   something changes.
+
 .. contents::
 
 Printer control is mostly achieved through the use of commands, issued to resources reflecting components of the
@@ -95,6 +101,10 @@ Issue a print head command
 Issue a heater command
 ======================
 
+.. todo::
+
+   Update to current implementation!
+
 .. http:post:: /api/printer/heater
 
    Heater commands allow setting the temperature and temperature offsets for the printer's hotend and bed. Available
@@ -103,7 +113,7 @@ Issue a heater command
    temp
      Sets the given target temperature on the printer's hotend and/or bed. Additional parameters:
 
-     * ``temps``: Target temperature(s) to set, allowed properties are:
+     * ``targets``: Target temperature(s) to set, allowed properties are:
 
        * ``hotend``: New target temperature of the printer's hotend in centigrade.
        * ``bed``: New target temperature of the printer's bed in centigrade.
