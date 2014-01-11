@@ -91,7 +91,7 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
     self.sendCommand = function() {
         var command = self.command();
 
-        var re = /^([gm][0-9]+)(\s.*)?/;
+        var re = /^([gmt][0-9]+)(\s.*)?/;
         var commandMatch = command.match(re);
         if (commandMatch != null) {
             command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");

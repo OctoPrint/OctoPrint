@@ -31,6 +31,7 @@ class VirtualPrinter():
 		self._selectedSdFilePos = None
 		self._writingToSd = False
 		self._newSdFilePos = None
+		self._heatupThread = None
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -90,12 +91,11 @@ class VirtualPrinter():
 
 		#print "Send: %s" % (data.rstrip())
 		if 'M104' in data or 'M109' in data:
-			self._parseHotendCommand(data)
+			if not self._parseHotendCommand(data):
+				return
 		if 'M140' in data or 'M190' in data:
-			try:
-				self.bedTargetTemp = float(re.search('S([0-9]+)', data).group(1))
-			except:
-				pass
+			if not self._parseBedCommand(data):
+				return
 
 		if 'M105' in data:
 			# send simulated temperature data
@@ -104,7 +104,10 @@ class VirtualPrinter():
 				for i in range(len(self.temp)):
 					allTemps.append((i, self.temp[i], self.targetTemp[i]))
 				allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x, allTemps))
-				self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, self.bedTemp, self.bedTargetTemp, allTempsString))
+				if settings().getBoolean(["devel", "virtualPrinted", "includeCurrentToolInTemps"]):
+					self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, self.bedTemp, self.bedTargetTemp, allTempsString))
+				else:
+					self.readList.append("ok %s B:%.2f /%.2f @:64\n" % (allTempsString, self.bedTemp, self.bedTargetTemp))
 			else:
 				self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp))
 		elif 'M20' in data:
@@ -214,6 +217,24 @@ class VirtualPrinter():
 		except:
 			pass
 
+		if "M109" in line:
+			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["tool%d" % tool])
+			self._heatupThread.start()
+			return False
+		return True
+
+	def _parseBedCommand(self, line):
+		try:
+			self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
+		except:
+			pass
+
+		if "M190" in line:
+			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["bed"])
+			self._heatupThread.start()
+			return False
+		return True
+
 	def _writeSdFile(self, filename):
 		file = os.path.join(self._virtualSd, filename).lower()
 		if os.path.exists(file):
@@ -251,10 +272,7 @@ class VirtualPrinter():
 				if 'M104' in line or 'M109' in line:
 					self._parseHotendCommand(line)
 				if 'M140' in line or 'M190' in line:
-					try:
-						self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
-					except:
-						pass
+					self._parseBedCommand(line)
 
 				time.sleep(0.01)
 
@@ -263,16 +281,29 @@ class VirtualPrinter():
 		self._sdPrinter = None
 		self.readList.append("Done printing file")
 
+	def _waitForHeatup(self, heater):
+		delta = 0.5
+		delay = 1
+		if heater.startswith("tool"):
+			toolNum = int(heater[len("tool"):])
+			while self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta:
+				self._simulateTemps()
+				self.readList.append("T:%0.2f /%0.2f" % (self.temp[toolNum], self.targetTemp[toolNum]))
+				time.sleep(delay)
+		elif heater == "bed":
+			while self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta:
+				self._simulateTemps()
+				self.readList.append("B:%0.2f /%0.2f" % (self.bedTemp, self.bedTargetTemp))
+				time.sleep(delay)
+		self.readList.append("ok")
+
 	def _deleteSdFile(self, filename):
 		f = os.path.join(self._virtualSd, filename)
 		if os.path.exists(f) and os.path.isfile(f):
 			os.remove(f)
 		self._sendOk()
 
-	def readline(self):
-		if self.readList is None:
-			return ''
-		n = 0
+	def _simulateTemps(self):
 		timeDiff = self.lastTempAt - time.time()
 		self.lastTempAt = time.time()
 		for i in range(len(self.temp)):
@@ -290,6 +321,14 @@ class VirtualPrinter():
 				self.bedTemp = self.bedTargetTemp
 			if self.bedTemp < 0:
 				self.bedTemp = 0
+
+	def readline(self):
+		if self.readList is None:
+			return ''
+		n = 0
+
+		self._simulateTemps()
+
 		while len(self.readList) < 1:
 			time.sleep(0.1)
 			n += 1

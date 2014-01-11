@@ -145,6 +145,7 @@ class MachineCom(object):
 		self._currentZ = None
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
+		self._currentExtruder = 0
 
 		# Regex matching temperature entries in line. Groups will be as follows:
 		# - 1: whole tool designator incl. optional toolNumber ("T", "Tn", "B")
@@ -152,7 +153,7 @@ class MachineCom(object):
 		# - 3: actual temperature
 		# - 4: whole target substring, if given (e.g. " / 22.0")
 		# - 5: target temperature
-		self._tempRegex = re.compile("(B|T(\d*)):([-+]?\d*\.?\d*)(\s*\/?\s*([-+]?\d*\.?\d*))?")
+		self._tempRegex = re.compile("(B|T(\d*)):\s*([-+]?\d*\.?\d*)(\s*\/?\s*([-+]?\d*\.?\d*))?")
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 1
@@ -603,7 +604,7 @@ class MachineCom(object):
 					continue
 
 				##~~ Temperature processing
-				if ' T:' in line or line.startswith('T:'):
+				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
 					self._processTemperatures(line)
 					self._callback.mcTempUpdate(self._temp, self._bedTemp)
 
@@ -992,7 +993,7 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				gcode = re.search("^\s*([GM]\d+)", cmd)
+				gcode = re.search("^\s*([GM]\d+|T)", cmd)
 				if gcode:
 					gcode = gcode.group(1)
 
@@ -1040,6 +1041,12 @@ class MachineCom(object):
 			self._errorValue = getExceptionString()
 			self.close(True)
 
+	def _gcode_T(self, cmd):
+		toolMatch = re.search('T([0-9]+)', cmd)
+		if toolMatch:
+			self._currentExtruder = int(toolMatch.group(1))
+		return cmd
+
 	def _gcode_G0(self, cmd):
 		if 'Z' in cmd:
 			try:
@@ -1058,10 +1065,14 @@ class MachineCom(object):
 	_gcode_M1 = _gcode_M0
 
 	def _gcode_M104(self, cmd):
+		toolNum = self._currentExtruder
+		toolMatch = re.search('T([0-9]+)', cmd)
+		if toolMatch:
+			toolNum = int(toolMatch.group(1))
 		match = re.search('S([0-9]+)', cmd)
 		if match:
 			try:
-				self._targetTemp = float(match.group(1))
+				self._targetTemp[toolNum] = float(match.group(1))
 			except ValueError:
 				pass
 		return cmd

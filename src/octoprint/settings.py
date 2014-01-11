@@ -132,7 +132,7 @@ default_settings = {
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	},
 	"terminalFilters": [
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T:)" },
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
 	"devel": {
@@ -142,7 +142,8 @@ default_settings = {
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
-			"numExtruders": 1
+			"numExtruders": 1,
+			"includeCurrentToolInTemps": True
 		}
 	}
 }
