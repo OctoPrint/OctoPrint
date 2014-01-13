@@ -249,12 +249,13 @@ class GcodeManager:
 			return None, True
 
 		curaEnabled = self._settings.getBoolean(["cura", "enabled"])
+		slicerEnabled = self._settings.getBoolean(["slic3r", "enabled"])
 		filename = file.filename
 
 		absolutePath = self.getAbsolutePath(filename, mustExist=False)
 		gcode = isGcodeFileName(filename)
 
-		if absolutePath is None or (not curaEnabled and not gcode):
+		if absolutePath is None or (not curaEnabled and not slicerEnabled and not gcode):
 			return None, True
 
 		file.save(absolutePath)
@@ -262,8 +263,11 @@ class GcodeManager:
 		if gcode:
 			return self.processGcode(absolutePath, destination, uploadCallback), True
 		else:
-			if curaEnabled and isSTLFileName(filename):
-				return self.processStl(absolutePath, destination, uploadCallback), False
+			if isSTLFileName(filename):
+				if curaEnabled:
+					return self.processStlCura(absolutePath, destination, uploadCallback), False
+				if slicerEnabled:
+					return self.processStlSlic3r(absolutePath, destination, uploadCallback), False
 			else:
 				return filename, False
 
@@ -277,12 +281,24 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
-	def processStl(self, absolutePath, destination, uploadCallback=None):
+	def processStlCura(self, absolutePath, destination, uploadCallback=None):
 		from octoprint.slicers.cura import CuraFactory
 
 		cura = CuraFactory.create_slicer()
-		gcodePath = genGcodeFileName(absolutePath)
 		config = self._settings.get(["cura", "config"])
+
+		return self.processStl(cura, config, absolutePath, destination, uploadCallback=None)
+
+	def processStlSlic3r(self, absolutePath, destination, uploadCallback=None):
+		from octoprint.slicers.slic3r import Slic3rFactory
+
+		slicer = Slic3rFactory.create_slicer()
+		config = self._settings.get(["slic3r", "config"])
+
+		return self.processStl(slicer, config, absolutePath, destination, uploadCallback)
+
+	def processStl(self, slicer, config, absolutePath, destination, uploadCallback=None):
+		gcodePath = genGcodeFileName(absolutePath)
 
 		slicingStart = time.time()
 
@@ -297,7 +313,7 @@ class GcodeManager:
 				self.processGcode(gcodePath, destination, uploadCallback)
 
 		eventManager().fire(Events.SLICING_STARTED, {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})
-		cura.process_file(config, gcodePath, absolutePath, stlProcessed, [absolutePath, gcodePath])
+		slicer.process_file(config, gcodePath, absolutePath, stlProcessed, [absolutePath, gcodePath])
 
 		return self._getBasicFilename(gcodePath)
 

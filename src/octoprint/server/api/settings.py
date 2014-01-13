@@ -90,6 +90,11 @@ def getSettings():
 			"enabled": s.getBoolean(["cura", "enabled"]),
 			"path": s.get(["cura", "path"]),
 			"config": s.get(["cura", "config"])
+		},
+		"slic3r": {
+			"enabled": s.getBoolean(["slic3r", "enabled"]),
+			"path": s.get(["slic3r", "path"]),
+			"config": s.get(["slic3r", "config"])
 		}
 	})
 
@@ -185,6 +190,19 @@ def setSettings():
 			# Enabled is a boolean so we cannot check that we have a result
 			enabled = cura.get("enabled")
 			s.setBoolean(["cura", "enabled"], enabled)
+
+		slic3r = data.get("slic3r", None)
+		if slic3r:
+			path = slic3r.get("path")
+			if path:
+				s.set(["slic3r", "path"], path)
+
+			config = slic3r.get("config")
+			if config:
+				s.set(["slic3r", "config"], config)
+
+			enabled = slic3r.get("enabled")
+			s.setBoolean(["slic3r", "enabled"], enabled)
 
 		s.save()
 

@@ -115,7 +115,7 @@ def uploadGcodeFile(target):
 
 	# determine future filename of file to be uploaded, abort if it can't be uploaded
 	futureFilename = gcodeManager.getFutureFilename(file)
-	if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
+	if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not settings().getBoolean(["slic3r", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
 		return make_response("Can not upload file %s, wrong format?" % file.filename, 415)
 
 	# prohibit overwriting currently selected file while it's being printed

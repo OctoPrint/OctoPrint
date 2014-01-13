@@ -119,6 +119,11 @@ default_settings = {
 		"path": "/default/path/to/cura",
 		"config": "/default/path/to/your/cura/config.ini"
 	},
+	"slic3r": {
+		"enabled": False,
+		"path": "/default/path/to/slic3r",
+		"config": "/default/path/to/your/slic3r/config.ini"
+	},
 	"events": {
 		"systemCommandTrigger": {
 			"enabled": False

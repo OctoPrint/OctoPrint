@@ -56,6 +56,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.cura_path = ko.observable(undefined);
     self.cura_config = ko.observable(undefined);
 
+    self.slic3r_enabled = ko.observable(undefined);
+    self.slic3r_path = ko.observable(undefined);
+    self.slic3r_config = ko.observable(undefined);
+
     self.temperature_profiles = ko.observableArray(undefined);
 
     self.system_actions = ko.observableArray([]);
@@ -165,6 +169,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.cura_path(response.cura.path);
         self.cura_config(response.cura.config);
 
+	self.slic3r_enabled(response.slic3r.enabled);
+	self.slic3r_path(response.slic3r.path);
+	self.slic3r_config(response.slic3r.config);
+
         self.temperature_profiles(response.temperature.profiles);
 
         self.system_actions(response.system.actions);
@@ -235,6 +243,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "path": self.cura_path(),
                 "config": self.cura_config()
             },
+	    "slic3r": {
+		"enabled": self.slic3r_enabled(),
+		"path": self.slic3r_path(),
+		"config": self.slic3r_config()
+	    },
             "terminalFilters": self.terminalFilters()
         };
 
