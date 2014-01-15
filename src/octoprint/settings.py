@@ -17,6 +17,8 @@ def settings(init=False, configfile=None, basedir=None):
 	global instance
 	if instance is None:
 		if init:
+			import octoprint.SlicerManager
+			default_settings["slicers"] = octoprint.SlicerManager.REGISTERED_SLICERS
 			instance = Settings(configfile, basedir)
 		else:
 			raise ValueError("Settings not initialized yet")
@@ -113,16 +115,6 @@ default_settings = {
 		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
 		"autologinAs": None
-	},
-	"cura": {
-		"enabled": False,
-		"path": "/default/path/to/cura",
-		"config": "/default/path/to/your/cura/config.ini"
-	},
-	"slic3r": {
-		"enabled": False,
-		"path": "/default/path/to/slic3r",
-		"config": "/default/path/to/your/slic3r/config.ini"
 	},
 	"events": {
 		"systemCommandTrigger": {

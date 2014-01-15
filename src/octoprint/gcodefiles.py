@@ -248,14 +248,13 @@ class GcodeManager:
 		if not file or not destination:
 			return None, True
 
-		curaEnabled = self._settings.getBoolean(["cura", "enabled"])
-		slicerEnabled = self._settings.getBoolean(["slic3r", "enabled"])
+		from octoprint import SlicerManager
 		filename = file.filename
 
 		absolutePath = self.getAbsolutePath(filename, mustExist=False)
 		gcode = isGcodeFileName(filename)
 
-		if absolutePath is None or (not curaEnabled and not slicerEnabled and not gcode):
+		if absolutePath is None or (not SlicerManager.SlicingSupported and not gcode):
 			return None, True
 
 		file.save(absolutePath)
@@ -264,10 +263,8 @@ class GcodeManager:
 			return self.processGcode(absolutePath, destination, uploadCallback), True
 		else:
 			if isSTLFileName(filename):
-				if curaEnabled:
-					return self.processStlCura(absolutePath, destination, uploadCallback), False
-				if slicerEnabled:
-					return self.processStlSlic3r(absolutePath, destination, uploadCallback), False
+				slicer, config = SlicerManager.create_slicer()
+				return self.processStl(slicer, config, absolutePath, destination, uploadCallback), False
 			else:
 				return filename, False
 
@@ -280,22 +277,6 @@ class GcodeManager:
 			return None
 
 		return self._getBasicFilename(absolutePath)
-
-	def processStlCura(self, absolutePath, destination, uploadCallback=None):
-		from octoprint.slicers.cura import CuraFactory
-
-		cura = CuraFactory.create_slicer()
-		config = self._settings.get(["cura", "config"])
-
-		return self.processStl(cura, config, absolutePath, destination, uploadCallback=None)
-
-	def processStlSlic3r(self, absolutePath, destination, uploadCallback=None):
-		from octoprint.slicers.slic3r import Slic3rFactory
-
-		slicer = Slic3rFactory.create_slicer()
-		config = self._settings.get(["slic3r", "config"])
-
-		return self.processStl(slicer, config, absolutePath, destination, uploadCallback)
 
 	def processStl(self, slicer, config, absolutePath, destination, uploadCallback=None):
 		gcodePath = genGcodeFileName(absolutePath)

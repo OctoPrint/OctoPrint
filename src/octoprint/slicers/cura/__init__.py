@@ -6,7 +6,7 @@ import os
 
 from octoprint.settings import settings
 
-class CuraFactory(object):
+class SlicerFactory(object):
 
 	@staticmethod
 	def create_slicer(path=None):
@@ -18,7 +18,7 @@ class CuraFactory(object):
 			return Cura(path)
 		
 		current_settings = settings(init=True)
-		path = current_settings.get(["cura", "path"])
+		path = current_settings.get(["slicers", "cura", "path"])
 
 		return Cura(path)
 
