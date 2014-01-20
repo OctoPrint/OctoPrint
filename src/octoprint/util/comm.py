@@ -341,6 +341,7 @@ class MachineCom(object):
 			if self._currentFile is not None:
 				payload = {
 					"file": self._currentFile.getFilename(),
+					"filename": os.path.basename(self._currentFile.getFilename()),
 					"origin": self._currentFile.getFileLocation()
 				}
 			eventManager().fire(Events.PRINT_FAILED, payload)
@@ -372,6 +373,7 @@ class MachineCom(object):
 		self._changeState(self.STATE_PRINTING)
 		eventManager().fire(Events.PRINT_STARTED, {
 			"file": self._currentFile.getFilename(),
+			"filename": os.path.basename(self._currentFile.getFilename()),
 			"origin": self._currentFile.getFileLocation()
 		})
 
@@ -438,6 +440,7 @@ class MachineCom(object):
 
 		eventManager().fire(Events.PRINT_CANCELLED, {
 			"file": self._currentFile.getFilename(),
+			"filename": os.path.basename(self._currentFile.getFilename()),
 			"origin": self._currentFile.getFileLocation()
 		})
 
@@ -454,6 +457,7 @@ class MachineCom(object):
 
 			eventManager().fire(Events.PRINT_RESUMED, {
 				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
 		elif pause and self.isPrinting():
@@ -463,6 +467,7 @@ class MachineCom(object):
 
 			eventManager().fire(Events.PRINT_PAUSED, {
 				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
 
@@ -665,6 +670,7 @@ class MachineCom(object):
 					self._changeState(self.STATE_OPERATIONAL)
 					eventManager().fire(Events.PRINT_DONE, {
 						"file": self._currentFile.getFilename(),
+						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
 						"time": time.time() - self._currentFile.getStartTime()
 					})
@@ -939,6 +945,7 @@ class MachineCom(object):
 				else:
 					payload = {
 						"file": self._currentFile.getFilename(),
+						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
 						"time": time.time() - self._currentFile.getStartTime()
 					}
