@@ -52,14 +52,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.folder_timelapseTmp = ko.observable(undefined);
     self.folder_logs = ko.observable(undefined);
 
-    self.cura_enabled = ko.observable(undefined);
-    self.cura_path = ko.observable(undefined);
-    self.cura_config = ko.observable(undefined);
-
+    self.slicers = ko.observableArray(undefined);
     self.temperature_profiles = ko.observableArray(undefined);
-
     self.system_actions = ko.observableArray([]);
-
     self.terminalFilters = ko.observableArray([]);
 
     self.addTemperatureProfile = function() {
@@ -161,18 +156,13 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.folder_timelapseTmp(response.folder.timelapseTmp);
         self.folder_logs(response.folder.logs);
 
-        self.cura_enabled(response.cura.enabled);
-        self.cura_path(response.cura.path);
-        self.cura_config(response.cura.config);
-
+        self.slicers(response.slicers);
         self.temperature_profiles(response.temperature.profiles);
-
         self.system_actions(response.system.actions);
-
         self.terminalFilters(response.terminalFilters);
     }
 
-    self.saveData = function() {
+    self.saveData = function () {
         var data = {
             "api" : {
                 "enabled": self.api_enabled(),
@@ -230,11 +220,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "system": {
                 "actions": self.system_actions()
             },
-            "cura": {
-                "enabled": self.cura_enabled(),
-                "path": self.cura_path(),
-                "config": self.cura_config()
-            },
+            "slicers": self.slicers(),
             "terminalFilters": self.terminalFilters()
         };
 
@@ -250,5 +236,4 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             }
         });
     }
-
 }

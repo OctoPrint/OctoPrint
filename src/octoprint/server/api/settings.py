@@ -25,7 +25,7 @@ def getSettings():
 
 	connectionOptions = getConnectionOptions()
 
-	return jsonify({
+	dict = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
 			"key": s.get(["api", "key"])
@@ -86,12 +86,22 @@ def getSettings():
 			"events": s.get(["system", "events"])
 		},
 		"terminalFilters": s.get(["terminalFilters"]),
-		"cura": {
-			"enabled": s.getBoolean(["cura", "enabled"]),
-			"path": s.get(["cura", "path"]),
-			"config": s.get(["cura", "config"])
-		}
-	})
+	}
+
+	from octoprint import SlicerManager
+	from copy import deepcopy
+	if len(SlicerManager.REGISTERED_SLICERS) > 0:
+		d = [];
+		for k, v in s.get(["slicers"], True).iteritems():
+			temp = deepcopy(v)
+			temp["name"] = k
+			temp["desc"] = SlicerManager.SLICER_DESCRIPTORS[k]
+
+			d.append(temp)
+
+		dict["slicers"] = d
+
+	return jsonify(dict)
 
 
 @api.route("/settings", methods=["POST"])
@@ -172,19 +182,16 @@ def setSettings():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
 			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
-		cura = data.get("cura", None)
-		if cura:
-			path = cura.get("path")
-			if path:
-				s.set(["cura", "path"], path)
+		if "slicers" in data.keys():
+			slicers={}
+			for k in data["slicers"]:
+				if k["desc"]:
+					del k["desc"]
 
-			config = cura.get("config")
-			if config:
-				s.set(["cura", "config"], config)
+				slicers[k["name"]]=k
+				del k["name"]
 
-			# Enabled is a boolean so we cannot check that we have a result
-			enabled = cura.get("enabled")
-			s.setBoolean(["cura", "enabled"], enabled)
+			s.set(["slicers"], slicers)
 
 		s.save()
 
