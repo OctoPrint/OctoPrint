@@ -1,4 +1,4 @@
-__author__ = "Ross Hendrickson savorywatt"
+__author__ = "Marc Hannappel Salandora"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import logging

@@ -1,3 +1,6 @@
+__author__ = "Marc Hannappel Salandora"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+
 from octoprint.settings import settings
 from octoprint import slicers
 
