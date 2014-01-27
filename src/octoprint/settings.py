@@ -143,7 +143,13 @@ default_settings = {
 			"forceChecksum": False,
 			"okWithLinenumber": False,
 			"numExtruders": 1,
-			"includeCurrentToolInTemps": True
+			"includeCurrentToolInTemps": True,
+			"movementSpeed": {
+				"x": 6000,
+				"y": 6000,
+				"z": 200,
+				"e": 300
+			}
 		}
 	}
 }

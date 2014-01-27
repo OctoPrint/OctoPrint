@@ -14,13 +14,22 @@ from octoprint.settings import settings
 
 class VirtualPrinter():
 	def __init__(self):
-		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD init fail\n'] # no sd card as default startup scenario
+		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n'] # no sd card as default startup scenario
 		self.currentExtruder = 0
 		self.temp = [0.0] * settings().getInt(["devel", "virtualPrinter", "numExtruders"])
 		self.targetTemp = [0.0] * settings().getInt(["devel", "virtualPrinter", "numExtruders"])
 		self.lastTempAt = time.time()
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
+		self.speeds = settings().get(["devel", "virtualPrinter", "movementSpeed"])
+
+		self._relative = True
+		self._lastX = None
+		self._lastY = None
+		self._lastZ = None
+		self._lastE = None
+
+		self._unitModifier = 1
 
 		self._virtualSd = settings().getBaseFolder("virtualSd")
 		self._sdCardReady = False
@@ -58,6 +67,7 @@ class VirtualPrinter():
 			linenumber = int(re.search("N([0-9]+)", data).group(1))
 			self.lastN = linenumber
 			self.currentLine = linenumber
+			self.readList.append("ok")
 			return
 		elif data.startswith("N"):
 			linenumber = int(re.search("N([0-9]+)", data).group(1))
@@ -68,14 +78,14 @@ class VirtualPrinter():
 				if settings().getBoolean(["devel", "virtualPrinter", "okAfterResend"]):
 					self.readList.append("ok")
 				return
-			elif self.currentLine == 100:
-				# simulate a resend at line 100 of the last 5 lines
-				self.lastN = 94
-				self.readList.append("Error: Line Number is not Last Line Number\n")
-				self.readList.append("rs %d\n" % (self.currentLine - 5))
-				if settings().getBoolean(["devel", "virtualPrinter", "okAfterResend"]):
-					self.readList.append("ok")
-				return
+			# elif self.currentLine == 100:
+			# 	# simulate a resend at line 100 of the last 5 lines
+			# 	self.lastN = 94
+			# 	self.readList.append("Error: Line Number is not Last Line Number\n")
+			# 	self.readList.append("rs %d\n" % (self.currentLine - 5))
+			# 	if settings().getBoolean(["devel", "virtualPrinter", "okAfterResend"]):
+			# 		self.readList.append("ok")
+			# 	return
 			else:
 				self.lastN = linenumber
 			data = data.split(None, 1)[1].strip()
@@ -159,6 +169,41 @@ class VirtualPrinter():
 			self.currentExtruder = int(re.search("T(\d+)", data).group(1))
 			self._sendOk()
 			self.readList.append("Active Extruder: %d" % self.currentExtruder)
+		elif "G20" in data:
+			self._unitModifier = 1.0 / 2.54
+			if self._lastX is not None:
+				self._lastX *= 2.54
+			if self._lastY is not None:
+				self._lastY *= 2.54
+			if self._lastZ is not None:
+				self._lastZ *= 2.54
+			if self._lastE is not None:
+				self._lastE *= 2.54
+			self._sendOk()
+		elif "G21" in data:
+			self._unitModifier = 1.0
+			if self._lastX is not None:
+				self._lastX /= 2.54
+			if self._lastY is not None:
+				self._lastY /= 2.54
+			if self._lastZ is not None:
+				self._lastZ /= 2.54
+			if self._lastE is not None:
+				self._lastE /= 2.54
+			self._sendOk()
+		elif "G90" in data:
+			self._relative = False
+			self._sendOk()
+		elif "G91" in data:
+			self._relative = True
+			self._sendOk()
+		elif "G92" in data:
+			self._setPosition(data)
+			self._sendOk()
+		elif "G0" in data or "G1" in data:
+			# simulate movement duration -- no acceleration, only linear movement duration based on max speed
+			self._performMove(data)
+			self._sendOk()
 		elif len(data.strip()) > 0:
 			self._sendOk()
 
@@ -234,6 +279,87 @@ class VirtualPrinter():
 			self._heatupThread.start()
 			return False
 		return True
+
+	def _performMove(self, line):
+		matchX = re.search("X([0-9.]+)", line)
+		matchY = re.search("Y([0-9.]+)", line)
+		matchZ = re.search("Z([0-9.]+)", line)
+		matchE = re.search("E([0-9.]+)", line)
+
+		duration = 0
+		if matchX is not None:
+			try:
+				x = float(matchX.group(1))
+				if self._relative or self._lastX is None:
+					duration = max(duration, x * self._unitModifier / float(self.speeds["x"]) * 60.0)
+				else:
+					duration = max(duration, (x - self._lastX) * self._unitModifier / float(self.speeds["x"]) * 60.0)
+				self._lastX = x
+			except:
+				pass
+		if matchY is not None:
+			try:
+				y = float(matchY.group(1))
+				if self._relative or self._lastY is None:
+					duration = max(duration, y * self._unitModifier / float(self.speeds["y"]) * 60.0)
+				else:
+					duration = max(duration, (y - self._lastY) * self._unitModifier / float(self.speeds["y"]) * 60.0)
+				self._lastY = y
+			except:
+				pass
+		if matchZ is not None:
+			try:
+				z = float(matchZ.group(1))
+				if self._relative or self._lastZ is None:
+					duration = max(duration, z * self._unitModifier / float(self.speeds["z"]) * 60.0)
+				else:
+					duration = max(duration, (z - self._lastZ) * self._unitModifier / float(self.speeds["z"]) * 60.0)
+				self._lastZ = z
+			except:
+				pass
+		if matchE is not None:
+			try:
+				e = float(matchE.group(1))
+				if self._relative or self._lastE is None:
+					duration = max(duration, e * self._unitModifier / float(self.speeds["e"]) * 60.0)
+				else:
+					duration = max(duration, (e - self._lastE) * self._unitModifier / float(self.speeds["e"]) * 60.0)
+				self._lastE = e
+			except:
+				pass
+
+		if duration:
+			time.sleep(duration)
+
+	def _setPosition(self, line):
+		matchX = re.search("X([0-9.]+)", line)
+		matchY = re.search("Y([0-9.]+)", line)
+		matchZ = re.search("Z([0-9.]+)", line)
+		matchE = re.search("E([0-9.]+)", line)
+
+		if matchX is None and matchY is None and matchZ is None and matchE is None:
+			self._lastX = self._lastY = self._lastZ = self._lastE = 0
+		else:
+			if matchX is not None:
+				try:
+					self._lastX = float(matchX.group(1))
+				except:
+					pass
+			if matchY is not None:
+				try:
+					self._lastY = float(matchY.group(1))
+				except:
+					pass
+			if matchZ is not None:
+				try:
+					self._lastZ = float(matchZ.group(1))
+				except:
+					pass
+			if matchE is not None:
+				try:
+					self._lastE = float(matchE.group(1))
+				except:
+					pass
 
 	def _writeSdFile(self, filename):
 		file = os.path.join(self._virtualSd, filename).lower()
@@ -336,7 +462,7 @@ class VirtualPrinter():
 				return ''
 			if self.readList is None:
 				return ''
-		time.sleep(0.001)
+		#time.sleep(0.001)
 		return self.readList.pop(0)
 
 	def close(self):
