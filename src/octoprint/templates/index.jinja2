@@ -27,6 +27,7 @@
 
             var CONFIG_GCODEFILESPERPAGE = 5;
             var CONFIG_TIMELAPSEFILESPERPAGE = 10;
+            var CONFIG_LOGFILESPERPAGE = 10;
             var CONFIG_USERSPERPAGE = 10;
             var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
             var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
@@ -252,6 +253,7 @@
                         {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">GCode Viewer</a></li>{% endif %}
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
                         {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Timelapse</a></li>{% endif %}
+                       <li><a href="#logs" data-toggle="tab">Logs</a></li>
                     </ul>
 
                     <div class="tab-content">
@@ -585,6 +587,40 @@
                             </div>
                         </div>
                         {% endif %}
+                        <div class="tab-pane" id="logs">
+                            <h1>Logs</h1>
+
+                            <div class="pull-right">
+                                <small>Sort by: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">Name (ascending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">Creation date (descending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">Size (descending)</a></small>
+                            </div>
+                            <table class="table table-striped table-hover table-condensed table-hover" id="log_files">
+                                <thead>
+                                    <tr>
+                                        <th class="log_files_name">Name</th>
+                                        <th class="log_files_size">Size</th>
+                                        <th class="log_files_action">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-bind="foreach: listHelper.paginatedItems">
+                                    <tr data-bind="attr: {title: name}">
+                                        <td class="log_files_name" data-bind="text: name"></td>
+                                        <td class="log_files_size" data-bind="text: size"></td>
+                                        <td class="log_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="pagination pagination-mini pagination-centered">
+                                <ul>
+                                    <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
+                                </ul>
+                                <ul data-bind="foreach: listHelper.pages">
+                                    <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a></li>
+                                </ul>
+                                <ul>
+                                    <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -644,6 +680,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>

@@ -14,6 +14,7 @@ $(function() {
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var logViewModel = new LogViewModel(loginStateViewModel);
 
         var dataUpdater = new DataUpdater(
             loginStateViewModel,
@@ -24,7 +25,8 @@ $(function() {
             terminalViewModel,
             gcodeFilesViewModel,
             timelapseViewModel,
-            gcodeViewModel
+            gcodeViewModel,
+			logViewModel
         );
         
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
@@ -302,6 +304,7 @@ $(function() {
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
         ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+        ko.applyBindings(logViewModel, document.getElementById("logs"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
@@ -316,6 +319,7 @@ $(function() {
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
         settingsViewModel.requestData();
+        logViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
