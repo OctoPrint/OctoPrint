@@ -16,6 +16,9 @@ class Transport(object):
 	def getProperties(self):
 		raise NotImplemented()
 
+	def getConnectionOptions(self):
+		return []
+
 	def connect(self, opt):
 		pass
 

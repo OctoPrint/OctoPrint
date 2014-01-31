@@ -32,7 +32,7 @@ class VirtualPrinter():
 		self._unitModifier = 1
 
 		self._virtualSd = settings().getBaseFolder("virtualSd")
-		self._sdCardReady = False
+		self._sdCardReady = True
 		self._sdPrinter = None
 		self._sdPrintingSemaphore = threading.Event()
 		self._selectedSdFile = None
@@ -75,17 +75,15 @@ class VirtualPrinter():
 			if linenumber != expected:
 				self.readList.append("Error: expected line %d got %d" % (expected, linenumber))
 				self.readList.append("Resend:%d" % expected)
-				if settings().getBoolean(["devel", "virtualPrinter", "okAfterResend"]):
-					self.readList.append("ok")
+				self.readList.append("ok")
 				return
-			# elif self.currentLine == 100:
-			# 	# simulate a resend at line 100 of the last 5 lines
-			# 	self.lastN = 94
-			# 	self.readList.append("Error: Line Number is not Last Line Number\n")
-			# 	self.readList.append("rs %d\n" % (self.currentLine - 5))
-			# 	if settings().getBoolean(["devel", "virtualPrinter", "okAfterResend"]):
-			# 		self.readList.append("ok")
-			# 	return
+			elif self.currentLine == 100:
+				# simulate a resend at line 100 of the last 5 lines
+				self.lastN = 94
+				self.readList.append("Error: Line Number is not Last Line Number\n")
+				self.readList.append("rs %d\n" % (self.currentLine - 5))
+				self.readList.append("ok")
+				return
 			else:
 				self.lastN = linenumber
 			data = data.split(None, 1)[1].strip()

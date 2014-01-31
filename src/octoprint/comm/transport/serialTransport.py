@@ -3,13 +3,20 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 Gina Häußge - Released under terms of the AGPLv3 License"
 
-
+import os
+import glob
 import threading
 import serial
+
+try:
+	import _winreg
+except:
+	pass
 
 from . import Transport, TransportProperties, State
 from octoprint.util import getExceptionString
 from octoprint.util.virtual import VirtualPrinter
+from octoprint.settings import settings
 
 
 class SerialTransport(Transport):
@@ -31,6 +38,12 @@ class SerialTransport(Transport):
 	def getProperties(self):
 		return {
 			TransportProperties.FLOWCONTROL: False
+		}
+
+	def getConnectionOptions(self):
+		return {
+			"port": self.__getSerialList(),
+			"baudrate": self.__getBaudrateList()
 		}
 
 	def connect(self, opt):
@@ -98,13 +111,18 @@ class SerialTransport(Transport):
 
 	def _connect(self):
 		self.changeState(State.OPENING_CONNECTION)
-		try:
-			self._serial = serial.Serial(self._port, self._baudrate, timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
+		if self._port == "VIRTUAL":
+			self._serial = VirtualPrinter()
+			self.changeState(State.CONNECTED)
 			return True
-		except:
-			self.logError("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
-			self.onError("Failed to open serial port, permissions correct?")
-			return False
+		else:
+			try:
+				self._serial = serial.Serial(self._port, self._baudrate, timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
+				return True
+			except:
+				self.logError("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
+				self.onError("Failed to open serial port, permissions correct?")
+				return False
 
 	def _readline(self):
 		if self._serial is None:
@@ -123,10 +141,41 @@ class SerialTransport(Transport):
 			self.logRx(unicode(line, "ascii", "replace").encode("ascii", "replace").rstrip())
 		return line
 
+	def __getSerialList(self):
+		baselist=[]
+		if os.name == "nt":
+			try:
+				key=_winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
+				i=0
+				while(1):
+					baselist+=[_winreg.EnumValue(key,i)[1]]
+					i+=1
+			except:
+				pass
+		baselist = baselist \
+				   + glob.glob("/dev/ttyUSB*") \
+				   + glob.glob("/dev/ttyACM*") \
+				   + glob.glob("/dev/ttyAMA*") \
+				   + glob.glob("/dev/tty.usb*") \
+				   + glob.glob("/dev/cu.*") \
+				   + glob.glob("/dev/rfcomm*")
 
-class VirtualSerialTransport(SerialTransport):
-	def _connect(self):
-		self.changeState(State.OPENING_CONNECTION)
-		self._serial = VirtualPrinter()
-		self.changeState(State.CONNECTED)
-		return True
+		additionalPorts = settings().get(["serial", "additionalPorts"])
+		for additional in additionalPorts:
+			baselist += glob.glob(additional)
+
+		prev = settings().get(["serial", "port"])
+		if prev in baselist:
+			baselist.remove(prev)
+			baselist.insert(0, prev)
+		if settings().getBoolean(["devel", "virtualPrinter", "enabled"]):
+			baselist.append("VIRTUAL")
+		return baselist
+
+	def __getBaudrateList(self):
+		ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+		prev = settings().getInt(["serial", "baudrate"])
+		if prev in ret:
+			ret.remove(prev)
+			ret.insert(0, prev)
+		return ret
