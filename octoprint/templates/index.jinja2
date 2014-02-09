@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title data-bind="text: title">OctoPrint</title>
+        <title data-bind="text: title">SeeMeCNC: Orion</title>
 
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
         <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.pnotify.default.css') }}" rel="stylesheet" media="screen">
@@ -112,7 +111,7 @@
                         </div>
                         <div class="accordion-body collapse in" id="state">
                             <div class="accordion-inner">
-                                Machine State: <strong data-bind="text: stateString"></strong><br>
+                                Orion State: <strong data-bind="text: stateString"></strong><br>
                                 File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
                                 Estimated Print Time: <strong data-bind="text: estimatedPrintTime"></strong><br>
@@ -340,6 +339,22 @@
                             <div id="webcam_container">
                                 <img id="webcam_image" src="{{ webcamStream }}" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
                             </div>
+                            <div class="tab-pane" id="term">
+                            <pre id="terminal-output" class="pre-scrollable"></pre>
+                            <label class="checkbox">
+                                <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
+                            </label>
+                            <div data-bind="foreach: filters">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="attr: { value: regex }, checked: $parent.activeFilters"> <span data-bind="text: name"></span>
+                                </label>
+                            </div>
+
+                            <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
+                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">
+                                <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
+                            </div>
+                        </div>
                             {% endif %}
 
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
