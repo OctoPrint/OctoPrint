@@ -1,0 +1,6 @@
+The code in this sub package mostly originates from the Cura project (https://github.com/daid/Cura). It has been
+slightly reorganized and adapted. The mapping to the original Cura source is the following:
+
+* avr_isp.* => Cura.avr_isp.*
+* comm => Cura.util.machineCom (highly modified now)
+* gcodeInterpreter => Cura.util.gcodeInterpreter
