@@ -9,8 +9,8 @@ $(function() {
         var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
-        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel, temperatureViewModel, terminalViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);

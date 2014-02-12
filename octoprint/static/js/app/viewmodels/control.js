@@ -1,8 +1,10 @@
-function ControlViewModel(loginStateViewModel, settingsViewModel) {
+function ControlViewModel(loginStateViewModel, settingsViewModel, temperatureViewModel, terminalViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.settings = settingsViewModel;
+	self.temperature = temperatureViewModel;
+	self.terminal = terminalViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
