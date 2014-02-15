@@ -672,7 +672,7 @@ class MachineCom(object):
 						"file": self._currentFile.getFilename(),
 						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					})
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
@@ -934,7 +934,7 @@ class MachineCom(object):
 					payload = {
 						"local": self._currentFile.getLocalFilename(),
 						"remote": self._currentFile.getRemoteFilename(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					}
 
 					self._currentFile = None
@@ -947,7 +947,7 @@ class MachineCom(object):
 						"file": self._currentFile.getFilename(),
 						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					}
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
