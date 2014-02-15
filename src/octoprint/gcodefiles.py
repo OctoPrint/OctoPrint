@@ -560,8 +560,6 @@ class MetadataAnalyzer:
 	def _work(self):
 		aborted = None
 		while True:
-			self._active.wait()
-
 			if aborted is not None:
 				filename = aborted
 				aborted = None
@@ -569,6 +567,8 @@ class MetadataAnalyzer:
 			else:
 				(priority, filename) = self._queue.get()
 				self._logger.debug("Processing file %s from queue (priority %d)" % (filename, priority))
+
+			self._active.wait()
 
 			try:
 				self._analyzeGcode(filename)
