@@ -11,39 +11,49 @@ GCODE.renderer = (function(){
     var canvas;
     var ctx;
     var zoomFactor= 2.8, zoomFactorDelta = 0.4;
-    var gridSizeX=200,gridSizeY=200,gridStep=10;
+    var gridStep=10;
     var ctxHeight, ctxWidth;
     var prevX=0, prevY=0;
 
-//    var colorGrid="#bbbbbb", colorLine="#000000";
-    var sliderHor, sliderVer;
     var layerNumStore, progressStore={from: 0, to: -1};
     var lastX, lastY;
-    var dragStart,dragged;
+    var dragStart, dragged;
     var scaleFactor = 1.1;
     var model;
-    var initialized=false;
+    var initialized = false;
     var renderOptions = {
-        showMoves: true,
-        showRetracts: true,
         colorGrid: "#bbbbbb",
-        extrusionWidth: 1,
-//        colorLine: ["#000000", "#aabb88",  "#ffe7a0", "#6e7700", "#331a00", "#44ba97", "#08262f", "#db0e00", "#ff9977"],
-        colorLine: ["#000000", "#45c7ba",  "#a9533a", "#ff44cc", "#dd1177", "#eeee22", "#ffbb55", "#ff5511", "#777788"],
+        bgColorGrid: "#ffffff",
+        bgColorOffGrid: "#eeeeee",
+        colorLine: ["#000000", "#3333cc", "#cc3333", "#33cc33", "#cc33cc"],
         colorMove: "#00ff00",
         colorRetract: "#ff0000",
         colorRestart: "#0000ff",
+
+        showMoves: true,
+        showRetracts: true,
+        extrusionWidth: 1,
+        // #000000", "#45c7ba",  "#a9533a", "#ff44cc", "#dd1177", "#eeee22", "#ffbb55", "#ff5511", "#777788"
         sizeRetractSpot: 2,
         modelCenter: {x: 0, y: 0},
-        moveModel: true,
         differentiateColors: true,
-        showNextLayer: false
+        showNextLayer: false,
+        showPreviousLayer: false,
+
+        moveModel: true,
+        zoomInOnModel: false,
+        zoomInOnBed: false,
+        centerViewport: false,
+
+        bed: {x: 200, y: 200},
+        container: undefined
     };
 
-    var offsetModelX=0, offsetModelY=0;
+    var offsetModelX = 0, offsetModelY = 0;
+    var offsetBedX = 0, offsetBedY = 0;
+    var scaleX = 1, scaleY = 1;
     var speeds = [];
     var speedsByLayer = {};
-
 
     var reRender = function(){
         var p1 = ctx.transformedPoint(0,0);
@@ -51,7 +61,10 @@ GCODE.renderer = (function(){
         ctx.clearRect(p1.x,p1.y,p2.x-p1.x,p2.y-p1.y);
         drawGrid();
         if(renderOptions['showNextLayer'] && layerNumStore < model.length - 1) {
-            drawLayer(layerNumStore+1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore+1), true);
+            drawLayer(layerNumStore + 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore + 1), true);
+        }
+        if (renderOptions['showPreviousLayer'] && layerNumStore > 0) {
+            drawLayer(layerNumStore - 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore - 1), true);
         }
         drawLayer(layerNumStore, progressStore.from, progressStore.to);
     };
@@ -114,14 +127,11 @@ GCODE.renderer = (function(){
 
 
     var  startCanvas = function() {
-        canvas = document.getElementById('canvas');
+        var jqueryCanvas = $(renderOptions["container"]);
+        //jqueryCanvas.css("background-color", renderOptions["bgColorOffGrid"]);
+        canvas = jqueryCanvas[0];
 
-        // Проверяем понимает ли браузер canvas
-        if (!canvas.getContext) {
-            throw "exception";
-        }
-
-        ctx = canvas.getContext('2d'); // Получаем 2D контекст
+        ctx = canvas.getContext('2d');
         ctxHeight = canvas.height;
         ctxWidth = canvas.width;
         lastX = ctxWidth/2;
@@ -172,121 +182,125 @@ GCODE.renderer = (function(){
     };
 
     var drawGrid = function() {
+        console.log("Drawing grid");
+
+        ctx.translate(offsetBedX, offsetBedY);
+
+        ctx.beginPath();
+        var width = renderOptions["bed"]["x"] * zoomFactor;
+        var height = renderOptions["bed"]["y"] * zoomFactor;
+        var origin = {
+            x: 0,
+            y: -1 * renderOptions["bed"]["y"] * zoomFactor
+        };
+        ctx.strokeStyle = renderOptions["colorGrid"];
+        ctx.fillStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.rect(origin.x, origin.y, width, height);
+        ctx.fill();
+        ctx.stroke();
+
         var i;
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.lineWidth = 1;
-        var offsetX=0, offsetY=0;
-        if(renderOptions["moveModel"]){
-            offsetX = offsetModelX;
-            offsetY = offsetModelY;
-        }
 
         ctx.beginPath();
-        for(i=0;i<=gridSizeX;i+=gridStep){
-            ctx.moveTo(i*zoomFactor-offsetX, 0-offsetY);
-            ctx.lineTo(i*zoomFactor-offsetX, -gridSizeY*zoomFactor-offsetY);
+        for (i = 0; i <= renderOptions["bed"]["x"]; i += gridStep) {
+            ctx.moveTo(i * zoomFactor, 0);
+            ctx.lineTo(i * zoomFactor, -1 * renderOptions["bed"]["y"] * zoomFactor);
         }
         ctx.stroke();
 
         ctx.beginPath();
-        for(i=0;i<=gridSizeY;i+=gridStep){
-            ctx.moveTo(0-offsetX, -i*zoomFactor-offsetY);
-            ctx.lineTo(gridSizeX*zoomFactor-offsetX, -i*zoomFactor-offsetY);
+        for (i = 0; i <= renderOptions["bed"]["y"]; i += gridStep) {
+            ctx.moveTo(0, -1 * i * zoomFactor);
+            ctx.lineTo(renderOptions["bed"]["x"] * zoomFactor, -1 * i * zoomFactor);
         }
         ctx.stroke();
 
+        ctx.translate(-offsetBedX, -offsetBedY);
     };
 
-    var drawLayer = function(layerNum, fromProgress, toProgress, isNextLayer){
-        var i, speedIndex= 0, prevZ = 0;
-        isNextLayer = typeof isNextLayer !== 'undefined' ? isNextLayer : false;
-        if(!isNextLayer){
-            layerNumStore=layerNum;
+    var drawLayer = function(layerNum, fromProgress, toProgress, isNotCurrentLayer){
+        console.log("Drawing layer " + layerNum + " from " + fromProgress + " to " + toProgress + " (current: " + !isNotCurrentLayer + ")");
+
+        var i;
+
+        isNotCurrentLayer = typeof isNotCurrentLayer !== 'undefined' ? isNotCurrentLayer : false;
+        if (!isNotCurrentLayer) {
+            layerNumStore = layerNum;
             progressStore = {from: fromProgress, to: toProgress};
         }
-        if(!model||!model[layerNum])return;
+
+        if (!model || !model[layerNum]) return;
 
         var cmds = model[layerNum];
         var x, y;
 
-//        if(toProgress === -1){
-//            toProgress=cmds.length;
-//        }
-
-        if(fromProgress>0){
-            prevX = cmds[fromProgress-1].x*zoomFactor;
-            prevY = -cmds[fromProgress-1].y*zoomFactor;
-        }else if(fromProgress===0 && layerNum==0){
-            if(model[0]&&model[0].x !== undefined &&model[0].y !== undefined){
-                prevX = model[0].x*zoomFactor;
-                prevY = -model[0].y*zoomFactor;
-            }else {
+        if (fromProgress > 0) {
+            prevX = cmds[fromProgress-1].x * zoomFactor;
+            prevY = -cmds[fromProgress-1].y * zoomFactor;
+        } else if (fromProgress === 0 && layerNum == 0) {
+            if (model[0] && model[0].x !== undefined && model[0].y !== undefined) {
+                prevX = model[0].x * zoomFactor;
+                prevY = -model[0].y * zoomFactor;
+            } else {
                 prevX = 0;
                 prevY = 0;
             }
-        }else if(typeof(cmds[0].prevX) !== 'undefined' && typeof(cmds[0].prevY) !== 'undefined'){
-            prevX = cmds[0].prevX*zoomFactor;
-            prevY = -cmds[0].prevY*zoomFactor;
-        }else{
-            if(model[layerNum-1]){
-                prevX=undefined;
-                prevY=undefined;
-                for(i=model[layerNum-1].length-1;i>=0;i--){
-                    if(prevX === undefined && model[layerNum-1][i].x!==undefined)prevX=model[layerNum-1][i].x*zoomFactor;
-                    if(prevY === undefined && model[layerNum-1][i].y!==undefined)prevY=-model[layerNum-1][i].y*zoomFactor;
+        } else if(typeof(cmds[0].prevX) !== 'undefined' && typeof(cmds[0].prevY) !== 'undefined') {
+            prevX = cmds[0].prevX * zoomFactor;
+            prevY = -cmds[0].prevY * zoomFactor;
+        } else {
+            if (model[layerNum-1]) {
+                prevX = undefined;
+                prevY = undefined;
+                for (i = model[layerNum-1].length-1; i >= 0; i--) {
+                    if (prevX === undefined && model[layerNum-1][i].x !== undefined) prevX = model[layerNum-1][i].x * zoomFactor;
+                    if (prevY === undefined && model[layerNum-1][i].y !== undefined) prevY =- model[layerNum-1][i].y * zoomFactor;
                 }
-                if(prevX === undefined)prevX=0;
-                if(prevY === undefined)prevY=0;
-            }else{
-                prevX=0;
-                prevY=0;
+                if (prevX === undefined) prevX=0;
+                if (prevY === undefined) prevY=0;
+            } else {
+                prevX = 0;
+                prevY = 0;
             }
         }
 
-        prevZ = GCODE.renderer.getZ(layerNum);
-
-//        ctx.strokeStyle = renderOptions["colorLine"];
-        for(i=fromProgress;i<=toProgress;i++){
+        for (i = fromProgress; i <= toProgress; i++) {
             ctx.lineWidth = 1;
 
-            if(typeof(cmds[i]) === 'undefined')continue;
+            if (typeof(cmds[i]) === 'undefined') continue;
 
-            if(typeof(cmds[i].prevX) !== 'undefined' && typeof(cmds[i].prevY) !== 'undefined'){
-                prevX = cmds[i].prevX*zoomFactor;
-                prevY = -cmds[i].prevY*zoomFactor;
-            }
-//                console.log(cmds[i]);
-            if(typeof(cmds[i].x)==='undefined'||isNaN(cmds[i].x))x=prevX/zoomFactor;
-            else x = cmds[i].x;
-            if(typeof(cmds[i].y) === 'undefined'||isNaN(cmds[i].y))y=prevY/zoomFactor;
-            else y = -cmds[i].y;
-            if(renderOptions["differentiateColors"]&&!renderOptions['showNextLayer']){
-//                if(speedsByLayer['extrude'][prevZ]){
-                    speedIndex = speeds['extrude'].indexOf(cmds[i].speed);
-//                    speedIndex = GCODE.ui.ArrayIndexOf(speedsByLayer['extrude'][prevZ], function(obj) {return obj.speed === cmds[i].speed;});
-//                } else {
-//                    speedIndex = -1;
-//                }
-                if(speedIndex === -1){
-                    speedIndex = 0;
-                }else if(speedIndex > renderOptions["colorLine"].length -1){
-                    speedIndex = speedIndex % (renderOptions["colorLine"].length-1);
-    //                console.log("Too much colors");
-                }
-            }else if(renderOptions['showNextLayer']&&isNextLayer){
-                speedIndex=3;
-            }else{
-                speedIndex=0;
+            if (typeof(cmds[i].prevX) !== 'undefined' && typeof(cmds[i].prevY) !== 'undefined') {
+                prevX = cmds[i].prevX * zoomFactor;
+                prevY = -cmds[i].prevY * zoomFactor;
             }
 
+            if (typeof(cmds[i].x) === 'undefined' || isNaN(cmds[i].x)) {
+                x = prevX / zoomFactor;
+            } else {
+                x = cmds[i].x;
+            }
+            if (typeof(cmds[i].y) === 'undefined' || isNaN(cmds[i].y)) {
+                y = prevY / zoomFactor;
+            } else {
+                y = -cmds[i].y;
+            }
 
-            if(!cmds[i].extrude&&!cmds[i].noMove){
-//                ctx.stroke();
-                if(cmds[i].retract == -1){
-                    if(renderOptions["showRetracts"]){
+            var tool = cmds[i].tool;
+            if (tool === undefined) tool = 0;
 
-                        ctx.strokeStyle = renderOptions["colorRetract"];
-                        ctx.fillStyle = renderOptions["colorRetract"];
+            var lineColor = renderOptions["colorLine"][tool];
+            if (lineColor === undefined) lineColor = renderOptions["colorLine"][0];
+
+            var alpha = (renderOptions['showNextLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
+            var shade = tool * 0.15;
+            if (!cmds[i].extrude && !cmds[i].noMove) {
+                if (cmds[i].retract == -1) {
+                    if (renderOptions["showRetracts"]) {
+                        ctx.strokeStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
+                        ctx.fillStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
                         ctx.beginPath();
                         ctx.arc(prevX, prevY, renderOptions["sizeRetractSpot"], 0, Math.PI*2, true);
                         ctx.stroke();
@@ -294,59 +308,125 @@ GCODE.renderer = (function(){
                     }
                 }
                 if(renderOptions["showMoves"]){
-                    ctx.strokeStyle = renderOptions["colorMove"];
+                    ctx.strokeStyle = pusher.color(renderOptions["colorMove"]).shade(shade).alpha(alpha).html();
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
                     ctx.lineTo(x*zoomFactor,y*zoomFactor);
                     ctx.stroke();
                 }
-//                ctx.strokeStyle = renderOptions["colorLine"][0];
-//                ctx.beginPath();
-//                console.log("moveto: "+cmds[i].x+":"+cmds[i].y)
-//                ctx.moveTo(cmds[i].x*zoomFactor,cmds[i].y*zoomFactor);
-            }
-            else if(cmds[i].extrude){
-                if(cmds[i].retract==0){
-                    ctx.strokeStyle = renderOptions["colorLine"][speedIndex];
+            } else if(cmds[i].extrude) {
+                if (cmds[i].retract == 0) {
+                    ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool]).shade(shade).alpha(alpha).html();
                     ctx.lineWidth = renderOptions['extrusionWidth'];
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
                     ctx.lineTo(x*zoomFactor,y*zoomFactor);
                     ctx.stroke();
-                }else {
-                    if(renderOptions["showRetracts"]){
-//                        ctx.stroke();
-                        ctx.strokeStyle = renderOptions["colorRestart"];
-                        ctx.fillStyle = renderOptions["colorRestart"];
+                } else {
+                    if (renderOptions["showRetracts"]) {
+                        ctx.strokeStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
+                        ctx.fillStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
                         ctx.beginPath();
                         ctx.arc(prevX, prevY, renderOptions["sizeRetractSpot"], 0, Math.PI*2, true);
                         ctx.stroke();
                         ctx.fill();
-//                        ctx.strokeStyle = renderOptions["colorLine"][0];
-//                        ctx.beginPath();
                     }
                 }
             }
-            prevX = x*zoomFactor;
-            prevY = y*zoomFactor;
+            prevX = x * zoomFactor;
+            prevY = y * zoomFactor;
         }
         ctx.stroke();
     };
 
+    var applyOffsets = function(mdlInfo) {
+        // determine bed and model offsets
+        if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
+        if (renderOptions["centerViewport"] || renderOptions["zoomInOnModel"]) {
+            var canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
+            if (mdlInfo) {
+                offsetModelX = canvasCenter.x - (mdlInfo.min.x + mdlInfo.modelSize.x / 2) * zoomFactor;
+                offsetModelY = canvasCenter.y + (mdlInfo.min.y + mdlInfo.modelSize.y / 2) * zoomFactor;
+            } else {
+                offsetModelX = 0;
+                offsetModelY = 0;
+            }
+            offsetBedX = 0;
+            offsetBedY = 0;
+        } else if (mdlInfo && renderOptions["moveModel"]) {
+            offsetModelX = (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
+            offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
+            offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
+            offsetBedY = (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
+        } else {
+            offsetModelX = 0;
+            offsetModelY = 0;
+            offsetBedX = 0;
+            offsetBedY = 0;
+        }
+        if (ctx) ctx.translate(offsetModelX, offsetModelY);
+    };
+
+    var applyZoom = function(mdlInfo) {
+        var pt = ctx.transformedPoint(canvas.width/2,canvas.height/2);
+        var transform = ctx.getTransform();
+        var scaleF;
+        if (scaleX && scaleY && transform.a && transform.d) {
+            ctx.translate(pt.x, pt.y);
+            ctx.scale(1 / scaleX, 1 / scaleY);
+            ctx.translate(-pt.x, -pt.y);
+        }
+        if (mdlInfo && renderOptions["zoomInOnModel"]) {
+            scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width - 10) / mdlInfo.modelSize.x : (canvas.height - 10) / mdlInfo.modelSize.y;
+            scaleF /= zoomFactor;
+            if (transform.a && transform.d) {
+                scaleX = scaleF / transform.a;
+                scaleY = scaleF / transform.d;
+                ctx.translate(pt.x,pt.y);
+                ctx.scale(scaleX, scaleY);
+                ctx.translate(-pt.x, -pt.y);
+            }
+        } else {
+            scaleX = 1;
+            scaleY = 1;
+        }
+    };
 
 // ***** PUBLIC *******
     return {
         init: function(){
             startCanvas();
             initialized = true;
-            ctx.translate(10,gridSizeY*zoomFactor+20);
+            zoomFactor = Math.min((canvas.width - 10) / renderOptions["bed"]["x"], (canvas.height - 10) / renderOptions["bed"]["y"]);
+            ctx.translate((canvas.width - renderOptions["bed"]["x"] * zoomFactor) / 2, renderOptions["bed"]["y"] * zoomFactor + (canvas.height - renderOptions["bed"]["y"] * zoomFactor) / 2);
+
+            offsetModelX = 0;
+            offsetModelY = 0;
+            offsetBedX = 0;
+            offsetBedY = 0;
         },
         setOption: function(options){
-            for(var opt in options){
-                if(options.hasOwnProperty(opt))renderOptions[opt] = options[opt];
-            };
+            var mustRefresh = false;
+            var dirty = false;
+            for (var opt in options) {
+                if (!options.hasOwnProperty(opt)) continue;
+                if (options[opt] === undefined) continue;
 
-            if(initialized)reRender();
+                dirty = dirty || (renderOptions[opt] != options[opt]);
+                renderOptions[opt] = options[opt];
+                if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed"])) {
+                    mustRefresh = true;
+                }
+            }
+
+            if (!dirty) return;
+            if(initialized) {
+                if (mustRefresh) {
+                    this.refresh();
+                } else {
+                    reRender();
+                }
+            }
         },
         getOptions: function(){
             return renderOptions;
@@ -355,27 +435,28 @@ GCODE.renderer = (function(){
             return model;
         },
         render: function(layerNum, fromProgress, toProgress){
-            if(!initialized)this.init();
-            if(!model){
-                drawGrid();
-            }else{
-                if(layerNum < model.length){
-                    var p1 = ctx.transformedPoint(0,0);
-                    var p2 = ctx.transformedPoint(canvas.width,canvas.height);
-                    ctx.clearRect(p1.x,p1.y,p2.x-p1.x,p2.y-p1.y);
-                    drawGrid();
-//                    ctx.globalAlpha = 0.5;
-                    if(renderOptions['showNextLayer'] && layerNum < model.length - 1) {
-                        drawLayer(layerNum+1, 0, this.getLayerNumSegments(layerNum+1), true);
+            if (!initialized) this.init();
+
+            var p1 = ctx.transformedPoint(0, 0);
+            var p2 = ctx.transformedPoint(canvas.width, canvas.height);
+            ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+            drawGrid();
+            if (model && model.length) {
+                if (layerNum < model.length) {
+                    if (renderOptions['showNextLayer'] && layerNum < model.length - 1) {
+                        drawLayer(layerNum + 1, 0, this.getLayerNumSegments(layerNum + 1), true);
+                    }
+                    if (renderOptions['showPreviousLayer'] && layerNum > 0) {
+                        drawLayer(layerNum - 1, 0, this.getLayerNumSegments(layerNum - 1), true);
                     }
                     drawLayer(layerNum, fromProgress, toProgress);
-                }else{
-                    console.log("Got request to render non-existent layer!!");
+                } else {
+                    console.log("Got request to render non-existent layer");
                 }
             }
         },
         getModelNumLayers: function(){
-            return model?model.length:1;
+            return model ? model.length : 1;
         },
         getLayerNumSegments: function(layer){
             if(model){
@@ -384,31 +465,52 @@ GCODE.renderer = (function(){
                 return 1;
             }
         },
+        clear: function() {
+            offsetModelX = 0;
+            offsetModelY = 0;
+            offsetBedX = 0;
+            offsetBedY = 0;
+            scaleX = 1;
+            scaleY = 1;
+            speeds = [];
+            speedsByLayer = {};
+
+            this.doRender([], 0);
+        },
         doRender: function(mdl, layerNum){
-            var mdlInfo;
             model = mdl;
-            prevX=0;
-            prevY=0;
-            if(!initialized)this.init();
 
-            mdlInfo = GCODE.gCodeReader.getModelInfo();
-            speeds = mdlInfo.speeds;
-            speedsByLayer = mdlInfo.speedsByLayer;
-//            console.log(speeds);
-//            console.log(mdlInfo.min.x + ' ' + mdlInfo.modelSize.x);
-            offsetModelX = (gridSizeX/2-(mdlInfo.min.x+mdlInfo.modelSize.x/2))*zoomFactor;
-            offsetModelY = (mdlInfo.min.y+mdlInfo.modelSize.y/2)*zoomFactor-gridSizeY/2*zoomFactor;
-            if(ctx)ctx.translate(offsetModelX, offsetModelY);
+            var mdlInfo = undefined;
+            prevX = 0;
+            prevY = 0;
+            if (!initialized) this.init();
 
-            this.render(layerNum, 0, model[layerNum].length);
+            var toProgress = 1;
+            if (model) {
+                mdlInfo = GCODE.gCodeReader.getModelInfo();
+                speeds = mdlInfo.speeds;
+                speedsByLayer = mdlInfo.speedsByLayer;
+                if (model[layerNum]) {
+                    toProgress = model[layerNum].length;
+                }
+            }
+
+            applyOffsets(mdlInfo);
+            applyZoom(mdlInfo);
+
+            this.render(layerNum, 0, toProgress);
+        },
+        refresh: function(layerNum) {
+            if (!layerNum) layerNum = layerNumStore;
+            this.doRender(model, layerNum);
         },
         getZ: function(layerNum){
-            if(!model&&!model[layerNum]){
+            if(!model || !model[layerNum]){
                 return '-1';
             }
             var cmds = model[layerNum];
-            for(var i=0;i<cmds.length;i++){
-                if(cmds[i].prevZ!==undefined)return cmds[i].prevZ;
+            for(var i = 0; i < cmds.length; i++){
+                if(cmds[i].prevZ !== undefined) return cmds[i].prevZ;
             }
             return '-1';
         }

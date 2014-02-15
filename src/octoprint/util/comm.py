@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 # coding=utf-8
-__author__ = "Gina Häußge <osd@foosel.net>"
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
+__copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
+
 
 import os
 import glob
@@ -18,7 +20,8 @@ from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
-from octoprint.events import eventManager
+from octoprint.events import eventManager, Events
+from octoprint.filemanager.destinations import FileDestinations
 from octoprint.gcodefiles import isGcodeFileName
 from octoprint.util import getExceptionString, getNewTimeout
 from octoprint.util.virtual import VirtualPrinter
@@ -68,17 +71,32 @@ def baudrateList():
 	return ret
 
 gcodeToEvent = {
-	"M226": "Waiting",  # pause for user input
-	"M0": "Waiting",
-	"M1": "Waiting",
-	"M245": "Cooling",  # part cooler
-	"M240": "Conveyor", # part conveyor
-	"M40": "Eject",     # part ejector
-	"M300": "Alert",    # user alert
-	"G28": "Home",      # home print head
-	"M112": "EStop",
-	"M80": "PowerOn",
-	"M81": "PowerOff"
+	# pause for user input
+	"M226": Events.WAITING,
+	"M0": Events.WAITING,
+	"M1": Events.WAITING,
+
+	# part cooler
+	"M245": Events.COOLING,
+
+	# part conveyor
+	"M240": Events.CONVEYOR,
+
+	# part ejector
+	"M40": Events.EJECT,
+
+	# user alert
+	"M300": Events.ALERT,
+
+	# home print head
+	"G28": Events.HOME,
+
+	# emergency stop
+	"M112": Events.E_STOP,
+
+	# motors on/off
+	"M80": Events.POWER_ON,
+	"M81": Events.POWER_OFF,
 }
 
 class MachineCom(object):
@@ -117,16 +135,25 @@ class MachineCom(object):
 		self._serial = None
 		self._baudrateDetectList = baudrateList()
 		self._baudrateDetectRetry = 0
-		self._temp = 0
+		self._temp = {}
+		self._targetTemp = {}
+		self._tempOffset = {}
 		self._bedTemp = 0
-		self._targetTemp = 0
 		self._bedTargetTemp = 0
-		self._tempOffset = 0
 		self._bedTempOffset = 0
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
 		self._heatupWaitStartTime = 0
 		self._heatupWaitTimeLost = 0.0
+		self._currentExtruder = 0
+
+		# Regex matching temperature entries in line. Groups will be as follows:
+		# - 1: whole tool designator incl. optional toolNumber ("T", "Tn", "B")
+		# - 2: toolNumber, if given ("", "n", "")
+		# - 3: actual temperature
+		# - 4: whole target substring, if given (e.g. " / 22.0")
+		# - 5: target temperature
+		self._tempRegex = re.compile("(B|T(\d*)):\s*([-+]?\d*\.?\d*)(\s*\/?\s*([-+]?\d*\.?\d*))?")
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 1
@@ -289,7 +316,10 @@ class MachineCom(object):
 		return self._bedTemp
 
 	def getOffsets(self):
-		return (self._tempOffset, self._bedTempOffset)
+		return self._tempOffset, self._bedTempOffset
+
+	def getConnection(self):
+		return self._port, self._baudrate
 
 	##~~ external interface
 
@@ -307,12 +337,19 @@ class MachineCom(object):
 			self._sdFileList = []
 
 		if printing:
-			eventManager().fire("PrintFailed")
-		eventManager().fire("Disconnected")
+			payload = None
+			if self._currentFile is not None:
+				payload = {
+					"file": self._currentFile.getFilename(),
+					"filename": os.path.basename(self._currentFile.getFilename()),
+					"origin": self._currentFile.getFileLocation()
+				}
+			eventManager().fire(Events.PRINT_FAILED, payload)
+		eventManager().fire(Events.DISCONNECTED)
 
-	def setTemperatureOffset(self, extruder=None, bed=None):
-		if extruder is not None:
-			self._tempOffset = extruder
+	def setTemperatureOffset(self, tool=None, bed=None):
+		if tool is not None:
+			self._tempOffset = tool
 
 		if bed is not None:
 			self._bedTempOffset = bed
@@ -334,7 +371,11 @@ class MachineCom(object):
 		wasPaused = self.isPaused()
 		self._printSection = "CUSTOM"
 		self._changeState(self.STATE_PRINTING)
-		eventManager().fire("PrintStarted", self._currentFile.getFilename())
+		eventManager().fire(Events.PRINT_STARTED, {
+			"file": self._currentFile.getFilename(),
+			"filename": os.path.basename(self._currentFile.getFilename()),
+			"origin": self._currentFile.getFileLocation()
+		})
 
 		try:
 			self._currentFile.start()
@@ -348,18 +389,18 @@ class MachineCom(object):
 		except:
 			self._errorValue = getExceptionString()
 			self._changeState(self.STATE_ERROR)
-			eventManager().fire("Error", self.getErrorString())
+			eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 
-	def startFileTransfer(self, filename, remoteFilename):
+	def startFileTransfer(self, filename, localFilename, remoteFilename):
 		if not self.isOperational() or self.isBusy():
 			logging.info("Printer is not operation or busy")
 			return
 
-		self._currentFile = StreamingGcodeFileInformation(filename)
+		self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
 		self._currentFile.start()
 
 		self.sendCommand("M28 %s" % remoteFilename)
-		eventManager().fire("TransferStart", remoteFilename)
+		eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
 		self._callback.mcFileTransferStarted(remoteFilename, self._currentFile.getFilesize())
 
 	def selectFile(self, filename, sd):
@@ -373,7 +414,10 @@ class MachineCom(object):
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename, self.getOffsets)
-			eventManager().fire("FileSelected", filename)
+			eventManager().fire(Events.FILE_SELECTED, {
+				"file": self._currentFile.getFilename(),
+				"origin": self._currentFile.getFileLocation()
+			})
 			self._callback.mcFileSelected(filename, self._currentFile.getFilesize(), False)
 
 	def unselectFile(self):
@@ -381,7 +425,7 @@ class MachineCom(object):
 			return
 
 		self._currentFile = None
-		eventManager().fire("FileSelected", None)
+		eventManager().fire(Events.FILE_DESELECTED)
 		self._callback.mcFileSelected(None, None, False)
 
 	def cancelPrint(self):
@@ -394,7 +438,11 @@ class MachineCom(object):
 			self.sendCommand("M25")    # pause print
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 
-		eventManager().fire("PrintCancelled")
+		eventManager().fire(Events.PRINT_CANCELLED, {
+			"file": self._currentFile.getFilename(),
+			"filename": os.path.basename(self._currentFile.getFilename()),
+			"origin": self._currentFile.getFileLocation()
+		})
 
 	def setPause(self, pause):
 		if self.isStreaming():
@@ -406,13 +454,22 @@ class MachineCom(object):
 				self.sendCommand("M24")
 			else:
 				self._sendNext()
-			eventManager().fire("PrintResumed", self._currentFile.getFilename())
-		if pause and self.isPrinting():
+
+			eventManager().fire(Events.PRINT_RESUMED, {
+				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
+				"origin": self._currentFile.getFileLocation()
+			})
+		elif pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
 
-			eventManager().fire("Paused")
+			eventManager().fire(Events.PRINT_PAUSED, {
+				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
+				"origin": self._currentFile.getFileLocation()
+			})
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -466,49 +523,65 @@ class MachineCom(object):
 
 	##~~ communication monitoring and handling
 
+	def _parseTemperatures(self, line):
+		result = {}
+		maxToolNum = 0
+		for match in re.finditer(self._tempRegex, line):
+			tool = match.group(1)
+			toolNumber = int(match.group(2)) if match.group(2) and len(match.group(2)) > 0 else None
+			if toolNumber > maxToolNum:
+				maxToolNum = toolNumber
+
+			try:
+				actual = float(match.group(3))
+				target = None
+				if match.group(4) and match.group(5):
+					target = float(match.group(5))
+
+				result[tool] = (toolNumber, actual, target)
+			except ValueError:
+				# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
+				pass
+
+		if "T0" in result.keys() and "T" in result.keys():
+			del result["T"]
+
+		return maxToolNum, result
+
+	def _processTemperatures(self, line):
+		maxToolNum, parsedTemps = self._parseTemperatures(line)
+
+		# extruder temperatures
+		if not "T0" in parsedTemps.keys() and "T" in parsedTemps.keys():
+			# only single reporting, "T" is our one and only extruder temperature
+			toolNum, actual, target = parsedTemps["T"]
+			self._temp[0] = (actual, target)
+		elif "T0" in parsedTemps.keys():
+			for n in range(maxToolNum + 1):
+				tool = "T%d" % n
+				if not tool in parsedTemps.keys():
+					continue
+
+				toolNum, actual, target = parsedTemps[tool]
+				self._temp[toolNum] = (actual, target)
+
+		# bed temperature
+		if "B" in parsedTemps.keys():
+			toolNum, actual, target = parsedTemps["B"]
+			self._bedTemp = (actual, target)
+
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
 		pauseTriggers = settings().getPauseTriggers()
 		feedbackErrors = []
 
 		#Open the serial port.
-		if self._port == 'AUTO':
-			self._changeState(self.STATE_DETECT_SERIAL)
-			programmer = stk500v2.Stk500v2()
-			self._log("Serial port list: %s" % (str(serialList())))
-			for p in serialList():
-				try:
-					self._log("Connecting to: %s" % (p))
-					programmer.connect(p)
-					self._serial = programmer.leaveISP()
-					break
-				except ispBase.IspError as (e):
-					self._log("Error while connecting to %s: %s" % (p, str(e)))
-					pass
-				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
-				programmer.close()
-		elif self._port == 'VIRTUAL':
-			self._changeState(self.STATE_OPEN_SERIAL)
-			self._serial = VirtualPrinter()
-		else:
-			self._changeState(self.STATE_OPEN_SERIAL)
-			try:
-				self._log("Connecting to: %s" % (self._port))
-				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
-				else:
-					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
-			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
-		if self._serial == None:
-			self._log("Failed to open serial port (%s)" % (self._port))
-			self._errorValue = 'Failed to autodetect serial port.'
-			self._changeState(self.STATE_ERROR)
-			eventManager().fire("Error", self.getErrorString())
+		if not self._openSerial():
 			return
-		self._log("Connected to: %s, starting monitor" % (self._serial))
+
+		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
+			self._log("Starting baud rate detection")
 			self._changeState(self.STATE_DETECT_BAUDRATE)
 		else:
 			self._changeState(self.STATE_CONNECTING)
@@ -523,31 +596,11 @@ class MachineCom(object):
 		while True:
 			try:
 				line = self._readline()
-				if line == None:
+				if line is None:
 					break
 
 				##~~ Error handling
-				# No matter the state, if we see an error, goto the error state and store the error for reference.
-				if line.startswith('Error:'):
-					#Oh YEAH, consistency.
-					# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
-					#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
-					#	So we can have an extra newline in the most common case. Awesome work people.
-					if re.match('Error:[0-9]\n', line):
-						line = line.rstrip() + self._readline()
-					#Skip the communication errors, as those get corrected.
-					if 'checksum mismatch' in line \
-							or 'Wrong checksum' in line \
-							or 'Line Number is not Last Line Number' in line \
-							or 'expected line' in line \
-							or 'No Line Number with checksum' in line \
-							or 'No Checksum with line number' in line \
-							or 'Missing checksum' in line:
-						pass
-					elif not self.isError():
-						self._errorValue = line[6:]
-						self._changeState(self.STATE_ERROR)
-						eventManager().fire("Error", self.getErrorString())
+				line = self._handleErrors(line)
 
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
@@ -556,16 +609,9 @@ class MachineCom(object):
 					continue
 
 				##~~ Temperature processing
-				if ' T:' in line or line.startswith('T:'):
-					try:
-						self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
-						if ' B:' in line:
-							self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
-
-						self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
-					except ValueError:
-						# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
-						pass
+				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
+					self._processTemperatures(line)
+					self._callback.mcTempUpdate(self._temp, self._bedTemp)
 
 					#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
 					if not 'ok' in line:
@@ -608,7 +654,10 @@ class MachineCom(object):
 					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 					if self._currentFile is not None:
 						self._callback.mcFileSelected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
-						eventManager().fire("FileSelected", self._currentFile.getFilename())
+						eventManager().fire(Events.FILE_SELECTED, {
+							"file": self._currentFile.getFilename(),
+							"origin": self._currentFile.getFileLocation()
+						})
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 					self._printSection = "CUSTOM"
@@ -619,28 +668,40 @@ class MachineCom(object):
 					self._sdFilePos = 0
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire("PrintDone")
+					eventManager().fire(Events.PRINT_DONE, {
+						"file": self._currentFile.getFilename(),
+						"filename": os.path.basename(self._currentFile.getFilename()),
+						"origin": self._currentFile.getFileLocation(),
+						"time": time.time() - self._currentFile.getStartTime()
+					})
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
 
 				##~~ Message handling
-				elif line.strip() != '' and line.strip() != 'ok' and not line.startswith("wait") and not line.startswith('Resend:') and line != 'echo:Unknown command:""\n' and self.isOperational():
+				elif line.strip() != '' \
+						and line.strip() != 'ok' and not line.startswith("wait") \
+						and not line.startswith('Resend:') \
+						and line != 'echo:Unknown command:""\n' \
+						and self.isOperational():
 					self._callback.mcMessage(line)
 
 				##~~ Parsing for feedback commands
 				if feedbackControls:
 					for name, matcher, template in feedbackControls:
+						if name in feedbackErrors:
+							# we previously had an error with that one, so we'll skip it now
+							continue
 						try:
 							match = matcher.search(line)
 							if match is not None:
-								format = None
+								formatFunction = None
 								if isinstance(template, str):
-									format = str.format
+									formatFunction = str.format
 								elif isinstance(template, unicode):
-									format = unicode.format
+									formatFunction = unicode.format
 
-								if format is not None:
-									self._callback.mcReceivedRegisteredMessage(name, format(template, *(match.groups("n/a"))))
+								if formatFunction is not None:
+									self._callback.mcReceivedRegisteredMessage(name, formatFunction(template, *(match.groups("n/a"))))
 						except:
 							if not name in feedbackErrors:
 								self._logger.info("Something went wrong with feedbackControl \"%s\": " % name, exc_info=True)
@@ -666,7 +727,7 @@ class MachineCom(object):
 							self.close()
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
 							self._changeState(self.STATE_ERROR)
-							eventManager().fire("Error", self.getErrorString())
+							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 						elif self._baudrateDetectRetry > 0:
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
@@ -698,7 +759,7 @@ class MachineCom(object):
 							self._changeState(self.STATE_OPERATIONAL)
 							if self._sdAvailable:
 								self.refreshSdFiles()
-							eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
+							eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
 					else:
 						self._testingBaudrate = False
 
@@ -712,7 +773,7 @@ class MachineCom(object):
 						self._changeState(self.STATE_OPERATIONAL)
 						if not self._sdAvailable:
 							self.initSdCard()
-						eventManager().fire("Connected", "%s at %s baud" % (self._port, self._baudrate))
+						eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
 					elif time.time() > timeout:
 						self.close()
 
@@ -777,8 +838,74 @@ class MachineCom(object):
 				self._log(errorMsg)
 				self._errorValue = errorMsg
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire("Error", self.getErrorString())
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
+
+	def _openSerial(self):
+		if self._port == 'AUTO':
+			self._changeState(self.STATE_DETECT_SERIAL)
+			programmer = stk500v2.Stk500v2()
+			self._log("Serial port list: %s" % (str(serialList())))
+			for p in serialList():
+				try:
+					self._log("Connecting to: %s" % (p))
+					programmer.connect(p)
+					self._serial = programmer.leaveISP()
+					break
+				except ispBase.IspError as (e):
+					self._log("Error while connecting to %s: %s" % (p, str(e)))
+					pass
+				except:
+					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
+				programmer.close()
+			if self._serial is None:
+				self._log("Failed to autodetect serial port")
+				self._errorValue = 'Failed to autodetect serial port.'
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				return False
+		elif self._port == 'VIRTUAL':
+			self._changeState(self.STATE_OPEN_SERIAL)
+			self._serial = VirtualPrinter()
+		else:
+			self._changeState(self.STATE_OPEN_SERIAL)
+			try:
+				self._log("Connecting to: %s" % self._port)
+				if self._baudrate == 0:
+					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
+				else:
+					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
+			except:
+				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
+				self._errorValue = "Failed to open serial port, permissions correct?"
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				return False
+		return True
+
+	def _handleErrors(self, line):
+		# No matter the state, if we see an error, goto the error state and store the error for reference.
+		if line.startswith('Error:'):
+			#Oh YEAH, consistency.
+			# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
+			#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
+			#	So we can have an extra newline in the most common case. Awesome work people.
+			if re.match('Error:[0-9]\n', line):
+				line = line.rstrip() + self._readline()
+			#Skip the communication errors, as those get corrected.
+			if 'checksum mismatch' in line \
+				or 'Wrong checksum' in line \
+				or 'Line Number is not Last Line Number' in line \
+				or 'expected line' in line \
+				or 'No Line Number with checksum' in line \
+				or 'No Checksum with line number' in line \
+				or 'Missing checksum' in line:
+				pass
+			elif not self.isError():
+				self._errorValue = line[6:]
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+		return line
 
 	def _readline(self):
 		if self._serial == None:
@@ -802,16 +929,29 @@ class MachineCom(object):
 			if line is None:
 				if self.isStreaming():
 					self._sendCommand("M29")
+
 					filename = self._currentFile.getFilename()
+					payload = {
+						"local": self._currentFile.getLocalFilename(),
+						"remote": self._currentFile.getRemoteFilename(),
+						"time": time.time() - self._currentFile.getStartTime()
+					}
+
 					self._currentFile = None
-					self._callback.mcFileTransferDone()
 					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire("TransferDone", filename)
+					self._callback.mcFileTransferDone(filename)
+					eventManager().fire(Events.TRANSFER_DONE, payload)
 					self.refreshSdFiles()
 				else:
+					payload = {
+						"file": self._currentFile.getFilename(),
+						"filename": os.path.basename(self._currentFile.getFilename()),
+						"origin": self._currentFile.getFileLocation(),
+						"time": time.time() - self._currentFile.getStartTime()
+					}
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire("PrintDone", self._currentFile.getFilename())
+					eventManager().fire(Events.PRINT_DONE, payload)
 				return
 
 			self._sendCommand(line, True)
@@ -820,7 +960,7 @@ class MachineCom(object):
 	def _handleResendRequest(self, line):
 		lineToResend = None
 		try:
-			lineToResend = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
+			lineToResend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
 		except:
 			if "rs" in line:
 				lineToResend = int(line.split()[1])
@@ -833,7 +973,7 @@ class MachineCom(object):
 				if self.isPrinting():
 					# abort the print, there's nothing we can do to rescue it now
 					self._changeState(self.STATE_ERROR)
-					eventManager().fire("Error", self.getErrorString())
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				else:
 					# reset resend delta, we can't do anything about it
 					self._resendDelta = None
@@ -860,7 +1000,7 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				gcode = re.search("^\s*([GM]\d+)", cmd)
+				gcode = re.search("^\s*([GM]\d+|T)", cmd)
 				if gcode:
 					gcode = gcode.group(1)
 
@@ -908,6 +1048,12 @@ class MachineCom(object):
 			self._errorValue = getExceptionString()
 			self.close(True)
 
+	def _gcode_T(self, cmd):
+		toolMatch = re.search('T([0-9]+)', cmd)
+		if toolMatch:
+			self._currentExtruder = int(toolMatch.group(1))
+		return cmd
+
 	def _gcode_G0(self, cmd):
 		if 'Z' in cmd:
 			try:
@@ -926,10 +1072,14 @@ class MachineCom(object):
 	_gcode_M1 = _gcode_M0
 
 	def _gcode_M104(self, cmd):
+		toolNum = self._currentExtruder
+		toolMatch = re.search('T([0-9]+)', cmd)
+		if toolMatch:
+			toolNum = int(toolMatch.group(1))
 		match = re.search('S([0-9]+)', cmd)
 		if match:
 			try:
-				self._targetTemp = float(match.group(1))
+				self._targetTemp[toolNum] = float(match.group(1))
 			except ValueError:
 				pass
 		return cmd
@@ -978,7 +1128,7 @@ class MachineComPrintCallback(object):
 	def mcLog(self, message):
 		pass
 
-	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
+	def mcTempUpdate(self, temp, bedTemp):
 		pass
 
 	def mcStateChange(self, state):
@@ -1039,6 +1189,9 @@ class PrintingFileInformation(object):
 	def getFilepos(self):
 		return self._filepos
 
+	def getFileLocation(self):
+		return FileDestinations.LOCAL
+
 	def getProgress(self):
 		"""
 		The current progress of the file, calculated as relation between file position and absolute size. Returns -1
@@ -1075,6 +1228,9 @@ class PrintingSdFileInformation(PrintingFileInformation):
 		"""
 		self._filepos = filepos
 
+	def getFileLocation(self):
+		return FileDestinations.SDCARD
+
 class PrintingGcodeFileInformation(PrintingFileInformation):
 	"""
 	Encapsulates information regarding an ongoing direct print. Takes care of the needed file handle and ensures
@@ -1083,12 +1239,16 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 	def __init__(self, filename, offsetCallback):
 		PrintingFileInformation.__init__(self, filename)
-		self._filehandle = None
+		self._filesetMenuModehandle = None
 		self._lineCount = None
 		self._firstLine = None
+		self._currentTool = 0
 
 		self._offsetCallback = offsetCallback
-		self._tempCommandPattern = re.compile("^\s*M(104|109|140|190)\s+S([0-9\.]+)")
+		self._tempCommandPattern = re.compile("M(104|109|140|190)")
+		self._tempCommandTemperaturePattern = re.compile("S([-+]?\d*\.?\d*)")
+		self._tempCommandToolPattern = re.compile("T(\d+)")
+		self._toolCommandPattern = re.compile("^T(\d+)")
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
@@ -1142,28 +1302,63 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			line = line[0:line.find(";")]
 		line = line.strip()
 		if len(line) > 0:
-			if self._offsetCallback is not None:
-				(tempOffset, bedTempOffset) = self._offsetCallback()
-				if tempOffset != 0 or bedTempOffset != 0:
+			toolMatch = self._toolCommandPattern.match(line)
+			if toolMatch is not None:
+				# track tool changes
+				self._currentTool = int(toolMatch.group(1))
+			else:
+				## apply offsets
+				if self._offsetCallback is not None:
 					tempMatch = self._tempCommandPattern.match(line)
 					if tempMatch is not None:
+						# if we have a temperature command, retrieve current offsets
+						tempOffset, bedTempOffset = self._offsetCallback()
 						if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
-							offset = tempOffset
+							# extruder temperature, determine which one and retrieve corresponding offset
+							toolNum = self._currentTool
+
+							toolNumMatch = self._tempCommandToolPattern.search(line)
+							if toolNumMatch is not None:
+								try:
+									toolNum = int(toolNumMatch.group(1))
+								except ValueError:
+									pass
+
+							offset = tempOffset[toolNum] if toolNum in tempOffset.keys() and tempOffset[toolNum] is not None else 0
 						elif tempMatch.group(1) == "140" or tempMatch.group(1) == "190":
+							# bed temperature
 							offset = bedTempOffset
 						else:
+							# unknown, should never happen
 							offset = 0
 
-						try:
-							temp = float(tempMatch.group(2))
-							newTemp = temp + offset
-							line = line.replace("S" + tempMatch.group(2), "S%f" % newTemp)
-						except ValueError:
-							pass
+						if not offset == 0:
+							# if we have an offset != 0, we need to get the temperature to be set and apply the offset to it
+							tempValueMatch = self._tempCommandTemperaturePattern.search(line)
+							if tempValueMatch is not None:
+								try:
+									temp = float(tempValueMatch.group(1))
+									if temp > 0:
+										newTemp = temp + offset
+										line = line.replace("S" + tempValueMatch.group(1), "S%f" % newTemp)
+								except ValueError:
+									pass
 			return line
 		else:
 			return None
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
-	def __init__(self, filename):
-		PrintingGcodeFileInformation.__init__(self, filename, None)
+	def __init__(self, path, localFilename, remoteFilename):
+		PrintingGcodeFileInformation.__init__(self, path, None)
+		self._localFilename = localFilename
+		self._remoteFilename = remoteFilename
+
+	def start(self):
+		PrintingGcodeFileInformation.start(self)
+		self._startTime = time.time()
+
+	def getLocalFilename(self):
+		return self._localFilename
+
+	def getRemoteFilename(self):
+		return self._remoteFilename

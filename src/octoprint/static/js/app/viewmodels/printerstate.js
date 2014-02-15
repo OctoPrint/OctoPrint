@@ -22,21 +22,36 @@ function PrinterStateViewModel(loginStateViewModel) {
     self.sd = ko.observable(undefined);
     self.timelapse = ko.observable(undefined);
 
-    self.filament = ko.observable(undefined);
+    self.filament = ko.observableArray([]);
     self.estimatedPrintTime = ko.observable(undefined);
 
     self.currentHeight = ko.observable(undefined);
 
+    self.estimatedPrintTimeString = ko.computed(function() {
+        if (!self.estimatedPrintTime())
+            return "-";
+        return formatDuration(self.estimatedPrintTime());
+    });
     self.byteString = ko.computed(function() {
         if (!self.filesize())
             return "-";
-        var filepos = self.filepos() ? self.filepos() : "-";
-        return filepos + " / " + self.filesize();
+        var filepos = self.filepos() ? formatSize(self.filepos()) : "-";
+        return filepos + " / " + formatSize(self.filesize());
     });
     self.heightString = ko.computed(function() {
         if (!self.currentHeight())
             return "-";
-        return self.currentHeight();
+        return _.sprintf("%.02fmm", self.currentHeight());
+    });
+    self.printTimeString = ko.computed(function() {
+        if (!self.printTime())
+            return "-";
+        return formatDuration(self.printTime());
+    });
+    self.printTimeLeftString = ko.computed(function() {
+        if (!self.printTimeLeft())
+            return "-";
+        return formatDuration(self.printTimeLeft());
     })
     self.progressString = ko.computed(function() {
         if (!self.progress())
@@ -97,16 +112,35 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self._processJobData = function(data) {
-        self.filename(data.filename);
-        self.filesize(data.filesize);
+        if (data.file) {
+            self.filename(data.file.name);
+            self.filesize(data.file.size);
+            self.sd(data.file.origin == "sdcard");
+        } else {
+            self.filename(undefined);
+            self.filesize(undefined);
+            self.sd(undefined);
+        }
         self.estimatedPrintTime(data.estimatedPrintTime);
-        self.filament(data.filament);
-        self.sd(data.sd);
+
+        var result = [];
+        if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
+            var i = 0;
+            do {
+                var key = "tool" + i;
+                result[i] = {
+                    name: ko.observable("Tool " + i),
+                    data: ko.observable(data.filament[key])
+                }
+                i++;
+            } while (data.filament.hasOwnProperty("tool" + i));
+        }
+        self.filament(result);
     }
 
     self._processProgressData = function(data) {
-        if (data.progress) {
-            self.progress(Math.round(data.progress * 100));
+        if (data.completion) {
+            self.progress(data.completion);
         } else {
             self.progress(undefined);
         }
@@ -120,16 +154,17 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self.print = function() {
-        var printAction = function() {
-            self._jobCommand("start");
+        var restartCommand = function() {
+            self._jobCommand("restart");
         }
 
         if (self.isPaused()) {
             $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); printAction(); });
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
+            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); restartCommand(); });
             $("#confirmation_dialog").modal("show");
         } else {
-            printAction();
+            self._jobCommand("start");
         }
 
     }
@@ -144,10 +179,11 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self._jobCommand = function(command) {
         $.ajax({
-            url: AJAX_BASEURL + "control/job",
+            url: API_BASEURL + "job",
             type: "POST",
             dataType: "json",
-            data: {command: command}
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify({command: command})
         });
     }
 }

@@ -37,6 +37,7 @@ function FirstRunViewModel() {
         $("#confirmation_dialog .confirmation_dialog_message").html("If you disable Access Control <strong>and</strong> your OctoPrint " +
             "installation is accessible from the internet, your printer <strong>will be accessible by everyone - " +
             "that also includes the bad guys!</strong>");
+        $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
         $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {
             e.preventDefault();
             $("#confirmation_dialog").modal("hide");
@@ -54,7 +55,7 @@ function FirstRunViewModel() {
 
     self._sendData = function(data, callback) {
         $.ajax({
-            url: AJAX_BASEURL + "setup",
+            url: API_BASEURL + "setup",
             type: "POST",
             dataType: "json",
             data: data,

@@ -7,6 +7,8 @@ import traceback
 import sys
 import time
 import re
+import tempfile
+from flask import make_response
 
 from octoprint.settings import settings
 
@@ -29,7 +31,7 @@ def isAllowedFile(filename, extensions):
 def getFormattedTimeDelta(d):
 	if d is None:
 		return None
-	hours = d.seconds // 3600
+	hours = d.days * 24 + d.seconds // 3600
 	minutes = (d.seconds % 3600) // 60
 	seconds = d.seconds % 60
 	return "%02d:%02d:%02d" % (hours, minutes, seconds)
@@ -55,7 +57,7 @@ def getClass(name):
 
 
 def isDevVersion():
-	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
+	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../../.git"))
 	return os.path.exists(gitPath)
 
 
@@ -65,7 +67,7 @@ def getExceptionString():
 
 
 def getGitInfo():
-	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../.git"))
+	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../../.git"))
 	if not os.path.exists(gitPath):
 		return (None, None)
 
@@ -139,3 +141,68 @@ def findCollisionfreeName(input, extension, existingFilenames):
 			power += 1
 
 	raise ValueError("Can't create a collision free filename")
+
+
+def safeRename(old, new):
+	"""
+	Safely renames a file.
+
+	On Windows this is achieved by first creating a backup file of the new file (if it
+	already exists), thus moving it, then renaming the old into the new file and finally removing the backup. If
+	anything goes wrong during those steps, the backup (if already there) will be renamed to its old name and thus
+	the operation hopefully result in a no-op.
+
+	On other operating systems the atomic os.rename function will be used instead.
+
+	@param old the path to the old file to be renamed
+	@param new the path to the new file to be created/replaced
+	"""
+
+	if sys.platform == "win32":
+		fh, backup = tempfile.mkstemp()
+		os.close(fh)
+
+		try:
+			if os.path.exists(new):
+				silentRemove(backup)
+				os.rename(new, backup)
+			os.rename(old, new)
+			os.remove(backup)
+		except OSError:
+			# if anything went wrong, try to rename the backup file to its original name
+			if os.path.exists(backup):
+				os.remove(new)
+			os.rename(backup, new)
+	else:
+		# on anything else than windows it's ooooh so much easier...
+		os.rename(old, new)
+
+
+def silentRemove(file):
+	"""
+	Silently removes a file. Does not raise an error if the file doesn't exist.
+
+	@param file the path of the file to be removed
+	"""
+
+	try:
+		os.remove(file)
+	except OSError:
+		pass
+
+
+def getJsonCommandFromRequest(request, valid_commands):
+	if not "application/json" in request.headers["Content-Type"]:
+		return None, None, make_response("Expected content-type JSON", 400)
+
+	data = request.json
+	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
+		return None, None, make_response("Expected valid command", 400)
+
+	command = data["command"]
+	for parameter in valid_commands[command]:
+		if not parameter in data:
+			return None, None, make_response("Mandatory parameter %s missing for command %s" % (parameter, command), 400)
+
+	return command, data, None
+

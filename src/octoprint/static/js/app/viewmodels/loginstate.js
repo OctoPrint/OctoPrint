@@ -24,7 +24,7 @@ function LoginStateViewModel() {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "login",
+            url: API_BASEURL + "login",
             type: "POST",
             data: {"passive": true},
             success: self.fromResponse
@@ -63,7 +63,7 @@ function LoginStateViewModel() {
         $("#login_remember").prop("checked", false);
 
         $.ajax({
-            url: AJAX_BASEURL + "login",
+            url: API_BASEURL + "login",
             type: "POST",
             data: {"user": username, "pass": password, "remember": remember},
             success: function(response) {
@@ -78,7 +78,7 @@ function LoginStateViewModel() {
 
     self.logout = function() {
         $.ajax({
-            url: AJAX_BASEURL + "logout",
+            url: API_BASEURL + "logout",
             type: "POST",
             success: function(response) {
                 $.pnotify({title: "Logout successful", text: "You are now logged out", type: "success"});

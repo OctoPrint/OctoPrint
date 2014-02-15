@@ -17,7 +17,7 @@ $(function() {
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
-        var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
+        var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
 
         var dataUpdater = new DataUpdater(
@@ -56,10 +56,41 @@ $(function() {
             terminalViewModel.updateOutput();
         });
 
+        var webcamDisableTimeout;
+        $('#tabs a[data-toggle="tab"]').on('show', function (e) {
+            var current = e.target;
+            var previous = e.relatedTarget;
+
+            if (current.hash == "#control") {
+                clearTimeout(webcamDisableTimeout);
+                var webcamImage = $("#webcam_image");
+                var currentSrc = webcamImage.attr("src");
+                if (currentSrc === undefined || currentSrc.trim() == "") {
+                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                }
+            } else if (previous.hash == "#control") {
+                // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
+                // more load by the constant connection creation than by the actual webcam stream
+                webcamDisableTimeout = setTimeout(function() {
+                    $("#webcam_image").attr("src", "");
+                }, 5000);
+            }
+        });
+
         //~~ Gcode upload
 
         function gcode_upload_done(e, data) {
-            gcodeFilesViewModel.fromResponse(data.result);
+            var filename = undefined;
+            var location = undefined;
+            if (data.result.files.hasOwnProperty("sdcard")) {
+                filename = data.result.files.sdcard.name;
+                location = "sdcard";
+            } else if (data.result.files.hasOwnProperty("local")) {
+                filename = data.result.files.local.name;
+                location = "local";
+            }
+            gcodeFilesViewModel.requestData(filename, location);
+
             if (data.result.done) {
                 $("#gcode_upload_progress .bar").css("width", "0%");
                 $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
@@ -91,9 +122,9 @@ $(function() {
 
         function enable_local_dropzone() {
             $("#gcode_upload").fileupload({
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: localTarget,
-                formData: {target: "local"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -102,9 +133,9 @@ $(function() {
 
         function disable_local_dropzone() {
             $("#gcode_upload").fileupload({
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: null,
-                formData: {target: "local"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -113,9 +144,9 @@ $(function() {
 
         function enable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: $("#drop_sd"),
-                formData: {target: "sd"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -124,9 +155,9 @@ $(function() {
 
         function disable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: null,
-                formData: {target: "sd"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -238,6 +269,10 @@ $(function() {
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
+        //~~ Underscore setup
+
+        _.mixin(_.str.exports());
+
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {
@@ -265,6 +300,7 @@ $(function() {
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         var gcode = document.getElementById("gcode");
         if (gcode) {
+            gcodeViewModel.initialize();
             ko.applyBindings(gcodeViewModel, gcode);
         }
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
@@ -276,10 +312,6 @@ $(function() {
         if (timelapseElement) {
             ko.applyBindings(timelapseViewModel, timelapseElement);
         }
-        var gCodeVisualizerElement = document.getElementById("gcode");
-        if (gCodeVisualizerElement) {
-            gcodeViewModel.initialize();
-        }
 
         //~~ startup commands
 
@@ -288,12 +320,12 @@ $(function() {
         controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
+        settingsViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
                 $("#gcode_upload").fileupload("enable");
 
-                settingsViewModel.requestData();
                 if (data.admin) {
                     usersViewModel.requestData();
                 }

@@ -118,6 +118,26 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                Invert controls
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertX" id="settings-printerInvertX"> X axis
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertY" id="settings-printerInvertY"> Y axis
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertZ" id="settings-printerInvertZ"> Z axis
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-numExtruders">Number of Extruders</label>
+                            <div class="controls">
+                                <input type="number" class="input-mini text-right" min="1" max="5" data-bind="value: printer_numExtruders" id="settings-numExtruders">
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="tab-pane" id="settings_webcam">
@@ -186,13 +206,6 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_invertZ" id="settings-featureInvertZ"> Invert Z axis controls
-                                </label>
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <div class="controls">
-                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> Enable SD support
                                 </label>
                             </div>
@@ -214,7 +227,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_swallowOkAfterResend" id="settings-swallowOkAfterResend"> Swallow the first "ok" after a resend response  <span class="label">Repetier</span>
+                                    <input type="checkbox" data-bind="checked: feature_swallowOkAfterResend" id="settings-swallowOkAfterResend"> Swallow the first "ok" after a resend response
                                 </label>
                             </div>
                         </div>
@@ -268,13 +281,13 @@
                                     <span class="add-on">&deg;C</span>
                                 </div>
                                 <div class="span2">
-                                    <button title="Remove profile" class="btn btn-danger" data-bind="click: $parent.removeTemperatureProfile"><i class="icon-trash"></i></button>
+                                    <a title="Remove profile" class="btn btn-danger" data-bind="click: $parent.removeTemperatureProfile"><i class="icon-trash"></i></a>
                                 </div>
                             </div>
                         </div>
                         <div class="row-fluid">
                             <div class="offset9 span2">
-                                <button title="Add Profile" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="icon-plus"></i></button>
+                                <a title="Add Profile" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="icon-plus"></i></a>
                             </div>
                         </div>
                     </form>
@@ -294,13 +307,13 @@
                                     <input type="text" class="span12" data-bind="value: regex">
                                 </div>
                                 <div class="span2">
-                                    <button title="Remove Filter" class="btn btn-danger" data-bind="click: $parent.removeTerminalFilter"><i class="icon-trash"></i></button>
+                                    <a title="Remove Filter" class="btn btn-danger" data-bind="click: $parent.removeTerminalFilter"><i class="icon-trash"></i></a>
                                 </div>
                             </div>
                         </div>
                         <div class="row-fluid">
                             <div class="offset10 span2">
-                                <button title="Add Filter" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="icon-plus"></i></button>
+                                <a title="Add Filter" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="icon-plus"></i></a>
                             </div>
                         </div>
                     </form>
@@ -375,7 +388,7 @@
                         </thead>
                         <tbody data-bind="foreach: users.listHelper.paginatedItems">
                             <tr>
-                                <td class="settings_users_name" data-bind="text: name"></td>
+                                <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>Apikey: <span data-bind="text: apikey"></span></small></span></td>
                                 <td class="settings_users_active"><i data-bind="css: { 'icon-check': active, 'icon-check-empty': !active }"></i></td>
                                 <td class="settings_users_admin"><i data-bind="css: { 'icon-check': admin, 'icon-check-empty': !admin }"></i></td>
                                 <td class="settings_users_actions" class="system_users_action">
@@ -497,6 +510,20 @@
                                         <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">Passwords do not match</span>
                                     </div>
                                 </div>
+                                <fieldset data-bind="visible: api_enabled">
+                                    <legend>Apikey</legend>
+                                    <div class="control-group">
+                                        <label class="control-label">Current Apikey</label>
+                                        <div class="controls">
+                                            <div class="input-append">
+                                                <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.users.editorApikey, attr: {placeholder: 'N/A'}">
+                                                <a class="btn" title="Generate new Apikey" data-bind="click: function() { $root.users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
+                                                <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { $root.users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </fieldset>
                             </form>
                         </div>
                         <div class="modal-footer">
@@ -504,6 +531,7 @@
                             <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmChangePassword(); }, enable: !$root.users.editorPasswordMismatch()">Confirm</button>
                         </div>
                     </div>
+
                 </div>
                 {% endif %}
 

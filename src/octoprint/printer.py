@@ -9,13 +9,13 @@ import copy
 import os
 import logging
 
-#import logging, logging.config
-
 import octoprint.util.comm as comm
 import octoprint.util as util
 
 from octoprint.settings import settings
-from octoprint.events import eventManager
+from octoprint.events import eventManager, Events
+
+from octoprint.filemanager.destinations import FileDestinations
 
 def getConnectionOptions():
 	"""
@@ -41,12 +41,7 @@ class Printer():
 		self._bedTemp = None
 		self._targetTemp = None
 		self._targetBedTemp = None
-		self._temps = {
-			"actual": deque([], 300),
-			"target": deque([], 300),
-			"actualBed": deque([], 300),
-			"targetBed": deque([], 300)
-		}
+		self._temps = deque([], 300)
 		self._tempBacklog = []
 
 		self._latestMessage = None
@@ -71,6 +66,8 @@ class Printer():
 		self._sdPrinting = False
 		self._sdStreaming = False
 		self._sdFilelistAvailable = threading.Event()
+		self._sdRemoteName = None
+		self._streamingFinishedCallback = None
 
 		self._selectedFile = None
 
@@ -90,8 +87,20 @@ class Printer():
 		)
 		self._stateMonitor.reset(
 			state={"state": None, "stateString": self.getStateString(), "flags": self._getStateFlags()},
-			jobData={"filename": None, "filesize": None, "estimatedPrintTime": None, "filament": None},
-			progress={"progress": None, "filepos": None, "printTime": None, "printTimeLeft": None},
+			jobData={
+				"file": {
+					"name": None,
+					"size": None,
+					"origin": None,
+					"date": None
+				},
+				"estimatedPrintTime": None,
+				"filament": {
+					"length": None,
+					"volume": None
+				}
+			},
+			progress={"completion": None, "filepos": None, "printTime": None, "printTimeLeft": None},
 			currentZ=None
 		)
 
@@ -127,7 +136,7 @@ class Printer():
 
 	def _sendTriggerUpdateCallbacks(self, type):
 		for callback in self._callbacks:
-			try: callback.sendUpdateTrigger(type)
+			try: callback.sendEvent(type)
 			except: pass
 
 	def _sendFeedbackCommandOutput(self, name, output):
@@ -161,7 +170,7 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = None
-		eventManager().fire("Disconnected")
+		eventManager().fire(Events.DISCONNECTED)
 
 	def command(self, command):
 		"""
@@ -179,12 +188,60 @@ class Printer():
 		for command in commands:
 			self._comm.sendCommand(command)
 
-	def setTemperatureOffset(self, extruder, bed):
+	def jog(self, axis, amount):
+		movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
+		self.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), amount, movementSpeed[axis]), "G90"])
+
+	def home(self, axes):
+		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), axes)), "G90"])
+
+	def extrude(self, amount):
+		extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
+		self.commands(["G91", "G1 E%s F%d" % (amount, extrusionSpeed), "G90"])
+
+	def changeTool(self, tool):
+		try:
+			toolNum = int(tool[len("tool"):])
+			self.command("T%d" % toolNum)
+		except ValueError:
+			pass
+
+	def setTemperature(self, type, value):
+		if type.startswith("tool"):
+			if settings().getInt(["printerParameters", "numExtruders"]) > 1:
+				try:
+					toolNum = int(type[len("tool"):])
+					self.command("M104 T%d S%f" % (toolNum, value))
+				except ValueError:
+					pass
+			else:
+				self.command("M104 S%f" % value)
+		elif type == "bed":
+			self.command("M140 S%f" % value)
+
+	def setTemperatureOffset(self, offsets={}):
 		if self._comm is None:
 			return
 
-		self._comm.setTemperatureOffset(extruder, bed)
-		self._stateMonitor.setTempOffsets(extruder, bed)
+		tool, bed = self._comm.getOffsets()
+
+		validatedOffsets = {}
+
+		for key in offsets:
+			value = offsets[key]
+			if key == "bed":
+				bed = value
+				validatedOffsets[key] = value
+			elif key.startswith("tool"):
+				try:
+					toolNum = int(key[len("tool"):])
+					tool[toolNum] = value
+					validatedOffsets[key] = value
+				except ValueError:
+					pass
+
+		self._comm.setTemperatureOffset(tool, bed)
+		self._stateMonitor.setTempOffsets(validatedOffsets)
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
@@ -236,7 +293,11 @@ class Printer():
 		self._comm.cancelPrint()
 
 		if disableMotorsAndHeater:
-			self.commands(["M84", "M104 S0", "M140 S0", "M106 S0"]) # disable motors, switch off heaters and fan
+			# disable motors, switch off hotends, bed and fan
+			commands = ["M84"]
+			commands.extend(map(lambda x: "M104 T%d S0" % x, range(settings().getInt(["printerParameters", "numExtruders"]))))
+			commands.extend(["M140 S0", "M106 S0"])
+			self.commands(commands)
 
 		# reset progress, height, print time
 		self._setCurrentZ(None)
@@ -245,17 +306,19 @@ class Printer():
 		# mark print as failure
 		if self._selectedFile is not None:
 			self._gcodeManager.printFailed(self._selectedFile["filename"])
-			eventManager().fire("PrintFailed", self._selectedFile["filename"])
+			payload = {
+				"file": self._selectedFile["filename"],
+				"origin": FileDestinations.LOCAL
+			}
+			if self._selectedFile["sd"]:
+				payload["origin"] = FileDestinations.SDCARD
+			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	#~~ state monitoring
 
 	def _setCurrentZ(self, currentZ):
 		self._currentZ = currentZ
-
-		formattedCurrentZ = None
-		if self._currentZ:
-			formattedCurrentZ = "%.2f mm" % (self._currentZ)
-		self._stateMonitor.setCurrentZ(formattedCurrentZ)
+		self._stateMonitor.setCurrentZ(self._currentZ)
 
 	def _setState(self, state):
 		self._state = state
@@ -274,34 +337,35 @@ class Printer():
 		self._printTime = printTime
 		self._printTimeLeft = printTimeLeft
 
-		formattedPrintTime = None
-		if (self._printTime):
-			formattedPrintTime = util.getFormattedTimeDelta(datetime.timedelta(seconds=self._printTime))
+		self._stateMonitor.setProgress({
+			"completion": self._progress * 100 if self._progress is not None else None,
+			"filepos": filepos,
+			"printTime": int(self._printTime) if self._printTime is not None else None,
+			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
+		})
 
-		formattedPrintTimeLeft = None
-		if (self._printTimeLeft):
-			formattedPrintTimeLeft = util.getFormattedTimeDelta(datetime.timedelta(minutes=self._printTimeLeft))
+	def _addTemperatureData(self, temp, bedTemp):
+		currentTimeUtc = int(time.time())
 
-		formattedFilePos = None
-		if (filepos):
-			formattedFilePos = util.getFormattedSize(filepos)
+		data = {
+			"time": currentTimeUtc
+		}
+		for tool in temp.keys():
+			data["tool%d" % tool] = {
+				"actual": temp[tool][0],
+				"target": temp[tool][1]
+			}
+		data["bed"] = {
+			"actual": bedTemp[0],
+			"target": bedTemp[1]
+		}
 
-		self._stateMonitor.setProgress({"progress": self._progress, "filepos": formattedFilePos, "printTime": formattedPrintTime, "printTimeLeft": formattedPrintTimeLeft})
-
-	def _addTemperatureData(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		currentTimeUtc = int(time.time() * 1000)
-
-		self._temps["actual"].append((currentTimeUtc, temp))
-		self._temps["target"].append((currentTimeUtc, targetTemp))
-		self._temps["actualBed"].append((currentTimeUtc, bedTemp))
-		self._temps["targetBed"].append((currentTimeUtc, bedTargetTemp))
+		self._temps.append(data)
 
 		self._temp = temp
 		self._bedTemp = bedTemp
-		self._targetTemp = targetTemp
-		self._targetBedTemp = bedTargetTemp
 
-		self._stateMonitor.addTemperature({"currentTime": currentTimeUtc, "temp": self._temp, "bedTemp": self._bedTemp, "targetTemp": self._targetTemp, "targetBedTemp": self._targetBedTemp})
+		self._stateMonitor.addTemperature(data)
 
 	def _setJobData(self, filename, filesize, sd):
 		if filename is not None:
@@ -313,21 +377,14 @@ class Printer():
 		else:
 			self._selectedFile = None
 
-		formattedFilename = None
-		formattedFilesize = None
 		estimatedPrintTime = None
-		fileMTime = None
+		date = None
 		filament = None
 		if filename:
-			formattedFilename = os.path.basename(filename)
-
 			# Use a string for mtime because it could be float and the
 			# javascript needs to exact match
 			if not sd:
-				fileMTime = str(os.stat(filename).st_mtime)
-
-			if filesize:
-				formattedFilesize = util.getFormattedSize(filesize)
+				date = int(os.stat(filename).st_ctime)
 
 			fileData = self._gcodeManager.getFileData(filename)
 			if fileData is not None and "gcodeAnalysis" in fileData.keys():
@@ -336,15 +393,22 @@ class Printer():
 				if "filament" in fileData["gcodeAnalysis"].keys():
 					filament = fileData["gcodeAnalysis"]["filament"]
 
-		self._stateMonitor.setJobData({"filename": formattedFilename, "filesize": formattedFilesize, "estimatedPrintTime": estimatedPrintTime, "filament": filament, "sd": sd, "mtime": fileMTime})
+		self._stateMonitor.setJobData({
+			"file": {
+				"name": os.path.basename(filename),
+				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+				"size": filesize,
+				"date": date
+			},
+			"estimatedPrintTime": estimatedPrintTime,
+			"filament": filament,
+		})
 
 	def _sendInitialStateUpdate(self, callback):
 		try:
 			data = self._stateMonitor.getCurrentData()
-			# convert the dict of deques to a dict of lists
-			temps = {k: list(v) for (k,v) in self._temps.iteritems()}
 			data.update({
-				"temperatureHistory": temps,
+				"tempHistory": list(self._temps),
 				"logHistory": list(self._log),
 				"messageHistory": list(self._messages)
 			})
@@ -355,11 +419,6 @@ class Printer():
 			pass
 
 	def _getStateFlags(self):
-		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
-			sdReady = False
-		else:
-			sdReady = self._comm.isSdReady()
-
 		return {
 			"operational": self.isOperational(),
 			"printing": self.isPrinting(),
@@ -367,7 +426,7 @@ class Printer():
 			"error": self.isError(),
 			"paused": self.isPaused(),
 			"ready": self.isReady(),
-			"sdReady": sdReady
+			"sdReady": self.isSdReady()
 		}
 
 	def getCurrentData(self):
@@ -381,8 +440,8 @@ class Printer():
 		"""
 		self._addLog(message)
 
-	def mcTempUpdate(self, temp, bedTemp, targetTemp, bedTargetTemp):
-		self._addTemperatureData(temp, bedTemp, targetTemp, bedTargetTemp)
+	def mcTempUpdate(self, temp, bedTemp):
+		self._addTemperatureData(temp, bedTemp)
 
 	def mcStateChange(self, state):
 		"""
@@ -426,7 +485,7 @@ class Printer():
 		if newZ != oldZ:
 			# we have to react to all z-changes, even those that might "go backward" due to a slicer's retraction or
 			# anti-backlash-routines. Event subscribes should individually take care to filter out "wrong" z-changes
-			eventManager().fire("ZChange", newZ)
+			eventManager().fire(Events.Z_CHANGE, {"new": newZ, "old": oldZ})
 
 		self._setCurrentZ(newZ)
 
@@ -434,7 +493,7 @@ class Printer():
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def mcSdFiles(self, files):
-		self._sendTriggerUpdateCallbacks("gcodeFiles")
+		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
 		self._sdFilelistAvailable.set()
 
 	def mcFileSelected(self, filename, filesize, sd):
@@ -455,9 +514,13 @@ class Printer():
 		self._setProgressData(0.0, 0, 0, None)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
-	def mcFileTransferDone(self):
+	def mcFileTransferDone(self, filename):
 		self._sdStreaming = False
 
+		if self._streamingFinishedCallback is not None:
+			self._streamingFinishedCallback(self._sdRemoteName, FileDestinations.SDCARD)
+
+		self._sdRemoteName = None
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
 		self._setProgressData(None, None, None, None)
@@ -473,35 +536,20 @@ class Printer():
 			return []
 		return self._comm.getSdFiles()
 
-	def addSdFile(self, filename, absolutePath):
-		from octoprint.gcodefiles import isGcodeFileName
-		from octoprint.gcodefiles import isSTLFileName
-
+	def addSdFile(self, filename, absolutePath, streamingFinishedCallback):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			logging.error("No connection to printer or printer is busy")
 			return
 
-		if isGcodeFileName(filename):
-			self.streamSdFile(filename, absolutePath)
-
-		if isSTLFileName(filename):
-			gcodePath = util.genGcodeFileName(absolutePath)
-			gcodeFileName = util.genGcodeFileName(filename)
-			callBackArgs = [gcodeFileName, gcodePath]
-			callBack = self.streamSdFile
-
-			self._gcodeManager.processStl(
-				absolutePath, callBack, callBackArgs)
-
-	def streamSdFile(self, filename, path):
-		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
-			return
+		self._streamingFinishedCallback = streamingFinishedCallback
 
 		self.refreshSdFiles(blocking=True)
 		existingSdFiles = self._comm.getSdFiles()
 
-		sdFilename = util.getDosFilename(filename, existingSdFiles)
-		self._comm.startFileTransfer(path, sdFilename)
+		remoteName = util.getDosFilename(filename, existingSdFiles)
+		self._comm.startFileTransfer(absolutePath, filename, remoteName)
+
+		return remoteName
 
 	def deleteSdFile(self, filename):
 		if not self._comm or not self._comm.isSdReady():
@@ -551,23 +599,35 @@ class Printer():
 
 	def getCurrentTemperatures(self):
 		if self._comm is not None:
-			(tempOffset, bedTempOffset) = self._comm.getOffsets()
+			tempOffset, bedTempOffset = self._comm.getOffsets()
 		else:
-			tempOffset = 0
-			bedTempOffset = 0
+			tempOffset = {}
+			bedTempOffset = None
 
-		return {
-			"extruder": {
-				"current": self._temp,
-				"target": self._targetTemp,
-				"offset": tempOffset
-			},
-			"bed": {
-				"current": self._bedTemp,
-				"target": self._targetBedTemp,
-				"offset": bedTempOffset
+		result = {}
+		for tool in self._temp.keys():
+			result["tool%d" % tool] = {
+				"actual": self._temp[tool][0],
+				"target": self._temp[tool][1],
+				"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
 			}
+		result["bed"] = {
+			"actual": self._bedTemp[0],
+			"target": self._bedTemp[1],
+			"offset": bedTempOffset
 		}
+
+		return result
+
+	def getTemperatureHistory(self):
+		return self._temps
+
+	def getCurrentConnection(self):
+		if self._comm is None:
+			return "Closed", None, None
+
+		port, baudrate = self._comm.getConnection()
+		return self._comm.getStateString(), port, baudrate
 
 	def isClosedOrError(self):
 		return self._comm is None or self._comm.isClosedOrError()
@@ -587,85 +647,14 @@ class Printer():
 	def isReady(self):
 		return self.isOperational() and not self._comm.isStreaming()
 
+	def isSdReady(self):
+		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
+			return False
+		else:
+			return self._comm.isSdReady()
+
 	def isLoading(self):
 		return self._gcodeLoader is not None
-
-class GcodeLoader(threading.Thread):
-	"""
-	 The GcodeLoader takes care of loading a gcode-File from disk and parsing it into a gcode object in a separate
-	 thread while constantly notifying interested listeners about the current progress.
-	 The progress is returned as a float value between 0 and 1 which is to be interpreted as the percentage of completion.
-	"""
-
-	def __init__(self, filename, progressCallback, loadedCallback):
-		threading.Thread.__init__(self)
-
-		self._progressCallback = progressCallback
-		self._loadedCallback = loadedCallback
-
-		self._filename = filename
-		self._gcodeList = None
-
-	def run(self):
-		#Send an initial M110 to reset the line counter to zero.
-		prevLineType = lineType = "CUSTOM"
-		gcodeList = ["M110 N0"]
-		filesize = os.stat(self._filename).st_size
-		with open(self._filename, "r") as file:
-			for line in file:
-				if line.startswith(";TYPE:"):
-					lineType = line[6:].strip()
-				if ";" in line:
-					line = line[0:line.find(";")]
-				line = line.strip()
-				if len(line) > 0:
-					if prevLineType != lineType:
-						gcodeList.append((line, lineType, ))
-					else:
-						gcodeList.append(line)
-					prevLineType = lineType
-				self._onLoadingProgress(float(file.tell()) / float(filesize))
-
-		self._gcodeList = gcodeList
-		self._loadedCallback(self._filename, self._gcodeList)
-
-	def _onLoadingProgress(self, progress):
-		self._progressCallback(self._filename, progress, "loading")
-
-	def _onParsingProgress(self, progress):
-		self._progressCallback(self._filename, progress, "parsing")
-
-class SdFileStreamer(threading.Thread):
-	def __init__(self, comm, filename, file, progressCallback, finishCallback):
-		threading.Thread.__init__(self)
-
-		self._comm = comm
-		self._filename = filename
-		self._file = file
-		self._progressCallback = progressCallback
-		self._finishCallback = finishCallback
-
-	def run(self):
-		if self._comm.isBusy():
-			return
-
-		name = self._filename[:self._filename.rfind(".")]
-		sdFilename = name[:8].lower() + ".gco"
-		try:
-			size = os.stat(self._file).st_size
-			with open(self._file, "r") as f:
-				self._comm.startSdFileTransfer(sdFilename)
-				for line in f:
-					if ";" in line:
-						line = line[0:line.find(";")]
-					line = line.strip()
-					if len(line) > 0:
-						self._comm.sendCommand(line)
-						time.sleep(0.001) # do not send too fast
-					self._progressCallback(sdFilename, float(f.tell()) / float(size))
-		finally:
-			self._comm.endSdFileTransfer(sdFilename)
-			self._finishCallback(sdFilename)
 
 class StateMonitor(object):
 	def __init__(self, ratelimit, updateCallback, addTemperatureCallback, addLogCallback, addMessageCallback):
@@ -682,8 +671,7 @@ class StateMonitor(object):
 		self._currentZ = None
 		self._progress = None
 
-		self._tempOffset = 0
-		self._bedTempOffset = 0
+		self._offsets = {}
 
 		self._changeEvent = threading.Event()
 
@@ -726,11 +714,8 @@ class StateMonitor(object):
 		self._progress = progress
 		self._changeEvent.set()
 
-	def setTempOffsets(self, tempOffset, bedTempOffset):
-		if tempOffset is not None:
-			self._tempOffset = tempOffset
-		if bedTempOffset is not None:
-			self._bedTempOffset = bedTempOffset
+	def setTempOffsets(self, offsets):
+		self._offsets = offsets
 		self._changeEvent.set()
 
 	def _work(self):
@@ -754,6 +739,6 @@ class StateMonitor(object):
 			"job": self._jobData,
 			"currentZ": self._currentZ,
 			"progress": self._progress,
-			"offsets": (self._tempOffset, self._bedTempOffset)
+			"offsets": self._offsets
 		}
 
