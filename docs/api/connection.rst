@@ -20,7 +20,7 @@ Get connection settings
 
    .. sourcecode:: http
 
-      GET /api/control/connection HTTP/1.1
+      GET /api/connection HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -77,7 +77,7 @@ Issue a connection command
 
    .. sourcecode:: http
 
-      POST /api/control/connection HTTP/1.1
+      POST /api/connection HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -94,7 +94,7 @@ Issue a connection command
 
    .. sourcecode:: http
 
-      POST /api/control/connection HTTP/1.1
+      POST /api/connection HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
