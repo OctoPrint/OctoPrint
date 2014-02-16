@@ -81,28 +81,27 @@ class GcodeManager:
 		self._processAnalysisBacklog()
 
 	def _processAnalysisBacklog(self):
-		for osFile in os.listdir(self._uploadFolder):
-			filename = self._getBasicFilename(osFile)
-			if not isGcodeFileName(filename):
-				continue
+		for subdir, dirs, osFiles in os.walk(self._uploadFolder):
+			for osFile in osFiles:
+				filename = self._getBasicFilename(os.path.join(subdir, osFile))
+				if not isGcodeFileName(filename):
+					continue
 
-			absolutePath = self.getAbsolutePath(filename)
-			if absolutePath is None:
-				continue
+				absolutePath = self.getAbsolutePath(filename)
+				if absolutePath is None:
+					continue
 
-			fileData = self.getFileData(filename)
-			if fileData is not None and "gcodeAnalysis" in fileData.keys():
-				continue
+				fileData = self.getFileData("", filename)
+				if fileData is not None and "gcodeAnalysis" in fileData.keys():
+					continue
 
-			self._metadataAnalyzer.addFileToBacklog(filename)
+				self._metadataAnalyzer.addFileToBacklog(filename)
 
 	def _onMetadataAnalysisFinished(self, filename, gcode):
 		if filename is None or gcode is None:
 			return
-
-		basename = os.path.basename(filename)
-
-		absolutePath = self.getAbsolutePath(basename)
+		
+		absolutePath = self.getAbsolutePath(filename)
 		if absolutePath is None:
 			return
 
@@ -121,12 +120,12 @@ class GcodeManager:
 			dirty = True
 
 		if dirty:
-			metadata = self.getFileMetadata(basename)
+			metadata = self.getFileMetadata(filename)
 			metadata["gcodeAnalysis"] = analysisResult
-			self._metadata[basename] = metadata
+			self._metadata[filename] = metadata
 			self._metadataDirty = True
 			self._saveMetadata()
-		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"file": basename, "result": analysisResult})
+		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"file": filename, "result": analysisResult})
 
 	def _loadMetadata(self, migrate=False):
 		if os.path.exists(self._metadataFile) and os.path.isfile(self._metadataFile):
@@ -330,9 +329,9 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
-	def removeFile(self, filename):
+	def removeFile(self, subdir, filename):
 		filename = self._getBasicFilename(filename)
-		absolutePath = self.getAbsolutePath(filename)
+		absolutePath = self.getAbsolutePath(os.path.join(subdir, filename))
 		stlPath = genStlFileName(absolutePath)
 
 		if absolutePath is None:
@@ -357,60 +356,75 @@ class GcodeManager:
 		  <li>exists and is a file (not a directory) if "mustExist" is set to True</li>
 		</ul>
 
+		@param subdir the name of the subdir the file is in
 		@param filename the name of the file for which to determine the absolute path
 		@param mustExist if set to true, the method also checks if the file exists and is a file
 		@return the absolute path of the file or None if the file is not valid
 		"""
 		filename = self._getBasicFilename(filename)
 
+		subdir = ""
+		index = filename.rfind(os.path.sep)
+		if (index != -1):
+			subdir = os.path.join(subdir, filename[:index])
+			filename = filename[index+len(os.path.sep):]
+
 		if not util.isAllowedFile(filename.lower(), set(SUPPORTED_EXTENSIONS)):
 			return None
 
 		# TODO: detect which type of file and add in the extra folder portion 
-		secure = os.path.join(self._uploadFolder, secure_filename(self._getBasicFilename(filename)))
+		secure = os.path.join(self._uploadFolder, os.path.join(subdir, secure_filename(self._getBasicFilename(filename))))
 		if mustExist and (not os.path.exists(secure) or not os.path.isfile(secure)):
 			return None
 
 		return secure
 
-	def getAllFilenames(self):
-		return map(lambda x: x["name"], self.getAllFileData())
+	def getAllRelativePathes(self):
+		return map(lambda x: x["relativepath"], self.getAllFileData())
 
 	def getAllFileData(self):
 		files = []
-		for osFile in os.listdir(self._uploadFolder):
-			fileData = self.getFileData(osFile)
-			if fileData is not None:
-				files.append(fileData)
+		for subdir, dirs, osFiles in os.walk(self._uploadFolder):
+			for osFile in osFiles:
+				fileData = self.getFileData(subdir[len(self._uploadFolder + os.path.sep):], osFile)
+				if fileData is not None:
+					files.append(fileData)
+
 		return files
 
-	def getFileData(self, filename):
+	def getFileData(self, subdir, filename):
 		if not filename:
 			return
 
 		filename = self._getBasicFilename(filename)
+		index = filename.rfind(os.path.sep)
+		if (index != -1):
+			subdir = os.path.join(subdir, filename[:index])
+			filename = filename[index+len(os.path.sep):]
 
 		# TODO: Make this more robust when STLs will be viewable from the client
 		if isSTLFileName(filename):
 			return
 	
-		absolutePath = self.getAbsolutePath(filename)
+		fullname = os.path.join(subdir, filename)
+		absolutePath = self.getAbsolutePath(fullname)
 		if absolutePath is None:
 			return None
 
 		statResult = os.stat(absolutePath)
 		fileData = {
 			"name": filename,
+			"relativepath": fullname.replace(os.path.sep, "/"),
 			"size": statResult.st_size,
 			"origin": FileDestinations.LOCAL,
 			"date": int(statResult.st_ctime)
 		}
 
 		# enrich with additional metadata from analysis if available
-		if filename in self._metadata.keys():
-			for key in self._metadata[filename].keys():
+		if fullname in self._metadata.keys():
+			for key in self._metadata[fullname].keys():
 				if key == "prints":
-					val = self._metadata[filename][key]
+					val = self._metadata[fullname][key]
 					last = None
 					if "last" in val and val["last"] is not None:
 						last = {
@@ -424,7 +438,7 @@ class GcodeManager:
 					}
 					fileData["prints"] = prints
 				else:
-					fileData[key] = self._metadata[filename][key]
+					fileData[key] = self._metadata[fullname][key]
 
 		return fileData
 
@@ -578,7 +592,7 @@ class MetadataAnalyzer:
 				self._logger.debug("Running analysis of file %s aborted" % filename)
 
 	def _analyzeGcode(self, filename):
-		path = self._getPathCallback(filename)
+		path = self._getPathCallback("", filename, mustExist=True)
 		if path is None or not os.path.exists(path):
 			return
 

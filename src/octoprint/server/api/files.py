@@ -4,6 +4,7 @@ from octoprint.events import Events
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+from os.path import sep;
 from flask import request, jsonify, make_response, url_for
 
 import octoprint.gcodefiles as gcodefiles
@@ -45,7 +46,6 @@ def _getFileDetails(origin, filename):
 			return file
 	return None
 
-
 def _getFileList(origin):
 	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.getSdFiles()
@@ -65,8 +65,8 @@ def _getFileList(origin):
 		for file in files:
 			file.update({
 				"refs": {
-					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["name"], _external=True),
-					"download": urlForDownload(FileDestinations.LOCAL, file["name"])
+					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["relativepath"], _external=True),
+					"download": urlForDownload(FileDestinations.LOCAL, file["relativepath"])
 				}
 			})
 	return files
@@ -76,7 +76,7 @@ def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
 		availableFiles = printer.getSdFiles()
 	else:
-		availableFiles = gcodeManager.getAllFilenames()
+		availableFiles = gcodeManager.getAllRelativePathes()
 
 	return filename in availableFiles
 
@@ -228,10 +228,11 @@ def gcodeFileCommand(filename, target):
 
 		sd = False
 		if target == FileDestinations.SDCARD:
-			filenameToSelect = filename
+			filenameToSelect = filename.replace("/", sep)
 			sd = True
 		else:
-			filenameToSelect = gcodeManager.getAbsolutePath(filename)
+			filenameToSelect = gcodeManager.getAbsolutePath(filename.replace("/", sep))
+
 		printer.selectFile(filenameToSelect, sd, printAfterLoading)
 
 	return NO_CONTENT
@@ -265,9 +266,9 @@ def deleteGcodeFile(filename, target):
 
 	# delete it
 	if sd:
-		printer.deleteSdFile(filename)
+		printer.deleteSdFile(filename.replace("/", sep))
 	else:
-		gcodeManager.removeFile(filename)
+		gcodeManager.removeFile(filename.replace("/", sep))
 
 	# return an updated list of files
 	return readGcodeFiles()

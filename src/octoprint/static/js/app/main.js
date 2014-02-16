@@ -14,6 +14,7 @@ $(function() {
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var filemanagerViewModel = new FilemanagerViewModel();
 
         var dataUpdater = new DataUpdater(
             loginStateViewModel,
@@ -302,6 +303,7 @@ $(function() {
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
         ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+        ko.applyBindings(filemanagerViewModel, document.getElementById("filemanager_dialog"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
@@ -316,6 +318,7 @@ $(function() {
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
         settingsViewModel.requestData();
+        filemanagerViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {

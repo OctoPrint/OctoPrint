@@ -19,6 +19,7 @@
         {% else %}
             <link href="{{ url_for('static', filename='css/octoprint.css') }}" rel="stylesheet" type="text/css" media="screen">
         {% endif %}
+            <link href="{{ url_for('static', filename='css/treeview.css') }}" rel="stylesheet" type="text/css" media="screen">
 
         <script lang="javascript">
             var BASEURL = "{{ url_for('index') }}";
@@ -152,16 +153,16 @@
                                     <span class="icon-wrench"></span>
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Sort by name (ascending)</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Sort by upload date (descending)</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> Sort by file size (descending)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Sort by name (ascending)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Sort by upload date (descending)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> Sort by file size (descending)</a></li>
                                     {% if enableSdSupport %}
                                     <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> Only show files stored locally</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> Only show files stored on SD</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> Only show files stored locally</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> Only show files stored on SD</a></li>
                                     {% endif %}
                                     <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
                                 </ul>
                             </div>
 
@@ -177,6 +178,12 @@
                                 </ul>
                             </div>
                             {% endif %}
+
+                            <div class="settings-trigger accordion-heading-button btn-group">
+								<a class="pull-right" data-toggle="modal" href="#filemanager_dialog">
+									<span class="icon-folder-open"></span>
+								</a>
+							</div>
                         </div>
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
@@ -188,15 +195,32 @@
                                             <th class="gcode_files_action">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody data-bind="foreach: listHelper.paginatedItems">
-                                        <tr data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data), html: true }">
-                                            <td class="gcode_files_name" data-bind="text: name"></td>
+                                    <tbody data-bind="template: { name: $root.displayMode, foreach: listHelper.paginatedItems }"></tbody>
+
+									<script type="text/html" id="dirTemplate">
+										<tr> 
+											<td colspan="3"><a data-toggle="collapse" data-bind="attr: { href: '#' + name }, click: $parent.onClick" class="hover"><i class="icon-folder-open" data-bind="text: name, attr: { id: 'image' + name }"></i></a></td>
+										</tr>
+										<tr>
+											<td colspan="3" style="border-top: 0px">
+												<div class="accordion-body collapse in overflow_visible" data-bind="attr: { id: name }">
+													<table class="table table-condensed table-hover">
+														<tbody data-bind="template: { name: $root.displayMode, foreach: files.items }"></tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+                                    </script>
+									<script type="text/html" id="fileTemplate">
+                                        <tr data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.isSelected($data) ? 'bold' : 'normal' }, popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data) }">
+											<td class="gcode_files_name" data-bind="text: name"></td>
                                             <td class="gcode_files_size" data-bind="text: formatSize(size)"></td>
                                             <td class="gcode_files_action">
-                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>
+                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>
                                             </td>
                                         </tr>
-                                    </tbody>
+                                    </script>
+
                                 </table>
                                 <div class="muted text-right">
                                     <small>Free: <span data-bind="text: freeSpaceString"></span></small>
@@ -605,6 +629,7 @@
 
         {% include 'settings.jinja2' %}
         {% include 'dialogs.jinja2' %}
+        {% include 'filemanager.jinja2' %}
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/modernizr.custom.js') }}"></script>
@@ -644,6 +669,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/filemanager.js') }}"></script>
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>
