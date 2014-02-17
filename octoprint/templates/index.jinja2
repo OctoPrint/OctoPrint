@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title data-bind="text: title">OctoPrint</title>
+        <title data-bind="text: title">SeeMeCNC: Orion</title>
 
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
         <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
+		<link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.pnotify.default.css') }}" rel="stylesheet" media="screen">
@@ -37,7 +37,7 @@
         <div id="navbar" class="navbar navbar-fixed-top">
             <div class="navbar-inner" data-bind="css: appearance.color">
                 <div class="container">
-                    <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
+                    <a class="brand" href="#"> <span data-bind="text: appearance.brand">OrionPrint</span></a>
                     <div class="nav-collapse">
                         <ul class="nav pull-right">
                             <li style="display: none;" data-bind="visible: loginState.isAdmin">
@@ -112,7 +112,7 @@
                         </div>
                         <div class="accordion-body collapse in" id="state">
                             <div class="accordion-inner">
-                                Machine State: <strong data-bind="text: stateString"></strong><br>
+                                Orion State: <strong data-bind="text: stateString"></strong><br>
                                 File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
                                 Filament: <strong data-bind="text: filament"></strong><br>
                                 Estimated Print Time: <strong data-bind="text: estimatedPrintTime"></strong><br>
@@ -238,15 +238,15 @@
 
                 <div class="span8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
-                        <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
-                        <li><a href="#control" data-toggle="tab">Control</a></li>
+                        <li class="active"><a href="#control" data-toggle="tab">Control</a></li>
                         {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">GCode Viewer</a></li>{% endif %}
+                        <li><a href="#temp" data-toggle="tab">Temperature</a></li>
                         <li><a href="#term" data-toggle="tab">Terminal</a></li>
                         {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Timelapse</a></li>{% endif %}
                     </ul>
 
                     <div class="tab-content">
-                        <div class="tab-pane active" id="temp">
+                        <div class="tab-pane" id="temp">
                             {% if enableTemperatureGraph %}
                             <div class="row" style="padding-left: 20px">
                                 <div id="temperature-graph"></div>
@@ -335,7 +335,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tab-pane" id="control">
+                        <div class="tab-pane active" id="control">
                             {% if webcamStream %}
                             <div id="webcam_container">
                                 <img id="webcam_image" src="{{ webcamStream }}" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
@@ -383,7 +383,7 @@
                             </div>
                             <!-- Extrusion control panel -->
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>E</h1>
+                                <h1>Extrusion</h1>
                                 <div>
                                     <div class="input-append control-box">
                                         <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: 5}">
@@ -402,7 +402,66 @@
                                     <button class="btn control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
                             </div>
-
+							<div style="clear:both;display: none;" class="row-fluid" data-bind="visible: loginState.isUser">
+								<h1>Temperature</h1>
+                                <div class="form-horizontal pull-left span6">
+									<div style="display: none;" data-bind="visible: loginState.isUser">
+                                        <label for="temp_newTemp" title="Sets the new target temperature for the extruder">Extruder</label>
+										<div class="input-append">
+											<input type="text" class="input-mini text-right" data-bind="value: temperature.newTemp, valueUpdate: 'afterkeydown', attr: {placeholder: temperature.targetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.temperature.handleEnter(e, 'temp');} }" class="tempInput">
+											<span class="add-on">&deg;C</span>
+										</div>
+										<div class="btn-group">
+											<button type="submit" class="btn" data-bind="click: temperature.setTemp, enable: isOperational() && loginState.isUser() && temperature.newTemp()">Set</button>
+											<button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
+												<span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu">
+												<!-- ko foreach: temperature.temperature_profiles -->
+												<li>
+													<a href="#" data-bind="click: $parent.temperature.setTempFromProfile, text: 'Set ' + name + ' (' + extruder + '&deg;C)'"></a>
+												</li>
+												<!-- /ko -->
+												<li class="divider"></li>
+												<li>
+													<a href="#" data-bind="click: function() { $root.temperature.setTempToZero(); }">Off</a>
+												</li>
+											</ul>
+										</div>
+                                    </div>
+                                </div>
+                                <div class="form-horizontal pull-left span5">                                    
+                                    <label for="temp_newBedTemp" title="Sets the new target temperature for the bed">Bed</label>
+									<div class="input-append">
+										<input type="text" class="input-mini text-right" data-bind="value: temperature.newBedTemp, valueUpdate: 'afterkeydown', attr: {placeholder: temperature.bedTargetTemp}, enable: isOperational() && loginState.isUser(), event: { keyup: function(d, e) {$root.temperature.handleEnter(event, 'bedTemp');} }" class="tempInput">
+										<span class="add-on">&deg;C</span>
+									</div>
+									<div class="btn-group">
+										<button type="submit" class="btn" data-bind="click: temperature.setBedTemp, enable: isOperational() && loginState.isUser() && temperature.newBedTemp()">Set</button>
+										<button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && loginState.isUser()">
+											<span class="caret"></span>
+										</button>
+										<ul class="dropdown-menu">
+											 <!-- ko foreach: temperature.temperature_profiles -->
+											 <li>
+												 <a href="#" data-bind="click: $parent.temperature.setBedTempFromProfile, text: 'Set ' + name + ' (' + bed + '&deg;C)'"></a>
+											 </li>
+											 <!-- /ko -->
+											 <li class="divider"></li>
+											 <li>
+												 <a href="#" data-bind="click: function(){ $root.temperature.setBedTempToZero(); }">Off</a>
+											 </li>
+										</ul>
+									</div>
+								</div>
+							</div>
+							<div style="clear:both;display: none;" data-bind="visible: loginState.isUser">
+								<h1>Command</h1>
+								<div class="input-append" style="" data-bind="visible: loginState.isUser">
+									<input style="width:400px" type="text" id="terminal-command" data-bind="value: terminal.command, event: { keyup: function(d,e) { terminal.handleEnter(e); } }, enable: isOperational() && loginState.isUser()" disabled="">
+									<button class="btn" type="button" id="terminal-send" data-bind="click: terminal.sendCommand(), enable: isOperational() && loginState.isUser()" disabled="">Send</button>
+								</div>
+							</div>
                             <!-- Container for custom controls -->
                             <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
 
