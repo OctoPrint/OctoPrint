@@ -187,41 +187,38 @@
                         </div>
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
-                                <table class="table table-condensed table-hover" id="gcode_files">
-                                    <thead>
-                                        <tr>
-                                            <th class="gcode_files_name">Name</th>
-                                            <th class="gcode_files_size">Size</th>
-                                            <th class="gcode_files_action">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody data-bind="template: { name: $root.displayMode, foreach: listHelper.paginatedItems }"></tbody>
+                                <div class="row-fluid" id="gcode_files">
+									<div class="span12" style="min-height:15px;">
+										<div class="row-fluid" style="border-bottom: 1px solid #dddddd;">
+											<div class="gcode_files_name span6">Name</div>
+											<div class="gcode_files_size span3">Size</div>
+											<div class="gcode_files_action span3">Action</div>
+										</div>
+										<!-- ko template: { name: $root.displayMode, foreach: listHelper.paginatedItems } -->
+										<!-- /ko -->
 
-									<script type="text/html" id="dirTemplate">
-										<tr> 
-											<td colspan="3"><a data-toggle="collapse" data-bind="attr: { href: '#' + name }, click: $parent.onClick" class="hover"><i class="icon-folder-open" data-bind="text: name, attr: { id: 'image' + name }"></i></a></td>
-										</tr>
-										<tr>
-											<td colspan="3" style="border-top: 0px">
-												<div class="accordion-body collapse in overflow_visible" data-bind="attr: { id: name }">
-													<table class="table table-condensed table-hover">
-														<tbody data-bind="template: { name: $root.displayMode, foreach: files.items }"></tbody>
-													</table>
+										<script type="text/html" id="dirTemplate">
+											<div class="row-fluid" style="border-top: 1px solid #dddddd;">
+												<div class="span12" style="min-height:15px;">
+													<div class="hover"><a data-toggle="collapse" data-bind="attr: { href: '#' + href }, click: $root.onClick" class="hover"><i class="icon-folder-open" data-bind="text: name, attr: { id: 'image' + href }"></i></a></div>
+													<div class="row-fluid">
+														<div class="collapse in offset1" data-bind="attr: { id: href }, template: { name: $root.displayMode, foreach: data }">
+															<!-- ko template: { name: $root.displayMode, foreach: data } -->
+															<!-- /ko -->
+														</div>
+													</div>
 												</div>
-											</td>
-										</tr>
-                                    </script>
-									<script type="text/html" id="fileTemplate">
-                                        <tr data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.isSelected($data) ? 'bold' : 'normal' }, popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data) }">
-											<td class="gcode_files_name" data-bind="text: name"></td>
-                                            <td class="gcode_files_size" data-bind="text: formatSize(size)"></td>
-                                            <td class="gcode_files_action">
-                                                <a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>
-                                            </td>
-                                        </tr>
-                                    </script>
-
-                                </table>
+											</div>
+										</script>
+										<script type="text/html" id="fileTemplate">
+											<div class="row-fluid hover" style="border-top: 1px solid #dddddd;" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.isSelected($data) ? 'bold' : 'normal' }, popover: { title: name, animation: true, html: true, placement: 'right', trigger: 'hover', delay: 0, content: $root.getPopoverContent($data) }">
+												<div class="gcode_files_name span5" style="min-height:0px; overflow: hidden" data-bind="text: name"></div>
+												<div class="gcode_files_size span3" style="min-height:0px; overflow: hidden;" data-bind="text: formatSize(size)"></div>
+												<div class="gcode_files_action span4" style="min-height:0px;"><a href="#" class="icon-trash" title="Remove" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-folder-open" title="Load" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a>&nbsp;|&nbsp;<a href="#" class="icon-print" title="Load and Print" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"></a></div>
+											</div>
+										</script>
+									</div>
+                                </div>
                                 <div class="muted text-right">
                                     <small>Free: <span data-bind="text: freeSpaceString"></span></small>
                                 </div>

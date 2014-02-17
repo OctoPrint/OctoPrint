@@ -14,7 +14,7 @@ $(function() {
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
-        var filemanagerViewModel = new FilemanagerViewModel();
+        var filemanagerViewModel = new FilemanagerViewModel(gcodeFilesViewModel);
 
         var dataUpdater = new DataUpdater(
             loginStateViewModel,
@@ -318,7 +318,6 @@ $(function() {
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
         settingsViewModel.requestData();
-        filemanagerViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {

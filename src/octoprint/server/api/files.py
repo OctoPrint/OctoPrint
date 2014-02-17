@@ -4,7 +4,7 @@ from octoprint.events import Events
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from os.path import sep;
+from os.path import isdir, sep, join;
 from flask import request, jsonify, make_response, url_for
 
 import octoprint.gcodefiles as gcodefiles
@@ -23,7 +23,7 @@ from octoprint.server.api import api
 def readGcodeFiles():
 	files = _getFileList(FileDestinations.LOCAL)
 	files.extend(_getFileList(FileDestinations.SDCARD))
-	return jsonify(files=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
+	return jsonify(directories=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
@@ -38,7 +38,6 @@ def readGcodeFilesForOrigin(origin):
 	else:
 		return jsonify(files=files)
 
-
 def _getFileDetails(origin, filename):
 	files = _getFileList(origin)
 	for file in files:
@@ -50,10 +49,10 @@ def _getFileList(origin):
 	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.getSdFiles()
 
-		files = []
+		data = [gcodeManager.getFolderData("SDCard", "")]
 		if sdFileList is not None:
 			for sdFile in sdFileList:
-				files.append({
+				data[0]["files"].append({
 					"name": sdFile,
 					"origin": FileDestinations.SDCARD,
 					"refs": {
@@ -61,16 +60,29 @@ def _getFileList(origin):
 					}
 				})
 	else:
-		files = gcodeManager.getAllFileData()
-		for file in files:
-			file.update({
+		data = gcodeManager.getAllData()
+		for d in data:
+			_recursiveUpdateData(d)
+
+	return data
+
+def _recursiveUpdateData(dir):
+	dir.update({
+			"refs": {
+				"resource": url_for(".deleteGcodeFile", target=FileDestinations.LOCAL, filename=dir["relativepath"], _external=True)
+			}
+		})
+
+	for d in dir["data"]:
+		if d["type"] is "dir":
+			_recursiveUpdateData(d)
+		else:
+			d.update({
 				"refs": {
-					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["relativepath"], _external=True),
-					"download": urlForDownload(FileDestinations.LOCAL, file["relativepath"])
+					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=d["relativepath"], _external=True),
+					"download": urlForDownload(FileDestinations.LOCAL, d["relativepath"])
 				}
 			})
-	return files
-
 
 def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
@@ -237,17 +249,17 @@ def gcodeFileCommand(filename, target):
 
 	return NO_CONTENT
 
-
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
 @restricted_access
 def deleteGcodeFile(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
 
-	if not _verifyFileExists(target, filename):
-		return make_response("File not found on '%s': %s" % (target, filename), 404)
+	absPath = join(gcodeManager._uploadFolder, filename.replace("/", sep))
 
 	sd = target == FileDestinations.SDCARD
+	if not _verifyFileExists(target, filename) and (not sd and not isdir(absPath)):
+		return make_response("File or Directory not found on '%s': %s" % (target, filename), 404)
 
 	currentJob = printer.getCurrentJob()
 	currentFilename = None
@@ -268,8 +280,18 @@ def deleteGcodeFile(filename, target):
 	if sd:
 		printer.deleteSdFile(filename.replace("/", sep))
 	else:
-		gcodeManager.removeFile(filename.replace("/", sep))
+		if isdir(absPath):
+			gcodeManager.removeDir(filename.replace("/", sep))
+		else:
+			gcodeManager.removeFile(filename.replace("/", sep))
 
 	# return an updated list of files
 	return readGcodeFiles()
 
+@api.route("/files/<path:folder>", methods=["PUT"])
+@restricted_access
+def createFolder(folder):
+	gcodeManager.createDir(folder)
+
+	# return an updated list of files
+	return readGcodeFiles()

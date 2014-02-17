@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import os
+import shutil
 import Queue
 import threading
 import yaml
@@ -32,7 +33,6 @@ def isGcodeFileName(filename):
 	"""
 	return "." in filename and filename.rsplit(".", 1)[1].lower() in GCODE_EXTENSIONS
 
-
 def isSTLFileName(filename):
 	"""Simple helper to determine if a filename has the .stl extension.
 
@@ -42,7 +42,6 @@ def isSTLFileName(filename):
 	"""
 	return "." in filename and filename.rsplit(".", 1)[1].lower() in STL_EXTENSIONS
 
-
 def genGcodeFileName(filename):
 	if not filename:
 		return None
@@ -50,14 +49,12 @@ def genGcodeFileName(filename):
 	name, ext = filename.rsplit(".", 1)
 	return name + ".gcode"
 
-
 def genStlFileName(filename):
 	if not filename:
 		return None
 
 	name, ext = filename.rsplit(".", 1)
 	return name + ".stl"
-
 
 class GcodeManager:
 	def __init__(self):
@@ -329,9 +326,25 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
-	def removeFile(self, subdir, filename):
+	def createDir(self, path):
+		path = self._getBasicFilename(path)
+		absolutePath = os.path.join(self._uploadFolder, self._getBasicFilename(path))
+		if absolutePath is None:
+			return
+
+		os.mkdir(absolutePath)
+
+	def removeDir(self, path):
+		path = self._getBasicFilename(path)
+		absolutePath = os.path.join(self._uploadFolder, self._getBasicFilename(path))
+		if absolutePath is None:
+			return
+
+		os.rmdir(absolutePath)
+
+	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
-		absolutePath = self.getAbsolutePath(os.path.join(subdir, filename))
+		absolutePath = self.getAbsolutePath(filename)
 		stlPath = genStlFileName(absolutePath)
 
 		if absolutePath is None:
@@ -379,19 +392,50 @@ class GcodeManager:
 
 		return secure
 
+	def recursiveGetAllRelativePathes(self, list):
+		relativepathes = []
+
+		for i in list:
+			relativepathes.append(i["relativepath"])
+			if "data" in i:
+				relativepathes.extend(self.recursiveGetAllRelativePathes(i["data"]))
+
+		return relativepathes
+
 	def getAllRelativePathes(self):
-		return map(lambda x: x["relativepath"], self.getAllFileData())
+		return self.recursiveGetAllRelativePathes(self.getAllData())
+	
+	def recursiveGetAllData(self, path, name):
+		data = []
+		for subdir, dirs, osFiles in os.walk(path):
+			dirData = self.getFolderData(name, subdir[len(self._uploadFolder + os.path.sep):])
+			if dirs:
+				for dir in dirs:
+					dirData["data"].extend(self.recursiveGetAllData(os.path.join(path, dir), dir))
 
-	def getAllFileData(self):
-		files = []
-		for subdir, dirs, osFiles in os.walk(self._uploadFolder):
+				del dirs[:]
+
 			for osFile in osFiles:
-				fileData = self.getFileData(subdir[len(self._uploadFolder + os.path.sep):], osFile)
+				fileData = self.getFileData(dirData["relativepath"], osFile)
 				if fileData is not None:
-					files.append(fileData)
+					dirData["data"].append(fileData)
+			
+			data.append(dirData)
 
-		return files
+		return data
 
+	def getAllData(self):
+		return self.recursiveGetAllData(self._uploadFolder, "Uploads")
+
+	def getFolderData(self, name, fullpath):
+		folderData = {
+			"name": name,
+			"relativepath": fullpath.replace(os.path.sep, "/"),
+			"type": "dir",
+			"data": []
+		}
+
+		return folderData
 	def getFileData(self, subdir, filename):
 		if not filename:
 			return
@@ -415,6 +459,7 @@ class GcodeManager:
 		fileData = {
 			"name": filename,
 			"relativepath": fullname.replace(os.path.sep, "/"),
+			"type": "file",
 			"size": statResult.st_size,
 			"origin": FileDestinations.LOCAL,
 			"date": int(statResult.st_ctime)
@@ -592,7 +637,7 @@ class MetadataAnalyzer:
 				self._logger.debug("Running analysis of file %s aborted" % filename)
 
 	def _analyzeGcode(self, filename):
-		path = self._getPathCallback("", filename, mustExist=True)
+		path = self._getPathCallback("", filename)
 		if path is None or not os.path.exists(path):
 			return
 

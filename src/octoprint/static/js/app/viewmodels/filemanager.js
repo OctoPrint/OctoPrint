@@ -1,19 +1,26 @@
-﻿function FilemanagerViewModel() {
+﻿function FilemanagerViewModel(gcodeFilesViewModel) {
 	var self = this;
+
+	self.gcodeFilesViewModel = gcodeFilesViewModel;
 
 	self.directoryContextMenu = $("#dirContextMenu");
 	self.fileContextMenu = $("#fileContextMenu");
-	self.rowClicked;
 
 	$("#directoryTab").on("contextmenu", null, function (e) {
-		self.rowClicked = $(this);
+		self.fileContextMenu.hide();
 		self.directoryContextMenu.css({ display: "block", left: e.pageX, top: e.pageY });
 		return false;
 	});
 	$("#fileTab").on("contextmenu", null, function (e) {
-		self.rowClicked = $(this);
+		self.directoryContextMenu.hide();
 		self.fileContextMenu.css({ display: "block", left: e.pageX, top: e.pageY });
 		return false;
+	});
+
+	$(document).ready(function () {
+		$("#name_overlay").on('shown', function () {
+			$(this).find("#renameName").focus();
+		});
 	});
 
 	$(document).click(function () {
@@ -22,12 +29,15 @@
 	});
 
 	self.activeFolders = ko.observableArray([]);
+	self.copyFolders = ko.observableArray([]);
 	self.cutFolders = ko.observableArray([]);
 
 	self.activeFiles = ko.observableArray([]);
+	self.copyFiles = ko.observableArray([]);
 	self.cutFiles = ko.observableArray([]);
 
 	self.directoryList = ko.observableArray([]);
+	self.lastDirectory;
 
 	self.itemList = ko.dependentObservable(function () {
 		if (self.activeFolders() == undefined) {
@@ -37,79 +47,39 @@
 			if (folders.length != 1)
 				return [];
 
-			return folders[0].files;
+			var files = [];
+			for (var i = 0; i < folders[0].data.length; i++) {
+				if (folders[0].data[i].type == "file")
+					files.push(folders[0].data[i]);
+			}
+
+			return files;
 		}
 	});
 
-	self.requestData = function (filenameToFocus, locationToFocus) {
-		$.ajax({
-			url: API_BASEURL + "files",
-			method: "GET",
-			dataType: "json",
-			success: function (response) {
-				self.fromResponse(response, filenameToFocus, locationToFocus);
-			}
-		});
-	};
-	self.fromResponse = function (response, filenameToFocus, locationToFocus) {
-		var files = response.files;
+	self.gcodeFilesViewModel.requestResponse.subscribe(function (response) {
+		self.directoryList(response.directories);
 
-		var dirs = {};
-		var looseFiles = [];
+		for (var i = 0; i < self.directoryList().length; i++) {
+			$("#fm" + self.directoryList()[i].href).click();
+		}
 
-		_.each(files, function (element, index, list) {
-			element.type = "file";
-			if (!element.hasOwnProperty("relativepath")) {
-				element.relativepath = "";
-				looseFiles.push(element);
-			}
-			else {
-				var path = element.relativepath.substring(0, element.relativepath.lastIndexOf("/"));
-				if (path == "")
-					looseFiles.push(element);
-				else {
-					var fullpath = "";
-					var dir = dirs;
-					while (path.indexOf("/") != -1) {
-						var name = path.substring(0, path.indexOf("/"));
-						if (!dir.hasOwnProperty(name))
-							dir[name] = { name: name, path: fullpath, dirs: [], files: [] };
-
-						dir = dirs[name];
-						fullpath = fullpath + "/" + name;
-						path = path.substring(path.indexOf("/"));
-					}
-
-					if (!dir.hasOwnProperty(path))
-						dir[path] = { name: path, path: fullpath, dirs: [], files: [] };
-
-					dir[path].files.push(element);
-				}
-			}
-			if (!element.hasOwnProperty("size")) element.size = undefined;
-			if (!element.hasOwnProperty("date")) element.date = undefined;
-		});
-
-		var upload = [
-			{
-				name: "Uploads",
-				dirs: [],
-				files: looseFiles
-			}
-		];
-
-		_.each(dirs, function (element, index, list) {
-			upload[0].dirs.push(element);
-		});
-
-		self.directoryList(upload);
-	};
+		if (self.lastDirectory != undefined) {
+			if (!self.selectFolder(self.directoryList()[0].data, self.lastDirectory.relativepath))
+				self.selectFolder(self.directoryList()[1].data, self.lastDirectory.relativepath);
+		}
+	});
 
 	self.displayMode = function (data) {
-		if (data.dirs === undefined)
+		if (data.data === undefined)
 			return "singleDir";
 
-		return data.dirs.length > 0 ? "expandableDir" : "singleDir";
+		var containsDir = false;
+		for (var i = 0; !containsDir && i < data.data.length; i++) {
+			containsDir = data.data[i].type == "dir";
+		}
+
+		return containsDir ? "expandableDir" : "singleDir";
 	};
 
 	self.isFolderSelected = function (data) {
@@ -162,7 +132,33 @@
 		return false;
 	};
 
-	self.selectFolder = function (data, e) {
+	self.selectFolder = function (list, folder) {
+		var index = folder.indexOf('/');
+		if (index == -1)
+			index = folder.indexOf('\\');
+
+		if (index != -1) {
+			var subdir = folder.substring(0, index);
+			folder = folder.substring(index + 1);
+
+			for (var i = 0; i < list.length; i++) {
+				if (list[i].name == subdir) {
+					$("#fm" + list[i].href).click();
+					return self.selectFolder(list[i].data, folder);
+				}
+			}
+		}
+		else {
+			for (var i = 0; i < list.length; i++) {
+				if (list[i].name == folder) {
+					self.activeFolders([list[i]]);
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+	self.selectFolderEvent = function (data, e) {
 		if (self.directoryContextMenu.css("display") == "block")
 			return;
 
@@ -184,7 +180,7 @@
 		self.activeFolders(itemList);
 		e.stopPropagation();
 	}
-	self.selectFile = function (data, e) {
+	self.selectFileEvent = function (data, e) {
 		if (self.fileContextMenu.css("display") == "block")
 			return;
 
@@ -214,6 +210,43 @@
 		e.stopPropagation();
 	}
 
+	self.enableRemoveFolders = function () {
+		var folders = self.activeFolders();
+		
+		var enabled = true;
+		for (var i = 0; enabled && i < folders.length; i++) {
+			enabled = self.enableRemoveFolder(folders[i]);
+		}
+
+		return enabled;
+	}
+	self.enableRemoveFolder = function (folder) {
+		var enabled = self.enableCopyFolder(folder);
+
+		for (var i = 0; enabled && i < folder.data.Length; i++){
+			enabled = self.gcodeFilesViewModel.enableRemove(folder.data[i]);
+		}
+
+		return enabled;
+	};
+
+	self.enableCopyFolders = function () {
+		var folders = self.activeFolders();
+
+		var enabled = true;
+		for (var i = 0; enabled && i < folders.length; i++) {
+			enabled = self.enableCopyFolder(folders[i]);
+		}
+
+		return enabled;
+	}
+	self.enableCopyFolder = function (folder) {
+		var enabled = folder != self.directoryList()[0];
+		enabled = enabled && folder != self.directoryList()[1];
+
+		return enabled;
+	};
+
 	self.createFolder = function () {
 		$("#renameName").val("");
 		$("#renameName").keydown(function (e) {
@@ -222,10 +255,26 @@
 				e.preventDefault();
 				$("#name_overlay").modal("hide");
 
+				var selectedFolders = self.activeFolders();
+				if (selectedFolders.length == 0) {
+					for (var i = 0; selectedFolders.length == 0 && i < self.directoryList().length; i++) {
+						if (self.directoryList()[i].name == "Uploads")
+							selectedFolders = [self.directoryList()[i]];
+					}
+				}
+
 				var value = $("#renameName").val();
+				for (var i = 0; i < selectedFolders.length; i++) {
+					var relativePath = selectedFolders[i].relativepath;
+					if (relativePath != "")
+						relativePath = relativePath + "/";
 
-				// AJAX Request
-
+					$.ajax({
+						url: API_BASEURL + "files/" + relativePath + value,
+						method: "PUT",
+						success: function () { self.gcodeFilesViewModel.requestData(); }
+					});
+				}
 			}
 		});
 		$("#name_overlay").modal("show");
@@ -233,8 +282,15 @@
 	self.removeFolder = function () {
 		var folders = self.activeFolders();
 
-		// AJAX Request
+		for (var i = 0; i < folders.length; i++) {
+			if (self.enableRemoveFolder(folders[i]))
+				self.gcodeFilesViewModel.removeFile(folders[i]);
+		}
 
+		self.activeFolders([]);
+	};
+	self.copyFolder = function () {
+		self.copyFolders(self.activeFolders());
 		self.activeFolders([]);
 	};
 	self.cutFolder = function () {
@@ -257,11 +313,32 @@
 		self.activeFiles([]);
 	};
 
-	self.removeFile = function () {
+	self.enableRemoveFiles = function () {
 		var files = self.activeFiles();
 
-		// AJAX Request
+		var enabled = true;
+		for (var i = 0; enabled && i < files.length; i++) {
+			enabled = self.gcodeFilesViewModel.enableRemove(files[i]);
+		}
 
+		return enabled;
+	}
+
+	self.removeFiles = function () {
+		var files = self.activeFiles();
+
+		for (var i = 0; i < files.length; i++) {
+			if (self.gcodeFilesViewModel.enableRemove(files[i]))
+				self.gcodeFilesViewModel.removeFile(files[i]);
+		}
+
+		self.lastDirectory = self.activeFolders()[0];
+
+		self.activeFiles([]);
+		self.activeFolders([]);
+	};
+	self.copyFile = function () {
+		self.copyFiles(self.activeFiles());
 		self.activeFiles([]);
 	};
 	self.cutFile = function () {
