@@ -291,14 +291,13 @@
 	};
 	self.copyFolder = function () {
 		self.copyFolders(self.activeFolders());
-		self.activeFolders([]);
 	};
 	self.cutFolder = function () {
 		self.cutFolders(self.activeFolders());
-		self.activeFolders([]);
 	};
 	self.pasteFolder = function () {
 		var folder = self.activeFolders();
+		var copyFolders = self.copyFolders();
 		var cutFolders = self.cutFolders();
 
 		// AJAX Request
@@ -339,14 +338,13 @@
 	};
 	self.copyFile = function () {
 		self.copyFiles(self.activeFiles());
-		self.activeFiles([]);
 	};
 	self.cutFile = function () {
 		self.cutFiles(self.activeFiles());
-		self.activeFiles([]);
 	};
 	self.pasteFile = function () {
 		var files = self.activeFiles();
+		var copyFiles = self.copyFiles();
 		var cutFiles = self.cutFiles();
 
 		// AJAX Request

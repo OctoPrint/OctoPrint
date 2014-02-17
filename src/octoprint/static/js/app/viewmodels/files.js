@@ -77,7 +77,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.onClick = function(data)
     {
     	var obj = $("#image" + data.href);
-    	if (obj.parent().hasClass("collapsed"))
+    	if (obj.next().hasClass("collapsed"))
     	{
     		obj.removeClass("icon-folder-close");
     		obj.addClass("icon-folder-open");
