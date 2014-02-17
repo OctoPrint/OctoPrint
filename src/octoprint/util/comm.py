@@ -23,7 +23,7 @@ from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.gcodefiles import isGcodeFileName
-from octoprint.util import getExceptionString, getNewTimeout
+from octoprint.util import getExceptionString, getNewTimeout, sanitizeAscii, filterNonAscii
 from octoprint.util.virtual import VirtualPrinter
 
 try:
@@ -605,7 +605,11 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and isGcodeFileName(line.strip().lower()) and not 'End file list' in line:
-					self._sdFiles.append(line.strip().lower())
+					filename = line.strip().lower()
+					if filterNonAscii(filename):
+						self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+					else:
+						self._sdFiles.append(filename)
 					continue
 
 				##~~ Temperature processing
@@ -672,7 +676,7 @@ class MachineCom(object):
 						"file": self._currentFile.getFilename(),
 						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					})
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
@@ -920,7 +924,7 @@ class MachineCom(object):
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
+		self._log("Recv: %s" % sanitizeAscii(ret))
 		return ret
 
 	def _sendNext(self):
@@ -934,7 +938,7 @@ class MachineCom(object):
 					payload = {
 						"local": self._currentFile.getLocalFilename(),
 						"remote": self._currentFile.getRemoteFilename(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					}
 
 					self._currentFile = None
@@ -947,7 +951,7 @@ class MachineCom(object):
 						"file": self._currentFile.getFilename(),
 						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					}
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
