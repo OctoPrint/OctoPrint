@@ -134,21 +134,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     self.changeSorting = function (sorting) {
     	self.listHelper.changeSorting(sorting);
-		
-    	var itemlist = self.listHelper.items();
-    	for (var i = 0; i < itemList.length; i++) {
-    		if (itemList[i].type == "dir")
-    			itemList[i].files.changeSorting(sorting);
-		}
     };
     self.toggleFilter = function (filter) {
     	self.listHelper.toggleFilter(filter);
-
-    	var itemlist = self.listHelper.items();
-    	for (var i = 0; i < itemList.length; i++) {
-    		if (itemList[i].type == "dir")
-    			itemList[i].files.toggleFilter(filter);
-    	}
     };
 
     self.displayMode = function (item) {
@@ -282,21 +270,11 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     		var subdir = filename.substring(0, index);
     		filename = filename.substring(index + 1);
 
-    		for (var i = 0; i < list.length; i++)
-    		{
-    			if (list[i].name == subdir)
-    				return self.selectItem(list[i].data, filename);
-    		}
+    		return self.selectItem(_.chain(list).filter(function (v) { return v.name == subdir; }).map(function (v) { return v.data; }).first().value(), filename);
 		}
 		else 
     	{
-    		for (var i = 0; i < list.length; i++)
-    		{
-				if (list[i].name == filename) {
-					self.selectedItem(list[i]);
-					return true;
-				}
-			}
+    		self.selectedItem(_.chain(list).filter(function (v) { return v.name == filename; }).first().value());
     	}
     	return false;
     };

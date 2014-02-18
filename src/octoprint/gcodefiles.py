@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import os
-import shutil
+import shutil, errno
 import Queue
 import threading
 import yaml
@@ -326,6 +326,12 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
+	def recursiveCopyMetadata(self, list, destination):
+		return
+		
+	def recursiveMoveMetadata(self, list, destination):
+		return
+
 	def createDir(self, path):
 		path = self._getBasicFilename(path)
 		absolutePath = os.path.join(self._uploadFolder, self._getBasicFilename(path))
@@ -333,14 +339,44 @@ class GcodeManager:
 			return
 
 		os.mkdir(absolutePath)
-
 	def removeDir(self, path):
 		path = self._getBasicFilename(path)
 		absolutePath = os.path.join(self._uploadFolder, self._getBasicFilename(path))
 		if absolutePath is None:
 			return
 
-		os.rmdir(absolutePath)
+		shutil.rmtree(absolutePath)
+	def copy(self, target, destination):
+		target = self._getBasicFilename(target)
+		target = os.path.join(self._uploadFolder, target)
+		if target is None:
+			return
+
+		destination = self._getBasicFilename(destination)
+		destination = os.path.join(self._uploadFolder, destination)
+		if destination is None:
+			return
+
+		if (os.path.isdir(target)):
+			shutil.copytree(target, destination)
+
+			list = self.recursiveGetAllData(target, os.path.basename(target))
+			self.recursiveCopyMetadata(list, self._getBasicFilename(destination))
+
+			self._metadataDirty = True
+			self._saveMetadata()
+		else:
+			shutil.copy(target, destination)
+			filename = self._getBasicFilename(target)
+
+			metadata = self.getFileMetadata(filename)
+
+			filename = os.path.basename(filename)
+			destination = self._getBasicFilename(destination)
+			if destination != "":
+				filename = destination + "\\" + filename
+
+			self.setFileMetadata(filename, metadata);
 
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)

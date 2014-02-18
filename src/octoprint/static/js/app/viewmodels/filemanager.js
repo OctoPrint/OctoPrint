@@ -22,7 +22,6 @@
 			$(this).find("#renameName").focus();
 		});
 	});
-
 	$(document).click(function () {
 		self.directoryContextMenu.hide();
 		self.fileContextMenu.hide();
@@ -44,7 +43,7 @@
 			return [];
 		} else {
 			var folders = self.activeFolders();
-			if (folders.length != 1)
+			if (folders.length == 0 || folders.length != 1)
 				return [];
 
 			var files = [];
@@ -67,6 +66,11 @@
 		if (self.lastDirectory != undefined) {
 			if (!self.selectFolder(self.directoryList()[0].data, self.lastDirectory.relativepath))
 				self.selectFolder(self.directoryList()[1].data, self.lastDirectory.relativepath);
+
+			if (self.lastDirectory.relativepath == "")
+				self.selectFolder(self.directoryList(), "Uploads");
+
+			self.lastDirectory = undefined;
 		}
 	});
 
@@ -86,50 +90,26 @@
 		if (data === undefined || self.activeFolders() === undefined)
 			return false;
 
-		var itemList = self.activeFolders();
-		for (var i = 0; i < itemList.length; i++) {
-			if (itemList[i] == data) {
-				return true;
-			}
-		}
-		return false;
+		return _.indexOf(self.activeFolders(), data) != -1;
 	};
 	self.isFolderCut = function (data) {
 		if (data === undefined || self.cutFolders() === undefined)
 			return false;
 
-		var itemList = self.cutFolders();
-		for (var i = 0; i < itemList.length; i++) {
-			if (itemList[i] == data) {
-				return true;
-			}
-		}
-		return false;
+		return _.indexOf(self.cutFolders(), data.relativepath) != -1;
 	};
 
 	self.isFileSelected = function (data) {
 		if (data === undefined || self.activeFiles() === undefined)
 			return false;
 
-		var itemList = self.activeFiles();
-		for (var i = 0; i < itemList.length; i++) {
-			if (itemList[i] == data) {
-				return true;
-			}
-		}
-		return false;
+		return _.indexOf(self.activeFiles(), data) != -1;
 	};
 	self.isFileCut = function (data) {
 		if (data === undefined || self.cutFiles() === undefined)
 			return false;
 
-		var itemList = self.cutFiles();
-		for (var i = 0; i < itemList.length; i++) {
-			if (itemList[i] == data) {
-				return true;
-			}
-		}
-		return false;
+		return _.indexOf(self.cutFiles(), data.relativepath) != -1;
 	};
 
 	self.selectFolder = function (list, folder) {
@@ -141,21 +121,13 @@
 			var subdir = folder.substring(0, index);
 			folder = folder.substring(index + 1);
 
-			for (var i = 0; i < list.length; i++) {
-				if (list[i].name == subdir) {
-					$("#fm" + list[i].href).click();
-					return self.selectFolder(list[i].data, folder);
-				}
-			}
+			var obj = _.chain(list).filter(function (v) { return v.name == subdir; }).first().value();
+			$("#fm" + obj.href).click();
+			return self.selectFolder(obj.data, folder);
 		}
-		else {
-			for (var i = 0; i < list.length; i++) {
-				if (list[i].name == folder) {
-					self.activeFolders([list[i]]);
-					return true;
-				}
-			}
-		}
+		else 
+			self.activeFolders(_.chain(list).filter(function (v) { return v.name == folder; }).value());
+
 		return false;
 	};
 	self.selectFolderEvent = function (data, e) {
@@ -253,55 +225,78 @@
 			if (e.keyCode == 13)
 			{
 				e.preventDefault();
+				e.stopPropagation();
+
 				$("#name_overlay").modal("hide");
 
-				var selectedFolders = self.activeFolders();
+				var selectedFolders = self.activeFolders().map(function (v) { return v.relativepath; });
 				if (selectedFolders.length == 0) {
-					for (var i = 0; selectedFolders.length == 0 && i < self.directoryList().length; i++) {
-						if (self.directoryList()[i].name == "Uploads")
-							selectedFolders = [self.directoryList()[i]];
-					}
+					selectedFolders = [""];
 				}
 
 				var value = $("#renameName").val();
-				for (var i = 0; i < selectedFolders.length; i++) {
-					var relativePath = selectedFolders[i].relativepath;
-					if (relativePath != "")
-						relativePath = relativePath + "/";
+				var folders = _.chain(selectedFolders).map(function (v) { return v == "" ? value : v + "/" + value; }).value();
 
-					$.ajax({
-						url: API_BASEURL + "files/" + relativePath + value,
-						method: "PUT",
-						success: function () { self.gcodeFilesViewModel.requestData(); }
-					});
-				}
+				$.ajax({
+					url: API_BASEURL + "files/command",
+					method: "POST",
+					dataType: "json",
+					contentType: "application/json; charset=UTF-8",
+					data: JSON.stringify({ "command": "create", "type": "dir", "targets": folders }),
+					success: function () { self.gcodeFilesViewModel.requestData(); }
+				});
 			}
 		});
 		$("#name_overlay").modal("show");
 	};
 	self.removeFolder = function () {
-		var folders = self.activeFolders();
+		var folders = _.chain(self.activeFolders()).filter(function (v) { return self.enableRemoveFolder(v); }).map(function (v) { return v.relativepath; }).value();
 
-		for (var i = 0; i < folders.length; i++) {
-			if (self.enableRemoveFolder(folders[i]))
-				self.gcodeFilesViewModel.removeFile(folders[i]);
-		}
+		$.ajax({
+			url: API_BASEURL + "files/command",
+			method: "POST",
+			dataType: "json",
+			contentType: "application/json; charset=UTF-8",
+			data: JSON.stringify({ "command": "delete", "type": "dir", "targets": folders }),
+			success: function () { self.gcodeFilesViewModel.requestData(); }
+		});
 
+		self.lastDirectory = self.activeFolders()[0];
 		self.activeFolders([]);
 	};
 	self.copyFolder = function () {
-		self.copyFolders(self.activeFolders());
+		self.copyFolders(self.activeFolders().map(function(v) { return v.relativepath; }));
 	};
 	self.cutFolder = function () {
-		self.cutFolders(self.activeFolders());
+		self.cutFolders(self.activeFolders().map(function (v) { return v.relativepath; }));
 	};
 	self.pasteFolder = function () {
-		var folder = self.activeFolders();
+		var folders = self.activeFolders().map(function (v) { return v.relativepath; });
 		var copyFolders = self.copyFolders();
 		var cutFolders = self.cutFolders();
 
-		// AJAX Request
+		if (copyFolders.length > 0) {
+			$.ajax({
+				url: API_BASEURL + "files/command",
+				method: "POST",
+				dataType: "json",
+				contentType: "application/json; charset=UTF-8",
+				data: JSON.stringify({ "command": "copy", "type": "dir", "targets": copyFolders, "destinations": folders }),
+				success: function () { self.gcodeFilesViewModel.requestData(); }
+			});
+		}
+		if (cutFolders.length > 0) {
+			$.ajax({
+				url: API_BASEURL + "files/command",
+				method: "POST",
+				dataType: "json",
+				contentType: "application/json; charset=UTF-8",
+				data: JSON.stringify({ "command": "cut", "type": "dir", "targets": cutFolders, "destinations": folders }),
+				success: function () { self.gcodeFilesViewModel.requestData(); }
+			});
+		}
 
+		self.lastDirectory = self.activeFolders()[0];
 		self.activeFolders([]);
 	};
 
@@ -322,7 +317,6 @@
 
 		return enabled;
 	}
-
 	self.removeFiles = function () {
 		var files = self.activeFiles();
 
@@ -337,18 +331,40 @@
 		self.activeFolders([]);
 	};
 	self.copyFile = function () {
-		self.copyFiles(self.activeFiles());
+		self.copyFiles(self.activeFiles().map(function (v) { return v.relativepath; }));
 	};
 	self.cutFile = function () {
-		self.cutFiles(self.activeFiles());
+		self.cutFiles(self.activeFiles().map(function (v) { return v.relativepath; }));
 	};
 	self.pasteFile = function () {
-		var files = self.activeFiles();
+		var folders = self.activeFolders().map(function (v) { return v.relativepath; });
 		var copyFiles = self.copyFiles();
 		var cutFiles = self.cutFiles();
 
-		// AJAX Request
+		if (copyFiles.length > 0) {
+			$.ajax({
+				url: API_BASEURL + "files/command",
+				method: "POST",
+				dataType: "json",
+				contentType: "application/json; charset=UTF-8",
+				data: JSON.stringify({ "command": "copy", "type": "file", "targets": copyFiles, "destinations": folders }),
+				success: function () { self.gcodeFilesViewModel.requestData(); }
+			});
+		}
+		if (cutFiles.length > 0) {
+			$.ajax({
+				url: API_BASEURL + "files/command",
+				method: "POST",
+				dataType: "json",
+				contentType: "application/json; charset=UTF-8",
+				data: JSON.stringify({ "command": "cut", "type": "file", "targets": cutFiles, "destinations": folders }),
+				success: function () { self.gcodeFilesViewModel.requestData(); }
+			});
+		}
+
+		self.lastDirectory = self.activeFolders()[0];
 
 		self.activeFiles([]);
+		self.activeFolders([]);
 	};
 }

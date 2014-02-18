@@ -4,7 +4,7 @@ from octoprint.events import Events
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from os.path import isdir, sep, join;
+from os.path import isdir, sep, join, basename;
 from flask import request, jsonify, make_response, url_for
 
 import octoprint.gcodefiles as gcodefiles
@@ -50,6 +50,7 @@ def _getFileList(origin):
 		sdFileList = printer.getSdFiles()
 
 		data = [gcodeManager.getFolderData("SDCard", "")]
+		data[0].update({ "origin": FileDestinations.SDCARD });
 		if sdFileList is not None:
 			for sdFile in sdFileList:
 				data[0]["files"].append({
@@ -61,6 +62,7 @@ def _getFileList(origin):
 				})
 	else:
 		data = gcodeManager.getAllData()
+		data[0].update({ "origin": FileDestinations.LOCAL });
 		for d in data:
 			_recursiveUpdateData(d)
 
@@ -255,12 +257,10 @@ def deleteGcodeFile(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
 
-	absPath = join(gcodeManager._uploadFolder, filename.replace("/", sep))
+	if not _verifyFileExists(target, filename):
+		return make_response("File not found on '%s': %s" % (target, filename), 404)
 
 	sd = target == FileDestinations.SDCARD
-	if not _verifyFileExists(target, filename) and (not sd and not isdir(absPath)):
-		return make_response("File or Directory not found on '%s': %s" % (target, filename), 404)
-
 	currentJob = printer.getCurrentJob()
 	currentFilename = None
 	currentSd = None
@@ -280,18 +280,69 @@ def deleteGcodeFile(filename, target):
 	if sd:
 		printer.deleteSdFile(filename.replace("/", sep))
 	else:
-		if isdir(absPath):
-			gcodeManager.removeDir(filename.replace("/", sep))
-		else:
-			gcodeManager.removeFile(filename.replace("/", sep))
+		gcodeManager.removeFile(filename.replace("/", sep))
 
 	# return an updated list of files
 	return readGcodeFiles()
 
-@api.route("/files/<path:folder>", methods=["PUT"])
+@api.route("/files/command", methods=["POST"])
 @restricted_access
-def createFolder(folder):
-	gcodeManager.createDir(folder)
+def filesCommand():
+	# valid file commands, dict mapping command name to mandatory parameters
+	valid_commands = {
+		"create": ["type", "targets"],
+		"delete": ["type", "targets"],
+		"copy": ["type", "targets", "destinations"],
+		"cut": ["type", "targets", "destinations"]
+	}
+
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	if data["type"] == "dir":
+		for target in data["targets"]:
+			absPath = join(gcodeManager._uploadFolder, target.replace("/", sep))
+			if command == "create":
+				if not isdir(absPath):
+					gcodeManager.createDir(absPath)
+			elif command == "delete":
+				if not isdir(absPath):
+					return make_response("Directory not found: %s" % target, 404)
+
+				gcodeManager.removeDir(target.replace("/", sep))
+			elif command == "copy":
+				if not isdir(absPath):
+					return make_response("Directory not found: %s" % target, 404)
+
+				for dst in data["destinations"]:
+					gcodeManager.copy(target.replace("/", sep), join(dst.replace("/", sep), basename(target)))
+			elif command == "cut":
+				if not isdir(absPath):
+					return make_response("Directory not found: %s" % target, 404)
+
+				for dst in data["destinations"]:
+					gcodeManager.copy(target.replace("/", sep), join(dst.replace("/", sep), basename(target)))
+
+				gcodeManager.removeDir(target.replace("/", sep))
+
+	if data["type"] == "file":
+		for target in data["targets"]:
+			absPath = join(gcodeManager._uploadFolder, target.replace("/", sep))
+			if command == "copy":
+				if not _verifyFileExists(FileDestinations.LOCAL, target):
+					return make_response("Directory not found: %s" % target, 404)
+
+				for dst in data["destinations"]:
+					gcodeManager.copy(target.replace("/", sep), dst.replace("/", sep))
+			elif command == "cut":
+				if not _verifyFileExists(FileDestinations.LOCAL, target):
+					return make_response("Directory not found: %s" % target, 404)
+				
+				for dst in data["destinations"]:
+					gcodeManager.copy(target.replace("/", sep), dst.replace("/", sep))
+				
+				gcodeManager.removeFile(target.replace("/", sep))
 
 	# return an updated list of files
 	return readGcodeFiles()

@@ -194,9 +194,10 @@
 											<div class="gcode_files_size span3">Size</div>
 											<div class="gcode_files_action span3">Action</div>
 										</div>
-										<!-- ko template: { name: $root.displayMode, foreach: listHelper.paginatedItems } -->
-										<!-- /ko -->
-
+										<div style="height: 270px; overflow:auto !important">
+											<!-- ko template: { name: $root.displayMode, foreach: listHelper.paginatedItems } -->
+											<!-- /ko -->
+										</div>
 										<script type="text/html" id="dirTemplate">
 											<div class="row-fluid" style="border-top: 1px solid #dddddd;">
 												<div class="span12" style="min-height:15px;">
@@ -222,7 +223,7 @@
                                 <div class="muted text-right">
                                     <small>Free: <span data-bind="text: freeSpaceString"></span></small>
                                 </div>
-                                <div class="pagination pagination-mini pagination-centered">
+                                <!--<div class="pagination pagination-mini pagination-centered">
                                     <ul>
                                         <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
                                     </ul>
@@ -232,7 +233,7 @@
                                     <ul>
                                         <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
                                     </ul>
-                                </div>
+                                </div>-->
                                 <div style="display: none;" data-bind="visible: loginState.isUser">
                                     <div class="row-fluid upload-buttons">
                                         {% if enableSdSupport %}

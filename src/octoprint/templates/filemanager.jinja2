@@ -28,18 +28,18 @@
 	<div id="dirContextMenu" class="dropdown clearfix fileManagerPopup">
 		<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
 			<li><a href="#" data-bind="click: createFolder">Create new Folder</a></li>
-			<li data-bind="css:  { divider: $root.activeFolders().length > 0 &&  $root.enableRemoveFolders() }"></li>
+			<li data-bind="css:  { divider: $root.activeFolders().length > 0 && $root.enableRemoveFolders() }"></li>
 			<li data-bind="if: $root.activeFolders().length == 1 && $root.enableRemoveFolders()"><a href="#" data-bind="click:$root.removeFolder">Delete Folder</a></li>
 			<li data-bind="if: $root.activeFolders().length > 1 && $root.enableRemoveFolders()"><a href="#" data-bind="click: $root.removeFolder">Delete Folders</a></li>
 			<li data-bind="css:  { divider: $root.activeFolders().length > 0 && $root.enableRemoveFolders() }"></li>
 			<li data-bind="if: $root.activeFolders().length == 1 && $root.enableRemoveFolders()"><a href="#" data-bind="click: $root.cutFolder">Cut Folder</a></li>
 			<li data-bind="if: $root.activeFolders().length > 1 && $root.enableRemoveFolders()"><a href="#" data-bind="click: $root.cutFolder">Cut Folders</a></li>
 			<li data-bind="css:  { divider: $root.activeFolders().length > 0 && $root.enableCopyFolders() }"></li>
-			<li data-bind="if: $root.activeFolders().length == 1 && $root.enableCopyFolders()"><a href="#" data-bind="click: $root.copyFolders">Copy Folder</a></li>
-			<li data-bind="if: $root.activeFolders().length > 1 && $root.enableCopyFolders()"><a href="#" data-bind="click: $root.copyFolders">Copy Folders</a></li>
-			<li data-bind="css:  { divider: $root.activeFolders().length == 1 && $root.cutFolders().length > 0 }"></li>
-			<li data-bind="if: $root.activeFolders().length == 1 && $root.cutFolders().length == 1"><a href="#" data-bind="click: $root.pasteFolder">Paste Folder</a></li>
-			<li data-bind="if: $root.activeFolders().length == 1 && $root.cutFolders().length > 1"><a href="#" data-bind="click: $root.pasteFolder">Paste Folders</a></li>
+			<li data-bind="if: $root.activeFolders().length == 1 && $root.enableCopyFolders()"><a href="#" data-bind="click: $root.copyFolder">Copy Folder</a></li>
+			<li data-bind="if: $root.activeFolders().length > 1 && $root.enableCopyFolders()"><a href="#" data-bind="click: $root.copyFolder">Copy Folders</a></li>
+			<li data-bind="css:  { divider: $root.activeFolders().length == 1 && ($root.cutFolders().length + $root.copyFolders().length) > 0 }"></li>
+			<li data-bind="if: $root.activeFolders().length == 1 && ($root.cutFolders().length + $root.copyFolders().length) == 1"><a href="#" data-bind="click: $root.pasteFolder">Paste Folder</a></li>
+			<li data-bind="if: $root.activeFolders().length == 1 && ($root.cutFolders().length + $root.copyFolders().length) > 1"><a href="#" data-bind="click: $root.pasteFolder">Paste Folders</a></li>
 			
 		</ul>
 	</div>
@@ -47,30 +47,30 @@
 		<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
 			<li><a href="#" data-bind="click: selectAll">Select All</a></li>
 			<li><a href="#" data-bind="click: deselectAll">Deselect All</a></li>
-			<li data-bind="css:  { divider: $root.activeFolders().length > 0 && $root.enableRemoveFiles() }"></li>
+			<li data-bind="css:  { divider: $root.activeFiles().length > 0 && $root.enableRemoveFiles() }"></li>
 			<li data-bind="if: $root.activeFiles().length == 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click:$root.removeFiles">Delete File</a></li>
 			<li data-bind="if: $root.activeFiles().length > 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click: $root.removeFiles">Delete Files</a></li>
-			<li data-bind="css:  { divider: $root.activeFolders().length > 0 && $root.enableRemoveFiles() }"></li>
+			<li data-bind="css:  { divider: $root.activeFiles().length > 0 && $root.enableRemoveFiles() }"></li>
 			<li data-bind="if: $root.activeFiles().length == 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click: $root.cutFile">Cut File</a></li>
 			<li data-bind="if: $root.activeFiles().length > 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click: $root.cutFile">Cut Files</a></li>
-			<li data-bind="css:  { divider: $root.activeFolders().length > 0 }"></li>
-			<li data-bind="if: $root.activeFiles().length == 1"><a href="#" data-bind="click: $root.cutFile">Copy File</a></li>
-			<li data-bind="if: $root.activeFiles().length > 1"><a href="#" data-bind="click: $root.cutFile">Copy Files</a></li>
-			<li data-bind="css:  { divider: $root.activeFolders().length == 1 && $root.cutFiles().length > 0 }"></li>
+			<li data-bind="css:  { divider: $root.activeFiles().length > 0 }"></li>
+			<li data-bind="if: $root.activeFiles().length == 1"><a href="#" data-bind="click: $root.copyFile">Copy File</a></li>
+			<li data-bind="if: $root.activeFiles().length > 1"><a href="#" data-bind="click: $root.copyFile">Copy Files</a></li>
+			<li data-bind="css:  { divider: $root.activeFolders().length == 1 && ($root.cutFiles().length + $root.copyFiles().length) > 0 }"></li>
 			<li data-bind="if: $root.activeFolders().length == 1 && ($root.cutFiles().length + $root.copyFiles().length) == 1"><a href="#" data-bind="click: $root.pasteFile">Paste File</a></li>
 			<li data-bind="if: $root.activeFolders().length == 1 && ($root.cutFiles().length + $root.copyFiles().length) > 1"><a href="#" data-bind="click: $root.pasteFile">Paste Files</a></li>
 		</ul>
 	</div>
 
 	<script type="text/html" id="expandableDir">
-	<li data-bind="css: { active: $root.isFolderSelected($data), cut: $root.isFolderCut($data) }"><input type="checkbox" data-bind="attr: { id: 'fm' + href }"></input><a href="#" class="directory" data-bind="text: name, attr: { for: 'fm' + href }, click: $root.selectFolderEvent"></a>
-		<ul data-bind="template: { name: $root.displayMode, foreach: data }"></ul>
-	</li>
+		<li data-bind="css: { active: $root.isFolderSelected($data), cut: $root.isFolderCut($data) }"><input type="checkbox" data-bind="attr: { id: 'fm' + href }"></input><a href="#" class="directory" data-bind="text: name, attr: { for: 'fm' + href }, click: $root.selectFolderEvent"></a>
+			<ul data-bind="template: { name: $root.displayMode, foreach: data }"></ul>
+		</li>
 	</script>
 
 	<script type="text/html" id="singleDir">
 	<!-- ko if: type=="dir" -->
-	<li data-bind="css: { active: $root.isFolderSelected($data), cut: $root.isFolderCut($data) }"><a href="#" class="directory" data-bind="text: name, click: $root.selectFolderEvent"></a></li>
+		<li data-bind="css: { active: $root.isFolderSelected($data), cut: $root.isFolderCut($data) }"><a href="#" class="directory" data-bind="text: name, click: $root.selectFolderEvent"></a></li>
 	<!-- /ko -->
 	</script>
 </div>
