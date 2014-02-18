@@ -4,7 +4,7 @@
         <h3 id="filemanager_dialog_label">OctoPrint Filemanager</h3>
     </div>
 	<div class="modal-body overflow_visible">
-		<div class="accordion row-fluid" id="directoryTab" style="height: 100%;">
+		<div class="accordion row-fluid" id="directoryTab" data-bind="click: $root.selectFolderEvent" style="height: 100%;">
 			<div class="accordion-group span4"style="height: 100%;">
 				<div class="accordion-inner">
 					<div class="container css-treeview">
@@ -12,7 +12,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="accordion-group span8" id="fileTab" style="height: 100%; background-color:">
+			<div class="accordion-group span8" id="fileTab" data-bind="click: selectFileEvent" style="height: 100%; background-color:">
 				<div class="accordion-inner">
 					<div class="container css-treeview">
 						<ul data-bind="foreach: itemList">

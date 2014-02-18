@@ -131,8 +131,14 @@
 		return false;
 	};
 	self.selectFolderEvent = function (data, e) {
-		if (self.directoryContextMenu.css("display") == "block")
-			return;
+		if (self.directoryContextMenu.css("display") == "block" || e.target.tagName=="INPUT")
+			return true;
+
+		if (data == self) {
+			self.activeFolders([]);
+			e.stopPropagation();
+			return true;
+		}
 
 		var itemList = self.activeFolders();
 		var index = itemList.indexOf(data);
@@ -154,29 +160,41 @@
 	}
 	self.selectFileEvent = function (data, e) {
 		if (self.fileContextMenu.css("display") == "block")
-			return;
+			return true;
 
 		if (data == self)
 		{
 			self.activeFiles([]);
 			e.stopPropagation();
-			return;
+			return true;
 		}
 
 		var itemList = self.activeFiles();
-		var index = itemList.indexOf(data);
-		if (index == -1)
-			if (e.ctrlKey)
-				itemList.push(data);
+		if (!e.shiftKey) {
+			var index = itemList.indexOf(data);
+			if (index == -1)
+				if (e.ctrlKey)
+					itemList.push(data);
+				else
+					itemList = [data];
 			else
-				itemList = [data];
-		else
-			if (e.ctrlKey)
-				itemList.splice(index, 1);
-			else if (itemList.length > 1)
-				itemList = [data];
+				if (e.ctrlKey)
+					itemList.splice(index, 1);
+				else if (itemList.length > 1)
+					itemList = [data];
+				else
+					itemList = [];
+		}
+		else {
+			var items = self.itemList();
+
+			var last_index = _.indexOf(items, _.last(itemList));
+			var new_index = _.indexOf(items, data);
+			if (_.contains(itemList, data))
+				itemList = _.difference(itemList, items.slice(_.min([last_index + 1, new_index]), _.max([last_index + 1, new_index])));
 			else
-				itemList = [];
+				itemList = _.union(itemList, items.slice(_.min([last_index + 1, new_index + 1]), _.max([last_index + 1, new_index + 1])));
+		}
 
 		self.activeFiles(itemList);
 		e.stopPropagation();
@@ -195,7 +213,7 @@
 	self.enableRemoveFolder = function (folder) {
 		var enabled = self.enableCopyFolder(folder);
 
-		for (var i = 0; enabled && i < folder.data.Length; i++){
+		for (var i = 0; enabled && i < folder.data.length; i++){
 			enabled = self.gcodeFilesViewModel.enableRemove(folder.data[i]);
 		}
 

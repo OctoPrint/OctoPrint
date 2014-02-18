@@ -286,9 +286,16 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     	var selectedItem = self.selectedItem();
     	return selectedItem.relativepath == data.relativepath;
     };
+    self.isPartiallySelected = function (data) {
+    	if (data == undefined || self.selectedItem() == undefined)
+    		return false;
+
+    	var selectedItem = self.selectedItem();
+    	return selectedItem.relativepath.substring(0, data.relativepath.length) == data.relativepath;
+    };
 
     self.enableRemove = function(data) {
-        return self.loginState.isUser() && !(self.isSelected(data) && (self.isPrinting() || self.isPaused()));
+    	return self.loginState.isUser() && !(self.isPartiallySelected(data) && (self.isPrinting() || self.isPaused()));
     };
 
     self.enableSelect = function(data, printAfterSelect) {

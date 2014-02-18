@@ -14,6 +14,7 @@ import logging
 import octoprint.util as util
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
+from copy import deepcopy
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager.destinations import FileDestinations
@@ -326,12 +327,6 @@ class GcodeManager:
 
 		return self._getBasicFilename(absolutePath)
 
-	def recursiveCopyMetadata(self, list, destination):
-		return
-		
-	def recursiveMoveMetadata(self, list, destination):
-		return
-
 	def createDir(self, path):
 		path = self._getBasicFilename(path)
 		absolutePath = os.path.join(self._uploadFolder, self._getBasicFilename(path))
@@ -344,6 +339,14 @@ class GcodeManager:
 		absolutePath = os.path.join(self._uploadFolder, self._getBasicFilename(path))
 		if absolutePath is None:
 			return
+
+		for subdir, dirs, osFiles in os.walk(absolutePath):
+			for filename in osFiles:
+				if filename in self._metadata.keys():
+					del self._metadata[self._getBasicFilename(os.path.join(subdir, filename))]
+
+		self._metadataDirty = True
+		self._saveMetadata()
 
 		shutil.rmtree(absolutePath)
 	def copy(self, target, destination):
@@ -360,23 +363,29 @@ class GcodeManager:
 		if (os.path.isdir(target)):
 			shutil.copytree(target, destination)
 
-			list = self.recursiveGetAllData(target, os.path.basename(target))
-			self.recursiveCopyMetadata(list, self._getBasicFilename(destination))
+			for subdir, dirs, osFiles in os.walk(target):
+				for filename in osFiles:
+					metadata = deepcopy(self.getFileMetadata(self._getBasicFilename(os.path.join(subdir, filename))))
+					destination = self._getBasicFilename(destination)
+					if destination != "":
+						filename = os.path.join(destination, filename)
 
-			self._metadataDirty = True
+					self.setFileMetadata(filename, metadata);
+
 			self._saveMetadata()
 		else:
 			shutil.copy(target, destination)
 			filename = self._getBasicFilename(target)
 
-			metadata = self.getFileMetadata(filename)
+			metadata = deepcopy(self.getFileMetadata(filename))
 
 			filename = os.path.basename(filename)
 			destination = self._getBasicFilename(destination)
 			if destination != "":
-				filename = destination + "\\" + filename
+				filename = os.path.join(destination, filename)
 
 			self.setFileMetadata(filename, metadata);
+			self._saveMetadata()
 
 	def removeFile(self, filename):
 		filename = self._getBasicFilename(filename)
@@ -476,7 +485,7 @@ class GcodeManager:
 		if not filename:
 			return
 
-		filename = self._getBasicFilename(filename)
+		filename = self._getBasicFilename(filename.replace("/", os.path.sep))
 		index = filename.rfind(os.path.sep)
 		if (index != -1):
 			subdir = os.path.join(subdir, filename[:index])
@@ -486,7 +495,7 @@ class GcodeManager:
 		if isSTLFileName(filename):
 			return
 	
-		fullname = os.path.join(subdir, filename)
+		fullname = os.path.join(subdir.replace("/", os.path.sep), filename)
 		absolutePath = self.getAbsolutePath(fullname)
 		if absolutePath is None:
 			return None
@@ -673,7 +682,7 @@ class MetadataAnalyzer:
 				self._logger.debug("Running analysis of file %s aborted" % filename)
 
 	def _analyzeGcode(self, filename):
-		path = self._getPathCallback("", filename)
+		path = self._getPathCallback(filename)
 		if path is None or not os.path.exists(path):
 			return
 
