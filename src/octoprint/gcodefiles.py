@@ -212,7 +212,7 @@ class GcodeManager:
 		self._loadMetadata()
 
 	def _getBasicFilename(self, filename):
-		if filename.startswith(self._uploadFolder):
+		if filename is not None and filename.startswith(self._uploadFolder):
 			return filename[len(self._uploadFolder + os.path.sep):]
 		else:
 			return filename
@@ -233,7 +233,7 @@ class GcodeManager:
 
 	#~~ file handling
 
-	def addFile(self, file, destination, uploadCallback=None):
+	def addFile(self, subdir, file, destination, uploadCallback=None):
 		"""
 		Adds the given file for the given destination to the systems. Takes care of slicing if enabled and
 		necessary.
@@ -246,7 +246,7 @@ class GcodeManager:
 			return None, True
 
 		curaEnabled = self._settings.getBoolean(["cura", "enabled"])
-		filename = file.filename
+		filename = os.path.join(subdir, file.filename)
 
 		absolutePath = self.getAbsolutePath(filename, mustExist=False)
 		gcode = isGcodeFileName(filename)
@@ -263,16 +263,6 @@ class GcodeManager:
 				return self.processStl(absolutePath, destination, uploadCallback), False
 			else:
 				return filename, False
-
-	def getFutureFileName(self, file):
-		if not file:
-			return None
-
-		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
-		if absolutePath is None:
-			return None
-
-		return self._getBasicFilename(absolutePath)
 
 	def processStl(self, absolutePath, destination, uploadCallback=None):
 		from octoprint.slicers.cura import CuraFactory
@@ -317,11 +307,11 @@ class GcodeManager:
 		else:
 			return filename
 
-	def getFutureFilename(self, file):
+	def getFutureFilename(self, subdir, file):
 		if not file:
 			return None
 
-		absolutePath = self.getAbsolutePath(file.filename, mustExist=False)
+		absolutePath = self.getAbsolutePath(os.path.join(subdir, file.filename), mustExist=False)
 		if absolutePath is None:
 			return None
 

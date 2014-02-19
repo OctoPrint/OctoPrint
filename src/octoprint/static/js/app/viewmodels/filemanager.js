@@ -38,6 +38,16 @@
 	self.directoryList = ko.observableArray([]);
 	self.lastDirectory;
 
+	self.formData = function (e, data) {
+		var formData = { "directories": [] };
+
+		var filemanager = $("#filemanager_dialog");
+		if (filemanager != undefined && filemanager.hasClass('in'))
+			formData = { "directories": JSON.stringify(self.activeFolders().map(function (v) { return v.relativepath; })) };
+
+		data.formData = formData;
+	};
+
 	self.itemList = ko.dependentObservable(function () {
 		if (self.activeFolders() == undefined) {
 			return [];
@@ -64,13 +74,12 @@
 		}
 
 		if (self.lastDirectory != undefined) {
-			if (!self.selectFolder(self.directoryList()[0].data, self.lastDirectory.relativepath))
-				self.selectFolder(self.directoryList()[1].data, self.lastDirectory.relativepath);
+			var lastdir = self.lastDirectory.relativepath;
+			if (!self.selectFolder(self.directoryList()[0].data, lastdir))
+				self.selectFolder(self.directoryList()[1].data, lastdir);
 
-			if (self.lastDirectory.relativepath == "")
+			if (lastdir == "")
 				self.selectFolder(self.directoryList(), "Uploads");
-
-			self.lastDirectory = undefined;
 		}
 	});
 
@@ -125,8 +134,13 @@
 			$("#fm" + obj.href).click();
 			return self.selectFolder(obj.data, folder);
 		}
-		else 
-			self.activeFolders(_.chain(list).filter(function (v) { return v.name == folder; }).value());
+		else {
+			self.lastDirectory = _.chain(list).filter(function (v) { return v.name == folder; }).first().value();
+			if (self.lastDirectory != undefined) {
+				self.activeFolders([self.lastDirectory]);
+				return true;
+			}
+		}
 
 		return false;
 	};
@@ -156,6 +170,7 @@
 				itemList = [];
 
 		self.activeFolders(itemList);
+		self.lastDirectory = data;
 		e.stopPropagation();
 	}
 	self.selectFileEvent = function (data, e) {

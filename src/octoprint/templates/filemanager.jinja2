@@ -2,6 +2,9 @@
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h3 id="filemanager_dialog_label">OctoPrint Filemanager</h3>
+        <div id="filemanager_gcode_upload_progress" class="progress" style="width: 100%; margin-bottom:0px;">
+            <div class="bar" style="width: 0%"></div>
+        </div>
     </div>
 	<div class="modal-body overflow_visible">
 		<div class="accordion row-fluid" id="directoryTab" data-bind="click: $root.selectFolderEvent" style="height: 100%;">
@@ -12,7 +15,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="accordion-group span8" id="fileTab" data-bind="click: selectFileEvent" style="height: 100%; background-color:">
+			<div class="accordion-group span8" id="fileTab" data-bind="click: selectFileEvent" style="height: 100%;">
 				<div class="accordion-inner">
 					<div class="container css-treeview">
 						<ul data-bind="foreach: itemList">

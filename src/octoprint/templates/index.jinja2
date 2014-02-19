@@ -180,7 +180,7 @@
                             {% endif %}
 
                             <div class="settings-trigger accordion-heading-button btn-group">
-								<a class="pull-right" data-toggle="modal" href="#filemanager_dialog">
+								<a class="pull-right" data-toggle="modal" href="#filemanager_dialog"  data-bind="visible: loginState.isUser">
 									<span class="icon-folder-open"></span>
 								</a>
 							</div>

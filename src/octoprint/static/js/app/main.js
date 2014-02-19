@@ -91,6 +91,10 @@ $(function() {
                 $("#gcode_upload_progress .bar").css("width", "0%");
                 $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
                 $("#gcode_upload_progress .bar").text("");
+
+                $("#filemanager_gcode_upload_progress .bar").css("width", "0%");
+                $("#filemanager_gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                $("#filemanager_gcode_upload_progress .bar").text("");
             }
         }
 
@@ -104,15 +108,26 @@ $(function() {
             $("#gcode_upload_progress .bar").css("width", "0%");
             $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
             $("#gcode_upload_progress .bar").text("");
+
+            $("#filemanager_gcode_upload_progress .bar").css("width", "0%");
+            $("#filemanager_gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+            $("#filemanager_gcode_upload_progress .bar").text("");
         }
 
         function gcode_upload_progress(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             $("#gcode_upload_progress .bar").css("width", progress + "%");
             $("#gcode_upload_progress .bar").text("Uploading ...");
+
+            $("#filemanager_gcode_upload_progress .bar").css("width", progress + "%");
+            $("#filemanager_gcode_upload_progress .bar").text("Uploading ...");
+
             if (progress >= 100) {
                 $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
                 $("#gcode_upload_progress .bar").text("Saving ...");
+
+                $("#filemanager_gcode_upload_progress").addClass("progress-striped").addClass("active");
+                $("#filemanager_gcode_upload_progress .bar").text("Saving ...");
             }
         }
 
@@ -121,6 +136,7 @@ $(function() {
                 url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: localTarget,
+                submit: filemanagerViewModel.formData,
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress

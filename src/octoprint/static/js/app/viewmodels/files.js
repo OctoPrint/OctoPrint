@@ -158,6 +158,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     	var i = 0;
     	recursiveCheck = function (element, index, list) {
     		element.href = i++;
+    		if (!element.hasOwnProperty("size")) element.size = undefined;
+    		if (!element.hasOwnProperty("date")) element.date = undefined;
+
     		_.each(element.data, recursiveCheck);
     	};
     	_.each(response.directories, recursiveCheck);

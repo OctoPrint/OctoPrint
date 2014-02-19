@@ -25,7 +25,6 @@ def readGcodeFiles():
 	files.extend(_getFileList(FileDestinations.SDCARD))
 	return jsonify(directories=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
 
-
 @api.route("/files/<string:origin>", methods=["GET"])
 def readGcodeFilesForOrigin(origin):
 	if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
@@ -50,14 +49,21 @@ def _getFileList(origin):
 		sdFileList = printer.getSdFiles()
 
 		data = [gcodeManager.getFolderData("SDCard", "")]
-		data[0].update({ "origin": FileDestinations.SDCARD });
+		data[0].update({ 
+				"origin": FileDestinations.SDCARD,
+				"refs": {
+					"resource": url_for(".deleteGcodeFile", target=FileDestinations.SDCARD, filename=data[0]["relativepath"], _external=True)
+				} 
+		})
 		if sdFileList is not None:
 			for sdFile in sdFileList:
-				data[0]["files"].append({
+				data[0]["data"].append({
 					"name": sdFile,
+					"relativepath": sdFile.replace(sep, "/"),
+					"type": "file",
 					"origin": FileDestinations.SDCARD,
 					"refs": {
-						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile, _external=True)
+						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile.replace(sep, "/"), _external=True)
 					}
 				})
 	else:
@@ -107,6 +113,11 @@ def uploadGcodeFile(target):
 		return make_response("SD card support is disabled", 404)
 
 	file = request.files["file"]
+	try:
+		directories = eval(request.form["directories"])
+	except:
+		directories = [""]
+
 	sd = target == FileDestinations.SDCARD
 	selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues
 	printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues
@@ -124,79 +135,79 @@ def uploadGcodeFile(target):
 	currentSd = None
 	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"].keys() and "origin" in currentJob["file"].keys():
 		currentFilename = currentJob["file"]["name"]
-		currentSd = currentJob["origin"] == FileDestinations.SDCARD
-
-	# determine future filename of file to be uploaded, abort if it can't be uploaded
-	futureFilename = gcodeManager.getFutureFilename(file)
-	if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
-		return make_response("Can not upload file %s, wrong format?" % file.filename, 415)
-
-	# prohibit overwriting currently selected file while it's being printed
-	if futureFilename == currentFilename and sd == currentSd and printer.isPrinting() or printer.isPaused():
-		return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
-
-	filename = None
-
-	def fileProcessingFinished(filename, absFilename, destination):
-		"""
-		Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
-		finished.
-
-		Depending on the file's destination triggers either streaming to SD card or directly calls selectAndOrPrint.
-		"""
-		if destination == FileDestinations.SDCARD:
-			return filename, printer.addSdFile(filename, absFilename, selectAndOrPrint)
-		else:
-			selectAndOrPrint(absFilename, destination)
-			return filename
-
-	def selectAndOrPrint(nameToSelect, destination):
-		"""
-		Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
-		the case after they have finished streaming to the printer, which is why this callback is also used
-		for the corresponding call to addSdFile.
-
-		Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
-		exact file is already selected, such reloading it.
-		"""
-		sd = destination == FileDestinations.SDCARD
-		if selectAfterUpload or printAfterSelect or (currentFilename == filename and currentSd == sd):
-			printer.selectFile(nameToSelect, sd, printAfterSelect)
-
-	destination = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
-	filename, done = gcodeManager.addFile(file, destination, fileProcessingFinished)
-	if filename is None:
-		return make_response("Could not upload the file %s" % file.filename, 500)
-
-	sdFilename = None
-	if isinstance(filename, tuple):
-		filename, sdFilename = filename
-
-	eventManager.fire(Events.UPLOAD, {"file": filename, "target": target})
+		currentSd = currentJob["file"]["origin"] == FileDestinations.SDCARD
 
 	files = {}
-	if done:
-		files.update({
-			FileDestinations.LOCAL: {
-				"name": filename,
-				"origin": FileDestinations.LOCAL,
-				"refs": {
-					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True),
-					"download": urlForDownload(FileDestinations.LOCAL, filename)
-				}
-			}
-		})
+	for subdir in directories:
+		# determine future filename of file to be uploaded, abort if it can't be uploaded
+		futureFilename = gcodeManager.getFutureFilename(subdir, file)
+		if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
+			return make_response("Can not upload file %s, wrong format?" % file.filename, 415)
 
-		if sd and sdFilename:
+		# prohibit overwriting currently selected file while it's being printed
+		if futureFilename == currentFilename and sd == currentSd and printer.isPrinting() or printer.isPaused():
+			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
+
+		filename = None
+
+		def fileProcessingFinished(filename, absFilename, destination):
+			"""
+			Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
+			finished.
+
+			Depending on the file's destination triggers either streaming to SD card or directly calls selectAndOrPrint.
+			"""
+			if destination == FileDestinations.SDCARD:
+				return filename, printer.addSdFile(filename, absFilename, selectAndOrPrint)
+			else:
+				selectAndOrPrint(absFilename, destination)
+				return filename
+
+		def selectAndOrPrint(nameToSelect, destination):
+			"""
+			Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
+			the case after they have finished streaming to the printer, which is why this callback is also used
+			for the corresponding call to addSdFile.
+
+			Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
+			exact file is already selected, such reloading it.
+			"""
+			sd = destination == FileDestinations.SDCARD
+			if selectAfterUpload or printAfterSelect or (currentFilename == filename and currentSd == sd):
+				printer.selectFile(nameToSelect, sd, printAfterSelect)
+
+		destination = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
+		filename, done = gcodeManager.addFile(subdir, file, destination, fileProcessingFinished)
+		if filename is None:
+			return make_response("Could not upload the file %s" % file.filename, 500)
+
+		sdFilename = None
+		if isinstance(filename, tuple):
+			filename, sdFilename = filename
+
+		eventManager.fire(Events.UPLOAD, {"file": filename, "target": target})
+		if done:
 			files.update({
-				FileDestinations.SDCARD: {
-					"name": sdFilename,
-					"origin": FileDestinations.SDCARD,
+				FileDestinations.LOCAL: {
+					"name": filename,
+					"origin": FileDestinations.LOCAL,
 					"refs": {
-						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFilename, _external=True)
+						"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True),
+						"download": urlForDownload(FileDestinations.LOCAL, filename)
 					}
 				}
 			})
+
+			if sd and sdFilename:
+				files.update({
+					FileDestinations.SDCARD: {
+						"name": sdFilename,
+						"origin": FileDestinations.SDCARD,
+						"refs": {
+							"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFilename, _external=True)
+						}
+					}
+				})
 
 	return make_response(jsonify(files=files, done=done), 201)
 
@@ -263,14 +274,14 @@ def deleteGcodeFile(filename, target):
 	currentSd = None
 	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"].keys() and "origin" in currentJob["file"].keys():
 		currentFilename = currentJob["file"]["name"]
-		currentSd = currentJob["origin"] == FileDestinations.SDCARD
+		currentSd = currentJob["file"]["origin"] == FileDestinations.SDCARD
 
 	# prohibit deleting the file that is currently being printed
 	if currentFilename is not None and currentSd is not None and currentFilename == filename and currentSd == sd and (printer.isPrinting() or printer.isPaused()):
 		return make_response("Trying to delete file that is currently being printed: %s" % filename, 409)
 
 	# deselect the file if it's currently selected
-	if currentFilename is not None and filename == currentFilename:
+	if currentFilename is not None and currentSd is not None and filename == currentFilename and currentSd == sd:
 		printer.unselectFile()
 
 	# delete it
