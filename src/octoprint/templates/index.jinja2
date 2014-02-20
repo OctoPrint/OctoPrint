@@ -516,7 +516,7 @@
                             </div>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
-                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">
+                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleKeys(e); } }, enable: isOperational() && loginState.isUser()">
                                 <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
                             </div>
                         </div>
