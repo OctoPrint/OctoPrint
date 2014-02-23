@@ -363,18 +363,18 @@ def filesCommand():
 
 	if data["type"] == "file":
 		for target in data["targets"]:
-			target = target.replace("/", sep)
-			absPath = join(gcodeManager._uploadFolder, target)
 			if command == "copy":
 				if not _verifyFileExists(FileDestinations.LOCAL, target):
 					return make_response("Directory not found: %s" % target, 404)
 
+				target = target.replace("/", sep)
 				for dst in data["destinations"]:
 					gcodeManager.copy(target, dst.replace("/", sep))
 			elif command == "cut":
 				if not _verifyFileExists(FileDestinations.LOCAL, target):
 					return make_response("Directory not found: %s" % target, 404)
 
+				target = target.replace("/", sep)
 				currentJob = printer.getCurrentJob()
 				currentFilename = None
 				if currentJob is not None and "file" in currentJob.keys():

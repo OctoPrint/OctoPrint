@@ -26,8 +26,10 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     });
 
 	// initialize list helper
-    self.listHelper = new ItemListHelper(
+    self.listHelper = new RecursiveItemListHelper(
         "gcodeFiles",
+		function (d) { return d.data; },
+		function (k, v) { k.data = v; },
         {
             "name": function(a, b) {
             	// sorts ascending
@@ -52,8 +54,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             	if (a["type"] == "dir" && b["type"] == "file") return -1;
             	if (a["type"] == "file" && b["type"] == "dir") return 1;
 
-                if (b["bytes"] === undefined || a["bytes"] > b["bytes"]) return -1;
-                if (a["bytes"] < b["bytes"]) return 1;
+            	if (b["size"] === undefined || a["size"] > b["size"]) return -1;
+                if (a["size"] < b["size"]) return 1;
                 return 0;
             }
         },
@@ -108,8 +110,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         	if (self.listHelper.items().length == 0)
         		return;
 
-        	if (self.listHelper.items()[0] == undefined || !self.selectItem(self.listHelper.items()[0].data, filename))
-        		self.selectItem(self.listHelper.items()[1].data, filename);
+        	if (self.listHelper.items()[0] == undefined || !self.listHelper.selectItem(self.listHelper.items()[0].data, filename))
+        		self.listHelper.selectItem(self.listHelper.items()[1].data, filename);
         }
     };
 
@@ -130,13 +132,6 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
         self.isSdReady(data.flags.sdReady);
-    };
-
-    self.changeSorting = function (sorting) {
-    	self.listHelper.changeSorting(sorting);
-    };
-    self.toggleFilter = function (filter) {
-    	self.listHelper.toggleFilter(filter);
     };
 
     self.displayMode = function (item) {
@@ -261,25 +256,6 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             return "";
         }
         return data["prints"]["last"]["success"] ? "text-success" : "text-error";
-    };
-
-    self.selectItem = function (list, filename) {
-    	var index = filename.indexOf('/');
-    	if (index == -1)
-    		index = filename.indexOf('\\');
-
-    	if (index != -1)
-		{
-    		var subdir = filename.substring(0, index);
-    		filename = filename.substring(index + 1);
-
-    		return self.selectItem(_.chain(list).filter(function (v) { return v.name == subdir; }).map(function (v) { return v.data; }).first().value(), filename);
-		}
-		else 
-    	{
-    		self.selectedItem(_.chain(list).filter(function (v) { return v.name == filename; }).first().value());
-    	}
-    	return false;
     };
 
     self.isSelected = function (data) {
