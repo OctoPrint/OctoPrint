@@ -13,7 +13,7 @@ function LogViewModel(loginStateViewModel) {
                 if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
                 return 0;
             },
-            "creation": function(a, b) {
+            "modification": function(a, b) {
                 // sorts descending
                 if (a["date"] > b["date"]) return -1;
                 if (a["date"] < b["date"]) return 1;
