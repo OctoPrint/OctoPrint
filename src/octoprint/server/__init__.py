@@ -191,6 +191,8 @@ class Server():
 				printer.connect(port, baudrate)
 		try:
 			IOLoop.instance().start()
+		except KeyboardInterrupt:
+			logger.info("Goodbye!")
 		except:
 			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			logger.exception("Stacktrace follows:")

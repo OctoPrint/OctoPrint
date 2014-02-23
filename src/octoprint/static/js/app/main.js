@@ -1,5 +1,4 @@
 $(function() {
-
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
