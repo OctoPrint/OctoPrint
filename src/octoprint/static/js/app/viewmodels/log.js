@@ -44,11 +44,11 @@ function LogViewModel(loginStateViewModel) {
     };
 
     self.fromResponse = function(response) {
-    	var files = response.files;
-    	if (files === undefined)
-    		return;
+        var files = response.files;
+        if (files === undefined)
+            return;
 
-    	self.listHelper.updateItems(files);
+        self.listHelper.updateItems(files);
     }
 
     self.removeFile = function(filename) {
