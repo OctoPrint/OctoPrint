@@ -22,7 +22,6 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
     self.filterRegex = undefined;
 
     self.cmdHistory = [];
-    self.cmdHistoryCnt = 0;
     self.cmdHistoryIdx = -1;
 
     self.activeFilters = ko.observableArray([]);
@@ -109,8 +108,8 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify({"command": command})
             });
-	    self.cmdHistory[self.cmdHistoryCnt++] = command
-            self.cmdHistoryIdx = self.cmdHistoryCnt
+	    self.cmdHistory.push(command);
+            self.cmdHistoryIdx = self.cmdHistory.length;
             self.command("");
         }
     }
@@ -119,11 +118,11 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
         if (event.keyCode == 13) {
             self.sendCommand();
         } else if (event.keyCode == 38) {
-            if (self.cmdHistoryIdx >= 0) {
+            if (self.cmdHistory.length >= 0 && self.cmdHistoryIdx >= 0) {
                 self.command(self.cmdHistory[--self.cmdHistoryIdx])
             }
         } else if (event.keyCode == 40) {
-            if (self.cmdHistoryIdx < self.cmdHistoryCnt) {
+            if (self.cmdHistoryIdx < self.cmdHistory.length) {
                 self.command(self.cmdHistory[++self.cmdHistoryIdx])
             }
         }
