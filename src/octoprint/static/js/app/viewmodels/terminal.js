@@ -21,6 +21,9 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
     self.filters = self.settings.terminalFilters;
     self.filterRegex = undefined;
 
+    self.cmdHistory = [];
+    self.cmdHistoryIdx = -1;
+
     self.activeFilters = ko.observableArray([]);
     self.activeFilters.subscribe(function(e) {
         self.updateFilterRegex();
@@ -105,13 +108,23 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify({"command": command})
             });
+	    self.cmdHistory.push(command);
+            self.cmdHistoryIdx = self.cmdHistory.length;
             self.command("");
         }
     }
 
-    self.handleEnter = function(event) {
+    self.handleKeys = function(event) {
         if (event.keyCode == 13) {
             self.sendCommand();
+        } else if (event.keyCode == 38) {
+            if (self.cmdHistory.length >= 0 && self.cmdHistoryIdx >= 0) {
+                self.command(self.cmdHistory[--self.cmdHistoryIdx])
+            }
+        } else if (event.keyCode == 40) {
+            if (self.cmdHistoryIdx < self.cmdHistory.length) {
+                self.command(self.cmdHistory[++self.cmdHistoryIdx])
+            }
         }
     }
 
