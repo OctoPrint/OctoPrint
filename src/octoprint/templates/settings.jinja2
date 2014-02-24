@@ -20,6 +20,7 @@
                 <li class="nav-header">OctoPrint</li>
                 <li><a href="#settings_folder" data-toggle="tab">Folders</a></li>
                 <li><a href="#settings_appearance" data-toggle="tab">Appearance</a></li>
+                <li><a href="#settings_logs" data-toggle="tab">Logs</a></li>
             </ul>
 
             <div class="tab-content span8">
@@ -535,6 +536,54 @@
                 </div>
                 {% endif %}
 
+                <div class="tab-pane" id="settings_logs" data-bind="allowBindings: false">
+                    <div id="logs">
+                        <h1>Logs</h1>
+
+                        <div class="pull-right">
+                            <small>
+                                Sort by: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">Name (ascending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('modification'); }">Modification date (descending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">Size (descending)</a>
+                            </small>
+                        </div>
+                        <table class="table table-striped table-hover table-condensed table-hover" id="log_files">
+                            <thead>
+                                <tr>
+                                    <th class="settings_logs_name">Name</th>
+                                    <th class="settings_logs_size">Size</th>
+                                    <th class="settings_logs_date">Date</th>
+                                    <th class="settings_logs_action">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: listHelper.paginatedItems">
+                                <tr data-bind="attr: {title: name}">
+                                    <td class="settings_logs_name" data-bind="text: name"></td>
+                                    <td class="settings_logs_size" data-bind="text: formatSize(size)"></td>
+                                    <td class="settings_logs_date" data-bind="text: formatDate(date)"></td>
+                                    <td class="settings_logs_action">
+                                        <a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: refs.download}"></a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="pagination pagination-mini pagination-centered">
+                            <ul>
+                                <li data-bind="css: {disabled: listHelper.currentPage() === 0}">
+                                    <a href="#" data-bind="click: listHelper.prevPage">«</a>
+                                </li>
+                            </ul>
+                            <ul data-bind="foreach: listHelper.pages">
+                                <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }">
+                                    <a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a>
+                                </li>
+                            </ul>
+                            <ul>
+                                <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}">
+                                    <a href="#" data-bind="click: listHelper.nextPage">»</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
