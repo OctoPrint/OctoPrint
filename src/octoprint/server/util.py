@@ -303,11 +303,19 @@ class LargeResponseHandler(StaticFileHandler):
 			self.set_header("Content-Disposition", "attachment")
 
 
-#~~ admin access validator for tornado
+#~~ admin access validator for use with tornado
 
 
-# TODO doesnt work for flask right now (no app context of course), try to figure out something
 def admin_validator(request):
+	"""
+	Validates that the given request is made by an admin user, identified either by API key or existing Flask
+	session.
+
+	Must be executed in an existing Flask request context!
+
+	:param request: The Flask request object
+	"""
+
 	apikey = _getApiKey(request)
 	if settings().get(["api", "enabled"]) and apikey is not None:
 		user = _getUserForApiKey(apikey)
