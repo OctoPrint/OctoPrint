@@ -12,4 +12,4 @@ API Documentation
    connection.rst
    printer.rst
    job.rst
-
+   logs.rst

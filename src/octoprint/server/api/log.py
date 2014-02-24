@@ -4,35 +4,43 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import os
 
-from flask import request, jsonify, make_response, url_for
+from flask import request, jsonify, url_for, make_response
 from werkzeug.utils import secure_filename
 
 from octoprint.settings import settings
 
-from octoprint.server import restricted_access
+from octoprint.server import restricted_access, NO_CONTENT, admin_permission
 from octoprint.server.util import redirectToTornado
 from octoprint.server.api import api
+from octoprint.util import getFreeBytes
 
 
 @api.route("/logs", methods=["GET"])
-def getLogData():
+@restricted_access
+@admin_permission.require(403)
+def getLogFiles():
 	files = _getLogFiles()
-	return jsonify(files=files)
+	return jsonify(files=files, free=getFreeBytes(settings().getBaseFolder("logs")))
 
 
-@api.route("/logs/<filename>", methods=["GET"])
+@api.route("/logs/<path:filename>", methods=["GET"])
+@restricted_access
+@admin_permission.require(403)
 def downloadLog(filename):
 	return redirectToTornado(request, url_for("index") + "downloads/logs/" + filename)
 
 
-@api.route("/logs/<filename>", methods=["DELETE"])
+@api.route("/logs/<path:filename>", methods=["DELETE"])
 @restricted_access
+@admin_permission.require(403)
 def deleteLog(filename):
 	secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
-	if os.path.exists(secure):
-		os.remove(secure)
+	if not os.path.exists(secure):
+		return make_response("File not found: %s" % filename, 404)
 
-	return getLogData()
+	os.remove(secure)
+
+	return NO_CONTENT
 
 
 def _getLogFiles():
@@ -42,10 +50,12 @@ def _getLogFiles():
 		statResult = os.stat(os.path.join(basedir, osFile))
 		files.append({
 			"name": osFile,
-			"size": statResult.st_size,
-			"bytes": statResult.st_size,
 			"date": int(statResult.st_mtime),
-			"url": url_for("index") + "downloads/logs/" + osFile
+			"size": statResult.st_size,
+			"refs": {
+				"resource": url_for(".downloadLog", filename=osFile, _external=True),
+				"download": url_for("index", _external=True) + "downloads/logs/" + osFile
+			}
 		})
 
 	return files
