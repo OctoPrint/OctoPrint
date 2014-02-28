@@ -13,6 +13,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     /* I did attempt to allow arbitrary gradients but cross browser support via knockout or jquery was going to be horrible */
     self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
 
+    self.printer_bedX = ko.observable(undefined);
+    self.printer_bedY = ko.observable(undefined);
     self.printer_movementSpeedX = ko.observable(undefined);
     self.printer_movementSpeedY = ko.observable(undefined);
     self.printer_movementSpeedZ = ko.observable(undefined);
@@ -20,7 +22,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_invertAxes = ko.observable(undefined);
     self.printer_numExtruders = ko.observable(undefined);
     self.printer_extruderOffsets = ko.observableArray([]);
-    self.printer_bedDimensions = ko.observable(undefined);
+    self.printer_bedDimensionX = ko.observable(undefined);
+    self.printer_bedDimensionY = ko.observable(undefined);
+
+    self.printer_bedDimensions = ko.dependentObservable(function () {
+    	return { "x": self.printer_bedDimensionX(), "y": self.printer_bedDimensionY() };
+    });
 
     self.webcam_streamUrl = ko.observable(undefined);
     self.webcam_snapshotUrl = ko.observable(undefined);
@@ -129,7 +136,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_invertAxes(response.printer.invertAxes);
         self.printer_numExtruders(response.printer.numExtruders);
         self.printer_extruderOffsets(response.printer.extruderOffsets);
-        self.printer_bedDimensions(response.printer.bedDimensions);
+        self.printer_bedDimensionX(response.printer.bedDimensions.x);
+        self.printer_bedDimensionY(response.printer.bedDimensions.y);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -190,7 +198,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "invertAxes": self.printer_invertAxes(),
                 "numExtruders": self.printer_numExtruders(),
                 "extruderOffsets": self.printer_extruderOffsets(),
-                "bedDimensions": self.printer_bedDimensions()
+                "bedDimensions": {
+                	"x": self.printer_bedDimensionX(),
+                	"y": self.printer_bedDimensionY()
+                }
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),
