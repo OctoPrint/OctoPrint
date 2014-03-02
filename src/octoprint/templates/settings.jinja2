@@ -83,54 +83,40 @@
                 </div>
                 <div class="tab-pane" id="settings_printerParameters">
                     <form class="form-horizontal">
-											<div class="control-group">
-												<label class="control-label" for="settings-movementSpeedX">Bed X</label>
-												<div class="controls">
-													<div class="input-append">
-														<input type="number" class="input-mini text-right" data-bind="value: printer_bedDimensionX" id="settings-bedX">
-															<span class="add-on">mm</span>
-														</div>
-												</div>
-											</div>
-											<div class="control-group">
-												<label class="control-label" for="settings-movementSpeedY">Bed Y</label>
-												<div class="controls">
-													<div class="input-append">
-														<input type="number" class="input-mini text-right" data-bind="value: printer_bedDimensionY" id="settings-bedY">
-															<span class="add-on">mm</span>
-														</div>
-												</div>
-											</div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedX">Movement Speed X Axis</label>
-                            <div class="controls">
+                            <label class="control-label">Axis</label>
+                            <div class="controls form-inline">
+                                <label>X:</label>
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedX" id="settings-movementSpeedX">
                                     <span class="add-on">mm/min</span>
                                 </div>
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertX" id="settings-printerInvertX"> Invert control
+                                </label>
                             </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedY">Movement Speed Y Axis</label>
-                            <div class="controls">
+                            <div class="controls form-inline">
+                                <label>Y:</label>
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedY" id="settings-movementSpeedY">
                                     <span class="add-on">mm/min</span>
                                 </div>
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertY" id="settings-printerInvertY"> Invert control
+                                </label>
                             </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedZ">Movement Speed Z Axis</label>
-                            <div class="controls">
+                            <div class="controls form-inline">
+                                <label>Z:</label>
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedZ" id="settings-movementSpeedZ">
                                     <span class="add-on">mm/min</span>
                                 </div>
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_invertZ" id="settings-printerInvertZ"> Invert control
+                                </label>
                             </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Movement Speed Extruder</label>
-                            <div class="controls">
+                            <div class="controls form-inline">
+                                <label>E:</label>
                                 <div class="input-append">
                                     <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedE" id="settings-movementSpeedE">
                                     <span class="add-on">mm/min</span>
@@ -138,23 +124,41 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <div class="controls">
-                                Invert controls
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertX" id="settings-printerInvertX"> X axis
-                                </label>
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertY" id="settings-printerInvertY"> Y axis
-                                </label>
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertZ" id="settings-printerInvertZ"> Z axis
-                                </label>
-                            </div>
-                        </div>
-                        <div class="control-group">
                             <label class="control-label" for="settings-numExtruders">Number of Extruders</label>
                             <div class="controls">
                                 <input type="number" class="input-mini text-right" min="1" max="5" data-bind="value: printer_numExtruders" id="settings-numExtruders">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-extruderOffsets">Extruder Offsets</label>
+                            <!-- ko foreach: ko_printer_extruderOffsets -->
+                            <div class="controls form-inline">
+                                <label>X:</label>
+                                <div class="input-append">
+                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x">
+                                    <span class="add-on">mm</span>
+                                </div>
+                                <label>Y:</label>
+                                <div class="input-append">
+                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y">
+                                    <span class="add-on">mm</span>
+                                </div>
+                            </div>
+                            <!-- /ko -->
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-bedSize">Bed Size</label>
+                            <div class="controls form-inline">
+                                <label>X:</label>
+                                <div class="input-append">
+                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printer_bedDimensionX" id="settings-bedX">
+                                    <span class="add-on">mm</span>
+                                </div>
+                                <label>Y:</label>
+                                <div class="input-append">
+                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printer_bedDimensionY" id="settings-bedY">
+                                    <span class="add-on">mm</span>
+                                </div>
                             </div>
                         </div>
                     </form>

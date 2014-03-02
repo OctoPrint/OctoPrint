@@ -18,13 +18,67 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedZ = ko.observable(undefined);
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
-    self.printer_numExtruders = ko.observable(undefined);
-    self.printer_extruderOffsets = ko.observableArray([]);
+    self.printer_numExtruders = ko.observable(1);
+
+    self._printer_extruderOffsets = ko.observableArray([]);
+    self.printer_extruderOffsets = ko.computed({
+        read: function() {
+            var extruderOffsets = self._printer_extruderOffsets();
+            var result = [];
+            for (var i = 0; i < extruderOffsets.length; i++) {
+                result[i] = {
+                    x: parseFloat(extruderOffsets[i].x()),
+                    y: parseFloat(extruderOffsets[i].y())
+                }
+            }
+            return result;
+        },
+        write: function(value) {
+            var result = [];
+            if (value && Array.isArray(value)) {
+                for (var i = 0; i < value.length; i++) {
+                    result[i] = {
+                        x: ko.observable(value[i].x),
+                        y: ko.observable(value[i].y)
+                    }
+                }
+            }
+            self._printer_extruderOffsets(result);
+        },
+        owner: self,
+        deferEvaluation: true
+    });
+    self.ko_printer_extruderOffsets = ko.computed(function() {
+        var extruderOffsets = self._printer_extruderOffsets();
+        var numExtruders = self.printer_numExtruders();
+
+        if (numExtruders > extruderOffsets.length) {
+            for (var i = extruderOffsets.length; i < numExtruders; i++) {
+                extruderOffsets[i] = {
+                    x: ko.observable(0),
+                    y: ko.observable(0)
+                }
+            }
+            self._printer_extruderOffsets(extruderOffsets);
+        }
+
+        return extruderOffsets.slice(0, numExtruders);
+    });
+
     self.printer_bedDimensionX = ko.observable(undefined);
     self.printer_bedDimensionY = ko.observable(undefined);
-
-    self.printer_bedDimensions = ko.dependentObservable(function () {
-    	return { "x": self.printer_bedDimensionX(), "y": self.printer_bedDimensionY() };
+    self.printer_bedDimensions = ko.computed({
+        read: function () {
+            return {
+                x: parseFloat(self.printer_bedDimensionX()),
+                y: parseFloat(self.printer_bedDimensionY())
+            };
+        },
+        write: function(value) {
+            self.printer_bedDimensionX(value.x);
+            self.printer_bedDimensionY(value.y);
+        },
+        owner: self
     });
 
     self.webcam_streamUrl = ko.observable(undefined);
@@ -134,8 +188,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_invertAxes(response.printer.invertAxes);
         self.printer_numExtruders(response.printer.numExtruders);
         self.printer_extruderOffsets(response.printer.extruderOffsets);
-        self.printer_bedDimensionX(response.printer.bedDimensions.x);
-        self.printer_bedDimensionY(response.printer.bedDimensions.y);
+        self.printer_bedDimensions(response.printer.bedDimensions);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -196,10 +249,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "invertAxes": self.printer_invertAxes(),
                 "numExtruders": self.printer_numExtruders(),
                 "extruderOffsets": self.printer_extruderOffsets(),
-                "bedDimensions": {
-                	"x": self.printer_bedDimensionX(),
-                	"y": self.printer_bedDimensionY()
-                }
+                "bedDimensions": self.printer_bedDimensions()
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),
