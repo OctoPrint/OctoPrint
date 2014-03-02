@@ -191,6 +191,24 @@ def silentRemove(file):
 		pass
 
 
+def sanitizeAscii(line):
+	return unicode(line, 'ascii', 'replace').encode('ascii', 'replace').rstrip()
+
+
+def filterNonAscii(line):
+	"""
+	Returns True if the line contains non-ascii characters, false otherwise
+
+	@param line the line to test
+	"""
+
+	try:
+		unicode(line, 'ascii').encode('ascii')
+		return False
+	except ValueError:
+		return True
+
+
 def getJsonCommandFromRequest(request, valid_commands):
 	if not "application/json" in request.headers["Content-Type"]:
 		return None, None, make_response("Expected content-type JSON", 400)
