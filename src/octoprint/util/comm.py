@@ -136,10 +136,8 @@ class MachineCom(object):
 		self._baudrateDetectList = baudrateList()
 		self._baudrateDetectRetry = 0
 		self._temp = {}
-		self._targetTemp = {}
 		self._tempOffset = {}
-		self._bedTemp = 0
-		self._bedTargetTemp = 0
+		self._bedTemp = None
 		self._bedTempOffset = 0
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
@@ -171,6 +169,7 @@ class MachineCom(object):
 
 		# regexes
 		floatPattern = "[-+]?[0-9]*\.?[0-9]+"
+		positiveFloatPattern = "[+]?[0-9]*\.?[0-9]+"
 		intPattern = "\d+"
 		self._regex_command = re.compile("^\s*([GM]\d+|T)")
 		self._regex_float = re.compile(floatPattern)
@@ -188,7 +187,7 @@ class MachineCom(object):
 		# - 3: actual temperature
 		# - 4: whole target substring, if given (e.g. " / 22.0")
 		# - 5: target temperature
-		self._regex_temp = re.compile("(B|T(\d*)):\s*(%s)(\s*\/?\s*(%s))?" % (floatPattern, floatPattern))
+		self._regex_temp = re.compile("(B|T(\d*)):\s*(%s)(\s*\/?\s*(%s))?" % (positiveFloatPattern, positiveFloatPattern))
 
 	def __del__(self):
 		self.close()
@@ -1065,7 +1064,7 @@ class MachineCom(object):
 			self.close(True)
 
 	def _gcode_T(self, cmd):
-		toolMatch = re.search('T([0-9]+)', cmd)
+		toolMatch = self._regex_paramTInt.search(cmd)
 		if toolMatch:
 			self._currentExtruder = int(toolMatch.group(1))
 		return cmd
@@ -1097,7 +1096,10 @@ class MachineCom(object):
 		match = self._regex_paramSInt.search(cmd)
 		if match:
 			try:
-				self._targetTemp[toolNum] = float(match.group(1))
+				target = float(match.group(1))
+				if self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
+					(actual, oldTarget) = self._temp[toolNum]
+					self._temp[toolNum] = (actual, target)
 			except ValueError:
 				pass
 		return cmd
@@ -1106,7 +1108,10 @@ class MachineCom(object):
 		match = self._regex_paramSInt.search(cmd)
 		if match:
 			try:
-				self._bedTargetTemp = float(match.group(1))
+				target = float(match.group(1))
+				if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
+					(actual, oldTarget) = self._bedTemp
+					self._bedTemp = (actual, target)
 			except ValueError:
 				pass
 		return cmd

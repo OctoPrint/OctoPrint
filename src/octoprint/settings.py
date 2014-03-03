@@ -143,7 +143,8 @@ default_settings = {
 			"forceChecksum": False,
 			"okWithLinenumber": False,
 			"numExtruders": 1,
-			"includeCurrentToolInTemps": True
+			"includeCurrentToolInTemps": True,
+			"hasBed": True
 		}
 	}
 }

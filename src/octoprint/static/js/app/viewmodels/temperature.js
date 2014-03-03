@@ -17,6 +17,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self.tools = ko.observableArray([]);
+    self.hasBed = ko.observable(true);
     self.bedTemp = self._createToolEntry();
     self.bedTemp["name"]("Bed");
     self.bedTemp["key"]("bed");
@@ -145,8 +146,13 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             }
         }
 
-        self.bedTemp["actual"](lastData.bed.actual);
-        self.bedTemp["target"](lastData.bed.target);
+        if (lastData.hasOwnProperty("bed")) {
+            self.hasBed(true);
+            self.bedTemp["actual"](lastData.bed.actual);
+            self.bedTemp["target"](lastData.bed.target);
+        } else {
+            self.hasBed(false);
+        }
 
         if (!CONFIG_TEMPERATURE_GRAPH) return;
 
@@ -184,6 +190,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         if (!result) {
             result = {};
         }
+
         _.each(types, function(type) {
             if (!result.hasOwnProperty(type)) {
                 result[type] = {actual: [], target: []};
@@ -199,6 +206,8 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
                 if (!d[type]) return;
                 result[type].actual.push([time, d[type].actual]);
                 result[type].target.push([time, d[type].target]);
+
+                self.hasBed(self.hasBed() || (type == "bed"));
             })
         });
 
@@ -213,6 +222,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             if (!heaterOptions) return;
 
             _.each(_.keys(heaterOptions), function(type) {
+                if (type == "bed" && !self.hasBed()) {
+                    return;
+                }
+
                 var actuals = [];
                 var targets = [];
 

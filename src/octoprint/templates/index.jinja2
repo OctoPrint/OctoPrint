@@ -274,7 +274,7 @@
                                     <!-- ko foreach: tools -->
                                     <tr data-bind="template: { name: 'temprow-template' }"></tr>
                                     <!-- /ko -->
-                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }"></tr>
+                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
                                 </table>
 
                                 <script type="text/html" id="temprow-template">
