@@ -1,5 +1,4 @@
 $(function() {
-
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -15,6 +14,7 @@ $(function() {
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var filemanagerViewModel = new FilemanagerViewModel(gcodeFilesViewModel);
+        var logViewModel = new LogViewModel(loginStateViewModel);
 
         var dataUpdater = new DataUpdater(
             loginStateViewModel,
@@ -25,7 +25,8 @@ $(function() {
             terminalViewModel,
             gcodeFilesViewModel,
             timelapseViewModel,
-            gcodeViewModel
+            gcodeViewModel,
+			logViewModel
         );
         
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
@@ -304,6 +305,12 @@ $(function() {
             }
         }
 
+        ko.bindingHandlers.allowBindings = {
+        	init: function (elem, valueAccessor) {
+        		return { controlsDescendantBindings: !valueAccessor() };
+        	}
+        };
+
         ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
@@ -320,6 +327,7 @@ $(function() {
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
         ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
         ko.applyBindings(filemanagerViewModel, document.getElementById("filemanager_dialog"));
+        ko.applyBindings(logViewModel, document.getElementById("logs"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
@@ -334,6 +342,7 @@ $(function() {
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
         settingsViewModel.requestData();
+        logViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {

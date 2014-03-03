@@ -10,7 +10,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.appearance_name = ko.observable(undefined);
     self.appearance_color = ko.observable(undefined);
 
-    /* I did attempt to allow arbitrary gradients but cross browser support via knockout or jquery was going to be horrible */
     self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
 
     self.printer_movementSpeedX = ko.observable(undefined);
@@ -19,8 +18,69 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
     self.printer_numExtruders = ko.observable(undefined);
-    self.printer_extruderOffsets = ko.observableArray([]);
-    self.printer_bedDimensions = ko.observable(undefined);
+
+    self._printer_extruderOffsets = ko.observableArray([]);
+    self.printer_extruderOffsets = ko.computed({
+        read: function() {
+            var extruderOffsets = self._printer_extruderOffsets();
+            var result = [];
+            for (var i = 0; i < extruderOffsets.length; i++) {
+                result[i] = {
+                    x: parseFloat(extruderOffsets[i].x()),
+                    y: parseFloat(extruderOffsets[i].y())
+                }
+            }
+            return result;
+        },
+        write: function(value) {
+            var result = [];
+            if (value && Array.isArray(value)) {
+                for (var i = 0; i < value.length; i++) {
+                    result[i] = {
+                        x: ko.observable(value[i].x),
+                        y: ko.observable(value[i].y)
+                    }
+                }
+            }
+            self._printer_extruderOffsets(result);
+        },
+        owner: self
+    });
+    self.ko_printer_extruderOffsets = ko.computed(function() {
+        var extruderOffsets = self._printer_extruderOffsets();
+        var numExtruders = self.printer_numExtruders();
+        if (!numExtruders) {
+            numExtruders = 1;
+        }
+
+        if (numExtruders > extruderOffsets.length) {
+            for (var i = extruderOffsets.length; i < numExtruders; i++) {
+                extruderOffsets[i] = {
+                    x: ko.observable(0),
+                    y: ko.observable(0)
+                }
+            }
+            self._printer_extruderOffsets(extruderOffsets);
+        }
+
+        return extruderOffsets.slice(0, numExtruders);
+    });
+
+    self.printer_bedDimensionX = ko.observable(undefined);
+    self.printer_bedDimensionY = ko.observable(undefined);
+    self.printer_bedDimensions = ko.computed({
+        read: function () {
+            return {
+                x: parseFloat(self.printer_bedDimensionX()),
+                y: parseFloat(self.printer_bedDimensionY())
+            };
+        },
+        write: function(value) {
+            self.printer_bedDimensionX(value.x);
+            self.printer_bedDimensionY(value.y);
+        },
+        owner: self
+    });
 
     self.webcam_streamUrl = ko.observable(undefined);
     self.webcam_snapshotUrl = ko.observable(undefined);
@@ -36,6 +96,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
     self.feature_swallowOkAfterResend = ko.observable(undefined);
+    self.feature_repetierTargetTemp = ko.observable(undefined);
 
     self.serial_port = ko.observable();
     self.serial_baudrate = ko.observable();
@@ -145,6 +206,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
         self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
+        self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
 
         self.serial_port(response.serial.port);
         self.serial_baudrate(response.serial.baudrate);
@@ -207,7 +269,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport(),
-                "swallowOkAfterResend": self.feature_swallowOkAfterResend()
+                "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
+                "repetierTargetTemp": self.feature_repetierTargetTemp()
             },
             "serial": {
                 "port": self.serial_port(),

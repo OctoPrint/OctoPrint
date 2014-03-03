@@ -28,6 +28,7 @@
 
             var CONFIG_GCODEFILESPERPAGE = 5;
             var CONFIG_TIMELAPSEFILESPERPAGE = 10;
+            var CONFIG_LOGFILESPERPAGE = 10;
             var CONFIG_USERSPERPAGE = 10;
             var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
             var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
@@ -183,7 +184,7 @@
 								<a class="pull-right" data-toggle="modal" href="#filemanager_dialog"  data-bind="visible: loginState.isUser">
 									<span class="icon-folder-open"></span>
 								</a>
-							</div>
+                        </div>
                         </div>
                         <div class="accordion-body collapse in" id="files" style="width: 100%">
                             <div class="accordion-inner">
@@ -289,7 +290,7 @@
                                     <!-- ko foreach: tools -->
                                     <tr data-bind="template: { name: 'temprow-template' }"></tr>
                                     <!-- /ko -->
-                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }"></tr>
+                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
                                 </table>
 
                                 <script type="text/html" id="temprow-template">
@@ -532,7 +533,7 @@
                             </div>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
-                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">
+                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
                                 <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
                             </div>
                         </div>
@@ -662,6 +663,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/filemanager.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>

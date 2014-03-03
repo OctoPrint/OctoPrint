@@ -104,10 +104,14 @@ class VirtualPrinter():
 				for i in range(len(self.temp)):
 					allTemps.append((i, self.temp[i], self.targetTemp[i]))
 				allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x, allTemps))
-				if settings().getBoolean(["devel", "virtualPrinted", "includeCurrentToolInTemps"]):
-					self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, self.bedTemp, self.bedTargetTemp, allTempsString))
+
+				if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+					allTempsString = "B:%.2f /%.2f %s" % (self.bedTemp, self.bedTargetTemp, allTempsString)
+
+				if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
+					self.readList.append("ok T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1))
 				else:
-					self.readList.append("ok %s B:%.2f /%.2f @:64\n" % (allTempsString, self.bedTemp, self.bedTargetTemp))
+					self.readList.append("ok %s @:64\n" % allTempsString)
 			else:
 				self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp))
 		elif 'M20' in data:
