@@ -341,14 +341,14 @@ class MachineCom(object):
 
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
-
 		wasPaused = self.isPaused()
-		self._printSection = "CUSTOM"
-		self._changeState(self.STATE_PRINTING)
-		eventManager().fire("PrintStarted", self._currentFile.getFilename())
 
 		try:
 			self._currentFile.start()
+
+			self._changeState(self.STATE_PRINTING)
+			eventManager().fire("PrintStarted", self._currentFile.getFilename())
+
 			if self.isSdFileSelected():
 				if wasPaused:
 					self.sendCommand("M26 S0")
@@ -620,7 +620,6 @@ class MachineCom(object):
 					eventManager().fire("FileSelected", self._currentFile.getFilename())
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
-					self._printSection = "CUSTOM"
 					self._changeState(self.STATE_PRINTING)
 					line = "ok"
 				elif 'Done printing file' in line:
