@@ -149,6 +149,18 @@ class MachineCom(object):
 		# print job
 		self._currentFile = None
 
+		# regexes
+		floatPattern = "[-+]?[0-9]*\.?[0-9]+"
+		intPattern = "[0-9]+"
+		self._regex_command = re.compile("^\s*([GM]\d+)")
+		self._regex_float = re.compile(floatPattern)
+		self._regex_paramZFloat = re.compile("Z(%s)" % floatPattern)
+		self._regex_paramSInt = re.compile("S(%s)" % intPattern)
+		self._regex_paramNInt = re.compile("N(%s)" % intPattern)
+		self._regex_minMaxError = re.compile("Error:[0-9]\n")
+		self._regex_sdPrintingByte = re.compile("([0-9]*)/([0-9]*)")
+		self._regex_sdFileOpened = re.compile("File opened:\s*(.*?)\s+Size:\s*([0-9]*)")
+
 	def __del__(self):
 		self.close()
 
@@ -531,7 +543,7 @@ class MachineCom(object):
 					# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 					#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
 					#	So we can have an extra newline in the most common case. Awesome work people.
-					if re.match('Error:[0-9]\n', line):
+					if self._regex_minMaxError.match(line):
 						line = line.rstrip() + self._readline()
 					#Skip the communication errors, as those get corrected.
 					if 'checksum mismatch' in line \
@@ -556,9 +568,9 @@ class MachineCom(object):
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:'):
 					try:
-						self._temp = float(re.search("-?[0-9\.]*", line.split('T:')[1]).group(0))
+						self._temp = float(self._regex_float.search(line.split('T:')[1]).group(0))
 						if ' B:' in line:
-							self._bedTemp = float(re.search("-?[0-9\.]*", line.split(' B:')[1]).group(0))
+							self._bedTemp = float(self._regex_float.search(line.split(' B:')[1]).group(0))
 
 						self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
 					except ValueError:
@@ -595,12 +607,12 @@ class MachineCom(object):
 					self._callback.mcSdFiles(self._sdFiles)
 				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
-					match = re.search("([0-9]*)/([0-9]*)", line)
+					match = self._regex_sdPrintingByte.search("([0-9]*)/([0-9]*)", line)
 					self._currentFile.setFilepos(int(match.group(1)))
 					self._callback.mcProgress()
 				elif 'File opened' in line:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
-					match = re.search("File opened:\s*(.*?)\s+Size:\s*([0-9]*)", line)
+					match = self._regex_sdFileOpened.search(line)
 					self._currentFile = PrintingSdFileInformation(match.group(1), int(match.group(2)))
 				elif 'File selected' in line:
 					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
@@ -855,7 +867,7 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				gcode = re.search("^\s*([GM]\d+)", cmd)
+				gcode = self._regex_command.search(cmd)
 				if gcode:
 					gcode = gcode.group(1)
 
@@ -905,13 +917,15 @@ class MachineCom(object):
 
 	def _gcode_G0(self, cmd):
 		if 'Z' in cmd:
-			try:
-				z = float(re.search('Z([0-9\.]*)', cmd).group(1))
-				if self._currentZ != z:
-					self._currentZ = z
-					self._callback.mcZChange(z)
-			except ValueError:
-				pass
+			match = self._regex_paramZFloat.search(cmd)
+			if match:
+				try:
+					z = float(match.group(1))
+					if self._currentZ != z:
+						self._currentZ = z
+						self._callback.mcZChange(z)
+				except ValueError:
+					pass
 		return cmd
 	_gcode_G1 = _gcode_G0
 
@@ -921,7 +935,7 @@ class MachineCom(object):
 	_gcode_M1 = _gcode_M0
 
 	def _gcode_M104(self, cmd):
-		match = re.search('S([0-9]+)', cmd)
+		match = self._regex_paramSInt.search(cmd)
 		if match:
 			try:
 				self._targetTemp = float(match.group(1))
@@ -930,7 +944,7 @@ class MachineCom(object):
 		return cmd
 
 	def _gcode_M140(self, cmd):
-		match = re.search('S([0-9]+)', cmd)
+		match = self._regex_paramSInt.search(cmd)
 		if match:
 			try:
 				self._bedTargetTemp = float(match.group(1))
@@ -948,7 +962,7 @@ class MachineCom(object):
 
 	def _gcode_M110(self, cmd):
 		newLineNumber = None
-		match = re.search("N([0-9]+)", cmd)
+		match = self._regex_paramNInt.search(cmd)
 		if match:
 			try:
 				newLineNumber = int(match.group(1))
@@ -1083,7 +1097,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		self._firstLine = None
 
 		self._offsetCallback = offsetCallback
-		self._tempCommandPattern = re.compile("^\s*M(104|109|140|190)\s+S([0-9\.]+)")
+		self._regex_tempCommand = re.compile("^\s*M(104|109|140|190)\s+S([0-9\.]+)")
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
@@ -1140,7 +1154,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			if self._offsetCallback is not None:
 				(tempOffset, bedTempOffset) = self._offsetCallback()
 				if tempOffset != 0 or bedTempOffset != 0:
-					tempMatch = self._tempCommandPattern.match(line)
+					tempMatch = self._regex_tempCommand.match(line)
 					if tempMatch is not None:
 						if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
 							offset = tempOffset
