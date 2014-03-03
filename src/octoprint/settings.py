@@ -67,7 +67,8 @@ default_settings = {
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
-		"swallowOkAfterResend": True
+		"swallowOkAfterResend": True,
+		"repetierTargetTemp": False
 	},
 	"folder": {
 		"uploads": None,
@@ -140,7 +141,8 @@ default_settings = {
 			"forceChecksum": False,
 			"okWithLinenumber": False,
 			"numExtruders": 1,
-			"includeCurrentToolInTemps": True
+			"includeCurrentToolInTemps": True,
+			"hasBed": True
 		}
 	}
 }

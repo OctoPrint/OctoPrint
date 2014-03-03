@@ -23,7 +23,7 @@ from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.gcodefiles import isGcodeFileName
-from octoprint.util import getExceptionString, getNewTimeout
+from octoprint.util import getExceptionString, getNewTimeout, sanitizeAscii, filterNonAscii
 from octoprint.util.virtual import VirtualPrinter
 
 try:
@@ -136,10 +136,8 @@ class MachineCom(object):
 		self._baudrateDetectList = baudrateList()
 		self._baudrateDetectRetry = 0
 		self._temp = {}
-		self._targetTemp = {}
 		self._tempOffset = {}
-		self._bedTemp = 0
-		self._bedTargetTemp = 0
+		self._bedTemp = None
 		self._bedTempOffset = 0
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
@@ -147,18 +145,42 @@ class MachineCom(object):
 		self._heatupWaitTimeLost = 0.0
 		self._currentExtruder = 0
 
+		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
+		self._currentLine = 1
+		self._resendDelta = None
+		self._lastLines = deque([], 50)
+
+		# SD status data
+		self._sdAvailable = False
+		self._sdFileList = False
+		self._sdFiles = []
+
+		# print job
+		self._currentFile = None
+
+		# regexes
+		floatPattern = "[-+]?[0-9]*\.?[0-9]+"
+		positiveFloatPattern = "[+]?[0-9]*\.?[0-9]+"
+		intPattern = "\d+"
+		self._regex_command = re.compile("^\s*([GM]\d+|T)")
+		self._regex_float = re.compile(floatPattern)
+		self._regex_paramZFloat = re.compile("Z(%s)" % floatPattern)
+		self._regex_paramSInt = re.compile("S(%s)" % intPattern)
+		self._regex_paramNInt = re.compile("N(%s)" % intPattern)
+		self._regex_paramTInt = re.compile("T(%s)" % intPattern)
+		self._regex_minMaxError = re.compile("Error:[0-9]\n")
+		self._regex_sdPrintingByte = re.compile("([0-9]*)/([0-9]*)")
+		self._regex_sdFileOpened = re.compile("File opened:\s*(.*?)\s+Size:\s*(%s)" % intPattern)
+
 		# Regex matching temperature entries in line. Groups will be as follows:
 		# - 1: whole tool designator incl. optional toolNumber ("T", "Tn", "B")
 		# - 2: toolNumber, if given ("", "n", "")
 		# - 3: actual temperature
 		# - 4: whole target substring, if given (e.g. " / 22.0")
 		# - 5: target temperature
-		self._tempRegex = re.compile("(B|T(\d*)):\s*([-+]?\d*\.?\d*)(\s*\/?\s*([-+]?\d*\.?\d*))?")
-
-		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-		self._currentLine = 1
-		self._resendDelta = None
-		self._lastLines = deque([], 50)
+		self._regex_temp = re.compile("(B|T(\d*)):\s*(%s)(\s*\/?\s*(%s))?" % (positiveFloatPattern, positiveFloatPattern))
+		self._regex_repetierTempExtr = re.compile("TargetExtr([0-9]+):(%s)" % positiveFloatPattern)
+		self._regex_repetierTempBed = re.compile("TargetBed:(%s)" % positiveFloatPattern)
 
 		# multithreading locks
 		self._sendNextLock = threading.Lock()
@@ -168,14 +190,6 @@ class MachineCom(object):
 		self.thread = threading.Thread(target=self._monitor)
 		self.thread.daemon = True
 		self.thread.start()
-
-		# SD status data
-		self._sdAvailable = False
-		self._sdFileList = False
-		self._sdFiles = []
-
-		# print job
-		self._currentFile = None
 
 	def __del__(self):
 		self.close()
@@ -341,6 +355,7 @@ class MachineCom(object):
 			if self._currentFile is not None:
 				payload = {
 					"file": self._currentFile.getFilename(),
+					"filename": os.path.basename(self._currentFile.getFilename()),
 					"origin": self._currentFile.getFileLocation()
 				}
 			eventManager().fire(Events.PRINT_FAILED, payload)
@@ -367,16 +382,17 @@ class MachineCom(object):
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
 
-		wasPaused = self.isPaused()
-		self._printSection = "CUSTOM"
-		self._changeState(self.STATE_PRINTING)
-		eventManager().fire(Events.PRINT_STARTED, {
-			"file": self._currentFile.getFilename(),
-			"origin": self._currentFile.getFileLocation()
-		})
-
 		try:
 			self._currentFile.start()
+
+			wasPaused = self.isPaused()
+			self._changeState(self.STATE_PRINTING)
+			eventManager().fire(Events.PRINT_STARTED, {
+				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
+				"origin": self._currentFile.getFileLocation()
+			})
+
 			if self.isSdFileSelected():
 				if wasPaused:
 					self.sendCommand("M26 S0")
@@ -438,6 +454,7 @@ class MachineCom(object):
 
 		eventManager().fire(Events.PRINT_CANCELLED, {
 			"file": self._currentFile.getFilename(),
+			"filename": os.path.basename(self._currentFile.getFilename()),
 			"origin": self._currentFile.getFileLocation()
 		})
 
@@ -454,6 +471,7 @@ class MachineCom(object):
 
 			eventManager().fire(Events.PRINT_RESUMED, {
 				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
 		elif pause and self.isPrinting():
@@ -463,6 +481,7 @@ class MachineCom(object):
 
 			eventManager().fire(Events.PRINT_PAUSED, {
 				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
 
@@ -521,7 +540,7 @@ class MachineCom(object):
 	def _parseTemperatures(self, line):
 		result = {}
 		maxToolNum = 0
-		for match in re.finditer(self._tempRegex, line):
+		for match in re.finditer(self._regex_temp, line):
 			tool = match.group(1)
 			toolNumber = int(match.group(2)) if match.group(2) and len(match.group(2)) > 0 else None
 			if toolNumber > maxToolNum:
@@ -558,12 +577,24 @@ class MachineCom(object):
 					continue
 
 				toolNum, actual, target = parsedTemps[tool]
-				self._temp[toolNum] = (actual, target)
+				if target is not None:
+					self._temp[toolNum] = (actual, target)
+				elif toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
+					(oldActual, oldTarget) = self._temp[toolNum]
+					self._temp[toolNum] = (actual, oldTarget)
+				else:
+					self._temp[toolNum] = (actual, None)
 
 		# bed temperature
 		if "B" in parsedTemps.keys():
 			toolNum, actual, target = parsedTemps["B"]
-			self._bedTemp = (actual, target)
+			if target is not None:
+				self._bedTemp = (actual, target)
+			elif self._bedTemp is not None and isinstance(self._bedTemp, tuple):
+				(oldActual, oldTarget) = self._bedTemp
+				self._bedTemp = (actual, oldTarget)
+			else:
+				self._bedTemp = (actual, None)
 
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
@@ -588,6 +619,8 @@ class MachineCom(object):
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		heatingUp = False
 		swallowOk = False
+		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
+
 		while True:
 			try:
 				line = self._readline()
@@ -600,7 +633,11 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and isGcodeFileName(line.strip().lower()) and not 'End file list' in line:
-					self._sdFiles.append(line.strip().lower())
+					filename = line.strip().lower()
+					if filterNonAscii(filename):
+						self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+					else:
+						self._sdFiles.append(filename)
 					continue
 
 				##~~ Temperature processing
@@ -615,6 +652,33 @@ class MachineCom(object):
 							t = time.time()
 							self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 							self._heatupWaitStartTime = t
+				elif supportRepetierTargetTemp:
+					matchExtr = self._regex_repetierTempExtr.match(line)
+					matchBed = self._regex_repetierTempBed.match(line)
+
+					if matchExtr is not None:
+						toolNum = int(matchExtr.group(1))
+						try:
+							target = float(matchExtr.group(2))
+							if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
+								(actual, oldTarget) = self._temp[toolNum]
+								self._temp[toolNum] = (actual, target)
+							else:
+								self._temp[toolNum] = (None, target)
+							self._callback.mcTempUpdate(self._temp, self._bedTemp)
+						except ValueError:
+							pass
+					elif matchBed is not None:
+						try:
+							target = float(matchBed.group(1))
+							if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
+								(actual, oldTarget) = self._bedTemp
+								self._bedTemp = (actual, target)
+							else:
+								self._bedTemp = (None, target)
+							self._callback.mcTempUpdate(self._temp, self._bedTemp)
+						except ValueError:
+							pass
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -638,12 +702,12 @@ class MachineCom(object):
 					self._callback.mcSdFiles(self._sdFiles)
 				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
-					match = re.search("([0-9]*)/([0-9]*)", line)
+					match = self._regex_sdPrintingByte.search("([0-9]*)/([0-9]*)", line)
 					self._currentFile.setFilepos(int(match.group(1)))
 					self._callback.mcProgress()
 				elif 'File opened' in line:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
-					match = re.search("File opened:\s*(.*?)\s+Size:\s*([0-9]*)", line)
+					match = self._regex_sdFileOpened.search(line)
 					self._currentFile = PrintingSdFileInformation(match.group(1), int(match.group(2)))
 				elif 'File selected' in line:
 					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
@@ -655,7 +719,6 @@ class MachineCom(object):
 						})
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
-					self._printSection = "CUSTOM"
 					self._changeState(self.STATE_PRINTING)
 					line = "ok"
 				elif 'Done printing file' in line:
@@ -665,8 +728,9 @@ class MachineCom(object):
 					self._changeState(self.STATE_OPERATIONAL)
 					eventManager().fire(Events.PRINT_DONE, {
 						"file": self._currentFile.getFilename(),
+						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					})
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
@@ -884,7 +948,7 @@ class MachineCom(object):
 			# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 			#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
 			#	So we can have an extra newline in the most common case. Awesome work people.
-			if re.match('Error:[0-9]\n', line):
+			if self._regex_minMaxError.match(line):
 				line = line.rstrip() + self._readline()
 			#Skip the communication errors, as those get corrected.
 			if 'checksum mismatch' in line \
@@ -914,7 +978,7 @@ class MachineCom(object):
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
+		self._log("Recv: %s" % sanitizeAscii(ret))
 		return ret
 
 	def _sendNext(self):
@@ -928,7 +992,7 @@ class MachineCom(object):
 					payload = {
 						"local": self._currentFile.getLocalFilename(),
 						"remote": self._currentFile.getRemoteFilename(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					}
 
 					self._currentFile = None
@@ -939,8 +1003,9 @@ class MachineCom(object):
 				else:
 					payload = {
 						"file": self._currentFile.getFilename(),
+						"filename": os.path.basename(self._currentFile.getFilename()),
 						"origin": self._currentFile.getFileLocation(),
-						"time": time.time() - self._currentFile.getStartTime()
+						"time": self.getPrintTime()
 					}
 					self._callback.mcPrintjobDone()
 					self._changeState(self.STATE_OPERATIONAL)
@@ -993,7 +1058,7 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				gcode = re.search("^\s*([GM]\d+|T)", cmd)
+				gcode = self._regex_command.search(cmd)
 				if gcode:
 					gcode = gcode.group(1)
 
@@ -1042,20 +1107,22 @@ class MachineCom(object):
 			self.close(True)
 
 	def _gcode_T(self, cmd):
-		toolMatch = re.search('T([0-9]+)', cmd)
+		toolMatch = self._regex_paramTInt.search(cmd)
 		if toolMatch:
 			self._currentExtruder = int(toolMatch.group(1))
 		return cmd
 
 	def _gcode_G0(self, cmd):
 		if 'Z' in cmd:
-			try:
-				z = float(re.search('Z([0-9\.]*)', cmd).group(1))
-				if self._currentZ != z:
-					self._currentZ = z
-					self._callback.mcZChange(z)
-			except ValueError:
-				pass
+			match = self._regex_paramZFloat.search(cmd)
+			if match:
+				try:
+					z = float(match.group(1))
+					if self._currentZ != z:
+						self._currentZ = z
+						self._callback.mcZChange(z)
+				except ValueError:
+					pass
 		return cmd
 	_gcode_G1 = _gcode_G0
 
@@ -1066,22 +1133,32 @@ class MachineCom(object):
 
 	def _gcode_M104(self, cmd):
 		toolNum = self._currentExtruder
-		toolMatch = re.search('T([0-9]+)', cmd)
+		toolMatch = self._regex_paramTInt.search(cmd)
 		if toolMatch:
 			toolNum = int(toolMatch.group(1))
-		match = re.search('S([0-9]+)', cmd)
+		match = self._regex_paramSInt.search(cmd)
 		if match:
 			try:
-				self._targetTemp[toolNum] = float(match.group(1))
+				target = float(match.group(1))
+				if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
+					(actual, oldTarget) = self._temp[toolNum]
+					self._temp[toolNum] = (actual, target)
+				else:
+					self._temp[toolNum] = (None, target)
 			except ValueError:
 				pass
 		return cmd
 
 	def _gcode_M140(self, cmd):
-		match = re.search('S([0-9]+)', cmd)
+		match = self._regex_paramSInt.search(cmd)
 		if match:
 			try:
-				self._bedTargetTemp = float(match.group(1))
+				target = float(match.group(1))
+				if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
+					(actual, oldTarget) = self._bedTemp
+					self._bedTemp = (actual, target)
+				else:
+					self._bedTemp = (None, target)
 			except ValueError:
 				pass
 		return cmd
@@ -1096,7 +1173,7 @@ class MachineCom(object):
 
 	def _gcode_M110(self, cmd):
 		newLineNumber = None
-		match = re.search("N([0-9]+)", cmd)
+		match = self._regex_paramNInt.search(cmd)
 		if match:
 			try:
 				newLineNumber = int(match.group(1))
@@ -1232,16 +1309,19 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 	def __init__(self, filename, offsetCallback):
 		PrintingFileInformation.__init__(self, filename)
+
+		self._filehandle = None
+
 		self._filesetMenuModehandle = None
 		self._lineCount = None
 		self._firstLine = None
 		self._currentTool = 0
 
 		self._offsetCallback = offsetCallback
-		self._tempCommandPattern = re.compile("M(104|109|140|190)")
-		self._tempCommandTemperaturePattern = re.compile("S([-+]?\d*\.?\d*)")
-		self._tempCommandToolPattern = re.compile("T(\d+)")
-		self._toolCommandPattern = re.compile("^T(\d+)")
+		self._regex_tempCommand = re.compile("M(104|109|140|190)")
+		self._regex_tempCommandTemperature = re.compile("S([-+]?\d*\.?\d*)")
+		self._regex_tempCommandTool = re.compile("T(\d+)")
+		self._regex_toolCommand = re.compile("^T(\d+)")
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
@@ -1295,14 +1375,14 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			line = line[0:line.find(";")]
 		line = line.strip()
 		if len(line) > 0:
-			toolMatch = self._toolCommandPattern.match(line)
+			toolMatch = self._regex_toolCommand.match(line)
 			if toolMatch is not None:
 				# track tool changes
 				self._currentTool = int(toolMatch.group(1))
 			else:
 				## apply offsets
 				if self._offsetCallback is not None:
-					tempMatch = self._tempCommandPattern.match(line)
+					tempMatch = self._regex_tempCommand.match(line)
 					if tempMatch is not None:
 						# if we have a temperature command, retrieve current offsets
 						tempOffset, bedTempOffset = self._offsetCallback()
@@ -1310,7 +1390,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 							# extruder temperature, determine which one and retrieve corresponding offset
 							toolNum = self._currentTool
 
-							toolNumMatch = self._tempCommandToolPattern.search(line)
+							toolNumMatch = self._regex_tempCommandTool.search(line)
 							if toolNumMatch is not None:
 								try:
 									toolNum = int(toolNumMatch.group(1))
@@ -1327,7 +1407,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 						if not offset == 0:
 							# if we have an offset != 0, we need to get the temperature to be set and apply the offset to it
-							tempValueMatch = self._tempCommandTemperaturePattern.search(line)
+							tempValueMatch = self._regex_tempCommandTemperature.search(line)
 							if tempValueMatch is not None:
 								try:
 									temp = float(tempValueMatch.group(1))

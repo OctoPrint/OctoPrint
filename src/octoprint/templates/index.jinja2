@@ -27,6 +27,7 @@
 
             var CONFIG_GCODEFILESPERPAGE = 5;
             var CONFIG_TIMELAPSEFILESPERPAGE = 10;
+            var CONFIG_LOGFILESPERPAGE = 10;
             var CONFIG_USERSPERPAGE = 10;
             var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
             var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
@@ -273,7 +274,7 @@
                                     <!-- ko foreach: tools -->
                                     <tr data-bind="template: { name: 'temprow-template' }"></tr>
                                     <!-- /ko -->
-                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }"></tr>
+                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
                                 </table>
 
                                 <script type="text/html" id="temprow-template">
@@ -516,7 +517,7 @@
                             </div>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
-                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">
+                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
                                 <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
                             </div>
                         </div>
@@ -644,6 +645,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>
