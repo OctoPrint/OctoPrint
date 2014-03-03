@@ -27,11 +27,11 @@ Dependencies
 OctoPrint depends on a couple of python modules to do its job. Those are listed in requirements.txt and can be
 installed using `pip`:
 
-    pip install -r requirements.txt
+    pip2 install -r requirements.txt
 
 You should also do this after pulling from the repository, since the dependencies might have changed.
 
-OctoPrint currently only supports Python 2.7.
+OctoPrint currently only supports Python 2.7. So you have to write pip2 for python2 instead of pip (this is python3).
 
 Usage
 -----
