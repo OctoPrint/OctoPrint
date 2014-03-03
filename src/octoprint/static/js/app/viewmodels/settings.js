@@ -10,7 +10,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.appearance_name = ko.observable(undefined);
     self.appearance_color = ko.observable(undefined);
 
-    /* I did attempt to allow arbitrary gradients but cross browser support via knockout or jquery was going to be horrible */
     self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
 
     self.printer_movementSpeedX = ko.observable(undefined);
@@ -18,7 +17,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedZ = ko.observable(undefined);
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
-    self.printer_numExtruders = ko.observable(1);
+    self.printer_numExtruders = ko.observable(undefined);
 
     self._printer_extruderOffsets = ko.observableArray([]);
     self.printer_extruderOffsets = ko.computed({
@@ -45,12 +44,14 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             }
             self._printer_extruderOffsets(result);
         },
-        owner: self,
-        deferEvaluation: true
+        owner: self
     });
     self.ko_printer_extruderOffsets = ko.computed(function() {
         var extruderOffsets = self._printer_extruderOffsets();
         var numExtruders = self.printer_numExtruders();
+        if (!numExtruders) {
+            numExtruders = 1;
+        }
 
         if (numExtruders > extruderOffsets.length) {
             for (var i = extruderOffsets.length; i < numExtruders; i++) {

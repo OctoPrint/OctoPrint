@@ -33,14 +33,14 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
     self.heaterOptions = ko.observable({});
 
-    self.settingsViewModel.printer_numExtruders.subscribe(function(oldVal, newVal) {
+    self._numExtrudersUpdated = function() {
         var graphColors = ["red", "orange", "green", "brown", "purple"];
         var heaterOptions = {};
         var tools = self.tools();
 
         // tools
         var numExtruders = self.settingsViewModel.printer_numExtruders();
-        if (numExtruders > 1) {
+        if (numExtruders && numExtruders > 1) {
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
                 var color = graphColors.shift();
@@ -71,7 +71,8 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         // write back
         self.heaterOptions(heaterOptions);
         self.tools(tools);
-    });
+    };
+    self.settingsViewModel.printer_numExtruders.subscribe(self._numExtrudersUpdated);
 
     self.temperatures = [];
     self.plotOptions = {
@@ -106,19 +107,19 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             noColumns: 2,
             backgroundOpacity: 0
         }
-    }
+    };
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
         self._processTemperatureUpdateData(data.temps);
         self._processOffsetData(data.offsets);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
         self._processTemperatureHistoryData(data.tempHistory);
         self._processOffsetData(data.offsets);
-    }
+    };
 
     self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
@@ -128,7 +129,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
-    }
+    };
 
     self._processTemperatureUpdateData = function(data) {
         if (data.length == 0)
@@ -156,12 +157,12 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         });
 
         self.updatePlot();
-    }
+    };
 
     self._processTemperatureHistoryData = function(data) {
         self.temperatures = self._processTemperatureData(data);
         self.updatePlot();
-    }
+    };
 
     self._processOffsetData = function(data) {
         var tools = self.tools();
@@ -174,7 +175,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         if (data.hasOwnProperty("bed")) {
             self.bedTemp["offset"](data["bed"]);
         }
-    }
+    };
 
     self._processTemperatureData = function(data, result) {
         var types = _.keys(self.heaterOptions());
@@ -202,7 +203,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         });
 
         return result;
-    }
+    };
 
     self.updatePlot = function() {
         var graph = $("#temperature-graph");
@@ -237,7 +238,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
             $.plot(graph, data, self.plotOptions);
         }
-    }
+    };
 
     self.setTarget = function(item) {
         var value = item.newTarget();
