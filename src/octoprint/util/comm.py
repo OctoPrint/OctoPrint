@@ -381,17 +381,17 @@ class MachineCom(object):
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
 
-		wasPaused = self.isPaused()
-		self._printSection = "CUSTOM"
-		self._changeState(self.STATE_PRINTING)
-		eventManager().fire(Events.PRINT_STARTED, {
-			"file": self._currentFile.getFilename(),
-			"filename": os.path.basename(self._currentFile.getFilename()),
-			"origin": self._currentFile.getFileLocation()
-		})
-
 		try:
 			self._currentFile.start()
+
+			wasPaused = self.isPaused()
+			self._changeState(self.STATE_PRINTING)
+			eventManager().fire(Events.PRINT_STARTED, {
+				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
+				"origin": self._currentFile.getFileLocation()
+			})
+
 			if self.isSdFileSelected():
 				if wasPaused:
 					self.sendCommand("M26 S0")
@@ -677,7 +677,6 @@ class MachineCom(object):
 						})
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
-					self._printSection = "CUSTOM"
 					self._changeState(self.STATE_PRINTING)
 					line = "ok"
 				elif 'Done printing file' in line:
@@ -1258,6 +1257,9 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 	def __init__(self, filename, offsetCallback):
 		PrintingFileInformation.__init__(self, filename)
+
+		self._filehandle = None
+
 		self._filesetMenuModehandle = None
 		self._lineCount = None
 		self._firstLine = None
