@@ -147,14 +147,6 @@ class MachineCom(object):
 		self._heatupWaitTimeLost = 0.0
 		self._currentExtruder = 0
 
-		# Regex matching temperature entries in line. Groups will be as follows:
-		# - 1: whole tool designator incl. optional toolNumber ("T", "Tn", "B")
-		# - 2: toolNumber, if given ("", "n", "")
-		# - 3: actual temperature
-		# - 4: whole target substring, if given (e.g. " / 22.0")
-		# - 5: target temperature
-		self._tempRegex = re.compile("(B|T(\d*)):\s*([-+]?\d*\.?\d*)(\s*\/?\s*([-+]?\d*\.?\d*))?")
-
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 1
 		self._resendDelta = None
@@ -179,7 +171,7 @@ class MachineCom(object):
 
 		# regexes
 		floatPattern = "[-+]?[0-9]*\.?[0-9]+"
-		intPattern = "[0-9]+"
+		intPattern = "\d+"
 		self._regex_command = re.compile("^\s*([GM]\d+|T)")
 		self._regex_float = re.compile(floatPattern)
 		self._regex_paramZFloat = re.compile("Z(%s)" % floatPattern)
@@ -188,7 +180,15 @@ class MachineCom(object):
 		self._regex_paramTInt = re.compile("T(%s)" % intPattern)
 		self._regex_minMaxError = re.compile("Error:[0-9]\n")
 		self._regex_sdPrintingByte = re.compile("([0-9]*)/([0-9]*)")
-		self._regex_sdFileOpened = re.compile("File opened:\s*(.*?)\s+Size:\s*([0-9]*)")
+		self._regex_sdFileOpened = re.compile("File opened:\s*(.*?)\s+Size:\s*(%s)" % intPattern)
+
+		# Regex matching temperature entries in line. Groups will be as follows:
+		# - 1: whole tool designator incl. optional toolNumber ("T", "Tn", "B")
+		# - 2: toolNumber, if given ("", "n", "")
+		# - 3: actual temperature
+		# - 4: whole target substring, if given (e.g. " / 22.0")
+		# - 5: target temperature
+		self._regex_temp = re.compile("(B|T(\d*)):\s*(%s)(\s*\/?\s*(%s))?" % (floatPattern, floatPattern))
 
 	def __del__(self):
 		self.close()
@@ -539,7 +539,7 @@ class MachineCom(object):
 	def _parseTemperatures(self, line):
 		result = {}
 		maxToolNum = 0
-		for match in re.finditer(self._tempRegex, line):
+		for match in re.finditer(self._regex_temp, line):
 			tool = match.group(1)
 			toolNumber = int(match.group(2)) if match.group(2) and len(match.group(2)) > 0 else None
 			if toolNumber > maxToolNum:
@@ -1264,10 +1264,10 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		self._currentTool = 0
 
 		self._offsetCallback = offsetCallback
-		self._tempCommandPattern = re.compile("M(104|109|140|190)")
-		self._tempCommandTemperaturePattern = re.compile("S([-+]?\d*\.?\d*)")
-		self._tempCommandToolPattern = re.compile("T(\d+)")
-		self._toolCommandPattern = re.compile("^T(\d+)")
+		self._regex_tempCommand = re.compile("M(104|109|140|190)")
+		self._regex_tempCommandTemperature = re.compile("S([-+]?\d*\.?\d*)")
+		self._regex_tempCommandTool = re.compile("T(\d+)")
+		self._regex_toolCommand = re.compile("^T(\d+)")
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
@@ -1321,14 +1321,14 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			line = line[0:line.find(";")]
 		line = line.strip()
 		if len(line) > 0:
-			toolMatch = self._toolCommandPattern.match(line)
+			toolMatch = self._regex_toolCommand.match(line)
 			if toolMatch is not None:
 				# track tool changes
 				self._currentTool = int(toolMatch.group(1))
 			else:
 				## apply offsets
 				if self._offsetCallback is not None:
-					tempMatch = self._tempCommandPattern.match(line)
+					tempMatch = self._regex_tempCommand.match(line)
 					if tempMatch is not None:
 						# if we have a temperature command, retrieve current offsets
 						tempOffset, bedTempOffset = self._offsetCallback()
@@ -1336,7 +1336,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 							# extruder temperature, determine which one and retrieve corresponding offset
 							toolNum = self._currentTool
 
-							toolNumMatch = self._tempCommandToolPattern.search(line)
+							toolNumMatch = self._regex_tempCommandTool.search(line)
 							if toolNumMatch is not None:
 								try:
 									toolNum = int(toolNumMatch.group(1))
@@ -1353,7 +1353,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 						if not offset == 0:
 							# if we have an offset != 0, we need to get the temperature to be set and apply the offset to it
-							tempValueMatch = self._tempCommandTemperaturePattern.search(line)
+							tempValueMatch = self._regex_tempCommandTemperature.search(line)
 							if tempValueMatch is not None:
 								try:
 									temp = float(tempValueMatch.group(1))
