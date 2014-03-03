@@ -150,15 +150,6 @@ class MachineCom(object):
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
 
-		# multithreading locks
-		self._sendNextLock = threading.Lock()
-		self._sendingLock = threading.Lock()
-
-		# monitoring thread
-		self.thread = threading.Thread(target=self._monitor)
-		self.thread.daemon = True
-		self.thread.start()
-
 		# SD status data
 		self._sdAvailable = False
 		self._sdFileList = False
@@ -188,6 +179,17 @@ class MachineCom(object):
 		# - 4: whole target substring, if given (e.g. " / 22.0")
 		# - 5: target temperature
 		self._regex_temp = re.compile("(B|T(\d*)):\s*(%s)(\s*\/?\s*(%s))?" % (positiveFloatPattern, positiveFloatPattern))
+		self._regex_repetierTempExtr = re.compile("TargetExtr([0-9]+):(%s)" % positiveFloatPattern)
+		self._regex_repetierTempBed = re.compile("TargetBed:(%s)" % positiveFloatPattern)
+
+		# multithreading locks
+		self._sendNextLock = threading.Lock()
+		self._sendingLock = threading.Lock()
+
+		# monitoring thread
+		self.thread = threading.Thread(target=self._monitor)
+		self.thread.daemon = True
+		self.thread.start()
 
 	def __del__(self):
 		self.close()
@@ -575,12 +577,24 @@ class MachineCom(object):
 					continue
 
 				toolNum, actual, target = parsedTemps[tool]
-				self._temp[toolNum] = (actual, target)
+				if target is not None:
+					self._temp[toolNum] = (actual, target)
+				elif toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
+					(oldActual, oldTarget) = self._temp[toolNum]
+					self._temp[toolNum] = (actual, oldTarget)
+				else:
+					self._temp[toolNum] = (actual, None)
 
 		# bed temperature
 		if "B" in parsedTemps.keys():
 			toolNum, actual, target = parsedTemps["B"]
-			self._bedTemp = (actual, target)
+			if target is not None:
+				self._bedTemp = (actual, target)
+			elif self._bedTemp is not None and isinstance(self._bedTemp, tuple):
+				(oldActual, oldTarget) = self._bedTemp
+				self._bedTemp = (actual, oldTarget)
+			else:
+				self._bedTemp = (actual, None)
 
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
@@ -605,6 +619,8 @@ class MachineCom(object):
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		heatingUp = False
 		swallowOk = False
+		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
+
 		while True:
 			try:
 				line = self._readline()
@@ -636,6 +652,33 @@ class MachineCom(object):
 							t = time.time()
 							self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 							self._heatupWaitStartTime = t
+				elif supportRepetierTargetTemp:
+					matchExtr = self._regex_repetierTempExtr.match(line)
+					matchBed = self._regex_repetierTempBed.match(line)
+
+					if matchExtr is not None:
+						toolNum = int(matchExtr.group(1))
+						try:
+							target = float(matchExtr.group(2))
+							if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
+								(actual, oldTarget) = self._temp[toolNum]
+								self._temp[toolNum] = (actual, target)
+							else:
+								self._temp[toolNum] = (None, target)
+							self._callback.mcTempUpdate(self._temp, self._bedTemp)
+						except ValueError:
+							pass
+					elif matchBed is not None:
+						try:
+							target = float(matchBed.group(1))
+							if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
+								(actual, oldTarget) = self._bedTemp
+								self._bedTemp = (actual, target)
+							else:
+								self._bedTemp = (None, target)
+							self._callback.mcTempUpdate(self._temp, self._bedTemp)
+						except ValueError:
+							pass
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1097,9 +1140,11 @@ class MachineCom(object):
 		if match:
 			try:
 				target = float(match.group(1))
-				if self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
+				if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
 					(actual, oldTarget) = self._temp[toolNum]
 					self._temp[toolNum] = (actual, target)
+				else:
+					self._temp[toolNum] = (None, target)
 			except ValueError:
 				pass
 		return cmd
@@ -1112,6 +1157,8 @@ class MachineCom(object):
 				if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
 					(actual, oldTarget) = self._bedTemp
 					self._bedTemp = (actual, target)
+				else:
+					self._bedTemp = (None, target)
 			except ValueError:
 				pass
 		return cmd

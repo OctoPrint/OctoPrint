@@ -96,6 +96,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
     self.feature_swallowOkAfterResend = ko.observable(undefined);
+    self.feature_repetierTargetTemp = ko.observable(undefined);
 
     self.serial_port = ko.observable();
     self.serial_baudrate = ko.observable();
@@ -205,6 +206,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
         self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
+        self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
 
         self.serial_port(response.serial.port);
         self.serial_baudrate(response.serial.baudrate);
@@ -267,7 +269,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport(),
-                "swallowOkAfterResend": self.feature_swallowOkAfterResend()
+                "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
+                "repetierTargetTemp": self.feature_repetierTargetTemp()
             },
             "serial": {
                 "port": self.serial_port(),

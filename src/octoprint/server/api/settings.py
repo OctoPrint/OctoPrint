@@ -59,7 +59,8 @@ def getSettings():
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
-			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"])
+			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
+			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -136,6 +137,7 @@ def setSettings():
 			if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 			if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
 			if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
+			if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
 
 		if "serial" in data.keys():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
