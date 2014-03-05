@@ -73,7 +73,11 @@ def configureTimelapse(config=None, persist=False):
 		current.unload()
 
 	type = config["type"]
-	postRoll = config["postRoll"]
+
+	postRoll = 0
+	if "postRoll" in config:
+		postRoll = config["postRoll"]
+
 	if type is None or "off" == type:
 		current = None
 	elif "zchange" == type:
