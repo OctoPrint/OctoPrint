@@ -52,7 +52,8 @@ default_settings = {
 		"flipV": False,
 		"timelapse": {
 			"type": "off",
-			"options": {}
+			"options": {},
+			"postRoll": 0
 		}
 	},
 	"gcodeViewer": {
@@ -65,7 +66,8 @@ default_settings = {
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
-		"swallowOkAfterResend": True
+		"swallowOkAfterResend": True,
+		"repetierTargetTemp": False
 	},
 	"folder": {
 		"uploads": None,
@@ -143,7 +145,8 @@ default_settings = {
 			"forceChecksum": False,
 			"okWithLinenumber": False,
 			"numExtruders": 1,
-			"includeCurrentToolInTemps": True
+			"includeCurrentToolInTemps": True,
+			"hasBed": True
 		}
 	}
 }
