@@ -52,7 +52,8 @@ default_settings = {
 		"flipV": False,
 		"timelapse": {
 			"type": "off",
-			"options": {}
+			"options": {},
+			"postRoll": 0
 		}
 	},
 	"gcodeViewer": {
