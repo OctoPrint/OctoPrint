@@ -58,6 +58,7 @@ class VirtualPrinter():
 			linenumber = int(re.search("N([0-9]+)", data).group(1))
 			self.lastN = linenumber
 			self.currentLine = linenumber
+			self._sendOk()
 			return
 		elif data.startswith("N"):
 			linenumber = int(re.search("N([0-9]+)", data).group(1))
@@ -284,7 +285,7 @@ class VirtualPrinter():
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
 		with open(self._selectedSdFile, "r") as f:
-			for line in f:
+			for line in iter(f.readline, ""):
 				# reset position if requested by client
 				if self._newSdFilePos is not None:
 					f.seek(self._newSdFilePos)
