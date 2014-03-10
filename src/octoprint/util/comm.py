@@ -614,8 +614,8 @@ class MachineCom(object):
 
 		#Start monitoring the serial port.
 		timeout = getNewTimeout("communication")
-		tempRequestTimeout = timeout
-		sdStatusRequestTimeout = timeout
+		tempRequestTimeout = getNewTimeout("temperature")
+		sdStatusRequestTimeout = getNewTimeout("sdStatus")
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		heatingUp = False
 		swallowOk = False
@@ -626,6 +626,8 @@ class MachineCom(object):
 				line = self._readline()
 				if line is None:
 					break
+				if line.strip() is not "":
+					timeout = getNewTimeout("communication")
 
 				##~~ Error handling
 				line = self._handleErrors(line)
@@ -845,7 +847,7 @@ class MachineCom(object):
 							self._sendCommand(self._commandQueue.get())
 						else:
 							self._sendCommand("M105")
-						tempRequestTimeout = getNewTimeout("communication")
+						tempRequestTimeout = getNewTimeout("temperature")
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						if settings().get(["feature", "swallowOkAfterResend"]):
@@ -861,24 +863,20 @@ class MachineCom(object):
 					if self.isSdPrinting():
 						if time.time() > tempRequestTimeout and not heatingUp:
 							self._sendCommand("M105")
-							tempRequestTimeout = getNewTimeout("communication")
+							tempRequestTimeout = getNewTimeout("temperature")
 
 						if time.time() > sdStatusRequestTimeout and not heatingUp:
 							self._sendCommand("M27")
-							sdStatusRequestTimeout = time.time() + 1
-
-						if 'ok' or 'SD printing byte' in line:
-							timeout = getNewTimeout("communication")
+							sdStatusRequestTimeout = getNewTimeout("sdStatus")
 					else:
 						# Even when printing request the temperature every 5 seconds.
 						if time.time() > tempRequestTimeout and not self.isStreaming():
 							self._commandQueue.put("M105")
-							tempRequestTimeout = getNewTimeout("communication")
+							tempRequestTimeout = getNewTimeout("temperature")
 
 						if "ok" in line and swallowOk:
 							swallowOk = False
 						elif "ok" in line:
-							timeout = getNewTimeout("communication")
 							if self._resendDelta is not None:
 								self._resendNextCommand()
 							elif not self._commandQueue.empty() and not self.isStreaming():
