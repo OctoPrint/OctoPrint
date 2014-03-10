@@ -569,7 +569,14 @@ class MachineCom(object):
 		if not "T0" in parsedTemps.keys() and "T" in parsedTemps.keys():
 			# only single reporting, "T" is our one and only extruder temperature
 			toolNum, actual, target = parsedTemps["T"]
-			self._temp[0] = (actual, target)
+
+			if target is not None:
+				self._temp[0] = (actual, target)
+			elif 0 in self._temp.keys() and self._temp[0] is not None and isinstance(self._temp[0], tuple):
+				(oldActual, oldTarget) = self._temp[0]
+				self._temp[0] = (actual, oldTarget)
+			else:
+				self._temp[0] = (actual, None)
 		elif "T0" in parsedTemps.keys():
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
