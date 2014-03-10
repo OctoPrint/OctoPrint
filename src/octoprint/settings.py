@@ -146,7 +146,8 @@ default_settings = {
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
-			"hasBed": True
+			"hasBed": True,
+			"repetierStyleTargetTemperature": False
 		}
 	}
 }
