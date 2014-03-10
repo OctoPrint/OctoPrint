@@ -562,7 +562,7 @@ class MachineCom(object):
 					self._callback.mcSdFiles(self._sdFiles)
 				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
-					match = self._regex_sdPrintingByte.search("([0-9]*)/([0-9]*)", line)
+					match = self._regex_sdPrintingByte.search(line)
 					self._currentFile.setFilepos(int(match.group(1)))
 					self._callback.mcProgress()
 				elif 'File opened' in line:
