@@ -68,16 +68,22 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.printer_bedDimensionX = ko.observable(undefined);
     self.printer_bedDimensionY = ko.observable(undefined);
+    self.printer_bedDimensionR = ko.observable(undefined);
+    self.printer_bedCircular = ko.observable(undefined);
     self.printer_bedDimensions = ko.computed({
         read: function () {
             return {
                 x: parseFloat(self.printer_bedDimensionX()),
-                y: parseFloat(self.printer_bedDimensionY())
+                y: parseFloat(self.printer_bedDimensionY()),
+                r: parseFloat(self.printer_bedDimensionR()),
+                circular: self.printer_bedCircular()
             };
         },
         write: function(value) {
             self.printer_bedDimensionX(value.x);
             self.printer_bedDimensionY(value.y);
+            self.printer_bedDimensionR(value.r);
+            self.printer_bedCircular(value.circular);
         },
         owner: self
     });

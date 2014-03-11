@@ -148,7 +148,7 @@
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="settings-bedSize">Bed Size</label>
-                            <div class="controls form-inline">
+                            <div class="controls form-inline" data-bind="ifnot: printer_bedCircular">
                                 <label>X:</label>
                                 <div class="input-append">
                                     <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printer_bedDimensionX" id="settings-bedX">
@@ -159,6 +159,18 @@
                                     <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printer_bedDimensionY" id="settings-bedY">
                                     <span class="add-on">mm</span>
                                 </div>
+                            </div>
+                            <div class="controls form-inline" data-bind="if: printer_bedCircular">
+                                <label>Radius:</label>
+                                <div class="input-append">
+                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printer_bedDimensionR" id="settings-bedR">
+                                    <span class="add-on">mm</span>
+                                </div>
+                            </div>
+                            <div class="controls form-inline">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: printer_bedCircular" id="settings-bedCircular">Circular
+                                </label>
                             </div>
                         </div>
                     </form>
