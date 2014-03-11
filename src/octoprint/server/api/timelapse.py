@@ -23,12 +23,13 @@ from octoprint.server.api import api
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
 
-	type = "off"
 	config = {"type": "off"}
 	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
 		config["type"] = "zchange"
+		config["postRoll"] = timelapse.postRoll()
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		config["type"] = "timed"
+		config["postRoll"] = timelapse.postRoll()
 		config.update({
 			"interval": timelapse.interval()
 		})
@@ -64,8 +65,16 @@ def setTimelapseConfig():
 	if "type" in request.values:
 		config = {
 			"type": request.values["type"],
+			"postRoll": 0,
 			"options": {}
 		}
+
+
+		if "postRoll" in request.values:
+			try:
+				config["postRoll"] = int(request.values["postRoll"])
+			except ValueError:
+				pass
 
 		if "interval" in request.values:
 			interval = 10

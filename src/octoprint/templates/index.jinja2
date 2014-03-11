@@ -533,7 +533,13 @@
                                     <option value="timed">Timed</option>
                                 </select>
 
-                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
+                                <label for="webcam_timelapse_postRoll">Timelapse post roll (in rendered seconds)</label>
+                                <div class="input-append">
+                                    <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+                                    <span class="add-on">sec</span>
+                                </div>
+
+                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
                                     <label for="webcam_timelapse_interval">Interval</label>
                                     <div class="input-append">
                                         <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">

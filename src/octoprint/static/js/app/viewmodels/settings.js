@@ -106,6 +106,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.serial_timeoutConnection = ko.observable(undefined);
     self.serial_timeoutDetection = ko.observable(undefined);
     self.serial_timeoutCommunication = ko.observable(undefined);
+    self.serial_timeoutTemperature = ko.observable(undefined);
+    self.serial_timeoutSdStatus = ko.observable(undefined);
     self.serial_log = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
@@ -216,6 +218,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.serial_timeoutConnection(response.serial.timeoutConnection);
         self.serial_timeoutDetection(response.serial.timeoutDetection);
         self.serial_timeoutCommunication(response.serial.timeoutCommunication);
+        self.serial_timeoutTemperature(response.serial.timeoutTemperature);
+        self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
         self.serial_log(response.serial.log);
 
         self.folder_uploads(response.folder.uploads);
@@ -279,6 +283,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "timeoutConnection": self.serial_timeoutConnection(),
                 "timeoutDetection": self.serial_timeoutDetection(),
                 "timeoutCommunication": self.serial_timeoutCommunication(),
+                "timeoutTemperature": self.serial_timeoutTemperature(),
+                "timeoutSdStatus": self.serial_timeoutSdStatus(),
                 "log": self.serial_log()
             },
             "folder": {
