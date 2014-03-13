@@ -728,6 +728,7 @@ class MachineCom(object):
 						})
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
+					self._printSection = "CUSTOM"
 					self._changeState(self.STATE_PRINTING)
 					line = "ok"
 				elif 'Done printing file' in line:
