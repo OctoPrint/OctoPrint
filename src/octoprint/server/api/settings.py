@@ -71,6 +71,8 @@ def getSettings():
 			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
 			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
 			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
+			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
+			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
 			"log": s.getBoolean(["serial", "log"])
 		},
 		"folder": {
@@ -146,6 +148,8 @@ def setSettings():
 			if "timeoutConnection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
 			if "timeoutDetection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
 			if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
+			if "timeoutTemperature" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
+			if "timeoutSdStatus" in data["serial"].keys(): s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 
 			oldLog = s.getBoolean(["serial", "log"])
 			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])

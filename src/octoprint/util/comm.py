@@ -569,7 +569,14 @@ class MachineCom(object):
 		if not "T0" in parsedTemps.keys() and "T" in parsedTemps.keys():
 			# only single reporting, "T" is our one and only extruder temperature
 			toolNum, actual, target = parsedTemps["T"]
-			self._temp[0] = (actual, target)
+
+			if target is not None:
+				self._temp[0] = (actual, target)
+			elif 0 in self._temp.keys() and self._temp[0] is not None and isinstance(self._temp[0], tuple):
+				(oldActual, oldTarget) = self._temp[0]
+				self._temp[0] = (actual, oldTarget)
+			else:
+				self._temp[0] = (actual, None)
 		elif "T0" in parsedTemps.keys():
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
@@ -614,8 +621,8 @@ class MachineCom(object):
 
 		#Start monitoring the serial port.
 		timeout = getNewTimeout("communication")
-		tempRequestTimeout = timeout
-		sdStatusRequestTimeout = timeout
+		tempRequestTimeout = getNewTimeout("temperature")
+		sdStatusRequestTimeout = getNewTimeout("sdStatus")
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		heatingUp = False
 		swallowOk = False
@@ -626,6 +633,8 @@ class MachineCom(object):
 				line = self._readline()
 				if line is None:
 					break
+				if line.strip() is not "":
+					timeout = getNewTimeout("communication")
 
 				##~~ Error handling
 				line = self._handleErrors(line)
@@ -702,7 +711,7 @@ class MachineCom(object):
 					self._callback.mcSdFiles(self._sdFiles)
 				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
-					match = self._regex_sdPrintingByte.search("([0-9]*)/([0-9]*)", line)
+					match = self._regex_sdPrintingByte.search(line)
 					self._currentFile.setFilepos(int(match.group(1)))
 					self._callback.mcProgress()
 				elif 'File opened' in line:
@@ -845,7 +854,7 @@ class MachineCom(object):
 							self._sendCommand(self._commandQueue.get())
 						else:
 							self._sendCommand("M105")
-						tempRequestTimeout = getNewTimeout("communication")
+						tempRequestTimeout = getNewTimeout("temperature")
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						if settings().get(["feature", "swallowOkAfterResend"]):
@@ -861,24 +870,20 @@ class MachineCom(object):
 					if self.isSdPrinting():
 						if time.time() > tempRequestTimeout and not heatingUp:
 							self._sendCommand("M105")
-							tempRequestTimeout = getNewTimeout("communication")
+							tempRequestTimeout = getNewTimeout("temperature")
 
 						if time.time() > sdStatusRequestTimeout and not heatingUp:
 							self._sendCommand("M27")
-							sdStatusRequestTimeout = time.time() + 1
-
-						if 'ok' or 'SD printing byte' in line:
-							timeout = getNewTimeout("communication")
+							sdStatusRequestTimeout = getNewTimeout("sdStatus")
 					else:
 						# Even when printing request the temperature every 5 seconds.
 						if time.time() > tempRequestTimeout and not self.isStreaming():
 							self._commandQueue.put("M105")
-							tempRequestTimeout = getNewTimeout("communication")
+							tempRequestTimeout = getNewTimeout("temperature")
 
 						if "ok" in line and swallowOk:
 							swallowOk = False
 						elif "ok" in line:
-							timeout = getNewTimeout("communication")
 							if self._resendDelta is not None:
 								self._resendNextCommand()
 							elif not self._commandQueue.empty() and not self.isStreaming():
