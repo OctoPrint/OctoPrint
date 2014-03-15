@@ -1,13 +1,5 @@
 #!/usr/bin/env python
 
-print """
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! You are using an old startup method for OctoPrint. !!!
-!!! Please perform 'sudo python setup.py install' and  !!!
-!!! use the 'octoprint' executable instead.            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-"""
-
 import os
 import sys
 
