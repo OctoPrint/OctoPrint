@@ -61,6 +61,7 @@ default_settings = {
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
+		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True
 	},
 	"folder": {
