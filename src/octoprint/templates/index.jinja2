@@ -27,6 +27,7 @@
 
             var CONFIG_GCODEFILESPERPAGE = 5;
             var CONFIG_TIMELAPSEFILESPERPAGE = 10;
+            var CONFIG_LOGFILESPERPAGE = 10;
             var CONFIG_USERSPERPAGE = 10;
             var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
             var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
@@ -266,14 +267,14 @@
                                 <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
                                     <tr>
                                         <th style="width: 18%"></th>
-                                        <th style="text-align: right" style="width: 12%">Actual</th>
+                                        <th style="width: 12%; text-align: right">Actual</th>
                                         <th style="width: 35%">Target</th>
                                         <th style="width: 35%">Offset</th>
                                     </tr>
                                     <!-- ko foreach: tools -->
                                     <tr data-bind="template: { name: 'temprow-template' }"></tr>
                                     <!-- /ko -->
-                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }"></tr>
+                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
                                 </table>
 
                                 <script type="text/html" id="temprow-template">
@@ -516,7 +517,7 @@
                             </div>
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
-                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { handleEnter(e); } }, enable: isOperational() && loginState.isUser()">
+                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
                                 <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
                             </div>
                         </div>
@@ -532,7 +533,13 @@
                                     <option value="timed">Timed</option>
                                 </select>
 
-                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
+                                <label for="webcam_timelapse_postRoll">Timelapse post roll (in rendered seconds)</label>
+                                <div class="input-append">
+                                    <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+                                    <span class="add-on">sec</span>
+                                </div>
+
+                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
                                     <label for="webcam_timelapse_interval">Interval</label>
                                     <div class="input-append">
                                         <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
@@ -644,6 +651,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>

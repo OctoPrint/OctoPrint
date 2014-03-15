@@ -279,6 +279,38 @@ table {
         }
       }
     }
+
+    // log files
+    &.settings_logs_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    &.settings_logs_size {
+      text-align: right;
+      width: 70px;
+    }
+
+    &.settings_logs_date {
+      text-align: left;
+      width: 130px;
+    }
+
+    &.settings_logs_action {
+      text-align: center;
+      width: 70px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
+    }
+
   }
 }
 
@@ -301,7 +333,8 @@ table {
   width: 50px;
 }
 
-#temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support, #webcam_timelapse_interval {
+#temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
+#webcam_timelapse_interval, #webcam_timelapse_postRoll {
   text-align: right;
 }
 

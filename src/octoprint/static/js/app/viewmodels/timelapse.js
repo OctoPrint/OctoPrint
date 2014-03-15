@@ -5,6 +5,7 @@ function TimelapseViewModel(loginStateViewModel) {
 
     self.timelapseType = ko.observable(undefined);
     self.timelapseTimedInterval = ko.observable(undefined);
+    self.timelapsePostRoll = ko.observable(undefined);
 
     self.persist = ko.observable(false);
     self.isDirty = ko.observable(false);
@@ -17,6 +18,9 @@ function TimelapseViewModel(loginStateViewModel) {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
+    self.timelapseTypeSelected = ko.computed(function() {
+        return ("off" != self.timelapseType());
+    });
     self.intervalInputEnabled = ko.computed(function() {
         return ("timed" == self.timelapseType());
     });
@@ -122,6 +126,7 @@ function TimelapseViewModel(loginStateViewModel) {
     self.save = function(data, event) {
         var data = {
             "type": self.timelapseType(),
+            "postRoll": self.timelapsePostRoll(),
             "save": self.persist()
         }
 

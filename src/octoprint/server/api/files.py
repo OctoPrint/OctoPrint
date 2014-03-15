@@ -11,7 +11,6 @@ import octoprint.util as util
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, gcodeManager, eventManager, restricted_access, NO_CONTENT
-from octoprint.server.util import urlForDownload
 from octoprint.server.api import api
 
 
@@ -66,7 +65,7 @@ def _getFileList(origin):
 			file.update({
 				"refs": {
 					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["name"], _external=True),
-					"download": urlForDownload(FileDestinations.LOCAL, file["name"])
+					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file["name"]
 				}
 			})
 	return files
@@ -169,7 +168,7 @@ def uploadGcodeFile(target):
 				"origin": FileDestinations.LOCAL,
 				"refs": {
 					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True),
-					"download": urlForDownload(FileDestinations.LOCAL, filename)
+					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + filename
 				}
 			}
 		})
@@ -269,6 +268,5 @@ def deleteGcodeFile(filename, target):
 	else:
 		gcodeManager.removeFile(filename)
 
-	# return an updated list of files
-	return readGcodeFiles()
+	return NO_CONTENT
 

@@ -1,4 +1,4 @@
-function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel) {
+function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel, logViewModel) {
     var self = this;
 
     self.loginStateViewModel = loginStateViewModel;
@@ -10,6 +10,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
     self.gcodeFilesViewModel = gcodeFilesViewModel;
     self.timelapseViewModel = timelapseViewModel;
     self.gcodeViewModel = gcodeViewModel;
+    self.logViewModel = logViewModel;
 
     self._socket = undefined;
     self._autoReconnecting = false;
@@ -38,8 +39,10 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self._autoReconnectTrial = 0;
 
         if ($("#offline_overlay").is(":visible")) {
-            $("#offline_overlay").hide();
+        	$("#offline_overlay").hide();
+        	self.logViewModel.requestData();
             self.timelapseViewModel.requestData();
+            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
             self.loginStateViewModel.requestData();
             self.gcodeFilesViewModel.requestData();
             self.gcodeViewModel.reset();
