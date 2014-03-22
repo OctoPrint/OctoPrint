@@ -607,12 +607,13 @@ class Printer():
 			bedTempOffset = None
 
 		result = {}
-		for tool in self._temp.keys():
-			result["tool%d" % tool] = {
-				"actual": self._temp[tool][0],
-				"target": self._temp[tool][1],
-				"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
-			}
+		if self._temp is not None:
+			for tool in self._temp.keys():
+				result["tool%d" % tool] = {
+					"actual": self._temp[tool][0],
+					"target": self._temp[tool][1],
+					"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
+					}
 		if self._bedTemp is not None:
 			result["bed"] = {
 				"actual": self._bedTemp[0],
