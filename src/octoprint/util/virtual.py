@@ -58,6 +58,7 @@ class VirtualPrinter():
 			linenumber = int(re.search("N([0-9]+)", data).group(1))
 			self.lastN = linenumber
 			self.currentLine = linenumber
+			self._sendOk()
 			return
 		elif data.startswith("N"):
 			linenumber = int(re.search("N([0-9]+)", data).group(1))
@@ -91,29 +92,15 @@ class VirtualPrinter():
 
 		#print "Send: %s" % (data.rstrip())
 		if 'M104' in data or 'M109' in data:
-			if not self._parseHotendCommand(data):
-				return
+			self._parseHotendCommand(data)
+			return
+
 		if 'M140' in data or 'M190' in data:
-			if not self._parseBedCommand(data):
-				return
+			self._parseBedCommand(data)
+			return
 
 		if 'M105' in data:
-			# send simulated temperature data
-			if settings().getInt(["devel", "virtualPrinter", "numExtruders"]) > 1:
-				allTemps = []
-				for i in range(len(self.temp)):
-					allTemps.append((i, self.temp[i], self.targetTemp[i]))
-				allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x, allTemps))
-
-				if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
-					allTempsString = "B:%.2f /%.2f %s" % (self.bedTemp, self.bedTargetTemp, allTempsString)
-
-				if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
-					self.readList.append("ok T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1))
-				else:
-					self.readList.append("ok %s @:64\n" % allTempsString)
-			else:
-				self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp))
+			self._processTemperatureQuery()
 		elif 'M20' in data:
 			if self._sdCardReady:
 				self._listSd()
@@ -204,6 +191,35 @@ class VirtualPrinter():
 		else:
 			self.readList.append("Not SD printing")
 
+	def _processTemperatureQuery(self):
+		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
+
+		# send simulated temperature data
+		if settings().getInt(["devel", "virtualPrinter", "numExtruders"]) > 1:
+			allTemps = []
+			for i in range(len(self.temp)):
+				allTemps.append((i, self.temp[i], self.targetTemp[i]))
+			allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x if includeTarget else "T%d:%.2f" % (x[0], x[1]), allTemps))
+
+			if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
+				if includeTarget:
+					allTempsString = "B:%.2f /%.2f %s" % (self.bedTemp, self.bedTargetTemp, allTempsString)
+				else:
+					allTempsString = "B:%.2f %s" % (self.bedTemp, allTempsString)
+
+			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
+				if includeTarget:
+					self.readList.append("ok T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString))
+				else:
+					self.readList.append("ok T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString))
+			else:
+				self.readList.append("ok %s @:64\n" % allTempsString)
+		else:
+			if includeTarget:
+				self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp))
+			else:
+				self.readList.append("ok T:%.2f B:%.2f @:64\n" % (self.temp[0], self.bedTemp))
+
 	def _parseHotendCommand(self, line):
 		tool = 0
 		toolMatch = re.search('T([0-9]+)', line)
@@ -214,6 +230,7 @@ class VirtualPrinter():
 				pass
 
 		if tool >= settings().getInt(["devel", "virtualPrinter", "numExtruders"]):
+			self._sendOk()
 			return
 
 		try:
@@ -224,8 +241,12 @@ class VirtualPrinter():
 		if "M109" in line:
 			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["tool%d" % tool])
 			self._heatupThread.start()
-			return False
-		return True
+			return
+
+		self._sendOk()
+
+		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
+			self.readList.append("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
 	def _parseBedCommand(self, line):
 		try:
@@ -236,8 +257,12 @@ class VirtualPrinter():
 		if "M190" in line:
 			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["bed"])
 			self._heatupThread.start()
-			return False
-		return True
+			return
+
+		self._sendOk()
+
+		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
+			self.readList.append("TargetBed:%d" % self.bedTargetTemp)
 
 	def _writeSdFile(self, filename):
 		file = os.path.join(self._virtualSd, filename).lower()
@@ -260,7 +285,7 @@ class VirtualPrinter():
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
 		with open(self._selectedSdFile, "r") as f:
-			for line in f:
+			for line in iter(f.readline, ""):
 				# reset position if requested by client
 				if self._newSdFilePos is not None:
 					f.seek(self._newSdFilePos)

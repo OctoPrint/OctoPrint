@@ -101,6 +101,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_waitForStart = ko.observable(undefined);
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
+    self.feature_sdAlwaysAvailable = ko.observable(undefined);
     self.feature_swallowOkAfterResend = ko.observable(undefined);
     self.feature_repetierTargetTemp = ko.observable(undefined);
 
@@ -112,6 +113,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.serial_timeoutConnection = ko.observable(undefined);
     self.serial_timeoutDetection = ko.observable(undefined);
     self.serial_timeoutCommunication = ko.observable(undefined);
+    self.serial_timeoutTemperature = ko.observable(undefined);
+    self.serial_timeoutSdStatus = ko.observable(undefined);
     self.serial_log = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
@@ -211,6 +214,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_waitForStart(response.feature.waitForStart);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
+        self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
         self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
         self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
 
@@ -222,6 +226,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.serial_timeoutConnection(response.serial.timeoutConnection);
         self.serial_timeoutDetection(response.serial.timeoutDetection);
         self.serial_timeoutCommunication(response.serial.timeoutCommunication);
+        self.serial_timeoutTemperature(response.serial.timeoutTemperature);
+        self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
         self.serial_log(response.serial.log);
 
         self.folder_uploads(response.folder.uploads);
@@ -275,6 +281,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport(),
+                "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
                 "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
                 "repetierTargetTemp": self.feature_repetierTargetTemp()
             },
@@ -285,6 +292,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "timeoutConnection": self.serial_timeoutConnection(),
                 "timeoutDetection": self.serial_timeoutDetection(),
                 "timeoutCommunication": self.serial_timeoutCommunication(),
+                "timeoutTemperature": self.serial_timeoutTemperature(),
+                "timeoutSdStatus": self.serial_timeoutSdStatus(),
                 "log": self.serial_log()
             },
             "folder": {

@@ -31,7 +31,9 @@ default_settings = {
 		"timeout": {
 			"detection": 0.5,
 			"connection": 2,
-			"communication": 5
+			"communication": 5,
+			"temperature": 5,
+			"sdStatus": 1
 		},
 		"additionalPorts": []
 	},
@@ -66,6 +68,7 @@ default_settings = {
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
+		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False
 	},
@@ -146,7 +149,8 @@ default_settings = {
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
-			"hasBed": True
+			"hasBed": True,
+			"repetierStyleTargetTemperature": False
 		}
 	}
 }

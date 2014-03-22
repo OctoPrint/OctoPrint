@@ -46,7 +46,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Communication timeout</label>
+                            <label class="control-label" for="settings-serialTimeoutCommunication">Communication timeout</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
@@ -55,7 +55,25 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Connection timeout</label>
+                            <label class="control-label" for="settings-movementSpeedE">Temperature timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutTemperature" id="settings-serialTimeoutTemperature">
+                                    <span class="add-on">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-serialTimeoutSdStatus">SD status timeout</label>
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutSdStatus" id="settings-serialTimeoutSdStatus">
+                                    <span class="add-on">s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-serialTimeoutConnection">Connection timeout</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutConnection" id="settings-serialTimeoutConnection">
@@ -64,7 +82,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Autodetection timeout</label>
+                            <label class="control-label" for="settings-serialTimeoutDetection">Autodetection timeout</label>
                             <div class="controls">
                                 <div class="input-append">
                                     <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutDetection" id="settings-serialTimeoutDetection">
@@ -242,6 +260,13 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> Enable SD support
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: feature_sdAlwaysAvailable" id="settings-featureSdAlwaysAvailable"> Always assume SD card is present <span class="label">Repetier</span>
                                 </label>
                             </div>
                         </div>

@@ -42,6 +42,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         	$("#offline_overlay").hide();
         	self.logViewModel.requestData();
             self.timelapseViewModel.requestData();
+            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
             self.loginStateViewModel.requestData();
             self.gcodeFilesViewModel.requestData();
             self.gcodeViewModel.reset();
