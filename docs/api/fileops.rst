@@ -258,7 +258,7 @@ Retrieve a specific file's information
 
    .. sourcecode:: http
 
-      HTTP/1.1 200 Ok
+      HTTP/1.1 200 OK
       Content-Type: application/json
 
       {

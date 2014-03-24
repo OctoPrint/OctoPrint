@@ -12,13 +12,36 @@ import octoprint.util as util
 
 #~~ Printer
 
+
 @api.route("/printer", methods=["GET"])
 def printerState():
 	if not printer.isOperational():
 		return make_response("Printer is not operational", 409)
 
+	# process excludes
+	excludes = []
+	if "exclude" in request.values:
+		excludeStr = request.values["exclude"]
+		if len(excludeStr.strip()) > 0:
+			excludes = filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(",")))
+
 	result = {}
-	result.update(_getTemperatureData(lambda x: x))
+
+	# add temperature information
+	if not "temperature" in excludes:
+		result.update({"temperature": _getTemperatureData(lambda x: x)})
+
+	# add sd information
+	if not "sd" in excludes and settings().getBoolean(["feature", "sdSupport"]):
+		result.update({"sd": {"ready": printer.isSdReady()}})
+
+	# add state information
+	if not "state" in excludes:
+		state = printer.getCurrentData()["state"]
+		result.update({"state": {
+			"text": state["stateString"],
+			"flags": state["flags"]
+		}})
 
 	return jsonify(result)
 
@@ -276,11 +299,14 @@ def printerCommand():
 	data = request.json
 
 	parameters = {}
-	if "parameters" in data.keys(): parameters = data["parameters"]
+	if "parameters" in data.keys():
+		parameters = data["parameters"]
 
 	commands = []
-	if "command" in data.keys(): commands = [data["command"]]
-	elif "commands" in data.keys(): commands = data["commands"]
+	if "command" in data.keys():
+		commands = [data["command"]]
+	elif "commands" in data.keys():
+		commands = data["commands"]
 
 	commandsToSend = []
 	for command in commands:
@@ -306,9 +332,6 @@ def _getTemperatureData(filter):
 		return make_response("Printer is not operational", 409)
 
 	tempData = printer.getCurrentTemperatures()
-	result = {
-		"temps": filter(tempData)
-	}
 
 	if "history" in request.values.keys() and request.values["history"] in valid_boolean_trues:
 		tempHistory = printer.getTemperatureHistory()
@@ -320,9 +343,9 @@ def _getTemperatureData(filter):
 		history = list(tempHistory)
 		limit = min(limit, len(history))
 
-		result.update({
+		tempData.update({
 			"history": map(lambda x: filter(x), history[-limit:])
 		})
 
-	return result
+	return filter(tempData)
 

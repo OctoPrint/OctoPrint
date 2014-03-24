@@ -1,4 +1,6 @@
 # coding=utf-8
+import uuid
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -40,6 +42,9 @@ import octoprint.events as events
 import octoprint.timelapse
 
 
+UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+
+
 @app.route("/")
 def index():
 	branch = None
@@ -64,7 +69,8 @@ def index():
 		gitCommit=commit,
 		stylesheet=settings().get(["devel", "stylesheet"]),
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
-		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"])
+		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+		uiApiKey=UI_API_KEY
 	)
 
 

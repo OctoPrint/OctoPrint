@@ -16,15 +16,165 @@ Printer control is mostly achieved through the use of commands, issued to resour
 printer. OctoPrint currently knows the following components:
 
 Print head
-  Print head commands allow jogging and homing the print head in all three axes. See :ref:`sec-api-printer-printheadcommand`.
-Heater
-  Heater commands allow setting the temperature and temperature offsets for the printer's hotend and bed. Currently
-  OctoPrint only supports one hotend heater (this will change in the future). See :ref:`sec-api-printer-heatercommand`.
-Feeder
-  Feeder commands allow extrusion/extraction of filament. Currently OctoPrint only supports one feeder (this will
-  change in a future version). See :ref:`sec-api-printer-feedercommand`.
+  Print head commands allow jogging and homing the print head in all three axes. Querying the resource is currently
+  not supported.
+  See :ref:`sec-api-printer-printheadcommand`.
+Tool
+  Tool commands allow setting the temperature and temperature offsets for the printer's hotends/tools. Querying the
+  corresponding resource returns temperature information including an optional history.
+  See :ref:`sec-api-printer-toolcommand`.
+Bed
+  Bed commands allow setting the temperature and temperature offset for the printer's heated bed. Querying the
+  corresponding resource returns temperature information including an optional history.
+  See :ref:`sec-api-printer-bedcommand`.
 SD card
-  SD commands allow initialization, refresh and release of the printer's SD card (if available). See :ref:`sec-api-printer-sdcommand`.
+  SD commands allow initialization, refresh and release of the printer's SD card (if available). Querying the
+  corresponding resource returns the current SD card state.
+  See :ref:`sec-api-printer-sdcommand`.
+
+Besides that, OctoPrint also provides a :ref:`full state report of the printer <sec-api-printer-state>`.
+
+.. _sec-api-printer-state:
+
+Retrieve the current printer state
+==================================
+
+.. http:get:: /api/printer
+
+   Retrieves the current state of the printer. Returned information includes:
+
+   * temperature information (see also :ref:`Retrieve the current tool state <sec-api-printer-toolstate>` and
+     :ref:`Retrieve the current bed state <sec-api-printer-bedstate>`)
+   * sd state (if available, see also :ref:`Retrieve the current SD state <sec-api-printer-sdstate>`)
+   * general printer state
+
+   Temperature information can also be made to include the printer's temperature history by supplying the ``history``
+   query parameter. The amount of data points to return here can be limited using the ``limit`` query parameter.
+
+   Clients can specific a list of attributes to not return in the response (e.g. if they don't need it) via the
+   ``exclude`` query parameter.
+
+   Returns a :http:statuscode:`200` with a :ref:`Full State Response <sec-api-printer-datamodel-fullstate>` in the
+   body upon success.
+
+   **Example 1**
+
+   Include temperature history data, but limit it to two entries.
+
+   .. sourcecode:: http
+
+      GET /api/printer?history=true&limit=2 HTTP/1.1
+      Host: example.com
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "temperature": {
+          "tool0": {
+            "actual": 214.8821,
+            "target": 220.0,
+            "offset": 0
+          },
+          "tool1": {
+            "actual": 25.3,
+            "target": null,
+            "offset": 0
+          },
+          "bed": {
+            "actual": 50.221,
+            "target": 70.0,
+            "offset": 5
+          },
+          "history": [
+            {
+              "time": 1395651928,
+              "tool0": {
+                "actual": 214.8821,
+                "target": 220.0
+              },
+              "tool1": {
+                "actual": 25.3,
+                "target": null
+              },
+              "bed": {
+                "actual": 50.221,
+                "target": 70.0
+              }
+            },
+            {
+              "time": 1395651926,
+              "tool0": {
+                "actual": 212.32,
+                "target": 220.0
+              },
+              "tool1": {
+                "actual": 25.1,
+                "target": null
+              },
+              "bed": {
+                "actual": 49.1123,
+                "target": 70.0
+              }
+            }
+          ]
+        },
+        "sd": {
+          "ready": true
+        },
+        "state": {
+          "text": "Operational",
+          "flags": {
+            "operational": true,
+            "paused": false,
+            "printing": false,
+            "sdReady": true,
+            "error": false,
+            "ready": true,
+            "closedOrError": false
+          }
+        }
+      }
+
+   **Example 2**
+
+   Exclude temperature and sd data.
+
+   .. sourcecode:: http
+
+      GET /api/printer?exclude=temperature,sd HTTP/1.1
+      Host: example.com
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "state": {
+          "text": "Operational",
+          "flags": {
+            "operational": true,
+            "paused": false,
+            "printing": false,
+            "sdReady": true,
+            "error": false,
+            "ready": true,
+            "closedOrError": false
+          }
+        }
+      }
+
+   :query exclude:  An optional comma-separated list of fields to exclude from the response (e.g. if not needed by
+                    the client). Valid values to supply here are ``temperature``, ``sd`` and ``state``.
+   :query history:  If set to ``true`` (or: ``yes``, ``y``, ``1``), history information will be included in the response
+                    too. If no ``limit`` parameter is given, all available temperature history data will be returned.
+   :query limit:    If set to an integer (``n``), only the last ``n`` data points from the printer's temperature history
+                    will be returned. Will be ignored if ``history`` is not enabled.
+   :statuscode 200: No error
+   :statuscode 409: If the printer is not operational.
 
 .. _sec-api-printer-printheadcommand:
 
@@ -70,6 +220,10 @@ Issue a print head command
         "z": 0.02
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Home Request**
 
    Home the X and Y axes.
@@ -86,6 +240,10 @@ Issue a print head command
         "axes": ["x", "y"]
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    :json string command: The command to issue, either ``jog`` or ``home``.
    :json number x:       ``jog`` command: The amount to travel on the X axis in mm.
    :json number y:       ``jog`` command: The amount to travel on the Y axis in mm.
@@ -96,67 +254,74 @@ Issue a print head command
                     request.
    :statuscode 409: If the printer is not operational or currently printing.
 
-.. _sec-api-printer-heatercommand:
+.. _sec-api-printer-toolcommand:
 
-Issue a heater command
-======================
+Issue a tool command
+====================
 
-.. todo::
+.. http:post:: /api/printer/tool
 
-   Update to current implementation!
+   Tool commands allow setting the temperature and temperature offsets for the printer's tools (hotends), selecting
+   the current tool and extruding/retracting from the currently selected tool. Available commands are:
 
-.. http:post:: /api/printer/heater
+   target
+     Sets the given target temperature on the printer's tools. Additional parameters:
 
-   Heater commands allow setting the temperature and temperature offsets for the printer's hotend and bed. Available
-   commands are:
-
-   temp
-     Sets the given target temperature on the printer's hotend and/or bed. Additional parameters:
-
-     * ``targets``: Target temperature(s) to set, allowed properties are:
-
-       * ``hotend``: New target temperature of the printer's hotend in centigrade.
-       * ``bed``: New target temperature of the printer's bed in centigrade.
+     * ``targets``: Target temperature(s) to set, properties must match the format ``tool{n}`` with ``n`` being the
+       tool's index starting with 0.
 
    offset
-     Sets the given temperature offset on the printer's hotend and/or bed. Additional parameters:
+     Sets the given temperature offset on the printer's tools. Additional parameters:
 
-     * ``offsets``: Offset(s) to set, allowed properties are:
+     * ``offsets``: Offset(s) to set, properties must match the format ``tool{n}`` with ``n`` being the tool's index
+       starting with 0.
 
-       * ``hotend``: New offset of the printer's hotend temperature in centigrade, max/min of +/-50°C.
-       * ``bed``: New offset of the printer's bed temperature in centigrade, max/min of +/-50°C.
+   select
+     Selects the printer's current tool. Additional parameters:
 
-   All of these commands may only be sent if the printer is currently operational and not printing. Otherwise a
-   :http:statuscode:`409` is returned.
+     * ``tool``: Tool to select, format ``tool{n}`` with ``n`` being the tool's index starting with 0.
+
+   extrude
+     Extrudes the given amount of filament from the currently selected tool. Additional parameters:
+
+     * ``amount``: The amount of filament to extrude in mm. May be negative to retract.
+
+
+   All of these commands may only be sent if the printer is currently operational and -- in case of ``select`` and
+   ``extrude`` -- not printing. Otherwise a :http:statuscode:`409` is returned.
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
    **Example Target Temperature Request**
 
-   Set the printer's hotend target temperature to 220°C and the bed target temperature to 75°C.
+   Set the target temperature for the printer's first hotend to 220°C and the printer's second extruder to 205°C.
 
    .. sourcecode:: http
 
-      POST /api/printer/heater HTTP/1.1
+      POST /api/printer/tool HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
 
       {
-        "command": "temp",
-        "temps": {
-          "hotend": 220,
-          "bed": 75
+        "command": "target",
+        "targets": {
+          "tool0": 220,
+          "tool1": 205
         }
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Offset Temperature Request**
 
-   Set the offset for hotend temperatures to +10°C and for bed temperatures to -5°C.
+   Set the offset for temperatures on ``tool0`` to +10°C and on ``tool1`` to -5°C.
 
    .. sourcecode:: http
 
-      POST /api/printer/heater HTTP/1.1
+      POST /api/printer/tool HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -164,62 +329,62 @@ Issue a heater command
       {
         "command": "offset",
         "offsets": {
-          "hotend": 10,
-          "bed": -5
+          "tool0": 10,
+          "tool1": -5
         }
       }
 
-   :json string command: The command to issue, either ``temp`` or ``offset``
-   :json object temps:   ``temp`` command: The target temperatures to set. Valid properties are ``hotend`` and ``bed``
-   :json object offsets: ``offset`` command: The offset temperature to set. Valid properties are ``hotend`` and ``bed``
-   :statuscode 204: No error
-   :statuscode 400: If ``temps`` or ``offsets`` contains a property other than ``hotend`` or ``bed``, the
-                    target or offset temperature is not a valid number or outside of the supported range, or if the
-                    request is otherwise invalid.
-   :statuscode 409: If the printer is not operational.
+   .. sourcecode:: http
 
-.. _sec-api-printer-feedercommand:
+      HTTP/1.1 204 No Content
 
-Issue a feeder command
-======================
+   **Example Tool Select Request**
 
-.. http:post:: /api/printer/feeder
-
-   Feeder commands allow extrusion/extraction of filament. Available commands are:
-
-   extrude
-     Extrudes the given amount of filament. Additional parameters:
-
-     * ``amount``: The amount of filament to extrude in mm. May be negative to retract.
-
-   All of these commands may only be sent if the printer is currently operational and not printing. Otherwise a
-   :http:statuscode:`409` is returned.
-
-   Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
-
-   **Example Extrude Request**
-
-   Extrudes 1mm of filament
+   Select the second hotend of the printer for any following ``extrude`` commands.
 
    .. sourcecode:: http
 
-      POST /api/printer/feeder HTTP/1.1
+      POST /api/printer/tool HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "select",
+        "tool": "tool1"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example Extrude Request**
+
+   Extrude 5mm on the currently selected tool.
+
+   .. sourcecode:: http
+
+      POST /api/printer/tool HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
 
       {
         "command": "extrude",
-        "amount": 1
+        "amount": 5
       }
-
-   **Example Retract Request**
-
-   Retracts 3mm of filament
 
    .. sourcecode:: http
 
-      POST /api/printer/feeder HTTP/1.1
+      HTTP/1.1 204 No Content
+
+   **Example Retract Request**
+
+   Retract 3mm of filament on the currently selected tool.
+
+   .. sourcecode:: http
+
+      POST /api/printer/tool HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -229,16 +394,238 @@ Issue a feeder command
         "amount": -3
       }
 
-   :json string command: The command to issue, only ``extrude`` is supported right now.
-   :json number amount:  ``extrude`` command: The amount of filament to extrude/retract in mm.
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   :json string command: The command to issue, either ``target``, ``offset``, ``select`` or ``extrude``.
+   :json object targets: ``target`` command: The target temperatures to set. Valid properties have to match the format ``tool{n}``.
+   :json object offsets: ``offset`` command: The offset temperature to set. Valid properties have to match the format ``tool{n}``.
+   :json object tool:    ``select`` command: The tool to select, value has to match the format ``tool{n}``.
+   :json object amount:  ``extrude`` command: The amount of filament to extrude from the currently selected tool.
    :statuscode 204: No error
-   :statuscode 400: If the value given for `amount` is not a valid number or the request is otherwise invalid.
-   :statuscode 409: If the printer is not operational or currently printing.
+   :statuscode 400: If ``targets`` or ``offsets`` contains a property or ``tool`` contains a value not matching the format
+                    ``tool{n}``, the target/offset temperature or extrusion amount is not a valid number or outside of
+                    the supported range, or if the request is otherwise invalid.
+   :statuscode 409: If the printer is not operational or -- in case of ``select`` or ``extrude`` -- currently printing.
+
+.. _sec-api-printer-toolstate:
+
+Retrieve the current tool state
+===============================
+
+.. http:get:: /api/printer/tool
+
+   Retrieves the current temperature data (actual, target and offset) plus optionally a (limited) history (actual, target,
+   timestamp) for all of the printer's available tools.
+
+   It's also possible to retrieve the temperature history by supplying the ``history`` query parameter set to ``true``. The
+   amount of returned history data points can be limited using the ``limit`` query parameter.
+
+   Returns a :http:statuscode:`200` with a Temperature Response in the body upon success.
+
+   .. note::
+      If you want both tool and bed temperature information at the same time, take a look at
+      :ref:`Retrieve the current printer state <sec-api-printer-state>`.
+
+   **Example**
+
+   Query the tool temperature data and also include the temperature history but limit it to two entries.
+
+   .. sourcecode:: http
+
+      GET /api/printer/tool?history=true&limit=2 HTTP/1.1
+      Host: example.com
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "tool0": {
+          "actual": 214.8821,
+          "target": 220.0,
+          "offset": 0
+        },
+        "tool1": {
+          "actual": 25.3,
+          "target": null,
+          "offset": 0
+        },
+        "history": [
+          {
+            "time": 1395651928,
+            "tool0": {
+              "actual": 214.8821,
+              "target": 220.0
+            },
+            "tool1": {
+              "actual": 25.3,
+              "target": null
+            }
+          },
+          {
+            "time": 1395651926,
+            "tool0": {
+              "actual": 212.32,
+              "target": 220.0
+            },
+            "tool1": {
+              "actual": 25.1
+            }
+          }
+        ]
+      }
+
+   :query history:  If set to ``true`` (or: ``yes``, ``y``, ``1``), history information will be included in the response
+                    too. If no ``limit`` parameter is given, all available temperature history data will be returned.
+   :query limit:    If set to an integer (``n``), only the last ``n`` data points from the printer's temperature history
+                    will be returned. Will be ignored if ``history`` is not enabled.
+   :statuscode 200: No error
+   :statuscode 409: If the printer is not operational.
+
+.. _sec-api-printer-bedcommand:
+
+Issue a bed command
+===================
+
+.. http:post:: /api/printer/bed
+
+   Bed commands allow setting the temperature and temperature offsets for the printer's heated bed. Available commands
+   are:
+
+   target
+     Sets the given target temperature on the printer's tools. Additional parameters:
+
+     * ``target``: Target temperature to set.
+
+   offset
+     Sets the given temperature offset on the printer's tools. Additional parameters:
+
+     * ``offsets``: Offset to set.
+
+   All of these commands may only be sent if the printer is currently operational. Otherwise a :http:statuscode:`409`
+   is returned.
+
+   Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+
+   **Example Target Temperature Request**
+
+   Set the target temperature for the printer's heated bed to 75°C.
+
+   .. sourcecode:: http
+
+      POST /api/printer/bed HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "target",
+        "target": 75
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example Offset Temperature Request**
+
+   Set the temperature offset for the heated bed to -5°C.
+
+   .. sourcecode:: http
+
+      POST /api/printer/bed HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "offset",
+        "offset": -5
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   :json string command: The command to issue, either ``target`` or ``offset``.
+   :json object target: ``target`` command: The target temperature to set.
+   :json object offset: ``offset`` command: The offset temperature to set.
+   :statuscode 204: No error
+   :statuscode 400: If ``target`` or ``offset`` is not a valid number or outside of the supported range, or if the
+                    request is otherwise invalid.
+   :statuscode 409: If the printer is not operational.
+
+.. _sec-api-printer-bedstate:
+
+Retrieve the current bed state
+==============================
+
+.. http:get:: /api/printer/bed
+
+   Retrieves the current temperature data (actual, target and offset) plus optionally a (limited) history (actual, target,
+   timestamp) for the printer's heated bed.
+
+   It's also possible to retrieve the temperature history by supplying the ``history`` query parameter set to ``true``. The
+   amount of returned history data points can be limited using the ``limit`` query parameter.
+
+   Returns a :http:statuscode:`200` with a Temperature Response in the body upon success.
+
+   .. note::
+      If you want both tool and bed temperature information at the same time, take a look at
+      :ref:`Retrieve the current printer state <sec-api-printer-state>`.
+
+   **Example**
+
+   Query the bed temperature data and also include the temperature history but limit it to two entries.
+
+   .. sourcecode:: http
+
+      GET /api/printer/bed?history=true&limit=2 HTTP/1.1
+      Host: example.com
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "bed": {
+          "actual": 50.221,
+          "target": 70.0,
+          "offset": 5
+        },
+        "history": [
+          {
+            "time": 1395651928,
+            "bed": {
+              "actual": 50.221,
+              "target": 70.0
+            }
+          },
+          {
+            "time": 1395651926,
+            "bed": {
+              "actual": 49.1123,
+              "target": 70.0
+            }
+          }
+        ]
+      }
+
+   :query history:  If set to ``true`` (or: ``yes``, ``y``, ``1``), history information will be included in the response
+                    too. If no ``limit`` parameter is given, all available temperature history data will be returned.
+   :query limit:    If set to an integer (``n``), only the last ``n`` data points from the printer's temperature history
+                    will be returned. Will be ignored if ``history`` is not enabled.
+   :statuscode 200: No error
+   :statuscode 409: If the printer is not operational.
 
 .. _sec-api-printer-sdcommand:
 
-Issue a SD command
-==================
+Issue an SD command
+===================
 
 .. http:post:: /api/printer/sd
 
@@ -268,6 +655,8 @@ Issue a SD command
 
    **Example Init Request**
 
+   Initialize the SD card.
+
    .. sourcecode:: http
 
       POST /api/printer/sd HTTP/1.1
@@ -279,7 +668,13 @@ Issue a SD command
         "command": "init"
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Refresh Request**
+
+   Refresh the file list of the SD card
 
    .. sourcecode:: http
 
@@ -292,7 +687,13 @@ Issue a SD command
         "command": "refresh"
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Release Request**
+
+   Release the SD card
 
    .. sourcecode:: http
 
@@ -304,6 +705,10 @@ Issue a SD command
       {
         "command": "release"
       }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
 
    :json string command: The command to issue, either ``init``, ``refresh`` or ``release``.
    :statuscode 204:      No error
@@ -324,14 +729,14 @@ Retrieve the current SD state
    Returns a :http:statuscode:`200` with an :ref:`SD State Response <sec-api-printer-datamodel-sdstate>` in the body
    upon success.
 
-   **Example Request**
+   **Example**
+
+   Read the current state of the SD card.
 
    .. sourcecode:: http
 
       GET /api/printer/sd HTTP/1.1
       Host: example.com
-
-   **Example Response**
 
    .. sourcecode:: http
 
@@ -350,10 +755,116 @@ Retrieve the current SD state
 Datamodel
 =========
 
+.. _sec-api-printer-datamodel-fullstate:
+
+Full State Response
+-------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``temperature``
+     - 0..1
+     - :ref:`Temperature State <sec-api-printer-datamodel-temps>`
+     - The printer's temperature state data
+   * - ``sd``
+     - 0..1
+     - :ref:`SD State <sec-api-printer-datamodel-sdstate>`
+     - The printer's sd state data
+   * - ``state``
+     - 0..1
+     - :ref:`Printer State <sec-api-printer-datamodel-printerstate>`
+     - The printer's general state
+
+.. _sec-api-printer-datamodel-temps:
+
+Temperature State
+-----------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``tool{n}``
+     - 0..*
+     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
+     - Current temperature stats for tool *n*. Enumeration starts at 0 for the first tool. Not included if querying
+       only bed state.
+   * - ``bed``
+     - 0..1
+     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
+     - Current temperature stats for the printer's heated bed. Not included if querying only tool state.
+   * - ``history``
+     - 0..1
+     - List of :ref:`Historic Temperature Datapoint <sec-api-printer-datamodel-temphistory>`
+     - Temperature history
+
+.. _sec-api-printer-datamodel-temphistory:
+
+Historic Temperature Data Point
+-------------------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``time``
+     - 1
+     - Unix Timestamp
+     - Timestamp of this data point
+   * - ``tool{n}``
+     - 0..*
+     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
+     - Temperature stats for tool *n*. Enumeration starts at 0 for the first tool. Not included if querying only
+       bed state.
+   * - ``bed``
+     - 0..*
+     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
+     - Temperature stats for the printer's heated bed. Not included if querying only tool state.
+
+.. _sec-api-printer-datamodel-tempdata:
+
+Temperature Data
+----------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``actual``
+     - 1
+     - Number
+     - Current temperature
+   * - ``target``
+     - 1
+     - Number
+     - Target temperature, may be ``null`` if no target temperature is set.
+   * - ``offset``
+     - 0..1
+     - Number
+     - Currently configured temperature offset to apply, will be left out for historic temperature information.
+
 .. _sec-api-printer-datamodel-sdstate:
 
-SD State Response
------------------
+SD State
+--------
 
 .. list-table::
    :widths: 15 5 10 30
@@ -367,3 +878,54 @@ SD State Response
      - 1
      - Boolean
      - Whether the SD card has been initialized (``true``) or not (``false``).
+
+.. _sec-api-printer-datamodel-printerstate:
+
+Printer State
+-------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``text``
+     - 1
+     - String
+     - A textual representation of the current state of the printer, e.g. "Operational" or "Printing"
+   * - ``flags``
+     - 1
+     - Printer state flags
+     - A couple of boolean printer state flags
+   * - ``flags.operational``
+     - 1
+     - Boolean
+     - ``true`` if the printer is operational, ``false`` otherwise
+   * - ``flags.paused``
+     - 1
+     - Boolean
+     - ``true`` if the printer is currently paused, ``false`` otherwise
+   * - ``flags.printing``
+     - 1
+     - Boolean
+     - ``true`` if the printer is currently printing, ``false`` otherwise
+   * - ``flags.sdReady``
+     - 1
+     - Boolean
+     - ``true`` if the printer's SD card is available and initialized, ``false`` otherwise. This is redundant information
+       to :ref:`the SD State <sec-api-printer-datamodel-sdstate>`.
+   * - ``flags.error``
+     - 1
+     - Boolean
+     - ``true`` if an unrecoverable error occurred, ``false`` otherwise
+   * - ``flags.ready``
+     - 1
+     - Boolean
+     - ``true`` if the printer is operational and no data is currently being streamed to SD, so ready to receive instructions
+   * - ``flags.closedOrError``
+     - 1
+     - Boolean
+     - ``true`` if the printer is disconnected (possibly due to an error), ``false`` otherwise

@@ -50,9 +50,9 @@ def restricted_access(func, apiEnabled=True):
 		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return make_response("OctoPrint isn't setup yet", 403)
 
-		# if API is globally enabled, enabled for this request and an api key is provided, try to use that
-		apikey = _getApiKey(request)
-		if settings().get(["api", "enabled"]) and apiEnabled and apikey is not None:
+		# if API is globally enabled, enabled for this request and an api key is provided that is not the current UI API key, try to use that
+		apikey = getApiKey(request)
+		if settings().get(["api", "enabled"]) and apiEnabled and apikey is not None and apikey != octoprint.server.UI_API_KEY:
 			if apikey == settings().get(["api", "key"]):
 				# master key was used
 				user = ApiUser()
@@ -61,7 +61,7 @@ def restricted_access(func, apiEnabled=True):
 				user = octoprint.server.userManager.findUser(apikey=apikey)
 
 			if user is None:
-				make_response("Invalid API key", 401)
+				return make_response("Invalid API key", 401)
 			if login_user(user, remember=False):
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 				return func(*args, **kwargs)
@@ -76,7 +76,7 @@ def api_access(func):
 	def decorated_view(*args, **kwargs):
 		if not settings().get(["api", "enabled"]):
 			make_response("API disabled", 401)
-		apikey = _getApiKey(request)
+		apikey = getApiKey(request)
 		if apikey is None:
 			make_response("No API key provided", 401)
 		if apikey != settings().get(["api", "key"]):
@@ -85,7 +85,7 @@ def api_access(func):
 	return decorated_view
 
 
-def _getUserForApiKey(apikey):
+def getUserForApiKey(apikey):
 	if settings().get(["api", "enabled"]) and apikey is not None:
 		if apikey == settings().get(["api", "key"]):
 			# master key was used
@@ -97,7 +97,7 @@ def _getUserForApiKey(apikey):
 		return None
 
 
-def _getApiKey(request):
+def getApiKey(request):
 	# Check Flask GET/POST arguments
 	if hasattr(request, "values") and "apikey" in request.values:
 		return request.values["apikey"]
@@ -148,6 +148,10 @@ class PrinterStateConnection(SockJSConnection):
 	def on_open(self, info):
 		remoteAddress = self._getRemoteAddress(info)
 		self._logger.info("New connection from client: %s" % remoteAddress)
+
+		# connected => update the API key, might be necessary if the client was left open while the server restarted
+		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY})
+
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
 		octoprint.timelapse.registerCallback(self)
@@ -316,9 +320,9 @@ def admin_validator(request):
 	:param request: The Flask request object
 	"""
 
-	apikey = _getApiKey(request)
+	apikey = getApiKey(request)
 	if settings().get(["api", "enabled"]) and apikey is not None:
-		user = _getUserForApiKey(apikey)
+		user = getUserForApiKey(apikey)
 	else:
 		user = current_user
 
