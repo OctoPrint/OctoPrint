@@ -65,6 +65,7 @@ Retrieve the current printer state
 
       GET /api/printer?history=true&limit=2 HTTP/1.1
       Host: example.com
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
@@ -146,6 +147,7 @@ Retrieve the current printer state
 
       GET /api/printer?exclude=temperature,sd HTTP/1.1
       Host: example.com
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
@@ -436,6 +438,7 @@ Retrieve the current tool state
 
       GET /api/printer/tool?history=true&limit=2 HTTP/1.1
       Host: example.com
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
@@ -585,6 +588,7 @@ Retrieve the current bed state
 
       GET /api/printer/bed?history=true&limit=2 HTTP/1.1
       Host: example.com
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
@@ -737,6 +741,7 @@ Retrieve the current SD state
 
       GET /api/printer/sd HTTP/1.1
       Host: example.com
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
