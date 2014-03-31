@@ -102,13 +102,14 @@ def load_user(id):
 
 
 class Server():
-	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False):
+	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False, logConf=None):
 		self._configfile = configfile
 		self._basedir = basedir
 		self._host = host
 		self._port = port
 		self._debug = debug
 		self._allowRoot = allowRoot
+		self._logConf = logConf
 
 		  
 	def run(self):
@@ -133,7 +134,7 @@ class Server():
 		self._initSettings(self._configfile, self._basedir)
 
 		# then initialize logging
-		self._initLogging(self._debug)
+		self._initLogging(self._debug, self._logConf)
 		logger = logging.getLogger(__name__)
 
 		eventManager = events.eventManager()
@@ -229,8 +230,8 @@ class Server():
 	def _initSettings(self, configfile, basedir):
 		settings(init=True, basedir=basedir, configfile=configfile)
 
-	def _initLogging(self, debug):
-		config = {
+	def _initLogging(self, debug, logConf=None):
+		defaultConfig = {
 			"version": 1,
 			"formatters": {
 				"simple": {
@@ -261,12 +262,6 @@ class Server():
 				}
 			},
 			"loggers": {
-				#"octoprint.timelapse": {
-				#	"level": "DEBUG"
-				#},
-				#"octoprint.events": {
-				#	"level": "DEBUG"
-				#},
 				"SERIAL": {
 					"level": "CRITICAL",
 					"handlers": ["serialFile"],
@@ -280,8 +275,18 @@ class Server():
 		}
 
 		if debug:
-			config["root"]["level"] = "DEBUG"
+			defaultConfig["root"]["level"] = "DEBUG"
 
+		if logConf is None:
+			logConf = os.path.join(settings().settings_dir, "logging.yaml")
+
+		configFromFile = {}
+		if os.path.exists(logConf) and os.path.isfile(logConf):
+			import yaml
+			with open(logConf, "r") as f:
+				configFromFile = yaml.safe_load(f)
+
+		config = util.dict_merge(defaultConfig, configFromFile)
 		logging.config.dictConfig(config)
 
 		if settings().getBoolean(["serial", "log"]):
