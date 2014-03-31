@@ -68,16 +68,22 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.printer_bedDimensionX = ko.observable(undefined);
     self.printer_bedDimensionY = ko.observable(undefined);
+    self.printer_bedDimensionR = ko.observable(undefined);
+    self.printer_bedCircular = ko.observable(undefined);
     self.printer_bedDimensions = ko.computed({
         read: function () {
             return {
                 x: parseFloat(self.printer_bedDimensionX()),
-                y: parseFloat(self.printer_bedDimensionY())
+                y: parseFloat(self.printer_bedDimensionY()),
+                r: parseFloat(self.printer_bedDimensionR()),
+                circular: self.printer_bedCircular()
             };
         },
         write: function(value) {
             self.printer_bedDimensionX(value.x);
             self.printer_bedDimensionY(value.y);
+            self.printer_bedDimensionR(value.r);
+            self.printer_bedCircular(value.circular);
         },
         owner: self
     });
@@ -95,6 +101,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_waitForStart = ko.observable(undefined);
     self.feature_alwaysSendChecksum = ko.observable(undefined);
     self.feature_sdSupport = ko.observable(undefined);
+    self.feature_sdAlwaysAvailable = ko.observable(undefined);
     self.feature_swallowOkAfterResend = ko.observable(undefined);
     self.feature_repetierTargetTemp = ko.observable(undefined);
 
@@ -207,6 +214,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_waitForStart(response.feature.waitForStart);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
         self.feature_sdSupport(response.feature.sdSupport);
+        self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
         self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
         self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
 
@@ -273,6 +281,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport(),
+                "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
                 "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
                 "repetierTargetTemp": self.feature_repetierTargetTemp()
             },

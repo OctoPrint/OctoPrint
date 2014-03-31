@@ -1,4 +1,6 @@
 # coding=utf-8
+from octoprint.server.util import getApiKey, getUserForApiKey
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -13,7 +15,7 @@ from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
 import octoprint.util as util
 import octoprint.users
 import octoprint.server
-from octoprint.server import restricted_access, admin_permission, NO_CONTENT
+from octoprint.server import restricted_access, admin_permission, NO_CONTENT, UI_API_KEY
 from octoprint.settings import settings as s, valid_boolean_trues
 
 #~~ init api blueprint, including sub modules
@@ -28,6 +30,41 @@ from . import settings as api_settings
 from . import timelapse as api_timelapse
 from . import users as api_users
 from . import log as api_logs
+
+
+@api.before_request
+def beforeApiRequests():
+	"""
+	All requests in this blueprint need to be made supplying an API key. This may be the UI_API_KEY, in which case
+	the underlying request processing will directly take place, or it may be the global or a user specific case. In any
+	case it has to be present and must be valid, so anything other than the above three types will result in denying
+	the request.
+	"""
+
+	apikey = getApiKey(request)
+	if apikey is None:
+		# no api key => 401
+		return make_response("No API key provided", 401)
+
+	if apikey == UI_API_KEY:
+		# ui api key => continue regular request processing
+		return
+
+	if not s().get(["api", "enabled"]):
+		# api disabled => 401
+		return make_response("API disabled", 401)
+
+	if apikey == s().get(["api", "key"]):
+		# global api key => continue regular request processing
+		return
+
+	user = getUserForApiKey(apikey)
+	if user is not None:
+		# user specific api key => continue regular request processing
+		return
+
+	# invalid api key => 401
+	return make_response("Invalid API key", 401)
 
 
 #~~ first run setup

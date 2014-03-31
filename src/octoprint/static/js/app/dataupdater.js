@@ -27,30 +27,17 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self._socket.onopen = self._onconnect;
         self._socket.onclose = self._onclose;
         self._socket.onmessage = self._onmessage;
-    }
+    };
 
     self.reconnect = function() {
         delete self._socket;
         self.connect();
-    }
+    };
 
     self._onconnect = function() {
         self._autoReconnecting = false;
         self._autoReconnectTrial = 0;
-
-        if ($("#offline_overlay").is(":visible")) {
-        	$("#offline_overlay").hide();
-        	self.logViewModel.requestData();
-            self.timelapseViewModel.requestData();
-            self.loginStateViewModel.requestData();
-            self.gcodeFilesViewModel.requestData();
-            self.gcodeViewModel.reset();
-
-            if ($('#tabs li[class="active"] a').attr("href") == "#control") {
-                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-            }
-        }
-    }
+    };
 
     self._onclose = function() {
         $("#offline_overlay_message").html(
@@ -69,20 +56,43 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         } else {
             self._onreconnectfailed();
         }
-    }
+    };
 
     self._onreconnectfailed = function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
                 "but you may try a manual reconnect using the button below."
         );
-    }
+    };
 
     self._onmessage = function(e) {
         for (var prop in e.data) {
             var data = e.data[prop];
 
             switch (prop) {
+                case "connected": {
+                    // update the current UI API key and send it with any request
+                    UI_API_KEY = data["apikey"];
+                    $.ajaxSetup({
+                        headers: {"X-Api-Key": UI_API_KEY}
+                    });
+
+                    if ($("#offline_overlay").is(":visible")) {
+                        $("#offline_overlay").hide();
+                        self.logViewModel.requestData();
+                        self.timelapseViewModel.requestData();
+                        $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                        self.loginStateViewModel.requestData();
+                        self.gcodeFilesViewModel.requestData();
+                        self.gcodeViewModel.reset();
+
+                        if ($('#tabs li[class="active"] a').attr("href") == "#control") {
+                            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                        }
+                    }
+
+                    break;
+                }
                 case "history": {
                     self.connectionViewModel.fromHistoryData(data);
                     self.printerStateViewModel.fromHistoryData(data);
@@ -159,7 +169,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                 }
             }
         }
-    }
+    };
 
     self.connect();
 }
