@@ -306,7 +306,7 @@ class Printer():
 
 		# mark print as failure
 		if self._selectedFile is not None:
-			self._gcodeManager.printFailed(self._selectedFile["filename"])
+			self._gcodeManager.printFailed(self._selectedFile["filename"], self._comm.getPrintTime())
 			payload = {
 				"file": self._selectedFile["filename"],
 				"origin": FileDestinations.LOCAL
@@ -455,9 +455,9 @@ class Printer():
 		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if self._selectedFile is not None:
 				if state == self._comm.STATE_OPERATIONAL:
-					self._gcodeManager.printSucceeded(self._selectedFile["filename"])
+					self._gcodeManager.printSucceeded(self._selectedFile["filename"], self._comm.getPrintTime())
 				elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
-					self._gcodeManager.printFailed(self._selectedFile["filename"])
+					self._gcodeManager.printFailed(self._selectedFile["filename"], self._comm.getPrintTime())
 			self._gcodeManager.resumeAnalysis() # printing done, put those cpu cycles to good use
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._gcodeManager.pauseAnalysis() # do not analyse gcode while printing

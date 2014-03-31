@@ -212,6 +212,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         if (data["prints"] && data["prints"]["last"]) {
             output += "<p>";
             output += "<strong>Last Print:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + formatDate(data["prints"]["last"]["date"]) + "</span>";
+            if (data["prints"]["last"]["lastPrintTime"]) {
+                output += "<br><strong>Last Print Time:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + formatDuration(data["prints"]["last"]["lastPrintTime"]) + "</span>";
+            }
             output += "</p>";
         }
         return output;
