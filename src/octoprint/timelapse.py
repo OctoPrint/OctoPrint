@@ -241,7 +241,8 @@ class Timelapse(object):
 			urllib.urlretrieve(self._snapshotUrl, filename)
 			self._logger.debug("Image %s captured from %s" % (filename, self._snapshotUrl))
 		except:
-			self._logger.exception("Could not capture image %s from %s" % (filename, self._snapshotUrl))
+			self._logger.exception("Could not capture image %s from %s, decreasing image counter again" % (filename, self._snapshotUrl))
+			self._imageNumber -= 1
 		eventManager().fire(Events.CAPTURE_DONE, {"file": filename})
 
 	def _createMovie(self, success=True):
