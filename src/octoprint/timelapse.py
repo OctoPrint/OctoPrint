@@ -236,10 +236,13 @@ class Timelapse(object):
 		return filename
 
 	def _captureWorker(self, filename):
-		eventManager().fire(Events.CAPTURE_START, {"file": filename});
-		urllib.urlretrieve(self._snapshotUrl, filename)
-		self._logger.debug("Image %s captured from %s" % (filename, self._snapshotUrl))
-		eventManager().fire(Events.CAPTURE_DONE, {"file": filename});
+		eventManager().fire(Events.CAPTURE_START, {"file": filename})
+		try:
+			urllib.urlretrieve(self._snapshotUrl, filename)
+			self._logger.debug("Image %s captured from %s" % (filename, self._snapshotUrl))
+		except:
+			self._logger.exception("Could not capture image %s from %s" % (filename, self._snapshotUrl))
+		eventManager().fire(Events.CAPTURE_DONE, {"file": filename})
 
 	def _createMovie(self, success=True):
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
