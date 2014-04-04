@@ -326,7 +326,7 @@
                                 <!-- XY jogging control panel -->
                                 <div class="jog-panel">
                                     <h1>X/Y</h1>
-                                    <div>
+                                    <!-- <div>
                                         <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
                                     </div>
                                     <div>
@@ -336,7 +336,59 @@
                                     </div>
                                     <div>
                                         <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
-                                    </div>
+                                    </div> ->
+                                    <table>
+                                        <tr>
+                                        <td/>
+                                        <td>
+                                            <button class="btn box" 
+                                                data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), 
+                                                click: function() { $root.sendJogCommand('y',1) }">
+                                                <i class="icon-arrow-up"></i>
+                                            </button>
+                                        </td>
+                                        <td/>
+                                        </tr>
+                                        <tr>
+                                        <td>
+                                            <button class="btn box pull-left" 
+                                                data-bind="enable: isOperational() && 
+                                                    !isPrinting() && 
+                                                    loginState.isUser(), 
+                                                    click: function() { $root.sendJogCommand('x',-1) }">
+                                                    <i class="icon-arrow-left"></i>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button class="btn box pull-left" 
+                                                data-bind="enable: isOperational() && 
+                                                    !isPrinting() && 
+                                                    loginState.isUser(), 
+                                                    click: function() { $root.sendHomeCommand(['x', 'y']) }">
+                                                    <i class="icon-home"></i>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button class="btn box pull-left" 
+                                                data-bind="enable: isOperational() && 
+                                                !isPrinting() && loginState.isUser(), 
+                                                click: function() { $root.sendJogCommand('x',1) }">
+                                                <i class="icon-arrow-right"></i>
+                                            </button>
+                                        </td>
+                                        </tr>
+                                        <tr>
+                                        <td/>
+                                        <td>
+                                            <button class="btn box" 
+                                                data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), 
+                                                click: function() { $root.sendJogCommand('y',-1) }">
+                                                <i class="icon-arrow-down"></i>
+                                            </button>
+                                        </td>
+                                        <td/>
+                                        </tr>
+                                    </table>
                                 </div>
                                 <!-- Z jogging control panel -->
                                 <div class="jog-panel">
@@ -387,6 +439,13 @@
                                 <h1>General</h1>
                                 <div>
                                     <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">Motors off</button>
+                                    <button class="btn box pull-left" 
+                                                data-bind="enable: isOperational() && 
+                                                    !isPrinting() && 
+                                                    loginState.isUser(), 
+                                                    click: function() { $root.sendHomeCommand(['x', 'y', 'z']) }">
+                                                    Home All
+                                            </button>
                                     <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
                                     <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
