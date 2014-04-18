@@ -506,7 +506,7 @@ Issue a bed command
    offset
      Sets the given temperature offset on the printer's tools. Additional parameters:
 
-     * ``offsets``: Offset to set.
+     * ``offset``: Offset to set.
 
    All of these commands may only be sent if the printer is currently operational. Otherwise a :http:statuscode:`409`
    is returned.
