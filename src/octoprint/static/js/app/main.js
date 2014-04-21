@@ -12,7 +12,7 @@ $(function() {
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
-        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel, temperatureViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
 
         var dataUpdater = new DataUpdater(

@@ -1,10 +1,11 @@
-function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel) {
+function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel, temperatureViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.appearance = appearanceViewModel;
     self.systemActions = settingsViewModel.system_actions;
     self.users = usersViewModel;
+    self.temp = temperatureViewModel;
 
     self.triggerAction = function(action) {
         var callback = function() {
