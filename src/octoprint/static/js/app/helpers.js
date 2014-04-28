@@ -293,6 +293,7 @@ function formatSize(bytes) {
 
 function formatDuration(seconds) {
     if (!seconds) return "-";
+    if (seconds < 0) return "00:00:00";
 
     var s = seconds % 60;
     var m = (seconds % 3600) / 60;

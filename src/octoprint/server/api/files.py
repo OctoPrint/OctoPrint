@@ -161,30 +161,33 @@ def uploadGcodeFile(target):
 	eventManager.fire(Events.UPLOAD, {"file": filename, "target": target})
 
 	files = {}
-	if done:
+	location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)
+	files.update({
+		FileDestinations.LOCAL: {
+			"name": filename,
+			"origin": FileDestinations.LOCAL,
+			"refs": {
+				"resource": location,
+				"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + filename
+			}
+		}
+	})
+
+	if sd and sdFilename:
+		location = url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFilename, _external=True)
 		files.update({
-			FileDestinations.LOCAL: {
-				"name": filename,
-				"origin": FileDestinations.LOCAL,
+			FileDestinations.SDCARD: {
+				"name": sdFilename,
+				"origin": FileDestinations.SDCARD,
 				"refs": {
-					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True),
-					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + filename
+					"resource": location
 				}
 			}
 		})
 
-		if sd and sdFilename:
-			files.update({
-				FileDestinations.SDCARD: {
-					"name": sdFilename,
-					"origin": FileDestinations.SDCARD,
-					"refs": {
-						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFilename, _external=True)
-					}
-				}
-			})
-
-	return make_response(jsonify(files=files, done=done), 201)
+	r = make_response(jsonify(files=files, done=done), 201)
+	r.headers["Location"] = location
+	return r
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["GET"])

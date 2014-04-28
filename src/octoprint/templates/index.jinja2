@@ -39,6 +39,8 @@
 
             var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + "/sockjs";
             var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+
+            var UI_API_KEY = "{{ uiApiKey }}";
         </script>
     </head>
     <body>
@@ -267,7 +269,7 @@
                                 <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
                                     <tr>
                                         <th style="width: 18%"></th>
-                                        <th style="text-align: right" style="width: 12%">Actual</th>
+                                        <th style="width: 12%; text-align: right">Actual</th>
                                         <th style="width: 35%">Target</th>
                                         <th style="width: 35%">Offset</th>
                                     </tr>

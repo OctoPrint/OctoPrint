@@ -18,14 +18,13 @@ Retrieve all files
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
-   **Example request**:
+   **Example**:
 
    .. sourcecode:: http
 
       GET /api/files HTTP/1.1
       Host: example.com
-
-   **Example response**:
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
@@ -84,14 +83,13 @@ Retrieve files from specific location
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
-   **Example request**:
+   **Example**:
 
    .. sourcecode:: http
 
       GET /api/files/local HTTP/1.1
       Host: example.com
-
-   **Example response**:
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
@@ -150,7 +148,7 @@ Upload file
    Returns a :http:statuscode:`201` response with a ``Location`` header set to the management URL of the uploaded
    file and an :ref:`Upload Response <sec-api-fileops-datamodel-uploadresponse>` as the body upon successful completion.
 
-   **Example request**
+   **Example**
 
    .. sourcecode:: http
 
@@ -186,13 +184,11 @@ Upload file
       true
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC--
 
-   **Example response**
-
    .. sourcecode:: http
 
       HTTP/1.1 200 OK
       Content-Type: application/json
-      Location:
+      Location: http://example.com/api/files/sdcard/whistle_.gcode
 
       {
         "files": {
@@ -247,18 +243,17 @@ Retrieve a specific file's information
    On success, a :http:statuscode:`200` is returned, with a :ref:`file information item <sec-api-fileops-datamodel-fileinfo>`
    as the response body.
 
-   **Example Request**
+   **Example**
 
    .. sourcecode:: http
 
       GET /api/files/local/whistle_v2.gcode HTTP/1.1
       Host: example.com
-
-   **Example Response**
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
-      HTTP/1.1 200 Ok
+      HTTP/1.1 200 OK
       Content-Type: application/json
 
       {
@@ -324,6 +319,10 @@ Issue a file command
         "command": "select",
         "print": true
       }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
 
    :param target:        The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
                          folder) or ``sdcard`` for the printer's SD card (if available)

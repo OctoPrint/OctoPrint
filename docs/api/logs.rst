@@ -22,15 +22,13 @@ Retrieve a list of available log files
 
    Returns a :ref:`Logfile Retrieve response <sec-api-logs-datamodel-retrieveresponse>`.
 
-   **Example Request**
+   **Example**
 
    .. sourcecode:: http
 
       GET /api/logs HTTP/1.1
       Host: example.com
       X-Api-Key: abcdef...
-
-   **Example response**:
 
    .. sourcecode:: http
 

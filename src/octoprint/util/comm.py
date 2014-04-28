@@ -522,6 +522,10 @@ class MachineCom(object):
 		if not self.isOperational():
 			return
 		self.sendCommand("M21")
+		if settings().getBoolean(["feature", "sdAlwaysAvailable"]):
+			self._sdAvailable = True
+			self.refreshSdFiles()
+			self._callback.mcSdStateChange(self._sdAvailable)
 
 	def releaseSdCard(self):
 		if not self.isOperational() or (self.isBusy() and self.isSdFileSelected()):
@@ -699,7 +703,7 @@ class MachineCom(object):
 						# something went wrong, printer is reporting that we actually are not printing right now...
 						self._sdFilePos = 0
 						self._changeState(self.STATE_OPERATIONAL)
-				elif 'SD card ok' in line:
+				elif 'SD card ok' in line and not self._sdAvailable:
 					self._sdAvailable = True
 					self.refreshSdFiles()
 					self._callback.mcSdStateChange(self._sdAvailable)
@@ -728,6 +732,7 @@ class MachineCom(object):
 						})
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
+					self._printSection = "CUSTOM"
 					self._changeState(self.STATE_PRINTING)
 					line = "ok"
 				elif 'Done printing file' in line:
@@ -826,6 +831,8 @@ class MachineCom(object):
 							self._changeState(self.STATE_OPERATIONAL)
 							if self._sdAvailable:
 								self.refreshSdFiles()
+							else:
+								self.initSdCard()
 							eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
 					else:
 						self._testingBaudrate = False
@@ -838,7 +845,9 @@ class MachineCom(object):
 						startSeen = True
 					elif "ok" in line and startSeen:
 						self._changeState(self.STATE_OPERATIONAL)
-						if not self._sdAvailable:
+						if self._sdAvailable:
+							self.refreshSdFiles()
+						else:
 							self.initSdCard()
 						eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
 					elif time.time() > timeout:
