@@ -78,6 +78,17 @@ $(function() {
             }
         });
 
+        //~~ File list
+
+        $(".gcode_files").slimScroll({
+            height: "306px",
+            size: "5px",
+            distance: "0",
+            railVisible: true,
+            alwaysVisible: true,
+            scrollBy: "102px"
+        });
+
         //~~ Gcode upload
 
         function gcode_upload_done(e, data) {
@@ -360,7 +371,7 @@ $(function() {
         $.fn.modal.defaults.maxHeight = function(){
             // subtract the height of the modal header and footer
             return $(window).height() - 165;
-        }
+        };
 
         // Fix input element click problem on login dialog
         $(".dropdown input, .dropdown label").click(function(e) {
