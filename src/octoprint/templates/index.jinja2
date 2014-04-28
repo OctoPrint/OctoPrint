@@ -40,6 +40,8 @@
 
             var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + "/sockjs";
             var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+
+            var UI_API_KEY = "{{ uiApiKey }}";
         </script>
     </head>
     <body>
@@ -283,7 +285,7 @@
                                 <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
                                     <tr>
                                         <th style="width: 18%"></th>
-                                        <th style="text-align: right" style="width: 12%">Actual</th>
+                                        <th style="width: 12%; text-align: right">Actual</th>
                                         <th style="width: 35%">Target</th>
                                         <th style="width: 35%">Offset</th>
                                     </tr>
@@ -549,7 +551,13 @@
                                     <option value="timed">Timed</option>
                                 </select>
 
-                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled()">
+                                <label for="webcam_timelapse_postRoll">Timelapse post roll (in rendered seconds)</label>
+                                <div class="input-append">
+                                    <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+                                    <span class="add-on">sec</span>
+                                </div>
+
+                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
                                     <label for="webcam_timelapse_interval">Interval</label>
                                     <div class="input-append">
                                         <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">

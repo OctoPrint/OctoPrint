@@ -511,6 +511,8 @@ class GcodeManager:
 							"date": val["last"]["date"],
 							"success": val["last"]["success"]
 						}
+						if "lastPrintTime" in val["last"] and val["last"]["lastPrintTime"] is not None:
+							last["lastPrintTime"] = val["last"]["lastPrintTime"]
 					prints = {
 						"success": val["success"],
 						"failure": val["failure"],
@@ -542,7 +544,7 @@ class GcodeManager:
 
 	#~~ print job data
 
-	def printSucceeded(self, filename):
+	def printSucceeded(self, filename, printTime):
 		filename = self._getBasicFilename(filename)
 		absolutePath = self.getAbsolutePath(filename)
 		if absolutePath is None:
@@ -554,10 +556,14 @@ class GcodeManager:
 			"date": time.time(),
 			"success": True
 		}
+
+		if printTime is not None:
+			metadata["prints"]["last"]["lastPrintTime"] = printTime
+
 		self.setFileMetadata(filename, metadata)
 		self._saveMetadata()
 
-	def printFailed(self, filename):
+	def printFailed(self, filename, printTime):
 		filename = self._getBasicFilename(filename)
 		absolutePath = self.getAbsolutePath(filename)
 		if absolutePath is None:
@@ -569,6 +575,10 @@ class GcodeManager:
 			"date": time.time(),
 			"success": False
 		}
+
+		if printTime is not None:
+			metadata["prints"]["last"]["lastPrintTime"] = printTime
+
 		self.setFileMetadata(filename, metadata)
 		self._saveMetadata()
 

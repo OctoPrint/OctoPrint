@@ -26,7 +26,7 @@ $(function() {
             gcodeFilesViewModel,
             timelapseViewModel,
             gcodeViewModel,
-			logViewModel
+            logViewModel
         );
         
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
@@ -34,6 +34,11 @@ $(function() {
         $.ajaxSetup({
             type: 'POST',
             headers: { "cache-control": "no-cache" }
+        });
+
+        // send the current UI API key with any request
+        $.ajaxSetup({
+            headers: {"X-Api-Key": UI_API_KEY}
         });
 
         //~~ Show settings - to ensure centered

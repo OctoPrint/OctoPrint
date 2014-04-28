@@ -31,7 +31,9 @@ default_settings = {
 		"timeout": {
 			"detection": 0.5,
 			"connection": 2,
-			"communication": 5
+			"communication": 5,
+			"temperature": 5,
+			"sdStatus": 1
 		},
 		"additionalPorts": []
 	},
@@ -52,7 +54,8 @@ default_settings = {
 		"flipV": False,
 		"timelapse": {
 			"type": "off",
-			"options": {}
+			"options": {},
+			"postRoll": 0
 		}
 	},
 	"gcodeViewer": {
@@ -65,6 +68,7 @@ default_settings = {
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
+		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False
 	},
@@ -96,7 +100,7 @@ default_settings = {
 			{"x": 0.0, "y": 0.0}
 		],
 		"bedDimensions": {
-			"x": 200.0, "y": 200.0
+			"x": 200.0, "y": 200.0, "r": 100
 		}
 	},
 	"appearance": {
@@ -145,7 +149,8 @@ default_settings = {
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
-			"hasBed": True
+			"hasBed": True,
+			"repetierStyleTargetTemperature": False
 		}
 	}
 }

@@ -168,7 +168,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             step: 1,
             value: 0,
             enabled: false,
-            formatter: function(value) { return "Layer #" + value; }
+            formatter: function(value) { return "Layer #" + (value + 1); }
         }).on("slide", self.changeLayer);
     };
 
@@ -333,7 +333,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             self.currentCommand = [0, 1];
         } else {
             var output = [];
-            output.push("Layer number: " + layer.number);
+            output.push("Layer number: " + (layer.number + 1));
             output.push("Layer height (mm): " + layer.height);
             output.push("GCODE commands in layer: " + layer.commands);
             if (layer.filament.length == 1) {
