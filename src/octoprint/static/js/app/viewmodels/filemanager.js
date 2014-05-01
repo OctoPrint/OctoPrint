@@ -6,25 +6,10 @@
 	self.directoryContextMenu = $("#dirContextMenu");
 	self.fileContextMenu = $("#fileContextMenu");
 
-	$("#directoryTab").on("contextmenu", null, function (e) {
-		self.fileContextMenu.hide();
-		self.directoryContextMenu.css({ display: "block", left: e.pageX, top: e.pageY });
-		return false;
-	});
-	$("#fileTab").on("contextmenu", null, function (e) {
-		self.directoryContextMenu.hide();
-		self.fileContextMenu.css({ display: "block", left: e.pageX, top: e.pageY });
-		return false;
-	});
-
 	$(document).ready(function () {
 		$("#name_overlay").on('shown', function () {
 			$(this).find("#renameName").focus();
 		});
-	});
-	$(document).click(function () {
-		self.directoryContextMenu.hide();
-		self.fileContextMenu.hide();
 	});
 
 	self.activeFolders = ko.observableArray([]);
@@ -148,9 +133,11 @@
 		if (self.directoryContextMenu.css("display") == "block" || e.target.tagName=="INPUT")
 			return true;
 
+		if (self.fileContextMenu.css("display") == "block")
+			self.fileContextMenu.hide();
+
 		if (data == self) {
 			self.activeFolders([]);
-			e.stopPropagation();
 			return true;
 		}
 
@@ -177,10 +164,12 @@
 		if (self.fileContextMenu.css("display") == "block")
 			return true;
 
+		if (self.directoryContextMenu.css("display") == "block")
+			self.directoryContextMenu.hide();
+
 		if (data == self)
 		{
 			self.activeFiles([]);
-			e.stopPropagation();
 			return true;
 		}
 
