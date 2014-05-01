@@ -27,6 +27,34 @@ $(function() {
             gcodeViewModel,
             logViewModel
         );
+
+        function changeTab()
+        {
+        	var hashTag = window.location.hash;
+        	if (hashTag) {
+        		$('#tabs a[href="' + hashTag + '"]').tab("show");
+        	}
+        }
+
+        $(document).ready(function () {
+        	changeTab();
+        });
+        if ("onhashchange" in window)
+		{
+			$(window).bind('hashchange', function () {
+
+				changeTab();
+			});
+        }
+        else
+        {
+        	var prevHash = window.location.hash;
+        	window.setInterval(function () {
+        		if (window.location.hash != prevHash) {
+        			changeTab();
+        		}
+        	}, 500);
+        }
         
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
         // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
