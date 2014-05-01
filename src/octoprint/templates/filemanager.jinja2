@@ -49,6 +49,9 @@
 		<li><a href="#" data-bind="click: selectAll">Select All</a></li>
 		<li><a href="#" data-bind="click: deselectAll">Deselect All</a></li>
 		<li data-bind="css:  { divider: $root.activeFiles().length > 0 && $root.enableRemoveFiles() }"></li>
+		<li data-bind="if: $root.activeFiles().length == 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click: $root.downloadFiles">Download File</a></li>
+		<li data-bind="if: $root.activeFiles().length > 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click: $root.downloadFiles">Download Files</a></li>
+		<li data-bind="css:  { divider: $root.activeFiles().length > 0 && $root.enableRemoveFiles() }"></li>
 		<li data-bind="if: $root.activeFiles().length == 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click:$root.removeFiles">Delete File</a></li>
 		<li data-bind="if: $root.activeFiles().length > 1 && $root.enableRemoveFiles()"><a href="#" data-bind="click: $root.removeFiles">Delete Files</a></li>
 		<li data-bind="css:  { divider: $root.activeFiles().length > 0 && $root.enableRemoveFiles() }"></li>

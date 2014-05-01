@@ -23,6 +23,8 @@
 	self.directoryList = ko.observableArray([]);
 	self.lastDirectory;
 
+	self.iframe;
+
 	self.formData = function (e, data) {
 		var formData = { "directories": [] };
 
@@ -329,6 +331,18 @@
 		self.activeFiles([]);
 	};
 
+	self.downloadURL = function (url) {
+		var hiddenIFrameID = 'hiddenDownloader';
+		self.iframe = document.getElementById(hiddenIFrameID);
+		if (self.iframe === null) {
+			self.iframe = document.createElement('iframe');
+			self.iframe.id = hiddenIFrameID;
+			self.iframe.style.display = 'none';
+			document.body.appendChild(self.iframe);
+		}
+		self.iframe.src = url;
+	};
+
 	self.enableRemoveFiles = function () {
 		var files = self.activeFiles();
 
@@ -339,6 +353,21 @@
 
 		return enabled;
 	}
+	self.downloadFiles = function (e) {
+		function download(files)
+		{
+			self.downloadURL(files.pop().refs.download);
+			if (files.length > 0)
+				setTimeout(download, 500, files);
+		}
+
+		download(self.activeFiles());
+
+		self.lastDirectory = self.activeFolders()[0];
+
+		self.activeFiles([]);
+		self.activeFolders([]);
+	};
 	self.removeFiles = function () {
 		var files = self.activeFiles();
 
