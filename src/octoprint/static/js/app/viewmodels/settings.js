@@ -132,50 +132,88 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.terminalFilters = ko.observableArray([]);
 
-    ko.extenders.sortControls = function(target)
-    {
-    	return ko.computed({
-    		read: function () { return target(); },
-    		write: function (v) {
-    			var rows = [];
-    			for (var i = 0; i < v.length; i++) {
-    				if (!rows[v[i].row()])
-    					rows[v[i].row()] = [];
-
-    				rows[v[i].row()].push(v[i]);
-    			}
-
-    			for (var i = 0; i < rows.length; i++)
-    				if (rows[i])
-    					rows[i] = rows[i].sort(function (left, right) {
-    						if (left.type == "section")
-    							left.children(left.children());
-    						if (right.type == "section")
-    							right.children(right.children());
-
-    						if (left.index() < right.index())
-    							return -1;
-
-    						if (left.index() > right.index())
-    							return 1;
-
-    						return 0;
-    					});
-					else
-    					rows[i] = [];
-    			
-    			var c = [];
-    			var index = 0;
-    			for (var i = 0; i < rows.length; i++)
-    				for (var j = 0; j < rows[i].length; j++)
-    					c[index++] = rows[i][j];
-
-    			target(c);
-    		}
-    	});
+	// http://stackoverflow.com/questions/15209576/knockout-js-sorted-observable-array
+    ko.sortedObservableArray = function (sortComparator, initialValues) {
+    	if (arguments.length < 2) {
+    		initialValues = [];
+    	}
+    	var result = ko.observableArray(initialValues);
+    	ko.utils.extend(result, ko.sortedObservableArray.fn);
+    	delete result.unshift;
+    	result.sort(sortComparator);
+    	return result;
     };
 
-    self.children = ko.observableArray([]).extend({sortControls: ''}); // Controls
+    ko.sortedObservableArray.fn = {
+    	reinitialise: function (values) {
+    		if (!$.isArray(values)) {
+    			values = [values];
+    		}
+    		var underlyingArray = this.peek();
+    		this.valueWillMutate();
+    		underlyingArray.splice(0, underlyingArray.length);
+    		underlyingArray.push.apply(underlyingArray, this.sortComparator(values));
+    		this.valueHasMutated();
+    	},
+    	push: function (values) {
+    		if (!$.isArray(values)) {
+    			values = [values];
+    		}
+
+    		var underlyingArray = this.peek();
+    		values.push.apply(values, underlyingArray);
+    		this.reinitialise(values);
+    	},
+    	sort: function (sortComparator) {
+    		var underlyingArray = this.peek();
+    		this.sortComparator = sortComparator;
+    		this.reinitialise(underlyingArray);
+    	},
+    	reverse: function () {
+    		var underlyingArrayClone = this.peek().slice();
+    		underlyingArrayClone.reverse();
+    		return underlyingArrayClone;
+    	}
+    };
+
+    self.sortControls = function (v) {
+    	var rows = [];
+    	for (var i = 0; i < v.length; i++) {
+    		if (!rows[v[i].row()])
+    			rows[v[i].row()] = [];
+
+    		rows[v[i].row()].push(v[i]);
+    	}
+
+    	for (var i = 0; i < rows.length; i++)
+    		if (rows[i])
+    			rows[i] = rows[i].sort(function (left, right) {
+    				if (left.type == "section")
+    					left.children(left.children());
+    				if (right.type == "section")
+    					right.children(right.children());
+
+    				if (left.index() < right.index())
+    					return -1;
+
+    				if (left.index() > right.index())
+    					return 1;
+
+    				return 0;
+    			});
+    		else
+    			rows[i] = [];
+
+    	var c = [];
+    	var index = 0;
+    	for (var i = 0; i < rows.length; i++)
+    		for (var j = 0; j < rows[i].length; j++)
+    			c[index++] = rows[i][j];
+
+    	return c;
+    };
+
+    self.children = ko.sortedObservableArray(self.sortControls); // Controls
 	self.controlRow = 0;
 	self.controlIndex = 0;
 
@@ -362,8 +400,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     		for (var j = 0; j < customControl.children.length; j++)
     			c[j] = self._processControl(customControl.children[j]);
 
-    		customControl.children = ko.observableArray([]).extend({ sortControls: '' });
-    		customControl.children(c);
+    		customControl.children = ko.sortedObservableArray(self.sortControls, c);
     	}
 
     	if (customControl.type == "parametric_command" || customControl.type == "parametric_commands") {
