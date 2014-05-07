@@ -391,41 +391,50 @@
                                     <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
                                 </div>
                             </div>
-
-                            <!-- Container for custom controls -->
-                            <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
+							
+							<div class="row-fluid" id="customControls" data-bind="visible: loginState.isUser, foreach: controls">
+								<div class="span12"  style="margin-left:0px" data-bind="template: { name: $root.displayMode, foreach: $data }"></div>
+							</div>
 
                             <!-- Templates for custom controls -->
                             <script type="text/html" id="customControls_sectionTemplate">
-                                <h1 data-bind="text: name"></h1>
+                                <div data-bind="css: offset() > 0 ? 'offset'+offset() : '', attr: { 'id': 'command_' + $parentContext.$index() + '_' + $index() }">
+									<div class="span12" style="margin-left:0px">
+										<a data-toggle="collapse" data-parent="#accordion" data-bind="attr: { 'href': '#title_' + $parentContext.$index() + '_' + $index() }"><h1 data-bind="text: name"></h1></a>
+									</div>
 
-                                <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+									<div class="row-fluid collapse in" data-bind="attr: { 'id': 'title_' + $parentContext.$index() + '_' + $index() }, foreach: children">
+										<div class="span12" style="margin-left: 0px" data-bind="template: { name: $root.displayMode, foreach: $data }"></div>
+									</div>
+								</div>
                             </script>
                             <script type="text/html" id="customControls_commandTemplate">
-                                <form class="form-inline">
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
-                                </form>
+                                <div style="display: inline-block" data-bind="css: offset() > 0 ? 'offset'+offset() : '', attr: { 'id': 'command_' + $parentContext.$index() + '_' + $index() }">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: 'linear-gradient(to bottom,' + backgroundColor1() + ',' + backgroundColor2() + ')' }"></button>
+                                </div>
                             </script>
                             <script type="text/html" id="customControls_feedbackCommandTemplate">
-                                <form class="form-inline">
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button> <span data-bind="text: output"></span>
-                                </form>
+                                <div style="display: inline-block" data-bind="css: offset() > 0 ? 'offset'+offset() : '', attr: { 'id': 'command_' + $parentContext.$index() + '_' + $index() }">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: 'linear-gradient(to bottom,' + backgroundColor1() + ',' + backgroundColor2() + ')' }"></button> 
+									<span data-bind="text: output"></span>
+                                </div>
                             </script>
                             <script type="text/html" id="customControls_feedbackTemplate">
-                                <div>
+                                <div style="display: inline-block" data-bind="css: offset() > 0 ? 'offset'+offset() : '', attr: { 'id': 'command_' + $parentContext.$index() + '_' + $index() }">
                                     <strong data-bind="text: name"></strong>: <span data-bind="text: output"></span>
                                 </div>
                             </script>
                             <script type="text/html" id="customControls_parametricCommandTemplate">
-                                <form class="form-inline">
+                                <div style="display: inline-block" class="form-inline" data-bind="css: offset() > 0 ? 'offset'+offset() : '', attr: { 'id': 'command_' + $parentContext.$index() + '_' + $index() }">
                                     <!-- ko foreach: input -->
                                         <label data-bind="text: name"></label>
                                         <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
                                     <!-- /ko -->
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
-                                </form>
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: 'linear-gradient(to bottom,' + backgroundColor1() + ',' + backgroundColor2() + ')' }"></button>
+                                </div>
                             </script>
-                            <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
+                            <script type="text/html" id="customControls_emptyTemplate">
+							</script>
                             <!-- End of templates for custom controls -->
                         </div>
                         {% if enableGCodeVisualizer %}

@@ -325,7 +325,6 @@ $(function() {
 
         loginStateViewModel.requestData();
         connectionViewModel.requestData();
-        controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
         settingsViewModel.requestData();

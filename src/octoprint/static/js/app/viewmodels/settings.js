@@ -132,6 +132,53 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.terminalFilters = ko.observableArray([]);
 
+    ko.extenders.sortControls = function(target)
+    {
+    	return ko.computed({
+    		read: function () { return target(); },
+    		write: function (v) {
+    			var rows = [];
+    			for (var i = 0; i < v.length; i++) {
+    				if (!rows[v[i].row()])
+    					rows[v[i].row()] = [];
+
+    				rows[v[i].row()].push(v[i]);
+    			}
+
+    			for (var i = 0; i < rows.length; i++)
+    				if (rows[i])
+    					rows[i] = rows[i].sort(function (left, right) {
+    						if (left.type == "section")
+    							left.children(left.children());
+    						if (right.type == "section")
+    							right.children(right.children());
+
+    						if (left.index() < right.index())
+    							return -1;
+
+    						if (left.index() > right.index())
+    							return 1;
+
+    						return 0;
+    					});
+					else
+    					rows[i] = [];
+    			
+    			var c = [];
+    			var index = 0;
+    			for (var i = 0; i < rows.length; i++)
+    				for (var j = 0; j < rows[i].length; j++)
+    					c[index++] = rows[i][j];
+
+    			target(c);
+    		}
+    	});
+    };
+
+    self.children = ko.observableArray([]).extend({sortControls: ''}); // Controls
+	self.controlRow = 0;
+	self.controlIndex = 0;
+
     self.addTemperatureProfile = function() {
         self.temperature_profiles.push({name: "New", extruder:0, bed:0});
     };
@@ -146,6 +193,46 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.removeTerminalFilter = function(filter) {
         self.terminalFilters.remove(filter);
+    };
+
+    self.addControlButton = function (data) {
+    	var customControlType = $("#customControl_type_overlay");
+    	var customControlTypeAck = $(".confirmation_dialog_acknowledge", customControlType);
+    	var selection = $("#customControlType", customControlType);
+
+    	customControlTypeAck.unbind("click");
+    	customControlTypeAck.bind("click", function (e) {
+    		e.preventDefault();
+    		$("#customControl_type_overlay").modal("hide");
+
+    		switch(selection.val())
+    		{
+    			case "commands":
+    				data.children.push(self._processControl({ type: selection.val(), name: "New"+(data.children().length+1), commands: "," }));
+    				break;
+    			case "parametric_command":
+    				data.children.push(self._processControl({ type: selection.val(), name: "New" + (data.children().length + 1), commands: ",", input: [{ default: "", parameter: "", name: "" }] }));
+    				break;
+    			case "feedback_commands":
+    				data.children.push(self._processControl({ type: selection.val(), name: "New" + (data.children().length + 1), commands: ",", regex: "", template: "" }));
+    				break;
+    			case "section":
+    				data.children.push(self._processControl({ type: selection.val(), name: "New" + (data.children().length + 1), children: [] }));
+    				break;
+
+    		}
+    	});
+    	customControlType.modal("show");
+    };
+    self.addInputButton = function () {
+    	this.input.push({ value: "", parameter: "", name: "" })
+    };
+
+    self.removeControlButton = function (parent, button) {
+    	parent.children.remove(button);
+    };
+    self.removeInput = function (parent, value) {
+    	parent.input.remove(value);
     };
 
     self.getPrinterInvertAxis = function(axis) {
@@ -244,9 +331,198 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.system_actions(response.system.actions);
 
         self.terminalFilters(response.terminalFilters);
+
+        var children = [];
+        for (var i = 0; i < response.controls.length; i++)
+        {
+        	children.push(self._processControl(response.controls[i]));
+        }
+        self.children(children);
     }
 
-    self.saveData = function() {
+    self._processControl = function (customControl)
+    {
+    	customControl.name = ko.observable(customControl.name);
+    	if (customControl.type != "section") {
+    		if (customControl.hasOwnProperty("command"))
+    			customControl.command = ko.observable(customControl.command);
+
+    		if (customControl.hasOwnProperty("commands"))
+    			if (customControl.commands.indexOf(',') >= 0)
+    				customControl.commands = ko.observable(customControl.commands);
+    			else
+    				customControl.commands = ko.observable(customControl.commands.toString().replace(/\,/g, '\n'));
+    	}
+    	else 
+		{
+			self.controlRow = 0;
+			self.controlIndex = 0;
+			
+			var c = [];
+    		for (var j = 0; j < customControl.children.length; j++)
+    			c[j] = self._processControl(customControl.children[j]);
+
+    		customControl.children = ko.observableArray([]).extend({ sortControls: '' });
+    		customControl.children(c);
+    	}
+
+    	if (customControl.type == "parametric_command" || customControl.type == "parametric_commands") {
+    		for (var j = 0; j < customControl.input.length; j++)
+    			customControl.input[j] = { name: ko.observable(customControl.input[j].name), parameter: ko.observable(customControl.input[j].parameter), value: ko.observable(customControl.input[j].default) };
+
+    		customControl.input = ko.observableArray(customControl.input);
+    	}
+
+    	if (customControl.type == "feedback_command" || customControl.type == "feedback_commands")
+    	{
+    		customControl.regex = ko.observable(customControl.regex);
+    		customControl.template = ko.observable(customControl.template);
+    	}
+		
+		if (!customControl.hasOwnProperty("backgroundColor1"))
+        	customControl.backgroundColor1 = ko.observable("#FFF");
+        else
+        	customControl.backgroundColor1 = ko.observable(customControl.backgroundColor1);
+
+    	if (!customControl.hasOwnProperty("backgroundColor2"))
+    		customControl.backgroundColor2 = ko.observable("#e6e6e6");
+    	else
+    		customControl.backgroundColor2 = ko.observable(customControl.backgroundColor2);
+
+        if (!customControl.hasOwnProperty("foregroundColor"))
+        	customControl.foregroundColor = ko.observable("#000000");
+        else
+        	customControl.foregroundColor = ko.observable(customControl.foregroundColor);
+			
+        if (!customControl.hasOwnProperty("row"))
+        	customControl.row = ko.observable(self.controlRow);
+        else
+		{
+			if (customControl.row != self.controlRow)
+			{
+				self.controlRow = customControl.row;
+				self.controlIndex = 0;
+			}
+        	customControl.row = ko.observable(customControl.row);
+		}
+			
+        if (!customControl.hasOwnProperty("index"))
+        	customControl.index = ko.observable(self.controlIndex++);
+        else
+		{
+			if (customControl.index >= self.controlIndex)
+				self.controlIndex = customControl.index+1;
+				
+        	customControl.index = ko.observable(customControl.index);
+		}
+			
+        if (!customControl.hasOwnProperty("offset"))
+        	customControl.offset = ko.observable("0");
+        else
+        	customControl.offset = ko.observable(customControl.offset);
+			
+		if (self.controlIndex >= 4)
+		{
+			self.controlRow++;
+			self.controlIndex = 0;
+		}
+
+    	return customControl;
+    }
+
+    self._customControlToArray = function (customControl)
+    {
+    	var c = { 
+					name: customControl.name(), 
+					foregroundColor: customControl.foregroundColor(), 
+					backgroundColor1: customControl.backgroundColor1(), 
+					backgroundColor2: customControl.backgroundColor2(),
+					row: customControl.row(), 
+					index: customControl.index(),
+					offset: customControl.offset() 
+				};
+				
+    	switch(customControl.type)
+    	{
+    		case "command":
+    		case "commands":
+    			if (customControl.hasOwnProperty("command"))
+    			{
+    				if (customControl.command().indexOf('\n') == -1)
+					{
+    					c.type = "command";
+    					c.command = customControl.command();
+    				}
+    				else {
+    					c.type = "commands";
+    					c.commands = customControl.command().toString().split('\n');
+    				}
+    			}
+    			else
+    			{
+    				c.type = "commands";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+    			break;
+    		case "parametric_command":
+    		case "parametric_commands":
+    			if (customControl.hasOwnProperty("command")) {
+    				if (customControl.command().indexOf('\n') == -1) {
+    					c.type = "parametric_command";
+    					c.command = customControl.command();
+    				}
+    				else {
+    					c.type = "parametric_commands";
+    					c.commands = customControl.command().toString().split('\n');
+    				}
+    			}
+    			else {
+    				c.type = "parametric_commands";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+
+    			c.input = [];
+    			for (var i = 0; i < customControl.input().length; i++)
+    				c.input.push({ name: customControl.input()[i].name(), parameter: customControl.input()[i].parameter(), default: customControl.input()[i].value() });
+
+    			break;
+			case "feedback_command":
+    		case "feedback_commands":
+    			if (customControl.hasOwnProperty("command")) {
+    				if (customControl.command().indexOf('\n') == -1) {
+    					c.type = "feedback_command";
+    					c.command = customControl.command();
+    				}
+    				else {
+    					c.type = "feedback_commands";
+    					c.commands = customControl.command().toString().split('\n');
+    				}
+    			}
+    			else {
+    				c.type = "feedback_commands";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+
+    			c.regex = customControl.regex();
+    			c.template = customControl.template();
+				break;
+    		case "section":
+    			c.type = "section";
+    			c.children = [];
+    			for (var i = 0; i < customControl.children().length; i++)
+    				c.children.push(self._customControlToArray(customControl.children()[i]));
+    			break;
+    	}
+
+    	return c;
+    }
+
+    self.saveData = function () {
+
+    	var controls = [];
+    	for (var i = 0; i < self.children().length; i++)
+    		controls.push(self._customControlToArray(self.children()[i]));
+
         var data = {
             "api" : {
                 "enabled": self.api_enabled(),
@@ -313,7 +589,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "path": self.cura_path(),
                 "config": self.cura_config()
             },
-            "terminalFilters": self.terminalFilters()
+            "terminalFilters": self.terminalFilters(),
+			"controls": controls
         };
 
         $.ajax({
@@ -329,4 +606,19 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         });
     }
 
+    self.displayMode = function (customControl) {
+    	switch (customControl.type) {
+    		case "section":
+    			return "settings_customControls_sectionTemplate";
+    		case "command":
+    		case "commands":
+    			return "settings_customControls_commandTemplate";
+    		case "parametric_command":
+    		case "parametric_commands":
+    			return "settings_customControls_parametricCommandTemplate";
+    		case "feedback_command":
+    		case "feedback_commands":
+    			return "settings_customControls_feedbackCommandTemplate";
+    	}
+    }
 }

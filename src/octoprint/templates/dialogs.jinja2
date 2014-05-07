@@ -101,3 +101,24 @@
         <a href="#" class="btn btn-primary" data-bind="click: keepAccessControl, enable: validData(), css: {disabled: !validData()}">Keep Access Control Enabled</a>
     </div>
 </div>
+
+<div id="customControl_type_overlay" class="modal hide fade">
+	<div class="modal-header">
+		<a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+		<h3>Select a type</h3>
+	</div>
+	<div class="modal-body">
+		<form class="form-horizontal">
+			<select id="customControlType" style="width:95%">
+				<option value="commands">Commands</option>
+				<option value="parametric_command">Parametric Commands</option>
+				<option value="feedback_commands">Feedback Commands</option>
+				<option value="section">Section</option>
+			</select>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
+		<a href="#" class="btn btn-danger confirmation_dialog_acknowledge" aria-hidden="true">OK</a>
+	</div>
+</div>

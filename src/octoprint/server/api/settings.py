@@ -94,7 +94,8 @@ def getSettings():
 			"enabled": s.getBoolean(["cura", "enabled"]),
 			"path": s.get(["cura", "path"]),
 			"config": s.get(["cura", "config"])
-		}
+		},
+		"controls": s.get(["controls"])
 	})
 
 
@@ -175,6 +176,9 @@ def setSettings():
 
 		if "terminalFilters" in data.keys():
 			s.set(["terminalFilters"], data["terminalFilters"])
+
+		if "controls" in data.keys():
+			s.set(["controls"], data["controls"])
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
