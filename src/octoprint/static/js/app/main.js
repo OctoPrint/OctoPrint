@@ -302,12 +302,24 @@ $(function() {
                 };
                 $(element).popover(options);
             }
-        }
+        };
 
         ko.bindingHandlers.allowBindings = {
-        	init: function (elem, valueAccessor) {
-        		return { controlsDescendantBindings: !valueAccessor() };
-        	}
+            init: function (elem, valueAccessor) {
+                return { controlsDescendantBindings: !valueAccessor() };
+            }
+        };
+
+        ko.bindingHandlers.slimScrolledForeach = {
+            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                return ko.bindingHandlers.foreach.init(element, valueAccessor(), allBindings, viewModel, bindingContext);
+            },
+            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                setTimeout(function() {
+                    $(element).slimScroll({scrollBy: 0});
+                }, 10);
+                return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
+            }
         };
 
         ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));

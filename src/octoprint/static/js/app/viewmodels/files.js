@@ -14,6 +14,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.isSdReady = ko.observable(undefined);
 
     self.searchQuery = ko.observable(undefined);
+    self.searchQuery.subscribe(function() {
+        self.performSearch();
+    });
 
     self.freeSpace = ko.observable(undefined);
     self.freeSpaceString = ko.computed(function() {

@@ -184,12 +184,9 @@
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
                                 <form class="form-search">
-                                    <div class="input-append">
-                                        <input type="text" class="input-medium search-query" data-bind="value: searchQuery">
-                                        <button class="btn" type="button" data-bind="click: performSearch"><i class=" icon-search"></i></button>
-                                    </div>
+                                    <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="Search...">
                                 </form>
-                                <div class="gcode_files" data-bind="foreach: listHelper.paginatedItems">
+                                <div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
                                     <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }">
                                         <div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
                                         <div class="uploaded">Uploaded: <span data-bind="text: formatTimeAgo(date)"></span></div>
