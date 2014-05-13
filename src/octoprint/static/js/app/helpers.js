@@ -415,6 +415,9 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 		var itemList = self.items();
 
 		recursiveGetItem = function (list) {
+			if (!list)
+				return undefined;
+
 			for (var i = 0; i < list.length; i++) {
 				if (matcher(list[i])) {
 					return list[i];

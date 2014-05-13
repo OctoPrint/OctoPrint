@@ -110,8 +110,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         	if (self.listHelper.items().length == 0)
         		return;
 
-        	if (self.listHelper.items()[0] == undefined || !self.listHelper.selectItem(self.listHelper.items()[0].data, filename))
-        		self.listHelper.selectItem(self.listHelper.items()[1].data, filename);
+        	self.listHelper.selectItem(function (item) { return item.relativepath == filename; });
         }
     };
 
@@ -153,6 +152,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     	var i = 0;
     	recursiveCheck = function (element, index, list) {
     		element.href = i++;
+    		element.relativepath = element.relativepath.replace(/\//g, '\\');
     		if (!element.hasOwnProperty("size")) element.size = undefined;
     		if (!element.hasOwnProperty("date")) element.date = undefined;
 
