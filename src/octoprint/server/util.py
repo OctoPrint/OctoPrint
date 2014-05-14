@@ -3,7 +3,8 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from flask.ext.principal import identity_changed, Identity
-from tornado.web import StaticFileHandler, HTTPError
+from tornado.web import StaticFileHandler, HTTPError, RequestHandler, asynchronous
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from flask import url_for, make_response, request, current_app
 from flask.ext.login import login_required, login_user, current_user
 from werkzeug.utils import redirect
@@ -307,6 +308,77 @@ class LargeResponseHandler(StaticFileHandler):
 			self.set_header("Content-Disposition", "attachment")
 
 
+##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
+
+
+class UrlForwardHandler(RequestHandler):
+
+	def initialize(self, url=None, as_attachment=False, basename=None, access_validation=None):
+		RequestHandler.initialize(self)
+		self._url = url
+		self._as_attachment = as_attachment
+		self._basename = basename
+		self._access_validation = access_validation
+
+	@asynchronous
+	def get(self, *args, **kwargs):
+		if self._access_validation is not None:
+			self._access_validation(self.request)
+
+		if self._url is None:
+			raise HTTPError(404)
+
+		client = AsyncHTTPClient()
+		r = HTTPRequest(url=self._url, method=self.request.method, body=self.request.body, headers=self.request.headers, follow_redirects=False, allow_nonstandard_methods=True)
+
+		try:
+			return client.fetch(r, self.handle_response)
+		except HTTPError as e:
+			if hasattr(e, "response") and e.response:
+				self.handle_response(e.response)
+			else:
+				raise HTTPError(500)
+
+	def handle_response(self, response):
+		if response.error and not isinstance(response.error, HTTPError):
+			raise HTTPError(500)
+
+		filename = None
+
+		self.set_status(response.code)
+		for name in ("Date", "Cache-Control", "Server", "Content-Type", "Location"):
+			value = response.headers.get(name)
+			if value:
+				self.set_header(name, value)
+
+				if name == "Content-Type":
+					filename = self.get_filename(value)
+
+		if self._as_attachment:
+			if filename is not None:
+				self.set_header("Content-Disposition", "attachment; filename=%s" % filename)
+			else:
+				self.set_header("Content-Disposition", "attachment")
+
+		if response.body:
+			self.write(response.body)
+		self.finish()
+
+	def get_filename(self, content_type):
+		if not self._basename:
+			return None
+
+		typeValue = map(str.strip, content_type.split(";"))
+		if len(typeValue) == 0:
+			return None
+
+		extension = mimetypes.guess_extension(typeValue[0])
+		if not extension:
+			return None
+
+		return "%s%s" % (self._basename, extension)
+
+
 #~~ admin access validator for use with tornado
 
 
@@ -327,6 +399,29 @@ def admin_validator(request):
 		user = current_user
 
 	if user is None or not user.is_authenticated() or not user.is_admin():
+		raise HTTPError(403)
+
+
+#~~ user access validator for use with tornado
+
+
+def user_validator(request):
+	"""
+	Validates that the given request is made by an authenticated user, identified either by API key or existing Flask
+	session.
+
+	Must be executed in an existing Flask request context!
+
+	:param request: The Flask request object
+	"""
+
+	apikey = getApiKey(request)
+	if settings().get(["api", "enabled"]) and apikey is not None:
+		user = getUserForApiKey(apikey)
+	else:
+		user = current_user
+
+	if user is None or not user.is_authenticated():
 		raise HTTPError(403)
 
 
