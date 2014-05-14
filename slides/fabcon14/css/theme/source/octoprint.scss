@@ -1,0 +1,81 @@
+/**
+ * OctoPrint theme for reveal.js.
+ *
+ * Copyright (C) 2013 Gina Häußge <osd@foosel.net>
+ */
+
+
+// Default mixins and settings -----------------
+@import "../template/mixins";
+@import "../template/settings";
+// ---------------------------------------------
+
+// theme-secific variables
+
+$octoLight:             darken(#13c100, 20%);
+$octoDark:              darken(#169300, 20%);
+$shadow:                rgba(0,0,0,0.6);
+
+$sansFontFamily:        "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+$serifFontFamily:       Arvo, "Helvetica Neue", Helvetica, Arial, sans-serif;
+$monoFontFamily:        Menlo, Monaco, Consolas, "Courier New", monospace;
+
+// Include theme-specific fonts
+@import url(/lib/font/Arvo.css);
+@import url(/lib/font/OpenSans.css);
+@import url(/lib/font/font-awesome.css);
+
+// Override theme settings (see ../template/settings.scss)
+$linkColor:             #69C95A;
+$linkColorHover:        #47C932;
+
+$mainFont:              $sansFontFamily;
+
+$headingFont:           $serifFontFamily;
+$headingFontWeight:     bold;
+$headingTextShadow:     3px 3px 3px $shadow;
+$heading1TextShadow:    5px 5px 5px $shadow;
+$headingTextTransform:  capitalize;
+$headingMargin:         0 0 30px 0; 
+
+// theme specific styles
+
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+	color: #69C95A !important; 
+	//color: #85ba80 !important;
+}
+
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+	text-transform: none !important;
+}
+
+.reveal p,
+.reveal ul,
+.reveal ol {
+	line-height: 1.4em;
+}
+
+.reveal strong {
+	font-size: 120%;
+	color: #69C95A;
+}
+
+.reveal a:not(.image),
+.reveal a:not(.image):hover {
+	text-decoration: underline !important;
+}
+
+// Background generator
+@mixin bodyBackground() {
+	@include radial-gradient( $octoDark, $octoLight );
+}
+
+// Theme template ------------------------------
+@import "../template/theme";
+// ---------------------------------------------
