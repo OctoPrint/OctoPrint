@@ -195,7 +195,6 @@ class gcode(object):
 					absoluteE = False
 
 			elif T is not None:
-				self._logger.info("Switched to tool T%d" % T)
 				posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
 				posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
 
