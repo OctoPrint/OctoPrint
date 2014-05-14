@@ -135,9 +135,8 @@ class Server():
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
 
-		# setup system and gcode command triggers
-		events.SystemCommandTrigger(printer)
-		events.GcodeCommandTrigger(printer)
+		# setup command triggers
+		events.CommandTrigger(printer)
 		if self._debug:
 			events.DebugEventListener()
 
