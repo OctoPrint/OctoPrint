@@ -177,7 +177,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 if (callback) callback();
             }
         });
-    }
+    };
 
     self.fromResponse = function(response) {
         self.api_enabled(response.api.enabled);
@@ -238,7 +238,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.system_actions(response.system.actions);
 
         self.terminalFilters(response.terminalFilters);
-    }
+    };
 
     self.saveData = function() {
         var data = {
