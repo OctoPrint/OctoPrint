@@ -44,6 +44,7 @@ GCODE.renderer = (function(){
         zoomInOnModel: false,
         zoomInOnBed: false,
         centerViewport: false,
+        invertAxes: {x: false, y: false},
 
         bed: {x: 200, y: 200},
         container: undefined
@@ -54,6 +55,7 @@ GCODE.renderer = (function(){
     var scaleX = 1, scaleY = 1;
     var speeds = [];
     var speedsByLayer = {};
+    var currentInvertX = false, currentInvertY = false;
 
     var reRender = function(){
         var p1 = ctx.transformedPoint(0,0);
@@ -280,8 +282,11 @@ GCODE.renderer = (function(){
 
         var i;
 
-        isNotCurrentLayer = typeof isNotCurrentLayer !== 'undefined' ? isNotCurrentLayer : false;
+        //~~ store current layer values
+
+        isNotCurrentLayer = isNotCurrentLayer !== undefined ? isNotCurrentLayer : false;
         if (!isNotCurrentLayer) {
+            // not not current layer == current layer => store layer number and from/to progress
             layerNumStore = layerNum;
             progressStore = {from: fromProgress, to: toProgress};
         }
@@ -291,35 +296,32 @@ GCODE.renderer = (function(){
         var cmds = model[layerNum];
         var x, y;
 
-        if (fromProgress > 0) {
-            prevX = cmds[fromProgress-1].x * zoomFactor;
-            prevY = -cmds[fromProgress-1].y * zoomFactor;
-        } else if (fromProgress === 0 && layerNum == 0) {
-            if (model[0] && model[0].x !== undefined && model[0].y !== undefined) {
-                prevX = model[0].x * zoomFactor;
-                prevY = -model[0].y * zoomFactor;
-            } else {
-                prevX = 0;
-                prevY = 0;
-            }
-        } else if(typeof(cmds[0].prevX) !== 'undefined' && typeof(cmds[0].prevY) !== 'undefined') {
+        //~~ find our initial prevX/prevY tuple
+
+        if (cmds[0].prevX !== undefined && cmds[0].prevY !== undefined) {
+            // command contains prevX/prevY values, use those
             prevX = cmds[0].prevX * zoomFactor;
-            prevY = -cmds[0].prevY * zoomFactor;
-        } else {
-            if (model[layerNum-1]) {
-                prevX = undefined;
-                prevY = undefined;
-                for (i = model[layerNum-1].length-1; i >= 0; i--) {
-                    if (prevX === undefined && model[layerNum-1][i].x !== undefined) prevX = model[layerNum-1][i].x * zoomFactor;
-                    if (prevY === undefined && model[layerNum-1][i].y !== undefined) prevY =- model[layerNum-1][i].y * zoomFactor;
-                }
-                if (prevX === undefined) prevX=0;
-                if (prevY === undefined) prevY=0;
-            } else {
-                prevX = 0;
-                prevY = 0;
+            prevY = -1 * cmds[0].prevY * zoomFactor;
+        } else if (fromProgress > 0) {
+            // previous command in same layer exists, use x/y as prevX/prevY
+            prevX = cmds[fromProgress - 1].x * zoomFactor;
+            prevY = -cmds[fromProgress - 1].y * zoomFactor;
+        } else if (model[layerNum - 1]) {
+            // previous layer exists, use last x/y as prevX/prevY
+            prevX = undefined;
+            prevY = undefined;
+            for (i = model[layerNum-1].length-1; i >= 0; i--) {
+                if (prevX === undefined && model[layerNum - 1][i].x !== undefined) prevX = model[layerNum - 1][i].x * zoomFactor;
+                if (prevY === undefined && model[layerNum - 1][i].y !== undefined) prevY =- model[layerNum - 1][i].y * zoomFactor;
             }
         }
+
+        // if we did not find prevX or prevY, set it to 0 (might be that we are on the first command of the first layer,
+        // or it's just a very weird model...)
+        if (prevX === undefined) prevX = 0;
+        if (prevY === undefined) prevY = 0;
+
+        //~~ render this layer's commands
 
         for (i = fromProgress; i <= toProgress; i++) {
             ctx.lineWidth = 1;
@@ -327,31 +329,41 @@ GCODE.renderer = (function(){
             if (typeof(cmds[i]) === 'undefined') continue;
 
             if (typeof(cmds[i].prevX) !== 'undefined' && typeof(cmds[i].prevY) !== 'undefined') {
+                // override new (prevX, prevY)
                 prevX = cmds[i].prevX * zoomFactor;
-                prevY = -cmds[i].prevY * zoomFactor;
+                prevY = -1 * cmds[i].prevY * zoomFactor;
             }
 
+            // new x
             if (typeof(cmds[i].x) === 'undefined' || isNaN(cmds[i].x)) {
                 x = prevX / zoomFactor;
             } else {
                 x = cmds[i].x;
             }
+
+            // new y
             if (typeof(cmds[i].y) === 'undefined' || isNaN(cmds[i].y)) {
                 y = prevY / zoomFactor;
             } else {
                 y = -cmds[i].y;
             }
 
+            // current tool
             var tool = cmds[i].tool;
             if (tool === undefined) tool = 0;
 
+            // line color based on tool
             var lineColor = renderOptions["colorLine"][tool];
             if (lineColor === undefined) lineColor = renderOptions["colorLine"][0];
 
+            // alpha value (100% if current layer is being rendered, 30% otherwise)
             var alpha = (renderOptions['showNextLayer'] || renderOptions['showPreviousLayer']) && isNotCurrentLayer ? 0.3 : 1.0;
             var shade = tool * 0.15;
+
             if (!cmds[i].extrude && !cmds[i].noMove) {
+                // neither extrusion nor move
                 if (cmds[i].retract == -1) {
+                    // retract => draw dot if configured to do so
                     if (renderOptions["showRetracts"]) {
                         ctx.strokeStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
                         ctx.fillStyle = pusher.color(renderOptions["colorRetract"]).shade(shade).alpha(alpha).html();
@@ -361,7 +373,9 @@ GCODE.renderer = (function(){
                         ctx.fill();
                     }
                 }
+
                 if(renderOptions["showMoves"]){
+                    // move => draw line from (prevX, prevY) to (x, y) in move color
                     ctx.strokeStyle = pusher.color(renderOptions["colorMove"]).shade(shade).alpha(alpha).html();
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
@@ -370,6 +384,7 @@ GCODE.renderer = (function(){
                 }
             } else if(cmds[i].extrude) {
                 if (cmds[i].retract == 0) {
+                    // no retraction => real extrusion move, use tool color to draw line
                     ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool]).shade(shade).alpha(alpha).html();
                     ctx.lineWidth = renderOptions['extrusionWidth'];
                     ctx.beginPath();
@@ -377,6 +392,7 @@ GCODE.renderer = (function(){
                     ctx.lineTo(x*zoomFactor,y*zoomFactor);
                     ctx.stroke();
                 } else {
+                    // we were previously retracting, now we are restarting => draw dot if configured to do so
                     if (renderOptions["showRetracts"]) {
                         ctx.strokeStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
                         ctx.fillStyle = pusher.color(renderOptions["colorRestart"]).shade(shade).alpha(alpha).html();
@@ -387,6 +403,8 @@ GCODE.renderer = (function(){
                     }
                 }
             }
+
+            // set new (prevX, prevY)
             prevX = x * zoomFactor;
             prevY = y * zoomFactor;
         }
@@ -443,8 +461,8 @@ GCODE.renderer = (function(){
             var scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width - 10) / mdlInfo.modelSize.x : (canvas.height - 10) / mdlInfo.modelSize.y;
             scaleF /= zoomFactor;
             if (transform.a && transform.d) {
-                scaleX = scaleF / transform.a;
-                scaleY = scaleF / transform.d;
+                scaleX = scaleF / transform.a * (renderOptions["invertAxes"]["x"] ? -1 : 1);
+                scaleY = scaleF / transform.d * (renderOptions["invertAxes"]["y"] ? -1 : 1);
                 ctx.translate(pt.x,pt.y);
                 ctx.scale(scaleX, scaleY);
                 ctx.translate(-pt.x, -pt.y);
@@ -455,13 +473,33 @@ GCODE.renderer = (function(){
         }
     };
 
+    var applyInversion = function() {
+        var width = canvas.width - 10;
+        var height = canvas.height - 10;
+
+        if (currentInvertX || currentInvertY) {
+            ctx.scale(currentInvertX ? -1 : 1, currentInvertY ? -1 : 1);
+            ctx.translate(currentInvertX ? -width : 0, currentInvertY ? height : 0);
+        }
+
+        var invertX = renderOptions["invertAxes"]["x"];
+        var invertY = renderOptions["invertAxes"]["y"];
+        if (invertX || invertY) {
+            ctx.translate(invertX ? width : 0, invertY ? -height : 0);
+            ctx.scale(invertX ? -1 : 1, invertY ? -1 : 1);
+        }
+
+        currentInvertX = invertX;
+        currentInvertY = invertY;
+    };
+
 // ***** PUBLIC *******
     return {
         init: function(){
             startCanvas();
             initialized = true;
             var bedWidth = renderOptions["bed"]["x"];
-            var bedHeight = renderOptions["bed"]["y"];;
+            var bedHeight = renderOptions["bed"]["y"];
             if(renderOptions["bed"]["circular"]) {
                 bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
             }
@@ -492,7 +530,7 @@ GCODE.renderer = (function(){
 
                 dirty = true;
                 renderOptions[opt] = options[opt];
-                if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed"])) {
+                if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed", "invertAxes"])) {
                     mustRefresh = true;
                 }
             }
@@ -573,6 +611,7 @@ GCODE.renderer = (function(){
                 }
             }
 
+            applyInversion();
             applyOffsets(mdlInfo);
             applyZoom(mdlInfo);
 
