@@ -439,7 +439,7 @@ if __name__ == "__main__":
 			if newState == State.OPERATIONAL and self.firstPrint:
 				self.firstPrint = False
 				print "Selecting file and starting print job"
-				protocol.selectFile("C:/Users/Gina/AppData/Roaming/OctoPrint/uploads/ExtruderQuickConnectClip.gcode", FileDestinations.LOCAL)
+				protocol.selectFile("C:/Users/Gina/AppData/Roaming/OctoPrint/uploads/whistle.gcode", FileDestinations.LOCAL)
 				protocol.startPrint()
 
 		def onTemperatureUpdate(self, source, temperatureData):

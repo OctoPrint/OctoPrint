@@ -1,4 +1,7 @@
 # coding=utf-8
+from octoprint.comm.protocol.reprap import RepRapProtocol
+from octoprint.comm.transport.serialTransport import SerialTransport
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -73,6 +76,8 @@ class Printer():
 
 		# comm
 		self._comm = None
+
+		self._protocol = RepRapProtocol(SerialTransport, protocolListener=self)
 
 		# callbacks
 		self._callbacks = []
@@ -151,6 +156,39 @@ class Printer():
 			self._setJobData(self._selectedFile["filename"],
 				self._selectedFile["filesize"],
 				self._selectedFile["sd"])
+
+	#~~ callbacks from protocol
+
+	def onStateChange(self, source, oldState, newState):
+		pass
+
+	def onTemperatureUpdate(self, source, temperatureData):
+		self._addTemperatureData(temperatureData)
+
+	def onProgress(self, source, progress):
+		pass
+
+	def onFileSelected(self, source, filename, filesize, origin):
+		pass
+
+	def onPrintjobDone(self, source):
+		pass
+
+	def onSdStateChange(self, source, sdAvailable):
+		pass
+
+	def onSdFiles(self, source, files):
+		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
+		self._sdFilelistAvailable.set()
+
+	def onLogTx(self, source, tx):
+		self._addLog(">> %s" % tx)
+
+	def onLogRx(self, source, rx):
+		self._addLog("<< %s" % rx)
+
+	def onLogError(self, source, error):
+		self._addLog("ERROR: %s" % error)
 
 	#~~ printer commands
 
@@ -244,20 +282,13 @@ class Printer():
 		self._stateMonitor.setTempOffsets(validatedOffsets)
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
-		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
-			logging.info("Cannot load file: printer not connected or currently busy")
-			return
-
 		self._printAfterSelect = printAfterSelect
-		self._comm.selectFile(filename, sd)
+		self._protocol.selectFile(filename, sd)
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 
 	def unselectFile(self):
-		if self._comm is not None and (self._comm.isBusy() or self._comm.isStreaming()):
-			return
-
-		self._comm.unselectFile()
+		self._protocol.unselectFile()
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 
@@ -272,25 +303,19 @@ class Printer():
 			return
 
 		self._setCurrentZ(None)
-		self._comm.startPrint()
+		self._protocol.startPrint()
 
 	def togglePausePrint(self):
 		"""
 		 Pause the current printjob.
 		"""
-		if self._comm is None:
-			return
-
-		self._comm.setPause(not self._comm.isPaused())
+		self._protocol.pausePrint()
 
 	def cancelPrint(self, disableMotorsAndHeater=True):
 		"""
 		 Cancel the current printjob.
 		"""
-		if self._comm is None:
-			return
-
-		self._comm.cancelPrint()
+		self._protocol.cancelPrint()
 
 		if disableMotorsAndHeater:
 			# disable motors, switch off hotends, bed and fan
@@ -344,21 +369,21 @@ class Printer():
 			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
 		})
 
-	def _addTemperatureData(self, temp, bedTemp):
+	def _addTemperatureData(self, temperatureData):
 		currentTimeUtc = int(time.time())
 
 		data = {
 			"time": currentTimeUtc
 		}
-		for tool in temp.keys():
-			data["tool%d" % tool] = {
-				"actual": temp[tool][0],
-				"target": temp[tool][1]
-			}
-		data["bed"] = {
-			"actual": bedTemp[0],
-			"target": bedTemp[1]
-		}
+		data.update(temperatureData)
+
+		temp = {}
+		bedTemp = None
+		for key in temperatureData.keys():
+			if key.startswith("tool"):
+				temp[key] = temperatureData[key]
+			else:
+				bedTemp = temperatureData[key]
 
 		self._temps.append(data)
 
