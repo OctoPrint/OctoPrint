@@ -30,14 +30,14 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         return formatSize(self.freeSpace());
     });
 
-	// initialize list helper
+    // initialize list helper
     self.listHelper = new RecursiveItemListHelper(
         "gcodeFiles",
 		function (d) { return d.data; },
 		function (k, v) { k.data = v; },
         {
             "name": function(a, b) {
-            	// sorts ascending
+                // sorts ascending
             	if (a["type"] == "dir" && b["type"] == "file") return -1;
             	if (a["type"] == "file" && b["type"] == "dir") return 1;
 
@@ -46,7 +46,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 return 0;
             },
             "upload": function(a, b) {
-            	// sorts descending
+                // sorts descending
             	if (a["type"] == "dir" && b["type"] == "file") return -1;
             	if (a["type"] == "file" && b["type"] == "dir") return 1;
 
@@ -55,7 +55,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 return 0;
             },
             "size": function(a, b) {
-            	// sorts descending
+                // sorts descending
             	if (a["type"] == "dir" && b["type"] == "file") return -1;
             	if (a["type"] == "file" && b["type"] == "dir") return 1;
 
@@ -158,8 +158,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     	recursiveCheck = function (element, index, list) {
     		element.href = i++;
     		element.relativepath = element.relativepath.replace(/\//g, '\\');
-    		if (!element.hasOwnProperty("size")) element.size = undefined;
-    		if (!element.hasOwnProperty("date")) element.date = undefined;
+            if (!element.hasOwnProperty("size")) element.size = undefined;
+            if (!element.hasOwnProperty("date")) element.date = undefined;
 
     		_.each(element.data, recursiveCheck);
     	};
@@ -171,7 +171,11 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             if (locationToFocus === undefined) {
                 locationToFocus = "local";
             }
-            self.listHelper.switchToItem(function(item) {return item.name == filenameToFocus && item.origin == locationToFocus});
+            var entryElement = self.getEntryElement({name: filenameToFocus, origin: locationToFocus});
+            if (entryElement) {
+                var entryOffset = entryElement.offsetTop;
+                $(".gcode_files").slimScroll({ scrollTo: entryOffset + "px" });
+        }
         }
 
         if (response.free) {
@@ -229,101 +233,101 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         });
     };
 
-    self.downloadLink = function (data) {
-    	if (data["refs"] && data["refs"]["download"]) {
-    		return data["refs"]["download"];
-    	} else {
-    		return false;
-    	}
+    self.downloadLink = function(data) {
+        if (data["refs"] && data["refs"]["download"]) {
+            return data["refs"]["download"];
+        } else {
+            return false;
+        }
     };
 
-    self.lastTimePrinted = function (data) {
-    	if (data["prints"] && data["prints"]["last"] && data["prints"]["last"]["date"]) {
-    		return data["prints"]["last"]["date"];
-    	} else {
-    		return "-";
-    	}
+    self.lastTimePrinted = function(data) {
+        if (data["prints"] && data["prints"]["last"] && data["prints"]["last"]["date"]) {
+            return data["prints"]["last"]["date"];
+        } else {
+            return "-";
+        }
     };
 
-    self.getSuccessClass = function (data) {
-    	if (!data["prints"] || !data["prints"]["last"]) {
-    		return "";
-    	}
-    	return data["prints"]["last"]["success"] ? "text-success" : "text-error";
+    self.getSuccessClass = function(data) {
+        if (!data["prints"] || !data["prints"]["last"]) {
+            return "";
+        }
+        return data["prints"]["last"]["success"] ? "text-success" : "text-error";
     };
 
-    self.getEntryId = function (data) {
-    	return "gcode_file_" + md5(data["name"] + ":" + data["origin"]);
+    self.getEntryId = function(data) {
+        return "gcode_file_" + md5(data["name"] + ":" + data["origin"]);
     };
 
-    self.getEntryElement = function (data) {
-    	var entryId = self.getEntryId(data);
-    	var entryElements = $("#" + entryId);
-    	if (entryElements && entryElements[0]) {
-    		return entryElements[0];
-    	} else {
-    		return undefined;
-    	}
+    self.getEntryElement = function(data) {
+        var entryId = self.getEntryId(data);
+        var entryElements = $("#" + entryId);
+        if (entryElements && entryElements[0]) {
+            return entryElements[0];
+        } else {
+            return undefined;
+        }
     };
 
-    self.enableRemove = function (data) {
-    	return self.loginState.isUser() && !(self.listHelper.isSelected(data) && (self.isPrinting() || self.isPaused()));
+    self.enableRemove = function(data) {
+        return self.loginState.isUser() && !(self.listHelper.isSelected(data) && (self.isPrinting() || self.isPaused()));
     };
 
-    self.enableSelect = function (data, printAfterSelect) {
-    	var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
-    	return isLoadActionPossible && !self.listHelper.isSelected(data);
+    self.enableSelect = function(data, printAfterSelect) {
+        var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
+        return isLoadActionPossible && !self.listHelper.isSelected(data);
     };
 
-    self.enableAdditionalData = function (data) {
-    	return data["gcodeAnalysis"] || data["prints"] && data["prints"]["last"];
+    self.enableAdditionalData = function(data) {
+        return data["gcodeAnalysis"] || data["prints"] && data["prints"]["last"];
     };
 
-    self.toggleAdditionalData = function (data) {
-    	var entryElement = self.getEntryElement(data);
-    	if (!entryElement) return;
+    self.toggleAdditionalData = function(data) {
+        var entryElement = self.getEntryElement(data);
+        if (!entryElement) return;
 
-    	var additionalInfo = $(".additionalInfo", entryElement);
-    	additionalInfo.slideToggle("fast", function () {
-    		$(".toggleAdditionalData i", entryElement).toggleClass("icon-chevron-down icon-chevron-up");
-    	});
+        var additionalInfo = $(".additionalInfo", entryElement);
+        additionalInfo.slideToggle("fast", function() {
+            $(".toggleAdditionalData i", entryElement).toggleClass("icon-chevron-down icon-chevron-up");
+        });
     };
 
-    self.getAdditionalData = function (data) {
-    	var output = "";
-    	if (data["gcodeAnalysis"]) {
-    		if (data["gcodeAnalysis"]["filament"] && typeof (data["gcodeAnalysis"]["filament"]) == "object") {
-    			var filament = data["gcodeAnalysis"]["filament"];
-    			if (_.keys(filament).length == 1) {
-    				output += "Filament: " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
-    			} else {
-    				var i = 0;
-    				do {
-    					output += "Filament (Tool " + i + "): " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
-    					i++;
-    				} while (filament.hasOwnProperty("tool" + i));
-    			}
-    		}
-    		output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
-    	}
-    	if (data["prints"] && data["prints"]["last"]) {
-    		output += "<br>Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]);
-    		if (data["prints"]["last"]["lastPrintTime"]) {
-    			output += "<br>Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
-    		}
-    	}
-    	return output;
+    self.getAdditionalData = function(data) {
+        var output = "";
+        if (data["gcodeAnalysis"]) {
+            if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
+                var filament = data["gcodeAnalysis"]["filament"];
+                if (_.keys(filament).length == 1) {
+                    output += "Filament: " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+                } else {
+                    var i = 0;
+                    do {
+                        output += "Filament (Tool " + i + "): " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
+                        i++;
+                    } while (filament.hasOwnProperty("tool" + i));
+                }
+            }
+            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
+        }
+        if (data["prints"] && data["prints"]["last"]) {
+            output += "<br>Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]);
+            if (data["prints"]["last"]["lastPrintTime"]) {
+                output += "<br>Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+            }
+        }
+        return output;
     };
 
-    self.performSearch = function () {
-    	var query = self.searchQuery();
-    	if (query !== undefined && query.trim() != "") {
-    		self.listHelper.changeSearchFunction(function (entry) {
-    			return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
-    		});
-    	} else {
-    		self.listHelper.resetSearch();
-    	}
+    self.performSearch = function() {
+        var query = self.searchQuery();
+        if (query !== undefined && query.trim() != "") {
+            self.listHelper.changeSearchFunction(function(entry) {
+                return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+            });
+        } else {
+            self.listHelper.resetSearch();
+        }
     };
 
     self.isSelected = function (data) {

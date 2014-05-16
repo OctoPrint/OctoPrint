@@ -180,8 +180,12 @@ GCODE.ui = (function(){
 
         updateOptions: function(options) {
             setOptions(options.ui);
-            GCODE.gCodeReader.setOption(options.reader);
-            GCODE.renderer.setOption(options.renderer);
+            if (options.reader) {
+                GCODE.gCodeReader.setOption(options.reader);
+            }
+            if (options.renderer) {
+                GCODE.renderer.setOption(options.renderer);
+            }
         },
 
         changeSelectedLayer: function(newLayerNum) {

@@ -186,7 +186,7 @@
 								<a class="pull-right" data-toggle="modal" href="#filemanager_dialog"  data-bind="visible: loginState.isUser">
 									<span class="icon-folder-open"></span>
 								</a>
-							</div>
+                        </div>
                         </div>
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
@@ -224,17 +224,6 @@
                                 <div class="muted text-right">
                                     <small>Free: <span data-bind="text: freeSpaceString"></span></small>
                                 </div>
-                                <!--<div class="pagination pagination-mini pagination-centered">
-                                    <ul>
-                                        <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
-                                    </ul>
-                                    <ul data-bind="foreach: listHelper.pages">
-                                        <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a></li>
-                                    </ul>
-                                    <ul>
-                                        <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
-                                    </ul>
-                                </div>-->
                                 <div style="display: none;" data-bind="visible: loginState.isUser">
                                     <div class="row-fluid upload-buttons">
                                         {% if enableSdSupport %}

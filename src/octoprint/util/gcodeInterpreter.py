@@ -83,27 +83,10 @@ class gcode(object):
 							self._filamentDiameter = 0.0
 				line = line[0:line.find(';')]
 
-			T = getCodeInt(line, 'T')
-			if T is not None:
-				posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-				posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
-
-				currentExtruder = T
-
-				posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-				posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
-
-				if len(currentE) <= currentExtruder:
-					for i in range(len(currentE), currentExtruder + 1):
-						currentE.append(0.0)
-				if len(maxExtrusion) <= currentExtruder:
-					for i in range(len(maxExtrusion), currentExtruder + 1):
-						maxExtrusion.append(0.0)
-				if len(totalExtrusion) <= currentExtruder:
-					for i in range(len(totalExtrusion), currentExtruder + 1):
-						totalExtrusion.append(0.0)
-			
 			G = getCodeInt(line, 'G')
+			M = getCodeInt(line, 'M')
+			T = getCodeInt(line, 'T')
+
 			if G is not None:
 				if G == 0 or G == 1:	#Move
 					x = getCodeFloat(line, 'X')
@@ -204,13 +187,32 @@ class gcode(object):
 						posOffset[1] = pos[1] - y
 					if z is not None:
 						posOffset[2] = pos[2] - z
-			else:
-				M = getCodeInt(line, 'M')
-				if M is not None:
-					if M == 82:   #Absolute E
-						absoluteE = True
-					elif M == 83:   #Relative E
-						absoluteE = False
+
+			elif M is not None:
+				if M == 82:   #Absolute E
+					absoluteE = True
+				elif M == 83:   #Relative E
+					absoluteE = False
+
+			elif T is not None:
+				posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+
+				currentExtruder = T
+
+				posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+
+				if len(currentE) <= currentExtruder:
+					for i in range(len(currentE), currentExtruder + 1):
+						currentE.append(0.0)
+				if len(maxExtrusion) <= currentExtruder:
+					for i in range(len(maxExtrusion), currentExtruder + 1):
+						maxExtrusion.append(0.0)
+				if len(totalExtrusion) <= currentExtruder:
+					for i in range(len(totalExtrusion), currentExtruder + 1):
+						totalExtrusion.append(0.0)
+
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
 
