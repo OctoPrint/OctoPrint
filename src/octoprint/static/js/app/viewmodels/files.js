@@ -15,6 +15,11 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.isLoading = ko.observable(undefined);
     self.isSdReady = ko.observable(undefined);
 
+    self.searchQuery = ko.observable(undefined);
+    self.searchQuery.subscribe(function () {
+    	self.performSearch();
+    });
+
     self.selectedItem = ko.observable(undefined);
     self.requestResponse = ko.observable(undefined);
 
@@ -73,7 +78,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         "name",
         [],
         [["sd", "local"]],
-        CONFIG_GCODEFILESPERPAGE
+        0
     );
 
     self.onClick = function(data)
@@ -224,41 +229,101 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         });
     };
 
-    self.getPopoverContent = function(data) {
-        var output = "<p><strong>Uploaded:</strong> " + formatDate(data["date"]) + "</p>";
-        if (data["gcodeAnalysis"]) {
-            output += "<p>";
-            if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
-                var filament = data["gcodeAnalysis"]["filament"];
-                if (_.keys(filament).length == 1) {
-                    output += "<strong>Filament:</strong> " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
-                } else {
-                    var i = 0;
-                    do {
-                        output += "<strong>Filament (Tool " + i + "):</strong> " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
-                        i++;
-                    } while (filament.hasOwnProperty("tool" + i));
-                }
-            }
-            output += "<strong>Estimated Print Time:</strong> " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
-            output += "</p>";
-        }
-        if (data["prints"] && data["prints"]["last"]) {
-            output += "<p>";
-            output += "<strong>Last Print:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + formatDate(data["prints"]["last"]["date"]) + "</span>";
-            if (data["prints"]["last"]["lastPrintTime"]) {
-                output += "<br><strong>Last Print Time:</strong> <span class=\"" + (data["prints"]["last"]["success"] ? "text-success" : "text-error") + "\">" + formatDuration(data["prints"]["last"]["lastPrintTime"]) + "</span>";
-            }
-            output += "</p>";
-        }
-        return output;
+    self.downloadLink = function (data) {
+    	if (data["refs"] && data["refs"]["download"]) {
+    		return data["refs"]["download"];
+    	} else {
+    		return false;
+    	}
     };
 
-    self.getSuccessClass = function(data) {
-        if (!data["prints"] || !data["prints"]["last"]) {
-            return "";
-        }
-        return data["prints"]["last"]["success"] ? "text-success" : "text-error";
+    self.lastTimePrinted = function (data) {
+    	if (data["prints"] && data["prints"]["last"] && data["prints"]["last"]["date"]) {
+    		return data["prints"]["last"]["date"];
+    	} else {
+    		return "-";
+    	}
+    };
+
+    self.getSuccessClass = function (data) {
+    	if (!data["prints"] || !data["prints"]["last"]) {
+    		return "";
+    	}
+    	return data["prints"]["last"]["success"] ? "text-success" : "text-error";
+    };
+
+    self.getEntryId = function (data) {
+    	return "gcode_file_" + md5(data["name"] + ":" + data["origin"]);
+    };
+
+    self.getEntryElement = function (data) {
+    	var entryId = self.getEntryId(data);
+    	var entryElements = $("#" + entryId);
+    	if (entryElements && entryElements[0]) {
+    		return entryElements[0];
+    	} else {
+    		return undefined;
+    	}
+    };
+
+    self.enableRemove = function (data) {
+    	return self.loginState.isUser() && !(self.listHelper.isSelected(data) && (self.isPrinting() || self.isPaused()));
+    };
+
+    self.enableSelect = function (data, printAfterSelect) {
+    	var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
+    	return isLoadActionPossible && !self.listHelper.isSelected(data);
+    };
+
+    self.enableAdditionalData = function (data) {
+    	return data["gcodeAnalysis"] || data["prints"] && data["prints"]["last"];
+    };
+
+    self.toggleAdditionalData = function (data) {
+    	var entryElement = self.getEntryElement(data);
+    	if (!entryElement) return;
+
+    	var additionalInfo = $(".additionalInfo", entryElement);
+    	additionalInfo.slideToggle("fast", function () {
+    		$(".toggleAdditionalData i", entryElement).toggleClass("icon-chevron-down icon-chevron-up");
+    	});
+    };
+
+    self.getAdditionalData = function (data) {
+    	var output = "";
+    	if (data["gcodeAnalysis"]) {
+    		if (data["gcodeAnalysis"]["filament"] && typeof (data["gcodeAnalysis"]["filament"]) == "object") {
+    			var filament = data["gcodeAnalysis"]["filament"];
+    			if (_.keys(filament).length == 1) {
+    				output += "Filament: " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+    			} else {
+    				var i = 0;
+    				do {
+    					output += "Filament (Tool " + i + "): " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
+    					i++;
+    				} while (filament.hasOwnProperty("tool" + i));
+    			}
+    		}
+    		output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
+    	}
+    	if (data["prints"] && data["prints"]["last"]) {
+    		output += "<br>Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]);
+    		if (data["prints"]["last"]["lastPrintTime"]) {
+    			output += "<br>Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+    		}
+    	}
+    	return output;
+    };
+
+    self.performSearch = function () {
+    	var query = self.searchQuery();
+    	if (query !== undefined && query.trim() != "") {
+    		self.listHelper.changeSearchFunction(function (entry) {
+    			return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+    		});
+    	} else {
+    		self.listHelper.resetSearch();
+    	}
     };
 
     self.isSelected = function (data) {
@@ -274,15 +339,6 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     	var selectedItem = self.selectedItem();
     	return selectedItem.relativepath.substring(0, data.relativepath.length) == data.relativepath;
-    };
-
-    self.enableRemove = function(data) {
-    	return self.loginState.isUser() && !(self.isPartiallySelected(data) && (self.isPrinting() || self.isPaused()));
-    };
-
-    self.enableSelect = function(data, printAfterSelect) {
-    	var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
-    	return isLoadActionPossible && !self.isSelected(data);
     };
 }
 

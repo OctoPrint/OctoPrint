@@ -1,283 +1,305 @@
 function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
-    var self = this;
+	var self = this;
 
-    self.listType = listType;
-    self.supportedSorting = supportedSorting;
-    self.supportedFilters = supportedFilters;
-    self.defaultSorting = defaultSorting;
-    self.defaultFilters = defaultFilters;
-    self.exclusiveFilters = exclusiveFilters;
+	self.listType = listType;
+	self.supportedSorting = supportedSorting;
+	self.supportedFilters = supportedFilters;
+	self.defaultSorting = defaultSorting;
+	self.defaultFilters = defaultFilters;
+	self.exclusiveFilters = exclusiveFilters;
 
-    self.allItems = [];
+	self.searchFunction = undefined;
 
-    self.items = ko.observableArray([]);
-    self.pageSize = ko.observable(filesPerPage);
-    self.currentPage = ko.observable(0);
-    self.currentSorting = ko.observable(self.defaultSorting);
-    self.currentFilters = ko.observableArray(self.defaultFilters);
-    self.selectedItem = ko.observable(undefined);
+	self.allItems = [];
 
-    //~~ item handling
+	self.items = ko.observableArray([]);
+	self.pageSize = ko.observable(filesPerPage);
+	self.currentPage = ko.observable(0);
+	self.currentSorting = ko.observable(self.defaultSorting);
+	self.currentFilters = ko.observableArray(self.defaultFilters);
+	self.selectedItem = ko.observable(undefined);
 
-    self.refresh = function() {
-        self._updateItems();
-    }
+	//~~ item handling
 
-    self.updateItems = function(items) {
-        self.allItems = items;
-        self._updateItems();
-    }
+	self.refresh = function () {
+		self._updateItems();
+	};
 
-    self.selectItem = function(matcher) {
-        var itemList = self.items();
-        for (var i = 0; i < itemList.length; i++) {
-            if (matcher(itemList[i])) {
-                self.selectedItem(itemList[i]);
-                break;
-            }
-        }
-    }
+	self.updateItems = function (items) {
+		self.allItems = items;
+		self._updateItems();
+	};
 
-    self.selectNone = function() {
-        self.selectedItem(undefined);
-    }
+	self.selectItem = function (matcher) {
+		var itemList = self.items();
+		for (var i = 0; i < itemList.length; i++) {
+			if (matcher(itemList[i])) {
+				self.selectedItem(itemList[i]);
+				break;
+			}
+		}
+	};
 
-    self.isSelected = function(data) {
-        return self.selectedItem() == data;
-    }
+	self.selectNone = function () {
+		self.selectedItem(undefined);
+	};
 
-    self.isSelectedByMatcher = function(matcher) {
-        return matcher(self.selectedItem());
-    }
+	self.isSelected = function (data) {
+		return self.selectedItem() == data;
+	};
 
-    //~~ pagination
+	self.isSelectedByMatcher = function (matcher) {
+		return matcher(self.selectedItem());
+	};
 
-    self.paginatedItems = ko.dependentObservable(function() {
-        if (self.items() == undefined) {
-            return [];
-        } else {
-            var from = Math.max(self.currentPage() * self.pageSize(), 0);
-            var to = Math.min(from + self.pageSize(), self.items().length);
-            return self.items().slice(from, to);
-        }
-    })
-    self.lastPage = ko.dependentObservable(function() {
-        return Math.ceil(self.items().length / self.pageSize()) - 1;
-    })
-    self.pages = ko.dependentObservable(function() {
-        var pages = [];
-        if (self.lastPage() < 7) {
-            for (var i = 0; i < self.lastPage() + 1; i++) {
-                pages.push({ number: i, text: i+1 });
-            }
-        } else {
-            pages.push({ number: 0, text: 1 });
-            if (self.currentPage() < 5) {
-                for (var i = 1; i < 5; i++) {
-                    pages.push({ number: i, text: i+1 });
-                }
-                pages.push({ number: -1, text: "…"});
-            } else if (self.currentPage() > self.lastPage() - 5) {
-                pages.push({ number: -1, text: "…"});
-                for (var i = self.lastPage() - 4; i < self.lastPage(); i++) {
-                    pages.push({ number: i, text: i+1 });
-                }
-            } else {
-                pages.push({ number: -1, text: "…"});
-                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
-                    pages.push({ number: i, text: i+1 });
-                }
-                pages.push({ number: -1, text: "…"});
-            }
-            pages.push({ number: self.lastPage(), text: self.lastPage() + 1})
-        }
-        return pages;
-    })
+	//~~ pagination
 
-    self.switchToItem = function(matcher) {
-        var pos = -1;
-        var itemList = self.items();
-        for (var i = 0; i < itemList.length; i++) {
-            if (matcher(itemList[i])) {
-                pos = i;
-                break;
-            }
-        }
+	self.paginatedItems = ko.dependentObservable(function () {
+		if (self.items() == undefined) {
+			return [];
+		} else if (self.pageSize() == 0) {
+			return self.items();
+		} else {
+			var from = Math.max(self.currentPage() * self.pageSize(), 0);
+			var to = Math.min(from + self.pageSize(), self.items().length);
+			return self.items().slice(from, to);
+		}
+	});
+	self.lastPage = ko.dependentObservable(function () {
+		return (self.pageSize() == 0 ? 1 : Math.ceil(self.items().length / self.pageSize()) - 1);
+	});
+	self.pages = ko.dependentObservable(function () {
+		var pages = [];
+		if (self.pageSize() == 0) {
+			pages.push({ number: 0, text: 1 });
+		} else if (self.lastPage() < 7) {
+			for (var i = 0; i < self.lastPage() + 1; i++) {
+				pages.push({ number: i, text: i + 1 });
+			}
+		} else {
+			pages.push({ number: 0, text: 1 });
+			if (self.currentPage() < 5) {
+				for (var i = 1; i < 5; i++) {
+					pages.push({ number: i, text: i + 1 });
+				}
+				pages.push({ number: -1, text: "…" });
+			} else if (self.currentPage() > self.lastPage() - 5) {
+				pages.push({ number: -1, text: "…" });
+				for (var i = self.lastPage() - 4; i < self.lastPage() ; i++) {
+					pages.push({ number: i, text: i + 1 });
+				}
+			} else {
+				pages.push({ number: -1, text: "…" });
+				for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
+					pages.push({ number: i, text: i + 1 });
+				}
+				pages.push({ number: -1, text: "…" });
+			}
+			pages.push({ number: self.lastPage(), text: self.lastPage() + 1 })
+		}
+		return pages;
+	});
 
-        if (pos > -1) {
-            var page = Math.floor(pos / self.pageSize());
-            self.changePage(page);
-        }
-    }
+	self.switchToItem = function (matcher) {
+		var pos = -1;
+		var itemList = self.items();
+		for (var i = 0; i < itemList.length; i++) {
+			if (matcher(itemList[i])) {
+				pos = i;
+				break;
+			}
+		}
 
-    self.changePage = function(newPage) {
-        if (newPage < 0 || newPage > self.lastPage())
-            return;
-        self.currentPage(newPage);
-    }
-    self.prevPage = function() {
-        if (self.currentPage() > 0) {
-            self.currentPage(self.currentPage() - 1);
-        }
-    }
-    self.nextPage = function() {
-        if (self.currentPage() < self.lastPage()) {
-            self.currentPage(self.currentPage() + 1);
-        }
-    }
+		if (pos > -1) {
+			var page = Math.floor(pos / self.pageSize());
+			self.changePage(page);
+		}
+	};
 
-    self.getItem = function(matcher) {
-        var itemList = self.items();
-        for (var i = 0; i < itemList.length; i++) {
-            if (matcher(itemList[i])) {
-                return itemList[i];
-            }
-        }
+	self.changePage = function (newPage) {
+		if (newPage < 0 || newPage > self.lastPage())
+			return;
+		self.currentPage(newPage);
+	};
+	self.prevPage = function () {
+		if (self.currentPage() > 0) {
+			self.currentPage(self.currentPage() - 1);
+		}
+	};
+	self.nextPage = function () {
+		if (self.currentPage() < self.lastPage()) {
+			self.currentPage(self.currentPage() + 1);
+		}
+	};
 
-        return undefined;
-    }
+	self.getItem = function (matcher) {
+		var itemList = self.items();
+		for (var i = 0; i < itemList.length; i++) {
+			if (matcher(itemList[i])) {
+				return itemList[i];
+			}
+		}
 
-    //~~ sorting
+		return undefined;
+	};
 
-    self.changeSorting = function(sorting) {
-        if (!_.contains(_.keys(self.supportedSorting), sorting))
-            return;
+	//~~ searching
 
-        self.currentSorting(sorting);
-        self._saveCurrentSortingToLocalStorage();
+	self.changeSearchFunction = function (searchFunction) {
+		self.searchFunction = searchFunction;
+		self.changePage(0);
+		self._updateItems();
+	};
 
-        self.changePage(0);
-        self._updateItems();
-    }
+	self.resetSearch = function () {
+		self.changeSearchFunction(undefined);
+	};
 
-    //~~ filtering
+	//~~ sorting
 
-    self.toggleFilter = function(filter) {
-        if (!_.contains(_.keys(self.supportedFilters), filter))
-            return;
+	self.changeSorting = function (sorting) {
+		if (!_.contains(_.keys(self.supportedSorting), sorting))
+			return;
 
-        if (_.contains(self.currentFilters(), filter)) {
-            self.removeFilter(filter);
-        } else {
-            self.addFilter(filter);
-        }
-    }
+		self.currentSorting(sorting);
+		self._saveCurrentSortingToLocalStorage();
 
-    self.addFilter = function(filter) {
-        if (!_.contains(_.keys(self.supportedFilters), filter))
-            return;
+		self.changePage(0);
+		self._updateItems();
+	};
 
-        for (var i = 0; i < self.exclusiveFilters.length; i++) {
-            if (_.contains(self.exclusiveFilters[i], filter)) {
-                for (var j = 0; j < self.exclusiveFilters[i].length; j++) {
-                    if (self.exclusiveFilters[i][j] == filter)
-                        continue;
-                    self.removeFilter(self.exclusiveFilters[i][j]);
-                }
-            }
-        }
+	//~~ filtering
 
-        var filters = self.currentFilters();
-        filters.push(filter);
-        self.currentFilters(filters);
-        self._saveCurrentFiltersToLocalStorage();
+	self.toggleFilter = function (filter) {
+		if (!_.contains(_.keys(self.supportedFilters), filter))
+			return;
 
-        self.changePage(0);
-        self._updateItems();
-    }
+		if (_.contains(self.currentFilters(), filter)) {
+			self.removeFilter(filter);
+		} else {
+			self.addFilter(filter);
+		}
+	};
 
-    self.removeFilter = function(filter) {
-        if (!_.contains(_.keys(self.supportedFilters), filter))
-            return;
+	self.addFilter = function (filter) {
+		if (!_.contains(_.keys(self.supportedFilters), filter))
+			return;
 
-        var filters = self.currentFilters();
-        filters.pop(filter);
-        self.currentFilters(filters);
-        self._saveCurrentFiltersToLocalStorage();
+		for (var i = 0; i < self.exclusiveFilters.length; i++) {
+			if (_.contains(self.exclusiveFilters[i], filter)) {
+				for (var j = 0; j < self.exclusiveFilters[i].length; j++) {
+					if (self.exclusiveFilters[i][j] == filter)
+						continue;
+					self.removeFilter(self.exclusiveFilters[i][j]);
+				}
+			}
+		}
 
-        self.changePage(0);
-        self._updateItems();
-    }
+		var filters = self.currentFilters();
+		filters.push(filter);
+		self.currentFilters(filters);
+		self._saveCurrentFiltersToLocalStorage();
 
-    //~~ update for sorted and filtered view
+		self.changePage(0);
+		self._updateItems();
+	};
 
-    self._updateItems = function() {
-        // determine comparator
-        var comparator = undefined;
-        var currentSorting = self.currentSorting();
-        if (typeof currentSorting !== undefined && typeof self.supportedSorting[currentSorting] !== undefined) {
-            comparator = self.supportedSorting[currentSorting];
-        }
+	self.removeFilter = function (filter) {
+		if (!_.contains(_.keys(self.supportedFilters), filter))
+			return;
 
-        // work on all items
-        var result = self.allItems;
+		var filters = self.currentFilters();
+		filters.pop(filter);
+		self.currentFilters(filters);
+		self._saveCurrentFiltersToLocalStorage();
 
-        // filter if necessary
-        var filters = self.currentFilters();
-        _.each(filters, function(filter) {
-            if (typeof filter !== undefined && typeof supportedFilters[filter] !== undefined)
-                result = _.filter(result, supportedFilters[filter]);
-        });
+		self.changePage(0);
+		self._updateItems();
+	};
 
-        // sort if necessary
-        if (typeof comparator !== undefined)
-            result.sort(comparator);
+	//~~ update for sorted and filtered view
 
-        // set result list
-        self.items(result);
-    }
+	self._updateItems = function () {
+		// determine comparator
+		var comparator = undefined;
+		var currentSorting = self.currentSorting();
+		if (typeof currentSorting !== undefined && typeof self.supportedSorting[currentSorting] !== undefined) {
+			comparator = self.supportedSorting[currentSorting];
+		}
 
-    //~~ local storage
+		// work on all items
+		var result = self.allItems;
 
-    self._saveCurrentSortingToLocalStorage = function() {
-        if ( self._initializeLocalStorage() ) {
-            var currentSorting = self.currentSorting();
-            if (currentSorting !== undefined)
-                localStorage[self.listType + "." + "currentSorting"] = currentSorting;
-            else
-                localStorage[self.listType + "." + "currentSorting"] = undefined;
-        }
-    }
+		// filter if necessary
+		var filters = self.currentFilters();
+		_.each(filters, function (filter) {
+			if (typeof filter !== undefined && typeof supportedFilters[filter] !== undefined)
+				result = _.filter(result, supportedFilters[filter]);
+		});
 
-    self._loadCurrentSortingFromLocalStorage = function() {
-        if ( self._initializeLocalStorage() ) {
-            if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
-                self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
-            else
-                self.currentSorting(defaultSorting);
-        }
-    }
+		// search if necessary
+		if (typeof self.searchFunction !== undefined && self.searchFunction) {
+			result = _.filter(result, self.searchFunction);
+		}
 
-    self._saveCurrentFiltersToLocalStorage = function() {
-        if ( self._initializeLocalStorage() ) {
-            var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
-            localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
-        }
-    }
+		// sort if necessary
+		if (typeof comparator !== undefined)
+			result.sort(comparator);
 
-    self._loadCurrentFiltersFromLocalStorage = function() {
-        if ( self._initializeLocalStorage() ) {
-            self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
-        }
-    }
+		// set result list
+		self.items(result);
+	};
 
-    self._initializeLocalStorage = function() {
-        if (!Modernizr.localstorage)
-            return false;
+	//~~ local storage
 
-        if (localStorage[self.listType + "." + "currentSorting"] !== undefined && localStorage[self.listType + "." + "currentFilters"] !== undefined && JSON.parse(localStorage[self.listType + "." + "currentFilters"]) instanceof Array)
-            return true;
+	self._saveCurrentSortingToLocalStorage = function () {
+		if (self._initializeLocalStorage()) {
+			var currentSorting = self.currentSorting();
+			if (currentSorting !== undefined)
+				localStorage[self.listType + "." + "currentSorting"] = currentSorting;
+			else
+				localStorage[self.listType + "." + "currentSorting"] = undefined;
+		}
+	};
 
-        localStorage[self.listType + "." + "currentSorting"] = self.defaultSorting;
-        localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(self.defaultFilters);
+	self._loadCurrentSortingFromLocalStorage = function () {
+		if (self._initializeLocalStorage()) {
+			if (_.contains(_.keys(supportedSorting), localStorage[self.listType + "." + "currentSorting"]))
+				self.currentSorting(localStorage[self.listType + "." + "currentSorting"]);
+			else
+				self.currentSorting(defaultSorting);
+		}
+	};
 
-        return true;
-    }
+	self._saveCurrentFiltersToLocalStorage = function () {
+		if (self._initializeLocalStorage()) {
+			var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
+			localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
+		}
+	};
 
-    self._loadCurrentFiltersFromLocalStorage();
-    self._loadCurrentSortingFromLocalStorage();
+	self._loadCurrentFiltersFromLocalStorage = function () {
+		if (self._initializeLocalStorage()) {
+			self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
+		}
+	};
+
+	self._initializeLocalStorage = function () {
+		if (!Modernizr.localstorage)
+			return false;
+
+		if (localStorage[self.listType + "." + "currentSorting"] !== undefined && localStorage[self.listType + "." + "currentFilters"] !== undefined && JSON.parse(localStorage[self.listType + "." + "currentFilters"]) instanceof Array)
+			return true;
+
+		localStorage[self.listType + "." + "currentSorting"] = self.defaultSorting;
+		localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(self.defaultFilters);
+
+		return true;
+	};
+
+	self._loadCurrentFiltersFromLocalStorage();
+	self._loadCurrentSortingFromLocalStorage();
 }
-
 function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursiveSetVariableFunction, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
 	var self = this;
 
@@ -289,6 +311,8 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 	self.exclusiveFilters = exclusiveFilters;
 	self.recursiveGetVariableFunction = recursiveGetVariableFunction;
 	self.recursiveSetVariableFunction = recursiveSetVariableFunction;
+
+	self.searchFunction = undefined;
 
 	self.allItems = [];
 
@@ -432,6 +456,18 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 
 		return recursiveGetItem(itemList);
 	}
+
+	//~~ searching
+
+	self.changeSearchFunction = function (searchFunction) {
+		self.searchFunction = searchFunction;
+		self.changePage(0);
+		self._updateItems();
+	};
+
+	self.resetSearch = function () {
+		self.changeSearchFunction(undefined);
+	};
 
 	//~~ sorting
 
