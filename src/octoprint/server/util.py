@@ -1,4 +1,6 @@
 # coding=utf-8
+from octoprint.filemanager.destinations import FileDestinations
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -19,13 +21,15 @@ import os
 import threading
 import logging
 from functools import wraps
+from watchdog.events import PatternMatchingEventHandler
 
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
 from octoprint.users import ApiUser
 from octoprint.events import Events
-
+from octoprint import gcodefiles
+import octoprint.util as util
 
 def restricted_access(func, apiEnabled=True):
 	"""
@@ -484,4 +488,71 @@ def redirectToTornado(request, target):
 		fragment = requestUrl[requestUrl.rfind("?"):]
 		redirectUrl += fragment
 	return redirect(redirectUrl)
+
+
+class UploadCleanupWatchdogHandler(PatternMatchingEventHandler):
+	"""
+	Takes care of automatically deleting metadata entries for files that get deleted from the uploads folder
+	"""
+
+	patterns = map(lambda x: "*.%s" % x, gcodefiles.GCODE_EXTENSIONS)
+
+	def __init__(self, gcode_manager):
+		PatternMatchingEventHandler.__init__(self)
+		self._gcode_manager = gcode_manager
+
+	def on_deleted(self, event):
+		filename = self._gcode_manager._getBasicFilename(event.src_path)
+		if not filename:
+			return
+
+		self._gcode_manager.removeFileFromMetadata(filename)
+
+
+class GcodeWatchdogHandler(PatternMatchingEventHandler):
+	"""
+	Takes care of automatically "uploading" files that get added to the watchdog folder.
+	"""
+
+	patterns = map(lambda x: "*.%s" % x, gcodefiles.SUPPORTED_EXTENSIONS)
+
+	def __init__(self, gcodeManager, printer):
+		PatternMatchingEventHandler.__init__(self)
+		self._gcodeManager = gcodeManager
+		self._printer = printer
+
+	def _upload(self, path):
+		class WatchdogFileWrapper(object):
+
+			def __init__(self, path):
+				self._path = path
+				self.filename = os.path.basename(self._path)
+
+			def save(self, target):
+				util.safeRename(self._path, target)
+
+		fileWrapper = WatchdogFileWrapper(path)
+
+		# determine current job
+		currentFilename = None
+		currentSd = None
+		currentJob = self._printer.getCurrentJob()
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		# determine future filename of file to be uploaded, abort if it can't be uploaded
+		futureFilename = self._gcodeManager.getFutureFilename(fileWrapper)
+		if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
+			return # Invalid file
+
+		# prohibit overwriting currently selected file while it's being printed
+		if futureFilename == currentFilename and not currentSd and self._printer.isPrinting() or self._printer.isPaused():
+			return # Trying to overwrite file that is currently being printed
+
+		self._gcodeManager.addFile(fileWrapper, FileDestinations.LOCAL)
+
+	def on_created(self, event):
+		self._upload(event.src_path)
+
 

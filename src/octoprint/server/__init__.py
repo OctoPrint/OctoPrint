@@ -10,6 +10,7 @@ from sockjs.tornado import SockJSRouter
 from flask import Flask, render_template, send_from_directory, make_response
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
+from watchdog.observers import Observer
 
 import os
 import logging
@@ -33,7 +34,7 @@ user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint.server.util import LargeResponseHandler, ReverseProxied, restricted_access, PrinterStateConnection, admin_validator, \
-	UrlForwardHandler, user_validator
+	UrlForwardHandler, user_validator, GcodeWatchdogHandler, UploadCleanupWatchdogHandler
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
 import octoprint.gcodefiles as gcodefiles
@@ -220,6 +221,13 @@ class Server():
 			connectionOptions = getConnectionOptions()
 			if port in connectionOptions["ports"]:
 				printer.connect(port, baudrate)
+
+		# start up watchdogs
+		observer = Observer()
+		observer.schedule(GcodeWatchdogHandler(gcodeManager, printer), settings().getBaseFolder("watchdog"))
+		observer.schedule(UploadCleanupWatchdogHandler(gcodeManager), settings().getBaseFolder("uploads"))
+		observer.start()
+
 		try:
 			IOLoop.instance().start()
 		except KeyboardInterrupt:
@@ -227,6 +235,9 @@ class Server():
 		except:
 			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			logger.exception("Stacktrace follows:")
+		finally:
+			observer.stop()
+		observer.join()
 
 	def _createSocketConnection(self, session):
 		global printer, gcodeManager, userManager, eventManager

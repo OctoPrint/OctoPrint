@@ -77,7 +77,8 @@ default_settings = {
 		"timelapse": None,
 		"timelapse_tmp": None,
 		"logs": None,
-		"virtualSd": None
+		"virtualSd": None,
+		"watchdog": None
 	},
 	"temperature": {
 		"profiles":
