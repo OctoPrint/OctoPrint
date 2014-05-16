@@ -78,6 +78,17 @@ $(function() {
             }
         });
 
+        //~~ File list
+
+        $(".gcode_files").slimScroll({
+            height: "306px",
+            size: "5px",
+            distance: "0",
+            railVisible: true,
+            alwaysVisible: true,
+            scrollBy: "102px"
+        });
+
         //~~ Gcode upload
 
         function gcode_upload_done(e, data) {
@@ -291,12 +302,24 @@ $(function() {
                 };
                 $(element).popover(options);
             }
-        }
+        };
 
         ko.bindingHandlers.allowBindings = {
-        	init: function (elem, valueAccessor) {
-        		return { controlsDescendantBindings: !valueAccessor() };
-        	}
+            init: function (elem, valueAccessor) {
+                return { controlsDescendantBindings: !valueAccessor() };
+            }
+        };
+
+        ko.bindingHandlers.slimScrolledForeach = {
+            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                return ko.bindingHandlers.foreach.init(element, valueAccessor(), allBindings, viewModel, bindingContext);
+            },
+            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                setTimeout(function() {
+                    $(element).slimScroll({scrollBy: 0});
+                }, 10);
+                return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
+            }
         };
 
         ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
@@ -360,7 +383,7 @@ $(function() {
         $.fn.modal.defaults.maxHeight = function(){
             // subtract the height of the modal header and footer
             return $(window).height() - 165;
-        }
+        };
 
         // Fix input element click problem on login dialog
         $(".dropdown input, .dropdown label").click(function(e) {

@@ -125,12 +125,8 @@ default_settings = {
 		"config": "/default/path/to/your/cura/config.ini"
 	},
 	"events": {
-		"systemCommandTrigger": {
-			"enabled": False
-		},
-		"gcodeCommandTrigger": {
-			"enabled": False
-		}
+		"enabled": False,
+		"subscriptions": []
 	},
 	"api": {
 		"enabled": False,
@@ -173,7 +169,7 @@ class Settings(object):
 			self._configfile = configfile
 		else:
 			self._configfile = os.path.join(self.settings_dir, "config.yaml")
-		self.load()
+		self.load(migrate=True)
 
 	def _init_settings_dir(self, basedir):
 		if basedir is not None:
@@ -189,13 +185,104 @@ class Settings(object):
 
 	#~~ load and save
 
-	def load(self):
+	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
 		# chamged from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = {}
+
+		if migrate:
+			self._migrateConfig()
+
+	def _migrateConfig(self):
+		if not self._config:
+			return
+
+		if "events" in self._config.keys() and ("gcodeCommandTrigger" in self._config["events"] or "systemCommandTrigger" in self._config["events"]):
+			self._logger.info("Migrating config (event subscriptions)...")
+
+			# migrate event hooks to new format
+			placeholderRe = re.compile("%\((.*?)\)s")
+
+			eventNameReplacements = {
+				"ClientOpen": "ClientOpened",
+				"TransferStart": "TransferStarted"
+			}
+			payloadDataReplacements = {
+				"Upload": {"data": "{file}", "filename": "{file}"},
+				"Connected": {"data": "{port} at {baudrate} baud"},
+				"FileSelected": {"data": "{file}", "filename": "{file}"},
+				"TransferStarted": {"data": "{remote}", "filename": "{remote}"},
+				"TransferDone": {"data": "{remote}", "filename": "{remote}"},
+				"ZChange": {"data": "{new}"},
+				"CaptureStart": {"data": "{file}"},
+				"CaptureDone": {"data": "{file}"},
+				"MovieDone": {"data": "{movie}", "filename": "{gcode}"},
+				"Error": {"data": "{error}"},
+				"PrintStarted": {"data": "{file}", "filename": "{file}"},
+				"PrintDone": {"data": "{file}", "filename": "{file}"},
+			}
+
+			def migrateEventHook(event, command):
+				# migrate placeholders
+				command = placeholderRe.sub("{__\\1}", command)
+
+				# migrate event names
+				if event in eventNameReplacements:
+					event = eventNameReplacements["event"]
+
+				# migrate payloads to more specific placeholders
+				if event in payloadDataReplacements:
+					for key in payloadDataReplacements[event]:
+						command = command.replace("{__%s}" % key, payloadDataReplacements[event][key])
+
+				# return processed tuple
+				return event, command
+
+			disableSystemCommands = False
+			if "systemCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["systemCommandTrigger"]:
+				disableSystemCommands = not self._config["events"]["systemCommandTrigger"]["enabled"]
+
+			disableGcodeCommands = False
+			if "gcodeCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["gcodeCommandTrigger"]:
+				disableGcodeCommands = not self._config["events"]["gcodeCommandTrigger"]["enabled"]
+
+			disableAllCommands = disableSystemCommands and disableGcodeCommands
+			newEvents = {
+				"enabled": not disableAllCommands,
+				"subscriptions": []
+			}
+
+			if "systemCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["systemCommandTrigger"]:
+				for trigger in self._config["events"]["systemCommandTrigger"]["subscriptions"]:
+					if not ("event" in trigger and "command" in trigger):
+						continue
+
+					newTrigger = {"type": "system"}
+					if disableSystemCommands and not disableAllCommands:
+						newTrigger["enabled"] = False
+
+					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
+					newEvents["subscriptions"].append(newTrigger)
+
+			if "gcodeCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["gcodeCommandTrigger"]:
+				for trigger in self._config["events"]["gcodeCommandTrigger"]["subscriptions"]:
+					if not ("event" in trigger and "command" in trigger):
+						continue
+
+					newTrigger = {"type": "gcode"}
+					if disableGcodeCommands and not disableAllCommands:
+						newTrigger["enabled"] = False
+
+					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
+					newTrigger["command"] = newTrigger["command"].split(",")
+					newEvents["subscriptions"].append(newTrigger)
+
+			self._config["events"] = newEvents
+			self.save(force=True)
+			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
 
 	def save(self, force=False):
 		if not self._dirty and not force:
