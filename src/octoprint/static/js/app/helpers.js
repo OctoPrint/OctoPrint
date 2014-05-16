@@ -300,6 +300,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 	self._loadCurrentFiltersFromLocalStorage();
 	self._loadCurrentSortingFromLocalStorage();
 }
+
 function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursiveSetVariableFunction, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
 	var self = this;
 
@@ -361,6 +362,8 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 	self.paginatedItems = ko.dependentObservable(function () {
 		if (self.items() == undefined) {
 			return [];
+		} else if (self.pageSize() == 0) {
+			return self.items();
 		} else {
 			var from = Math.max(self.currentPage() * self.pageSize(), 0);
 			var to = Math.min(from + self.pageSize(), self.items().length);
@@ -368,14 +371,13 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 		}
 	})
 	self.lastPage = ko.dependentObservable(function () {
-		if (self.items() == undefined)
-			return 0;
-
-		return Math.ceil(self.items().length / self.pageSize()) - 1;
+		return (self.pageSize() == 0 ? 1 : Math.ceil(self.items().length / self.pageSize()) - 1);
 	})
 	self.pages = ko.dependentObservable(function () {
 		var pages = [];
-		if (self.lastPage() < 7) {
+		if (self.pageSize() == 0) {
+			pages.push({ number: 0, text: 1 });
+		} else if (self.lastPage() < 7) {
 			for (var i = 0; i < self.lastPage() + 1; i++) {
 				pages.push({ number: i, text: i + 1 });
 			}
@@ -542,7 +544,7 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 		}
 
 		// work on all items
-		var result = self.allItems;
+		var result = self.allItems.slice();
 
 		// filter if necessary
 		recursiveFilterFunc = function (list, filter) {
@@ -552,7 +554,7 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 			for (var i = 0; i < list.length; i++) {
 				var tmp = self.recursiveGetVariableFunction(list[i]);
 				if (tmp != undefined)
-					self.recursiveSetVariableFunction(list[i], recursiveFilterFunc(tmp, filter));
+					self.recursiveSetVariableFunction(list[i], recursiveFilterFunc(tmp.slice(), filter));
 			}
 
 			return list;
@@ -562,6 +564,22 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 		_.each(filters, function (filter) {
 			result = recursiveFilterFunc(result, filter);
 		});
+
+		// search if necessary
+		recursiveSearchFunc = function (list, searchFunction) {
+			list = _.filter(list, searchFunction);
+
+			for (var i = 0; i < list.length; i++) {
+				var tmp = self.recursiveGetVariableFunction(list[i]);
+				if (tmp != undefined)
+					self.recursiveSetVariableFunction(list[i], recursiveSearchFunc(tmp.slice(), searchFunction));
+			}
+
+			return list;
+		}
+		if (typeof self.searchFunction !== undefined && self.searchFunction) {
+			result = recursiveSearchFunc(result, self.searchFunction);
+		}
 
 		// sort if necessary
 		if (typeof comparator !== undefined) {
@@ -637,49 +655,54 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 }
 
 function formatSize(bytes) {
-    if (!bytes) return "-";
+	if (!bytes) return "-";
 
-    var units = ["bytes", "KB", "MB", "GB"];
-    for (var i = 0; i < units.length; i++) {
-        if (bytes < 1024) {
-            return _.sprintf("%3.1f%s", bytes, units[i]);
-        }
-        bytes /= 1024;
-    }
-    return _.sprintf("%.1f%s", bytes, "TB");
+	var units = ["bytes", "KB", "MB", "GB"];
+	for (var i = 0; i < units.length; i++) {
+		if (bytes < 1024) {
+			return _.sprintf("%3.1f%s", bytes, units[i]);
+		}
+		bytes /= 1024;
+	}
+	return _.sprintf("%.1f%s", bytes, "TB");
 }
 
 function formatDuration(seconds) {
-    if (!seconds) return "-";
-    if (seconds < 0) return "00:00:00";
+	if (!seconds) return "-";
+	if (seconds < 0) return "00:00:00";
 
-    var s = seconds % 60;
-    var m = (seconds % 3600) / 60;
-    var h = seconds / 3600;
+	var s = seconds % 60;
+	var m = (seconds % 3600) / 60;
+	var h = seconds / 3600;
 
-    return _.sprintf("%02d:%02d:%02d", h, m, s);
+	return _.sprintf("%02d:%02d:%02d", h, m, s);
 }
 
 function formatDate(unixTimestamp) {
-    if (!unixTimestamp) return "-";
-    return moment.unix(unixTimestamp).format("YYYY-MM-DD HH:mm");
+	if (!unixTimestamp) return "-";
+	return moment.unix(unixTimestamp).format("YYYY-MM-DD HH:mm");
+}
+
+function formatTimeAgo(unixTimestamp) {
+	if (!unixTimestamp) return "-";
+	return moment.unix(unixTimestamp).fromNow();
 }
 
 function formatFilament(filament) {
-    if (!filament || !filament["length"]) return "-";
-    var result = _.sprintf("%.02fm", (filament["length"] / 1000));
-    if (filament.hasOwnProperty("volume") && filament.volume) {
-        result += " / " + _.sprintf("%.02fcm³", filament["volume"]);
-    }
-    return result;
+	if (!filament || !filament["length"]) return "-";
+	var result = _.sprintf("%.02fm", (filament["length"] / 1000));
+	if (filament.hasOwnProperty("volume") && filament.volume) {
+		result += " / " + _.sprintf("%.02fcm³", filament["volume"]);
+	}
+	return result;
 }
 
 function cleanTemperature(temp) {
-    if (!temp || temp < 10) return "off";
-    return temp;
+	if (!temp || temp < 10) return "off";
+	return temp;
 }
 
 function formatTemperature(temp) {
-    if (!temp || temp < 10) return "off";
-    return _.sprintf("%.1f&deg;C", temp);
+	if (!temp || temp < 10) return "off";
+	return _.sprintf("%.1f&deg;C", temp);
 }

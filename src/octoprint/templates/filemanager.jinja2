@@ -66,7 +66,7 @@
 	</ul>
 
 	<script type="text/html" id="expandableDir">
-		<li data-bind="css: { active: $root.isFolderSelected($data), cut: $root.isFolderCut($data) }"><input type="checkbox" data-bind="attr: { id: 'fm' + href }"></input><a href="#" class="directory" data-bind="text: name, attr: { for: 'fm' + href }, click: $root.selectFolderEvent"></a>
+		<li data-bind="css: { active: $root.isFolderSelected($data), cut: $root.isFolderCut($data) }"><input type="checkbox" data-bind="attr: { id: 'fm_' + $root.getEntryId($data) }"></input><a href="#" class="directory" data-bind="text: name, attr: { for: 'fm_' + $root.getEntryId($data) }, click: $root.selectFolderEvent"></a>
 			<ul data-bind="template: { name: $root.displayMode, foreach: data }"></ul>
 		</li>
 	</script>

@@ -3,7 +3,6 @@ import sys
 from octoprint.daemon import Daemon
 from octoprint.server import Server
 
-
 class Main(Daemon):
 	def __init__(self, pidfile, configfile, basedir, host, port, debug, allowRoot, logConf):
 		Daemon.__init__(self, pidfile)

@@ -406,6 +406,8 @@ $(function () {
             }
         };
 
+        ko.virtualElements.allowedBindings.slimScrolledForeach = true;
+
         ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));

@@ -83,17 +83,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
 
     self.onClick = function(data)
     {
-    	var obj = $("#image" + data.href);
-    	if (obj.next().hasClass("collapsed"))
-    	{
-    		obj.removeClass("icon-folder-close");
-    		obj.addClass("icon-folder-open");
-    	}
-    	else
-    	{
-    		obj.removeClass("icon-folder-open");
-    		obj.addClass("icon-folder-close");
-    	}
+    	var obj = $("#image_" + self.getEntryId(data)).toggleClass("icon-folder-close icon-folder-open");
 	}
 
     self.isLoadActionPossible = ko.computed(function() {
@@ -156,7 +146,6 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.fromResponse = function(response, filenameToFocus, locationToFocus) {
     	var i = 0;
     	recursiveCheck = function (element, index, list) {
-    		element.href = i++;
     		element.relativepath = element.relativepath.replace(/\//g, '\\');
             if (!element.hasOwnProperty("size")) element.size = undefined;
             if (!element.hasOwnProperty("date")) element.date = undefined;
@@ -186,9 +175,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.requestResponse(response);
     };
 
-    self.loadFile = function (data, printAfterLoad) {
+    self.loadFile = function (path, printAfterLoad) {
+    	var file = self.listHelper.getItem(function (item) { return item.relativepath == path });
+    	if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
+
         $.ajax({
-            url: data.refs.resource,
+            url: file.refs.resource,
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -196,16 +188,19 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         });
     };
 
-    self.removeFile = function (data) {
+    self.removeFile = function (path) {
+    	var file = self.listHelper.getItem(function (item) { return item.relativepath == path });
+    	if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
+
         var origin;
-        if (data.origin === undefined) {
+        if (file.origin === undefined) {
             origin = "local";
         } else {
-        	origin = data.origin;
+        	origin = file.origin;
         }
 
         $.ajax({
-        	url: data.refs.resource,
+        	url: file.refs.resource,
             type: "DELETE",
             success: function() { self.requestData(); }
         });
@@ -257,7 +252,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     };
 
     self.getEntryId = function(data) {
-        return "gcode_file_" + md5(data["name"] + ":" + data["origin"]);
+    	return "gcode_file_" + md5(data["relativepath"] + ":" + data["name"] + ":" + data["origin"]);
     };
 
     self.getEntryElement = function(data) {
@@ -322,8 +317,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.performSearch = function() {
         var query = self.searchQuery();
         if (query !== undefined && query.trim() != "") {
-            self.listHelper.changeSearchFunction(function(entry) {
-                return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+        	self.listHelper.changeSearchFunction(function (entry) {
+				
+                return entry && (entry["name"].toLocaleLowerCase().indexOf(query) > -1 || (entry.type != "file" && entry.data.length > 0));
             });
         } else {
             self.listHelper.resetSearch();

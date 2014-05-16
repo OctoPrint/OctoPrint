@@ -192,17 +192,17 @@ class Server():
 			"""
 			def f(request):
 				"""
-			Creates a custom wsgi and Flask request context in order to be able to process user information
-			stored in the current session.
+				Creates a custom wsgi and Flask request context in order to be able to process user information
+				stored in the current session.
 
-			:param request: The Tornado request for which to create the environment and context
-			"""
-			wsgi_environ = tornado.wsgi.WSGIContainer.environ(request)
-			with app.request_context(wsgi_environ):
-				app.session_interface.open_session(app, flask.request)
-				loginManager.reload_user()
+				:param request: The Tornado request for which to create the environment and context
+				"""
+				wsgi_environ = tornado.wsgi.WSGIContainer.environ(request)
+				with app.request_context(wsgi_environ):
+					app.session_interface.open_session(app, flask.request)
+					loginManager.reload_user()
 					validator(flask.request)
-			return f
+				return f
 
 		self._tornado_app = Application(self._router.urls + [
 			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),

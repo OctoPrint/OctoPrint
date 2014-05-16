@@ -356,7 +356,7 @@
 	self.downloadFiles = function (e) {
 		function download(files)
 		{
-			self.downloadURL(files.pop().refs.download);
+			self.downloadURL(self.gcodeFilesViewModel.downloadLink(files.pop()));
 			if (files.length > 0)
 				setTimeout(download, 500, files);
 		}
@@ -417,5 +417,9 @@
 
 		self.activeFiles([]);
 		self.activeFolders([]);
+	};
+
+	self.getEntryId = function (data) {
+		return "gcode_file_" + md5(data["relativepath"] + ":" + data["name"] + ":" + data["origin"]);
 	};
 }

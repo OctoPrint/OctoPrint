@@ -193,34 +193,32 @@
                                 <form class="form-search">
                                     <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="Search...">
                                 </form>
-                                <div id="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
-									<div class="entry" data-bind="attr: { id: $root.getEntryId($data) }">
-										<div style="height: 270px; overflow:auto !important" data-bind="template: { name: $root.displayMode, foreach: listHelper.paginatedItems }"></div>
-										<script type="text/html" id="dirTemplate">
-											<div class="entry" style="border-top: 1px solid #dddddd;">
-												<div class="hover"><i class="icon-folder-open" data-bind="attr: { id: 'image' + href }"></i><a data-toggle="collapse" data-bind="text: name, attr: { href: '#' + href }, click: $root.onClick" class="hover"></a></div>
-												<div class="row-fluid">
-													<div class="collapse in offset1" data-bind="attr: { id: href }, template: { name: $root.displayMode, foreach: data }"></div>
-												</div>
-											</div>
-										</script>
-										<script type="text/html" id="fileTemplate">
-											<div class="entry" style="border-top: 1px solid #dddddd;" data-bind="attr: { id: $root.getEntryId($data) }">
-												<div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
-												<div class="uploaded">Uploaded: <span data-bind="text: formatTimeAgo(date)"></span></div>
-												<div class="size">Size: <span data-bind="text: formatSize(size)"></span></div>
-												<div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
-												<div class="btn-group action-buttons">
-													<div class="btn btn-mini toggleAdditionalData" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }"><i class="icon-chevron-down"></i></div>
-													<a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="Download"></i></a>
-													<div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="Remove"></i></div>
-													<div class="btn btn-mini" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-folder-open" title="Load"></i></div>
-													<div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-print" title="Load and Print"></i></div>
-												</div>
-											</div>
-										</script>
-									</div>
+                                <div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
+									<div data-bind="template: { name: $root.displayMode }"></div>
                                 </div>
+								<script type="text/html" id="dirTemplate">
+									<div style="border-top: 1px solid #dddddd;">
+										<div class="hover"><i class="icon-folder-open" data-bind="attr: { id: 'image_' + $root.getEntryId($data) }"></i><a data-toggle="collapse" data-bind="text: name, attr: { href: '#collapse_' + $root.getEntryId($data) }, click: $root.onClick" class="hover"></a></div>
+										<div class="row-fluid">
+											<div class="collapse in offset1" data-bind="attr: { id: 'collapse_' + $root.getEntryId($data) }, template: { name: $root.displayMode, foreach: data }"></div>
+										</div>
+									</div>
+								</script>
+								<script type="text/html" id="fileTemplate">
+									<div class="entry" style="border-top: 1px solid #dddddd;" data-bind="attr: { id: $root.getEntryId($data) }">
+										<div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
+										<div class="uploaded">Uploaded: <span data-bind="text: formatTimeAgo(date)"></span></div>
+										<div class="size">Size: <span data-bind="text: formatSize(size)"></span></div>
+										<div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
+										<div class="btn-group action-buttons">
+											<div class="btn btn-mini toggleAdditionalData" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }"><i class="icon-chevron-down"></i></div>
+											<a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="Download"></i></a>
+											<div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.relativepath); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="Remove"></i></div>
+											<div class="btn btn-mini" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.relativepath, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-folder-open" title="Load"></i></div>
+											<div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.relativepath, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-print" title="Load and Print"></i></div>
+										</div>
+									</div>
+								</script>
                                 <div class="muted text-right">
                                     <small>Free: <span data-bind="text: freeSpaceString"></span></small>
                                 </div>
