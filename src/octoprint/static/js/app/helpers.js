@@ -301,7 +301,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 	self._loadCurrentSortingFromLocalStorage();
 }
 
-function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursiveSetVariableFunction, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
+function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursiveGetFilteredVariableFunction, recursiveSetFilteredVariableFunction, supportedSorting, supportedFilters, defaultSorting, defaultFilters, exclusiveFilters, filesPerPage) {
 	var self = this;
 
 	self.listType = listType;
@@ -311,7 +311,8 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 	self.defaultFilters = defaultFilters;
 	self.exclusiveFilters = exclusiveFilters;
 	self.recursiveGetVariableFunction = recursiveGetVariableFunction;
-	self.recursiveSetVariableFunction = recursiveSetVariableFunction;
+	self.recursiveGetFilteredVariableFunction = recursiveGetFilteredVariableFunction;
+	self.recursiveSetFilteredVariableFunction = recursiveSetFilteredVariableFunction;
 
 	self.searchFunction = undefined;
 
@@ -544,19 +545,23 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 		}
 
 		// work on all items
-		var result = self.allItems.slice();
+		var result = self.allItems;
+		var runThrough = false;
 
 		// filter if necessary
 		recursiveFilterFunc = function (list, filter) {
 			if (typeof filter !== undefined && typeof supportedFilters[filter] !== undefined)
+			{
 				list = _.filter(list, supportedFilters[filter]);
 
-			for (var i = 0; i < list.length; i++) {
-				var tmp = self.recursiveGetVariableFunction(list[i]);
-				if (tmp != undefined)
-					self.recursiveSetVariableFunction(list[i], recursiveFilterFunc(tmp.slice(), filter));
-			}
+				for (var i = 0; i < list.length; i++) {
+					var tmp = self.recursiveGetVariableFunction(list[i]);
+					if (tmp != undefined)
+						self.recursiveSetFilteredVariableFunction(list[i], recursiveFilterFunc(tmp, filter));
+				}
 
+				runThrough = true;
+			}
 			return list;
 		}
 
@@ -565,20 +570,20 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 			result = recursiveFilterFunc(result, filter);
 		});
 
+
 		// search if necessary
 		recursiveSearchFunc = function (list, searchFunction) {
-			list = _.filter(list, searchFunction);
-
 			for (var i = 0; i < list.length; i++) {
-				var tmp = self.recursiveGetVariableFunction(list[i]);
+				var tmp = runThrough ? self.recursiveGetFilteredVariableFunction(list[i]) : self.recursiveGetVariableFunction(list[i]);
 				if (tmp != undefined)
-					self.recursiveSetVariableFunction(list[i], recursiveSearchFunc(tmp.slice(), searchFunction));
+					self.recursiveSetFilteredVariableFunction(list[i], recursiveSearchFunc(tmp, searchFunction));
 			}
 
-			return list;
+			return _.filter(list, searchFunction);
 		}
 		if (typeof self.searchFunction !== undefined && self.searchFunction) {
 			result = recursiveSearchFunc(result, self.searchFunction);
+			runThrough = true;
 		}
 
 		// sort if necessary
@@ -588,9 +593,9 @@ function RecursiveItemListHelper(listType, recursiveGetVariableFunction, recursi
 				list.sort(comparator);
 
 				for (var i = 0; i < list.length; i++) {
-					var tmp = self.recursiveGetVariableFunction(list[i]);
+					var tmp = runThrough ? self.recursiveGetFilteredVariableFunction(list[i]) : self.recursiveGetVariableFunction(list[i]);
 					if (tmp != undefined)
-						self.recursiveSetVariableFunction(list[i], recursiveSort(tmp));
+						self.recursiveSetFilteredVariableFunction(list[i], recursiveSort(tmp));
 				}
 
 				return list;

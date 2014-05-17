@@ -200,7 +200,7 @@
 									<div style="border-top: 1px solid #dddddd;">
 										<div class="hover"><i class="icon-folder-open" data-bind="attr: { id: 'image_' + $root.getEntryId($data) }"></i><a data-toggle="collapse" data-bind="text: name, attr: { href: '#collapse_' + $root.getEntryId($data) }, click: $root.onClick" class="hover"></a></div>
 										<div class="row-fluid">
-											<div class="collapse in offset1" data-bind="attr: { id: 'collapse_' + $root.getEntryId($data) }, template: { name: $root.displayMode, foreach: data }"></div>
+											<div class="collapse in offset1" data-bind="attr: { id: 'collapse_' + $root.getEntryId($data) }, template: { name: $root.displayMode, foreach: filteredData }"></div>
 										</div>
 									</div>
 								</script>

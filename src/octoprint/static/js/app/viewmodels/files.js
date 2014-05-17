@@ -34,7 +34,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.listHelper = new RecursiveItemListHelper(
         "gcodeFiles",
 		function (d) { return d.data; },
-		function (k, v) { k.data = v; },
+		function (d) { return d.filteredData; },
+		function (k, v) { k.filteredData = v; },
         {
             "name": function(a, b) {
                 // sorts ascending
@@ -150,6 +151,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             if (!element.hasOwnProperty("size")) element.size = undefined;
             if (!element.hasOwnProperty("date")) element.date = undefined;
 
+            if (element.type != "file")
+            	element.filteredData = element.data;
+
     		_.each(element.data, recursiveCheck);
     	};
     	_.each(response.directories, recursiveCheck);
@@ -164,7 +168,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             if (entryElement) {
                 var entryOffset = entryElement.offsetTop;
                 $(".gcode_files").slimScroll({ scrollTo: entryOffset + "px" });
-        }
+			}
         }
 
         if (response.free) {
@@ -319,7 +323,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         if (query !== undefined && query.trim() != "") {
         	self.listHelper.changeSearchFunction(function (entry) {
 				
-                return entry && (entry["name"].toLocaleLowerCase().indexOf(query) > -1 || (entry.type != "file" && entry.data.length > 0));
+        		return entry && ((entry.type == "file" && entry["name"].toLocaleLowerCase().indexOf(query) > -1) || (entry.filteredData && entry.filteredData.length > 0));
             });
         } else {
             self.listHelper.resetSearch();
