@@ -160,14 +160,16 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     			values = [values];
     		}
 
-    		var underlyingArray = this.peek();
+    		var underlyingArray = this.peek().slice();
     		values.push.apply(values, underlyingArray);
     		this.reinitialise(values);
     	},
     	sort: function (sortComparator) {
     		var underlyingArray = this.peek();
+    		this.valueWillMutate();
     		this.sortComparator = sortComparator;
-    		this.reinitialise(underlyingArray);
+    		this.reinitialise(underlyingArray.slice());
+    		this.valueHasMutated();
     	},
     	reverse: function () {
     		var underlyingArrayClone = this.peek().slice();

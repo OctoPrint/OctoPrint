@@ -272,4 +272,25 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
                 return "customControls_emptyTemplate";
         }
     }
+
+	// Dynamic Commands
+    self.getEntryId = function (data) {
+    	return "custom_command_" + md5(data["name"] + ":" + data["type"]);
+    };
+
+    $("#customControls").mousemove(function (event) {
+    	var msg = "Handler for .mousemove() called at ";
+    	msg += event.pageX + ", " + event.pageY;
+    	$("#log").append("<div>" + msg + "</div>");
+    });
+
+    self.createCommand = function(parent, data) {
+    }
+    self.deleteCommand = function (parent, data) {
+    }
+    self.editCommand = function (parent, data) {
+    }
+
+    self.deleteSection = function (parent, data) {
+    }
 }
