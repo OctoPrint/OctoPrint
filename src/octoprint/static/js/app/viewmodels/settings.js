@@ -310,7 +310,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 if (callback) callback();
             }
         });
-    }
+    };
 
     self.fromResponse = function(response) {
         self.api_enabled(response.api.enabled);

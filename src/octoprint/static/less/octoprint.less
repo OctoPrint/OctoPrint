@@ -208,14 +208,9 @@ table {
       text-align: left;
     }
 
-    &.gcode_files_size {
-      text-align: right;
-      width: 55px;
-    }
-
     &.gcode_files_action {
       text-align: center;
-      width: 70px;
+      width: 90px;
 
       a {
         text-decoration: none;
@@ -410,16 +405,52 @@ ul.dropdown-menu li a {
 /** GCODE file manager */
 
 #files {
-  .popover {
-    font-size: 85%;
+  .gcode_files {
+    @padding: 5px;
+    @scrollBar: 5px;
+    @line-height: 20px;
 
-    p:last-child {
-      margin-bottom: 0;
+    padding-right: @scrollBar + 2px;
+
+    .entry {
+      padding: @padding;
+      line-height: @line-height;
+      border-bottom: 1px solid #ddd;
+      position: relative;
+
+      &:hover {
+        background-color: #f5f5f5;
+      }
+
+      .title {
+        text-overflow: ellipsis;
+        word-break: break-all;
+      }
+
+      .uploaded, .size, .additionalInfo {
+        font-size: 85%;
+        color: #999;
+      }
+
+      .action-buttons {
+        position: absolute;
+        bottom: @padding;
+        right: @padding;
+      }
+
+      .additionalInfo {
+        padding-bottom: @line-height + 2px;
+      }
     }
   }
 
-  table {
-    margin-bottom: 0;
+  .upload-buttons {
+    margin-top: 10px;
+  }
+
+  .form-search {
+    text-align: center;
+    margin-bottom: 5px !important;
   }
 }
 
@@ -678,6 +709,13 @@ ul.dropdown-menu li a {
   background: url("../img/icon-sd-black-14.png") 0 3px no-repeat;
   width: 11px;
   height: 17px;
+  display: inline-block !important;
+}
+
+.center {
+  float: none;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /** Styles for Bootstrap Slider */
