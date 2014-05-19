@@ -511,7 +511,7 @@ class UploadCleanupWatchdogHandler(PatternMatchingEventHandler):
 
 class GcodeWatchdogHandler(PatternMatchingEventHandler):
 	"""
-	Takes care of automatically "uploading" files that get added to the watchdog folder.
+	Takes care of automatically "uploading" files that get added to the watched folder.
 	"""
 
 	patterns = map(lambda x: "*.%s" % x, gcodefiles.SUPPORTED_EXTENSIONS)
