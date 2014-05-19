@@ -101,7 +101,7 @@ def getSettings():
 
 @api.route("/settings", methods=["POST"])
 @restricted_access
-@admin_permission.require(403)
+#@admin_permission.require(403)
 def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json

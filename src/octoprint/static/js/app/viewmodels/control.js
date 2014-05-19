@@ -75,38 +75,12 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
     }
 	
-	self._sortByRow = function(controls)
-	{
-		var rows = [];
-		for (var i = 0; i < controls.length; i++)
-		{
-			if (!rows[controls[i].row()])
-				rows[controls[i].row()] = [];
-				
-			rows[controls[i].row()].push(controls[i]);
-		}
-			
-		for (var i = 0; i < rows.length; i++)
-			if (rows[i])
-				rows[i] = ko.observableArray(rows[i].sort(function(left, right) {
-					if (left.index() < right.index())
-						return -1;
-			
-					if (left.index() > right.index())
-						return 1;
-				
-					return 0;
-				}));
-			
-		return rows;
-	}
-	
     self._processControls = function (controls) {
     	var control = [];
         for (var i = 0; i < controls.length; i++) {
             control.push(self._processControl(controls[i]));
         }
-        return self._sortByRow(control);
+        return control;
     }
 
     self._processControl = function (control) {
@@ -130,10 +104,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
         c.backgroundColor1 = control.backgroundColor1;
     	c.backgroundColor2 = control.backgroundColor2;
-        c.foregroundColor = control.foregroundColor;
-		c.row = control.row;
-		c.offset = control.offset;
-		c.index = control.index;
+    	c.foregroundColor = control.foregroundColor;
+
+    	if (control.hasOwnProperty("height")) c.height = control.height;
+    	if (control.hasOwnProperty("left")) c.left = control.left;
+    	if (control.hasOwnProperty("top")) c.top = control.top;
 
         return c;
     }
@@ -225,7 +200,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
             // single command
             data = {"command" : command.command()};
-        } else if (command.type == "commands" || command.type == "parametric_commands") {
+        } else if (command.type == "commands" || command.type == "parametric_commands" || command.type == "feedback_commands") {
             // multi command
             data = {"commands": command.commands().toString().split('\n')};
         }
@@ -274,23 +249,84 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     }
 
 	// Dynamic Commands
+    self.customCommandParentObject = {};
+    self.customCommandData = {};
+
+    self.showChevron = function (dir, index) {
+    	if (dir == "down")
+    	{
+    		return index < self.controls().length-1;
+    	}
+
+    	return index > 0;
+    }
+
+    self.switchPlaces = function (index1, index2) {
+    	self.settings.switchControls(index1, index2);
+    }
+
+    self.toggleCollapse = function () {
+    	var element = $('#title_' + self.getEntryId(this));
+
+    	if (this.height() != 0)
+    	{
+    		this.height(0);
+		}
+    	else
+    	{
+    		var maxHeight = 0;
+    		element.children().each(function (index, value) {
+    			var e = $(value);
+    			maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
+    		});
+
+    		this.height(maxHeight);
+    	}
+
+    	self.settings.saveControls(true);
+    }
+
     self.getEntryId = function (data) {
-    	return "custom_command_" + md5(data["name"] + ":" + data["type"]);
-    };
-
-    $("#customControls").mousemove(function (event) {
-    	var msg = "Handler for .mousemove() called at ";
-    	msg += event.pageX + ", " + event.pageY;
-    	$("#log").append("<div>" + msg + "</div>");
-    });
-
-    self.createCommand = function(parent, data) {
-    }
-    self.deleteCommand = function (parent, data) {
-    }
-    self.editCommand = function (parent, data) {
+    	return "custom_command_" + md5(data.name() + ":" + data.type);
     }
 
-    self.deleteSection = function (parent, data) {
+    self.adjustContainer = function () {
+    	var element = $(this);
+    	var pos = element.position();
+    	var parent = element.parents(".collapse:first");
+
+    	var maxHeight = 0;
+    	parent.children().each(function (index, value) {
+    		var e = $(value);
+    		maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
+    	});
+
+    	parent.height(maxHeight + 50);
+    }
+
+    self.movementStopped = function (data, parentData) {
+    	var element = $('#' + self.getEntryId(data));
+    	var elementPos = element.position();
+
+    	data.left(elementPos.left);
+    	data.top(elementPos.top);
+
+    	parentData.height(0);
+    	self.toggleCollapse.call(parentData);
+    }
+
+    self.setData = function (parent, data) {
+    	self.customCommandParentObject = parent;
+    	self.customCommandData = data;
+    }
+
+    self.createCommand = function() {
+    }
+    self.deleteCommand = function() {
+    }
+    self.editCommand = function() {
+    }
+
+    self.deleteSection = function() {
     }
 }

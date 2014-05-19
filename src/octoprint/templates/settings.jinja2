@@ -9,7 +9,7 @@
                 <li class="nav-header">Printer</li>
                 <li class="active"><a href="#settings_serialConnection" data-toggle="tab">Serial Connection</a></li>
                 <li><a href="#settings_printerParameters" data-toggle="tab">Printer Parameters</a></li>
-								<li><a href="#settings_controlButtons" data-toggle="tab">Control Buttons</a></li>
+				<li><a href="#settings_controlButtons" data-toggle="tab">Control Buttons</a></li>
                 <li><a href="#settings_temperature" data-toggle="tab">Temperatures</a></li>
                 <li><a href="#settings_terminalFilters" data-toggle="tab">Terminal filters</a></li>
                 <li class="nav-header">Features</li>
@@ -883,35 +883,39 @@
 						</script>
 						<script type="text/html" id="settings_customControls_layoutTemplate">
 							<div class="span12" style="min-height: 0px">
+								<!-- ko if: type == 'section' -->
 								<div class="span3" style="min-height: 0px">
-									<label data-bind="attr: { 'for': 'row_' + $data.name() + '_' + $index() }">
+									<label data-bind="attr: { 'for': 'row_' + name() + '_' + $index() }">
 										<h5>Row</h5>
 									</label>
 								</div>
+								<!-- /ko -->
 								<!-- ko if: type != 'section' -->
 								<div class="span3" style="min-height: 0px">
-									<label data-bind="attr: { 'for': 'index_' + $data.name() + '_' + $index() }">
-										<h5 >Index</h5>
+									<label data-bind="attr: { 'for': 'left_' + name() + '_' + $index() }">
+										<h5>Left</h5>
 									</label>
 								</div>
 								<div class="span3" style="min-height: 0px">
-									<label data-bind="attr: { 'for': 'offset_' + $data.name() + '_' + $index() }">
-										<h5>Offset</h5>
+									<label data-bind="attr: { 'for': 'top_' + name() + '_' + $index() }">
+										<h5>Top</h5>
 									</label>
 								</div>
 								<!-- /ko -->
 							</div>
 
 							<div class="span12" style="margin-left: 0px">
+								<!-- ko if: type == 'section' -->
 								<div class="span3">
-									<input type="number" min="0" class="span12 text-right" data-bind="value: row, attr: { 'id': 'row_' + $data.name() + '_' + $index() }"></input>
+									<input type="number" min="0" class="span12 text-right" data-bind="value: row, attr: { 'id': 'row_' + name() + '_' + $index() }"></input>
 								</div>
+								<!-- /ko -->
 								<!-- ko if: type != 'section' -->
 								<div class="span3">
-									<input type="number" min="0" class="span12 text-right" data-bind="value: index, attr: { 'id': 'index_' + $data.name() + '_' + $index() }"></input>
+									<input type="number" min="0" class="span12 text-right" data-bind="value: left, attr: { 'id': 'left_' + name() + '_' + $index() }"></input>
 								</div>
 								<div class="span3">
-									<input type="number" min="0" class="span12 text-right" data-bind="value: offset, attr: { 'id': 'offset_' + $data.name() + '_' + $index() }"></input>
+									<input type="number" min="0" class="span12 text-right" data-bind="value: top, attr: { 'id': 'top_' + name() + '_' + $index() }"></input>
 								</div>
 								<!-- /ko -->
 							</div>

@@ -296,6 +296,9 @@ $(function() {
         				$(e).hide();
         			});
 
+        			if (settings.preFunction)
+        				settings.preFunction();
+
         			$(settings.menuSelector)
 					.show()
 					.css({
@@ -349,10 +352,32 @@ $(function() {
 
         ko.bindingHandlers.contextMenu = {
         	init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-        		var option = { menuSelector: valueAccessor() };
-        		$(element).contextMenu(option);
-        	}
+        		var val = ko.utils.unwrapObservable(valueAccessor());
+
+        		$(element).contextMenu(valueAccessor());
+        	},
+        	update: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        		$(element).contextMenu(valueAccessor());
+			}
         }
+
+        ko.bindingHandlers.drag = {
+        	init: function (element, valueAccessor, allBindingsAccessor, viewModel) {
+        		$(element).find(":input").on('mousedown', function (e) {
+        			var mdown = document.createEvent("MouseEvents");
+        			mdown.initMouseEvent("mousedown", false, true, window, 0, e.screenX, e.screenY, e.clientX, e.clientY, true, false, false, true, 0, null);
+        			$(this).closest(element)[0].dispatchEvent(mdown);
+        		}).on('click', function (e) {
+        			var $draggable = $(this).closest(element);
+        			if ($draggable.data("preventBehaviour")) {
+        				e.preventDefault();
+        				$draggable.data("preventBehaviour", false)
+        			}
+        		});
+
+        		$(element).draggable(valueAccessor());
+        	}
+        };
 
         ko.bindingHandlers.popover = {
             init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {

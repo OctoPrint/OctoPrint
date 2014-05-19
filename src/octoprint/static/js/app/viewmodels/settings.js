@@ -132,92 +132,16 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.terminalFilters = ko.observableArray([]);
 
-	// http://stackoverflow.com/questions/15209576/knockout-js-sorted-observable-array
-    ko.sortedObservableArray = function (sortComparator, initialValues) {
-    	if (arguments.length < 2) {
-    		initialValues = [];
-    	}
-    	var result = ko.observableArray(initialValues);
-    	ko.utils.extend(result, ko.sortedObservableArray.fn);
-    	delete result.unshift;
-    	result.sort(sortComparator);
-    	return result;
+    self.children = ko.observableArray([]); // Controls
+    self.sortControls = function (left, right) {
+    	if (left.row() < right.row())
+    		return -1;
+
+    	if (left.row() > right.row())
+    		return 1;
+
+    	return 0;
     };
-
-    ko.sortedObservableArray.fn = {
-    	reinitialise: function (values) {
-    		if (!$.isArray(values)) {
-    			values = [values];
-    		}
-    		var underlyingArray = this.peek();
-    		this.valueWillMutate();
-    		underlyingArray.splice(0, underlyingArray.length);
-    		underlyingArray.push.apply(underlyingArray, this.sortComparator(values));
-    		this.valueHasMutated();
-    	},
-    	push: function (values) {
-    		if (!$.isArray(values)) {
-    			values = [values];
-    		}
-
-    		var underlyingArray = this.peek().slice();
-    		values.push.apply(values, underlyingArray);
-    		this.reinitialise(values);
-    	},
-    	sort: function (sortComparator) {
-    		var underlyingArray = this.peek();
-    		this.valueWillMutate();
-    		this.sortComparator = sortComparator;
-    		this.reinitialise(underlyingArray.slice());
-    		this.valueHasMutated();
-    	},
-    	reverse: function () {
-    		var underlyingArrayClone = this.peek().slice();
-    		underlyingArrayClone.reverse();
-    		return underlyingArrayClone;
-    	}
-    };
-
-    self.sortControls = function (v) {
-    	var rows = [];
-    	for (var i = 0; i < v.length; i++) {
-    		if (!rows[v[i].row()])
-    			rows[v[i].row()] = [];
-
-    		rows[v[i].row()].push(v[i]);
-    	}
-
-    	for (var i = 0; i < rows.length; i++)
-    		if (rows[i])
-    			rows[i] = rows[i].sort(function (left, right) {
-    				if (left.type == "section")
-    					left.children(left.children());
-    				if (right.type == "section")
-    					right.children(right.children());
-
-    				if (left.index() < right.index())
-    					return -1;
-
-    				if (left.index() > right.index())
-    					return 1;
-
-    				return 0;
-    			});
-    		else
-    			rows[i] = [];
-
-    	var c = [];
-    	var index = 0;
-    	for (var i = 0; i < rows.length; i++)
-    		for (var j = 0; j < rows[i].length; j++)
-    			c[index++] = rows[i][j];
-
-    	return c;
-    };
-
-    self.children = ko.sortedObservableArray(self.sortControls); // Controls
-	self.controlRow = 0;
-	self.controlIndex = 0;
 
     self.addTemperatureProfile = function() {
         self.temperature_profiles.push({name: "New", extruder:0, bed:0});
@@ -377,7 +301,16 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         {
         	children.push(self._processControl(response.controls[i]));
         }
-        self.children(children);
+        self.children(children.sort(self.sortControls));
+    }
+
+    self.switchControls = function (index1, index2) {
+    	self.children()[index1].row(index2);
+    	self.children()[index2].row(index1);
+
+    	self.children(self.children().sort(self.sortControls));
+
+    	self.saveControls(true);
     }
 
     self._processControl = function (customControl)
@@ -392,17 +325,34 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     				customControl.commands = ko.observable(customControl.commands);
     			else
     				customControl.commands = ko.observable(customControl.commands.toString().replace(/\,/g, '\n'));
+
+			if (!customControl.hasOwnProperty("left"))
+				customControl.left = ko.observable(0);
+			else
+				customControl.left = ko.observable(customControl.left);
+
+			if (!customControl.hasOwnProperty("top"))
+				customControl.top = ko.observable(0);
+			else
+				customControl.top = ko.observable(customControl.top);
     	}
     	else 
 		{
-			self.controlRow = 0;
-			self.controlIndex = 0;
-			
 			var c = [];
     		for (var j = 0; j < customControl.children.length; j++)
     			c[j] = self._processControl(customControl.children[j]);
 
-    		customControl.children = ko.sortedObservableArray(self.sortControls, c);
+    		customControl.children = ko.observableArray(c);
+
+    		if (!customControl.hasOwnProperty("height"))
+    			customControl.height = ko.observable(0);
+    		else
+    			customControl.height = ko.observable(customControl.height);
+
+    		if (!customControl.hasOwnProperty("row"))
+    			customControl.row = ko.observable(0);
+    		else
+    			customControl.row = ko.observable(customControl.row);
     	}
 
     	if (customControl.type == "parametric_command" || customControl.type == "parametric_commands") {
@@ -432,39 +382,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         	customControl.foregroundColor = ko.observable("#000000");
         else
         	customControl.foregroundColor = ko.observable(customControl.foregroundColor);
-			
-        if (!customControl.hasOwnProperty("row"))
-        	customControl.row = ko.observable(self.controlRow);
-        else
-		{
-			if (customControl.row != self.controlRow)
-			{
-				self.controlRow = customControl.row;
-				self.controlIndex = 0;
-			}
-        	customControl.row = ko.observable(customControl.row);
-		}
-			
-        if (!customControl.hasOwnProperty("index"))
-        	customControl.index = ko.observable(self.controlIndex++);
-        else
-		{
-			if (customControl.index >= self.controlIndex)
-				self.controlIndex = customControl.index+1;
-				
-        	customControl.index = ko.observable(customControl.index);
-		}
-			
-        if (!customControl.hasOwnProperty("offset"))
-        	customControl.offset = ko.observable("0");
-        else
-        	customControl.offset = ko.observable(customControl.offset);
-			
-		if (self.controlIndex >= 4)
-		{
-			self.controlRow++;
-			self.controlIndex = 0;
-		}
 
     	return customControl;
     }
@@ -475,11 +392,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 					name: customControl.name(), 
 					foregroundColor: customControl.foregroundColor(), 
 					backgroundColor1: customControl.backgroundColor1(), 
-					backgroundColor2: customControl.backgroundColor2(),
-					row: customControl.row(), 
-					index: customControl.index(),
-					offset: customControl.offset() 
-				};
+					backgroundColor2: customControl.backgroundColor2()
+    	};
+
+    	if (customControl.hasOwnProperty("height")) c.height = customControl.height();
+    	if (customControl.hasOwnProperty("left")) c.left = customControl.left();
+    	if (customControl.hasOwnProperty("top")) c.top = customControl.top();
 				
     	switch(customControl.type)
     	{
@@ -556,12 +474,26 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     	return c;
     }
 
-    self.saveData = function () {
-
+    self.saveControls = function (send) {
     	var controls = [];
     	for (var i = 0; i < self.children().length; i++)
     		controls.push(self._customControlToArray(self.children()[i]));
 
+    	if (send)
+    	{
+    		$.ajax({
+    			url: API_BASEURL + "settings",
+    			type: "POST",
+    			dataType: "json",
+    			contentType: "application/json; charset=UTF-8",
+    			data: JSON.stringify({"controls": controls })
+    		});
+    	}
+
+    	return controls;
+    }
+
+    self.saveData = function () {
         var data = {
             "api" : {
                 "enabled": self.api_enabled(),
@@ -629,7 +561,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "config": self.cura_config()
             },
             "terminalFilters": self.terminalFilters(),
-			"controls": controls
+            "controls": self.saveControls(false)
         };
 
         $.ajax({
