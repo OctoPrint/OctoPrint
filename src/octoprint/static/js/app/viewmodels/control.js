@@ -1,7 +1,8 @@
-function ControlViewModel(loginStateViewModel, settingsViewModel) {
+function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.users = usersViewModel;
     self.settings = settingsViewModel;
 
     self._createToolEntry = function() {
@@ -23,8 +24,6 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.controls = ko.observableArray([]);
 
     self.tools = ko.observableArray([]);
-
-    self.feedbackControlLookup = {};
 
     self.settings.printer_numExtruders.subscribe(function(oldVal, newVal) {
         var tools = [];
@@ -48,7 +47,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     });
 
     self.settings.children.subscribe(function (newVal) {
-    	self.controls(self._processControls(newVal));
+    	self.controls(newVal);
     });
 
     self.fromCurrentData = function(data) {
@@ -70,47 +69,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     }
 
     self.fromFeedbackCommandData = function(data) {
-        if (data.name in self.feedbackControlLookup) {
-            self.feedbackControlLookup[data.name](data.output);
-        }
-    }
-	
-    self._processControls = function (controls) {
-    	var control = [];
-        for (var i = 0; i < controls.length; i++) {
-            control.push(self._processControl(controls[i]));
-        }
-        return control;
-    }
-
-    self._processControl = function (control) {
-    	var c = { name: control.name, type: control.type };
-    	if (control.type == "parametric_command" || control.type == "parametric_commands") {
-    		c.input = [];
-    		for (var i = 0; i < control.input().length; i++)
-    			c.input.push({ name: control.input()[i].name(), parameter: control.input()[i].parameter(), value: control.input()[i].default });
-
-        	c.input = ko.observableArray(c.input);
-    	} else if (control.type == "feedback_command" || control.type == "feedback_commands") {
-    		c.regex = control.regex;
-    		c.template = control.template;
-        	c.output = ko.observable("");
-            self.feedbackControlLookup[control.name()] = control.output;
-        } else if (control.type == "section") {
-        	c.children = ko.observableArray(self._processControls(control.children()));
-		}
-        if (control.hasOwnProperty("command")) c.command = control.command;
-        if (control.hasOwnProperty("commands")) c.commands = control.commands;
-
-        c.backgroundColor1 = control.backgroundColor1;
-    	c.backgroundColor2 = control.backgroundColor2;
-    	c.foregroundColor = control.foregroundColor;
-
-    	if (control.hasOwnProperty("height")) c.height = control.height;
-    	if (control.hasOwnProperty("left")) c.left = control.left;
-    	if (control.hasOwnProperty("top")) c.top = control.top;
-
-        return c;
+        
     }
 
     self.sendJogCommand = function(axis, multiplier, distance) {
@@ -249,29 +208,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     }
 
 	// Dynamic Commands
-    self.customCommandParentObject = {};
-    self.customCommandData = {};
-
-    self.showChevron = function (dir, index) {
-    	if (dir == "down")
-    	{
-    		return index < self.controls().length-1;
-    	}
-
-    	return index > 0;
-    }
-
-    self.switchPlaces = function (index1, index2) {
-    	self.settings.switchControls(index1, index2);
-    }
-
     self.toggleCollapse = function () {
     	var element = $('#title_' + self.getEntryId(this));
 
     	if (this.height() != 0)
-    	{
     		this.height(0);
-		}
     	else
     	{
     		var maxHeight = 0;
@@ -280,53 +221,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     			maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
     		});
 
-    		this.height(maxHeight);
+    		this.height(maxHeight+1);
     	}
 
-    	self.settings.saveControls(true);
+    	//self.settings.saveControls(true);
     }
 
     self.getEntryId = function (data) {
     	return "custom_command_" + md5(data.name() + ":" + data.type);
-    }
-
-    self.adjustContainer = function () {
-    	var element = $(this);
-    	var pos = element.position();
-    	var parent = element.parents(".collapse:first");
-
-    	var maxHeight = 0;
-    	parent.children().each(function (index, value) {
-    		var e = $(value);
-    		maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
-    	});
-
-    	parent.height(maxHeight + 50);
-    }
-
-    self.movementStopped = function (data, parentData) {
-    	var element = $('#' + self.getEntryId(data));
-    	var elementPos = element.position();
-
-    	data.left(elementPos.left);
-    	data.top(elementPos.top);
-
-    	parentData.height(0);
-    	self.toggleCollapse.call(parentData);
-    }
-
-    self.setData = function (parent, data) {
-    	self.customCommandParentObject = parent;
-    	self.customCommandData = data;
-    }
-
-    self.createCommand = function() {
-    }
-    self.deleteCommand = function() {
-    }
-    self.editCommand = function() {
-    }
-
-    self.deleteSection = function() {
     }
 }

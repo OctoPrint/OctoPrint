@@ -1,8 +1,9 @@
-function SettingsViewModel(loginStateViewModel, usersViewModel) {
+function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.users = usersViewModel;
+    self.dialogs = dialogsViewModel;
 
     self.api_enabled = ko.observable(undefined);
     self.api_key = ko.observable(undefined);
@@ -159,46 +160,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.terminalFilters.remove(filter);
     };
 
-    self.addControlButton = function (data) {
-    	var customControlType = $("#customControl_type_overlay");
-    	var customControlTypeAck = $(".confirmation_dialog_acknowledge", customControlType);
-    	var selection = $("#customControlType", customControlType);
-
-    	customControlTypeAck.unbind("click");
-    	customControlTypeAck.bind("click", function (e) {
-    		e.preventDefault();
-    		$("#customControl_type_overlay").modal("hide");
-
-    		switch(selection.val())
-    		{
-    			case "commands":
-    				data.children.push(self._processControl({ type: selection.val(), name: "New"+(data.children().length+1), commands: "," }));
-    				break;
-    			case "parametric_command":
-    				data.children.push(self._processControl({ type: selection.val(), name: "New" + (data.children().length + 1), commands: ",", input: [{ default: "", parameter: "", name: "" }] }));
-    				break;
-    			case "feedback_commands":
-    				data.children.push(self._processControl({ type: selection.val(), name: "New" + (data.children().length + 1), commands: ",", regex: "", template: "" }));
-    				break;
-    			case "section":
-    				data.children.push(self._processControl({ type: selection.val(), name: "New" + (data.children().length + 1), children: [] }));
-    				break;
-
-    		}
-    	});
-    	customControlType.modal("show");
-    };
-    self.addInputButton = function () {
-    	this.input.push({ value: "", parameter: "", name: "" })
-    };
-
-    self.removeControlButton = function (parent, button) {
-    	parent.children.remove(button);
-    };
-    self.removeInput = function (parent, value) {
-    	parent.input.remove(value);
-    };
-
     self.getPrinterInvertAxis = function(axis) {
         return _.contains((self.printer_invertAxes() || []), axis.toLowerCase());
     };
@@ -304,15 +265,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.children(children.sort(self.sortControls));
     }
 
-    self.switchControls = function (index1, index2) {
-    	self.children()[index1].row(index2);
-    	self.children()[index2].row(index1);
-
-    	self.children(self.children().sort(self.sortControls));
-
-    	self.saveControls(true);
-    }
-
     self._processControl = function (customControl)
     {
     	customControl.name = ko.observable(customControl.name);
@@ -349,6 +301,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     		else
     			customControl.height = ko.observable(customControl.height);
 
+			customControl.settingsHeight = ko.observable(0);
+
     		if (!customControl.hasOwnProperty("row"))
     			customControl.row = ko.observable(0);
     		else
@@ -357,7 +311,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     	if (customControl.type == "parametric_command" || customControl.type == "parametric_commands") {
     		for (var j = 0; j < customControl.input.length; j++)
-    			customControl.input[j] = { name: ko.observable(customControl.input[j].name), parameter: ko.observable(customControl.input[j].parameter), value: ko.observable(customControl.input[j].default) };
+    			customControl.input[j] = { name: ko.observable(customControl.input[j].name), parameter: ko.observable(customControl.input[j].parameter), defaultValue: ko.observable(customControl.input[j].default), value: ko.observable(customControl.input[j].default) };
 
     		customControl.input = ko.observableArray(customControl.input);
     	}
@@ -366,6 +320,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     	{
     		customControl.regex = ko.observable(customControl.regex);
     		customControl.template = ko.observable(customControl.template);
+    		customControl.output = ko.observable("");
     	}
 		
 		if (!customControl.hasOwnProperty("backgroundColor1"))
@@ -440,7 +395,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     			c.input = [];
     			for (var i = 0; i < customControl.input().length; i++)
-    				c.input.push({ name: customControl.input()[i].name(), parameter: customControl.input()[i].parameter(), default: customControl.input()[i].value() });
+    				c.input.push({ name: customControl.input()[i].name(), parameter: customControl.input()[i].parameter(), default: customControl.input()[i].defaultValue() });
 
     			break;
 			case "feedback_command":
@@ -474,26 +429,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     	return c;
     }
 
-    self.saveControls = function (send) {
+    self.saveData = function () {
     	var controls = [];
     	for (var i = 0; i < self.children().length; i++)
     		controls.push(self._customControlToArray(self.children()[i]));
 
-    	if (send)
-    	{
-    		$.ajax({
-    			url: API_BASEURL + "settings",
-    			type: "POST",
-    			dataType: "json",
-    			contentType: "application/json; charset=UTF-8",
-    			data: JSON.stringify({"controls": controls })
-    		});
-    	}
-
-    	return controls;
-    }
-
-    self.saveData = function () {
         var data = {
             "api" : {
                 "enabled": self.api_enabled(),
@@ -561,7 +501,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "config": self.cura_config()
             },
             "terminalFilters": self.terminalFilters(),
-            "controls": self.saveControls(false)
+            "controls": controls
         };
 
         $.ajax({
@@ -578,6 +518,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     }
 
     self.displayMode = function (customControl) {
+    	if (!customControl)
+    		return "customControls_emptyTemplate";
+
     	switch (customControl.type) {
     		case "section":
     			return "settings_customControls_sectionTemplate";
@@ -590,6 +533,187 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     		case "feedback_command":
     		case "feedback_commands":
     			return "settings_customControls_feedbackCommandTemplate";
+    		case "feedback":
+    			return "settings_customControls_feedbackTemplate";
+    		default:
+    			return "settings_customControls_emptyTemplate";
     	}
+    }
+
+	// Dynamic Commands
+    self.customCommandData = undefined;
+    self.customCommandParent = undefined;
+    self.event = undefined;
+
+    self.showChevron = function (dir, index) {
+    	if (dir == "down") {
+    		return index < self.children().length - 1;
+    	}
+
+    	return index > 0;
+    }
+
+    self.switchPlaces = function (index1, index2) {
+    	self.children()[index1].row(index2);
+    	self.children()[index2].row(index1);
+
+    	self.children(self.children().sort(self.sortControls));
+    }
+
+    self.toggleCollapse = function () {
+    	var element = $('#title_' + self.getEntryId(this));
+
+    	if (this.settingsHeight() != 0)
+    		this.settingsHeight(0);
+    	else {
+    		var maxHeight = 0;
+    		element.children().each(function (index, value) {
+    			var e = $(value);
+    			maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
+    		});
+
+    		this.settingsHeight(maxHeight + 1);
+    	}
+    }
+
+    self.getEntryId = function (data) {
+    	return "settings_custom_command_" + md5(data.name() + ":" + data.type);
+    }
+
+    self.adjustContainer = function () {
+    	var element = $(this);
+    	var pos = element.position();
+    	var parent = element.parents(".collapse:first");
+
+    	var maxHeight = 0;
+    	parent.children().each(function (index, value) {
+    		var e = $(value);
+    		maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
+    	});
+
+    	parent.height(maxHeight + 50);
+    }
+
+    self.movementStopped = function (ui, data, parentData) {
+    	data.left(ui.position.left);
+    	data.top(ui.position.top);
+
+    	parentData.settingsHeight(0);
+    	self.toggleCollapse.call(parentData);
+    }
+
+    self.setData = function (event, parent, data) {
+    	self.event = event;
+    	self.customCommandParent = parent;
+    	self.customCommandData = data;
+    }
+
+    self.createCommand = function (command) {
+    	var customControlType = $("#customControl_create_overlay");
+    	var customControlTypeAck = $(".confirmation_dialog_acknowledge", customControlType);
+
+    	self.dialogs.name("");
+    	self.dialogs.commands("");
+    	self.dialogs.type(command);
+
+    	if (command.indexOf('parametric') != -1)
+    		self.dialogs.inputs([{ name: "", parameter: "", defaultValue: "" }]);
+
+    	customControlTypeAck.unbind("click");
+    	customControlTypeAck.bind("click", function (e) {
+    		e.preventDefault();
+    		customControlType.modal("hide");
+
+    		switch (command) {
+    			case "command":
+    				self.customCommandData.children.push(self._processControl({ type: "commands", name: self.dialogs.name(), commands: self.dialogs.commands(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				break;
+    			case "parametric_command":
+    				var inputs = [];
+    				for (var i = 0; i < self.dialogs.inputs().length; i++)
+    				{
+    					var input = self.dialogs.inputs()[i];
+    					if (input.name != "" && input.parameter != "")
+    						inputs.push({ name: input.name, parameter: input.parameter, default: input.defaultValue });
+    				}
+
+					self.customCommandData.children.push(self._processControl({ type: "parametric_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), input: inputs, top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				break;
+    			case "feedback_command":
+    				self.customCommandData.children.push(self._processControl({ type: "feedback_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				break;
+    			case "section":
+    				self.children.push(self._processControl({ type: "section", name: self.dialogs.name(), children: [], height: 30 }));
+    				break;
+
+    		}
+    	});
+    	customControlType.modal("show");
+    }
+    self.deleteCommand = function () {
+    	if (self.customCommandParent === self)
+    		self.children.remove(self.customCommandData);
+    	else {
+    		self.customCommandParent.children.remove(self.customCommandData);
+
+    		self.customCommandParent.settingsHeight(0);
+    		self.toggleCollapse.call(self.customCommandParent);
+    	}
+    }
+    self.editCommand = function () {
+    	var customControlType = $("#customControl_create_overlay");
+    	var customControlTypeAck = $(".confirmation_dialog_acknowledge", customControlType);
+
+    	self.dialogs.name(self.customCommandData.name());
+
+    	self.dialogs.type(self.customCommandData.type);
+    	self.dialogs.commands(self.customCommandData.commands());
+
+    	if (self.customCommandData.hasOwnProperty("input"))
+    	{
+    		var inputs = [];
+    		for (var i = 0; i < self.customCommandData.input().length; i++) {
+    			var input = self.customCommandData.input()[i];
+    			if (input.name != "" && input.parameter != "")
+    				inputs.push({ name: input.name(), parameter: input.parameter(), defaultValue: input.defaultValue() });
+    		}
+
+    		self.dialogs.inputs(inputs);
+		}
+
+    	if (self.customCommandData.hasOwnProperty("template"))
+    		self.dialogs.template(self.customCommandData.template());
+
+    	if (self.customCommandData.hasOwnProperty("regex"))
+    		self.dialogs.regex(self.customCommandData.regex());
+
+    	customControlTypeAck.unbind("click");
+    	customControlTypeAck.bind("click", function (e) {
+    		e.preventDefault();
+    		customControlType.modal("hide");
+
+    		self.customCommandData.name(self.dialogs.name());
+    		self.customCommandData.commands(self.dialogs.commands());
+
+    		switch (self.customCommandData.type) {
+				case "parametric_command":
+    			case "parametric_commands":
+    				var inputs = [];
+    				for (var i = 0; i < self.dialogs.inputs().length; i++) {
+    					var input = self.dialogs.inputs()[i];
+    					if (input.name != "" && input.parameter != "")
+    						inputs.push({ name: ko.observable(input.name), parameter: ko.observable(input.parameter), defaultValue: ko.observable(input.defaultValue), value: ko.observable(input.defaultValue) });
+    				}
+
+    				self.customCommandData.input(inputs);
+    				break;
+    			case "feedback_command":
+    			case "feedback_commands":
+    				self.customCommandData.regex(self.dialogs.regex());
+    				self.customCommandData.template(self.dialogs.template());
+    				break;
+    		}
+    	});
+    	customControlType.modal("show");
     }
 }

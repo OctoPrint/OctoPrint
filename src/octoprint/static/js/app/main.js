@@ -2,13 +2,14 @@ $(function() {
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
+        var dialogsViewModel = new DialogsViewModel();
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel);
         var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
-        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
@@ -297,14 +298,15 @@ $(function() {
         			});
 
         			if (settings.preFunction)
-        				settings.preFunction();
+        				settings.preFunction(e);
 
         			$(settings.menuSelector)
 					.show()
 					.css({
 						position: "absolute",
 						left: getLeftLocation(e),
-						top: getTopLocation(e)
+						top: getTopLocation(e),
+						"z-index": 9999
 					});
 
         			return false;
@@ -354,15 +356,32 @@ $(function() {
         	init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
         		var val = ko.utils.unwrapObservable(valueAccessor());
 
-        		$(element).contextMenu(valueAccessor());
+        		$(element).contextMenu(val);
         	},
-        	update: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-        		$(element).contextMenu(valueAccessor());
+        	update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        		var val = ko.utils.unwrapObservable(valueAccessor());
+
+        		$(element).contextMenu(val);
 			}
         }
 
         ko.bindingHandlers.drag = {
         	init: function (element, valueAccessor, allBindingsAccessor, viewModel) {
+        		$(element).find(":input").on('mousedown', function (e) {
+        			var mdown = document.createEvent("MouseEvents");
+        			mdown.initMouseEvent("mousedown", false, true, window, 0, e.screenX, e.screenY, e.clientX, e.clientY, true, false, false, true, 0, null);
+        			$(this).closest(element)[0].dispatchEvent(mdown);
+        		}).on('click', function (e) {
+        			var $draggable = $(this).closest(element);
+        			if ($draggable.data("preventBehaviour")) {
+        				e.preventDefault();
+        				$draggable.data("preventBehaviour", false)
+        			}
+        		});
+
+        		$(element).draggable(valueAccessor());
+        	},
+        	update: function (element, valueAccessor, allBindingsAccessor, viewModel) {
         		$(element).find(":input").on('mousedown', function (e) {
         			var mdown = document.createEvent("MouseEvents");
         			mdown.initMouseEvent("mousedown", false, true, window, 0, e.screenX, e.screenY, e.clientX, e.clientY, true, false, false, true, 0, null);
@@ -425,6 +444,7 @@ $(function() {
             gcodeViewModel.initialize();
             ko.applyBindings(gcodeViewModel, gcode);
         }
+        ko.applyBindings(dialogsViewModel, document.getElementById("customControl_create_overlay"));
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
