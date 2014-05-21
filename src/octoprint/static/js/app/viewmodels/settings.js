@@ -322,19 +322,24 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     		customControl.template = ko.observable(customControl.template);
     		customControl.output = ko.observable("");
     	}
+
+    	if (!customControl.hasOwnProperty("css"))
+    		customControl.css = ko.observable("");
+    	else
+    		customControl.css = ko.observable(customControl.css);
 		
 		if (!customControl.hasOwnProperty("backgroundColor1"))
-        	customControl.backgroundColor1 = ko.observable("#FFF");
+        	customControl.backgroundColor1 = ko.observable("");
         else
         	customControl.backgroundColor1 = ko.observable(customControl.backgroundColor1);
 
     	if (!customControl.hasOwnProperty("backgroundColor2"))
-    		customControl.backgroundColor2 = ko.observable("#e6e6e6");
+    		customControl.backgroundColor2 = ko.observable("");
     	else
     		customControl.backgroundColor2 = ko.observable(customControl.backgroundColor2);
 
         if (!customControl.hasOwnProperty("foregroundColor"))
-        	customControl.foregroundColor = ko.observable("#000000");
+        	customControl.foregroundColor = ko.observable("");
         else
         	customControl.foregroundColor = ko.observable(customControl.foregroundColor);
 
@@ -344,10 +349,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     self._customControlToArray = function (customControl)
     {
     	var c = { 
-					name: customControl.name(), 
-					foregroundColor: customControl.foregroundColor(), 
-					backgroundColor1: customControl.backgroundColor1(), 
-					backgroundColor2: customControl.backgroundColor2()
+			name: customControl.name(), 
+			foregroundColor: customControl.foregroundColor(), 
+			backgroundColor1: customControl.backgroundColor1(), 
+			backgroundColor2: customControl.backgroundColor2(),
+			css: customControl.css()
     	};
 
     	if (customControl.hasOwnProperty("height")) c.height = customControl.height();
@@ -541,9 +547,42 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     }
 
 	// Dynamic Commands
-    self.customCommandData = undefined;
+    self.customCommandData = ko.observable(self._processControl({name: ""}));
     self.customCommandParent = undefined;
     self.event = undefined;
+
+    self.editStyle = function (type) {
+    	return ko.computed({
+    		read: function () {
+    			if (type == "bgColor1")
+    				return self.customCommandData().backgroundColor1();
+
+    			if (type == "bgColor2")
+    				return self.customCommandData().backgroundColor2();
+
+    			if (type == "fgColor")
+    				return self.customCommandData().foregroundColor();
+
+    			if (type == "bgImage")
+    				return self.customCommandData().backgroundColor1() != '' && self.customCommandData().backgroundColor2() != '' ? "linear-gradient(to bottom," + self.customCommandData().backgroundColor1() + "," + self.customCommandData().backgroundColor2() + ")" : '';
+
+    			return self.customCommandData().css();
+    		},
+    		write: function (value) {
+    			self.customCommandData().backgroundColor1(type == "bgColor1" ? value : (type == "bgColor2" || type == "fgColor" ? self.customCommandData().backgroundColor1() : ""));
+    			self.customCommandData().backgroundColor2(type == "bgColor2" ? value : (type == "bgColor1" || type == "fgColor" ? self.customCommandData().backgroundColor2() : ""));
+    			self.customCommandData().foregroundColor(type == "fgColor" ? value : (type == "bgColor1" || type == "bgColor2" ? self.customCommandData().foregroundColor() : ""));
+    			self.customCommandData().css(type == "css" ? value : "");
+    		},
+    		owner: this
+    	});
+    }
+
+    self.bgImage = function(data) {
+    	return ko.computed(function () {
+    		return data.backgroundColor1() != '' && data.backgroundColor2() != '' ? "linear-gradient(to bottom," + data.backgroundColor1() + "," + data.backgroundColor2() + ")" : '';
+    	});
+	}
 
     self.showChevron = function (dir, index) {
     	if (dir == "down") {
@@ -605,7 +644,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     self.setData = function (event, parent, data) {
     	self.event = event;
     	self.customCommandParent = parent;
-    	self.customCommandData = data;
+    	self.customCommandData(data);
     }
 
     self.createCommand = function (command) {
@@ -626,7 +665,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
 
     		switch (command) {
     			case "command":
-    				self.customCommandData.children.push(self._processControl({ type: "commands", name: self.dialogs.name(), commands: self.dialogs.commands(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				self.customCommandData().children.push(self._processControl({ type: "commands", name: self.dialogs.name(), commands: self.dialogs.commands(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
     				break;
     			case "parametric_command":
     				var inputs = [];
@@ -637,10 +676,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     						inputs.push({ name: input.name, parameter: input.parameter, default: input.defaultValue });
     				}
 
-					self.customCommandData.children.push(self._processControl({ type: "parametric_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), input: inputs, top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				self.customCommandData().children.push(self._processControl({ type: "parametric_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), input: inputs, top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
     				break;
     			case "feedback_command":
-    				self.customCommandData.children.push(self._processControl({ type: "feedback_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				self.customCommandData().children.push(self._processControl({ type: "feedback_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
     				break;
     			case "section":
     				self.children.push(self._processControl({ type: "section", name: self.dialogs.name(), children: [], height: 30 }));
@@ -652,9 +691,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     }
     self.deleteCommand = function () {
     	if (self.customCommandParent === self)
-    		self.children.remove(self.customCommandData);
+    		self.children.remove(self.customCommandData());
     	else {
-    		self.customCommandParent.children.remove(self.customCommandData);
+    		self.customCommandParent.children.remove(self.customCommandData());
 
     		self.customCommandParent.settingsHeight(0);
     		self.toggleCollapse.call(self.customCommandParent);
@@ -664,16 +703,16 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     	var customControlType = $("#customControl_create_overlay");
     	var customControlTypeAck = $(".confirmation_dialog_acknowledge", customControlType);
 
-    	self.dialogs.name(self.customCommandData.name());
+    	self.dialogs.name(self.customCommandData().name());
 
-    	self.dialogs.type(self.customCommandData.type);
-    	self.dialogs.commands(self.customCommandData.commands());
+    	self.dialogs.type(self.customCommandData().type);
+    	self.dialogs.commands(self.customCommandData().commands());
 
-    	if (self.customCommandData.hasOwnProperty("input"))
+    	if (self.customCommandData().hasOwnProperty("input"))
     	{
     		var inputs = [];
-    		for (var i = 0; i < self.customCommandData.input().length; i++) {
-    			var input = self.customCommandData.input()[i];
+    		for (var i = 0; i < self.customCommandData().input().length; i++) {
+    			var input = self.customCommandData().input()[i];
     			if (input.name != "" && input.parameter != "")
     				inputs.push({ name: input.name(), parameter: input.parameter(), defaultValue: input.defaultValue() });
     		}
@@ -681,21 +720,21 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     		self.dialogs.inputs(inputs);
 		}
 
-    	if (self.customCommandData.hasOwnProperty("template"))
-    		self.dialogs.template(self.customCommandData.template());
+    	if (self.customCommandData().hasOwnProperty("template"))
+    		self.dialogs.template(self.customCommandData().template());
 
-    	if (self.customCommandData.hasOwnProperty("regex"))
-    		self.dialogs.regex(self.customCommandData.regex());
+    	if (self.customCommandData().hasOwnProperty("regex"))
+    		self.dialogs.regex(self.customCommandData().regex());
 
     	customControlTypeAck.unbind("click");
     	customControlTypeAck.bind("click", function (e) {
     		e.preventDefault();
     		customControlType.modal("hide");
 
-    		self.customCommandData.name(self.dialogs.name());
-    		self.customCommandData.commands(self.dialogs.commands());
+    		self.customCommandData().name(self.dialogs.name());
+    		self.customCommandData().commands(self.dialogs.commands());
 
-    		switch (self.customCommandData.type) {
+    		switch (self.customCommandData().type) {
 				case "parametric_command":
     			case "parametric_commands":
     				var inputs = [];
@@ -705,12 +744,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     						inputs.push({ name: ko.observable(input.name), parameter: ko.observable(input.parameter), defaultValue: ko.observable(input.defaultValue), value: ko.observable(input.defaultValue) });
     				}
 
-    				self.customCommandData.input(inputs);
+    				self.customCommandData().input(inputs);
     				break;
     			case "feedback_command":
     			case "feedback_commands":
-    				self.customCommandData.regex(self.dialogs.regex());
-    				self.customCommandData.template(self.dialogs.template());
+    				self.customCommandData().regex(self.dialogs.regex());
+    				self.customCommandData().template(self.dialogs.template());
     				break;
     		}
     	});

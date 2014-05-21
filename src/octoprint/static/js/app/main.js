@@ -286,6 +286,10 @@ $(function() {
 
         _.mixin(_.str.exports());
 
+        $.fn.isChildOf = function (element) {
+        	return $(element).has(this).length > 0;
+        }
+
         var contextMenuList = [];
 		// from http://jsfiddle.net/KyleMit/X9tgY/
         $.fn.contextMenu = function (settings) {
@@ -314,6 +318,9 @@ $(function() {
 
         		// click handler for context menu
         		$(settings.menuSelector).click(function (e) {
+        			if (e.target.tagName.toLowerCase() == "input")
+        				return;
+
         			$(this).hide();
         		});
         	});
@@ -344,9 +351,12 @@ $(function() {
         	}
         };
 		//make sure any menu closes on any click
-        $(document).click(function () {
-        	contextMenuList.forEach(function (e) {
-        		$(e).hide();
+        $(document).click(function (e) {
+        	contextMenuList.forEach(function (i) {
+        		if ($(e.target).isChildOf(i))
+        			return;
+
+        		$(i).hide();
         	});
         });
 

@@ -230,4 +230,8 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     self.getEntryId = function (data) {
     	return "custom_command_" + md5(data.name() + ":" + data.type);
     }
+
+    self.bgImage = function(data) { 
+    	return data.backgroundColor1() != '' && data.backgroundColor2() != '' ? "linear-gradient(to bottom," + data.backgroundColor1() + "," + data.backgroundColor2() + ")" : '';    	
+	}
 }
