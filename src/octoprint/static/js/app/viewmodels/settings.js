@@ -316,10 +316,18 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     		customControl.input = ko.observableArray(customControl.input);
     	}
 
-    	if (customControl.type == "feedback_command" || customControl.type == "feedback_commands")
+    	if (customControl.type == "feedback_command_output" || customControl.type == "feedback_commands_output")
     	{
     		customControl.regex = ko.observable(customControl.regex);
     		customControl.template = ko.observable(customControl.template);
+    		customControl.output = ko.observable("");
+    	}
+    	if (customControl.type == "feedback_command" || customControl.type == "feedback_commands") {
+    		customControl.regex = ko.observable(customControl.regex);
+    		customControl.template = ko.observable(customControl.template);
+    	}
+
+    	if (customControl.type == "feedback" || customControl.type == "feedback") {
     		customControl.output = ko.observable("");
     	}
 
@@ -406,15 +414,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     			break;
 			case "feedback_command":
     		case "feedback_commands":
-    			if (customControl.hasOwnProperty("command")) {
-    				if (customControl.command().indexOf('\n') == -1) {
-    					c.type = "feedback_command";
-    					c.command = customControl.command();
-    				}
-    				else {
-    					c.type = "feedback_commands";
-    					c.commands = customControl.command().toString().split('\n');
-    				}
+    			if (customControl.hasOwnProperty("command") && customControl.command().indexOf('\n') == -1) {
+    				c.type = "feedback_command";
+    				c.command = customControl.command();
     			}
     			else {
     				c.type = "feedback_commands";
@@ -423,7 +425,24 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
 
     			c.regex = customControl.regex();
     			c.template = customControl.template();
-				break;
+    			break;
+    		case "feedback_command_output":
+    		case "feedback_commands_output":
+    			if (customControl.hasOwnProperty("command") && customControl.command().indexOf('\n') == -1) {
+    				c.type = "feedback_command_output";
+    				c.command = customControl.command();
+    			}
+    			else {
+    				c.type = "feedback_commands_output";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+
+    			c.regex = customControl.regex();
+    			c.template = customControl.template();
+    			break;
+    		case "feedback":
+    			c.type = "feedback";
+    			break;
     		case "section":
     			c.type = "section";
     			c.children = [];
@@ -539,6 +558,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     		case "feedback_command":
     		case "feedback_commands":
     			return "settings_customControls_feedbackCommandTemplate";
+			case "feedback_command_output":
+    		case "feedback_commands_output":
+				return "settings_customControls_feedbackCommandOutputTemplate";
     		case "feedback":
     			return "settings_customControls_feedbackTemplate";
     		default:
@@ -681,6 +703,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     			case "feedback_command":
     				self.customCommandData().children.push(self._processControl({ type: "feedback_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
     				break;
+				case "feedback_command_output":
+					self.customCommandData().children.push(self._processControl({ type: "feedback_commands_output", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+					break;
+				case "feedback":
+					self.customCommandData().children.push(self._processControl({ type: "feedback", name: self.dialogs.name(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+					break;
     			case "section":
     				self.children.push(self._processControl({ type: "section", name: self.dialogs.name(), children: [], height: 30 }));
     				break;
@@ -706,7 +734,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     	self.dialogs.name(self.customCommandData().name());
 
     	self.dialogs.type(self.customCommandData().type);
-    	self.dialogs.commands(self.customCommandData().commands());
+
+    	if (self.customCommandData().hasOwnProperty("commands"))
+    		self.dialogs.commands(self.customCommandData().commands());
+    	if (self.customCommandData().hasOwnProperty("command"))
+    		self.dialogs.commands(self.customCommandData().command());
 
     	if (self.customCommandData().hasOwnProperty("input"))
     	{
@@ -748,6 +780,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     				break;
     			case "feedback_command":
     			case "feedback_commands":
+    			case "feedback_command_output":
+    			case "feedback_commands_output":
     				self.customCommandData().regex(self.dialogs.regex());
     				self.customCommandData().template(self.dialogs.template());
     				break;

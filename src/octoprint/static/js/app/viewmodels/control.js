@@ -22,7 +22,8 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
-    self.feedbackOutput = [];
+
+    self.feedbackControlLookup = {};
 
     self.tools = ko.observableArray([]);
 
@@ -53,11 +54,11 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     			if (controls[i].type == "section")
     				feedback(controls[i].children());
     			else if (controls[i].type == "feedback_command_output" || controls[i].type == "feedback_commands_output" || controls[i].type == "feedback")
-    			{
-    			}
+    				self.feedbackControlLookup[controls[i].name()] = controls[i].output;
     		}
     	};
 
+    	feedback(newVal);
     	self.controls(newVal);
     });
 
@@ -80,7 +81,9 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     }
 
     self.fromFeedbackCommandData = function(data) {
-    	
+    	if (data.name in self.feedbackControlLookup) {
+    		self.feedbackControlLookup[data.name](data.output);
+    	}
     }
 
     self.sendJogCommand = function(axis, multiplier, distance) {
@@ -167,12 +170,12 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
             return;
 
         var data = undefined;
-        if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
-            // single command
-            data = {"command" : command.command()};
-        } else if (command.type == "commands" || command.type == "parametric_commands" || command.type == "feedback_commands") {
-            // multi command
-            data = {"commands": command.commands().toString().split('\n')};
+        if (command.type.indexOf("commands") != -1) {
+        	// multi command
+        	data = { "commands": command.commands().toString().split('\n') };
+        } else if (command.type.indexOf("command") != -1) {
+        	// single command
+        	data = { "command": command.command() };
         }
 
         if (command.type == "parametric_command" || command.type == "parametric_commands") {

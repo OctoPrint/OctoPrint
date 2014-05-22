@@ -395,11 +395,11 @@ class Settings(object):
 		return feedbackControls
 
 	def _getFeedbackControls(self, control=None):
-		if control["type"] == "feedback_command" or control["type"] == "feedback_commands" or control["type"] == "feedback":
+		if "feedback_command" in control["type"]:
 			pattern = control["regex"]
 			try:
 				matcher = re.compile(pattern)
-				return [(control["id"], matcher, control["template"])]
+				return [(control["name"], matcher, control["template"])]
 			except:
 				# invalid regex or something like this, we'll just skip this entry
 				pass

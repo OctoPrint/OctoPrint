@@ -115,8 +115,8 @@
                     <input type="text" id="customControlName" style="width: 95%;" data-bind="value: name"></input>
                 </div>
             </div>
-            <!-- Everything but Sections -->
-            <div class="control-group" data-bind="visible: type().indexOf('section') == -1, style: { 'margin-bottom': type().indexOf('parametric') != -1 || type().indexOf('feedback') != -1 ? '20px' : '0px' }">
+            <!-- Everything but Sections and Feedback -->
+            <div class="control-group" data-bind="visible: type().indexOf('_') != -1, style: { 'margin-bottom': type().indexOf('parametric') != -1 || type().indexOf('feedback') != -1 ? '20px' : '0px' }">
                 <label class="control-label" for="customControlCommands">Commands</label>
                 <div class="controls">
                     <textarea id="customControlCommands" style="width: 95%; height: auto" data-bind="value: commands"></textarea>
