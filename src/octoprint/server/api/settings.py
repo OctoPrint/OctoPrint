@@ -179,6 +179,7 @@ def setSettings():
 
 		if "controls" in data.keys():
 			s.set(["controls"], data["controls"])
+			s.controlsChanged = True
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])

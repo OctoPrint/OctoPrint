@@ -399,10 +399,15 @@
                                     <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button>
                                 </div>
                             </script>
-                            <script type="text/html" id="customControls_feedbackCommandTemplate">
+                            <script type="text/html" id="customControls_feedbackCommandOutputTemplate">
                                 <div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, attr: { 'id': $root.getEntryId($data) }">
                                     <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button> 
 									<span data-bind="text: output"></span>
+                                </div>
+                            </script>
+                            <script type="text/html" id="customControls_feedbackCommandTemplate">
+                                <div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, attr: { 'id': $root.getEntryId($data) }">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button> 
                                 </div>
                             </script>
                             <script type="text/html" id="customControls_feedbackTemplate">

@@ -159,6 +159,7 @@ class Settings(object):
 		self._logger = logging.getLogger(__name__)
 
 		self.settings_dir = None
+		self.controlsChanged = False
 
 		self._config = None
 		self._dirty = False
@@ -394,11 +395,11 @@ class Settings(object):
 		return feedbackControls
 
 	def _getFeedbackControls(self, control=None):
-		if control["type"] == "feedback_command" or control["type"] == "feedback":
+		if control["type"] == "feedback_command" or control["type"] == "feedback_commands" or control["type"] == "feedback":
 			pattern = control["regex"]
 			try:
 				matcher = re.compile(pattern)
-				return [(control["name"], matcher, control["template"])]
+				return [(control["id"], matcher, control["template"])]
 			except:
 				# invalid regex or something like this, we'll just skip this entry
 				pass

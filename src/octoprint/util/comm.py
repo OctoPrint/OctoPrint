@@ -758,6 +758,10 @@ class MachineCom(object):
 					self._callback.mcMessage(line)
 
 				##~~ Parsing for feedback commands
+				if settings().controlsChanged:
+					feedbackControls = settings().getFeedbackControls()
+					settings().controlsChanged = False
+
 				if feedbackControls:
 					for name, matcher, template in feedbackControls:
 						if name in feedbackErrors:

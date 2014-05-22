@@ -22,6 +22,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
+    self.feedbackOutput = [];
 
     self.tools = ko.observableArray([]);
 
@@ -47,6 +48,16 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     });
 
     self.settings.children.subscribe(function (newVal) {
+    	var feedback = function (controls) {
+    		for (var i = 0; i < controls.length; i++) {
+    			if (controls[i].type == "section")
+    				feedback(controls[i].children());
+    			else if (controls[i].type == "feedback_command_output" || controls[i].type == "feedback_commands_output" || controls[i].type == "feedback")
+    			{
+    			}
+    		}
+    	};
+
     	self.controls(newVal);
     });
 
@@ -69,7 +80,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     }
 
     self.fromFeedbackCommandData = function(data) {
-        
+    	
     }
 
     self.sendJogCommand = function(axis, multiplier, distance) {
@@ -199,7 +210,10 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
                 return "customControls_parametricCommandTemplate";
         	case "feedback_command":
         	case "feedback_commands":
-                return "customControls_feedbackCommandTemplate";
+        		return "customControls_feedbackCommandTemplate";
+			case "feedback_command_output":
+        	case "feedback_commands_output":
+				return "customControls_feedbackCommandOutputTemplate";
             case "feedback":
                 return "customControls_feedbackTemplate";
             default:

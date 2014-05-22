@@ -699,8 +699,10 @@
 											<a href="#">Create Command</a>
 											<ul class="dropdown-menu">
 												<li><a href="#" data-bind="click: function() { $root.createCommand('command'); }">Command</a></li>
-												<li><a href="#" data-bind="click: function() { $root.createCommand('feedback_command'); }">Feedback Command</a></li>
 												<li><a href="#" data-bind="click: function() { $root.createCommand('parametric_command'); }">Parametric Command</a></li>
+												<li><a href="#" data-bind="click: function() { $root.createCommand('feedback_command_output'); }">Feedback Command with Output</a></li>
+												<li><a href="#" data-bind="click: function() { $root.createCommand('feedback_command'); }">Feedback Command without Output</a></li>
+												<li><a href="#" data-bind="click: function() { $root.createCommand('feedback'); }">Feedback Output</a></li>
 											</ul>
 										</li>
 										<li class="divider"></li>
@@ -743,11 +745,16 @@
 														<button class="btn" data-bind="text: name, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button>
 												</div>
 										</script>
-										<script type="text/html" id="settings_customControls_feedbackCommandTemplate">
+										<script type="text/html" id="settings_customControls_feedbackCommandOutputTemplate">
 												<div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, contextMenu: { menuSelector: '#settingsCommandContextMenu', preFunction: function(event) { $root.setData(event, $parent, $data); } }, drag: { grid: [5, 5], containment: 'parent', start: function( event, ui ) { $(this).data('preventBehaviour', true); }, drag: $root.adjustContainer, stop: function( event, ui ) { $root.movementStopped(ui, $data, $parent); } }, attr: { 'id': $root.getEntryId($data) }">
 														<button class="btn" data-bind="text: name, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button> 
-														<span data-bind="text: output"></span>
+														<span data-bind="text: template"></span>
 												</div>
+										</script>
+										<script type="text/html" id="settings_customControls_feedbackCommandTemplate">
+											<div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, contextMenu: { menuSelector: '#settingsCommandContextMenu', preFunction: function(event) { $root.setData(event, $parent, $data); } }, drag: { grid: [5, 5], containment: 'parent', start: function( event, ui ) { $(this).data('preventBehaviour', true); }, drag: $root.adjustContainer, stop: function( event, ui ) { $root.movementStopped(ui, $data, $parent); } }, attr: { 'id': $root.getEntryId($data) }">
+												<button class="btn" data-bind="text: name, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button>
+											</div>
 										</script>
 										<script type="text/html" id="settings_customControls_feedbackTemplate">
 												<div class="draggable"  style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, contextMenu: { menuSelector: '#commandContextMenu', preFunction: function(event) { $root.setData(event, $parent, $data); } }, drag: { grid: [5, 5], containment: 'parent', start: function( event, ui ) { $(this).data('preventBehaviour', true); }, drag: $root.adjustContainer, stop: function( event, ui ) { $root.movementStopped(ui, $data, $parent); } }, attr: { 'id': $root.getEntryId($data) }">
