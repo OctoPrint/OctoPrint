@@ -309,22 +309,31 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     			customControl.row = ko.observable(customControl.row);
     	}
 
-    	if (customControl.type == "parametric_command" || customControl.type == "parametric_commands") {
+    	if (customControl.type.indexOf("parametric_c") != -1) {
     		for (var j = 0; j < customControl.input.length; j++)
     			customControl.input[j] = { name: ko.observable(customControl.input[j].name), parameter: ko.observable(customControl.input[j].parameter), defaultValue: ko.observable(customControl.input[j].default), value: ko.observable(customControl.input[j].default) };
 
     		customControl.input = ko.observableArray(customControl.input);
     	}
+    	if (customControl.type.indexOf("parametric_s") != -1) {
+    		customControl.slideInput = {
+    			name: ko.observable(customControl.slideInput.name),
+    			parameter: ko.observable(customControl.slideInput.parameter),
+    			min: ko.observable(customControl.slideInput.min),
+    			max: ko.observable(customControl.slideInput.max),
+    			defaultValue: ko.observable(customControl.slideInput.default),
+    			value: ko.observable(customControl.slideInput.default)
+    		};
 
-    	if (customControl.type == "feedback_command_output" || customControl.type == "feedback_commands_output")
+    		customControl.slideInput = ko.observable(customControl.slideInput);
+    	}
+
+    	if (customControl.type.indexOf("feedback_command") != -1)
     	{
     		customControl.regex = ko.observable(customControl.regex);
     		customControl.template = ko.observable(customControl.template);
-    		customControl.output = ko.observable("");
-    	}
-    	if (customControl.type == "feedback_command" || customControl.type == "feedback_commands") {
-    		customControl.regex = ko.observable(customControl.regex);
-    		customControl.template = ko.observable(customControl.template);
+    		if (customControl.type.indexOf("output") != -1)
+    			customControl.output = ko.observable("");
     	}
 
     	if (customControl.type == "feedback" || customControl.type == "feedback") {
@@ -412,6 +421,32 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     				c.input.push({ name: customControl.input()[i].name(), parameter: customControl.input()[i].parameter(), default: customControl.input()[i].defaultValue() });
 
     			break;
+			case "parametric_slider_command":
+    		case "parametric_slider_commands":
+				if (customControl.hasOwnProperty("command")) {
+					if (customControl.command().indexOf('\n') == -1) {
+						c.type = "parametric_slider_command";
+						c.command = customControl.command();
+					}
+					else {
+						c.type = "parametric_slider_commands";
+						c.commands = customControl.command().toString().split('\n');
+					}
+				}
+				else {
+					c.type = "parametric_slider_commands";
+					c.commands = customControl.commands().toString().split('\n');
+				}
+
+				c.slideInput = {
+					name: customControl.slideInput().name(),
+					parameter: customControl.slideInput().parameter(),
+					min: customControl.slideInput().min(),
+					max: customControl.slideInput().max(),
+					default: customControl.slideInput().defaultValue()
+				};
+
+				break;
 			case "feedback_command":
     		case "feedback_commands":
     			if (customControl.hasOwnProperty("command") && customControl.command().indexOf('\n') == -1) {
@@ -555,6 +590,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     		case "parametric_command":
     		case "parametric_commands":
     			return "settings_customControls_parametricCommandTemplate";
+			case "parametric_slider_command":
+    		case "parametric_slider_commands":
+				return "settings_customControls_parametricSliderCommandTemplate";
     		case "feedback_command":
     		case "feedback_commands":
     			return "settings_customControls_feedbackCommandTemplate";
@@ -569,7 +607,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     }
 
 	// Dynamic Commands
-    self.customCommandData = ko.observable(self._processControl({name: ""}));
+    self.customCommandData = ko.observable(self._processControl({name: "", type: ""}));
     self.customCommandParent = undefined;
     self.event = undefined;
 
@@ -634,6 +672,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     		});
 
     		this.settingsHeight(maxHeight + 1);
+    		this.height(maxHeight + 1);
     	}
     }
 
@@ -677,7 +716,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     	self.dialogs.commands("");
     	self.dialogs.type(command);
 
-    	if (command.indexOf('parametric') != -1)
+    	if (command.indexOf('parametric_c') != -1)
     		self.dialogs.inputs([{ name: "", parameter: "", defaultValue: "" }]);
 
     	customControlTypeAck.unbind("click");
@@ -700,6 +739,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
 
     				self.customCommandData().children.push(self._processControl({ type: "parametric_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), input: inputs, top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
     				break;
+				case "parametric_slider_command":
+					var input = { name: self.dialogs.slideInput().name, parameter: self.dialogs.slideInput().parameter, min: self.dialogs.slideInput().min, max: self.dialogs.slideInput().max, default: self.dialogs.slideInput().defaultValue };
+					self.customCommandData().children.push(self._processControl({ type: "parametric_slider_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), slideInput: input, top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+					break;
     			case "feedback_command":
     				self.customCommandData().children.push(self._processControl({ type: "feedback_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
     				break;
@@ -750,7 +793,19 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     		}
 
     		self.dialogs.inputs(inputs);
-		}
+    	}
+    	if (self.customCommandData().hasOwnProperty("slideInput"))
+    	{
+    		var input = {
+    			name: self.customCommandData().slideInput().name(),
+    			parameter: self.customCommandData().slideInput().parameter(),
+    			min: self.customCommandData().slideInput().min(),
+    			max: self.customCommandData().slideInput().max(),
+    			defaultValue: self.customCommandData().slideInput().defaultValue()
+    		};
+
+    		self.dialogs.slideInput(input);
+    	}
 
     	if (self.customCommandData().hasOwnProperty("template"))
     		self.dialogs.template(self.customCommandData().template());
@@ -778,6 +833,18 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
 
     				self.customCommandData().input(inputs);
     				break;
+				case "parametric_slider_command":
+    			case "parametric_slider_commands":
+    				var input = {
+    					name: ko.observable(self.dialogs.slideInput().name),
+    					parameter: ko.observable(self.dialogs.slideInput().parameter),
+    					min: ko.observable(self.dialogs.slideInput().min),
+    					max: ko.observable(self.dialogs.slideInput().max),
+    					defaultValue: ko.observable(self.dialogs.slideInput().defaultValue)
+    				};
+
+					self.customCommandData().slideInput(input);
+					break;
     			case "feedback_command":
     			case "feedback_commands":
     			case "feedback_command_output":

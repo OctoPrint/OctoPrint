@@ -424,6 +424,12 @@
                                     <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button>
                                 </div>
                             </script>
+                            <script type="text/html" id="customControls_parametricSliderCommandTemplate">
+						        <div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, contextMenu: { menuSelector: '#settingsCommandContextMenu', preFunction: function(event) { $root.setData(event, $parent, $data); } }, drag: { grid: [5, 5], containment: 'parent', start: function( event, ui ) { $(this).data('preventBehaviour', true); }, drag: $root.adjustContainer, stop: function( event, ui ) { $root.movementStopped(ui, $data, $parent); } }, attr: { 'id': $root.getEntryId($data) }">
+							        <label style="display: inline-block; padding-right: 5px" data-bind="text: name() + ': '"></label>
+                                    <div class="input-large" data-bind="slider: { slideStop: function(newVal, oldVal) { $root.sendCustomCommand($data); }, min: slideInput().min, max: slideInput().max, value: slideInput().value, formatter: function(value) { return $data.slideInput().name() + ': ' + value; } }"></input>
+						        </div>
+					        </script>
                             <script type="text/html" id="customControls_emptyTemplate">
 							</script>
                             <!-- End of templates for custom controls -->

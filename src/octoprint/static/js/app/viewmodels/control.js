@@ -178,12 +178,17 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
         	data = { "command": command.command() };
         }
 
-        if (command.type == "parametric_command" || command.type == "parametric_commands") {
+        if (command.type.indexOf("parametric_c") != -1) {
             // parametric command(s)
             data["parameters"] = {};
             for (var i = 0; i < command.input().length; i++) {
-                data["parameters"][command.input()[i].parameter] = command.input()[i].value;
+                data["parameters"][command.input()[i].parameter()] = command.input()[i].value();
             }
+        }
+        else if (command.type.indexOf("parametric_s") != -1) {
+        	// parametric command(s)
+        	data["parameters"] = {};
+        	data["parameters"][command.slideInput().parameter()] = command.slideInput().value();
         }
 
         if (data === undefined)
@@ -210,7 +215,10 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
                 return "customControls_commandTemplate";
             case "parametric_command":
             case "parametric_commands":
-                return "customControls_parametricCommandTemplate";
+            	return "customControls_parametricCommandTemplate";
+			case "parametric_slider_command":
+        	case "parametric_slider_commands":
+        		return "customControls_parametricSliderCommandTemplate";
         	case "feedback_command":
         	case "feedback_commands":
         		return "customControls_feedbackCommandTemplate";

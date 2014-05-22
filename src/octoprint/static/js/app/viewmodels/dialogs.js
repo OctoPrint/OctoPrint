@@ -7,6 +7,7 @@
 
 	// Parametric
 	self.inputs = ko.observableArray([]);
+	self.slideInput = ko.observable({ name: "", parameter: "", min: 0, max: 100, default: 0 });
 
 	// Feedback
 	self.template = ko.observable("");

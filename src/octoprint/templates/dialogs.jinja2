@@ -123,7 +123,7 @@
                 </div>
             </div>
             <!-- Parametric Command -->
-            <div data-bind="visible: type().indexOf('parametric') != -1">
+            <div data-bind="visible: type().indexOf('parametric_c') != -1">
                 <label class="control-label">Inputs</label>
                 <div class="row-fluid">
                     <div class="span12">
@@ -142,6 +142,26 @@
                 </div>
                 <div class="row-fluid">
                     <div class="offset10 span2"><a title="Add Input" class="btn btn-primary" data-bind="click: $root.addInput"><i class="icon-plus"></i></a></div>
+                </div>
+            </div>
+            <!-- Parametric Slider Command -->
+            <div data-bind="visible: type().indexOf('parametric_s') != -1">
+                <label class="control-label">Input</label>
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="span4">Name</div>
+                        <div class="span2">Parameter</div>
+                        <div class="span2">Min</div>
+                        <div class="span2">Max</div>
+                        <div class="span2">Default</div>
+                    </div>
+                </div>
+                <div class="row-fluid" style="margin-bottom: 5px">
+                    <div class="span4"><input class="span12" data-bind="value: slideInput().name"></input></div>
+                    <div class="span2"><input class="span12" data-bind="value: slideInput().parameter"></input></div>
+                    <div class="span2"><input class="span12" data-bind="value: slideInput().min"></input></div>
+                    <div class="span2"><input class="span12" data-bind="value: slideInput().max"></input></div>
+                    <div class="span2"><input class="span12" data-bind="value: slideInput().defaultValue"></input></div>
                 </div>
             </div>
             <!-- Feedback command -->

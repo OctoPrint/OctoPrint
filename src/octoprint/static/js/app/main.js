@@ -375,6 +375,38 @@ $(function() {
 			}
         }
 
+        function objectForEach(obj, action) {
+        	for (var prop in obj) {
+        		if (obj.hasOwnProperty(prop)) {
+        			action(prop, obj[prop]);
+        		}
+        	}
+        }
+
+        ko.bindingHandlers.slider = {
+        	init: function (element, valueAccessor, allBindingsAccessor, viewmodel, bindingContext) {
+        		var val = {};
+
+        		objectForEach(ko.utils.unwrapObservable(valueAccessor()), function (a, b) { val[a] = ko.utils.unwrapObservable(b); });
+        		$(element).slider(val)
+					.on("slide", val["slide"])
+					.on("slideChange", val["slideChange"])
+					.on("slideStop", function (v) {
+							if (val.hasOwnProperty("value"))
+								valueAccessor().value(v.value);
+
+							if (val.hasOwnProperty("slideStop"))
+								val["slideStop"](v);
+					});
+        	},
+        	update: function (element, valueAccessor, allBindingsAccessor, viewmodel, bindingContext) {
+        		var val = {};
+
+        		objectForEach(ko.utils.unwrapObservable(valueAccessor()), function (a, b) { val[a] = ko.utils.unwrapObservable(b); });
+        		$(element).slider(val);
+        	}
+        }
+
         ko.bindingHandlers.drag = {
         	init: function (element, valueAccessor, allBindingsAccessor, viewModel) {
         		$(element).find(":input").on('mousedown', function (e) {
