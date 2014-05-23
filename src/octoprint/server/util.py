@@ -1,9 +1,12 @@
 # coding=utf-8
+from octoprint.filemanager.destinations import FileDestinations
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from flask.ext.principal import identity_changed, Identity
-from tornado.web import StaticFileHandler, HTTPError
+from tornado.web import StaticFileHandler, HTTPError, RequestHandler, asynchronous
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from flask import url_for, make_response, request, current_app
 from flask.ext.login import login_required, login_user, current_user
 from werkzeug.utils import redirect
@@ -18,13 +21,15 @@ import os
 import threading
 import logging
 from functools import wraps
+from watchdog.events import PatternMatchingEventHandler
 
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
 from octoprint.users import ApiUser
 from octoprint.events import Events
-
+from octoprint import gcodefiles
+import octoprint.util as util
 
 def restricted_access(func, apiEnabled=True):
 	"""
@@ -50,9 +55,9 @@ def restricted_access(func, apiEnabled=True):
 		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return make_response("OctoPrint isn't setup yet", 403)
 
-		# if API is globally enabled, enabled for this request and an api key is provided, try to use that
-		apikey = _getApiKey(request)
-		if settings().get(["api", "enabled"]) and apiEnabled and apikey is not None:
+		# if API is globally enabled, enabled for this request and an api key is provided that is not the current UI API key, try to use that
+		apikey = getApiKey(request)
+		if settings().get(["api", "enabled"]) and apiEnabled and apikey is not None and apikey != octoprint.server.UI_API_KEY:
 			if apikey == settings().get(["api", "key"]):
 				# master key was used
 				user = ApiUser()
@@ -61,7 +66,7 @@ def restricted_access(func, apiEnabled=True):
 				user = octoprint.server.userManager.findUser(apikey=apikey)
 
 			if user is None:
-				make_response("Invalid API key", 401)
+				return make_response("Invalid API key", 401)
 			if login_user(user, remember=False):
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 				return func(*args, **kwargs)
@@ -76,7 +81,7 @@ def api_access(func):
 	def decorated_view(*args, **kwargs):
 		if not settings().get(["api", "enabled"]):
 			make_response("API disabled", 401)
-		apikey = _getApiKey(request)
+		apikey = getApiKey(request)
 		if apikey is None:
 			make_response("No API key provided", 401)
 		if apikey != settings().get(["api", "key"]):
@@ -85,7 +90,7 @@ def api_access(func):
 	return decorated_view
 
 
-def _getUserForApiKey(apikey):
+def getUserForApiKey(apikey):
 	if settings().get(["api", "enabled"]) and apikey is not None:
 		if apikey == settings().get(["api", "key"]):
 			# master key was used
@@ -97,7 +102,7 @@ def _getUserForApiKey(apikey):
 		return None
 
 
-def _getApiKey(request):
+def getApiKey(request):
 	# Check Flask GET/POST arguments
 	if hasattr(request, "values") and "apikey" in request.values:
 		return request.values["apikey"]
@@ -148,6 +153,10 @@ class PrinterStateConnection(SockJSConnection):
 	def on_open(self, info):
 		remoteAddress = self._getRemoteAddress(info)
 		self._logger.info("New connection from client: %s" % remoteAddress)
+
+		# connected => update the API key, might be necessary if the client was left open while the server restarted
+		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY})
+
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
 		octoprint.timelapse.registerCallback(self)
@@ -303,6 +312,77 @@ class LargeResponseHandler(StaticFileHandler):
 			self.set_header("Content-Disposition", "attachment")
 
 
+##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
+
+
+class UrlForwardHandler(RequestHandler):
+
+	def initialize(self, url=None, as_attachment=False, basename=None, access_validation=None):
+		RequestHandler.initialize(self)
+		self._url = url
+		self._as_attachment = as_attachment
+		self._basename = basename
+		self._access_validation = access_validation
+
+	@asynchronous
+	def get(self, *args, **kwargs):
+		if self._access_validation is not None:
+			self._access_validation(self.request)
+
+		if self._url is None:
+			raise HTTPError(404)
+
+		client = AsyncHTTPClient()
+		r = HTTPRequest(url=self._url, method=self.request.method, body=self.request.body, headers=self.request.headers, follow_redirects=False, allow_nonstandard_methods=True)
+
+		try:
+			return client.fetch(r, self.handle_response)
+		except HTTPError as e:
+			if hasattr(e, "response") and e.response:
+				self.handle_response(e.response)
+			else:
+				raise HTTPError(500)
+
+	def handle_response(self, response):
+		if response.error and not isinstance(response.error, HTTPError):
+			raise HTTPError(500)
+
+		filename = None
+
+		self.set_status(response.code)
+		for name in ("Date", "Cache-Control", "Server", "Content-Type", "Location"):
+			value = response.headers.get(name)
+			if value:
+				self.set_header(name, value)
+
+				if name == "Content-Type":
+					filename = self.get_filename(value)
+
+		if self._as_attachment:
+			if filename is not None:
+				self.set_header("Content-Disposition", "attachment; filename=%s" % filename)
+			else:
+				self.set_header("Content-Disposition", "attachment")
+
+		if response.body:
+			self.write(response.body)
+		self.finish()
+
+	def get_filename(self, content_type):
+		if not self._basename:
+			return None
+
+		typeValue = map(str.strip, content_type.split(";"))
+		if len(typeValue) == 0:
+			return None
+
+		extension = mimetypes.guess_extension(typeValue[0])
+		if not extension:
+			return None
+
+		return "%s%s" % (self._basename, extension)
+
+
 #~~ admin access validator for use with tornado
 
 
@@ -316,13 +396,36 @@ def admin_validator(request):
 	:param request: The Flask request object
 	"""
 
-	apikey = _getApiKey(request)
+	apikey = getApiKey(request)
 	if settings().get(["api", "enabled"]) and apikey is not None:
-		user = _getUserForApiKey(apikey)
+		user = getUserForApiKey(apikey)
 	else:
 		user = current_user
 
 	if user is None or not user.is_authenticated() or not user.is_admin():
+		raise HTTPError(403)
+
+
+#~~ user access validator for use with tornado
+
+
+def user_validator(request):
+	"""
+	Validates that the given request is made by an authenticated user, identified either by API key or existing Flask
+	session.
+
+	Must be executed in an existing Flask request context!
+
+	:param request: The Flask request object
+	"""
+
+	apikey = getApiKey(request)
+	if settings().get(["api", "enabled"]) and apikey is not None:
+		user = getUserForApiKey(apikey)
+	else:
+		user = current_user
+
+	if user is None or not user.is_authenticated():
 		raise HTTPError(403)
 
 
@@ -385,4 +488,71 @@ def redirectToTornado(request, target):
 		fragment = requestUrl[requestUrl.rfind("?"):]
 		redirectUrl += fragment
 	return redirect(redirectUrl)
+
+
+class UploadCleanupWatchdogHandler(PatternMatchingEventHandler):
+	"""
+	Takes care of automatically deleting metadata entries for files that get deleted from the uploads folder
+	"""
+
+	patterns = map(lambda x: "*.%s" % x, gcodefiles.GCODE_EXTENSIONS)
+
+	def __init__(self, gcode_manager):
+		PatternMatchingEventHandler.__init__(self)
+		self._gcode_manager = gcode_manager
+
+	def on_deleted(self, event):
+		filename = self._gcode_manager._getBasicFilename(event.src_path)
+		if not filename:
+			return
+
+		self._gcode_manager.removeFileFromMetadata(filename)
+
+
+class GcodeWatchdogHandler(PatternMatchingEventHandler):
+	"""
+	Takes care of automatically "uploading" files that get added to the watched folder.
+	"""
+
+	patterns = map(lambda x: "*.%s" % x, gcodefiles.SUPPORTED_EXTENSIONS)
+
+	def __init__(self, gcodeManager, printer):
+		PatternMatchingEventHandler.__init__(self)
+		self._gcodeManager = gcodeManager
+		self._printer = printer
+
+	def _upload(self, path):
+		class WatchdogFileWrapper(object):
+
+			def __init__(self, path):
+				self._path = path
+				self.filename = os.path.basename(self._path)
+
+			def save(self, target):
+				util.safeRename(self._path, target)
+
+		fileWrapper = WatchdogFileWrapper(path)
+
+		# determine current job
+		currentFilename = None
+		currentSd = None
+		currentJob = self._printer.getCurrentJob()
+		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+			currentFilename = currentJob["filename"]
+			currentSd = currentJob["sd"]
+
+		# determine future filename of file to be uploaded, abort if it can't be uploaded
+		futureFilename = self._gcodeManager.getFutureFilename(fileWrapper)
+		if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
+			return # Invalid file
+
+		# prohibit overwriting currently selected file while it's being printed
+		if futureFilename == currentFilename and not currentSd and self._printer.isPrinting() or self._printer.isPaused():
+			return # Trying to overwrite file that is currently being printed
+
+		self._gcodeManager.addFile(fileWrapper, FileDestinations.LOCAL)
+
+	def on_created(self, event):
+		self._upload(event.src_path)
+
 

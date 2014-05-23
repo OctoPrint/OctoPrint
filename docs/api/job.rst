@@ -46,6 +46,10 @@ Issue a job command
         "command": "start"
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Restart Request**
 
    .. sourcecode:: http
@@ -58,6 +62,10 @@ Issue a job command
       {
         "command": "restart"
       }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
 
    **Example Pause Request**
 
@@ -72,6 +80,10 @@ Issue a job command
         "command": "pause"
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Cancel Request**
 
    .. sourcecode:: http
@@ -84,6 +96,10 @@ Issue a job command
       {
         "command": "cancel"
       }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
 
    :json string command: The command to issue, either ``start``, ``restart``, ``pause`` or ``cancel``
    :statuscode 204:      No error
@@ -101,14 +117,13 @@ Retrieve information about the current job
 
    Returns a :http:statuscode:`200` with a :ref:`sec-api-job-datamodel-response` in the body.
 
-   **Example Request**
+   **Example**
 
    .. sourcecode:: http
 
       GET /api/job HTTP/1.1
       Host: example.com
-
-   **Example Response**
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 

@@ -55,6 +55,11 @@ Please be advised that clients should use the header field variant if at all pos
 
    The API key options in the "Change password" dialog. Users can generate and revoke their custom API key here.
 
+.. note::
+   OctoPrint's web interface uses a custom API key that is freshly generated on every server start. This key is not
+   intended to be used by any other client and would not be very useful in any case, since it basically represents
+   a completely anonymous client.
+
 .. _sec-api-general-contenttype:
 
 Content Type
