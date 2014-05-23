@@ -614,6 +614,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     self.editStyle = function (type) {
     	return ko.computed({
     		read: function () {
+    			if (self.customCommandData() == undefined || !self.customCommandData().hasOwnProperty("backgroundColor1"))
+    				return "";
+
     			if (type == "bgColor1")
     				return self.customCommandData().backgroundColor1();
 
