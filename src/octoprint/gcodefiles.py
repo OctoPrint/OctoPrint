@@ -342,6 +342,9 @@ class GcodeManager:
 		if os.path.exists(stlPath):
 			os.remove(stlPath)
 
+		self.removeFileFromMetadata(filename)
+
+	def removeFileFromMetadata(self, filename):
 		if filename in self._metadata.keys():
 			del self._metadata[filename]
 			self._metadataDirty = True
