@@ -518,6 +518,9 @@ class GcodeWatchdogHandler(PatternMatchingEventHandler):
 
 	def __init__(self, gcodeManager, printer):
 		PatternMatchingEventHandler.__init__(self)
+
+		self._logger = logging.getLogger(__name__)
+
 		self._gcodeManager = gcodeManager
 		self._printer = printer
 
@@ -535,20 +538,24 @@ class GcodeWatchdogHandler(PatternMatchingEventHandler):
 
 		# determine current job
 		currentFilename = None
-		currentSd = None
+		currentOrigin = None
 		currentJob = self._printer.getCurrentJob()
-		if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
-			currentFilename = currentJob["filename"]
-			currentSd = currentJob["sd"]
+		if currentJob is not None and "file" in currentJob.keys():
+			currentJobFile = currentJob["file"]
+			if "name" in currentJobFile.keys() and "origin" in currentJobFile.keys():
+				currentFilename = currentJobFile["name"]
+				currentOrigin = currentJobFile["origin"]
 
 		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		futureFilename = self._gcodeManager.getFutureFilename(fileWrapper)
 		if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
-			return # Invalid file
+			self._logger.warn("Could not add %s: Invalid file" % fileWrapper.filename)
+			return
 
 		# prohibit overwriting currently selected file while it's being printed
-		if futureFilename == currentFilename and not currentSd and self._printer.isPrinting() or self._printer.isPaused():
-			return # Trying to overwrite file that is currently being printed
+		if futureFilename == currentFilename and not currentOrigin == FileDestinations.SDCARD and self._printer.isPrinting() or self._printer.isPaused():
+			self._logger.warn("Could not add %s: Trying to overwrite file that is currently being printed" % fileWrapper.filename)
+			return
 
 		self._gcodeManager.addFile(fileWrapper, FileDestinations.LOCAL)
 
