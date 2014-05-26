@@ -162,6 +162,7 @@ class MachineCom(object):
 		self._estimatedPrintTime = None
 		self._pauseStarted = 0
 		self._pauseTime = 0
+		self._lastProgress = None
 
 		# regexes
 		floatPattern = "[-+]?[0-9]*\.?[0-9]+"
@@ -316,10 +317,11 @@ class MachineCom(object):
 			return time.time() - self._currentFile.getStartTime()
 
 	def getPrintTimeRemainingEstimate(self):
-		printTime = self.getPrintTime() - self._pauseTime
+		printTime = self.getPrintTime()
 		if printTime is None:
 			return None
 
+		printTime -= self._pauseTime
 		progress = self._currentFile.getProgress()
 		if self._estimatedPrintTime and progress and progress >= 0.30:
 			time1 = (self._estimatedPrintTime - printTime) / 60
@@ -1046,6 +1048,11 @@ class MachineCom(object):
 
 			self._sendCommand(line, True)
 			self._callback.mcProgress()
+			progress = self.getPrintProgress() * 100
+			if progress is not None:
+				if self._lastProgress is None or progress - self._lastProgress >= 0.5:
+					eventManager().fire(Events.PRINT_PROGRESS, { "lineNumber": self._currentFile._lineCount })
+					self._lastProgress = progress
 
 	def _handleResendRequest(self, line):
 		lineToResend = None
@@ -1397,7 +1404,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			self._lineCount += 1
 			self._filepos = self._filehandle.tell()
 
-			if self._lineCount >= 100 and self._startTime is None:
+			if self._lineCount >= 10 and self._startTime is None:
 				self._startTime = time.time()
 
 			return processedLine

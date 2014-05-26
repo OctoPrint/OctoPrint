@@ -47,6 +47,7 @@ class Events(object):
 	PRINT_CANCELLED = "PrintCancelled"
 	PRINT_PAUSED = "PrintPaused"
 	PRINT_RESUMED = "PrintResumed"
+	PRINT_PROGRESS = "PrintProgress"
 	ERROR = "Error"
 
 	# print/gcode events
@@ -293,7 +294,7 @@ class CommandTrigger(GenericEventListener):
 	def _executeGcodeCommand(self, command):
 		commands = [command]
 		if isinstance(command, (list, tuple, set)):
-			self.logger.debug("Executing GCode commands: %r" % command)
+			self._logger.debug("Executing GCode commands: %r" % command)
 			commands = list(command)
 		else:
 			self._logger.debug("Executing GCode command: %s" % command)
@@ -330,8 +331,8 @@ class CommandTrigger(GenericEventListener):
 		if "job" in currentData.keys() and currentData["job"] is not None:
 			params["__filename"] = currentData["job"]["file"]["name"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
-				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None:
-				params["__progress"] = str(round(currentData["progress"]["progress"] * 100))
+				and "completion" in currentData["progress"].keys() and currentData["progress"]["completion"] is not None:
+				params["__progress"] = str(round(currentData["progress"]["completion"], 1))
 
 		# now add the payload keys as well
 		if isinstance(payload, dict):
