@@ -14,10 +14,12 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
                 dataType: "json",
                 data: "action=" + action.action,
                 success: function() {
-                    $.pnotify({title: "Success", text: "The command \""+ action.name +"\" executed successfully", type: "success"});
+                    new PNotify({title: "Success", text: "The command \""+ action.name +"\" executed successfully", type: "success"});
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
-                    $.pnotify({title: "Error", text: "<p>The command \"" + action.name + "\" could not be executed.</p><p>Reason: <pre>" + jqXHR.responseText + "</pre></p>", type: "error"});
+                    var error = "<p>The command \"" + action.name + "\" could not be executed.</p>";
+                    error += pnotifyAdditionalInfo("<pre>" + jqXHR.responseText + "</pre>");
+                    new PNotify({title: "Error", text: error, type: "error", hide: false});
                 }
             })
         }

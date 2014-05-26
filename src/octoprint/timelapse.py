@@ -18,6 +18,7 @@ import octoprint.util as util
 
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
+import sarge
 
 # currently configured timelapse
 current = None
@@ -242,7 +243,8 @@ class Timelapse(object):
 			self._logger.debug("Image %s captured from %s" % (filename, self._snapshotUrl))
 		except:
 			self._logger.exception("Could not capture image %s from %s, decreasing image counter again" % (filename, self._snapshotUrl))
-			self._imageNumber -= 1
+			if self._imageNumber is not None and self._imageNumber > 0:
+				self._imageNumber -= 1
 		eventManager().fire(Events.CAPTURE_DONE, {"file": filename})
 
 	def _createMovie(self, success=True):
@@ -260,7 +262,7 @@ class Timelapse(object):
 
 		# prepare ffmpeg command
 		command = [
-			ffmpeg, '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b:v', bitrate,
+			ffmpeg, '-loglevel', 'error', '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b:v', bitrate,
 			'-f', 'vob']
 
 		filters = []
@@ -293,18 +295,24 @@ class Timelapse(object):
 
 		if filterstring is not None:
 			self._logger.debug("Applying videofilter chain: %s" % filterstring)
-			command.extend(["-vf", filterstring])
+			command.extend(["-vf", sarge.shell_quote(filterstring)])
 
 		# finalize command with output file
 		self._logger.debug("Rendering movie to %s" % output)
 		command.append(output)
 		eventManager().fire(Events.MOVIE_RENDERING, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
-		try:
-			subprocess.check_call(command)
+
+		command_str = " ".join(command)
+		self._logger.debug("Executing command: %s" % command_str)
+
+		p = sarge.run(command_str, stderr=sarge.Capture())
+		if p.returncode == 0:
 			eventManager().fire(Events.MOVIE_DONE, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
-		except subprocess.CalledProcessError as (e):
-			self._logger.warn("Could not render movie, got return code %r" % e.returncode)
-			eventManager().fire(Events.MOVIE_FAILED, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output), "returncode": e.returncode})
+		else:
+			returncode = p.returncode
+			stderr_text = p.stderr.text
+			self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
+			eventManager().fire(Events.MOVIE_FAILED, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output), "returncode": returncode, "error": stderr_text})
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):

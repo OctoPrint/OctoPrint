@@ -352,3 +352,10 @@ function formatTemperature(temp) {
     if (!temp || temp < 10) return "off";
     return _.sprintf("%.1f&deg;C", temp);
 }
+
+function pnotifyAdditionalInfo(inner) {
+    return '<div class="pnotify_additional_info">'
+        + '<div class="pnotify_more"><a href="#" onclick="$(this).children().toggleClass(\'icon-caret-right icon-caret-down\').parent().parent().next().slideToggle(\'fast\')">More <i class="icon-caret-right"></i></a></div>'
+        + '<div class="pnotify_more_container hide">' + inner + '</div>'
+        + '</div>';
+}

@@ -5,8 +5,8 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import logging
-import subprocess
 import netaddr
+import sarge
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response
 from flask.ext.login import login_user, logout_user, current_user
@@ -114,20 +114,22 @@ def apiPrinterState():
 @admin_permission.require(403)
 def performSystemAction():
 	logger = logging.getLogger(__name__)
-	if request.values.has_key("action"):
+	if "action" in request.values.keys():
 		action = request.values["action"]
-		availableActions = s().get(["system", "actions"])
-		for availableAction in availableActions:
+		available_actions = s().get(["system", "actions"])
+		for availableAction in available_actions:
 			if availableAction["action"] == action:
 				logger.info("Performing command: %s" % availableAction["command"])
 				try:
-					subprocess.check_output(availableAction["command"], shell=True)
-				except subprocess.CalledProcessError, e:
-					logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
-					return make_response(("Command failed with return code %i: %s" % (e.returncode, e.message), 500, []))
-				except Exception, ex:
-					logger.exception("Command failed")
-					return make_response(("Command failed: %r" % ex, 500, []))
+					p = sarge.run(availableAction["command"], stderr=sarge.Capture())
+					if p.returncode != 0:
+						returncode = p.returncode
+						stderr_text = p.stderr.text
+						logger.warn("Command failed with return code %i: %s" % (returncode, stderr_text))
+						return make_response(("Command failed with return code %i: %s" % (returncode, stderr_text), 500, []))
+				except Exception, e:
+					logger.warn("Command failed: %s" % e)
+					return make_response(("Command failed: %s" % e, 500, []))
 	return NO_CONTENT
 
 

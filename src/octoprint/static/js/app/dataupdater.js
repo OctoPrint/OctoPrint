@@ -118,6 +118,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                 case "event": {
                     var type = data["type"];
                     var payload = data["payload"];
+                    var html = "";
 
                     var gcodeUploadProgress = $("#gcode_upload_progress");
                     var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
@@ -125,12 +126,14 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     if ((type == "UpdatedFiles" && payload.type == "gcode") || type == "MetadataAnalysisFinished") {
                         gcodeFilesViewModel.requestData();
                     } else if (type == "MovieRendering") {
-                        $.pnotify({title: "Rendering timelapse", text: "Now rendering timelapse " + payload.movie_basename});
+                        new PNotify({title: "Rendering timelapse", text: "Now rendering timelapse " + payload.movie_basename});
                     } else if (type == "MovieDone") {
-                        $.pnotify({title: "Timelapse ready", text: "New timelapse " + payload.movie_basename + " is done rendering."});
+                        new PNotify({title: "Timelapse ready", text: "New timelapse " + payload.movie_basename + " is done rendering."});
                         timelapseViewModel.requestData();
                     } else if (type == "MovieFailed") {
-                        $.pnotify({title: "Rendering failed", text: "Rendering of timelapse " + payload.movie_basename + " failed, return code " + payload.returncode, type: "error"});
+                        html = "<p>Rendering of timelapse " + payload.movie_basename + " failed with return code " + payload.returncode + "</p>";
+                        html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+                        new PNotify({title: "Rendering failed", text: html, type: "error", hide: false});
                     } else if (type == "SlicingStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
@@ -139,13 +142,15 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + _.sprintf("%.2f", payload.time) + " seconds"});
+                        new PNotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + _.sprintf("%.2f", payload.time) + " seconds"});
                         gcodeFilesViewModel.requestData(payload.gcode);
                     } else if (type == "SlicingFailed") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Slicing failed", text: "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason, type: "error"});
+
+                        html = "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason;
+                        new PNotify({title: "Slicing failed", text: html, type: "error", hide: false});
                     } else if (type == "TransferStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
@@ -154,7 +159,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Streaming done", text: "Streamed " + payload.local + " to " + payload.remote + " on SD, took " + _.sprintf("%.2f", payload.time) + " seconds"});
+                        new PNotify({title: "Streaming done", text: "Streamed " + payload.local + " to " + payload.remote + " on SD, took " + _.sprintf("%.2f", payload.time) + " seconds"});
                         gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
                     break;

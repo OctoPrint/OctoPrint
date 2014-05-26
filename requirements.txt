@@ -10,6 +10,7 @@ netaddr>=0.7.10
 mock>=1.0.1
 nose>=1.3.0
 watchdog
+sarge
 
 sphinxcontrib-httpdomain
 sphinx_rtd_theme
