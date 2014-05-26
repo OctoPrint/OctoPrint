@@ -399,6 +399,7 @@ class MachineCom(object):
 			self._currentFile.start()
 
 			wasPaused = self.isPaused()
+			self._lastProgress = None
 			self._changeState(self.STATE_PRINTING)
 			eventManager().fire(Events.PRINT_STARTED, {
 				"file": self._currentFile.getFilename(),
