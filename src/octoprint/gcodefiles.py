@@ -76,10 +76,16 @@ class GcodeManager:
 		self._metadataAnalyzer = MetadataAnalyzer(getPathCallback=self.getAbsolutePath, loadedCallback=self._onMetadataAnalysisFinished)
 
 		self._loadMetadata(migrate=True)
-		self._processAnalysisBacklog()
+		self._processAnalysisBacklog(self._uploadFolder)
 
-	def _processAnalysisBacklog(self):
-		for subdir, dirs, osFiles in os.walk(self._uploadFolder):
+	def _processAnalysisBacklog(self, path):
+		for subdir, dirs, osFiles in os.walk(path):
+			if dirs:
+				for dir in dirs:
+					self._processAnalysisBacklog(os.path.join(path, dir))
+
+				del dirs[:]
+
 			for osFile in osFiles:
 				filename = self._getBasicFilename(os.path.join(subdir, osFile))
 				if not isGcodeFileName(filename):
@@ -94,6 +100,7 @@ class GcodeManager:
 					continue
 
 				self._metadataAnalyzer.addFileToBacklog(filename)
+
 
 	def _onMetadataAnalysisFinished(self, filename, gcode):
 		if filename is None or gcode is None:
