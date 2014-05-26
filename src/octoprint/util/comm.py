@@ -14,6 +14,8 @@ import Queue as queue
 import logging
 import serial
 
+import octoprint.gcodefiles as gcodefiles
+
 from collections import deque
 
 from octoprint.util.avr_isp import stk500v2
@@ -22,7 +24,7 @@ from octoprint.util.avr_isp import ispBase
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.gcodefiles import isGcodeFileName
+from octoprint.gcodefiles import gcodeManager, isGcodeFileName
 from octoprint.util import getExceptionString, getNewTimeout, sanitizeAscii, filterNonAscii
 from octoprint.util.virtual import VirtualPrinter
 
@@ -157,6 +159,7 @@ class MachineCom(object):
 
 		# print job
 		self._currentFile = None
+		self._estimatedPrintTime = None
 
 		# regexes
 		floatPattern = "[-+]?[0-9]*\.?[0-9]+"
@@ -315,11 +318,14 @@ class MachineCom(object):
 		if printTime is None:
 			return None
 
-		printTime /= 60
-		progress = self._currentFile.getProgress()
-		if progress:
+		progress = self._currentFile.getProgress() * 60
+		if self._estimatedPrintTime and progress:
+			return (self._estimatedPrintTime / 30 - printTime / 15) + 0.5 * printTime / progress
+		elif self._estimatedPrintTime:
+			return (self._estimatedPrintTime - printTime) / 60
+		elif progress:
 			printTimeTotal = printTime / progress
-			return printTimeTotal - printTime
+			return printTimeTotal - printTime / 60
 		else:
 			return None
 
@@ -428,6 +434,10 @@ class MachineCom(object):
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename, self.getOffsets)
+			metadata = gcodeManager().getFileMetadata(filename)
+			if "gcodeAnalysis" in metadata.keys() and "estimatedPrintTime" in metadata["gcodeAnalysis"].keys():
+				self._estimatedPrintTime = metadata["gcodeAnalysis"]["estimatedPrintTime"]
+
 			eventManager().fire(Events.FILE_SELECTED, {
 				"file": self._currentFile.getFilename(),
 				"origin": self._currentFile.getFileLocation()
@@ -439,6 +449,7 @@ class MachineCom(object):
 			return
 
 		self._currentFile = None
+		self._estimatedPrintTime = None
 		eventManager().fire(Events.FILE_DESELECTED)
 		self._callback.mcFileSelected(None, None, False)
 

@@ -140,7 +140,7 @@ class Server():
 		logger = logging.getLogger(__name__)
 
 		eventManager = events.eventManager()
-		gcodeManager = gcodefiles.GcodeManager()
+		gcodeManager = gcodefiles.gcodeManager()
 		printer = Printer(gcodeManager)
 
 		# configure timelapse

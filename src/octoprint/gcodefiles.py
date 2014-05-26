@@ -19,6 +19,9 @@ from octoprint.filemanager.destinations import FileDestinations
 
 from werkzeug.utils import secure_filename
 
+# singleton
+_instance = None
+
 GCODE_EXTENSIONS = ["gcode", "gco", "g"]
 STL_EXTENSIONS = ["stl"]
 SUPPORTED_EXTENSIONS = GCODE_EXTENSIONS + STL_EXTENSIONS
@@ -58,6 +61,11 @@ def genStlFileName(filename):
 	name, ext = filename.rsplit(".", 1)
 	return name + ".stl"
 
+def gcodeManager():
+	global _instance
+	if _instance is None:
+		_instance = GcodeManager()
+	return _instance
 
 class GcodeManager:
 	def __init__(self):
