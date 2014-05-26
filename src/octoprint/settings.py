@@ -94,6 +94,7 @@ default_settings = {
 			"z": 200,
 			"e": 300
 		},
+		"feedRateMultiply": 1.0,
 		"pauseTriggers": [],
 		"invertAxes": [],
 		"numExtruders": 1,

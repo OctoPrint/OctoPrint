@@ -55,7 +55,7 @@ class gcode(object):
 		totalMoveTimeMinute = 0.0
 		absoluteE = True
 		scale = 1.0
-		feedRateMultiply = 0.65 # little test for simulating Acceleration
+		feedRateMultiply = settings().getFloat(["printerParameters", "feedRateMultiply"]) # 0.6 # little test for simulating Acceleration
 		posAbs = True
 		maxFeedrate = settings().get(["printerParameters", "movementSpeed"])
 		feedRateXY = settings().getFloat(["printerParameters", "movementSpeed", "x"]) * feedRateMultiply
@@ -165,7 +165,7 @@ class gcode(object):
 						if abs(tmp) > maxFeedrate[axiscode[i]]:
 							speedFactor = min(speedFactor, maxFeedrate[axiscode[i]] / abs(tmp))
 					
-					totalMoveTimeMinute += millimeters*speedFactor/feedRateXY;
+					totalMoveTimeMinute += millimeters/(feedRateXY*speedFactor);
 				elif G == 4:	#Delay
 					S = getCodeFloat(line, 'S')
 					if S is not None:
@@ -178,6 +178,7 @@ class gcode(object):
 				elif G == 21:	#Units are mm
 					scale = 1.0
 				elif G == 28:	#Home
+					totalMoveTimeMinute += 0.25 # this takes time too 15 seconds should be ok
 					x = getCodeFloat(line, 'X')
 					y = getCodeFloat(line, 'Y')
 					z = getCodeFloat(line, 'Z')

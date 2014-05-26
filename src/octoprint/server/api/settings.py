@@ -39,6 +39,7 @@ def getSettings():
 			"movementSpeedY": movementSpeedY,
 			"movementSpeedZ": movementSpeedZ,
 			"movementSpeedE": movementSpeedE,
+			"feedRateMultiply": s.getFloat(["printerParameters", "feedRateMultiply"]),
 			"invertAxes": s.get(["printerParameters", "invertAxes"]),
 			"numExtruders": s.get(["printerParameters", "numExtruders"]),
 			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
@@ -119,6 +120,7 @@ def setSettings():
 			if "movementSpeedY" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "y"], data["printer"]["movementSpeedY"])
 			if "movementSpeedZ" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "z"], data["printer"]["movementSpeedZ"])
 			if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
+			if "feedRateMultiply" in data["printer"].keys(): s.setFloat(["printerParameters", "feedRateMultiply"], data["printer"]["feedRateMultiply"])
 			if "invertAxes" in data["printer"].keys(): s.set(["printerParameters", "invertAxes"], data["printer"]["invertAxes"])
 			if "numExtruders" in data["printer"].keys(): s.setInt(["printerParameters", "numExtruders"], data["printer"]["numExtruders"])
 			if "extruderOffsets" in data["printer"].keys(): s.set(["printerParameters", "extruderOffsets"], data["printer"]["extruderOffsets"])

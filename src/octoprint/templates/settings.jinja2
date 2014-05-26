@@ -163,7 +163,13 @@
                                 </div>
                             </div>
                             <!-- /ko -->
-                        </div>
+												</div>
+												<div class="control-group">
+													<label class="control-label" for="settings-feedRateMultiply">Feedrate Multiply</label>
+													<div class="controls">
+														<input type="number" step="0.01" class="input-mini text-right" max="1" data-bind="value: printer_feedRateMultiply" id="settings-feedRateMultiply">
+                          </div>
+												</div>
                         <div class="control-group">
                             <label class="control-label" for="settings-bedSize">Bed Size</label>
                             <div class="controls form-inline" data-bind="ifnot: printer_bedCircular">

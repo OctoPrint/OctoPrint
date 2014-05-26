@@ -160,6 +160,8 @@ class MachineCom(object):
 		# print job
 		self._currentFile = None
 		self._estimatedPrintTime = None
+		self._pauseStarted = 0
+		self._pauseTime = 0
 
 		# regexes
 		floatPattern = "[-+]?[0-9]*\.?[0-9]+"
@@ -314,18 +316,21 @@ class MachineCom(object):
 			return time.time() - self._currentFile.getStartTime()
 
 	def getPrintTimeRemainingEstimate(self):
-		printTime = self.getPrintTime()
+		printTime = self.getPrintTime() - self._pauseTime
 		if printTime is None:
 			return None
 
-		progress = self._currentFile.getProgress() * 60
-		if self._estimatedPrintTime and progress:
-			return (self._estimatedPrintTime / 30 - printTime / 15) + 0.5 * printTime / progress
+		progress = self._currentFile.getProgress()
+		if self._estimatedPrintTime and progress and progress >= 0.30:
+			time1 = (self._estimatedPrintTime - printTime) / 60
+			printTimeTotal = printTime / progress
+			time2 = (printTimeTotal - printTime) / 60
+			return 0.5 * (time1 + time2)
 		elif self._estimatedPrintTime:
 			return (self._estimatedPrintTime - printTime) / 60
 		elif progress:
 			printTimeTotal = printTime / progress
-			return printTimeTotal - printTime / 60
+			return (printTimeTotal - printTime) / 60
 		else:
 			return None
 
@@ -475,6 +480,7 @@ class MachineCom(object):
 
 		if not pause and self.isPaused():
 			self._changeState(self.STATE_PRINTING)
+			self._pauseTime += time.time() - self._pauseStarted
 			if self.isSdFileSelected():
 				self.sendCommand("M24")
 			else:
@@ -487,6 +493,7 @@ class MachineCom(object):
 			})
 		elif pause and self.isPrinting():
 			self._changeState(self.STATE_PAUSED)
+			self._pauseStarted = time.time()
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
 
@@ -955,7 +962,7 @@ class MachineCom(object):
 			try:
 				self._log("Connecting to: %s" % self._port)
 				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), 115200, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 				else:
 					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 			except:
