@@ -43,8 +43,11 @@ class gcode(object):
 
 	def _load(self, gcodeFile):
 		filePos = 0
-		pos = [0.0, 0.0, 0.0]
-		posOffset = [0.0, 0.0, 0.0]
+		pos = [0.0, 0.0, 0.0, 0.0]
+		posOffset = [0.0, 0.0, 0.0, 0.0]
+		axiscode = ['x', 'y', 'z', 'e']
+		feedmultiply = 100
+		extrudemultiply = 100
 		currentE = [0.0]
 		totalExtrusion = [0.0]
 		maxExtrusion = [0.0]
@@ -52,8 +55,10 @@ class gcode(object):
 		totalMoveTimeMinute = 0.0
 		absoluteE = True
 		scale = 1.0
+		feedRateMultiply = 0.65 # little test for simulating Acceleration
 		posAbs = True
-		feedRateXY = settings().getFloat(["printerParameters", "movementSpeed", "x"])
+		maxFeedrate = settings().get(["printerParameters", "movementSpeed"])
+		feedRateXY = settings().getFloat(["printerParameters", "movementSpeed", "x"]) * feedRateMultiply
 		offsets = settings().get(["printerParameters", "extruderOffsets"])
 
 		for line in gcodeFile:
@@ -103,6 +108,8 @@ class gcode(object):
 							pos[1] = y * scale + posOffset[1]
 						if z is not None:
 							pos[2] = z * scale + posOffset[2]
+						if e is not None:
+							pos[3] = e * extrudemultiply * 0.01 + posOffset[3]
 					else:
 						if x is not None:
 							pos[0] += x * scale
@@ -110,8 +117,10 @@ class gcode(object):
 							pos[1] += y * scale
 						if z is not None:
 							pos[2] += z * scale
+						if e is not None:
+							pos[3] += e * extrudemultiply * 0.01
 					if f is not None:
-						feedRateXY = f
+						feedRateXY = f * feedmultiply * 0.01 * feedRateMultiply
 
 					moveType = 'move'
 					if e is not None:
@@ -128,22 +137,35 @@ class gcode(object):
 					else:
 						e = 0.0
 
+					diff = [0.0, 0.0, 0.0, 0.0]
 					if x is not None or y is not None or z is not None:
-						diffX = oldPos[0] - pos[0]
-						diffY = oldPos[1] - pos[1]
-						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
+						diff[0] = (pos[0] - oldPos[0])
+						diff[1] = (pos[1] - oldPos[1])
+						diff[2] = (pos[2] - oldPos[2])
+						millimeters = math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
 					elif moveType == "extrude":
-						diffX = oldPos[0] - pos[0]
-						diffY = oldPos[1] - pos[1]
-						time1 = math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
-						time2 = abs(e / feedRateXY)
-						totalMoveTimeMinute += max(time1, time2)
+						diff[0] = (pos[0] - oldPos[0])
+						diff[1] = (pos[1] - oldPos[1])
+						diff[2] = (pos[2] - oldPos[2])
+						diff[3] = (pos[3] - oldPos[3])
+						millimeters = math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
+						if millimeters == 0:
+							millimeters += abs(diff[3])
 					elif moveType == "retract":
-						totalMoveTimeMinute += abs(e / feedRateXY)
+						millimeters = abs(e)
 
-					if moveType == 'move' and oldPos[2] != pos[2]:
-						if oldPos[2] > pos[2] and abs(oldPos[2] - pos[2]) > 5.0 and pos[2] < 1.0:
-							oldPos[2] = 0.0
+					if millimeters == 0:
+						continue
+
+					inverseMinute = feedRateXY / millimeters
+
+					speedFactor = 1
+					for i in range(0, 4):
+						tmp = diff[i] * inverseMinute
+						if abs(tmp) > maxFeedrate[axiscode[i]]:
+							speedFactor = min(speedFactor, maxFeedrate[axiscode[i]] / abs(tmp))
+					
+					totalMoveTimeMinute += millimeters*speedFactor/feedRateXY;
 				elif G == 4:	#Delay
 					S = getCodeFloat(line, 'S')
 					if S is not None:
@@ -193,6 +215,10 @@ class gcode(object):
 					absoluteE = True
 				elif M == 83:   #Relative E
 					absoluteE = False
+				elif M == 220:
+					feedmultiply = getCodeInt(line, 'S')
+				elif M == 221:
+					extrudemultiply = getCodeInt(line, 'S')
 
 			elif T is not None:
 				posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
