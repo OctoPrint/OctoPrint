@@ -944,7 +944,7 @@ class MachineCom(object):
 			try:
 				self._log("Connecting to: %s" % self._port)
 				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), 115200, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 				else:
 					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 			except:
