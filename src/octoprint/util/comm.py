@@ -406,7 +406,7 @@ class MachineCom(object):
 				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
-			metadata = gcodeManager().getFileMetadata(filename)
+			metadata = gcodeManager().getFileMetadata(self._currentFile.getFilename())
 			if "gcodeAnalysis" in metadata.keys() and "estimatedPrintTime" in metadata["gcodeAnalysis"].keys():
 				self._estimatedPrintTime = metadata["gcodeAnalysis"]["estimatedPrintTime"]
 
