@@ -406,6 +406,9 @@ class MachineCom(object):
 				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
+			metadata = gcodeManager().getFileMetadata(filename)
+			if "gcodeAnalysis" in metadata.keys() and "estimatedPrintTime" in metadata["gcodeAnalysis"].keys():
+				self._estimatedPrintTime = metadata["gcodeAnalysis"]["estimatedPrintTime"]
 
 			if self.isSdFileSelected():
 				if wasPaused:
@@ -442,10 +445,6 @@ class MachineCom(object):
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename, self.getOffsets)
-			metadata = gcodeManager().getFileMetadata(filename)
-			if "gcodeAnalysis" in metadata.keys() and "estimatedPrintTime" in metadata["gcodeAnalysis"].keys():
-				self._estimatedPrintTime = metadata["gcodeAnalysis"]["estimatedPrintTime"]
-
 			eventManager().fire(Events.FILE_SELECTED, {
 				"file": self._currentFile.getFilename(),
 				"origin": self._currentFile.getFileLocation()
