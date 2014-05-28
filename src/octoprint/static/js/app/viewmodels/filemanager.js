@@ -57,7 +57,7 @@
 		self.directoryList(response.directories);
 
 		for (var i = 0; i < self.directoryList().length; i++) {
-			$("#fm" + self.directoryList()[i].href).click();
+			$("#fm_" + self.getEntryID(self.directoryList()[i])).click();
 		}
 
 		if (self.lastDirectory != undefined) {
