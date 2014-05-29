@@ -88,8 +88,8 @@ class RepRapProtocol(Protocol):
 	# - 2: file size
 	REGEX_SD_PRINTING_BYTE = re.compile("([0-9]*)/([0-9]*)")
 
-	def __init__(self, transportFactory, protocolListener=None):
-		Protocol.__init__(self, transportFactory, protocolListener)
+	def __init__(self, transport_factory, protocol_listener=None):
+		Protocol.__init__(self, transport_factory, protocol_listener)
 
 		self._lastTemperatureUpdate = time.time()
 		self._lastSdProgressUpdate = time.time()
@@ -116,38 +116,44 @@ class RepRapProtocol(Protocol):
 		# enqueue our first temperature query so it get's sent right on establishment of the connection
 		self._sendTemperatureQuery(withType=True)
 
-
-	def selectFile(self, filename, origin):
+	def select_file(self, filename, origin):
 		if origin == FileDestinations.SDCARD:
-			if not self._sdAvailable:
+			if not self._sd_available:
 				return
 			self._send(RepRapProtocol.COMMAND_SD_SELECT_FILE(filename), highPriority=True)
 		else:
-			self._currentFile = PrintingGcodeFileInformation(filename, None)
+			self._selectFile(PrintingGcodeFileInformation(filename, None))
 
-	def startPrint(self):
+	def start_print(self):
 		wasPaused = self._state == State.PAUSED
 
-		Protocol.startPrint(self)
-		if isinstance(self._currentFile, PrintingSdFileInformation):
+		Protocol.start_print(self)
+		if isinstance(self._current_file, PrintingSdFileInformation):
 			if wasPaused:
 				self._send(RepRapProtocol.COMMAND_SD_SET_POS(0))
-				self._currentFile.setFilepos(0)
+				self._current_file.setFilepos(0)
 			self._send(RepRapProtocol.COMMAND_SD_START())
 		else:
 			self._sendNext()
 
-	def refreshSdFiles(self):
-		if not self._sdAvailable:
+	def cancel_print(self):
+		if isinstance(self._current_file, PrintingSdFileInformation):
+			self._send(RepRapProtocol.COMMAND_SD_PAUSE)
+			self._send(RepRapProtocol.COMMAND_SD_SET_POS(0))
+
+		Protocol.cancel_print(self)
+
+	def refresh_sd_files(self):
+		if not self._sd_available:
 			return
 
-		Protocol.refreshSdFiles(self)
+		Protocol.refresh_sd_files(self)
 		self._send(RepRapProtocol.COMMAND_SD_REFRESH())
 
-	def sendManually(self, command, highPriority=False):
-		if self._isStreaming():
+	def send_manually(self, command, high_priority=False):
+		if self.is_streaming():
 			return
-		self._send(command, highPriority=highPriority, withChecksum=self._useChecksum())
+		self._send(command, highPriority=high_priority, withChecksum=self._useChecksum())
 
 	##~~ callback methods
 
@@ -183,10 +189,12 @@ class RepRapProtocol(Protocol):
 		# sd progress
 		elif RepRapProtocol.MESSAGE_SD_PRINTING_BYTE(message):
 			match = RepRapProtocol.REGEX_SD_PRINTING_BYTE.search(message)
-			self._currentFile.setFilepos(int(match.group(1)))
+			if isinstance(self._current_file, PrintingSdFileInformation):
+				self._current_file.setFilepos(int(match.group(1)))
 			self._reportProgress()
 		elif RepRapProtocol.MESSAGE_SD_DONE_PRINTING(message):
-			self._currentFile.setFilepos(0)
+			if isinstance(self._current_file, PrintingSdFileInformation):
+				self._current_file.setFilepos(0)
 			self._changeState(State.OPERATIONAL)
 			self._finishPrintjob()
 
@@ -208,7 +216,7 @@ class RepRapProtocol(Protocol):
 			self._changeState(State.PRINTING)
 			self._clearForSend.set()
 		elif RepRapProtocol.MESSAGE_SD_END_WRITING(message):
-			self.refreshSdFiles()
+			self.refresh_sd_files()
 
 		# initial handshake with the firmware
 		if self._state == State.CONNECTED:
@@ -225,15 +233,15 @@ class RepRapProtocol(Protocol):
 
 		# ok == go ahead with sending
 		if RepRapProtocol.MESSAGE_OK(message):
-			if self._isHeatingUp():
+			if self.is_heating_up():
 				self._heatupDone()
 
-			if self._isPrinting():
+			if self.is_printing():
 				self._sendNext()
 				if self._resendDelta is None:
 					if time.time() > self._lastTemperatureUpdate + 5:
 						self._sendTemperatureQuery(withType=True)
-					elif self._isSdPrinting() and time.time() > self._lastSdProgressUpdate + 5:
+					elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
 						self._sendSdProgressQuery(withType=True)
 			self._clearForSend.set()
 
@@ -267,7 +275,7 @@ class RepRapProtocol(Protocol):
 			if self._resendDelta <= 0:
 				self._resendDelta = None
 		else:
-			command = self._currentFile.getNext()
+			command = self._current_file.getNext()
 			if command is None:
 				self._finishPrintjob()
 				return
@@ -385,7 +393,7 @@ class RepRapProtocol(Protocol):
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta <= 0:
 				error = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(error)
-				if self._isPrinting():
+				if self.is_printing():
 					# abort the print, there's nothing we can do to rescue it now
 					self.onError(error)
 				else:
@@ -393,7 +401,7 @@ class RepRapProtocol(Protocol):
 					self._resendDelta = None
 
 	def _useChecksum(self):
-		return not self._transportProperties[TransportProperties.FLOWCONTROL] and self._isBusy()
+		return not self._transport_properties[TransportProperties.FLOWCONTROL] and self.is_busy()
 
 	##~~ the actual send queue handling starts here
 
@@ -444,8 +452,8 @@ if __name__ == "__main__":
 			if newState == State.OPERATIONAL and self.firstPrint:
 				self.firstPrint = False
 				print "Selecting file and starting print job"
-				protocol.selectFile("C:/Users/Gina/AppData/Roaming/OctoPrint/uploads/whistle.gcode", FileDestinations.LOCAL)
-				protocol.startPrint()
+				protocol.select_file("C:/Users/Gina/AppData/Roaming/OctoPrint/uploads/whistle.gcode", FileDestinations.LOCAL)
+				protocol.start_print()
 
 		def onTemperatureUpdate(self, source, temperatureData):
 			print "### Temperature update: %r" % temperatureData
@@ -468,7 +476,7 @@ if __name__ == "__main__":
 		def onLogError(self, source, error):
 			print "Error: %s" % error
 
-	protocol = RepRapProtocol(SerialTransport, protocolListener=DummyProtocolListener())
+	protocol = RepRapProtocol(SerialTransport, protocol_listener=DummyProtocolListener())
 	#from octoprint.comm.protocol.repetier import RepetierTextualProtocol
 	#protocol = RepetierTextualProtocol(SerialTransport, protocolListener=DummyProtocolListener())
 	protocol.connect({"port": "VIRTUAL"})

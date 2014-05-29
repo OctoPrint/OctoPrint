@@ -35,18 +35,20 @@ class SerialTransport(Transport):
 
 		self._thread = None
 
-	def getProperties(self):
+	def get_properties(self):
 		return {
 			TransportProperties.FLOWCONTROL: False
 		}
 
-	def getConnectionOptions(self):
+	def get_connection_options(self):
 		return {
 			"port": self.__getSerialList(),
 			"baudrate": self.__getBaudrateList()
 		}
 
 	def connect(self, opt):
+		Transport.connect(self, opt)
+
 		self._port = opt["port"] if "port" in opt else None
 		self._baudrate = opt["baudrate"] if "baudrate" in opt else None
 		self._connectionTimeout = opt["connectionTimeout"] if "connectionTimeout" in opt else 2.0
@@ -60,7 +62,8 @@ class SerialTransport(Transport):
 
 	def disconnect(self, onError=False):
 		try:
-			self._serial.close()
+			if self._serial is not None:
+				self._serial.close()
 		finally:
 			self._serial = None
 		self._thread = None

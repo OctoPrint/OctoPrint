@@ -296,13 +296,16 @@ class VirtualPrinter():
 		except:
 			pass
 
-		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
-			self.readList.append("TargetBed:%d" % self.bedTargetTemp)
-
 		if "M190" in line:
 			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["bed"])
 			self._heatupThread.start()
 			return False
+
+		self._sendOk()
+
+		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
+			self.readList.append("TargetBed:%d" % self.bedTargetTemp)
+
 		return True
 
 	def _performMove(self, line):
@@ -353,8 +356,8 @@ class VirtualPrinter():
 			except:
 				pass
 
-		if duration:
-			time.sleep(duration)
+		#if duration:
+		#	time.sleep(duration)
 
 	def _setPosition(self, line):
 		matchX = re.search("X([0-9.]+)", line)

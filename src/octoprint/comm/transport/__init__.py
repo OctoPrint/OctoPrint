@@ -12,15 +12,19 @@ class Transport(object):
 		self._logReceiver = logReceiver
 		self._state = State.DISCONNECTED
 		self._error = None
+		self._opt = {}
 
-	def getProperties(self):
+	def get_properties(self):
 		raise NotImplemented()
 
-	def getConnectionOptions(self):
+	def get_connection_options(self):
 		return []
 
+	def get_current_connection(self):
+		return self._opt
+
 	def connect(self, opt):
-		pass
+		self._opt = opt
 
 	def disconnect(self, onError=False):
 		if onError:

@@ -1,7 +1,4 @@
 # coding=utf-8
-from octoprint.comm.protocol.reprap import RepRapProtocol
-from octoprint.comm.transport.serialTransport import SerialTransport
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -19,6 +16,10 @@ from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 
 from octoprint.filemanager.destinations import FileDestinations
+
+from octoprint.comm.protocol import State as ProtocolState
+from octoprint.comm.protocol.reprap import RepRapProtocol
+from octoprint.comm.transport.serialTransport import SerialTransport
 
 def getConnectionOptions():
 	"""
@@ -78,7 +79,7 @@ class Printer():
 		# comm
 		self._comm = None
 
-		self._protocol = RepRapProtocol(SerialTransport, protocolListener=self)
+		self._protocol = RepRapProtocol(SerialTransport, protocol_listener=self)
 
 		# callbacks
 		self._callbacks = []
@@ -161,22 +162,40 @@ class Printer():
 	#~~ callbacks from protocol
 
 	def onStateChange(self, source, oldState, newState):
+		# forward relevant state changes to gcode manager
+		if self._comm is not None and oldState == ProtocolState.PRINTING:
+			if self._selectedFile is not None:
+				if newState == ProtocolState.OPERATIONAL:
+					self._gcodeManager.printSucceeded(self._selectedFile["filename"], self._protocol.get_print_time())
+				elif newState == ProtocolState.OFFLINE or newState == ProtocolState.ERROR:
+					self._gcodeManager.printFailed(self._selectedFile["filename"], self._protocol.get_print_time())
+			self._gcodeManager.resumeAnalysis() # printing done, put those cpu cycles to good use
+		elif newState == ProtocolState.PRINTING:
+			self._gcodeManager.pauseAnalysis() # do not analyse gcode while printing
+
+		self._setState(newState)
 		pass
 
 	def onTemperatureUpdate(self, source, temperatureData):
 		self._addTemperatureData(temperatureData)
 
 	def onProgress(self, source, progress):
-		pass
+		self._setProgressData(progress["completion"], progress["filepos"], progress["printTime"], progress["printTimeLeft"])
 
 	def onFileSelected(self, source, filename, filesize, origin):
+		self._setJobData(filename, filesize, origin)
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+		if self._printAfterSelect:
+			self.startPrint()
 		pass
 
 	def onPrintjobDone(self, source):
-		pass
+		self._setProgressData(1.0, self._selectedFile["filesize"], self._protocol.get_print_time(), 0)
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onSdStateChange(self, source, sdAvailable):
-		pass
+		self._stateMonitor.setState({"state": self._state, "stateString": self._state, "flags": self._getStateFlags()})
 
 	def onSdFiles(self, source, files):
 		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
@@ -198,17 +217,14 @@ class Printer():
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
 		"""
-		if self._comm is not None:
-			self._comm.close()
-		self._comm = comm.MachineCom(port, baudrate, callbackObject=self)
+		self._protocol.disconnect()
+		self._protocol.connect({"port": port, "baudrate": baudrate})
 
 	def disconnect(self):
 		"""
 		 Closes the connection to the printer.
 		"""
-		if self._comm is not None:
-			self._comm.close()
-		self._comm = None
+		self._protocol.disconnect()
 		eventManager().fire(Events.DISCONNECTED)
 
 	def command(self, command):
@@ -221,11 +237,8 @@ class Printer():
 		"""
 		 Sends multiple gcode commands (provided as a list) to the printer.
 		"""
-		if self._comm is None:
-			return
-
 		for command in commands:
-			self._comm.sendCommand(command)
+			self._protocol.send_manually(command)
 
 	def jog(self, axis, amount):
 		movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
@@ -259,6 +272,7 @@ class Printer():
 			self.command("M140 S%f" % value)
 
 	def setTemperatureOffset(self, offsets={}):
+		# TODO
 		if self._comm is None:
 			return
 
@@ -284,12 +298,12 @@ class Printer():
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
 		self._printAfterSelect = printAfterSelect
-		self._protocol.selectFile(filename, sd)
+		self._protocol.select_file(filename, sd)
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 
 	def unselectFile(self):
-		self._protocol.unselectFile()
+		self._protocol.deselect_file()
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 
@@ -298,25 +312,25 @@ class Printer():
 		 Starts the currently loaded print job.
 		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
 		"""
-		if self._comm is None or not self._comm.isOperational() or self._comm.isPrinting():
+		if not self._protocol.is_operational() or self._protocol.is_busy():
 			return
 		if self._selectedFile is None:
 			return
 
 		self._setCurrentZ(None)
-		self._protocol.startPrint()
+		self._protocol.start_print()
 
 	def togglePausePrint(self):
 		"""
 		 Pause the current printjob.
 		"""
-		self._protocol.pausePrint()
+		self._protocol.pause_print()
 
 	def cancelPrint(self, disableMotorsAndHeater=True):
 		"""
 		 Cancel the current printjob.
 		"""
-		self._protocol.cancelPrint()
+		self._protocol.cancel_print()
 
 		if disableMotorsAndHeater:
 			# disable motors, switch off hotends, bed and fan
@@ -331,7 +345,7 @@ class Printer():
 
 		# mark print as failure
 		if self._selectedFile is not None:
-			self._gcodeManager.printFailed(self._selectedFile["filename"], self._comm.getPrintTime())
+			self._gcodeManager.printFailed(self._selectedFile["filename"], self._protocol.get_print_time())
 			payload = {
 				"file": self._selectedFile["filename"],
 				"origin": FileDestinations.LOCAL
@@ -364,7 +378,7 @@ class Printer():
 		self._printTimeLeft = printTimeLeft
 
 		self._stateMonitor.setProgress({
-			"completion": self._progress * 100 if self._progress is not None else None,
+			"completion": self._progress,
 			"filepos": filepos,
 			"printTime": int(self._printTime) if self._printTime is not None else None,
 			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
@@ -455,53 +469,7 @@ class Printer():
 			"sdReady": self.isSdReady()
 		}
 
-	def getCurrentData(self):
-		return self._stateMonitor.getCurrentData()
-
 	#~~ callbacks triggered from self._comm
-
-	def mcLog(self, message):
-		"""
-		 Callback method for the comm object, called upon log output.
-		"""
-		self._addLog(message)
-
-	def mcTempUpdate(self, temp, bedTemp):
-		self._addTemperatureData(temp, bedTemp)
-
-	def mcStateChange(self, state):
-		"""
-		 Callback method for the comm object, called if the connection state changes.
-		"""
-		oldState = self._state
-
-		# forward relevant state changes to gcode manager
-		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
-			if self._selectedFile is not None:
-				if state == self._comm.STATE_OPERATIONAL:
-					self._gcodeManager.printSucceeded(self._selectedFile["filename"], self._comm.getPrintTime())
-				elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
-					self._gcodeManager.printFailed(self._selectedFile["filename"], self._comm.getPrintTime())
-			self._gcodeManager.resumeAnalysis() # printing done, put those cpu cycles to good use
-		elif self._comm is not None and state == self._comm.STATE_PRINTING:
-			self._gcodeManager.pauseAnalysis() # do not analyse gcode while printing
-
-		self._setState(state)
-
-	def mcMessage(self, message):
-		"""
-		 Callback method for the comm object, called upon message exchanges via serial.
-		 Stores the message in the message buffer, truncates buffer to the last 300 lines.
-		"""
-		self._addMessage(message)
-
-	def mcProgress(self):
-		"""
-		 Callback method for the comm object, called upon any change in progress of the printjob.
-		 Triggers storage of new values for printTime, printTimeLeft and the current progress.
-		"""
-
-		self._setProgressData(self._comm.getPrintProgress(), self._comm.getPrintFilepos(), self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
 
 	def mcZChange(self, newZ):
 		"""
@@ -530,7 +498,7 @@ class Printer():
 			self.startPrint()
 
 	def mcPrintjobDone(self):
-		self._setProgressData(1.0, self._selectedFile["filesize"], self._comm.getPrintTime(), 0)
+		self._setProgressData(1.0, self._selectedFile["filesize"], self._comm.get_print_time(), 0)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def mcFileTransferStarted(self, filename, filesize):
@@ -558,36 +526,40 @@ class Printer():
 	#~~ sd file handling
 
 	def getSdFiles(self):
-		if self._comm is None or not self._comm.isSdReady():
+		if not self._protocol.is_sd_ready():
 			return []
-		return self._comm.getSdFiles()
+		return self._protocol.get_sd_files()
 
 	def addSdFile(self, filename, absolutePath, streamingFinishedCallback):
-		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
+		if self._protocol.is_busy() or not self._protocol.is_sd_ready():
 			logging.error("No connection to printer or printer is busy")
 			return
 
 		self._streamingFinishedCallback = streamingFinishedCallback
 
 		self.refreshSdFiles(blocking=True)
-		existingSdFiles = self._comm.getSdFiles()
+		existingSdFiles = self._protocol.get_sd_files()
 
 		remoteName = util.getDosFilename(filename, existingSdFiles)
+		# TODO
 		self._comm.startFileTransfer(absolutePath, filename, remoteName)
 
 		return remoteName
 
 	def deleteSdFile(self, filename):
+		# TODO
 		if not self._comm or not self._comm.isSdReady():
 			return
 		self._comm.deleteSdFile(filename)
 
 	def initSdCard(self):
+		# TODO
 		if not self._comm or self._comm.isSdReady():
 			return
 		self._comm.initSdCard()
 
 	def releaseSdCard(self):
+		# TODO
 		if not self._comm or not self._comm.isSdReady():
 			return
 		self._comm.releaseSdCard()
@@ -596,12 +568,12 @@ class Printer():
 		"""
 		Refreshs the list of file stored on the SD card attached to printer (if available and printer communication
 		available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
-		received (and can be accessed via self._comm.getSdFiles()). Defaults to a asynchronous operation.
+		received (and can be accessed via self._protocol.get_sd_files()). Defaults to a asynchronous operation.
 		"""
-		if not self._comm or not self._comm.isSdReady():
+		if not self._protocol.is_sd_ready():
 			return
 		self._sdFilelistAvailable.clear()
-		self._comm.refreshSdFiles()
+		self._protocol.refresh_sd_files()
 		if blocking:
 			self._sdFilelistAvailable.wait(10000)
 
@@ -611,10 +583,7 @@ class Printer():
 		"""
 		 Returns a human readable string corresponding to the current communication state.
 		"""
-		if self._comm is None:
-			return "Offline"
-		else:
-			return self._comm.getStateString()
+		return self._state
 
 	def getCurrentData(self):
 		return self._stateMonitor.getCurrentData()
@@ -624,6 +593,7 @@ class Printer():
 		return currentData["job"]
 
 	def getCurrentTemperatures(self):
+		# TODO
 		if self._comm is not None:
 			tempOffset, bedTempOffset = self._comm.getOffsets()
 		else:
@@ -651,38 +621,34 @@ class Printer():
 		return self._temps
 
 	def getCurrentConnection(self):
-		if self._comm is None:
-			return "Closed", None, None
-
-		port, baudrate = self._comm.getConnection()
-		return self._comm.getStateString(), port, baudrate
+		opt = self._protocol.get_current_connection()
+		if "port" in opt.keys() and "baudrate" in opt.keys():
+			return self._protocol.get_state(), opt["port"], opt["baudrate"]
+		return self._protocol.get_state(), None, None
 
 	def isClosedOrError(self):
-		return self._comm is None or self._comm.isClosedOrError()
+		return self._protocol.get_state() == ProtocolState.OFFLINE or self._protocol == ProtocolState.ERROR
 
 	def isOperational(self):
-		return self._comm is not None and self._comm.isOperational()
+		return not self.isClosedOrError()
 
 	def isPrinting(self):
-		return self._comm is not None and self._comm.isPrinting()
+		return self._protocol.get_state() == ProtocolState.PRINTING
 
 	def isPaused(self):
-		return self._comm is not None and self._comm.isPaused()
+		return self._protocol.get_state() == ProtocolState.PAUSED
 
 	def isError(self):
-		return self._comm is not None and self._comm.isError()
+		return self._protocol.get_state() == ProtocolState.ERROR
 
 	def isReady(self):
-		return self.isOperational() and not self._comm.isStreaming()
+		return self.isOperational() and not self._protocol.is_streaming()
 
 	def isSdReady(self):
-		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
+		if not settings().getBoolean(["feature", "sdSupport"]):
 			return False
 		else:
-			return self._comm.isSdReady()
-
-	def isLoading(self):
-		return self._gcodeLoader is not None
+			return self._protocol.is_sd_ready()
 
 class StateMonitor(object):
 	def __init__(self, ratelimit, updateCallback, addTemperatureCallback, addLogCallback, addMessageCallback):

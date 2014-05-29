@@ -14,22 +14,22 @@ from octoprint.filemanager.destinations import FileDestinations
 
 class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 
-	def __init__(self, transportFactory, protocolListener=None):
+	def __init__(self, transport_factory, protocol_listener=None):
 		self._logger = logging.getLogger(__name__)
 
-		self._transport = transportFactory(self, self, self)
-		self._transportProperties = self._transport.getProperties()
+		self._transport = transport_factory(self, self, self)
+		self._transport_properties = self._transport.get_properties()
 
-		self._protocolListener = protocolListener
+		self._protocol_listener = protocol_listener
 		self._state = State.OFFLINE
 
-		self._heatupStartTime = None
-		self._heatupTimeLost = 0.0
+		self._heatup_start_time = None
+		self._heatup_time_lost = 0.0
 
-		self._currentFile = None
+		self._current_file = None
 
-		self._sdAvailable = False
-		self._sdFiles = []
+		self._sd_available = False
+		self._sd_files = []
 
 		self._error = None
 
@@ -38,56 +38,94 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 	def connect(self, opt):
 		self._transport.connect(opt)
 
-	def disconnect(self, onError=False):
-		self._transport.disconnect(onError)
+	def disconnect(self, on_error=False):
+		self._transport.disconnect(on_error)
 
-	def sendManually(self, command, highPriority=False):
+	def send_manually(self, command, high_priority=False):
 		pass
 
-	def selectFile(self, filename, origin):
+	def select_file(self, filename, origin):
 		pass
 
-	def deselectFile(self):
+	def deselect_file(self):
 		pass
 
-	def startPrint(self):
-		if self._currentFile is None:
+	def start_print(self):
+		if self._current_file is None:
 			raise ValueError("No file selected for printing")
 
-		self._heatupStartTime = None
-		self._heatupTimeLost = 0.0
+		self._heatup_start_time = None
+		self._heatup_time_lost = 0.0
 
 		self._changeState(State.PRINTING)
-		self._currentFile.start()
+		self._current_file.start()
 
-	def pausePrint(self):
+	def pause_print(self):
 		if self._state == State.PRINTING:
 			self._changeState(State.PAUSED)
 		elif self._state == State.PAUSED:
 			self._changeState(State.PRINTING)
 
-	def cancelPrint(self):
+	def cancel_print(self):
+		eventManager().fire(Events.PRINT_CANCELLED, {
+			"file": self._current_file.getFilename(),
+			"origin": self._current_file.getFileLocation()
+		})
+		self._changeState(State.OPERATIONAL)
+
+	def refresh_sd_files(self):
 		pass
 
-	def refreshSdFiles(self):
-		pass
+	def get_state(self):
+		return self._state
+
+	def get_sd_files(self):
+		return self._sd_files
+
+	def get_print_time(self):
+		if self._current_file is None or self._current_file.getStartTime() is None:
+			return None
+		else:
+			return max(int(time.time() - self._current_file.getStartTime() - self._heatup_time_lost), 0)
+
+	def get_print_time_remaining_estimate(self):
+		print_time = self.get_print_time()
+		if print_time is None:
+			return None
+
+		print_time /= 60
+		progress = self._current_file.getProgress()
+		if progress:
+			print_time_total = print_time / progress
+			return int(print_time_total - print_time)
+		else:
+			return None
+
+	def get_current_connection(self):
+		return self._transport.get_current_connection()
 
 	##~~ granular state detection for implementations
 
-	def _isHeatingUp(self):
-		return self._heatupStartTime is not None
+	def is_heating_up(self):
+		return self._heatup_start_time is not None
 
-	def _isPrinting(self):
+	def is_printing(self):
 		return self._state == State.PRINTING or self._state == State.PAUSED
 
-	def _isSdPrinting(self):
-		return isinstance(self._currentFile, PrintingSdFileInformation) and self._isBusy()
+	def is_sd_printing(self):
+		return isinstance(self._current_file, PrintingSdFileInformation) and self.is_busy()
 
-	def _isStreaming(self):
+	def is_streaming(self):
 		return self._state == State.STREAMING
 
-	def _isBusy(self):
-		return self._isPrinting() or self._isStreaming()
+	def is_busy(self):
+		return self.is_printing() or self.is_streaming()
+
+	def is_operational(self):
+		return self._state == State.OPERATIONAL
+
+	def is_sd_ready(self):
+		return self._sd_available
 
 	##~~ state tracking and reporting to protocol listener
 
@@ -95,16 +133,16 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		oldState = self._state
 		self._state = newState
 		self._stateChanged(newState)
-		if self._protocolListener is not None:
-			self._protocolListener.onStateChange(self, oldState, newState)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onStateChange(self, oldState, newState)
 
 	def _stateChanged(self, newState):
 		pass
 
 	def _updateTemperature(self, temperatureData):
 		self._temperatureUpdated(temperatureData)
-		if self._protocolListener is not None:
-			self._protocolListener.onTemperatureUpdate(self, temperatureData)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onTemperatureUpdate(self, temperatureData)
 
 	def _temperatureUpdated(self, temperatureData):
 		pass
@@ -113,38 +151,38 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		progress = {
 			"completion": self.__getPrintCompletion(),
 			"filepos": self.__getPrintFilepos(),
-			"printTime": self.__getPrintTime(),
-			"printTimeLeft": self.__getPrintTimeRemainingEstimate()
+			"printTime": self.get_print_time(),
+			"printTimeLeft": self.get_print_time_remaining_estimate()
 		}
 
 		self._progressReported(progress)
-		if self._protocolListener is not None:
-			self._protocolListener.onProgress(self, progress)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onProgress(self, progress)
 
 	def _progressReported(self, progress):
 		pass
 
 	def _changeSdState(self, sdAvailable):
-		self._sdAvailable = sdAvailable
+		self._sd_available = sdAvailable
 		self._sdStateChanged(sdAvailable)
-		if self._sdAvailable:
-			self.refreshSdFiles()
+		if self._sd_available:
+			self.refresh_sd_files()
 		else:
-			self._sdFiles = []
-		if self._protocolListener is not None:
-			self._protocolListener.onSdStateChange(self, sdAvailable)
+			self._sd_files = []
+		if self._protocol_listener is not None:
+			self._protocol_listener.onSdStateChange(self, sdAvailable)
 
 	def _sdStateChanged(self, sdAvailable):
 		pass
 
 	def _selectFile(self, currentFile):
-		self._currentFile = currentFile
+		self._current_file = currentFile
 		self._fileSelected(currentFile)
-		if self._protocolListener is not None:
-			self._protocolListener.onFileSelected(self, currentFile.getFilename(), currentFile.getFilesize(), currentFile.getFileLocation())
+		if self._protocol_listener is not None:
+			self._protocol_listener.onFileSelected(self, currentFile.getFilename(), currentFile.getFilesize(), currentFile.getFileLocation())
 		eventManager().fire(Events.FILE_SELECTED, {
-			"file": self._currentFile.getFilename(),
-			"origin": self._currentFIle.getFileLocation()
+			"file": self._current_file.getFilename(),
+			"origin": self._current_file.getFileLocation()
 		})
 
 	def _fileSelected(self, currentFile):
@@ -152,21 +190,21 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 
 	def _sendSdFiles(self):
 		self._sdFilesSent()
-		if self._protocolListener is not None:
-			self._protocolListener.onSdFiles(self, self._sdFiles)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onSdFiles(self, self._sd_files)
 
 	def _sdFilesSent(self):
 		pass
 
 	def _finishPrintjob(self):
 		self._changeState(State.OPERATIONAL)
-		if self._protocolListener is not None:
-			self._protocolListener.onPrintjobDone(self)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onPrintjobDone(self)
 		eventManager().fire(Events.PRINT_DONE, {
-			"file": self._currentFile.getFilename(),
-			"filename": os.path.basename(self._currentFile.getFilename()),
-			"origin": self._currentFile.getFileLocation(),
-			"time": time.time() - self._currentFile.getStartTime()
+			"file": self._current_file.getFilename(),
+			"filename": os.path.basename(self._current_file.getFilename()),
+			"origin": self._current_file.getFileLocation(),
+			"time": time.time() - self._current_file.getStartTime() if self._current_file.getStartTime() is not None else None
 		})
 
 	def _printJobFinished(self):
@@ -178,7 +216,7 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 
 		:param filename: the filename to add to the list
 		"""
-		self._sdFiles.append(filename)
+		self._sd_files.append(filename)
 		self._sdFileAdded(filename)
 
 	def _sdFileAdded(self, filename):
@@ -197,7 +235,7 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		:param filenames: the list of filenames to add to the list
 		"""
 		for filename in filenames:
-			self._sdFiles.append(filename)
+			self._sd_files.append(filename)
 		self._sdFilesAdded(filenames)
 
 	def _sdFilesAdded(self, filenames):
@@ -213,7 +251,7 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		"""
 		Resets the SD file list
 		"""
-		self._sdFiles = []
+		self._sd_files = []
 		self._sdFilesReset()
 
 	def _sdFilesReset(self):
@@ -227,15 +265,15 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		"""
 		Called when the underlying protocol detects the beginning of a heat-up interval.
 		"""
-		self._heatupStartTime = time.time()
+		self._heatup_start_time = time.time()
 
 	def _heatupDone(self):
 		"""
 		Called when the underlying protocol detects the end of a heat-up interval.
 		"""
-		if self._heatupStartTime is not None:
-			self._heatupTimeLost += time.time() - self._heatupStartTime
-			self._heatupStartTime = None
+		if self._heatup_start_time is not None:
+			self._heatup_time_lost += time.time() - self._heatup_start_time
+			self._heatup_start_time = None
 
 	##~~ StateReceiver
 
@@ -265,53 +303,34 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		if self._transport != source:
 			return
 
-		if self._protocolListener is not None:
-			self._protocolListener.onLogRx(self, rx)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onLogRx(self, rx)
 
 	def onLogTx(self, source, tx):
 		if self._transport != source:
 			return
 
-		if self._protocolListener is not None:
-			self._protocolListener.onLogTx(self, tx)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onLogTx(self, tx)
 
 	def onLogError(self, source, error):
 		if self._transport != source:
 			return
 
-		if self._protocolListener is not None:
-			self._protocolListener.onLogError(self, error)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onLogError(self, error)
 
 	##~~ helpers
 
 	def __getPrintCompletion(self):
-		if self._currentFile is None:
+		if self._current_file is None:
 			return None
-		return self._currentFile.getProgress() * 100
+		return self._current_file.getProgress() * 100
 
 	def __getPrintFilepos(self):
-		if self._currentFile is None:
+		if self._current_file is None:
 			return None
-		return self._currentFile.getFilepos()
-
-	def __getPrintTime(self):
-		if self._currentFile is None or self._currentFile.getStartTime() is None:
-			return None
-		else:
-			return max(int(time.time() - self._currentFile.getStartTime() - self._heatupTimeLost), 0)
-
-	def __getPrintTimeRemainingEstimate(self):
-		printTime = self.__getPrintTime()
-		if printTime is None:
-			return None
-
-		printTime /= 60
-		progress = self._currentFile.getProgress()
-		if progress:
-			printTimeTotal = printTime / progress
-			return int(printTimeTotal - printTime)
-		else:
-			return None
+		return self._current_file.getFilepos()
 
 
 class ProtocolListener(object):
