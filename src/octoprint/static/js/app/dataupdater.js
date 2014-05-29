@@ -27,31 +27,17 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self._socket.onopen = self._onconnect;
         self._socket.onclose = self._onclose;
         self._socket.onmessage = self._onmessage;
-    }
+    };
 
     self.reconnect = function() {
         delete self._socket;
         self.connect();
-    }
+    };
 
     self._onconnect = function() {
         self._autoReconnecting = false;
         self._autoReconnectTrial = 0;
-
-        if ($("#offline_overlay").is(":visible")) {
-        	$("#offline_overlay").hide();
-        	self.logViewModel.requestData();
-            self.timelapseViewModel.requestData();
-            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-            self.loginStateViewModel.requestData();
-            self.gcodeFilesViewModel.requestData();
-            self.gcodeViewModel.reset();
-
-            if ($('#tabs li[class="active"] a').attr("href") == "#control") {
-                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-            }
-        }
-    }
+    };
 
     self._onclose = function() {
         $("#offline_overlay_message").html(
@@ -70,20 +56,43 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         } else {
             self._onreconnectfailed();
         }
-    }
+    };
 
     self._onreconnectfailed = function() {
         $("#offline_overlay_message").html(
             "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
                 "but you may try a manual reconnect using the button below."
         );
-    }
+    };
 
     self._onmessage = function(e) {
         for (var prop in e.data) {
             var data = e.data[prop];
 
             switch (prop) {
+                case "connected": {
+                    // update the current UI API key and send it with any request
+                    UI_API_KEY = data["apikey"];
+                    $.ajaxSetup({
+                        headers: {"X-Api-Key": UI_API_KEY}
+                    });
+
+                    if ($("#offline_overlay").is(":visible")) {
+                        $("#offline_overlay").hide();
+                        self.logViewModel.requestData();
+                        self.timelapseViewModel.requestData();
+                        $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                        self.loginStateViewModel.requestData();
+                        self.gcodeFilesViewModel.requestData();
+                        self.gcodeViewModel.reset();
+
+                        if ($('#tabs li[class="active"] a').attr("href") == "#control") {
+                            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                        }
+                    }
+
+                    break;
+                }
                 case "history": {
                     self.connectionViewModel.fromHistoryData(data);
                     self.printerStateViewModel.fromHistoryData(data);
@@ -109,6 +118,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                 case "event": {
                     var type = data["type"];
                     var payload = data["payload"];
+                    var html = "";
 
                     var gcodeUploadProgress = $("#gcode_upload_progress");
                     var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
@@ -116,12 +126,14 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     if ((type == "UpdatedFiles" && payload.type == "gcode") || type == "MetadataAnalysisFinished") {
                         gcodeFilesViewModel.requestData();
                     } else if (type == "MovieRendering") {
-                        $.pnotify({title: "Rendering timelapse", text: "Now rendering timelapse " + payload.movie_basename});
+                        new PNotify({title: "Rendering timelapse", text: "Now rendering timelapse " + payload.movie_basename});
                     } else if (type == "MovieDone") {
-                        $.pnotify({title: "Timelapse ready", text: "New timelapse " + payload.movie_basename + " is done rendering."});
+                        new PNotify({title: "Timelapse ready", text: "New timelapse " + payload.movie_basename + " is done rendering."});
                         timelapseViewModel.requestData();
                     } else if (type == "MovieFailed") {
-                        $.pnotify({title: "Rendering failed", text: "Rendering of timelapse " + payload.movie_basename + " failed, return code " + payload.returncode, type: "error"});
+                        html = "<p>Rendering of timelapse " + payload.movie_basename + " failed with return code " + payload.returncode + "</p>";
+                        html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+                        new PNotify({title: "Rendering failed", text: html, type: "error", hide: false});
                     } else if (type == "SlicingStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
@@ -130,13 +142,15 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + _.sprintf("%.2f", payload.time) + " seconds"});
+                        new PNotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + _.sprintf("%.2f", payload.time) + " seconds"});
                         gcodeFilesViewModel.requestData(payload.gcode);
                     } else if (type == "SlicingFailed") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Slicing failed", text: "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason, type: "error"});
+
+                        html = "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason;
+                        new PNotify({title: "Slicing failed", text: html, type: "error", hide: false});
                     } else if (type == "TransferStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
@@ -145,7 +159,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Streaming done", text: "Streamed " + payload.local + " to " + payload.remote + " on SD, took " + _.sprintf("%.2f", payload.time) + " seconds"});
+                        new PNotify({title: "Streaming done", text: "Streamed " + payload.local + " to " + payload.remote + " on SD, took " + _.sprintf("%.2f", payload.time) + " seconds"});
                         gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
                     break;
@@ -160,7 +174,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                 }
             }
         }
-    }
+    };
 
     self.connect();
 }

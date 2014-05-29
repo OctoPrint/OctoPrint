@@ -96,21 +96,38 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     // subscribe to relevant printer settings...
     self.settings.printer_extruderOffsets.subscribe(function() {
         if (!self.enabled) return;
+        if (!self.settings.printer_extruderOffsets()) return;
 
-        var options = {
+        GCODE.ui.updateOptions({
             reader: {
                 toolOffsets: self.settings.printer_extruderOffsets()
             }
-        };
+        });
+    });
+    self.settings.printer_bedDimensions.subscribe(function() {
+        if (!self.enabled) return;
 
         var bedDimensions = self.settings.printer_bedDimensions();
-        if (bedDimensions && bedDimensions.hasOwnProperty("x") && bedDimensions.hasOwnProperty("y")) {
-            options["renderer"] = {
-                bed: self.settings.printer_bedDimensions()
-            }
-        }
+        if (!bedDimensions || (!bedDimensions.hasOwnProperty("x") && !bedDimensions.hasOwnProperty("y") && !bedDimensions.hasOwnProperty("r"))) return;
 
-        GCODE.ui.updateOptions(options);
+        GCODE.ui.updateOptions({
+            renderer: {
+                bed: bedDimensions
+            }
+        });
+    });
+    self.settings.printer_invertAxes.subscribe(function() {
+        if (!self.enabled) return;
+        if (!self.settings.printer_invertAxes()) return;
+
+        GCODE.ui.updateOptions({
+            renderer: {
+                invertAxes: {
+                    x: self.settings.printer_invertX(),
+                    y: self.settings.printer_invertY()
+                }
+            }
+        });
     });
 
     self.loadedFilename = undefined;
@@ -168,7 +185,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             step: 1,
             value: 0,
             enabled: false,
-            formatter: function(value) { return "Layer #" + value; }
+            formatter: function(value) { return "Layer #" + (value + 1); }
         }).on("slide", self.changeLayer);
     };
 
@@ -288,7 +305,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     self.approveLargeFile = function() {
         self.waitForApproval(false);
         self.loadFile(self.selectedFile.name(), self.selectedFile.date());
-    }
+    };
 
     self._onProgress = function(type, percentage) {
         self.ui_progress_type(type);
@@ -333,7 +350,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             self.currentCommand = [0, 1];
         } else {
             var output = [];
-            output.push("Layer number: " + layer.number);
+            output.push("Layer number: " + (layer.number + 1));
             output.push("Layer height (mm): " + layer.height);
             output.push("GCODE commands in layer: " + layer.commands);
             if (layer.filament.length == 1) {

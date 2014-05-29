@@ -67,11 +67,11 @@ function LoginStateViewModel() {
             type: "POST",
             data: {"user": username, "pass": password, "remember": remember},
             success: function(response) {
-                $.pnotify({title: "Login successful", text: "You are now logged in as \"" + response.name + "\"", type: "success"});
+                new PNotify({title: "Login successful", text: "You are now logged in as \"" + response.name + "\"", type: "success"});
                 self.fromResponse(response);
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                $.pnotify({title: "Login failed", text: "User unknown or wrong password", type: "error"});
+                new PNotify({title: "Login failed", text: "User unknown or wrong password", type: "error"});
             }
         })
     }
@@ -81,7 +81,7 @@ function LoginStateViewModel() {
             url: API_BASEURL + "logout",
             type: "POST",
             success: function(response) {
-                $.pnotify({title: "Logout successful", text: "You are now logged out", type: "success"});
+                new PNotify({title: "Logout successful", text: "You are now logged out", type: "success"});
                 self.fromResponse(response);
             }
         })
