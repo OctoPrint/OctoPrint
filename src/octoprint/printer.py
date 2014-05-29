@@ -397,7 +397,7 @@ class Printer():
 
 		self._stateMonitor.setJobData({
 			"file": {
-				"name": os.path.basename(filename),
+				"name": os.path.basename(filename) if filename is not None else None,
 				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
 				"size": filesize,
 				"date": date
