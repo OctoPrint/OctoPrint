@@ -2,6 +2,7 @@
 import Queue
 from collections import deque
 from octoprint.events import eventManager, Events
+from octoprint.util import filterNonAscii
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -158,7 +159,11 @@ class RepRapProtocol(Protocol):
 
 		# SD file list
 		if self._receivingSdFileList and isGcodeFileName(message.strip().lower()) and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
-			self._addSdFile(message.strip().lower())
+			filename = message.strip().lower()
+			if filterNonAscii(filename):
+				self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+			else:
+				self._addSdFile(filename)
 			return
 
 		##~~ regular message processing
@@ -379,7 +384,7 @@ class RepRapProtocol(Protocol):
 				pass
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta <= 0:
 				error = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
-				# TODO self._logger.warn(error)
+				self._logger.warn(error)
 				if self._isPrinting():
 					# abort the print, there's nothing we can do to rescue it now
 					self.onError(error)

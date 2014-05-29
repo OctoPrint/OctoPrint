@@ -40,6 +40,7 @@ class Printer():
 		self._gcodeManager.registerCallback(self)
 
 		# state
+		# TODO do we really need to hold the temperature here?
 		self._temp = None
 		self._bedTemp = None
 		self._targetTemp = None
@@ -636,11 +637,12 @@ class Printer():
 				"target": self._temp[tool][1],
 				"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
 			}
-		result["bed"] = {
-			"actual": self._bedTemp[0],
-			"target": self._bedTemp[1],
-			"offset": bedTempOffset
-		}
+		if self._bedTemp is not None:
+			result["bed"] = {
+				"actual": self._bedTemp[0],
+				"target": self._bedTemp[1],
+				"offset": bedTempOffset
+			}
 
 		return result
 

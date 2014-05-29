@@ -31,7 +31,9 @@ default_settings = {
 		"timeout": {
 			"detection": 0.5,
 			"connection": 2,
-			"communication": 5
+			"communication": 5,
+			"temperature": 5,
+			"sdStatus": 1
 		},
 		"additionalPorts": []
 	},
@@ -52,7 +54,8 @@ default_settings = {
 		"flipV": False,
 		"timelapse": {
 			"type": "off",
-			"options": {}
+			"options": {},
+			"postRoll": 0
 		}
 	},
 	"gcodeViewer": {
@@ -65,7 +68,9 @@ default_settings = {
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
-		"swallowOkAfterResend": True
+		"sdAlwaysAvailable": False,
+		"swallowOkAfterResend": True,
+		"repetierTargetTemp": False
 	},
 	"folder": {
 		"uploads": None,
@@ -149,7 +154,9 @@ default_settings = {
 				"y": 6000,
 				"z": 200,
 				"e": 300
-			}
+			},
+			"hasBed": True,
+			"repetierStyleTargetTemperature": False
 		}
 	}
 }

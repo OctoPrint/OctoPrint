@@ -1,13 +1,13 @@
 # coding=utf-8
-import os
-import time
-from octoprint.events import eventManager, Events
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 Gina Häußge - Released under terms of the AGPLv3 License"
 
 
+import logging
+import os
+import time
+from octoprint.events import eventManager, Events
 from octoprint.comm.transport import MessageReceiver, StateReceiver, LogReceiver, State as TransportState
 from octoprint.filemanager.destinations import FileDestinations
 
@@ -15,6 +15,8 @@ from octoprint.filemanager.destinations import FileDestinations
 class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 
 	def __init__(self, transportFactory, protocolListener=None):
+		self._logger = logging.getLogger(__name__)
+
 		self._transport = transportFactory(self, self, self)
 		self._transportProperties = self._transport.getProperties()
 

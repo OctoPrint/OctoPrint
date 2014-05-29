@@ -370,14 +370,15 @@ GCODE.renderer = (function(){
     var applyZoom = function(mdlInfo) {
         var pt = ctx.transformedPoint(canvas.width/2,canvas.height/2);
         var transform = ctx.getTransform();
-        var scaleF;
         if (scaleX && scaleY && transform.a && transform.d) {
             ctx.translate(pt.x, pt.y);
             ctx.scale(1 / scaleX, 1 / scaleY);
             ctx.translate(-pt.x, -pt.y);
+            transform = ctx.getTransform();
         }
+
         if (mdlInfo && renderOptions["zoomInOnModel"]) {
-            scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width - 10) / mdlInfo.modelSize.x : (canvas.height - 10) / mdlInfo.modelSize.y;
+            var scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width - 10) / mdlInfo.modelSize.x : (canvas.height - 10) / mdlInfo.modelSize.y;
             scaleF /= zoomFactor;
             if (transform.a && transform.d) {
                 scaleX = scaleF / transform.a;
@@ -409,10 +410,11 @@ GCODE.renderer = (function(){
             var mustRefresh = false;
             var dirty = false;
             for (var opt in options) {
-                if (!options.hasOwnProperty(opt)) continue;
+                if (!renderOptions.hasOwnProperty(opt) || !options.hasOwnProperty(opt)) continue;
                 if (options[opt] === undefined) continue;
+                if (renderOptions[opt] == options[opt]) continue;
 
-                dirty = dirty || (renderOptions[opt] != options[opt]);
+                dirty = true;
                 renderOptions[opt] = options[opt];
                 if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed"])) {
                     mustRefresh = true;
