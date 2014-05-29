@@ -28,6 +28,8 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 
 		self._current_file = None
 
+		self._current_z = 0.0
+
 		self._sd_available = False
 		self._sd_files = []
 
@@ -160,6 +162,17 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 			self._protocol_listener.onProgress(self, progress)
 
 	def _progressReported(self, progress):
+		pass
+
+	def _reportZChange(self, z):
+		old_z = self._current_z
+		self._current_z = z
+
+		self._zChangeReported(z)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onZChange(self, old_z, z)
+
+	def _zChangeReported(self, newZ):
 		pass
 
 	def _changeSdState(self, sdAvailable):
@@ -341,6 +354,9 @@ class ProtocolListener(object):
 		pass
 
 	def onProgress(self, source, progress):
+		pass
+
+	def onZChange(self, source, oldZ, newZ):
 		pass
 
 	def onFileSelected(self, source, filename, filesize, origin):

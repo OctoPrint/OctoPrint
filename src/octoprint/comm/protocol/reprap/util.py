@@ -87,18 +87,21 @@ class GcodeCommand(object):
 		return self.command.startswith("T")
 
 	def __str__(self):
-		attr = []
-		for key in GcodeCommand.KNOWN_ATTRIBUTES:
-			value = self.__getattribute__(key)
-			if value is not None:
-				if key in GcodeCommand.KNOWN_INT_ATTRIBUTES:
-					attr.append("%s%d" % (key.upper(), value))
-				elif key in GcodeCommand.KNOWN_FLOAT_ATTRIBUTES:
-					attr.append("%s%f" % (key.upper(), value))
-				else:
-					attr.append("%s%r" % (key.upper(), value))
-		attributeStr = " ".join(attr)
-		return "%s%s%s" % (self.command.upper(), " " + attributeStr if attributeStr else "", " " + self.param if self.param else "")
+		if self.original is not None:
+			return self.original
+		else:
+			attr = []
+			for key in GcodeCommand.KNOWN_ATTRIBUTES:
+				value = self.__getattribute__(key)
+				if value is not None:
+					if key in GcodeCommand.KNOWN_INT_ATTRIBUTES:
+						attr.append("%s%d" % (key.upper(), value))
+					elif key in GcodeCommand.KNOWN_FLOAT_ATTRIBUTES:
+						attr.append("%s%f" % (key.upper(), value))
+					else:
+						attr.append("%s%r" % (key.upper(), value))
+			attributeStr = " ".join(attr)
+			return "%s%s%s" % (self.command.upper(), " " + attributeStr if attributeStr else "", " " + self.param if self.param else "")
 
 
 class CommandQueue(Queue.Queue):

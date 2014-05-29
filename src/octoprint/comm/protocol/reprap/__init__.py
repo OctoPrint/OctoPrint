@@ -102,7 +102,7 @@ class RepRapProtocol(Protocol):
 		self._clearForSend = threading.Event()
 		self._clearForSend.clear()
 
-		self._lastLines = deque([], 50)
+		self._last_lines = deque([], 50)
 		self._resendDelta = None
 
 		self._sendQueueProcessing = True
@@ -111,6 +111,8 @@ class RepRapProtocol(Protocol):
 		self._thread.start()
 
 		self._currentLine = 1
+		self._current_temperature = {}
+		self._currentExtruder = 0
 		self._state = State.OFFLINE
 
 		# enqueue our first temperature query so it get's sent right on establishment of the connection
@@ -255,7 +257,7 @@ class RepRapProtocol(Protocol):
 	def _send(self, command, highPriority=False, commandType=None, withChecksum=None, withLinenumber=None):
 		if withChecksum is None:
 			withChecksum = self._useChecksum()
-		commandTuple = (str(command), withChecksum, withLinenumber)
+		commandTuple = (command, withChecksum, withLinenumber)
 
 		priority = 100
 		if highPriority:
@@ -267,7 +269,7 @@ class RepRapProtocol(Protocol):
 
 	def _sendNext(self):
 		if self._resendDelta is not None:
-			command = self._lastLines[-self._resendDelta]
+			command = self._last_lines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 			self._send(command, withLinenumber=lineNumber)
 
@@ -375,6 +377,9 @@ class RepRapProtocol(Protocol):
 
 		self._updateTemperature(result)
 
+	def _temperatureUpdated(self, temperature_data):
+		self._current_temperature = temperature_data
+
 	def _handleResendRequest(self, message):
 		lineToResend = None
 		try:
@@ -390,7 +395,7 @@ class RepRapProtocol(Protocol):
 					self._sendQueue.get(False)
 			except Queue.Empty:
 				pass
-			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta <= 0:
+			if self._resendDelta > len(self._last_lines) or len(self._last_lines) == 0 or self._resendDelta <= 0:
 				error = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(error)
 				if self.is_printing():
@@ -402,6 +407,70 @@ class RepRapProtocol(Protocol):
 
 	def _useChecksum(self):
 		return not self._transport_properties[TransportProperties.FLOWCONTROL] and self.is_busy()
+
+	##~~ specific command actions
+
+	def _gcode_T(self, command, with_checksum, with_line_number):
+		self._currentExtruder = command.tool
+		return command, with_checksum, with_line_number
+
+	def _gcode_G0(self, command, with_checksum, with_line_number):
+		if command.z is not None:
+			z = command.z
+			self._reportZChange(z)
+		return command, with_checksum, with_line_number
+	_gcode_G1 = _gcode_G0
+
+	def _gcode_M0(self, command, with_checksum, with_line_number):
+		self.pause_print()
+		# Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+		return None
+	_gcode_M1 = _gcode_M0
+
+	def _gcode_M104(self, command, with_checksum, with_line_number):
+		tool = self._currentExtruder
+		if command.t is not None:
+			tool = command.t
+		if command.s is not None:
+			target = command.s
+			tool_key = "tool%d" % tool
+			if tool_key in self._current_temperature.keys() and self._current_temperature[tool_key] is not None and isinstance(self._current_temperature[tool_key], tuple):
+				actual, old_target = self._current_temperature[tool_key]
+				self._current_temperature[tool_key] = (actual, target)
+			else:
+				self._current_temperature[tool_key] = (None, target)
+		return command, with_checksum, with_line_number
+	_gcode_M109 = _gcode_M104
+
+	def _gcode_M140(self, command, with_checksum, with_line_number):
+		if command.s is not None:
+			target = command.s
+			if "bed" in self._current_temperature.keys() and self._current_temperature["bed"] is not None and isinstance(self._current_temperature["bed"], tuple):
+				actual, old_target = self._current_temperature["bed"]
+				self._current_temperature["bed"] = (actual, target)
+			else:
+				self._current_temperature["bed"] = (None, target)
+		return command, with_checksum, with_line_number
+	_gcode_M190 = _gcode_M140
+
+	def _gcode_M110(self, command, with_checksum, with_line_number):
+		if command.n is not None:
+			new_line_number = command.n
+		else:
+			new_line_number = 0
+
+		self._currentLine = new_line_number + 1
+
+		# after a reset of the line number we have no way to determine what line exactly the printer now wants
+		self._last_lines.clear()
+		self._resendDelta = None
+
+		# send M110 command with new line number
+		return command, with_checksum, new_line_number
+
+	def _gcode_M112(self, command, with_checksum, with_line_number): # It's an emergency what todo? Canceling the print should be the minimum
+		self.cancel_print()
+		return command, with_checksum, with_line_number
 
 	##~~ the actual send queue handling starts here
 
@@ -416,27 +485,38 @@ class RepRapProtocol(Protocol):
 				priority, commandTuple = entry
 
 			command, withChecksum, lineNumber = commandTuple
-			preprocessedCommand = self._preprocessCommand(command, withChecksum=withChecksum, withLinenumber=lineNumber)
-			self._transport.send(preprocessedCommand)
+			if not isinstance(command, GcodeCommand):
+				command = GcodeCommand.fromLine(command)
+			preprocessed_command = self._preprocess_command(command, with_checksum=withChecksum, with_line_number=lineNumber)
 
-			if withChecksum:
-				self._lastLines.append(command)
+			if preprocessed_command is not None:
+				self._transport.send(preprocessed_command)
 
-	def _preprocessCommand(self, command, withChecksum=False, withLinenumber=None):
-		if withChecksum:
-			if withLinenumber is not None:
-				commandToSend = "N%d %s" % (withLinenumber, command)
+				if withChecksum:
+					self._last_lines.append(command)
+
+	def _preprocess_command(self, command, with_checksum=False, with_line_number=None):
+		if command is None:
+			return None
+
+		gcode_command_handler = "_gcode_%s" % command.command
+		if hasattr(self, gcode_command_handler):
+			command, with_checksum, with_line_number = getattr(self, gcode_command_handler)(command, with_checksum, with_line_number)
+
+		if with_checksum:
+			if with_line_number is not None:
+				command_to_send = "N%d %s" % (with_line_number, str(command))
 			else:
-				commandToSend = "N%d %s" % (self._currentLine, command)
+				command_to_send = "N%d %s" % (self._currentLine, str(command))
 
-			checksum = reduce(lambda x, y: x ^ y, map(ord, commandToSend))
+			checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
 
-			if withLinenumber is None:
+			if with_line_number is None:
 				self._currentLine += 1
 
-			return "%s*%d" % (commandToSend, checksum)
+			return "%s*%d" % (command_to_send, checksum)
 		else:
-			return command
+			return str(command)
 
 
 if __name__ == "__main__":

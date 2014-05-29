@@ -182,6 +182,14 @@ class Printer():
 	def onProgress(self, source, progress):
 		self._setProgressData(progress["completion"], progress["filepos"], progress["printTime"], progress["printTimeLeft"])
 
+	def onZChange(self, source, oldZ, newZ):
+		if newZ != oldZ:
+			# we have to react to all z-changes, even those that might "go backward" due to a slicer's retraction or
+			# anti-backlash-routines. Event subscribes should individually take care to filter out "wrong" z-changes
+			eventManager().fire(Events.Z_CHANGE, {"new": newZ, "old": oldZ})
+
+		self._setCurrentZ(newZ)
+
 	def onFileSelected(self, source, filename, filesize, origin):
 		self._setJobData(filename, filesize, origin)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
