@@ -665,7 +665,7 @@ class MachineCom(object):
 							t = time.time()
 							self._heatupWaitTimeLost = t - self._heatupWaitStartTime
 							self._heatupWaitStartTime = t
-				elif supportRepetierTargetTemp:
+				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = self._regex_repetierTempExtr.match(line)
 					matchBed = self._regex_repetierTempBed.match(line)
 
