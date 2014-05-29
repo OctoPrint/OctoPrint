@@ -403,9 +403,6 @@ $(function() {
             firstRunViewModel.showDialog();
         }
 
-        var html = "<p>Rendering of timelapse someTimelapse.mpg failed with return code someReturnCode</p>";
-        html += pnotifyAdditionalInfo('<pre style="overflow: auto">some Error\nwith\nsome\nlines</pre>');
-        new PNotify({title: "Rendering failed", text: html, type: "error", hide: false});
     }
 );
 
