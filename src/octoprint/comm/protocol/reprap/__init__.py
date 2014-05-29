@@ -40,6 +40,7 @@ class RepRapProtocol(Protocol):
 	MESSAGE_SD_END_WRITING = staticmethod(lambda line: "done saving file" in line.lower())
 
 	MESSAGE_ERROR = staticmethod(lambda line: line.startswith("Error:") or line.startswith("!!"))
+	MESSAGE_ERROR_MULTILINE = staticmethod(lambda line: RepRapProtocol.REGEX_ERROR_MULTILINE.match(line))
 	MESSAGE_ERROR_COMMUNICATION = staticmethod(lambda line: 'checksum mismatch' in line.lower()
 															or 'wrong checksum' in line.lower()
 															or 'line number is not last line number' in line.lower()
@@ -48,6 +49,8 @@ class RepRapProtocol(Protocol):
 															or 'no checksum with line number' in line.lower()
 															or 'missing checksum' in line.lower())
 	MESSAGE_RESEND = staticmethod(lambda line: line.lower().startswith("resend") or line.lower().startswith("rs"))
+
+	TRANSFORM_ERROR = staticmethod(lambda line: line[6:] if line.startswith("Error:") else line[2:])
 
 	## Commands
 	COMMAND_GET_TEMP = staticmethod(lambda: GcodeCommand("M105"))
@@ -88,6 +91,17 @@ class RepRapProtocol(Protocol):
 	# - 2: file size
 	REGEX_SD_PRINTING_BYTE = re.compile("([0-9]*)/([0-9]*)")
 
+	# Regex matching multi line errors
+	#
+	# Marlin reports MAXTEMP issues on extruders in the format
+	#
+	#   Error:{int}
+	#   Extruder switched off. {MIN|MAX}TEMP triggered !
+	#
+	# This regex matches the line initiating those multiline errors. If it is encountered, the next line has
+	# to be fetched from the transport layer in order to fully handle the error at hand.
+	REGEX_ERROR_MULTILINE = re.compile("Error:[0-9]\n")
+
 	def __init__(self, transport_factory, protocol_listener=None):
 		Protocol.__init__(self, transport_factory, protocol_listener)
 
@@ -97,26 +111,27 @@ class RepRapProtocol(Protocol):
 		self._startSeen = False
 		self._receivingSdFileList = False
 
-		self._sendQueue = CommandQueue()
+		self._send_queue = CommandQueue()
 
-		self._clearForSend = threading.Event()
-		self._clearForSend.clear()
+		self._clear_for_send = threading.Event()
+		self._clear_for_send.clear()
 
 		self._last_lines = deque([], 50)
-		self._resendDelta = None
+		self._resend_delta = None
+		self._last_resend_request = None
 
-		self._sendQueueProcessing = True
-		self._thread = threading.Thread(target=self._handleSendQueue, name="SendQueueHandler")
+		self._send_queue_processing = True
+		self._thread = threading.Thread(target=self._handle_send_queue, name="SendQueueHandler")
 		self._thread.daemon = True
 		self._thread.start()
 
-		self._currentLine = 1
+		self._current_line = 1
 		self._current_temperature = {}
 		self._currentExtruder = 0
 		self._state = State.OFFLINE
 
 		# enqueue our first temperature query so it get's sent right on establishment of the connection
-		self._sendTemperatureQuery(withType=True)
+		self._send_temperature_query(withType=True)
 
 	def select_file(self, filename, origin):
 		if origin == FileDestinations.SDCARD:
@@ -136,7 +151,7 @@ class RepRapProtocol(Protocol):
 				self._current_file.setFilepos(0)
 			self._send(RepRapProtocol.COMMAND_SD_START())
 		else:
-			self._sendNext()
+			self._send_next()
 
 	def cancel_print(self):
 		if isinstance(self._current_file, PrintingSdFileInformation):
@@ -144,6 +159,14 @@ class RepRapProtocol(Protocol):
 			self._send(RepRapProtocol.COMMAND_SD_SET_POS(0))
 
 		Protocol.cancel_print(self)
+
+	def init_sd(self):
+		Protocol.init_sd(self)
+		self._send(RepRapProtocol.COMMAND_SD_INIT())
+
+	def release_sd(self):
+		Protocol.release_sd(self)
+		self._send(RepRapProtocol.COMMAND_SD_RELEASE())
 
 	def refresh_sd_files(self):
 		if not self._sd_available:
@@ -163,7 +186,7 @@ class RepRapProtocol(Protocol):
 		if self._transport != source:
 			return
 
-		message = self._handleErrors(message.strip())
+		message = self._handle_errors(message.strip())
 
 		# SD file list
 		if self._receivingSdFileList and isGcodeFileName(message.strip().lower()) and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
@@ -178,7 +201,7 @@ class RepRapProtocol(Protocol):
 
 		# temperature updates
 		if RepRapProtocol.MESSAGE_TEMPERATURE(message):
-			self._processTemperatures(message)
+			self._process_temperatures(message)
 			if not RepRapProtocol.MESSAGE_OK(message):
 				self._heatupDetected()
 
@@ -194,11 +217,13 @@ class RepRapProtocol(Protocol):
 			if isinstance(self._current_file, PrintingSdFileInformation):
 				self._current_file.setFilepos(int(match.group(1)))
 			self._reportProgress()
+			self._clear_for_send.set()
 		elif RepRapProtocol.MESSAGE_SD_DONE_PRINTING(message):
 			if isinstance(self._current_file, PrintingSdFileInformation):
 				self._current_file.setFilepos(0)
 			self._changeState(State.OPERATIONAL)
 			self._finishPrintjob()
+			self._clear_for_send.set()
 
 		# sd file list
 		elif RepRapProtocol.MESSAGE_SD_BEGIN_FILE_LIST(message):
@@ -212,26 +237,25 @@ class RepRapProtocol(Protocol):
 		elif RepRapProtocol.MESSAGE_SD_FILE_OPENED(message):
 			match = RepRapProtocol.REGEX_FILE_OPENED.search(message)
 			self._selectFile(PrintingSdFileInformation(match.group(1), int(match.group(2))))
+			self._clear_for_send.set()
 
 		# sd file streaming
 		elif RepRapProtocol.MESSAGE_SD_BEGIN_WRITING(message):
 			self._changeState(State.PRINTING)
-			self._clearForSend.set()
+			self._clear_for_send.set()
 		elif RepRapProtocol.MESSAGE_SD_END_WRITING(message):
 			self.refresh_sd_files()
+			self._clear_for_send.set()
 
 		# initial handshake with the firmware
-		if self._state == State.CONNECTED:
+		if self._state == State.CONNECTING:
 			if RepRapProtocol.MESSAGE_START(message):
-				self._startSeen = True
-			elif RepRapProtocol.MESSAGE_WAIT(message) and self._startSeen:
-				self._clearForSend.set()
-			elif RepRapProtocol.MESSAGE_OK(message) and self._startSeen:
 				self._changeState(State.OPERATIONAL)
+				self._clear_for_send.set()
 
 		# resend == roll back time a bit
 		if RepRapProtocol.MESSAGE_RESEND(message):
-			self._handleResendRequest(message)
+			self._handle_resend_request(message)
 
 		# ok == go ahead with sending
 		if RepRapProtocol.MESSAGE_OK(message):
@@ -239,18 +263,19 @@ class RepRapProtocol(Protocol):
 				self._heatupDone()
 
 			if self.is_printing():
-				self._sendNext()
-				if self._resendDelta is None:
+				if not self.is_sd_printing():
+					self._send_next()
+				if self._resend_delta is None:
 					if time.time() > self._lastTemperatureUpdate + 5:
-						self._sendTemperatureQuery(withType=True)
+						self._send_temperature_query(withType=True)
 					elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
-						self._sendSdProgressQuery(withType=True)
-			self._clearForSend.set()
+						self._send_sd_progress_query(withType=True)
+			self._clear_for_send.set()
 
 	def onTimeoutReceived(self, source):
 		if self._transport != source:
 			return
-		self._sendTemperatureQuery(withType=True)
+		self._send_temperature_query(withType=True)
 
 	##~~ private
 
@@ -263,19 +288,19 @@ class RepRapProtocol(Protocol):
 		if highPriority:
 			priority = 1
 		if commandType is not None:
-			self._sendQueue.put((priority, commandTuple, commandType))
+			self._send_queue.put((priority, commandTuple, commandType))
 		else:
-			self._sendQueue.put((priority, commandTuple))
+			self._send_queue.put((priority, commandTuple))
 
-	def _sendNext(self):
-		if self._resendDelta is not None:
-			command = self._last_lines[-self._resendDelta]
-			lineNumber = self._currentLine - self._resendDelta
+	def _send_next(self):
+		if self._resend_delta is not None:
+			command = self._last_lines[-self._resend_delta]
+			lineNumber = self._current_line - self._resend_delta
 			self._send(command, withLinenumber=lineNumber)
 
-			self._resendDelta -= 1
-			if self._resendDelta <= 0:
-				self._resendDelta = None
+			self._resend_delta -= 1
+			if self._resend_delta <= 0:
+				self._resend_delta = None
 		else:
 			command = self._current_file.getNext()
 			if command is None:
@@ -285,39 +310,36 @@ class RepRapProtocol(Protocol):
 			self._send(command)
 			self._reportProgress()
 
-	def _sendTemperatureQuery(self, withType=False):
+	def _send_temperature_query(self, withType=False):
 		if withType:
 			self._send(RepRapProtocol.COMMAND_GET_TEMP(), commandType=RepRapProtocol.COMMAND_TYPE_TEMPERATURE)
 		else:
 			self._send(RepRapProtocol.COMMAND_GET_TEMP())
 		self._lastTemperatureUpdate = time.time()
 
-	def _sendSdProgressQuery(self, withType=False):
+	def _send_sd_progress_query(self, withType=False):
 		if withType:
 			self._send(RepRapProtocol.COMMAND_SD_STATUS(), commandType=RepRapProtocol.COMMAND_TYPE_SD_PROGRESS)
 		else:
 			self._send(RepRapProtocol.COMMAND_SD_STATUS())
 		self._lastSdProgressUpdate = time.time()
 
-	def _handleErrors(self, line):
-		# TODO Somehow figure out how to handle multiline errors here...
+	def _handle_errors(self, line):
+		if RepRapProtocol.MESSAGE_ERROR(line):
+			if RepRapProtocol.MESSAGE_ERROR_MULTILINE(line):
+				error = self._transport.receive()
+			else:
+				error = RepRapProtocol.TRANSFORM_ERROR(line)
 
-		# No matter the state, if we see an error, goto the error state and store the error for reference.
-		if line.startswith('Error:'):
-			#Oh YEAH, consistency.
-			# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
-			#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
-			#	So we can have an extra newline in the most common case. Awesome work people.
-			if re.match('Error:[0-9]\n', line):
-				line = line.rstrip() + self._readline()
-			#Skip the communication errors, as those get corrected.
-			if RepRapProtocol.MESSAGE_ERROR_COMMUNICATION(line):
+			# skip the communication errors as those get corrected via resend requests
+			if RepRapProtocol.MESSAGE_ERROR_COMMUNICATION(error):
 				pass
+			# handle the error
 			elif not self._state == State.ERROR:
-				self.onError(line[6:])
+				self.onError(error)
 		return line
 
-	def _parseTemperatures(self, line):
+	def _parse_temperatures(self, line):
 		result = {}
 		maxToolNum = 0
 		for match in re.finditer(RepRapProtocol.REGEX_TEMPERATURE, line):
@@ -342,8 +364,8 @@ class RepRapProtocol(Protocol):
 
 		return maxToolNum, result
 
-	def _processTemperatures(self, line):
-		maxToolNum, parsedTemps = self._parseTemperatures(line)
+	def _process_temperatures(self, line):
+		maxToolNum, parsedTemps = self._parse_temperatures(line)
 
 		result = {}
 
@@ -380,30 +402,30 @@ class RepRapProtocol(Protocol):
 	def _temperatureUpdated(self, temperature_data):
 		self._current_temperature = temperature_data
 
-	def _handleResendRequest(self, message):
-		lineToResend = None
+	def _handle_resend_request(self, message):
+		line_to_resend = None
 		try:
-			lineToResend = int(message.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
+			line_to_resend = int(message.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
 		except:
 			if "rs" in message:
-				lineToResend = int(message.split()[1])
+				line_to_resend = int(message.split()[1])
 
-		if lineToResend is not None:
-			self._resendDelta = self._currentLine - lineToResend
+		if line_to_resend is not None:
+			self._resend_delta = self._current_line - line_to_resend
 			try:
-				while not self._sendQueue.empty():
-					self._sendQueue.get(False)
+				while not self._send_queue.empty():
+					self._send_queue.get(False)
 			except Queue.Empty:
 				pass
-			if self._resendDelta > len(self._last_lines) or len(self._last_lines) == 0 or self._resendDelta <= 0:
-				error = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
+			if self._resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or self._resend_delta <= 0:
+				error = "Printer requested line %d but no sufficient history is available, can't resend" % line_to_resend
 				self._logger.warn(error)
 				if self.is_printing():
 					# abort the print, there's nothing we can do to rescue it now
 					self.onError(error)
 				else:
 					# reset resend delta, we can't do anything about it
-					self._resendDelta = None
+					self._resend_delta = None
 
 	def _useChecksum(self):
 		return not self._transport_properties[TransportProperties.FLOWCONTROL] and self.is_busy()
@@ -459,11 +481,11 @@ class RepRapProtocol(Protocol):
 		else:
 			new_line_number = 0
 
-		self._currentLine = new_line_number + 1
+		self._current_line = new_line_number + 1
 
 		# after a reset of the line number we have no way to determine what line exactly the printer now wants
 		self._last_lines.clear()
-		self._resendDelta = None
+		self._resend_delta = None
 
 		# send M110 command with new line number
 		return command, with_checksum, new_line_number
@@ -474,25 +496,25 @@ class RepRapProtocol(Protocol):
 
 	##~~ the actual send queue handling starts here
 
-	def _handleSendQueue(self):
-		while self._sendQueueProcessing:
-			self._clearForSend.wait()
-			self._clearForSend.clear()
-			entry = self._sendQueue.get()
+	def _handle_send_queue(self):
+		while self._send_queue_processing:
+			self._clear_for_send.wait()
+			self._clear_for_send.clear()
+			entry = self._send_queue.get()
 			if len(entry) == 3:
-				priority, commandTuple, commandType = entry
+				priority, command_tuple, command_type = entry
 			else:
-				priority, commandTuple = entry
+				priority, command_tuple = entry
 
-			command, withChecksum, lineNumber = commandTuple
+			command, with_checksum, with_line_number = command_tuple
 			if not isinstance(command, GcodeCommand):
-				command = GcodeCommand.fromLine(command)
-			preprocessed_command = self._preprocess_command(command, with_checksum=withChecksum, with_line_number=lineNumber)
+				command = GcodeCommand.from_line(command)
+			preprocessed_command = self._preprocess_command(command, with_checksum=with_checksum, with_line_number=with_line_number)
 
 			if preprocessed_command is not None:
 				self._transport.send(preprocessed_command)
 
-				if withChecksum:
+				if with_checksum:
 					self._last_lines.append(command)
 
 	def _preprocess_command(self, command, with_checksum=False, with_line_number=None):
@@ -507,12 +529,12 @@ class RepRapProtocol(Protocol):
 			if with_line_number is not None:
 				command_to_send = "N%d %s" % (with_line_number, str(command))
 			else:
-				command_to_send = "N%d %s" % (self._currentLine, str(command))
+				command_to_send = "N%d %s" % (self._current_line, str(command))
 
 			checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
 
 			if with_line_number is None:
-				self._currentLine += 1
+				self._current_line += 1
 
 			return "%s*%d" % (command_to_send, checksum)
 		else:

@@ -91,6 +91,9 @@ class SerialTransport(Transport):
 			self.onError(exceptionString)
 			self.disconnect(True)
 
+	def receive(self):
+		return self._readline()
+
 	def _monitor(self):
 		error = None
 		while True:

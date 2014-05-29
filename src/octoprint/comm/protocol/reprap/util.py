@@ -24,7 +24,7 @@ class GcodeCommand(object):
 	PARAM_REGEX = re.compile("^[GMT]\d+\s+(.*?)$")
 
 	@staticmethod
-	def fromLine(line):
+	def from_line(line):
 		line = line.strip()
 		match = GcodeCommand.COMMAND_REGEX.match(line)
 		if match is None:

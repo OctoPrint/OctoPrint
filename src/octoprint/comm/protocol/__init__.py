@@ -75,6 +75,12 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		})
 		self._changeState(State.OPERATIONAL)
 
+	def init_sd(self):
+		pass
+
+	def release_sd(self):
+		pass
+
 	def refresh_sd_files(self):
 		pass
 
@@ -95,13 +101,15 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		if print_time is None:
 			return None
 
-		print_time /= 60
 		progress = self._current_file.getProgress()
 		if progress:
 			print_time_total = print_time / progress
 			return int(print_time_total - print_time)
 		else:
 			return None
+
+	def get_connection_options(self):
+		return self._transport.get_connection_options()
 
 	def get_current_connection(self):
 		return self._transport.get_current_connection()

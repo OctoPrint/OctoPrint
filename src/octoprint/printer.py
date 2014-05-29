@@ -210,10 +210,10 @@ class Printer():
 		self._sdFilelistAvailable.set()
 
 	def onLogTx(self, source, tx):
-		self._addLog(">> %s" % tx)
+		self._addLog("Send: %s" % tx)
 
 	def onLogRx(self, source, rx):
-		self._addLog("<< %s" % rx)
+		self._addLog("Recv: %s" % rx)
 
 	def onLogError(self, source, error):
 		self._addLog("ERROR: %s" % error)
@@ -234,6 +234,17 @@ class Printer():
 		"""
 		self._protocol.disconnect()
 		eventManager().fire(Events.DISCONNECTED)
+
+	def getConnectionOptions(self):
+		connection_options = self._protocol.get_connection_options()
+
+		return {
+		"ports": connection_options["port"],
+		"baudrates": connection_options["baudrate"],
+		"portPreference": settings().get(["serial", "port"]),
+		"baudratePreference": settings().getInt(["serial", "baudrate"]),
+		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
+		}
 
 	def command(self, command):
 		"""
@@ -304,9 +315,9 @@ class Printer():
 		self._comm.setTemperatureOffset(tool, bed)
 		self._stateMonitor.setTempOffsets(validatedOffsets)
 
-	def selectFile(self, filename, sd, printAfterSelect=False):
+	def selectFile(self, filename, origin, printAfterSelect=False):
 		self._printAfterSelect = printAfterSelect
-		self._protocol.select_file(filename, sd)
+		self._protocol.select_file(filename, origin)
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 
@@ -479,36 +490,6 @@ class Printer():
 
 	#~~ callbacks triggered from self._comm
 
-	def mcZChange(self, newZ):
-		"""
-		 Callback method for the comm object, called upon change of the z-layer.
-		"""
-		oldZ = self._currentZ
-		if newZ != oldZ:
-			# we have to react to all z-changes, even those that might "go backward" due to a slicer's retraction or
-			# anti-backlash-routines. Event subscribes should individually take care to filter out "wrong" z-changes
-			eventManager().fire(Events.Z_CHANGE, {"new": newZ, "old": oldZ})
-
-		self._setCurrentZ(newZ)
-
-	def mcSdStateChange(self, sdReady):
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-
-	def mcSdFiles(self, files):
-		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
-		self._sdFilelistAvailable.set()
-
-	def mcFileSelected(self, filename, filesize, sd):
-		self._setJobData(filename, filesize, sd)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-
-		if self._printAfterSelect:
-			self.startPrint()
-
-	def mcPrintjobDone(self):
-		self._setProgressData(1.0, self._selectedFile["filesize"], self._comm.get_print_time(), 0)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-
 	def mcFileTransferStarted(self, filename, filesize):
 		self._sdStreaming = True
 
@@ -561,16 +542,12 @@ class Printer():
 		self._comm.deleteSdFile(filename)
 
 	def initSdCard(self):
-		# TODO
-		if not self._comm or self._comm.isSdReady():
-			return
-		self._comm.initSdCard()
+		self._protocol.init_sd()
 
 	def releaseSdCard(self):
-		# TODO
-		if not self._comm or not self._comm.isSdReady():
+		if not self._protocol.is_sd_ready() or self._protocol.is_busy():
 			return
-		self._comm.releaseSdCard()
+		self._protocol.release_sd()
 
 	def refreshSdFiles(self, blocking=False):
 		"""

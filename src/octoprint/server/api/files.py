@@ -228,13 +228,11 @@ def gcodeFileCommand(filename, target):
 				return make_response("Printer is not operational, cannot directly start printing", 409)
 			printAfterLoading = True
 
-		sd = False
 		if target == FileDestinations.SDCARD:
 			filenameToSelect = filename
-			sd = True
 		else:
 			filenameToSelect = gcodeManager.getAbsolutePath(filename)
-		printer.selectFile(filenameToSelect, sd, printAfterLoading)
+		printer.selectFile(filenameToSelect, target, printAfterLoading)
 
 	return NO_CONTENT
 
