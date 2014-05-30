@@ -51,14 +51,17 @@ def _getFileList(origin):
 
 		files = []
 		if sdFileList is not None:
-			for sdFile in sdFileList:
-				files.append({
+			for sdFile, sdSize in sdFileList:
+				file = {
 					"name": sdFile,
 					"origin": FileDestinations.SDCARD,
 					"refs": {
 						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile, _external=True)
 					}
-				})
+				}
+				if sdSize is not None:
+					file.update({"size": sdSize})
+				files.append(file)
 	else:
 		files = gcodeManager.getAllFileData()
 		for file in files:

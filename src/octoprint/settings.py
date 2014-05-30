@@ -147,7 +147,8 @@ default_settings = {
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
 			"hasBed": True,
-			"repetierStyleTargetTemperature": False
+			"repetierStyleTargetTemperature": False,
+			"extendedSdFileList": False
 		}
 	}
 }

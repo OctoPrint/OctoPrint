@@ -645,13 +645,28 @@ class MachineCom(object):
 
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
-				if self._sdFileList and isGcodeFileName(line.strip().lower()) and not 'End file list' in line:
-					filename = line.strip().lower()
-					if filterNonAscii(filename):
-						self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+				if self._sdFileList and not "End file list" in line:
+					fileinfo = line.strip().split(None, 2)
+					if len(fileinfo) > 1:
+						# we got extended file information here, so let's split filename and size and try to make them a bit nicer
+						filename, size = fileinfo
+						filename = filename.lower()
+						try:
+							size = int(size)
+						except ValueError:
+							# whatever that was, it was not an integer, so we'll just ignore it and set size to None
+							size = None
 					else:
-						self._sdFiles.append(filename)
-					continue
+						# no extended file information, so only the filename is there and we set size to None
+						filename = fileinfo[0].lower()
+						size = None
+
+					if isGcodeFileName(filename):
+						if filterNonAscii(filename):
+							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+						else:
+							self._sdFiles.append((filename, size))
+						continue
 
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
