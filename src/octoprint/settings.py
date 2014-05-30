@@ -153,7 +153,8 @@ default_settings = {
 				"e": 300
 			},
 			"hasBed": True,
-			"repetierStyleTargetTemperature": False
+			"repetierStyleTargetTemperature": False,
+			"extendedSdFileList": False
 		}
 	}
 }
