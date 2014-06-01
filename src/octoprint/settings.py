@@ -154,7 +154,9 @@ default_settings = {
 			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
-			"extendedSdFileList": False
+			"extendedSdFileList": False,
+			"throttle": 0.01,
+			"waitOnLongMoves": False
 		}
 	}
 }

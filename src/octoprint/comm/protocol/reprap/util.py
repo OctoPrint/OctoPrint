@@ -237,7 +237,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 				else:
 					key = None
 
-				if key is not None:
+				if key is not None and key in offsets:
 					offset = offsets[key]
 					command.s = command.s + offset
 					if command.original is not None:

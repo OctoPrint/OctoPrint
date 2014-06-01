@@ -158,27 +158,42 @@ class Printer():
 	#~~ callbacks from protocol
 
 	def onStateChange(self, source, oldState, newState):
+		if not source == self._protocol:
+			return
+
 		# forward relevant state changes to gcode manager
-		if self._comm is not None and oldState == ProtocolState.PRINTING:
+		if oldState == ProtocolState.PRINTING:
 			if self._selectedFile is not None:
 				if newState == ProtocolState.OPERATIONAL:
 					self._gcodeManager.printSucceeded(self._selectedFile["filename"], self._protocol.get_print_time())
 				elif newState == ProtocolState.OFFLINE or newState == ProtocolState.ERROR:
 					self._gcodeManager.printFailed(self._selectedFile["filename"], self._protocol.get_print_time())
-			self._gcodeManager.resumeAnalysis() # printing done, put those cpu cycles to good use
+
+			# printing done, put those cpu cycles to good use
+			self._gcodeManager.resumeAnalysis()
 		elif newState == ProtocolState.PRINTING:
-			self._gcodeManager.pauseAnalysis() # do not analyse gcode while printing
+			# do not analyse gcode while printing
+			self._gcodeManager.pauseAnalysis()
 
 		self._setState(newState)
 		pass
 
 	def onTemperatureUpdate(self, source, temperatureData):
+		if not source == self._protocol:
+			return
+
 		self._addTemperatureData(temperatureData)
 
 	def onProgress(self, source, progress):
+		if not source == self._protocol:
+			return
+
 		self._setProgressData(progress["completion"], progress["filepos"], progress["printTime"], progress["printTimeLeft"])
 
 	def onZChange(self, source, oldZ, newZ):
+		if not source == self._protocol:
+			return
+
 		if newZ != oldZ:
 			# we have to react to all z-changes, even those that might "go backward" due to a slicer's retraction or
 			# anti-backlash-routines. Event subscribes should individually take care to filter out "wrong" z-changes
@@ -187,6 +202,9 @@ class Printer():
 		self._setCurrentZ(newZ)
 
 	def onFileSelected(self, source, filename, filesize, origin):
+		if not source == self._protocol:
+			return
+
 		self._setJobData(filename, filesize, origin)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
@@ -195,10 +213,16 @@ class Printer():
 		pass
 
 	def onPrintjobDone(self, source):
+		if not source == self._protocol:
+			return
+
 		self._setProgressData(100.0, self._selectedFile["filesize"], self._protocol.get_print_time(), 0)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onFileTransferStarted(self, source, filename, filesize):
+		if not source == self._protocol:
+			return
+
 		self._sdStreaming = True
 
 		self._setJobData(filename, filesize, FileDestinations.SDCARD)
@@ -206,6 +230,9 @@ class Printer():
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onFileTransferDone(self, source):
+		if not source == self._protocol:
+			return
+
 		self._sdStreaming = False
 
 		if self._streamingFinishedCallback is not None:
@@ -218,19 +245,34 @@ class Printer():
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onSdStateChange(self, source, sdAvailable):
+		if not source == self._protocol:
+			return
+
 		self._stateMonitor.setState({"state": self._state, "stateString": self._state, "flags": self._getStateFlags()})
 
 	def onSdFiles(self, source, files):
+		if not source == self._protocol:
+			return
+
 		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
 		self._sdFilelistAvailable.set()
 
 	def onLogTx(self, source, tx):
+		if not source == self._protocol:
+			return
+
 		self._addLog("Send: %s" % tx)
 
 	def onLogRx(self, source, rx):
+		if not source == self._protocol:
+			return
+
 		self._addLog("Recv: %s" % rx)
 
 	def onLogError(self, source, error):
+		if not source == self._protocol:
+			return
+
 		self._addLog("ERROR: %s" % error)
 
 	#~~ printer commands

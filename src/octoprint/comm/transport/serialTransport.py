@@ -115,12 +115,13 @@ class SerialTransport(Transport):
 		if error is not None:
 			self._transport_logger.error(error)
 			self.logError(error)
+			self.onError(error)
 			# TODO further error handling
 
 	def _connect(self):
 		self.changeState(State.OPENING_CONNECTION)
 		if self._port == "VIRTUAL":
-			self._serial = VirtualPrinter()
+			self._serial = VirtualPrinter(timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
 			self.changeState(State.CONNECTED)
 			self._transport_logger.debug("Connected to VIRTUAL printer")
 			return True

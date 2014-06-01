@@ -9,12 +9,19 @@ import os
 import re
 import threading
 import math
+import Queue
 
 from octoprint.settings import settings
 
 class VirtualPrinter():
-	def __init__(self):
-		self.readList = ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n'] # no sd card as default startup scenario
+	def __init__(self, timeout=5.0, writeTimeout=10.0):
+		self._timeout = timeout
+		self._writeTimeout = writeTimeout
+
+		self.readList = Queue.Queue()
+		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']: # no sd card as default startup scenario
+			self.readList.put(item)
+		
 		self.currentExtruder = 0
 		self.temp = [0.0] * settings().getInt(["devel", "virtualPrinter", "numExtruders"])
 		self.targetTemp = [0.0] * settings().getInt(["devel", "virtualPrinter", "numExtruders"])
@@ -59,7 +66,7 @@ class VirtualPrinter():
 			data = data[:data.rfind("*")]
 			self.currentLine += 1
 		elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
-			self.readList.append("Error: Missing checksum")
+			self.readList.put("Error: Missing checksum")
 			return
 
 		# track N = N + 1
@@ -73,16 +80,16 @@ class VirtualPrinter():
 			linenumber = int(re.search("N([0-9]+)", data).group(1))
 			expected = self.lastN + 1
 			if linenumber != expected:
-				self.readList.append("Error: expected line %d got %d" % (expected, linenumber))
-				self.readList.append("Resend:%d" % expected)
-				self.readList.append("ok")
+				self.readList.put("Error: expected line %d got %d" % (expected, linenumber))
+				self.readList.put("Resend:%d" % expected)
+				self.readList.put("ok")
 				return
 			elif self.currentLine == 100:
 				# simulate a resend at line 100 of the last 5 lines
 				self.lastN = 94
-				self.readList.append("Error: Line Number is not Last Line Number\n")
-				self.readList.append("rs %d\n" % (self.currentLine - 5))
-				self.readList.append("ok")
+				self.readList.put("Error: Line Number is not Last Line Number\n")
+				self.readList.put("rs %d\n" % (self.currentLine - 5))
+				self.readList.put("ok")
 				return
 			else:
 				self.lastN = linenumber
@@ -114,7 +121,7 @@ class VirtualPrinter():
 				self._listSd()
 		elif 'M21' in data:
 			self._sdCardReady = True
-			self.readList.append("SD card ok")
+			self.readList.put("SD card ok")
 		elif 'M22' in data:
 			self._sdCardReady = False
 		elif 'M23' in data:
@@ -147,17 +154,17 @@ class VirtualPrinter():
 				self._deleteSdFile(filename)
 		elif "M114" in data:
 			# send dummy position report
-			self.readList.append("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
+			self.readList.put("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
 			return
 		elif "M117" in data:
 			# we'll just use this to echo a message, to allow playing around with pause triggers
-			self.readList.append("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+			self.readList.put("echo:%s" % re.search("M117\s+(.*)", data).group(1))
 		elif "M999" in data:
 			# mirror Marlin behaviour
-			self.readList.append("Resend: 1")
+			self.readList.put("Resend: 1")
 		elif data.startswith("T"):
 			self.currentExtruder = int(re.search("T(\d+)", data).group(1))
-			self.readList.append("Active Extruder: %d" % self.currentExtruder)
+			self.readList.put("Active Extruder: %d" % self.currentExtruder)
 		elif "G20" in data:
 			self._unitModifier = 1.0 / 2.54
 			if self._lastX is not None:
@@ -192,32 +199,30 @@ class VirtualPrinter():
 			self._sendOk()
 
 	def _listSd(self):
-		self.readList.append("Begin file list")
+		self.readList.put("Begin file list")
 		if settings().getBoolean(["devel", "virtualPrinter", "extendedSdFileList"]):
-			self.readList.extend(
-				map(
-					lambda x: "%s %d" % (x.upper(), os.stat(os.path.join(self._virtualSd, x)).st_size),
-					os.listdir(self._virtualSd)
-				)
+			items = map(
+				lambda x: "%s %d" % (x.upper(), os.stat(os.path.join(self._virtualSd, x)).st_size),
+				os.listdir(self._virtualSd)
 			)
 		else:
-			self.readList.extend(
-				map(
-					lambda x: x.upper(),
-					os.listdir(self._virtualSd)
-				)
+			items = map(
+				lambda x: x.upper(),
+				os.listdir(self._virtualSd)
 			)
-		self.readList.append("End file list")
+		for item in items:
+			self.readList.put(item)
+		self.readList.put("End file list")
 
 	def _selectSdFile(self, filename):
 		file = os.path.join(self._virtualSd, filename).lower()
 		if not os.path.exists(file) or not os.path.isfile(file):
-			self.readList.append("open failed, File: %s." % filename)
+			self.readList.put("open failed, File: %s." % filename)
 		else:
 			self._selectedSdFile = file
 			self._selectedSdFileSize = os.stat(file).st_size
-			self.readList.append("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
-			self.readList.append("File selected")
+			self.readList.put("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+			self.readList.put("File selected")
 
 	def _startSdPrint(self):
 		if self._selectedSdFile is not None:
@@ -234,9 +239,9 @@ class VirtualPrinter():
 
 	def _reportSdStatus(self):
 		if self._sdPrinter is not None and self._sdPrintingSemaphore.is_set:
-			self.readList.append("SD printing byte %d/%d" % (self._selectedSdFilePos, self._selectedSdFileSize))
+			self.readList.put("SD printing byte %d/%d" % (self._selectedSdFilePos, self._selectedSdFileSize))
 		else:
-			self.readList.append("Not SD printing")
+			self.readList.put("Not SD printing")
 
 	def _processTemperatureQuery(self):
 		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
@@ -256,16 +261,16 @@ class VirtualPrinter():
 
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
-					self.readList.append("ok T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString))
+					self.readList.put("ok T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString))
 				else:
-					self.readList.append("ok T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString))
+					self.readList.put("ok T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString))
 			else:
-				self.readList.append("ok %s @:64\n" % allTempsString)
+				self.readList.put("ok %s @:64\n" % allTempsString)
 		else:
 			if includeTarget:
-				self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp))
+				self.readList.put("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp))
 			else:
-				self.readList.append("ok T:%.2f B:%.2f @:64\n" % (self.temp[0], self.bedTemp))
+				self.readList.put("ok T:%.2f B:%.2f @:64\n" % (self.temp[0], self.bedTemp))
 
 	def _parseHotendCommand(self, line):
 		tool = 0
@@ -277,6 +282,7 @@ class VirtualPrinter():
 				pass
 
 		if tool >= settings().getInt(["devel", "virtualPrinter", "numExtruders"]):
+			self._sendOk()
 			return
 
 		try:
@@ -288,9 +294,10 @@ class VirtualPrinter():
 			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["tool%d" % tool])
 			self._heatupThread.start()
 			return
-
-		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
-			self.readList.append("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
+		else:
+			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
+				self.readList.put("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
+			self._sendOk()
 
 	def _parseBedCommand(self, line):
 		try:
@@ -301,12 +308,11 @@ class VirtualPrinter():
 		if "M190" in line:
 			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["bed"])
 			self._heatupThread.start()
-			return False
-
-		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
-			self.readList.append("TargetBed:%d" % self.bedTargetTemp)
-
-		return True
+			return
+		else:
+			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
+				self.readList.put("TargetBed:%d" % self.bedTargetTemp)
+			self._sendOk()
 
 	def _performMove(self, line):
 		matchX = re.search("X([0-9.]+)", line)
@@ -356,8 +362,15 @@ class VirtualPrinter():
 			except:
 				pass
 
-		#if duration:
-		#	time.sleep(duration)
+		if duration:
+			if settings().getBoolean(["devel", "virtualPrinter", "waitOnLongMoves"]):
+				slept = 0
+				while duration - slept > self._timeout:
+					time.sleep(self._timeout)
+					self.readList.put("wait")
+					slept += self._timeout
+			else:
+				time.sleep(duration)
 
 	def _setPosition(self, line):
 		matchX = re.search("X([0-9.]+)", line)
@@ -395,11 +408,11 @@ class VirtualPrinter():
 			if os.path.isfile(file):
 				os.remove(file)
 			else:
-				self.readList.append("error writing to file")
+				self.readList.put("error writing to file")
 
 		self._writingToSd = True
 		self._selectedSdFile = file
-		self.readList.append("Writing to file: %s" % filename)
+		self.readList.put("Writing to file: %s" % filename)
 
 	def _finishSdFile(self):
 		self._writingToSd = False
@@ -426,12 +439,12 @@ class VirtualPrinter():
 				if 'M140' in line or 'M190' in line:
 					self._parseBedCommand(line)
 
-				time.sleep(0.01)
+				time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
 
 		self._sdPrintingSemaphore.clear()
 		self._selectedSdFilePos = 0
 		self._sdPrinter = None
-		self.readList.append("Done printing file")
+		self.readList.put("Done printing file")
 
 	def _waitForHeatup(self, heater):
 		delta = 0.5
@@ -440,14 +453,14 @@ class VirtualPrinter():
 			toolNum = int(heater[len("tool"):])
 			while self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta:
 				self._simulateTemps()
-				self.readList.append("T:%0.2f /%0.2f" % (self.temp[toolNum], self.targetTemp[toolNum]))
+				self.readList.put("T:%0.2f /%0.2f" % (self.temp[toolNum], self.targetTemp[toolNum]))
 				time.sleep(delay)
 		elif heater == "bed":
 			while self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta:
 				self._simulateTemps()
-				self.readList.append("B:%0.2f /%0.2f" % (self.bedTemp, self.bedTargetTemp))
+				self.readList.put("B:%0.2f /%0.2f" % (self.bedTemp, self.bedTargetTemp))
 				time.sleep(delay)
-		self.readList.append("ok")
+		self._sendOk()
 
 	def _deleteSdFile(self, filename):
 		f = os.path.join(self._virtualSd, filename)
@@ -474,33 +487,24 @@ class VirtualPrinter():
 				self.bedTemp = 0
 
 	def readline(self):
-		if self.readList is None:
-			return ''
-		n = 0
-
-		self._simulateTemps()
-
-		while len(self.readList) < 1:
-			time.sleep(0.1)
-			n += 1
-			if n == 20:
-				return ''
-			if self.readList is None:
-				return ''
-		#time.sleep(0.001)
-		return self.readList.pop(0)
+		try:
+			line = self.readList.get(timeout=self._timeout)
+			time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
+			return line
+		except Queue.Empty:
+			return ""
 
 	def close(self):
 		self.readList = None
 
 	def _sendOk(self):
 		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
-			self.readList.append("ok %d" % self.lastN)
+			self.readList.put("ok %d" % self.lastN)
 		else:
-			self.readList.append("ok")
+			self.readList.put("ok")
 
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
 		if self.readList is not None:
-			self.readList.append("wait")
+			self.readList.put("wait")
 

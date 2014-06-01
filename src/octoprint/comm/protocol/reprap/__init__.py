@@ -312,6 +312,10 @@ class RepRapProtocol(Protocol):
 		elif RepRapProtocol.MESSAGE_SD_END_WRITING(message):
 			self.refresh_sd_files()
 
+		# firmware specific messages
+		if not self._evaluate_firmware_specific_messages(source, message):
+			return
+
 		# initial handshake with the firmware
 		if self._state == State.CONNECTED:
 			if not self._startSeen and RepRapProtocol.MESSAGE_START(message):
@@ -346,6 +350,9 @@ class RepRapProtocol(Protocol):
 		self._send_temperature_query(withType=True)
 
 	##~~ private
+
+	def _evaluate_firmware_specific_messages(self, source, message):
+		pass
 
 	def _send(self, command, highPriority=False, commandType=None, withChecksum=None, withLinenumber=None):
 		if withChecksum is None:
