@@ -33,6 +33,25 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		self._sd_available = False
 		self._sd_files = []
 
+		self._current_temperature = {}
+		self._temperature_offsets = {}
+
+		self._error = None
+
+	def _reset(self):
+		self._heatup_start_time = None
+		self._heatup_time_lost = 0.0
+
+		self._current_file = None
+
+		self._current_z = 0.0
+
+		self._sd_available = False
+		self._sd_files = []
+
+		self._current_temperature = {}
+		self._temperature_offsets = {}
+
 		self._error = None
 
 	##~~ public
@@ -84,8 +103,27 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 	def refresh_sd_files(self):
 		pass
 
+	def add_sd_file(self, path, local, remote):
+		pass
+
+	def remove_sd_file(self, filename):
+		pass
+
 	def get_state(self):
 		return self._state
+
+	def get_current_temperatures(self):
+		return self._current_temperature
+
+	def get_temperature_offsets(self):
+		result = {}
+		result.update(self._temperature_offsets)
+		return result
+
+	def set_temperature_offsets(self, new_temperature_offsets):
+		offsets = {}
+		offsets.update(new_temperature_offsets)
+		self._temperature_offsets = offsets
 
 	def get_sd_files(self):
 		return self._sd_files
@@ -150,6 +188,7 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		pass
 
 	def _updateTemperature(self, temperatureData):
+		self._current_temperature = temperatureData
 		self._temperatureUpdated(temperatureData)
 		if self._protocol_listener is not None:
 			self._protocol_listener.onTemperatureUpdate(self, temperatureData)
@@ -227,44 +266,63 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 			"origin": self._current_file.getFileLocation(),
 			"time": time.time() - self._current_file.getStartTime() if self._current_file.getStartTime() is not None else None
 		})
+		self._printJobFinished()
 
 	def _printJobFinished(self):
 		pass
 
-	def _addSdFile(self, filename):
+	def _startFileTransfer(self, filename, filesize):
+		self._fileTransferStarted(filename, filesize)
+		if self._protocol_listener is not None:
+			self._protocol_listener.onFileTransferStarted(filename, filesize)
+
+	def _fileTransferStarted(self, filename, filesize):
+		pass
+
+	def _finishFileTransfer(self):
+		self._fileTransferFinished()
+		if self._protocol_listener is not None:
+			self._protocol_listener.onFileTransferFinished()
+
+	def _fileTransferFinished(self):
+		pass
+
+	def _addSdFile(self, filename, filesize):
 		"""
 		Adds a file to the SD file list
 
 		:param filename: the filename to add to the list
+		:param filesize: the filesize to add to the list, may be None
 		"""
-		self._sd_files.append(filename)
-		self._sdFileAdded(filename)
+		self._sd_files.append((filename, filesize))
+		self._sdFileAdded(filename, filesize)
 
-	def _sdFileAdded(self, filename):
+	def _sdFileAdded(self, filename, filesize):
 		"""
 		Called when a file has been added to the SD file list, can be used by the underyling protocol implementation
 		to react to that.
 
 		:param filename: the filename to add to the list
+		:param filesize: the filesize to add to the list, may be None
 		"""
 		pass
 
-	def _addSdFiles(self, filenames):
+	def _addSdFiles(self, files):
 		"""
 		Adds a list of files to the SD file list
 
-		:param filenames: the list of filenames to add to the list
+		:param files: the list of file tuples (name, size) to add to the list, size may be None
 		"""
-		for filename in filenames:
-			self._sd_files.append(filename)
-		self._sdFilesAdded(filenames)
+		for f in files:
+			self._sd_files.append(f)
+		self._sdFilesAdded(files)
 
-	def _sdFilesAdded(self, filenames):
+	def _sdFilesAdded(self, files):
 		"""
 		Called when a list of files has been added to the SD file list, can be used by the underlying protocol
 		implementation to react to that.
 
-		:param filenames: the filenames added to the list
+		:param files: the file tuples (name, size) added to the list, size may be None
 		"""
 		pass
 
@@ -296,6 +354,10 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 			self._heatup_time_lost += time.time() - self._heatup_start_time
 			self._heatup_start_time = None
 
+	def _log_error(self, error):
+		if self._protocol_listener is not None:
+			self._protocol_listener.onLogError(self, error)
+
 	##~~ StateReceiver
 
 	def onStateChangeReceived(self, source, oldState, newState):
@@ -309,7 +371,12 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		elif newState == TransportState.DISCONNECTED:
 			self._changeState(State.OFFLINE)
 		elif newState == TransportState.DISCONNECTED_WITH_ERROR or newState == TransportState.ERROR:
-			self._changeState(State.ERROR)
+			self.onError(self._transport.getError())
+			try:
+				self._transport.disconnect()
+			except:
+				# TODO do we need to handle that?
+				pass
 
 	##~~ MessageReceiver
 
@@ -337,9 +404,7 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 	def onLogError(self, source, error):
 		if self._transport != source:
 			return
-
-		if self._protocol_listener is not None:
-			self._protocol_listener.onLogError(self, error)
+		self._log_error(error)
 
 	##~~ helpers
 
@@ -371,6 +436,12 @@ class ProtocolListener(object):
 		pass
 
 	def onPrintjobDone(self, source):
+		pass
+
+	def onFileTransferStarted(self, source):
+		pass
+
+	def onFileTransferDone(self, source):
 		pass
 
 	def onSdStateChange(self, source, sdAvailable):

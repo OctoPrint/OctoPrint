@@ -7,6 +7,7 @@ import datetime
 import threading
 import copy
 import os
+import re
 import logging
 
 import octoprint.util.comm as comm
@@ -41,11 +42,6 @@ class Printer():
 		self._gcodeManager.registerCallback(self)
 
 		# state
-		# TODO do we really need to hold the temperature here?
-		self._temp = None
-		self._bedTemp = None
-		self._targetTemp = None
-		self._targetBedTemp = None
 		self._temps = deque([], 300)
 		self._tempBacklog = []
 
@@ -199,7 +195,26 @@ class Printer():
 		pass
 
 	def onPrintjobDone(self, source):
-		self._setProgressData(1.0, self._selectedFile["filesize"], self._protocol.get_print_time(), 0)
+		self._setProgressData(100.0, self._selectedFile["filesize"], self._protocol.get_print_time(), 0)
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+	def onFileTransferStarted(self, source, filename, filesize):
+		self._sdStreaming = True
+
+		self._setJobData(filename, filesize, True)
+		self._setProgressData(0.0, 0, 0, None)
+		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+
+	def onFileTransferDone(self, source):
+		self._sdStreaming = False
+
+		if self._streamingFinishedCallback is not None:
+			self._streamingFinishedCallback(self._sdRemoteName, FileDestinations.SDCARD)
+
+		self._sdRemoteName = None
+		self._setCurrentZ(None)
+		self._setJobData(None, None, None)
+		self._setProgressData(None, None, None, None)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onSdStateChange(self, source, sdAvailable):
@@ -290,30 +305,18 @@ class Printer():
 		elif type == "bed":
 			self.command("M140 S%f" % value)
 
-	def setTemperatureOffset(self, offsets={}):
-		# TODO
-		if self._comm is None:
-			return
+	def setTemperatureOffset(self, offsets):
+		current_offsets = self._protocol.get_temperature_offsets()
 
-		tool, bed = self._comm.getOffsets()
-
-		validatedOffsets = {}
+		new_offsets = {}
+		new_offsets.update(current_offsets)
 
 		for key in offsets:
-			value = offsets[key]
-			if key == "bed":
-				bed = value
-				validatedOffsets[key] = value
-			elif key.startswith("tool"):
-				try:
-					toolNum = int(key[len("tool"):])
-					tool[toolNum] = value
-					validatedOffsets[key] = value
-				except ValueError:
-					pass
+			if key == "bed" or re.match("tool\d+", key):
+				new_offsets[key] = offsets[key]
 
-		self._comm.setTemperatureOffset(tool, bed)
-		self._stateMonitor.setTempOffsets(validatedOffsets)
+		self._protocol.set_temperature_offsets(new_offsets)
+		self._stateMonitor.setTempOffsets(new_offsets)
 
 	def selectFile(self, filename, origin, printAfterSelect=False):
 		self._printAfterSelect = printAfterSelect
@@ -400,7 +403,7 @@ class Printer():
 			"completion": self._progress,
 			"filepos": filepos,
 			"printTime": int(self._printTime) if self._printTime is not None else None,
-			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
+			"printTimeLeft": int(self._printTimeLeft) if self._printTimeLeft is not None else None
 		})
 
 	def _addTemperatureData(self, temperatureData):
@@ -411,22 +414,12 @@ class Printer():
 		}
 		data.update(temperatureData)
 
-		temp = {}
-		bedTemp = None
-		for key in temperatureData.keys():
-			if key.startswith("tool"):
-				temp[key] = temperatureData[key]
-			else:
-				bedTemp = temperatureData[key]
-
 		self._temps.append(data)
-
-		self._temp = temp
-		self._bedTemp = bedTemp
 
 		self._stateMonitor.addTemperature(data)
 
-	def _setJobData(self, filename, filesize, sd):
+	def _setJobData(self, filename, filesize, origin):
+		sd = origin == FileDestinations.SDCARD
 		if filename is not None:
 			self._selectedFile = {
 				"filename": filename,
@@ -455,7 +448,7 @@ class Printer():
 		self._stateMonitor.setJobData({
 			"file": {
 				"name": os.path.basename(filename) if filename is not None else None,
-				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+				"origin": origin,
 				"size": filesize,
 				"date": date
 			},
@@ -490,25 +483,6 @@ class Printer():
 
 	#~~ callbacks triggered from self._comm
 
-	def mcFileTransferStarted(self, filename, filesize):
-		self._sdStreaming = True
-
-		self._setJobData(filename, filesize, True)
-		self._setProgressData(0.0, 0, 0, None)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-
-	def mcFileTransferDone(self, filename):
-		self._sdStreaming = False
-
-		if self._streamingFinishedCallback is not None:
-			self._streamingFinishedCallback(self._sdRemoteName, FileDestinations.SDCARD)
-
-		self._sdRemoteName = None
-		self._setCurrentZ(None)
-		self._setJobData(None, None, None)
-		self._setProgressData(None, None, None, None)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
-
 	def mcReceivedRegisteredMessage(self, command, output):
 		self._sendFeedbackCommandOutput(command, output)
 
@@ -529,17 +503,15 @@ class Printer():
 		self.refreshSdFiles(blocking=True)
 		existingSdFiles = self._protocol.get_sd_files()
 
-		remoteName = util.getDosFilename(filename, existingSdFiles)
-		# TODO
-		self._comm.startFileTransfer(absolutePath, filename, remoteName)
+		self._sdRemoteName = util.getDosFilename(filename, existingSdFiles)
+		self._protocol.add_sd_file(absolutePath, filename, self._sdRemoteName)
 
-		return remoteName
+		return self._sdRemoteName
 
 	def deleteSdFile(self, filename):
-		# TODO
-		if not self._comm or not self._comm.isSdReady():
+		if not self._protocol.is_sd_ready():
 			return
-		self._comm.deleteSdFile(filename)
+		self._protocol.remove_sd_file(filename)
 
 	def initSdCard(self):
 		self._protocol.init_sd()
@@ -578,27 +550,13 @@ class Printer():
 		return currentData["job"]
 
 	def getCurrentTemperatures(self):
-		# TODO
-		if self._comm is not None:
-			tempOffset, bedTempOffset = self._comm.getOffsets()
-		else:
-			tempOffset = {}
-			bedTempOffset = None
+		temperatures = self._protocol.get_current_temperatures()
+		offsets = self._protocol.get_temperature_offsets()
 
 		result = {}
-		if self._temp is not None:
-			for tool in self._temp.keys():
-				result["tool%d" % tool] = {
-					"actual": self._temp[tool][0],
-					"target": self._temp[tool][1],
-					"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
-					}
-		if self._bedTemp is not None:
-			result["bed"] = {
-				"actual": self._bedTemp[0],
-				"target": self._bedTemp[1],
-				"offset": bedTempOffset
-			}
+		result.update(temperatures)
+		for key, tool in result:
+			tool["offset"] = offsets[key] if key in offsets and offsets[key] is not None else 0
 
 		return result
 

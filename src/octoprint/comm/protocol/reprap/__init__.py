@@ -12,7 +12,8 @@ import re
 import threading
 import time
 from octoprint.comm.protocol import ProtocolListener, State, Protocol, PrintingSdFileInformation
-from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, PrintingGcodeFileInformation
+from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, PrintingGcodeFileInformation, \
+	StreamingGcodeFileInformation
 from octoprint.comm.transport import TransportProperties
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.gcodefiles import isGcodeFileName
@@ -114,7 +115,6 @@ class RepRapProtocol(Protocol):
 		self._send_queue = CommandQueue()
 
 		self._clear_for_send = threading.Event()
-		self._clear_for_send.clear()
 
 		self._last_lines = deque([], 50)
 		self._resend_delta = None
@@ -126,12 +126,35 @@ class RepRapProtocol(Protocol):
 		self._thread.start()
 
 		self._current_line = 1
-		self._current_temperature = {}
 		self._currentExtruder = 0
 		self._state = State.OFFLINE
 
+		self._reset()
+
+	def _reset(self):
+		self._lastTemperatureUpdate = time.time()
+		self._lastSdProgressUpdate = time.time()
+
+		self._startSeen = False
+		self._receivingSdFileList = False
+
+		self._clear_for_send.clear()
+
+		self._last_lines.clear()
+		self._resend_delta = None
+		self._last_resend_request = None
+
+		self._current_line = 1
+		self._currentExtruder = 0
+
+	def connect(self, opt):
+		self._reset()
+
 		# enqueue our first temperature query so it get's sent right on establishment of the connection
 		self._send_temperature_query(withType=True)
+
+		# connect
+		Protocol.connect(self, opt)
 
 	def select_file(self, filename, origin):
 		if origin == FileDestinations.SDCARD:
@@ -139,7 +162,7 @@ class RepRapProtocol(Protocol):
 				return
 			self._send(RepRapProtocol.COMMAND_SD_SELECT_FILE(filename), highPriority=True)
 		else:
-			self._selectFile(PrintingGcodeFileInformation(filename, None))
+			self._selectFile(PrintingGcodeFileInformation(filename, self.get_temperature_offsets))
 
 	def start_print(self):
 		wasPaused = self._state == State.PAUSED
@@ -175,6 +198,29 @@ class RepRapProtocol(Protocol):
 		Protocol.refresh_sd_files(self)
 		self._send(RepRapProtocol.COMMAND_SD_REFRESH())
 
+	def add_sd_file(self, path, local, remote):
+		Protocol.add_sd_file(self, path, local, remote)
+		if not self.is_operational() or self.is_busy():
+			return
+
+		self._current_file = StreamingGcodeFileInformation(path, local, remote)
+		self._current_file.start()
+
+		self.send_manually(RepRapProtocol.COMMAND_SD_BEGIN_WRITE(remote))
+		eventManager().fire(Events.TRANSFER_STARTED, {"local": local, "remote": remote})
+
+		self._startFileTransfer(remote, self._current_file.getFilesize())
+
+	def remove_sd_file(self, filename):
+		Protocol.remove_sd_file(self, filename)
+		if not self.is_operational() or \
+				(self.is_busy() and isinstance(self._current_file, PrintingSdFileInformation) and
+						 self._current_file.getFilename() == filename):
+			return
+
+		self.send_manually(RepRapProtocol.COMMAND_SD_DELETE(filename))
+		self.refresh_sd_files()
+
 	def send_manually(self, command, high_priority=False):
 		if self.is_streaming():
 			return
@@ -189,13 +235,26 @@ class RepRapProtocol(Protocol):
 		message = self._handle_errors(message.strip())
 
 		# SD file list
-		if self._receivingSdFileList and isGcodeFileName(message.strip().lower()) and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
-			filename = message.strip().lower()
-			if filterNonAscii(filename):
-				self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+		if self._receivingSdFileList and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
+			fileinfo = message.strip().split(None, 2)
+			if len(fileinfo) > 1:
+				filename, size = fileinfo
+				filename = filename.lower()
+				try:
+					size = int(size)
+				except ValueError:
+					# whatever that was, it was not an integer, so we'll ignore it and set size to None
+					size = None
 			else:
-				self._addSdFile(filename)
-			return
+				filename = fileinfo[0].lower()
+				size = None
+
+			if isGcodeFileName(filename):
+				if filterNonAscii(filename):
+					self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
+				else:
+					self._addSdFile(filename, size)
+				return
 
 		##~~ regular message processing
 
@@ -248,10 +307,13 @@ class RepRapProtocol(Protocol):
 			self._clear_for_send.set()
 
 		# initial handshake with the firmware
-		if self._state == State.CONNECTING:
-			if RepRapProtocol.MESSAGE_START(message):
-				self._changeState(State.OPERATIONAL)
+		if self._state == State.CONNECTED:
+			if not self._startSeen and RepRapProtocol.MESSAGE_START(message):
+				self._startSeen = True
 				self._clear_for_send.set()
+			elif self._startSeen:
+				if RepRapProtocol.MESSAGE_OK(message):
+					self._changeState(State.OPERATIONAL)
 
 		# resend == roll back time a bit
 		if RepRapProtocol.MESSAGE_RESEND(message):
@@ -398,9 +460,6 @@ class RepRapProtocol(Protocol):
 			}
 
 		self._updateTemperature(result)
-
-	def _temperatureUpdated(self, temperature_data):
-		self._current_temperature = temperature_data
 
 	def _handle_resend_request(self, message):
 		line_to_resend = None

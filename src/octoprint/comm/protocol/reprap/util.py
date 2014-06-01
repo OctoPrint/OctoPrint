@@ -155,10 +155,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		self._currentTool = 0
 
 		self._offsetCallback = offsetCallback
-		self._tempCommandPattern = re.compile("M(104|109|140|190)")
-		self._tempCommandTemperaturePattern = re.compile("S([-+]?/d*/.?/d+)")
-		self._tempCommandToolPattern = re.compile("T(/d+)")
-		self._toolCommandPattern = re.compile("^T(/d+)")
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
@@ -181,11 +177,12 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 		if self._lineCount is None:
 			self._lineCount = 0
-			return "M110 N0"
+			self._startTime = time.time()
+			return GcodeCommand.from_line("M110 N0")
 
 		try:
-			processedLine = None
-			while processedLine is None:
+			command = None
+			while command is None:
 				if self._filehandle is None:
 					# file got closed just now
 					return None
@@ -193,68 +190,61 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 				if not line:
 					self._filehandle.close()
 					self._filehandle = None
-				processedLine = self._processLine(line)
+				command = self._process_command(line)
 			self._lineCount += 1
 			self._filepos = self._filehandle.tell()
 
-			if self._lineCount >= 100 and self._startTime is None:
-				self._startTime = time.time()
-
-			return processedLine
+			return command
 		except Exception as (e):
 			if self._filehandle is not None:
 				self._filehandle.close()
 				self._filehandle = None
 			raise e
 
-	def _processLine(self, line):
+	def _process_command(self, line):
+		# remove all comments and trim the line
 		if ";" in line:
 			line = line[0:line.find(";")]
 		line = line.strip()
+
 		if len(line) > 0:
-			toolMatch = self._toolCommandPattern.match(line)
-			if toolMatch is not None:
+			# we still got something left => parse the command
+			command = GcodeCommand.from_line(line)
+
+			if command.isSelectToolCommand():
 				# track tool changes
-				self._currentTool = int(toolMatch.group(1))
-			else:
-				## apply offsets
-				if self._offsetCallback is not None:
-					tempMatch = self._tempCommandPattern.match(line)
-					if tempMatch is not None:
-						# if we have a temperature command, retrieve current offsets
-						tempOffset, bedTempOffset = self._offsetCallback()
-						if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
-							# extruder temperature, determine which one and retrieve corresponding offset
-							toolNum = self._currentTool
+				self._currentTool = command.tool
 
-							toolNumMatch = self._tempCommandToolPattern.search(line)
-							if toolNumMatch is not None:
-								try:
-									toolNum = int(toolNumMatch.group(1))
-								except ValueError:
-									pass
+			elif command.isSetTemperatureCommand() and self._offsetCallback is not None:
+				# if we have a temperature command and an offset callback, retrieve current offsets
+				offsets = self._offsetCallback()
 
-							offset = tempOffset[toolNum] if toolNum in tempOffset.keys() and tempOffset[toolNum] is not None else 0
-						elif tempMatch.group(1) == "140" or tempMatch.group(1) == "190":
-							# bed temperature
-							offset = bedTempOffset
-						else:
-							# unknown, should never happen
-							offset = 0
+				# extruder temperature, determine which one and retrieve corresponding offset
+				if command.command == "M104" or command.command == "M109":
+					tool_num = self._currentTool
+					if command.t is not None:
+						tool_num = command.t
 
-						if not offset == 0:
-							# if we have an offset != 0, we need to get the temperature to be set and apply the offset to it
-							tempValueMatch = self._tempCommandTemperaturePattern.search(line)
-							if tempValueMatch is not None:
-								try:
-									temp = float(tempValueMatch.group(1))
-									if temp > 0:
-										newTemp = temp + offset
-										line = line.replace("S" + tempValueMatch.group(1), "S%f" % newTemp)
-								except ValueError:
-									pass
-			return line
+					key = "tool%d" % tool_num
+
+				# bed temperature
+				elif command.command == "M140" or command.command == "M190":
+					key = "bed"
+
+				# unknown, should never happen
+				else:
+					key = None
+
+				if key is not None:
+					offset = offsets[key]
+					command.s = command.s + offset
+					if command.original is not None:
+						command.original = None
+
+			# finally return the processed command
+			return command
 		else:
+			# no command, return None
 			return None
 
 

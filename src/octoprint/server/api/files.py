@@ -76,7 +76,7 @@ def _getFileList(origin):
 
 def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
-		availableFiles = printer.getSdFiles()
+		availableFiles = map(lambda x: x[0], printer.getSdFiles())
 	else:
 		availableFiles = gcodeManager.getAllFilenames()
 

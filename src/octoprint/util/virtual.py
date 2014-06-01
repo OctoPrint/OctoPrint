@@ -108,6 +108,7 @@ class VirtualPrinter():
 
 		if 'M105' in data:
 			self._processTemperatureQuery()
+			return
 		elif 'M20' in data:
 			if self._sdCardReady:
 				self._listSd()
@@ -147,15 +148,15 @@ class VirtualPrinter():
 		elif "M114" in data:
 			# send dummy position report
 			self.readList.append("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
+			return
 		elif "M117" in data:
 			# we'll just use this to echo a message, to allow playing around with pause triggers
-			self.readList.append("ok %s" % re.search("M117\s+(.*)", data).group(1))
+			self.readList.append("echo:%s" % re.search("M117\s+(.*)", data).group(1))
 		elif "M999" in data:
 			# mirror Marlin behaviour
 			self.readList.append("Resend: 1")
 		elif data.startswith("T"):
 			self.currentExtruder = int(re.search("T(\d+)", data).group(1))
-			self._sendOk()
 			self.readList.append("Active Extruder: %d" % self.currentExtruder)
 		elif "G20" in data:
 			self._unitModifier = 1.0 / 2.54
@@ -167,7 +168,6 @@ class VirtualPrinter():
 				self._lastZ *= 2.54
 			if self._lastE is not None:
 				self._lastE *= 2.54
-			self._sendOk()
 		elif "G21" in data:
 			self._unitModifier = 1.0
 			if self._lastX is not None:
@@ -178,21 +178,17 @@ class VirtualPrinter():
 				self._lastZ /= 2.54
 			if self._lastE is not None:
 				self._lastE /= 2.54
-			self._sendOk()
 		elif "G90" in data:
 			self._relative = False
-			self._sendOk()
 		elif "G91" in data:
 			self._relative = True
-			self._sendOk()
 		elif "G92" in data:
 			self._setPosition(data)
-			self._sendOk()
 		elif "G0" in data or "G1" in data:
 			# simulate movement duration -- no acceleration, only linear movement duration based on max speed
 			self._performMove(data)
-			self._sendOk()
-		elif len(data.strip()) > 0:
+
+		if len(data.strip()) > 0:
 			self._sendOk()
 
 	def _listSd(self):
@@ -212,7 +208,6 @@ class VirtualPrinter():
 				)
 			)
 		self.readList.append("End file list")
-		self._sendOk()
 
 	def _selectSdFile(self, filename):
 		file = os.path.join(self._virtualSd, filename).lower()
@@ -230,11 +225,9 @@ class VirtualPrinter():
 				self._sdPrinter = threading.Thread(target=self._sdPrintingWorker)
 				self._sdPrinter.start()
 		self._sdPrintingSemaphore.set()
-		self._sendOk()
 
 	def _pauseSdPrint(self):
 		self._sdPrintingSemaphore.clear()
-		self._sendOk()
 
 	def _setSdPos(self, pos):
 		self._newSdFilePos = pos
@@ -284,7 +277,6 @@ class VirtualPrinter():
 				pass
 
 		if tool >= settings().getInt(["devel", "virtualPrinter", "numExtruders"]):
-			self._sendOk()
 			return
 
 		try:
@@ -296,8 +288,6 @@ class VirtualPrinter():
 			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["tool%d" % tool])
 			self._heatupThread.start()
 			return
-
-		self._sendOk()
 
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self.readList.append("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
@@ -312,8 +302,6 @@ class VirtualPrinter():
 			self._heatupThread = threading.Thread(target=self._waitForHeatup, args=["bed"])
 			self._heatupThread.start()
 			return False
-
-		self._sendOk()
 
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self.readList.append("TargetBed:%d" % self.bedTargetTemp)
@@ -412,12 +400,10 @@ class VirtualPrinter():
 		self._writingToSd = True
 		self._selectedSdFile = file
 		self.readList.append("Writing to file: %s" % filename)
-		self._sendOk()
 
 	def _finishSdFile(self):
 		self._writingToSd = False
 		self._selectedSdFile = None
-		self._sendOk()
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
@@ -467,7 +453,6 @@ class VirtualPrinter():
 		f = os.path.join(self._virtualSd, filename)
 		if os.path.exists(f) and os.path.isfile(f):
 			os.remove(f)
-		self._sendOk()
 
 	def _simulateTemps(self):
 		timeDiff = self.lastTempAt - time.time()

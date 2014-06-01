@@ -124,6 +124,7 @@ class SerialTransport(Transport):
 		else:
 			try:
 				self._serial = serial.Serial(self._port, self._baudrate, timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
+				self.changeState(State.CONNECTED)
 				return True
 			except:
 				self.logError("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
