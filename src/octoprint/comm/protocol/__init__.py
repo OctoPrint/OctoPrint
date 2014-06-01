@@ -274,17 +274,23 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 	def _startFileTransfer(self, filename, filesize):
 		self._fileTransferStarted(filename, filesize)
 		if self._protocol_listener is not None:
-			self._protocol_listener.onFileTransferStarted(filename, filesize)
+			self._protocol_listener.onFileTransferStarted(self, filename, filesize)
 
 	def _fileTransferStarted(self, filename, filesize):
 		pass
 
 	def _finishFileTransfer(self):
-		self._fileTransferFinished()
-		if self._protocol_listener is not None:
-			self._protocol_listener.onFileTransferFinished()
+		self._changeState(State.OPERATIONAL)
 
-	def _fileTransferFinished(self):
+		current_file = self._current_file
+		self._current_file = None
+
+		self._fileTransferFinished(current_file)
+
+		if self._protocol_listener is not None:
+			self._protocol_listener.onFileTransferDone(self)
+
+	def _fileTransferFinished(self, current_file):
 		pass
 
 	def _addSdFile(self, filename, filesize):
@@ -438,7 +444,7 @@ class ProtocolListener(object):
 	def onPrintjobDone(self, source):
 		pass
 
-	def onFileTransferStarted(self, source):
+	def onFileTransferStarted(self, source, filename, filesize):
 		pass
 
 	def onFileTransferDone(self, source):

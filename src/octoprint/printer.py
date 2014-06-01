@@ -201,7 +201,7 @@ class Printer():
 	def onFileTransferStarted(self, source, filename, filesize):
 		self._sdStreaming = True
 
-		self._setJobData(filename, filesize, True)
+		self._setJobData(filename, filesize, FileDestinations.SDCARD)
 		self._setProgressData(0.0, 0, 0, None)
 		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
 
@@ -501,7 +501,7 @@ class Printer():
 		self._streamingFinishedCallback = streamingFinishedCallback
 
 		self.refreshSdFiles(blocking=True)
-		existingSdFiles = self._protocol.get_sd_files()
+		existingSdFiles = map(lambda x: x[0], self._protocol.get_sd_files())
 
 		self._sdRemoteName = util.getDosFilename(filename, existingSdFiles)
 		self._protocol.add_sd_file(absolutePath, filename, self._sdRemoteName)

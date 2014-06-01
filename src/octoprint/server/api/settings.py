@@ -157,12 +157,12 @@ def setSettings():
 			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
 			if oldLog and not s.getBoolean(["serial", "log"]):
 				# disable debug logging to serial.log
-				logging.getLogger("SERIAL").debug("Disabling serial logging")
-				logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
+				logging.getLogger("TRANSPORT").debug("Disabling transport logging")
+				logging.getLogger("TRANSPORT").setLevel(logging.CRITICAL)
 			elif not oldLog and s.getBoolean(["serial", "log"]):
 				# enable debug logging to serial.log
-				logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-				logging.getLogger("SERIAL").debug("Enabling serial logging")
+				logging.getLogger("TRANSPORT").setLevel(logging.DEBUG)
+				logging.getLogger("TRANSPORT").debug("Enabling transport logging")
 
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])

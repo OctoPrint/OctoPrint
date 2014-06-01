@@ -282,7 +282,7 @@ class Server():
 				}
 			},
 			"loggers": {
-				"SERIAL": {
+				"TRANSPORT": {
 					"level": "CRITICAL",
 					"handlers": ["serialFile"],
 					"propagate": False
@@ -311,8 +311,8 @@ class Server():
 
 		if settings().getBoolean(["serial", "log"]):
 			# enable debug logging to serial.log
-			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-			logging.getLogger("SERIAL").debug("Enabling serial logging")
+			logging.getLogger("TRANSPORT").setLevel(logging.DEBUG)
+			logging.getLogger("TRANSPORT").debug("Enabling transport logging")
 
 if __name__ == "__main__":
 	octoprint = Server()

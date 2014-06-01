@@ -70,6 +70,7 @@ class SerialTransport(Transport):
 		Transport.disconnect(self, onError)
 
 	def send(self, command):
+		self._transport_logger.info("Send: %s" % command)
 		self.logTx(command)
 
 		commandToSend = command + "\n"
@@ -112,6 +113,7 @@ class SerialTransport(Transport):
 			self.onMessageReceived(line.strip())
 
 		if error is not None:
+			self._transport_logger.error(error)
 			self.logError(error)
 			# TODO further error handling
 
@@ -120,11 +122,13 @@ class SerialTransport(Transport):
 		if self._port == "VIRTUAL":
 			self._serial = VirtualPrinter()
 			self.changeState(State.CONNECTED)
+			self._transport_logger.debug("Connected to VIRTUAL printer")
 			return True
 		else:
 			try:
 				self._serial = serial.Serial(self._port, self._baudrate, timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
 				self.changeState(State.CONNECTED)
+				self._transport_logger.debug("Connected to %s" % self._serial)
 				return True
 			except:
 				self.logError("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
@@ -145,7 +149,9 @@ class SerialTransport(Transport):
 			return None
 
 		if line != "":
-			self.logRx(unicode(line, "ascii", "replace").encode("ascii", "replace").rstrip())
+			loggable_line = unicode(line, "ascii", "replace").encode("ascii", "replace").rstrip()
+			self._transport_logger.debug("Recv: %s" % loggable_line)
+			self.logRx(loggable_line)
 		return line
 
 	def __getSerialList(self):

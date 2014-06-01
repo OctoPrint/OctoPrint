@@ -3,10 +3,14 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 Gina Häußge - Released under terms of the AGPLv3 License"
 
+import logging
+
 
 class Transport(object):
 
 	def __init__(self, messageReceiver=None, stateReceiver=None, logReceiver=None):
+		self._transport_logger = logging.getLogger("TRANSPORT")
+
 		self._messageReceiver = messageReceiver
 		self._stateReceiver = stateReceiver
 		self._logReceiver = logReceiver

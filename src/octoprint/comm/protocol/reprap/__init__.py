@@ -203,10 +203,13 @@ class RepRapProtocol(Protocol):
 		if not self.is_operational() or self.is_busy():
 			return
 
+		self.send_manually(RepRapProtocol.COMMAND_SD_BEGIN_WRITE(remote))
+
 		self._current_file = StreamingGcodeFileInformation(path, local, remote)
+
+		self._changeState(State.STREAMING)
 		self._current_file.start()
 
-		self.send_manually(RepRapProtocol.COMMAND_SD_BEGIN_WRITE(remote))
 		eventManager().fire(Events.TRANSFER_STARTED, {"local": local, "remote": remote})
 
 		self._startFileTransfer(remote, self._current_file.getFilesize())
@@ -225,6 +228,14 @@ class RepRapProtocol(Protocol):
 		if self.is_streaming():
 			return
 		self._send(command, highPriority=high_priority, withChecksum=self._useChecksum())
+
+	def _fileTransferFinished(self, current_file):
+		if isinstance(current_file, StreamingGcodeFileInformation):
+			self.send_manually(RepRapProtocol.COMMAND_SD_END_WRITE(current_file.getRemoteFilename()))
+		else:
+			self._logger.warn("Finished file transfer to printer's SD card, but could not determine remote filename, assuming 'unknown.gco' for end-write-command")
+			self.send_manually(RepRapProtocol.COMMAND_SD_END_WRITE("unknown.gco"))
+		self.refresh_sd_files()
 
 	##~~ callback methods
 
@@ -276,13 +287,11 @@ class RepRapProtocol(Protocol):
 			if isinstance(self._current_file, PrintingSdFileInformation):
 				self._current_file.setFilepos(int(match.group(1)))
 			self._reportProgress()
-			self._clear_for_send.set()
 		elif RepRapProtocol.MESSAGE_SD_DONE_PRINTING(message):
 			if isinstance(self._current_file, PrintingSdFileInformation):
 				self._current_file.setFilepos(0)
 			self._changeState(State.OPERATIONAL)
 			self._finishPrintjob()
-			self._clear_for_send.set()
 
 		# sd file list
 		elif RepRapProtocol.MESSAGE_SD_BEGIN_FILE_LIST(message):
@@ -296,15 +305,12 @@ class RepRapProtocol(Protocol):
 		elif RepRapProtocol.MESSAGE_SD_FILE_OPENED(message):
 			match = RepRapProtocol.REGEX_FILE_OPENED.search(message)
 			self._selectFile(PrintingSdFileInformation(match.group(1), int(match.group(2))))
-			self._clear_for_send.set()
 
 		# sd file streaming
 		elif RepRapProtocol.MESSAGE_SD_BEGIN_WRITING(message):
-			self._changeState(State.PRINTING)
-			self._clear_for_send.set()
+			self._changeState(State.STREAMING)
 		elif RepRapProtocol.MESSAGE_SD_END_WRITING(message):
 			self.refresh_sd_files()
-			self._clear_for_send.set()
 
 		# initial handshake with the firmware
 		if self._state == State.CONNECTED:
@@ -324,10 +330,10 @@ class RepRapProtocol(Protocol):
 			if self.is_heating_up():
 				self._heatupDone()
 
-			if self.is_printing():
+			if self.is_printing() or self.is_streaming():
 				if not self.is_sd_printing():
 					self._send_next()
-				if self._resend_delta is None:
+				if self._resend_delta is None and not self.is_streaming():
 					if time.time() > self._lastTemperatureUpdate + 5:
 						self._send_temperature_query(withType=True)
 					elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
@@ -366,7 +372,10 @@ class RepRapProtocol(Protocol):
 		else:
 			command = self._current_file.getNext()
 			if command is None:
-				self._finishPrintjob()
+				if self.is_streaming():
+					self._finishFileTransfer()
+				else:
+					self._finishPrintjob()
 				return
 
 			self._send(command)
@@ -581,7 +590,7 @@ class RepRapProtocol(Protocol):
 			return None
 
 		gcode_command_handler = "_gcode_%s" % command.command
-		if hasattr(self, gcode_command_handler):
+		if hasattr(self, gcode_command_handler) and not self.is_streaming():
 			command, with_checksum, with_line_number = getattr(self, gcode_command_handler)(command, with_checksum, with_line_number)
 
 		if with_checksum:

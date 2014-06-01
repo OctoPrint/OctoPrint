@@ -210,6 +210,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		if len(line) > 0:
 			# we still got something left => parse the command
 			command = GcodeCommand.from_line(line)
+			if command is None:
+				return None
 
 			if command.isSelectToolCommand():
 				# track tool changes
