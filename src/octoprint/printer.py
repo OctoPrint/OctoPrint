@@ -546,7 +546,7 @@ class Printer():
 		self._streamingFinishedCallback = streamingFinishedCallback
 
 		self.refreshSdFiles(blocking=True)
-		existingSdFiles = self._comm.getSdFiles()
+		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
 		remoteName = util.getDosFilename(filename, existingSdFiles)
 		self._comm.startFileTransfer(absolutePath, filename, remoteName)
