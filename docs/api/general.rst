@@ -73,3 +73,29 @@ Encoding
 ========
 
 OctoPrint uses UTF-8 as charset.
+
+
+.. _sec-api-cross-origin:
+
+Cross-origin requests
+===================
+To make use of the Octoprint API from websites other than the Octoprint web interface,
+cross-origin resource sharing (`CORS <http://en.wikipedia.org/wiki/Cross-origin_resource_sharing>`) must be enabled.
+This is the case even when the website in question is served from a different port on the same machine, and on localhost.
+
+To enable this feature, set the ``allowCrossOrigin`` key in ``config.yml`` to ``true``.
+
+.. code-block:: yaml
+
+   api:
+     enabled: true
+     key: MYKEY
+     allowCrossOrigin: true
+
+.. note::
+   This means any browser page can send requests to the Octoprint API. Authorization is still required, however.
+
+If CORS is not enabled, you will get errors similar to:
+
+``XMLHttpRequest cannot load http://localhost:8081/api/files. No 'Access-Control-Allow-Origin' header is present on the requested resource.``
+
