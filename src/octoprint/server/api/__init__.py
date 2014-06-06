@@ -32,6 +32,28 @@ from . import users as api_users
 from . import log as api_logs
 
 
+def optionsAllowOrigin(request):
+	""" Always reply 200 on OPTIONS request """
+
+	resp = current_app.make_default_options_response()
+
+	headers = None
+	if 'ACCESS_CONTROL_REQUEST_HEADERS' in request.headers:
+		headers = request.headers['ACCESS_CONTROL_REQUEST_HEADERS']
+
+	# Allow the origin which made the XHR
+	resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+	# Allow the actual method
+	resp.headers['Access-Control-Allow-Methods'] = request.headers['Access-Control-Request-Method']
+	# Allow for 10 seconds
+	resp.headers['Access-Control-Max-Age'] = "10"
+
+	# We also keep current headers
+	if headers is not None:
+		resp.headers['Access-Control-Allow-Headers'] = headers
+
+	return resp
+
 @api.before_request
 def beforeApiRequests():
 	"""
@@ -40,6 +62,9 @@ def beforeApiRequests():
 	case it has to be present and must be valid, so anything other than the above three types will result in denying
 	the request.
 	"""
+
+	if request.method == 'OPTIONS':
+		return optionsAllowOrigin(request)
 
 	apikey = getApiKey(request)
 	if apikey is None:
@@ -65,6 +90,16 @@ def beforeApiRequests():
 
 	# invalid api key => 401
 	return make_response("Invalid API key", 401)
+
+@api.after_request
+def afterApiRequests(resp):
+    """"""
+
+    # Allow crossdomain
+    if request.method != 'OPTIONS' and 'Origin' in request.headers:
+        resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+
+    return resp
 
 
 #~~ first run setup
