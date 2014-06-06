@@ -131,7 +131,8 @@ default_settings = {
 	},
 	"api": {
 		"enabled": False,
-		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes),
+		"allowCrossOrigin": False
 	},
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },

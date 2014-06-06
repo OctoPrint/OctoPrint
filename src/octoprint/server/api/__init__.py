@@ -63,7 +63,7 @@ def beforeApiRequests():
 	the request.
 	"""
 
-	if request.method == 'OPTIONS':
+	if request.method == 'OPTIONS' and s().getBoolean(["api", "allowCrossOrigin"]):
 		return optionsAllowOrigin(request)
 
 	apikey = getApiKey(request)
@@ -93,13 +93,14 @@ def beforeApiRequests():
 
 @api.after_request
 def afterApiRequests(resp):
-    """"""
+	""""""
 
     # Allow crossdomain
-    if request.method != 'OPTIONS' and 'Origin' in request.headers:
-        resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+	allowCrossOrigin = s().getBoolean(["api", "allowCrossOrigin"])
+	if request.method != 'OPTIONS' and 'Origin' in request.headers and allowCrossOrigin:
+		resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
 
-    return resp
+	return resp
 
 
 #~~ first run setup
