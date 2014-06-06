@@ -137,6 +137,9 @@ default_settings = {
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
+	"wii": {
+		"enabled": True,
+	},		
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {

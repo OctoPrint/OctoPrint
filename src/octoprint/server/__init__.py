@@ -42,6 +42,7 @@ import octoprint.util as util
 import octoprint.users as users
 import octoprint.events as events
 import octoprint.timelapse
+import octoprint.wii
 
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
@@ -145,6 +146,7 @@ class Server():
 
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
+		octoprint.wii.configureWii(printer=printer)
 
 		# setup command triggers
 		events.CommandTrigger(printer)
