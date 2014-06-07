@@ -6,6 +6,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.api_enabled = ko.observable(undefined);
     self.api_key = ko.observable(undefined);
+    self.api_allowCrossOrigin = ko.observable(undefined);
 
     self.appearance_name = ko.observable(undefined);
     self.appearance_color = ko.observable(undefined);
@@ -188,6 +189,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.fromResponse = function(response) {
         self.api_enabled(response.api.enabled);
         self.api_key(response.api.key);
+        self.api_allowCrossOrigin(response.api.allowCrossOrigin);
 
         self.appearance_name(response.appearance.name);
         self.appearance_color(response.appearance.color);
@@ -250,7 +252,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         var data = {
             "api" : {
                 "enabled": self.api_enabled(),
-                "key": self.api_key()
+                "key": self.api_key(),
+                "allowCrossOrigin": self.api_allowCrossOrigin()
             },
             "appearance" : {
                 "name": self.appearance_name(),
