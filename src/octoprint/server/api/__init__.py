@@ -45,7 +45,7 @@ def optionsAllowOrigin(request):
 	resp.headers['Access-Control-Max-Age'] = "10"
 
 	# 'preflight' request contains the non-standard headers the real request will have (like X-Api-Key)
-	customRequestHeaders = request.headers.get('ACCESS_CONTROL_REQUEST_HEADERS', None)
+	customRequestHeaders = request.headers.get('Access-Control-Request-Headers', None)
 	if customRequestHeaders is not None:
 		# If present => allow them all
 		resp.headers['Access-Control-Allow-Headers'] = customRequestHeaders
