@@ -37,10 +37,6 @@ def optionsAllowOrigin(request):
 
 	resp = current_app.make_default_options_response()
 
-	headers = None
-	if 'ACCESS_CONTROL_REQUEST_HEADERS' in request.headers:
-		headers = request.headers['ACCESS_CONTROL_REQUEST_HEADERS']
-
 	# Allow the origin which made the XHR
 	resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
 	# Allow the actual method
@@ -48,9 +44,11 @@ def optionsAllowOrigin(request):
 	# Allow for 10 seconds
 	resp.headers['Access-Control-Max-Age'] = "10"
 
-	# We also keep current headers
-	if headers is not None:
-		resp.headers['Access-Control-Allow-Headers'] = headers
+	# 'preflight' request contains the non-standard headers the real request will have (like X-Api-Key)
+	customRequestHeaders = request.headers.get('ACCESS_CONTROL_REQUEST_HEADERS', None)
+	if customRequestHeaders is not None:
+		# If present => allow them all
+		resp.headers['Access-Control-Allow-Headers'] = customRequestHeaders
 
 	return resp
 
