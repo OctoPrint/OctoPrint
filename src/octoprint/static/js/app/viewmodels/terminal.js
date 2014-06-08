@@ -37,7 +37,7 @@ function TerminalViewModel(loginStateViewModel, settingsViewModel) {
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-        self._processHistoryLogData(data.logHistory);
+        self._processHistoryLogData(data.logs);
     };
 
     self._processCurrentLogData = function(data) {

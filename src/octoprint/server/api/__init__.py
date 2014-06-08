@@ -132,11 +132,7 @@ def firstRunSetup():
 @api.route("/state", methods=["GET"])
 @restricted_access
 def apiPrinterState():
-	currentData = octoprint.server.printer.getCurrentData()
-	currentData.update({
-		"temperatures": octoprint.server.printer.getCurrentTemperatures()
-	})
-	return jsonify(currentData)
+	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
 
 #~~ system control

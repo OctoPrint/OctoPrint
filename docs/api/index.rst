@@ -13,3 +13,5 @@ API Documentation
    printer.rst
    job.rst
    logs.rst
+   sockjs.rst
+   datamodel.rst

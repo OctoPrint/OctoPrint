@@ -101,7 +101,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     }
 
     self._processStateData = function(data) {
-        self.stateString(data.stateString);
+        self.stateString(data.text);
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);

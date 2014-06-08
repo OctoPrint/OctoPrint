@@ -38,10 +38,7 @@ def printerState():
 	# add state information
 	if not "state" in excludes:
 		state = printer.getCurrentData()["state"]
-		result.update({"state": {
-			"text": state["stateString"],
-			"flags": state["flags"]
-		}})
+		result.update({"state": state})
 
 	return jsonify(result)
 
