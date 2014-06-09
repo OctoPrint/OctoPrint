@@ -234,22 +234,18 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
 	// Dynamic Commands
     self.toggleCollapse = function () {
-    	var element = $('#title_' + self.getEntryId(this));
+    	var element = $('#title_' + self.getEntryId(this) + ' div.accordion-inner');
 
-    	if (this.height() != 0)
-    		this.height(0);
-    	else
-    	{
-    		var maxHeight = 0;
-    		element.children().each(function (index, value) {
-    			var e = $(value);
-    			maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
-    		});
+    	var padding_top = parseInt(element.css("padding-top").replace("px", ""));
 
-    		this.height(maxHeight+1);
-    	}
+    	var maxHeight = 0;
+    	element.children().each(function (index, value) {
+    		var e = $(value);
+    		var height = e.position().top + e.outerHeight() - padding_top;
+    		maxHeight = height > maxHeight ? height : maxHeight;
+    	});
 
-    	//self.settings.saveControls(true);
+    	this.height(maxHeight);
     }
 
     self.getEntryId = function (data) {

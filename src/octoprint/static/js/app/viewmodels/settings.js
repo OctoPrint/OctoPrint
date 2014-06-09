@@ -663,20 +663,18 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     }
 
     self.toggleCollapse = function () {
-    	var element = $('#title_' + self.getEntryId(this));
+    	var element = $('#title_' + self.getEntryId(this) + ' div.accordion-inner');
 
-    	if (this.settingsHeight() != 0)
-    		this.settingsHeight(0);
-    	else {
-    		var maxHeight = 0;
-    		element.children().each(function (index, value) {
-    			var e = $(value);
-    			maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
-    		});
+    	var padding_top = parseInt(element.css("padding-top").replace("px", ""));
 
-    		this.settingsHeight(maxHeight + 1);
-    		this.height(maxHeight + 1);
-    	}
+    	var maxHeight = 0;
+    	element.children().each(function (index, value) {
+    		var e = $(value);
+    		var height = e.position().top + e.outerHeight() - padding_top;
+    		maxHeight = height > maxHeight ? height : maxHeight;
+    	});
+
+    	this.height(maxHeight);
     }
 
     self.getEntryId = function (data) {
@@ -686,7 +684,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     self.adjustContainer = function () {
     	var element = $(this);
     	var pos = element.position();
-    	var parent = element.parents(".collapse:first");
+    	var parent = element.parents("div.accordion-inner");
 
     	var maxHeight = 0;
     	parent.children().each(function (index, value) {
@@ -701,7 +699,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel
     	data.left(ui.position.left);
     	data.top(ui.position.top);
 
-    	parentData.settingsHeight(0);
+    	parentData.height(0);
     	self.toggleCollapse.call(parentData);
     }
 
