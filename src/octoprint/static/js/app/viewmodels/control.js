@@ -1,8 +1,9 @@
-function ControlViewModel(loginStateViewModel, settingsViewModel) {
+function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.settings = settingsViewModel;
+    self.users = usersViewModel;
 
     self._createToolEntry = function() {
         return {
@@ -273,14 +274,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     		self.collapseState.push(self.getEntryId(this));
 
     	_.extend(self.loginState.currentUser().options, { collapseState: self.collapseState() });
-
-    	$.ajax({
-    		url: API_BASEURL + "users/" + self.loginState.username(),
-    		type: "PUT",
-    		dataType: "json",
-    		contentType: "application/json; charset=UTF-8",
-    		data: JSON.stringify({ options: self.loginState.currentUser().options })
-    	});
+    	self.users.updateUser(self.loginState.currentUser());
     }
 
     self.getEntryId = function (data) {
