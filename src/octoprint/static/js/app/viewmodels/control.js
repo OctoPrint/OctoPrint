@@ -274,7 +274,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     		self.collapseState.push(self.getEntryId(this));
 
     	_.extend(self.loginState.currentUser().options, { collapseState: self.collapseState() });
-    	self.users.updateUser(self.loginState.currentUser());
+    	self.users.updateUserOptions(self.loginState.currentUser());
     }
 
     self.getEntryId = function (data) {

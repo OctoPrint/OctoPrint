@@ -123,6 +123,8 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		self._users[username].set_options(options)
+		self._dirty = True
+		self._save()
 
 	def changeUserRoles(self, username, roles):
 		if not username in self._users.keys():
