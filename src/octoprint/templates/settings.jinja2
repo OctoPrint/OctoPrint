@@ -655,9 +655,9 @@
 									<div class="row">
 										<div class="span8">
 											<div class="jog-panel" style="min-height:15px; margin: 0px 16px; border:1px solid #00e500" data-bind="contextMenu: { menuSelector: '#settingsControlContextMenu', preFunction: function(event) { $root.setData(event, $root, $root); } }, visible: loginState.isUser">
-												<div id="log" style="width: 100%; height: 100%; opacity:0.3; background-color: #00e500"></div>
 											</div>
-											<div class="jog-panel" style="margin-top: 5px; padding: 9px 16px">
+											
+											<div class="jog-panel" style="padding: 9px 16px">
 												<div style="text-align: start" id="customControls" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: children }">
 												</div>
 											</div>

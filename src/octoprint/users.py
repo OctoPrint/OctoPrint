@@ -74,7 +74,10 @@ class FilebasedUserManager(UserManager):
 					apikey = None
 					if "apikey" in attributes:
 						apikey = attributes["apikey"]
-					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"], apikey)
+					options = {}
+					if "options" in attributes:
+						options = attributes["options"]
+					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"], options, apikey)
 		else:
 			self._customized = False
 
@@ -89,6 +92,7 @@ class FilebasedUserManager(UserManager):
 				"password": user._passwordHash,
 				"active": user._active,
 				"roles": user._roles,
+				"options": user._options,
 				"apikey": user._apikey
 			}
 
@@ -101,7 +105,7 @@ class FilebasedUserManager(UserManager):
 		if username in self._users.keys():
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey)
+		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, {}, apikey)
 		self._dirty = True
 		self._save()
 
@@ -113,6 +117,12 @@ class FilebasedUserManager(UserManager):
 			self._users[username]._active = active
 			self._dirty = True
 			self._save()
+
+	def changeUserOptions(self, username, options):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		self._users[username].set_options(options)
 
 	def changeUserRoles(self, username, roles):
 		if not username in self._users.keys():
@@ -223,12 +233,13 @@ class UnknownRole(Exception):
 ##~~ User object
 
 class User(UserMixin):
-	def __init__(self, username, passwordHash, active, roles, apikey=None):
+	def __init__(self, username, passwordHash, active, roles, options, apikey=None):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
 		self._roles = roles
 		self._apikey = apikey
+		self._options = options
 
 	def asDict(self):
 		return {
@@ -236,11 +247,18 @@ class User(UserMixin):
 			"active": self.is_active(),
 			"admin": self.is_admin(),
 			"user": self.is_user(),
+			"options": self._options,
 			"apikey": self._apikey
 		}
 
 	def check_password(self, passwordHash):
 		return self._passwordHash == passwordHash
+
+	def get_options(self):
+		return self._options
+
+	def set_options(self, options):
+		self._options = options
 
 	def get_id(self):
 		return self._username

@@ -67,7 +67,7 @@ def getUser(username):
 
 @api.route("/users/<username>", methods=["PUT"])
 @restricted_access
-@admin_permission.require(403)
+#@admin_permission.require(403)
 def updateUser(username):
 	if userManager is None:
 		return jsonify(SUCCESS)
@@ -82,6 +82,9 @@ def updateUser(username):
 			if "admin" in data.keys() and data["admin"]:
 				roles.append("admin")
 			userManager.changeUserRoles(username, roles)
+
+			if "options" in data.keys():
+				userManager.changeUserOptions(username, data["options"]);
 
 			# change activation
 			if "active" in data.keys():

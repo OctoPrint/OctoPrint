@@ -1,8 +1,7 @@
-function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel) {
+function ControlViewModel(loginStateViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
-    self.users = usersViewModel;
     self.settings = settingsViewModel;
 
     self._createToolEntry = function() {
@@ -22,6 +21,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
+    self.collapseState = ko.observableArray([]);
 
     self.feedbackControlLookup = {};
 
@@ -60,6 +60,22 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
     	feedback(newVal);
     	self.controls(newVal);
+    });
+
+    self.loginState.subscribe(function (change, newVal) {
+    	if ("login" == change)
+    	{
+    		if (newVal.options.collapseState !== undefined)
+    		{
+    			self.collapseState(newVal.options.collapseState);
+    			setTimeout(function () {
+    				for (var i = 0; i < self.collapseState().length; i++) {
+    					var element = $('#title_' + self.collapseState()[i]);
+    					element.addClass("in");
+					}
+    			}, 500);
+    		}
+		}
     });
 
     self.fromCurrentData = function(data) {
@@ -234,7 +250,10 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
 	// Dynamic Commands
     self.toggleCollapse = function () {
-    	var element = $('#title_' + self.getEntryId(this) + ' div.accordion-inner');
+    	var elementParent = $('#title_' + self.getEntryId(this));
+
+		// Height calculation
+    	var element = elementParent.children('div.accordion-inner');
 
     	var padding_top = parseInt(element.css("padding-top").replace("px", ""));
 
@@ -246,6 +265,22 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     	});
 
     	this.height(maxHeight);
+
+    	// User save state
+    	if (elementParent.hasClass("in"))
+    		self.collapseState.remove(self.getEntryId(this));
+    	else
+    		self.collapseState.push(self.getEntryId(this));
+
+    	_.extend(self.loginState.currentUser().options, { collapseState: self.collapseState() });
+
+    	$.ajax({
+    		url: API_BASEURL + "users/" + self.loginState.username(),
+    		type: "PUT",
+    		dataType: "json",
+    		contentType: "application/json; charset=UTF-8",
+    		data: JSON.stringify({ options: self.loginState.currentUser().options })
+    	});
     }
 
     self.getEntryId = function (data) {

@@ -390,7 +390,7 @@
                             <script type="text/html" id="customControls_sectionTemplate">
                                 <div class="accordion-group" style="width: 100%;" data-bind="attr: { 'id': $root.getEntryId($data) }">
 									<div class="accordion-heading"><a class="accordion-toggle" data-toggle="collapse" style="vertical-align: -webkit-baseline-middle" data-bind="click: $root.toggleCollapse, attr: { 'href': '#title_' + $root.getEntryId($data) }"><h1 style="line-height: 30px; margin: 0 0; border-bottom: none; width: auto" data-bind="text: name"></h1></a></div>
-									<div class="accordion-body collapse in" data-bind="attr: { 'id': 'title_' + $root.getEntryId($data) }">
+									<div class="accordion-body collapse" data-bind="attr: { 'id': 'title_' + $root.getEntryId($data) }">
 										<div class="accordion-inner" data-bind="style: { height: height() + 'px' },  template: { name: $root.displayMode, foreach: children }">
 										</div>
 									</div>
