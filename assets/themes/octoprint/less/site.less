@@ -5,6 +5,16 @@
 @import "mixins.less";
 @import "variables.less";
 
+@bqIcofontPath: "../font";
+@font-face {
+  font-family:'bqreaders_icofont';
+  src: url('@{bqIcofontPath}/bqreaders_icofont.eot');
+  src: url('@{bqIcofontPath}/bqreaders_icofont.eot?#iefix') format('embedded-opentype'),
+       url('@{bqIcofontPath}/bqreaders_icofont.woff') format('woff'), 
+       url('@{bqIcofontPath}/bqreaders_icofont.ttf') format('truetype'),
+       url('@{bqIcofontPath}/bqreaders_icofont.svg#bqreaders_icofont') format('svg'); 
+}
+
 body, html {
   height: 100%;
 }
@@ -12,13 +22,26 @@ body, html {
 .text-align-right  { text-align: right; }
 .text-align-center { text-align: center; }
 
-.navbar .brand {
-  color: @white;
-  font-family: @serifFontFamily;
-  .tentacle {
-    vertical-align: bottom;
-    padding-right: 3px;
+.bqlogo {
+  font-family: "bqreaders_icofont";
+  &:before {
+    content: "\e623";
   }
+}
+
+.navbar {
+  .brand {
+    color: @white;
+    font-family: @serifFontFamily;
+    .tentacle {
+      vertical-align: bottom;
+      padding-right: 3px;
+    }
+    .bqlogo {
+      margin-right: -20px;
+    }
+  }
+
 }
 
 .navbar .nav > li > a { padding: 12px 10px 9px; }
@@ -193,7 +216,7 @@ footer {
   //margin-top: 60px;
 
   height: 170px;
-  margin-top: -276px;
+  margin-top: -266px;
 
   a {
     color: @white;
@@ -210,5 +233,10 @@ footer {
 
   ul {
     line-height: 25px;
+  }
+
+  .poweredBy {
+    text-align: right;
+    font-size: 0.9em;
   }
 }
