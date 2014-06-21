@@ -155,7 +155,7 @@ class PrinterStateConnection(SockJSConnection):
 		self._logger.info("New connection from client: %s" % remoteAddress)
 
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
-		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY})
+		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY, "version": octoprint.server.VERSION})
 
 		self._printer.registerCallback(self)
 		self._gcodeManager.registerCallback(self)
