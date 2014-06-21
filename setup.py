@@ -10,11 +10,8 @@ versioneer.parentdir_prefix = 'octoprint-'
 
 from setuptools import setup, find_packages
 
-VERSION = open("VERSION").read().strip()
-
 def params():
 	name = "OctoPrint"
-	version = VERSION
 	description = "A responsive web interface for 3D printers"
 	long_description = open("README.md").read()
 	classifiers = [
