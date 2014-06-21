@@ -38,17 +38,14 @@ import octoprint.util as util
 import octoprint.users as users
 import octoprint.events as events
 import octoprint.timelapse
+import octoprint._version
+
+
+VERSION = octoprint._version.get_versions()['version']
 
 
 @app.route("/")
 def index():
-	branch = None
-	commit = None
-	try:
-		branch, commit = util.getGitInfo()
-	except:
-		pass
-
 	return render_template(
 		"index.jinja2",
 		webcamStream=settings().get(["webcam", "stream"]),
@@ -60,8 +57,7 @@ def index():
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
 		debug=debug,
-		gitBranch=branch,
-		gitCommit=commit,
+		version=VERSION,
 		stylesheet=settings().get(["devel", "stylesheet"]),
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"])
@@ -129,6 +125,8 @@ class Server():
 		# then initialize logging
 		self._initLogging(self._debug)
 		logger = logging.getLogger(__name__)
+
+		logger.info("Starting OctoPrint (%s)" % VERSION)
 
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()

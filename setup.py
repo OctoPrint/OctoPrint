@@ -1,6 +1,13 @@
 # coding=utf-8
 #!/usr/bin/env python
 
+import versioneer
+versioneer.VCS = 'git'
+versioneer.versionfile_source = 'src/octoprint/_version.py'
+versioneer.versionfile_build = 'octoprint/_version.py'
+versioneer.tag_prefix = ''
+versioneer.parentdir_prefix = 'octoprint-'
+
 from setuptools import setup, find_packages
 
 VERSION = open("VERSION").read().strip()
@@ -50,6 +57,9 @@ def params():
 	#scripts = {
 	#	"scripts/octoprint.init": "/etc/init.d/octoprint"
 	#}
+
+	version = versioneer.get_version()
+	cmdclass = versioneer.get_cmdclass()
 
 	return locals()
 

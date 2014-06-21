@@ -3,6 +3,13 @@ import sys
 from octoprint.daemon import Daemon
 from octoprint.server import Server
 
+#~~ version
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
+#~~ main class
 
 class Main(Daemon):
 	def __init__(self, pidfile, configfile, basedir, host, port, debug, allowRoot):
@@ -23,6 +30,9 @@ def main():
 	import argparse
 
 	parser = argparse.ArgumentParser(prog="run")
+
+	parser.add_argument("-v", "--version", action="store_true", dest="version",
+						help="Output OctoPrint's version and exit")
 
 	parser.add_argument("-d", "--debug", action="store_true", dest="debug",
 						help="Enable debug mode")
@@ -47,6 +57,10 @@ def main():
 
 	args = parser.parse_args()
 
+	if args.version:
+		print "OctoPrint version %s" % __version__
+		sys.exit(0)
+
 	if args.daemon:
 		if sys.platform == "darwin" or sys.platform == "win32":
 			print >> sys.stderr, "Sorry, daemon mode is only supported under Linux right now"
@@ -65,4 +79,3 @@ def main():
 
 if __name__ == "__main__":
 	main()
-
