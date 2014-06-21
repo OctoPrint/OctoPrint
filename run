@@ -16,7 +16,7 @@ I don't know anything about).
 """
     os.rename(old, os.path.join(basedir, "octoprint.backup"))
 
-sys.path.append(os.path.join(basedir, "src"))
+sys.path.insert(0, os.path.join(basedir, "src"))
 
 import octoprint
 octoprint.main()
