@@ -30,6 +30,8 @@ from . import users as api_users
 from . import log as api_logs
 
 
+VERSION = "1.0"
+
 #~~ first run setup
 
 
@@ -68,6 +70,14 @@ def apiPrinterState():
 	})
 	return jsonify(currentData)
 
+
+@api.route("/version", methods=["GET"])
+@restricted_access
+def apiVersion():
+	return jsonify({
+		"server": octoprint.server.VERSION,
+		"api": octoprint.server.api.VERSION
+	})
 
 #~~ system control
 
