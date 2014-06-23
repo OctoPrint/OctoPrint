@@ -745,26 +745,30 @@ class cmd_version(Command):
 
 class cmd_build_py(_build_py):
     def run(self):
-        versions = get_versions(verbose=True)
         _build_py.run(self)
+
+        versions = get_versions(verbose=True)
         # now locate _version.py in the new build/ directory and replace it
         # with an updated value
         target_versionfile = os.path.join(self.build_lib, versionfile_build)
         print("UPDATING %s" % target_versionfile)
-        os.unlink(target_versionfile)
+        if os.path.exists(target_versionfile):
+            os.unlink(target_versionfile)
         f = open(target_versionfile, "w")
         f.write(SHORT_VERSION_PY % versions)
         f.close()
 
 class cmd_build(_build):
     def run(self):
-        versions = get_versions(verbose=True)
         _build.run(self)
+
+        versions = get_versions(verbose=True)
         # now locate _version.py in the new build/ directory and replace it
         # with an updated value
         target_versionfile = os.path.join(self.build_lib, versionfile_build)
         print("UPDATING %s" % target_versionfile)
-        os.unlink(target_versionfile)
+        if os.path.exists(target_versionfile):
+            os.unlink(target_versionfile)
         f = open(target_versionfile, "w")
         f.write(SHORT_VERSION_PY % versions)
         f.close()

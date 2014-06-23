@@ -6,12 +6,27 @@ versioneer.VCS = 'git'
 versioneer.versionfile_source = 'src/octoprint/_version.py'
 versioneer.versionfile_build = 'octoprint/_version.py'
 versioneer.tag_prefix = ''
-versioneer.parentdir_prefix = 'octoprint-'
+versioneer.parentdir_prefix = ''
 
 from setuptools import setup, find_packages
+import os
+
+def package_data_dirs(source, sub_folders):
+	dirs = []
+
+	for d in sub_folders:
+		for dirname, _, files in os.walk(os.path.join(source, d)):
+			dirname = os.path.relpath(dirname, source)
+			for f in files:
+				dirs.append(os.path.join(dirname, f))
+
+	return dirs
 
 def params():
 	name = "OctoPrint"
+	version = versioneer.get_version()
+	cmdclass = versioneer.get_cmdclass()
+
 	description = "A responsive web interface for 3D printers"
 	long_description = open("README.md").read()
 	classifiers = [
@@ -40,6 +55,7 @@ def params():
 
 	packages = find_packages(where="src")
 	package_dir = {"octoprint": "src/octoprint"}
+	package_data = {"octoprint": package_data_dirs('src/octoprint', ['static', 'templates'])}
 
 	include_package_data = True
 	zip_safe = False
@@ -54,9 +70,6 @@ def params():
 	#scripts = {
 	#	"scripts/octoprint.init": "/etc/init.d/octoprint"
 	#}
-
-	version = versioneer.get_version()
-	cmdclass = versioneer.get_cmdclass()
 
 	return locals()
 
