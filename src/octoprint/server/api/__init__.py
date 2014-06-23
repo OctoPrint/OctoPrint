@@ -32,6 +32,9 @@ from . import users as api_users
 from . import log as api_logs
 
 
+VERSION = "1.0"
+
+
 def optionsAllowOrigin(request):
 	""" Always reply 200 on OPTIONS request """
 
@@ -134,6 +137,14 @@ def firstRunSetup():
 def apiPrinterState():
 	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
+
+@api.route("/version", methods=["GET"])
+@restricted_access
+def apiVersion():
+	return jsonify({
+		"server": octoprint.server.VERSION,
+		"api": octoprint.server.api.VERSION
+	})
 
 #~~ system control
 
