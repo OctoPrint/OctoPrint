@@ -105,6 +105,8 @@ class Printer():
 			currentZ=None
 		)
 
+		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self.onMetadataAnalysisFinished);
+
 	#~~ callback handling
 
 	def registerCallback(self, callback):
@@ -152,6 +154,14 @@ class Printer():
 			self._setJobData(self._selectedFile["filename"],
 				self._selectedFile["filesize"],
 				self._selectedFile["sd"])
+
+	#~~ callback from metadata analysis event
+
+	def onMetadataAnalysisFinished(self, event, data):
+		if self._selectedFile:
+			self._setJobData(self._selectedFile["filename"],
+							 self._selectedFile["filesize"],
+							 self._selectedFile["sd"])
 
 	#~~ printer commands
 
