@@ -1017,16 +1017,16 @@ class MachineCom(object):
 				if self.isStreaming():
 					self._sendCommand("M29")
 
-					filename = self._currentFile.getFilename()
+					remote = self._currentFile.getRemoteFilename()
 					payload = {
 						"local": self._currentFile.getLocalFilename(),
-						"remote": self._currentFile.getRemoteFilename(),
+						"remote": remote,
 						"time": self.getPrintTime()
 					}
 
 					self._currentFile = None
 					self._changeState(self.STATE_OPERATIONAL)
-					self._callback.mcFileTransferDone(filename)
+					self._callback.mcFileTransferDone(remote)
 					eventManager().fire(Events.TRANSFER_DONE, payload)
 					self.refreshSdFiles()
 				else:

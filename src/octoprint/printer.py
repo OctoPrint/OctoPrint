@@ -67,7 +67,6 @@ class Printer():
 		self._sdPrinting = False
 		self._sdStreaming = False
 		self._sdFilelistAvailable = threading.Event()
-		self._sdRemoteName = None
 		self._streamingFinishedCallback = None
 
 		self._selectedFile = None
@@ -431,9 +430,6 @@ class Printer():
 			"sdReady": self.isSdReady()
 		}
 
-	def getCurrentData(self):
-		return self._stateMonitor.getCurrentData()
-
 	#~~ callbacks triggered from self._comm
 
 	def mcLog(self, message):
@@ -520,9 +516,10 @@ class Printer():
 		self._sdStreaming = False
 
 		if self._streamingFinishedCallback is not None:
-			self._streamingFinishedCallback(self._sdRemoteName, FileDestinations.SDCARD)
+			# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
+			# both parameters
+			self._streamingFinishedCallback(filename, filename, FileDestinations.SDCARD)
 
-		self._sdRemoteName = None
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
 		self._setProgressData(None, None, None, None)
@@ -656,9 +653,6 @@ class Printer():
 			return False
 		else:
 			return self._comm.isSdReady()
-
-	def isLoading(self):
-		return self._gcodeLoader is not None
 
 class StateMonitor(object):
 	def __init__(self, ratelimit, updateCallback, addTemperatureCallback, addLogCallback, addMessageCallback):
