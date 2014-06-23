@@ -397,6 +397,17 @@ $(function() {
             e.preventDefault();
         });
 
+        $("#login_user").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_pass").focus();
+            }
+        });
+        $("#login_pass").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_button").click();
+            }
+        });
+
         if (CONFIG_FIRST_RUN) {
             var firstRunViewModel = new FirstRunViewModel();
             ko.applyBindings(firstRunViewModel, document.getElementById("first_run_dialog"));
