@@ -52,7 +52,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         if (!self.printTimeLeft())
             return "-";
         return formatDuration(self.printTimeLeft());
-    })
+    });
     self.progressString = ko.computed(function() {
         if (!self.progress())
             return 0;
@@ -83,22 +83,22 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.fromCurrentData = function(data) {
         self._fromData(data);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._fromData(data);
-    }
+    };
 
     self.fromTimelapseData = function(data) {
         self.timelapse(data);
-    }
+    };
 
     self._fromData = function(data) {
-        self._processStateData(data.state)
+        self._processStateData(data.state);
         self._processJobData(data.job);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
-    }
+    };
 
     self._processStateData = function(data) {
         self.stateString(data.text);
@@ -109,7 +109,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isSdReady(data.flags.sdReady);
-    }
+    };
 
     self._processJobData = function(data) {
         if (data.file) {
@@ -121,6 +121,7 @@ function PrinterStateViewModel(loginStateViewModel) {
             self.filesize(undefined);
             self.sd(undefined);
         }
+
         self.estimatedPrintTime(data.estimatedPrintTime);
 
         var result = [];
@@ -131,12 +132,12 @@ function PrinterStateViewModel(loginStateViewModel) {
                 result[i] = {
                     name: ko.observable("Tool " + i),
                     data: ko.observable(data.filament[key])
-                }
+                };
                 i++;
             } while (data.filament.hasOwnProperty("tool" + i));
         }
         self.filament(result);
-    }
+    };
 
     self._processProgressData = function(data) {
         if (data.completion) {
@@ -147,16 +148,16 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.filepos(data.filepos);
         self.printTime(data.printTime);
         self.printTimeLeft(data.printTimeLeft);
-    }
+    };
 
     self._processZData = function(data) {
         self.currentHeight(data);
-    }
+    };
 
     self.print = function() {
         var restartCommand = function() {
             self._jobCommand("restart");
-        }
+        };
 
         if (self.isPaused()) {
             $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
@@ -167,15 +168,15 @@ function PrinterStateViewModel(loginStateViewModel) {
             self._jobCommand("start");
         }
 
-    }
+    };
 
     self.pause = function() {
         self._jobCommand("pause");
-    }
+    };
 
     self.cancel = function() {
         self._jobCommand("cancel");
-    }
+    };
 
     self._jobCommand = function(command) {
         $.ajax({
