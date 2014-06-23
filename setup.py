@@ -8,8 +8,11 @@ versioneer.versionfile_build = 'octoprint/_version.py'
 versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = ''
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
 import os
+import shutil
+import glob
+
 
 def package_data_dirs(source, sub_folders):
 	dirs = []
@@ -22,10 +25,40 @@ def package_data_dirs(source, sub_folders):
 
 	return dirs
 
+
+class CleanCommand(Command):
+	description = "clean build artifacts"
+	user_options = []
+	boolean_options = []
+
+	def initialize_options(self):
+		pass
+
+	def finalize_options(self):
+		pass
+
+	def run(self):
+		if os.path.exists('build'):
+			print "Deleting build directory"
+			shutil.rmtree('build')
+		eggs = glob.glob('OctoPrint*.egg-info')
+		for egg in eggs:
+			print "Deleting %s directory" % egg
+			shutil.rmtree(egg)
+
+
+def get_cmdclass():
+	cmdclass = versioneer.get_cmdclass()
+	cmdclass.update({
+		'clean': CleanCommand
+	})
+	return cmdclass
+
+
 def params():
 	name = "OctoPrint"
 	version = versioneer.get_version()
-	cmdclass = versioneer.get_cmdclass()
+	cmdclass = get_cmdclass()
 
 	description = "A responsive web interface for 3D printers"
 	long_description = open("README.md").read()
