@@ -151,6 +151,10 @@ default_settings = {
 			"repetierStyleTargetTemperature": False,
 			"extendedSdFileList": False
 		}
+	},
+	"proxy": {
+		"detect": True,
+		"headername": "HTTP_X_ORIG_PATH"
 	}
 }
 
