@@ -3,7 +3,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, request
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 
@@ -86,6 +86,23 @@ def load_user(id):
 	return users.DummyUser()
 
 
+class ProxyWrapper(object):
+	path_headername='HTTP_X_PATH'
+	
+	def __init__(self, app):
+		self.app = app
+
+	def __call__(self, environ, start_response):
+		if self.path_headername in environ:
+			environ['SCRIPT_NAME']=environ[self.path_headername]
+			"""
+			print(environ)
+			if environ['PATH_INFO'].find(environ['HTTP_ORIG_PATH'])!=-1:
+				environ['PATH_INFO']=environ['PATH_INFO'][len(environ['HTTP_ORIG_PATH']):]
+				print(environ['PATH_INFO'])
+			"""
+		return self.app(environ, start_response)
+			 
 #~~ startup code
 
 
@@ -144,9 +161,13 @@ class Server():
 				userManager = clazz()
 			except AttributeError, e:
 				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
-
-		app.wsgi_app = ReverseProxied(app.wsgi_app)
-
+		
+		if settings().get(['proxy','detect']):
+			app.wsgi_app = ProxyWrapper(app.wsgi_app)
+			app.wsgi_app.path_headername=settings().get(['proxy','headername'])
+		else:
+			app.wsgi_app = ReverseProxied(app.wsgi_app)
+			
 		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
