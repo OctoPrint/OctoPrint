@@ -3,7 +3,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory, request
+from flask import Flask, render_template, send_from_directory
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 
