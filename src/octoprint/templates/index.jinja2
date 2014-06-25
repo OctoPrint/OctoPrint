@@ -29,7 +29,7 @@
             var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
             var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
 
-            var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + "/sockjs";
+            var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + BASEURL + "sockjs";
             var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
         </script>
         <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
