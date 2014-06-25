@@ -132,6 +132,10 @@ default_settings = {
 			"forceChecksum": False,
 			"okWithLinenumber": False
 		}
+	},
+	"proxy": {
+		"detect": True,
+		"headername": "HTTP_X_ORIG_PATH"
 	}
 }
 
