@@ -49,7 +49,8 @@ copyright = u'2013, Gina Häußge'
 # built documents.
 #
 # The short X.Y version.
-version = open("../VERSION").read().strip()
+import octoprint._version
+version = octoprint._version.get_versions()["version"]
 # The full version, including alpha/beta/rc tags.
 release = version
 
