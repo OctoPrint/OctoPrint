@@ -26,6 +26,11 @@ OctoPrint is being developed under Windows 7, therefore it will run there as wel
 is running it on low-powered embedded devices with Linux. If you want to give it a try on Windows, you can find
 instructions on what to do [on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-Windows).
 
+Mac
+---
+
+For installing OctoPrint on a Mac, please take a look at [the setup instructions for MacOS on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-Mac).
+
 OctoPi
 ======
 
