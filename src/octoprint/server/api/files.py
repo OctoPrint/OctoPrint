@@ -126,8 +126,6 @@ def uploadGcodeFile(target):
 	if futureFilename == currentFilename and target == currentOrigin and printer.isPrinting() or printer.isPaused():
 		return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
 
-	filename = None
-
 	def fileProcessingFinished(filename, absFilename, destination):
 		"""
 		Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
@@ -138,10 +136,10 @@ def uploadGcodeFile(target):
 		if destination == FileDestinations.SDCARD:
 			return filename, printer.addSdFile(filename, absFilename, selectAndOrPrint)
 		else:
-			selectAndOrPrint(absFilename, destination)
+			selectAndOrPrint(filename, absFilename, destination)
 			return filename
 
-	def selectAndOrPrint(nameToSelect, destination):
+	def selectAndOrPrint(filename, absFilename, destination):
 		"""
 		Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
 		the case after they have finished streaming to the printer, which is why this callback is also used
@@ -151,7 +149,7 @@ def uploadGcodeFile(target):
 		exact file is already selected, such reloading it.
 		"""
 		if selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination):
-			printer.selectFile(nameToSelect, destination == FileDestinations.SDCARD, printAfterSelect)
+			printer.selectFile(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
 	filename, done = gcodeManager.addFile(file, target, fileProcessingFinished)
 	if filename is None:

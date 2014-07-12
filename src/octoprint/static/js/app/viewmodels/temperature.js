@@ -118,7 +118,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-        self._processTemperatureHistoryData(data.tempHistory);
+        self._processTemperatureHistoryData(data.temps);
         self._processOffsetData(data.offsets);
     };
 

@@ -28,7 +28,8 @@ def getSettings():
 	return jsonify({
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
-			"key": s.get(["api", "key"])
+			"key": s.get(["api", "key"]),
+			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
@@ -107,8 +108,9 @@ def setSettings():
 		s = settings()
 
 		if "api" in data.keys():
-			if "enabled" in data["api"].keys(): s.set(["api", "enabled"], data["api"]["enabled"])
+			if "enabled" in data["api"].keys(): s.setBoolean(["api", "enabled"], data["api"]["enabled"])
 			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
+			if "allowCrossOrigin" in data["api"].keys(): s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
 		if "appearance" in data.keys():
 			if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])

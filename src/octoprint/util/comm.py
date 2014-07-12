@@ -896,7 +896,7 @@ class MachineCom(object):
 							if self._resendDelta is not None:
 								self._resendNextCommand()
 							elif not self._commandQueue.empty() and not self.isStreaming():
-								self._sendCommand(self._commandQueue.get())
+								self._sendCommand(self._commandQueue.get(), True)
 							else:
 								self._sendNext()
 						elif line.lower().startswith("resend") or line.lower().startswith("rs"):
@@ -1002,16 +1002,16 @@ class MachineCom(object):
 				if self.isStreaming():
 					self._sendCommand("M29")
 
-					filename = self._currentFile.getFilename()
+					remote = self._currentFile.getRemoteFilename()
 					payload = {
 						"local": self._currentFile.getLocalFilename(),
-						"remote": self._currentFile.getRemoteFilename(),
+						"remote": remote,
 						"time": self.getPrintTime()
 					}
 
 					self._currentFile = None
 					self._changeState(self.STATE_OPERATIONAL)
-					self._callback.mcFileTransferDone(filename)
+					self._callback.mcFileTransferDone(remote)
 					eventManager().fire(Events.TRANSFER_DONE, payload)
 					self.refreshSdFiles()
 				else:
@@ -1205,6 +1205,9 @@ class MachineCom(object):
 		self._resendDelta = None
 
 		return None
+	def _gcode_M112(self, cmd): # It's an emergency what todo? Canceling the print should be the minimum
+		self.cancelPrint()
+		return cmd
 
 	def _gcode_M112(self, cmd): # It's an emergency what todo? Canceling the print should be the minimum
 		self.cancelPrint()

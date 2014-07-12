@@ -32,6 +32,29 @@ from . import users as api_users
 from . import log as api_logs
 
 
+VERSION = "1.0"
+
+
+def optionsAllowOrigin(request):
+	""" Always reply 200 on OPTIONS request """
+
+	resp = current_app.make_default_options_response()
+
+	# Allow the origin which made the XHR
+	resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+	# Allow the actual method
+	resp.headers['Access-Control-Allow-Methods'] = request.headers['Access-Control-Request-Method']
+	# Allow for 10 seconds
+	resp.headers['Access-Control-Max-Age'] = "10"
+
+	# 'preflight' request contains the non-standard headers the real request will have (like X-Api-Key)
+	customRequestHeaders = request.headers.get('Access-Control-Request-Headers', None)
+	if customRequestHeaders is not None:
+		# If present => allow them all
+		resp.headers['Access-Control-Allow-Headers'] = customRequestHeaders
+
+	return resp
+
 @api.before_request
 def beforeApiRequests():
 	"""
@@ -40,6 +63,9 @@ def beforeApiRequests():
 	case it has to be present and must be valid, so anything other than the above three types will result in denying
 	the request.
 	"""
+
+	if request.method == 'OPTIONS' and s().getBoolean(["api", "allowCrossOrigin"]):
+		return optionsAllowOrigin(request)
 
 	apikey = getApiKey(request)
 	if apikey is None:
@@ -65,6 +91,16 @@ def beforeApiRequests():
 
 	# invalid api key => 401
 	return make_response("Invalid API key", 401)
+
+@api.after_request
+def afterApiRequests(resp):
+
+	# Allow crossdomain
+	allowCrossOrigin = s().getBoolean(["api", "allowCrossOrigin"])
+	if request.method != 'OPTIONS' and 'Origin' in request.headers and allowCrossOrigin:
+		resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+
+	return resp
 
 
 #~~ first run setup
@@ -99,12 +135,16 @@ def firstRunSetup():
 @api.route("/state", methods=["GET"])
 @restricted_access
 def apiPrinterState():
-	currentData = octoprint.server.printer.getCurrentData()
-	currentData.update({
-		"temperatures": octoprint.server.printer.getCurrentTemperatures()
-	})
-	return jsonify(currentData)
+	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
+
+@api.route("/version", methods=["GET"])
+@restricted_access
+def apiVersion():
+	return jsonify({
+		"server": octoprint.server.VERSION,
+		"api": octoprint.server.api.VERSION
+	})
 
 #~~ system control
 

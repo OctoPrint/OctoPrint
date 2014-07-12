@@ -67,7 +67,6 @@ class Printer():
 		self._sdPrinting = False
 		self._sdStreaming = False
 		self._sdFilelistAvailable = threading.Event()
-		self._sdRemoteName = None
 		self._streamingFinishedCallback = None
 
 		self._selectedFile = None
@@ -89,7 +88,7 @@ class Printer():
 			addMessageCallback=self._sendAddMessageCallbacks
 		)
 		self._stateMonitor.reset(
-			state={"state": None, "stateString": self.getStateString(), "flags": self._getStateFlags()},
+			state={"text": self.getStateString(), "flags": self._getStateFlags()},
 			jobData={
 				"file": {
 					"name": None,
@@ -106,6 +105,8 @@ class Printer():
 			progress={"completion": None, "filepos": None, "printTime": None, "printTimeLeft": None},
 			currentZ=None
 		)
+
+		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self.onMetadataAnalysisFinished);
 
 	#~~ callback handling
 
@@ -275,6 +276,14 @@ class Printer():
 
 		self._addLog("ERROR: %s" % error)
 
+	#~~ callback from metadata analysis event
+
+	def onMetadataAnalysisFinished(self, event, data):
+		if self._selectedFile:
+			self._setJobData(self._selectedFile["filename"],
+							 self._selectedFile["filesize"],
+							 self._selectedFile["sd"])
+
 	#~~ printer commands
 
 	def connect(self, port=None, baudrate=None):
@@ -426,7 +435,7 @@ class Printer():
 
 	def _setState(self, state):
 		self._state = state
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+		self._stateMonitor.setState({"text": self.getStateString(), "flags": self._getStateFlags()})
 
 	def _addLog(self, log):
 		self._log.append(log)
@@ -502,9 +511,9 @@ class Printer():
 		try:
 			data = self._stateMonitor.getCurrentData()
 			data.update({
-				"tempHistory": list(self._temps),
-				"logHistory": list(self._log),
-				"messageHistory": list(self._messages)
+				"temps": list(self._temps),
+				"logs": list(self._log),
+				"messages": list(self._messages)
 			})
 			callback.sendHistoryData(data)
 		except Exception, err:

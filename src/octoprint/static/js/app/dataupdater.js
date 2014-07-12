@@ -77,6 +77,9 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                         headers: {"X-Api-Key": UI_API_KEY}
                     });
 
+                    VERSION = data["version"];
+                    $("span.version").text(VERSION);
+
                     if ($("#offline_overlay").is(":visible")) {
                         $("#offline_overlay").hide();
                         self.logViewModel.requestData();
