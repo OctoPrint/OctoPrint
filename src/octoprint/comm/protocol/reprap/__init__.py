@@ -317,13 +317,14 @@ class RepRapProtocol(Protocol):
 			return
 
 		# initial handshake with the firmware
-		if self._state == State.CONNECTED:
-			if not self._startSeen and RepRapProtocol.MESSAGE_START(message):
-				self._startSeen = True
-				self._clear_for_send.set()
-			elif self._startSeen:
-				if RepRapProtocol.MESSAGE_OK(message):
-					self._changeState(State.OPERATIONAL)
+		if not self._startSeen and RepRapProtocol.MESSAGE_START(message):
+			# if we did not see "start" from the firmware yet and we just did we are cleared for sending
+			self._startSeen = True
+			self._clear_for_send.set()
+
+		if self._state == State.CONNECTED and self._startSeen and RepRapProtocol.MESSAGE_OK(message):
+			# if we are currently connected, have seen start and just gotten an "ok" we are now operational
+			self._changeState(State.OPERATIONAL)
 
 		# resend == roll back time a bit
 		if RepRapProtocol.MESSAGE_RESEND(message):
@@ -347,12 +348,16 @@ class RepRapProtocol(Protocol):
 	def onTimeoutReceived(self, source):
 		if self._transport != source:
 			return
+
+		if self._state == State.CONNECTED:
+			# it might be that the printer controller did not reset on connect and therefore we won't ever see a start => try clearing for send
+			self._clear_for_send.set()
 		self._send_temperature_query(withType=True)
 
 	##~~ private
 
 	def _evaluate_firmware_specific_messages(self, source, message):
-		pass
+		return True
 
 	def _send(self, command, highPriority=False, commandType=None, withChecksum=None, withLinenumber=None):
 		if withChecksum is None:

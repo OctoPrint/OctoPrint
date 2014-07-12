@@ -43,7 +43,7 @@ class RepetierTextualProtocol(RepRapProtocol):
 				pass
 
 			if key is None:
-				return
+				return False
 
 			if key in current_temperatures and current_temperatures[key] is not None and isinstance(current_temperatures[key], tuple):
 				(actual, old_target) = current_temperatures[key]
