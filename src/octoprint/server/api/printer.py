@@ -125,6 +125,9 @@ def printerToolCommand():
 
 @api.route("/printer/tool", methods=["GET"])
 def printerToolState():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
 	def deleteBed(x):
 		data = dict(x)
 
@@ -181,6 +184,9 @@ def printerBedCommand():
 
 @api.route("/printer/bed", methods=["GET"])
 def printerBedState():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
 	def deleteTools(x):
 		data = dict(x)
 
@@ -189,7 +195,11 @@ def printerBedState():
 				del data[k]
 		return data
 
-	return jsonify(_getTemperatureData(deleteTools))
+	data = _getTemperatureData(deleteTools)
+	if isinstance(data, Response):
+		return data
+	else:
+		return jsonify(data)
 
 
 ##~~ Print head
