@@ -305,14 +305,18 @@ class Timelapse(object):
 		command_str = " ".join(command)
 		self._logger.debug("Executing command: %s" % command_str)
 
-		p = sarge.run(command_str, stderr=sarge.Capture())
-		if p.returncode == 0:
-			eventManager().fire(Events.MOVIE_DONE, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
-		else:
-			returncode = p.returncode
-			stderr_text = p.stderr.text
-			self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
-			eventManager().fire(Events.MOVIE_FAILED, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output), "returncode": returncode, "error": stderr_text})
+		try:
+			p = sarge.run(command_str, stderr=sarge.Capture())
+			if p.returncode == 0:
+				eventManager().fire(Events.MOVIE_DONE, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
+			else:
+				returncode = p.returncode
+				stderr_text = p.stderr.text
+				self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
+				eventManager().fire(Events.MOVIE_FAILED, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output), "returncode": returncode, "error": stderr_text})
+		except:
+			self._logger.exception("Could not render movie due to unknown error")
+			eventManager().fire(Events.MOVIE_FAILED, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output), "returncode": 255, "error": "Unknown error"})
 
 	def cleanCaptureDir(self):
 		if not os.path.isdir(self._captureDir):
