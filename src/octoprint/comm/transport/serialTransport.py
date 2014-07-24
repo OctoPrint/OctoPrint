@@ -21,6 +21,8 @@ from octoprint.settings import settings
 
 class SerialTransport(Transport):
 
+	__transportinfo__ = ("serial", "Serial", False)
+
 	def __init__(self, messageReceiver, stateReceiver, logReceiver):
 		Transport.__init__(self, messageReceiver, stateReceiver, logReceiver)
 

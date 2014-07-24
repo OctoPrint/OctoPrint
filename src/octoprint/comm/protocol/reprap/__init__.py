@@ -18,9 +18,12 @@ from octoprint.comm.transport import TransportProperties
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.gcodefiles import isGcodeFileName
 from octoprint.comm.transport.serialTransport import SerialTransport
+from octoprint.settings import settings
 
 
 class RepRapProtocol(Protocol):
+
+	__protocolinfo__ = ("reprap", "RepRap", False)
 
 	## Firmware messages
 	MESSAGE_OK = staticmethod(lambda line: line.startswith("ok"))
@@ -55,8 +58,13 @@ class RepRapProtocol(Protocol):
 
 	## Commands
 	COMMAND_GET_TEMP = staticmethod(lambda: GcodeCommand("M105"))
-	COMMAND_SET_EXTRUDER_TEMP = staticmethod(lambda x, w: GcodeCommand("M109", s=x) if w else GcodeCommand("M104", s=x))
-	COMMAND_SET_BED_TEMP = staticmethod(lambda x, w: GcodeCommand("M190", s=x) if w else GcodeCommand("M140", s=x))
+	COMMAND_SET_EXTRUDER_TEMP = staticmethod(lambda s, t, w: GcodeCommand("M109", s=s, t=t) if w else GcodeCommand("M104", s=s, t=t))
+	COMMAND_SET_BED_TEMP = staticmethod(lambda s, w: GcodeCommand("M190", s=s) if w else GcodeCommand("M140", s=s))
+	COMMAND_SET_RELATIVE_POSITIONING = staticmethod(lambda: GcodeCommand("G91"))
+	COMMAND_SET_ABSOLUTE_POSITIONING = staticmethod(lambda: GcodeCommand("G90"))
+	COMMAND_MOVE_AXIS = staticmethod(lambda axis, amount, speed: GcodeCommand("G1", x=amount if axis=='x' else None, y=amount if axis=='y' else None, z=amount if axis=='z' else None, f=speed))
+	COMMAND_EXTRUDE = staticmethod(lambda amount, speed: GcodeCommand("G1", e=amount, f=speed))
+	COMMAND_HOME_AXIS = staticmethod(lambda x, y, z: GcodeCommand("G28", x=0 if x else None, y=0 if y else None, z=0 if z else None))
 	COMMAND_SET_TOOL = staticmethod(lambda t: GcodeCommand("T%d" % t))
 	COMMAND_SD_REFRESH = staticmethod(lambda: GcodeCommand("M20"))
 	COMMAND_SD_INIT = staticmethod(lambda: GcodeCommand("M21"))
@@ -224,10 +232,63 @@ class RepRapProtocol(Protocol):
 		self.send_manually(RepRapProtocol.COMMAND_SD_DELETE(filename))
 		self.refresh_sd_files()
 
+	def set_temperature(self, type, value):
+		if type.startswith("tool"):
+			if settings().getInt(["printerParameters", "numExtruders"]) > 1:
+				try:
+					tool_num = int(type[len("tool"):])
+					self.send_manually(RepRapProtocol.COMMAND_SET_EXTRUDER_TEMP(value, tool_num, False))
+				except ValueError:
+					pass
+			else:
+				# set temperature without tool number
+				self.send_manually(RepRapProtocol.COMMAND_SET_EXTRUDER_TEMP(value, None, False))
+		elif type == "bed":
+			self.send_manually(RepRapProtocol.COMMAND_SET_BED_TEMP(value, False))
+
+	def jog(self, axis, amount):
+		speeds = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
+		commands = (
+			RepRapProtocol.COMMAND_SET_RELATIVE_POSITIONING(),
+			RepRapProtocol.COMMAND_MOVE_AXIS(axis, amount, speeds[axis]),
+			RepRapProtocol.COMMAND_SET_ABSOLUTE_POSITIONING()
+		)
+		self.send_manually(commands)
+
+	def home(self, axes):
+
+		commands = (
+			RepRapProtocol.COMMAND_SET_RELATIVE_POSITIONING(),
+			RepRapProtocol.COMMAND_HOME_AXIS('x' in axes, 'y' in axes, 'z' in axes),
+			RepRapProtocol.COMMAND_SET_ABSOLUTE_POSITIONING()
+		)
+		self.send_manually(commands)
+
+	def extrude(self, amount):
+		extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
+
+		commands = (
+			RepRapProtocol.COMMAND_SET_RELATIVE_POSITIONING(),
+			RepRapProtocol.COMMAND_EXTRUDE(amount, extrusionSpeed),
+			RepRapProtocol.COMMAND_SET_ABSOLUTE_POSITIONING()
+		)
+		self.send_manually(commands)
+
+	def change_tool(self, tool):
+		try:
+			tool_num = int(tool[len("tool"):])
+			self.send_manually(RepRapProtocol.COMMAND_SET_TOOL(tool_num))
+		except ValueError:
+			pass
+
 	def send_manually(self, command, high_priority=False):
 		if self.is_streaming():
 			return
-		self._send(command, highPriority=high_priority, withChecksum=self._useChecksum())
+		if isinstance(command, (tuple, list)):
+			for c in command:
+				self._send(c, highPriority=high_priority, withChecksum=self._useChecksum())
+		else:
+			self._send(command, highPriority=high_priority, withChecksum=self._useChecksum())
 
 	def _fileTransferFinished(self, current_file):
 		if isinstance(current_file, StreamingGcodeFileInformation):
@@ -508,7 +569,7 @@ class RepRapProtocol(Protocol):
 					self._resend_delta = None
 
 	def _useChecksum(self):
-		return not self._transport_properties[TransportProperties.FLOWCONTROL] and self.is_busy()
+		return settings().getBoolean(["feature", "alwaysSendChecksum"]) or (not self._transport_properties[TransportProperties.FLOWCONTROL] and self.is_busy())
 
 	##~~ specific command actions
 

@@ -23,6 +23,25 @@ def settings(init=False, configfile=None, basedir=None):
 	return instance
 
 default_settings = {
+	"communication": {
+		"protocol": "reprap",
+		"protocolOptions": {},
+		"transport": "serial",
+		"transportOptions": {
+			"port": None,
+			"baudrate": None,
+			"timeout": {
+				"detection": 0.5,
+				"connection": 2,
+				"communication": 5,
+				"temperature": 5,
+				"sdStatus": 1
+			},
+			"additionalPorts": []
+		},
+		"autoconnect": False,
+		"log": False
+	},
 	"serial": {
 		"port": None,
 		"baudrate": None,

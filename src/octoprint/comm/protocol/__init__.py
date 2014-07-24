@@ -10,6 +10,7 @@ import time
 from octoprint.events import eventManager, Events
 from octoprint.comm.transport import MessageReceiver, StateReceiver, LogReceiver, State as TransportState
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.settings import settings
 
 
 class Protocol(MessageReceiver, StateReceiver, LogReceiver):
