@@ -417,9 +417,153 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-curaConfig">Path to Cura config</label>
+                            <label class="control-label" for="settings-curaConfigPath">Cura config directory</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: cura_config">
+                                <input type="text" class="input-block-level" data-bind="value: cura_configPath,
+                                event: {change: refreshCuraSettings}">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="settings-curaConfig">Select Cura Config</label>
+                            <div class="controls">
+                                <select class="input-block-level" data-bind="value: cura_config, options: cura_configFiles,
+                                    optionsText: function(item) {return item.name},
+                                    optionsValue: function(item) {return item.path},
+                                    event: {click: refreshCuraSettings}">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div data-bind="visible: cura_config">
+                            <hr \>
+                            <div class="control-group">
+                                <label class="control-label" for="cura-copy-name">Copy selected config to</label>
+                                <div class="controls">
+                                    <input name="cura-copy-name" type="text" class="cura-copy-name">
+                                    <button class="btn btn-secondary" data-bind="event: {click: curaCopyIni}">copy</button>
+                                </div>
+                            </div>
+                            <hr \>
+
+                            <ul class="nav nav-tabs" id="cura-config-tabs">
+                                <li class="active"><a href="#cura-config-basic-edit" data-toggle="tab">Basic settings</a></li>
+                                <li><a href="#cura-config-expert-edit" data-toggle="tab">Advanced settings</a></li>
+                            </ul>
+
+                            <div id="cura-config-tabs-content" class="tab-content">
+                                <div class="tab-pane active" id="cura-config-basic-edit">
+                                    <h4>Quality</h4>
+                                    <div class="control-group">
+                                        <label class="control-label" for="layer_height">Layer height (mm)</label>
+                                        <div class="controls">
+                                            <input name="layer_height" type="text" class="input-block-level" data-bind="value: getCuraIniValue('layer_height')">
+                                        </div>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label class="control-label" for="wall_thickness">Shell thickness (mm)</label>
+                                        <div class="controls">
+                                            <input name="wall_thickness" type="text" class="input-block-level" data-bind="value: getCuraIniValue('wall_thickness')">
+                                        </div>
+                                    </div>
+
+                                    <h4>Fill</h4>
+                                    <div class="control-group">
+                                        <label class="control-label" for="solid_layer_thickness">Bottom/Top thickness (mm)</label>
+                                        <div class="controls">
+                                            <input name="solid_layer_thickness" type="text" class="input-block-level" data-bind="value: getCuraIniValue('solid_layer_thickness')">
+                                        </div>
+                                    </div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="fill_density">Fill density (%)</label>
+                                        <div class="controls">
+                                            <input name="fill_density" type="text" class="input-block-level" data-bind="value: getCuraIniValue('fill_density')">
+                                        </div>
+                                    </div>
+
+                                    <h4>Speed and Temperature</h4>
+                                    <div class="control-group">
+                                        <label class="control-label" for="print_speed">Print speed (mm/s)</label>
+                                        <div class="controls">
+                                            <input name="print_speed" type="text" class="input-block-level" data-bind="value: getCuraIniValue('print_speed')">
+                                        </div>
+                                    </div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="print_temperature">Printing temperature (C)</label>
+                                        <div class="controls">
+                                            <input name="print_temperature" type="text" class="input-block-level" data-bind="value: getCuraIniValue('print_temperature')">
+                                        </div>
+                                    </div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="print_bed_temperature">Bed temperature (C)</label>
+                                        <div class="controls">
+                                            <input name="print_bed_temperature" type="text" class="input-block-level" data-bind="value: getCuraIniValue('print_bed_temperature')">
+                                        </div>
+                                    </div>
+
+                                    <h4>Support</h4>
+                                    <div class="control-group">
+                                        <label class="control-label" for="support">Support type</label>
+                                        <div class="controls">
+                                            <select name="support" data-bind="value: getCuraIniValue('support')">
+                                                <option name="None">None</option>
+                                                <option name="Touching buildplate">Touching buildplate</option>
+                                                <option name="Everywhere">Everywhere</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="platform_adhesion">Platform adhesion type</label>
+                                        <div class="controls">
+                                            <select name="platform_adhesion" data-bind="value: getCuraIniValue('platform_adhesion')">
+                                                <option name="None">None</option>
+                                                <option name="Brim">Brim</option>
+                                                <option name="Raft">Raft</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <h4>Filament</h4>
+                                    <div class="control-group">
+                                        <label class="control-label" for="filament_diameter">Diameter (mm)</label>
+                                        <div class="controls">
+                                            <input name="filament_diameter" type="text" class="input-block-level" data-bind="value: getCuraIniValue('filament_diameter')">
+                                        </div>
+                                    </div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="filament_flow">Flow (%)</label>
+                                        <div class="controls">
+                                            <input name="filament_flow" type="text" class="input-block-level" data-bind="value: getCuraIniValue('filament_flow')">
+                                        </div>
+                                    </div>
+
+                                    <hr \>
+
+                                    <button class="btn btn-secondary" data-bind="click: function(data, event) { curaOverwriteIni('#cura-config-basic-edit') }"">Overwrite ini file</button>
+                                </div>
+                                <div class="tab-pane" id="cura-config-expert-edit">
+                                    <table class="table" data-bind="visible: cura_config">
+                                        <thead>
+                                            <tr>
+                                                <th>Attribute</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody data-bind="foreach: cura_configData">
+                                            <tr>
+                                                <td data-bind="text: key"></td>
+                                                <td>
+                                                 <input type="text" data-bind="name: key, value: value, attr: {name: key}" \>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <hr \>
+
+                                    <button class="btn btn-secondary" data-bind="click: function(data, event) { curaOverwriteIni('#cura-config-expert-edit') }">Overwrite ini file</button>
+                                </div>
                             </div>
                         </div>
                     </form>

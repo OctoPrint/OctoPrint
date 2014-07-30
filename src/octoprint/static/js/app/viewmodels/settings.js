@@ -126,6 +126,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.cura_enabled = ko.observable(undefined);
     self.cura_path = ko.observable(undefined);
     self.cura_config = ko.observable(undefined);
+    self.cura_configPath = ko.observable(undefined);
+    self.cura_configFiles = ko.observableArray([]);
+    self.cura_configData = ko.observableArray([]);
 
     self.temperature_profiles = ko.observableArray(undefined);
 
@@ -240,6 +243,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.cura_enabled(response.cura.enabled);
         self.cura_path(response.cura.path);
         self.cura_config(response.cura.config);
+        self.cura_configPath(response.cura.configPath);
+        self.cura_configFiles(response.cura.configFiles);
+        self.cura_configData(response.cura.configData);
 
         self.temperature_profiles(response.temperature.profiles);
 
@@ -247,6 +253,81 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
         self.terminalFilters(response.terminalFilters);
     };
+
+    self.getCuraIniValue = function(name) {
+        for(i in self.cura_configData()) {
+            if(self.cura_configData()[i].key == name) {
+                return self.cura_configData()[i].value;
+            }
+        }
+
+        return null;
+    };
+
+    self.curaCopyIni = function() {
+        var name = $("input.cura-copy-name").val();
+        var data = {
+            "curaCopyIni": {"name": name}
+        };
+
+        $.ajax({
+            url: API_BASEURL + "settings",
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data),
+            success: function(response) {
+                self.fromResponse(response);
+                $("input.cura-copy-name").val("");
+                new PNotify({title: "Copy done", text: "Copying cura profile done."});
+            }
+        });
+    };
+
+    self.curaOverwriteIni = function(selector) {
+        var selector = selector + " input, " + selector + " select";
+        var data = {
+            "curaOverwrite": {}
+        };
+
+        $(selector).each(function(index, item) {
+            data.curaOverwrite[item.name] = item.value;
+        });
+
+        $.ajax({
+            url: API_BASEURL + "settings",
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data),
+            success: function(response) {
+                self.fromResponse(response);
+                new PNotify({title: "Config saved", text: "Your changes have been saved to the current cura profile."});
+            }
+        });
+    };
+
+    self.refreshCuraSettings = function() {
+        var data= {
+            "cura": {
+                "enabled": self.cura_enabled(),
+                "path": self.cura_path(),
+                "configPath": self.cura_configPath(),
+                "config": self.cura_config()
+            }
+        };
+
+        $.ajax({
+            url: API_BASEURL + "settings",
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data),
+            success: function(response) {
+                self.fromResponse(response);
+            }
+        });
+    }
 
     self.saveData = function() {
         var data = {
@@ -314,6 +395,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "cura": {
                 "enabled": self.cura_enabled(),
                 "path": self.cura_path(),
+                "configPath": self.cura_configPath(),
                 "config": self.cura_config()
             },
             "terminalFilters": self.terminalFilters()
