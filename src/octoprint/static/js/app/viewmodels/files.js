@@ -274,12 +274,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                     } while (filament.hasOwnProperty("tool" + i));
                 }
             }
-            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
+            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
         }
         if (data["prints"] && data["prints"]["last"]) {
-            output += "<br>Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]);
+            output += "Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
             if (data["prints"]["last"]["lastPrintTime"]) {
-                output += "<br>Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                output += "Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
             }
         }
         return output;

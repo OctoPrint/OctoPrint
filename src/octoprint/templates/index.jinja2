@@ -125,12 +125,11 @@
                             <div class="accordion-inner">
                                 Machine State: <strong data-bind="text: stateString"></strong><br>
                                 File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
-                                <!-- ko foreach: filament -->
-                                    <span data-bind="text: 'Filament (' + name() + '): '"></span><strong data-bind="text: formatFilament(data())"></strong><br>
-                                <!-- /ko -->
-                                Estimated Print Time: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
                                 Timelapse: <strong data-bind="text: timelapseString"></strong><br>
-                                Height: <strong data-bind="text: heightString"></strong><br>
+                                <!-- ko foreach: filament -->
+                                <span data-bind="text: 'Filament (' + name() + '): '"></span><strong data-bind="text: formatFilament(data())"></strong><br>
+                                <!-- /ko -->
+                                Approx. Total Print Time: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
                                 Print Time: <strong data-bind="text: printTimeString"></strong><br>
                                 Print Time Left: <strong data-bind="text: printTimeLeftString"></strong><br>
                                 Printed: <strong data-bind="text: byteString"></strong><br>

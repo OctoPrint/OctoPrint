@@ -95,6 +95,7 @@ class Printer():
 					"date": None
 				},
 				"estimatedPrintTime": None,
+				"lastPrintTime": None,
 				"filament": {
 					"length": None,
 					"volume": None
@@ -389,6 +390,7 @@ class Printer():
 			self._selectedFile = None
 
 		estimatedPrintTime = None
+		lastPrintTime = None
 		date = None
 		filament = None
 		if filename:
@@ -398,11 +400,14 @@ class Printer():
 				date = int(os.stat(filename).st_ctime)
 
 			fileData = self._gcodeManager.getFileData(filename)
-			if fileData is not None and "gcodeAnalysis" in fileData.keys():
-				if "estimatedPrintTime" in fileData["gcodeAnalysis"].keys():
-					estimatedPrintTime = fileData["gcodeAnalysis"]["estimatedPrintTime"]
-				if "filament" in fileData["gcodeAnalysis"].keys():
-					filament = fileData["gcodeAnalysis"]["filament"]
+			if fileData is not None:
+				if "gcodeAnalysis" in fileData:
+					if estimatedPrintTime is None and "estimatedPrintTime" in fileData["gcodeAnalysis"]:
+						estimatedPrintTime = fileData["gcodeAnalysis"]["estimatedPrintTime"]
+					if "filament" in fileData["gcodeAnalysis"].keys():
+						filament = fileData["gcodeAnalysis"]["filament"]
+				if "prints" in fileData and "last" in fileData["prints"] and "lastPrintTime" in fileData["prints"]["last"]:
+					lastPrintTime = fileData["prints"]["last"]["lastPrintTime"]
 
 		self._stateMonitor.setJobData({
 			"file": {
@@ -412,6 +417,7 @@ class Printer():
 				"date": date
 			},
 			"estimatedPrintTime": estimatedPrintTime,
+			"lastPrintTime": lastPrintTime,
 			"filament": filament,
 		})
 
