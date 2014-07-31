@@ -330,8 +330,8 @@ class CommandTrigger(GenericEventListener):
 		if "job" in currentData.keys() and currentData["job"] is not None:
 			params["__filename"] = currentData["job"]["file"]["name"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
-				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None:
-				params["__progress"] = str(round(currentData["progress"]["progress"] * 100))
+				and "completion" in currentData["progress"].keys() and currentData["progress"]["completion"] is not None:
+				params["__progress"] = str(round(currentData["progress"]["completion"] * 100))
 
 		# now add the payload keys as well
 		if isinstance(payload, dict):
