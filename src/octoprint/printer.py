@@ -406,7 +406,7 @@ class Printer():
 						estimatedPrintTime = fileData["gcodeAnalysis"]["estimatedPrintTime"]
 					if "filament" in fileData["gcodeAnalysis"].keys():
 						filament = fileData["gcodeAnalysis"]["filament"]
-				if "prints" in fileData and "last" in fileData["prints"] and "lastPrintTime" in fileData["prints"]["last"]:
+				if "prints" in fileData and fileData["prints"] and "last" in fileData["prints"] and fileData["prints"]["last"] and "lastPrintTime" in fileData["prints"]["last"]:
 					lastPrintTime = fileData["prints"]["last"]["lastPrintTime"]
 
 		self._stateMonitor.setJobData({
