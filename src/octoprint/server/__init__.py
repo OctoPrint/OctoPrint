@@ -34,7 +34,8 @@ user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint.server.util import LargeResponseHandler, ReverseProxied, restricted_access, PrinterStateConnection, admin_validator, \
-	UrlForwardHandler, user_validator, GcodeWatchdogHandler, UploadCleanupWatchdogHandler
+	UrlForwardHandler, user_validator, GcodeWatchdogHandler, UploadCleanupWatchdogHandler, LargeUploadHandler, \
+	access_validation_factory, StreamedWsgiContainer, StreamingFallbackHandler
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
 import octoprint.gcodefiles as gcodefiles
@@ -106,8 +107,8 @@ class Server():
 		self._debug = debug
 		self._allowRoot = allowRoot
 		self._logConf = logConf
+		self._server = None
 
-		  
 	def run(self):
 		if not self._allowRoot:
 			self._checkForRoot()
@@ -180,35 +181,15 @@ class Server():
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
-		def access_validation_factory(validator):
-			"""
-			Creates an access validation wrapper using the supplied validator.
-
-			:param validator: the access validator to use inside the validation wrapper
-			:return: an access validation wrapper taking a request as parameter and performing the request validation
-			"""
-			def f(request):
-				"""
-				Creates a custom wsgi and Flask request context in order to be able to process user information
-				stored in the current session.
-
-				:param request: The Tornado request for which to create the environment and context
-				"""
-				wsgi_environ = tornado.wsgi.WSGIContainer.environ(request)
-				with app.request_context(wsgi_environ):
-					app.session_interface.open_session(app, flask.request)
-					loginManager.reload_user()
-					validator(flask.request)
-			return f
-
 		self._tornado_app = Application(self._router.urls + [
-			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),
-			(r"/downloads/files/local/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
-			(r"/downloads/logs/([^/]*)", LargeResponseHandler, {"path": settings().getBaseFolder("logs"), "as_attachment": True, "access_validation": access_validation_factory(admin_validator)}),
-			(r"/downloads/camera/current", UrlForwardHandler, {"url": settings().get(["webcam", "snapshot"]), "as_attachment": True, "access_validation": access_validation_factory(user_validator)}),
-			(r".*", FallbackHandler, {"fallback": WSGIContainer(app.wsgi_app)})
+			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, dict(path=settings().getBaseFolder("timelapse"), as_attachment=True)),
+			(r"/downloads/files/local/([^/]*\.(gco|gcode))", LargeResponseHandler, dict(path=settings().getBaseFolder("uploads"), as_attachment=True)),
+			(r"/downloads/logs/([^/]*)", LargeResponseHandler, dict(path=settings().getBaseFolder("logs"), as_attachment=True, access_validation=access_validation_factory(app, loginManager, admin_validator))),
+			(r"/downloads/camera/current", UrlForwardHandler, dict(url=settings().get(["webcam", "snapshot"]), as_attachment=True, access_validation=access_validation_factory(app, loginManager, user_validator))),
+			(r"/uploads/files/([^/]*)", LargeUploadHandler, dict(access_validation=access_validation_factory(app, loginManager, user_validator))),
+			(r".*", StreamingFallbackHandler, dict(fallback=StreamedWsgiContainer(app.wsgi_app)))
 		])
-		self._server = HTTPServer(self._tornado_app)
+		self._server = HTTPServer(self._tornado_app, max_body_size=1*1024*1024*1024)
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire(events.Events.STARTUP)

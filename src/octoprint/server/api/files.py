@@ -4,7 +4,7 @@ from octoprint.events import Events
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
-from flask import request, jsonify, make_response, url_for
+from flask import request, jsonify, make_response, url_for, redirect
 
 import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
@@ -188,6 +188,7 @@ def uploadGcodeFile(target):
 
 	r = make_response(jsonify(files=files, done=done), 201)
 	r.headers["Location"] = location
+	#return redirect(url_for("index", _external=True) + "uploads/files/" + target, code=307)
 	return r
 
 
