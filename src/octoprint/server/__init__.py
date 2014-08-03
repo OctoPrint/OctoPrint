@@ -34,8 +34,8 @@ user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint.server.util import LargeResponseHandler, ReverseProxied, restricted_access, PrinterStateConnection, admin_validator, \
-	UrlForwardHandler, user_validator, GcodeWatchdogHandler, UploadCleanupWatchdogHandler, LargeUploadHandler, \
-	access_validation_factory, StreamedWsgiContainer, StreamingFallbackHandler
+	UrlForwardHandler, user_validator, GcodeWatchdogHandler, UploadCleanupWatchdogHandler, \
+	access_validation_factory, StreamedWsgiContainer, StreamingFallbackHandler, PrintableFilesUploadHandler
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
 import octoprint.gcodefiles as gcodefiles
@@ -186,8 +186,8 @@ class Server():
 			(r"/downloads/files/local/([^/]*\.(gco|gcode))", LargeResponseHandler, dict(path=settings().getBaseFolder("uploads"), as_attachment=True)),
 			(r"/downloads/logs/([^/]*)", LargeResponseHandler, dict(path=settings().getBaseFolder("logs"), as_attachment=True, access_validation=access_validation_factory(app, loginManager, admin_validator))),
 			(r"/downloads/camera/current", UrlForwardHandler, dict(url=settings().get(["webcam", "snapshot"]), as_attachment=True, access_validation=access_validation_factory(app, loginManager, user_validator))),
-			(r"/uploads/files/([^/]*)", LargeUploadHandler, dict(access_validation=access_validation_factory(app, loginManager, user_validator))),
-			(r".*", StreamingFallbackHandler, dict(fallback=StreamedWsgiContainer(app.wsgi_app)))
+			(r"/api/files/([^/]*)", PrintableFilesUploadHandler, dict(path=settings().getBaseFolder("uploads"), access_validation=access_validation_factory(app, loginManager, user_validator))),
+			(r".*", FallbackHandler, dict(fallback=WSGIContainer(app.wsgi_app)))
 		])
 		self._server = HTTPServer(self._tornado_app, max_body_size=1*1024*1024*1024)
 		self._server.listen(self._port, address=self._host)
