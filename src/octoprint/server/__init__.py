@@ -189,7 +189,7 @@ class Server():
 		max_body_sizes = [
 			("POST", r"/api/files/([^/]*)", settings().getInt(["server", "uploads", "maxSize"]))
 		]
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=10*1024)
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=settings().getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire(events.Events.STARTUP)
