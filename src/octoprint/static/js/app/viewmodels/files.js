@@ -106,13 +106,18 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isSdReady(data.flags.sdReady);
     };
 
+    self._otherRequestInProgress = false;
     self.requestData = function(filenameToFocus, locationToFocus) {
+        if (self._otherRequestInProgress) return;
+
+        self._otherRequestInProgress = true;
         $.ajax({
             url: API_BASEURL + "files",
             method: "GET",
             dataType: "json",
             success: function(response) {
                 self.fromResponse(response, filenameToFocus, locationToFocus);
+                self._otherRequestInProgress = false;
             }
         });
     };
