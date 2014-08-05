@@ -42,7 +42,13 @@ default_settings = {
 		"port": 5000,
 		"firstRun": True,
 		"baseUrl": "",
-		"scheme": ""
+		"scheme": "",
+		"uploads": {
+			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
+			"nameSuffix": ".name",
+			"pathSuffix": ".path"
+		},
+		"maxSize": 100 * 1024, # 100 KB
 	},
 	"webcam": {
 		"stream": None,
@@ -375,7 +381,11 @@ class Settings(object):
 			return None
 		if isinstance(value, bool):
 			return value
-		return value.lower() in valid_boolean_trues
+		if isinstance(value, (int, float)):
+			return value != 0
+		if isinstance(value, (str, unicode)):
+			return value.lower() in valid_boolean_trues
+		return value is not None
 
 	def getBaseFolder(self, type):
 		if type not in default_settings["folder"].keys():

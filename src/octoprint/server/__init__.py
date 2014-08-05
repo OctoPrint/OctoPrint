@@ -1,13 +1,13 @@
 # coding=utf-8
-import uuid
+from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import flask
-import tornado.wsgi
+import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory, make_response
+from flask import Flask, render_template, send_from_directory
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from watchdog.observers import Observer
@@ -33,18 +33,16 @@ admin_permission = Permission(RoleNeed("admin"))
 user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
-from octoprint.server.util import LargeResponseHandler, ReverseProxied, restricted_access, PrinterStateConnection, admin_validator, \
-	UrlForwardHandler, user_validator, GcodeWatchdogHandler, UploadCleanupWatchdogHandler, \
-	access_validation_factory, WsgiInputContainer, StreamingFallbackHandler, PrintableFilesUploadHandler, \
-	UploadStorageFallbackHandler
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
 import octoprint.gcodefiles as gcodefiles
-import octoprint.util as util
 import octoprint.users as users
 import octoprint.events as events
 import octoprint.timelapse
 import octoprint._version
+import octoprint.util
+
+from . import util
 
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
@@ -121,10 +119,8 @@ class Server():
 		global loginManager
 		global debug
 
-		from tornado.wsgi import WSGIContainer
-		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
-		from tornado.web import Application, FallbackHandler
+		from tornado.web import Application
 
 		debug = self._debug
 
@@ -152,12 +148,12 @@ class Server():
 		if settings().getBoolean(["accessControl", "enabled"]):
 			userManagerName = settings().get(["accessControl", "userManager"])
 			try:
-				clazz = util.getClass(userManagerName)
+				clazz = octoprint.util.getClass(userManagerName)
 				userManager = clazz()
 			except AttributeError, e:
 				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
 
-		app.wsgi_app = ReverseProxied(app.wsgi_app)
+		app.wsgi_app = util.ReverseProxied(app.wsgi_app)
 
 		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
 		loginManager = LoginManager()
@@ -182,14 +178,18 @@ class Server():
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
+		upload_suffixes = dict(name=settings().get(["server", "uploads", "nameSuffix"]), path=settings().get(["server", "uploads", "pathSuffix"]))
 		self._tornado_app = Application(self._router.urls + [
-			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, dict(path=settings().getBaseFolder("timelapse"), as_attachment=True)),
-			(r"/downloads/files/local/([^/]*\.(gco|gcode))", LargeResponseHandler, dict(path=settings().getBaseFolder("uploads"), as_attachment=True)),
-			(r"/downloads/logs/([^/]*)", LargeResponseHandler, dict(path=settings().getBaseFolder("logs"), as_attachment=True, access_validation=access_validation_factory(app, loginManager, admin_validator))),
-			(r"/downloads/camera/current", UrlForwardHandler, dict(url=settings().get(["webcam", "snapshot"]), as_attachment=True, access_validation=access_validation_factory(app, loginManager, user_validator))),
-			(r".*", UploadStorageFallbackHandler, dict(fallback=WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp"))
+			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("timelapse"), as_attachment=True)),
+			(r"/downloads/files/local/([^/]*\.(gco|gcode))", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("uploads"), as_attachment=True)),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("logs"), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))),
+			(r"/downloads/camera/current", util.tornado.UrlForwardHandler, dict(url=settings().get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			(r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp", suffixes=upload_suffixes))
 		])
-		self._server = HTTPServer(self._tornado_app, max_body_size=1*1024*1024*1024)
+		max_body_sizes = [
+			("POST", r"/api/files/([^/]*)", settings().getInt(["server", "uploads", "maxSize"]))
+		]
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=10*1024)
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire(events.Events.STARTUP)
@@ -201,8 +201,8 @@ class Server():
 
 		# start up watchdogs
 		observer = Observer()
-		observer.schedule(GcodeWatchdogHandler(gcodeManager, printer), settings().getBaseFolder("watched"))
-		observer.schedule(UploadCleanupWatchdogHandler(gcodeManager), settings().getBaseFolder("uploads"))
+		observer.schedule(util.watchdog.GcodeWatchdogHandler(gcodeManager, printer), settings().getBaseFolder("watched"))
+		observer.schedule(util.watchdog.UploadCleanupWatchdogHandler(gcodeManager), settings().getBaseFolder("uploads"))
 		observer.start()
 
 		try:
@@ -218,7 +218,7 @@ class Server():
 
 	def _createSocketConnection(self, session):
 		global printer, gcodeManager, userManager, eventManager
-		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session)
+		return util.sockjs.PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session)
 
 	def _checkForRoot(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
@@ -283,7 +283,7 @@ class Server():
 			with open(logConf, "r") as f:
 				configFromFile = yaml.safe_load(f)
 
-		config = util.dict_merge(defaultConfig, configFromFile)
+		config = octoprint.util.dict_merge(defaultConfig, configFromFile)
 		logging.config.dictConfig(config)
 
 		if settings().getBoolean(["serial", "log"]):
@@ -292,5 +292,5 @@ class Server():
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 if __name__ == "__main__":
-	octoprint = Server()
-	octoprint.run()
+	server = Server()
+	server.run()
