@@ -161,7 +161,12 @@ def performSystemAction():
 			if availableAction["action"] == action:
 				logger.info("Performing command: %s" % availableAction["command"])
 				try:
-					p = sarge.run(availableAction["command"], stderr=sarge.Capture())
+					# Note: we put the command in brackets since sarge (up to the most recently released version) has
+					# a bug concerning shell=True commands. Once sarge 0.1.4 we can upgrade to that and remove this
+					# workaround again
+					#
+					# See https://bitbucket.org/vinay.sajip/sarge/issue/21/behavior-is-not-like-popen-using-shell
+					p = sarge.run([availableAction["command"]], stderr=sarge.Capture(), shell=True)
 					if p.returncode != 0:
 						returncode = p.returncode
 						stderr_text = p.stderr.text
