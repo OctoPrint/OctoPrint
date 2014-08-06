@@ -156,6 +156,8 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				else:
 					self._multipart_boundary = None
 		else:
+			print("### In UploadStorageFallbackHandler.prepare, invoking fallback")
+
 			self._fallback(self.request, b"")
 			self._finished = True
 
@@ -410,6 +412,8 @@ class WsgiInputContainer(object):
 		:param request: the `tornado.httpserver.HTTPServerRequest` to derive the WSGI environment from
 		:param body: an optional body  to use as `wsgi.input` instead of `request.body`, can be a string or a stream
 		"""
+
+		print("### In WsgiInputContainer.__call__")
 
 		data = {}
 		response = []
