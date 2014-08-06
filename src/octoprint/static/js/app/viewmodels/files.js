@@ -118,6 +118,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             success: function(response) {
                 self.fromResponse(response, filenameToFocus, locationToFocus);
                 self._otherRequestInProgress = false;
+            },
+            error: function() {
+                self._otherRequestInProgress = false;
             }
         });
     };
