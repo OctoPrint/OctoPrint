@@ -134,6 +134,8 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		body-less request, just calls the `fallback` with an empty body and finishes the request.
 		"""
 		if self.request.method in UploadStorageFallbackHandler.BODY_METHODS:
+			print("### In UploadStorageFallbackHandler.prepare, processing body: %r" % self.request)
+
 			self._bytes_left = self.request.headers.get("Content-Length", 0)
 			self._content_type = self.request.headers.get("Content-Type", None)
 
@@ -156,7 +158,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				else:
 					self._multipart_boundary = None
 		else:
-			print("### In UploadStorageFallbackHandler.prepare, invoking fallback")
+			print("### In UploadStorageFallbackHandler.prepare, invoking fallback: %r" % self.request)
 
 			self._fallback(self.request, b"")
 			self._finished = True
@@ -203,23 +205,22 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			data, self._buffer = data[0:-endlen], data[-endlen:]
 
 		# stream data to part handler
-		if data:
-			if self._current_part:
-				self._on_data(self._current_part, data)
+		if data and self._current_part:
+				self._on_part_data(self._current_part, data)
 
 		if end_of_header >= 0:
-			self._on_header(self._buffer[delimiter_len+2:end_of_header])
+			self._on_part_header(self._buffer[delimiter_len+2:end_of_header])
 			self._buffer = self._buffer[end_of_header + 4:]
 
 		if delimiter_loc != -1 and self._buffer[delimiter_len:delimiter_len+2] == "--":
 			# we saw the last boundary and are at the end of our request
 			if self._current_part:
-				self._on_close(self._current_part)
+				self._on_part_finish(self._current_part)
 				self._current_part = None
 			self._buffer = b""
-			self._on_finish()
+			self._on_request_body_finish()
 
-	def _on_header(self, header):
+	def _on_part_header(self, header):
 		"""
 		Called for a new multipart header, takes care of parsing the header and calling `self._on_part` with the
 		relevant data, setting the current part in the process.
@@ -229,7 +230,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 
 		# close any open parts
 		if self._current_part:
-			self._on_close(self._current_part)
+			self._on_part_finish(self._current_part)
 			self._current_part = None
 
 		header_check = header.find(self._multipart_boundary)
@@ -249,9 +250,9 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			self._logger.warn("Got a multipart header without name, ignoring that one")
 			return
 
-		self._current_part = self._on_part(disp_params["name"], header.get("Content-Type", None), filename=disp_params["filename"] if "filename" in disp_params else None)
+		self._current_part = self._on_part_start(disp_params["name"], header.get("Content-Type", None), filename=disp_params["filename"] if "filename" in disp_params else None)
 
-	def _on_part(self, name, content_type, filename=None):
+	def _on_part_start(self, name, content_type, filename=None):
 		"""
 		Called for new parts in the multipart stream. If `filename` is given creates new `file` part (which leads
 		to storage of the data as temporary file on disk), if not creates a new `data` part (which stores
@@ -289,7 +290,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		else:
 			return dict(name=tornado.escape.utf8(name), content_type=content_type, data=b"")
 
-	def _on_data(self, part, data):
+	def _on_part_data(self, part, data):
 		"""
 		Called when new bytes are received for the given `part`, takes care of writing them to their storage.
 
@@ -301,7 +302,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		else:
 			part["data"] += data
 
-	def _on_close(self, part):
+	def _on_part_finish(self, part):
 		"""
 		Called when a part gets closed, takes care of storing the finished part in the internal parts storage and for
 		`file` parts closing the temporary file and storing the part in the internal files storage.
@@ -315,7 +316,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			part["file"].close()
 			del part["file"]
 
-	def _on_finish(self):
+	def _on_request_body_finish(self):
 		"""
 		Called when the request body has been read completely. Takes care of creating the replacement body out of the
 		logged parts, turning `file` parts into new
@@ -413,7 +414,7 @@ class WsgiInputContainer(object):
 		:param body: an optional body  to use as `wsgi.input` instead of `request.body`, can be a string or a stream
 		"""
 
-		print("### In WsgiInputContainer.__call__")
+		print("### In WsgiInputContainer.__call__: %r" % request)
 
 		data = {}
 		response = []
