@@ -178,6 +178,9 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		else:
 			self._buffer = data
 
+	def on_finish(self):
+		pass
+
 	def is_multipart(self):
 		"""Checks whether this request is a `multipart` request"""
 		return self._content_type is not None and self._content_type.startswith("multipart")
