@@ -134,8 +134,6 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		body-less request, just calls the `fallback` with an empty body and finishes the request.
 		"""
 		if self.request.method in UploadStorageFallbackHandler.BODY_METHODS:
-			print("### In UploadStorageFallbackHandler.prepare, processing body: %r" % self.request)
-
 			self._bytes_left = self.request.headers.get("Content-Length", 0)
 			self._content_type = self.request.headers.get("Content-Type", None)
 
@@ -158,8 +156,6 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				else:
 					self._multipart_boundary = None
 		else:
-			print("### In UploadStorageFallbackHandler.prepare, invoking fallback: %r" % self.request)
-
 			self._fallback(self.request, b"")
 			self._finished = True
 
@@ -177,9 +173,6 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			self._process_multipart_data(data)
 		else:
 			self._buffer = data
-
-	def on_finish(self):
-		pass
 
 	def is_multipart(self):
 		"""Checks whether this request is a `multipart` request"""
@@ -373,6 +366,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		try:
 			# call the configured fallback with request and body to use
 			self._fallback(self.request, body)
+			self._headers_written = True
 		finally:
 			# make sure the temporary files are removed again
 			for f in self._files:
@@ -416,8 +410,6 @@ class WsgiInputContainer(object):
 		:param request: the `tornado.httpserver.HTTPServerRequest` to derive the WSGI environment from
 		:param body: an optional body  to use as `wsgi.input` instead of `request.body`, can be a string or a stream
 		"""
-
-		print("### In WsgiInputContainer.__call__: %r" % request)
 
 		data = {}
 		response = []
