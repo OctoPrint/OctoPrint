@@ -153,7 +153,13 @@ class Server():
 			except AttributeError, e:
 				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
 
-		app.wsgi_app = util.ReverseProxied(app.wsgi_app)
+		app.wsgi_app = util.ReverseProxied(
+			app.wsgi_app,
+			settings().get(["server", "reverseProxy", "prefixHeader"]),
+			settings().get(["server", "reverseProxy", "schemeHeader"]),
+			settings().get(["server", "reverseProxy", "prefixFallback"]),
+			settings().get(["server", "reverseProxy", "prefixScheme"])
+		)
 
 		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
 		loginManager = LoginManager()

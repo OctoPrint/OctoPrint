@@ -72,29 +72,43 @@ class ReverseProxied(object):
 	:param app: the WSGI application
 	:param header_script_name: the HTTP header in the wsgi environment from which to determine the prefix
 	:param header_scheme: the HTTP header in the wsgi environment from which to determine the scheme
+	:param base_url: the prefix to use as fallback if headers are not set
 	"""
 
-	def __init__(self, app, header_script_name="HTTP_X_SCRIPT_NAME", header_scheme="HTTP_X_SCHEME"):
+	def __init__(self, app, header_prefix="x-script-name", header_scheme="x-scheme", base_url="", scheme=""):
 		self.app = app
-		self._header_script_name = header_script_name
-		self._header_scheme = header_scheme
+
+		# headers for prefix & scheme, converted to conform to WSGI format
+		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
+		self._header_prefix = to_wsgi_format(header_prefix)
+		self._header_scheme = to_wsgi_format(header_scheme)
+
+		# fallback prefix & scheme from config
+		self._fallback_prefix = base_url
+		self._fallback_scheme = scheme
 
 	def __call__(self, environ, start_response):
-		script_name = environ.get(self._header_script_name, '')
-		if not script_name:
-			script_name = settings().get(["server", "baseUrl"])
+		# determine prefix
+		prefix = environ.get(self._header_prefix, "")
+		if not prefix:
+			prefix = self._fallback_prefix
 
-		if script_name:
-			environ['SCRIPT_NAME'] = script_name
-			path_info = environ['PATH_INFO']
-			if path_info.startswith(script_name):
-				environ['PATH_INFO'] = path_info[len(script_name):]
+		# rewrite SCRIPT_NAME and if necessary also PATH_INFO based on prefix
+		if prefix:
+			environ["SCRIPT_NAME"] = prefix
+			path_info = environ["PATH_INFO"]
+			if path_info.startswith(prefix):
+				environ["PATH_INFO"] = path_info[len(prefix):]
 
-		scheme = environ.get(self._header_scheme, '')
+		# determine scheme
+		scheme = environ.get(self._header_scheme, "")
 		if not scheme:
-			scheme = settings().get(["server", "scheme"])
+			scheme = self._fallback_scheme
 
+		# rewrite wsgi.url_scheme based on scheme
 		if scheme:
-			environ['wsgi.url_scheme'] = scheme
+			environ["wsgi.url_scheme"] = scheme
+
+		# call wrapped app with rewritten environment
 		return self.app(environ, start_response)
 
