@@ -688,6 +688,7 @@ class StateMonitor(object):
 		self._offsets = {}
 
 		self._changeEvent = threading.Event()
+		self._stateMutex = threading.Lock()
 
 		self._lastUpdate = time.time()
 		self._worker = threading.Thread(target=self._work)
@@ -717,8 +718,9 @@ class StateMonitor(object):
 		self._changeEvent.set()
 
 	def setState(self, state):
-		self._state = state
-		self._changeEvent.set()
+		with self._stateMutex:
+			self._state = state
+			self._changeEvent.set()
 
 	def setJobData(self, jobData):
 		self._jobData = jobData
@@ -736,16 +738,17 @@ class StateMonitor(object):
 		while True:
 			self._changeEvent.wait()
 
-			now = time.time()
-			delta = now - self._lastUpdate
-			additionalWaitTime = self._ratelimit - delta
-			if additionalWaitTime > 0:
-				time.sleep(additionalWaitTime)
+			with self._stateMutex:
+				now = time.time()
+				delta = now - self._lastUpdate
+				additionalWaitTime = self._ratelimit - delta
+				if additionalWaitTime > 0:
+					time.sleep(additionalWaitTime)
 
-			data = self.getCurrentData()
-			self._updateCallback(data)
-			self._lastUpdate = time.time()
-			self._changeEvent.clear()
+				data = self.getCurrentData()
+				self._updateCallback(data)
+				self._lastUpdate = time.time()
+				self._changeEvent.clear()
 
 	def getCurrentData(self):
 		return {

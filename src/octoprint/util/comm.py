@@ -340,11 +340,11 @@ class MachineCom(object):
 	def close(self, isError = False):
 		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
-			self._serial.close()
 			if isError:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
 				self._changeState(self.STATE_CLOSED)
+			self._serial.close()
 		self._serial = None
 
 		if settings().get(["feature", "sdSupport"]):
