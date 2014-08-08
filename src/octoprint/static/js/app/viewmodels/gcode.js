@@ -60,7 +60,8 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             extrusionWidth: self.renderer_extrusionWidthEnabled() ? self.renderer_extrusionWidth() : 1,
             showNextLayer: self.renderer_showNext(),
             showPreviousLayer: self.renderer_showPrevious(),
-            zoomInOnModel: self.renderer_zoomOnModel()
+            zoomInOnModel: self.renderer_zoomOnModel(),
+            onInternalOptionChange: self._onInternalRendererOptionChange
         };
         if (additionalRendererOptions) {
             _.extend(renderer, additionalRendererOptions);
@@ -155,7 +156,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
     self.clear = function() {
         GCODE.ui.clear();
-    }
+    };
 
     self._configureLayerSlider = function() {
         self.layerSlider = $("#gcode_slider_layers").slider({
@@ -353,6 +354,20 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         }
     };
 
+    self._onInternalRendererOptionChange = function(options) {
+        if (!options) return;
+
+        for (var opt in options) {
+            if (opt == "zoomInOnModel" && options[opt] != self.renderer_zoomOnModel()) {
+                self.renderer_zoomOnModel(false);
+            } else if (opt == "centerViewport" && options[opt] != self.renderer_centerViewport()) {
+                self.renderer_centerViewport(false);
+            } else if (opt == "moveModel" && options[opt] != self.renderer_centerModel()) {
+                self.renderer_centerModel(false);
+            }
+        }
+    };
+
     self.changeLayer = function(event) {
         if (self.currentlyPrinting && self.renderer_syncProgress()) self.renderer_syncProgress(false);
 
@@ -372,4 +387,5 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
         GCODE.ui.changeSelectedCommands(self.layerSlider.slider("getValue"), tuple[0], tuple[1]);
     };
+
 }
