@@ -47,7 +47,9 @@ GCODE.renderer = (function(){
         invertAxes: {x: false, y: false},
 
         bed: {x: 200, y: 200},
-        container: undefined
+        container: undefined,
+
+        onInternalOptionChange: undefined
     };
 
     var offsetModelX = 0, offsetModelY = 0;
@@ -142,45 +144,107 @@ GCODE.renderer = (function(){
         ctx.lineCap = 'round';
         trackTransforms(ctx);
 
-        canvas.addEventListener('mousedown',function(evt){
+        // dragging => translating
+        canvas.addEventListener('mousedown', function(event){
             document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
-            lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
-            lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
-            dragStart = ctx.transformedPoint(lastX,lastY);
+
+            // remember starting point of dragging gesture
+            lastX = event.offsetX || (event.pageX - canvas.offsetLeft);
+            lastY = event.offsetY || (event.pageY - canvas.offsetTop);
+            dragStart = ctx.transformedPoint(lastX, lastY);
+
+            // not yet dragged anything
             dragged = false;
-        },false);
-        canvas.addEventListener('mousemove',function(evt){
-            lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
-            lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+        }, false);
+
+        canvas.addEventListener('mousemove', function(event){
+            // save current mouse coordinates
+            lastX = event.offsetX || (event.pageX - canvas.offsetLeft);
+            lastY = event.offsetY || (event.pageY - canvas.offsetTop);
+
+            // mouse movement => dragged
             dragged = true;
-            if (dragStart){
+
+            if (dragStart !== undefined){
+                // translate
                 var pt = ctx.transformedPoint(lastX,lastY);
-                ctx.translate(pt.x-dragStart.x,pt.y-dragStart.y);
+                ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
                 reRender();
+
+                renderOptions["centerViewport"] = false;
+                renderOptions["zoomInOnModel"] = false;
+                renderOptions["zoomInOnBed"] = false;
+                offsetModelX = 0;
+                offsetModelY = 0;
+                offsetBedX = 0;
+                offsetBedY = 0;
+                scaleX = 1;
+                scaleY = 1;
+
+                if (renderOptions["onInternalOptionChange"] !== undefined) {
+                    renderOptions["onInternalOptionChange"]({
+                        centerViewport: false,
+                        moveModel: false,
+                        zoomInOnModel: false,
+                        zoomInOnBed: false
+                    });
+                }
             }
-        },false);
-        canvas.addEventListener('mouseup',function(evt){
-            dragStart = null;
-            if (!dragged) zoom(evt.shiftKey ? -1 : 1 );
-        },false);
+        }, false);
+
+        canvas.addEventListener('mouseup', function(event){
+            // reset dragStart
+            dragStart = undefined;
+        }, false);
+
+        // mouse wheel => zooming
         var zoom = function(clicks){
-            var pt = ctx.transformedPoint(lastX,lastY);
+            // focus on last mouse position prior to zoom
+            var pt = ctx.transformedPoint(lastX, lastY);
             ctx.translate(pt.x,pt.y);
+
+            // determine zooming factor and perform zoom
             var factor = Math.pow(scaleFactor,clicks);
             ctx.scale(factor,factor);
+
+            // return to old position
             ctx.translate(-pt.x,-pt.y);
+
+            // render
             reRender();
+
+            // disable conflicting options
+            renderOptions["zoomInOnModel"] = false;
+            renderOptions["zoomInOnBed"] = false;
+            offsetModelX = 0;
+            offsetModelY = 0;
+            offsetBedX = 0;
+            offsetBedY = 0;
+            scaleX = 1;
+            scaleY = 1;
+
+            if (renderOptions["onInternalOptionChange"] !== undefined) {
+                renderOptions["onInternalOptionChange"]({
+                    zoomInOnModel: false,
+                    zoomInOnBed: false
+                });
+            }
         };
-        var handleScroll = function(evt){
+        var handleScroll = function(event){
             var delta;
-            if(evt.detail<0 || evt.wheelDelta>0)delta=zoomFactorDelta;
-            else delta=-1*zoomFactorDelta;
+
+            // determine zoom direction & delta
+            if (event.detail < 0 || event.wheelDelta > 0) {
+                delta = zoomFactorDelta;
+            } else {
+                delta = -1 * zoomFactorDelta;
+            }
             if (delta) zoom(delta);
-            return evt.preventDefault() && false;
+
+            return event.preventDefault() && false;
         };
         canvas.addEventListener('DOMMouseScroll',handleScroll,false);
         canvas.addEventListener('mousewheel',handleScroll,false);
-
     };
 
     var drawGrid = function() {
@@ -448,8 +512,13 @@ GCODE.renderer = (function(){
     };
 
     var applyZoom = function(mdlInfo) {
+        // get middle of canvas
         var pt = ctx.transformedPoint(canvas.width/2,canvas.height/2);
+
+        // get current transform
         var transform = ctx.getTransform();
+
+        // move to middle of canvas, reset scale, move back
         if (scaleX && scaleY && transform.a && transform.d) {
             ctx.translate(pt.x, pt.y);
             ctx.scale(1 / scaleX, 1 / scaleY);
@@ -458,6 +527,7 @@ GCODE.renderer = (function(){
         }
 
         if (mdlInfo && renderOptions["zoomInOnModel"]) {
+            // if we need to zoom in on model, scale factor is calculated by longer side of object in relation to that axis of canvas
             var scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width - 10) / mdlInfo.modelSize.x : (canvas.height - 10) / mdlInfo.modelSize.y;
             scaleF /= zoomFactor;
             if (transform.a && transform.d) {
@@ -468,6 +538,7 @@ GCODE.renderer = (function(){
                 ctx.translate(-pt.x, -pt.y);
             }
         } else {
+            // reset scale to 1
             scaleX = 1;
             scaleY = 1;
         }
@@ -477,18 +548,23 @@ GCODE.renderer = (function(){
         var width = canvas.width - 10;
         var height = canvas.height - 10;
 
+        // de-invert
         if (currentInvertX || currentInvertY) {
             ctx.scale(currentInvertX ? -1 : 1, currentInvertY ? -1 : 1);
             ctx.translate(currentInvertX ? -width : 0, currentInvertY ? height : 0);
         }
 
+        // get settings
         var invertX = renderOptions["invertAxes"]["x"];
         var invertY = renderOptions["invertAxes"]["y"];
+
+        // invert
         if (invertX || invertY) {
             ctx.translate(invertX ? width : 0, invertY ? -height : 0);
             ctx.scale(invertX ? -1 : 1, invertY ? -1 : 1);
         }
 
+        // save for later
         currentInvertX = invertX;
         currentInvertY = invertY;
     };
@@ -530,7 +606,7 @@ GCODE.renderer = (function(){
 
                 dirty = true;
                 renderOptions[opt] = options[opt];
-                if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed", "invertAxes"])) {
+                if ($.inArray(opt, ["moveModel", "centerViewport", "zoomInOnModel", "bed", "invertAxes"]) > -1) {
                     mustRefresh = true;
                 }
             }
