@@ -646,19 +646,20 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					fileinfo = line.strip().split(None, 2)
+					preprocessed_line = line.strip().lower()
+					fileinfo = preprocessed_line.rsplit(None, 1)
 					if len(fileinfo) > 1:
-						# we got extended file information here, so let's split filename and size and try to make them a bit nicer
+						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
 						filename, size = fileinfo
-						filename = filename.lower()
 						try:
 							size = int(size)
 						except ValueError:
-							# whatever that was, it was not an integer, so we'll just ignore it and set size to None
+							# whatever that was, it was not an integer, so we'll just use the whole line as filename and set size to None
+							filename = preprocessed_line
 							size = None
 					else:
 						# no extended file information, so only the filename is there and we set size to None
-						filename = fileinfo[0].lower()
+						filename = preprocessed_line
 						size = None
 
 					if isGcodeFileName(filename):
