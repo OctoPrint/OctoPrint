@@ -36,7 +36,7 @@ from . import users as api_users
 from . import log as api_logs
 
 
-VERSION = "1.0"
+VERSION = "0.1"
 
 
 def optionsAllowOrigin(request):
