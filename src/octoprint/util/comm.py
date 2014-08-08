@@ -1205,6 +1205,9 @@ class MachineCom(object):
 		self._resendDelta = None
 
 		return None
+	def _gcode_M112(self, cmd): # It's an emergency what todo? Canceling the print should be the minimum
+		self.cancelPrint()
+		return cmd
 
 ### MachineCom callback ################################################################################################
 
