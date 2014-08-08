@@ -6,6 +6,9 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import ConfigParser
+
+from shutil import copyfile
 
 from flask import request, jsonify
 
@@ -98,6 +101,9 @@ def getSettings():
 		"cura": {
 			"enabled": s.getBoolean(["cura", "enabled"]),
 			"path": s.get(["cura", "path"]),
+			"configPath": s.get(["cura", "configPath"]),
+			"configFiles": s.getCuraConfigFiles(s.get(["cura", "configPath"])),
+			"configData": s.getCuraConfig(s.get(["cura", "config"])),
 			"config": s.get(["cura", "config"])
 		}
 	})
@@ -196,9 +202,33 @@ def setSettings():
 			if config:
 				s.set(["cura", "config"], config)
 
+			configPath = cura.get("configPath")
+			if configPath:
+				s.set(["cura", "configPath"], configPath)
+
 			# Enabled is a boolean so we cannot check that we have a result
 			enabled = cura.get("enabled")
 			s.setBoolean(["cura", "enabled"], enabled)
+
+		if "curaOverwrite" in data.keys():
+			newValues = data["curaOverwrite"]
+			config = ConfigParser.ConfigParser()
+			config.readfp(open(s.get(["cura", "config"])))
+
+			for item in newValues:
+				config.set("profile", item, newValues[item])
+
+			config.write(open(s.get(["cura", "config"]), "w"))
+
+		if "curaCopyIni" in data.keys():
+			if data["curaCopyIni"]["name"]:
+				newPath = s.get(["cura", "configPath"])
+				newPath += data["curaCopyIni"]["name"]
+				if not newPath.endswith(".ini"):
+					newPath += ".ini"
+
+				currentPath = s.get(["cura", "config"])
+				copyfile(currentPath, newPath)
 
 		s.save()
 

@@ -8,6 +8,7 @@ import yaml
 import logging
 import re
 import uuid
+import ConfigParser
 
 APPNAME="OctoPrint"
 
@@ -133,7 +134,8 @@ default_settings = {
 	"cura": {
 		"enabled": False,
 		"path": "/default/path/to/cura",
-		"config": "/default/path/to/your/cura/config.ini"
+		"configPath": "/path/to/cura/configs",
+		"config": ""
 	},
 	"events": {
 		"enabled": False,
@@ -483,6 +485,37 @@ class Settings(object):
 			if len(triggers[type]) > 0:
 				result[type] = re.compile("|".join(map(lambda x: "(%s)" % x, triggers[type])))
 		return result
+
+	def getCuraConfigFiles(self, path):
+		configFiles = []
+		if not path.endswith("/"):
+			path += "/"
+
+		if os.path.isdir(path):
+			for f in os.listdir(path):
+				if f.endswith(".ini"):
+					config = ConfigParser.ConfigParser()
+					config.read(path + f)
+
+					sections = config.sections()
+					if "profile" in sections:
+						configFiles.append({"path": path + f, "name": f[:-4]})
+
+		return configFiles
+
+	def getCuraConfig(self, path):
+		data = []
+		if os.path.isfile(path):
+			config = ConfigParser.ConfigParser()
+			config.read(path)
+
+			sections = config.sections()
+			if 'profile' in sections:
+				items = config.items('profile')
+				for key, val in items:
+					data.append({"key": key, "value": val})
+
+		return data;
 
 	#~~ setter
 
