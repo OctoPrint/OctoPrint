@@ -361,7 +361,15 @@ $(function() {
                 var webcamImage = $("#webcam_image");
                 var currentSrc = webcamImage.attr("src");
                 if (currentSrc === undefined || currentSrc.trim() == "") {
-                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                    var newSrc = CONFIG_WEBCAM_STREAM;
+                    if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
+                        newSrc += "&";
+                    } else {
+                        newSrc += "?";
+                    }
+                    newSrc += new Date().getTime();
+
+                    webcamImage.attr("src", newSrc);
                 }
             } else if (previous.hash == "#control") {
                 // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
