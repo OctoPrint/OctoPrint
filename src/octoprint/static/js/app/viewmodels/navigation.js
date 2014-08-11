@@ -22,7 +22,7 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
                     new PNotify({title: "Error", text: error, type: "error", hide: false});
                 }
             })
-        }
+        };
         if (action.confirm) {
             var confirmationDialog = $("#confirmation_dialog");
             var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);

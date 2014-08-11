@@ -19,6 +19,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
     self.printer_numExtruders = ko.observable(undefined);
+    self.printer_defaultExtrusionLength = ko.observable(undefined);
 
     self._printer_extruderOffsets = ko.observableArray([]);
     self.printer_extruderOffsets = ko.computed({
@@ -122,6 +123,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.folder_timelapse = ko.observable(undefined);
     self.folder_timelapseTmp = ko.observable(undefined);
     self.folder_logs = ko.observable(undefined);
+    self.folder_watched = ko.observable(undefined);
 
     self.cura_enabled = ko.observable(undefined);
     self.cura_path = ko.observable(undefined);
@@ -202,6 +204,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_numExtruders(response.printer.numExtruders);
         self.printer_extruderOffsets(response.printer.extruderOffsets);
         self.printer_bedDimensions(response.printer.bedDimensions);
+        self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -267,7 +270,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "invertAxes": self.printer_invertAxes(),
                 "numExtruders": self.printer_numExtruders(),
                 "extruderOffsets": self.printer_extruderOffsets(),
-                "bedDimensions": self.printer_bedDimensions()
+                "bedDimensions": self.printer_bedDimensions(),
+                "defaultExtrusionLength": self.printer_defaultExtrusionLength()
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),

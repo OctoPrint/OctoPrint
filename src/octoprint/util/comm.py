@@ -340,11 +340,11 @@ class MachineCom(object):
 	def close(self, isError = False):
 		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
-			self._serial.close()
 			if isError:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
 				self._changeState(self.STATE_CLOSED)
+			self._serial.close()
 		self._serial = None
 
 		if settings().get(["feature", "sdSupport"]):
@@ -631,19 +631,20 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					fileinfo = line.strip().split(None, 2)
+					preprocessed_line = line.strip().lower()
+					fileinfo = preprocessed_line.rsplit(None, 1)
 					if len(fileinfo) > 1:
-						# we got extended file information here, so let's split filename and size and try to make them a bit nicer
+						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
 						filename, size = fileinfo
-						filename = filename.lower()
 						try:
 							size = int(size)
 						except ValueError:
-							# whatever that was, it was not an integer, so we'll just ignore it and set size to None
+							# whatever that was, it was not an integer, so we'll just use the whole line as filename and set size to None
+							filename = preprocessed_line
 							size = None
 					else:
 						# no extended file information, so only the filename is there and we set size to None
-						filename = fileinfo[0].lower()
+						filename = preprocessed_line
 						size = None
 
 					if isGcodeFileName(filename):
@@ -944,7 +945,7 @@ class MachineCom(object):
 			try:
 				self._log("Connecting to: %s" % self._port)
 				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=0.1, writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), 115200, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 				else:
 					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
 			except:

@@ -60,8 +60,18 @@ default_settings = {
 		"host": "0.0.0.0",
 		"port": 5000,
 		"firstRun": True,
-		"baseUrl": "",
-		"scheme": ""
+		"reverseProxy": {
+			"prefixHeader": "X-Script-Name",
+			"schemeHeader": "X-Scheme",
+			"prefixFallback": "",
+			"schemeFallback": ""
+		},
+		"uploads": {
+			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
+			"nameSuffix": ".name",
+			"pathSuffix": ".path"
+		},
+		"maxSize": 100 * 1024, # 100 KB
 	},
 	"webcam": {
 		"stream": None,
@@ -81,6 +91,9 @@ default_settings = {
 		"enabled": True,
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
+	},
+	"gcodeAnalysis": {
+		"maxExtruders": 10
 	},
 	"feature": {
 		"temperatureGraph": True,
@@ -121,7 +134,8 @@ default_settings = {
 		],
 		"bedDimensions": {
 			"x": 200.0, "y": 200.0, "r": 100
-		}
+		},
+		"defaultExtrusionLength": 5
 	},
 	"appearance": {
 		"name": "",
@@ -219,7 +233,7 @@ class Settings(object):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
-		# chamged from else to handle cases where the file exists, but is empty / 0 bytes
+		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = {}
 
@@ -230,6 +244,36 @@ class Settings(object):
 		if not self._config:
 			return
 
+		dirty = False
+		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config):
+			dirty = migrate() or dirty
+		if dirty:
+			self.save(force=True)
+
+	def _migrate_reverse_proxy_config(self):
+		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
+			prefix = ""
+			if "baseUrl" in self._config["server"]:
+				prefix = self._config["server"]["baseUrl"]
+				del self._config["server"]["baseUrl"]
+
+			scheme = ""
+			if "scheme" in self._config["server"]:
+				scheme = self._config["server"]["scheme"]
+				del self._config["server"]["scheme"]
+
+			if not "reverseProxy" in self._config["server"] or not isinstance(self._config["server"]["reverseProxy"], dict):
+				self._config["server"]["reverseProxy"] = dict()
+			if prefix:
+				self._config["server"]["reverseProxy"]["prefixFallback"] = prefix
+			if scheme:
+				self._config["server"]["reverseProxy"]["schemeFallback"] = scheme
+			self._logger.info("Migrated reverse proxy configuration to new structure")
+			return True
+		else:
+			return False
+
+	def _migrate_event_config(self):
 		if "events" in self._config.keys() and ("gcodeCommandTrigger" in self._config["events"] or "systemCommandTrigger" in self._config["events"]):
 			self._logger.info("Migrating config (event subscriptions)...")
 
@@ -311,8 +355,10 @@ class Settings(object):
 					newEvents["subscriptions"].append(newTrigger)
 
 			self._config["events"] = newEvents
-			self.save(force=True)
 			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
+			return True
+		else:
+			return False
 
 	def save(self, force=False):
 		if not self._dirty and not force:
@@ -402,7 +448,11 @@ class Settings(object):
 			return None
 		if isinstance(value, bool):
 			return value
-		return value.lower() in valid_boolean_trues
+		if isinstance(value, (int, float)):
+			return value != 0
+		if isinstance(value, (str, unicode)):
+			return value.lower() in valid_boolean_trues
+		return value is not None
 
 	def getBaseFolder(self, type):
 		if type not in default_settings["folder"].keys():

@@ -1,6 +1,9 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
 
@@ -11,8 +14,8 @@ import octoprint.timelapse
 import octoprint.util as util
 from octoprint.settings import settings, valid_boolean_trues
 
-from octoprint.server import restricted_access, admin_permission
-from octoprint.server.util import redirectToTornado
+from octoprint.server import admin_permission
+from octoprint.server.util.flask import redirect_to_tornado, restricted_access
 from octoprint.server.api import api
 
 
@@ -46,7 +49,7 @@ def getTimelapseData():
 
 @api.route("/timelapse/<filename>", methods=["GET"])
 def downloadTimelapse(filename):
-	return redirectToTornado(request, url_for("index") + "downloads/timelapse/" + filename)
+	return redirect_to_tornado(request, url_for("index") + "downloads/timelapse/" + filename)
 
 
 @api.route("/timelapse/<filename>", methods=["DELETE"])

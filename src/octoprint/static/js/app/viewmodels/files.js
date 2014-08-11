@@ -106,13 +106,21 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isSdReady(data.flags.sdReady);
     };
 
+    self._otherRequestInProgress = false;
     self.requestData = function(filenameToFocus, locationToFocus) {
+        if (self._otherRequestInProgress) return;
+
+        self._otherRequestInProgress = true;
         $.ajax({
             url: API_BASEURL + "files",
             method: "GET",
             dataType: "json",
             success: function(response) {
                 self.fromResponse(response, filenameToFocus, locationToFocus);
+                self._otherRequestInProgress = false;
+            },
+            error: function() {
+                self._otherRequestInProgress = false;
             }
         });
     };
@@ -269,17 +277,19 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 } else {
                     var i = 0;
                     do {
-                        output += "Filament (Tool " + i + "): " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
+                        if (filament["tool" + i].hasOwnProperty("length") && filament["tool" + i]["length"] > 0) {
+                            output += "Filament (Tool " + i + "): " + formatFilament(filament["tool" + i]) + "<br>";
+                        }
                         i++;
                     } while (filament.hasOwnProperty("tool" + i));
                 }
             }
-            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
+            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
         }
         if (data["prints"] && data["prints"]["last"]) {
-            output += "<br>Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]);
+            output += "Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
             if (data["prints"]["last"]["lastPrintTime"]) {
-                output += "<br>Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                output += "Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
             }
         }
         return output;

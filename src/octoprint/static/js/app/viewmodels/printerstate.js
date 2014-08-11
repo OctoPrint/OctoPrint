@@ -24,13 +24,16 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.filament = ko.observableArray([]);
     self.estimatedPrintTime = ko.observable(undefined);
+    self.lastPrintTime = ko.observable(undefined);
 
     self.currentHeight = ko.observable(undefined);
 
     self.estimatedPrintTimeString = ko.computed(function() {
-        if (!self.estimatedPrintTime())
-            return "-";
-        return formatDuration(self.estimatedPrintTime());
+        if (self.lastPrintTime())
+            return formatDuration(self.lastPrintTime());
+        if (self.estimatedPrintTime())
+            return formatDuration(self.estimatedPrintTime());
+        return "-";
     });
     self.byteString = ko.computed(function() {
         if (!self.filesize())
@@ -123,16 +126,19 @@ function PrinterStateViewModel(loginStateViewModel) {
         }
 
         self.estimatedPrintTime(data.estimatedPrintTime);
+        self.lastPrintTime(data.lastPrintTime);
 
         var result = [];
         if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
             var i = 0;
             do {
                 var key = "tool" + i;
-                result[i] = {
-                    name: ko.observable("Tool " + i),
-                    data: ko.observable(data.filament[key])
-                };
+                if (data.filament[key].hasOwnProperty("length") && data.filament[key].length > 0) {
+                    result.push({
+                        name: ko.observable("Tool " + i),
+                        data: ko.observable(data.filament[key])
+                    });
+                }
                 i++;
             } while (data.filament.hasOwnProperty("tool" + i));
         }

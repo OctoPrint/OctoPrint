@@ -1,6 +1,9 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 
@@ -9,8 +12,9 @@ from flask import request, jsonify
 from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
 
-from octoprint.server import restricted_access, admin_permission
+from octoprint.server import admin_permission
 from octoprint.server.api import api
+from octoprint.server.util.flask import restricted_access
 
 
 #~~ settings
@@ -43,7 +47,8 @@ def getSettings():
 			"invertAxes": s.get(["printerParameters", "invertAxes"]),
 			"numExtruders": s.get(["printerParameters", "numExtruders"]),
 			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
-			"bedDimensions": s.get(["printerParameters", "bedDimensions"])
+			"bedDimensions": s.get(["printerParameters", "bedDimensions"]),
+			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
 		},
 		"webcam": {
 			"streamUrl": s.get(["webcam", "stream"]),
@@ -125,6 +130,7 @@ def setSettings():
 			if "numExtruders" in data["printer"].keys(): s.setInt(["printerParameters", "numExtruders"], data["printer"]["numExtruders"])
 			if "extruderOffsets" in data["printer"].keys(): s.set(["printerParameters", "extruderOffsets"], data["printer"]["extruderOffsets"])
 			if "bedDimensions" in data["printer"].keys(): s.set(["printerParameters", "bedDimensions"], data["printer"]["bedDimensions"])
+			if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
 		if "webcam" in data.keys():
 			if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
