@@ -65,6 +65,9 @@ default_settings = {
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
+	"gcodeAnalysis": {
+		"maxExtruders": 10
+	},
 	"feature": {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
