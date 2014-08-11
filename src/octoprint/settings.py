@@ -115,7 +115,8 @@ default_settings = {
 		],
 		"bedDimensions": {
 			"x": 200.0, "y": 200.0, "r": 100
-		}
+		},
+		"defaultExtrusionLength": 5
 	},
 	"appearance": {
 		"name": "",

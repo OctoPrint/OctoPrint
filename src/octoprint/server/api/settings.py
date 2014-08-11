@@ -47,7 +47,8 @@ def getSettings():
 			"invertAxes": s.get(["printerParameters", "invertAxes"]),
 			"numExtruders": s.get(["printerParameters", "numExtruders"]),
 			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
-			"bedDimensions": s.get(["printerParameters", "bedDimensions"])
+			"bedDimensions": s.get(["printerParameters", "bedDimensions"]),
+			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
 		},
 		"webcam": {
 			"streamUrl": s.get(["webcam", "stream"]),
@@ -129,6 +130,7 @@ def setSettings():
 			if "numExtruders" in data["printer"].keys(): s.setInt(["printerParameters", "numExtruders"], data["printer"]["numExtruders"])
 			if "extruderOffsets" in data["printer"].keys(): s.set(["printerParameters", "extruderOffsets"], data["printer"]["extruderOffsets"])
 			if "bedDimensions" in data["printer"].keys(): s.set(["printerParameters", "bedDimensions"], data["printer"]["bedDimensions"])
+			if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
 		if "webcam" in data.keys():
 			if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])

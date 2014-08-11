@@ -364,7 +364,7 @@
                                         </ul>
                                     </div>
                                     <div class="input-append control-box">
-                                        <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: 5}">
+                                        <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: settings.printer_defaultExtrusionLength}">
                                         <span class="add-on">mm</span>
                                     </div>
                                     <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
