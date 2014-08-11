@@ -277,7 +277,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 } else {
                     var i = 0;
                     do {
-                        output += "Filament (Tool " + i + "): " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
+                        if (filament["tool" + i].hasOwnProperty("length") && filament["tool" + i]["length"] > 0) {
+                            output += "Filament (Tool " + i + "): " + formatFilament(filament["tool" + i]) + "<br>";
+                        }
                         i++;
                     } while (filament.hasOwnProperty("tool" + i));
                 }

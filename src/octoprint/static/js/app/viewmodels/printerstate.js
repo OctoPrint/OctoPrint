@@ -133,10 +133,12 @@ function PrinterStateViewModel(loginStateViewModel) {
             var i = 0;
             do {
                 var key = "tool" + i;
-                result[i] = {
-                    name: ko.observable("Tool " + i),
-                    data: ko.observable(data.filament[key])
-                };
+                if (data.filament[key].hasOwnProperty("length") && data.filament[key].length > 0) {
+                    result.push({
+                        name: ko.observable("Tool " + i),
+                        data: ko.observable(data.filament[key])
+                    });
+                }
                 i++;
             } while (data.filament.hasOwnProperty("tool" + i));
         }
