@@ -12,6 +12,7 @@ import stat
 import mimetypes
 import email
 import time
+import re
 
 import tornado
 import tornado.web
@@ -622,7 +623,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		self._max_body_sizes = map(lambda x: (x[0], re.compile(x[1]), x[2]), self.params.max_body_sizes or dict())
 		self._default_max_body_size = self.params.default_max_body_size or self.stream.max_buffer_size
 
-	def _read_body(self, headers, delegate):
+	def _read_body(self, code, headers, delegate):
 		"""
 		Basically the same as `tornado.http1connection.HTTP1Connection._read_body`, but determines the maximum
 		content length individually for the request (utilizing `._get_max_content_length`).
@@ -632,11 +633,37 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		`HTTPInputError` is raised.
 		"""
 		content_length = headers.get("Content-Length")
-		if content_length:
+		if "Content-Length" in headers:
+			if "," in headers["Content-Length"]:
+				# Proxies sometimes cause Content-Length headers to get
+				# duplicated.  If all the values are identical then we can
+				# use them but if they differ it's an error.
+				pieces = re.split(r',\s*', headers["Content-Length"])
+				if any(i != pieces[0] for i in pieces):
+					raise tornado.httputil.HTTPInputError(
+						"Multiple unequal Content-Lengths: %r" %
+						headers["Content-Length"])
+				headers["Content-Length"] = pieces[0]
+			content_length = int(headers["Content-Length"])
+
 			content_length = int(content_length)
 			max_content_length = self._get_max_content_length(self._request_start_line.method, self._request_start_line.path)
 			if 0 <= max_content_length < content_length:
 				raise tornado.httputil.HTTPInputError("Content-Length too long")
+		else:
+			content_length = None
+
+		if code == 204:
+			# This response code is not allowed to have a non-empty body,
+			# and has an implicit length of zero instead of read-until-close.
+			# http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.3
+			if ("Transfer-Encoding" in headers or
+						content_length not in (None, 0)):
+				raise tornado.httputil.HTTPInputError(
+					"Response with code %d should not have body" % code)
+			content_length = 0
+
+		if content_length is not None:
 			return self._read_fixed_body(content_length, delegate)
 		if headers.get("Transfer-Encoding") == "chunked":
 			return self._read_chunked_body(delegate)
