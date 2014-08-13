@@ -130,17 +130,14 @@ function PrinterStateViewModel(loginStateViewModel) {
 
         var result = [];
         if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
-            var i = 0;
-            do {
-                var key = "tool" + i;
-                if (data.filament[key].hasOwnProperty("length") && data.filament[key].length > 0) {
-                    result.push({
-                        name: ko.observable("Tool " + i),
-                        data: ko.observable(data.filament[key])
-                    });
-                }
-                i++;
-            } while (data.filament.hasOwnProperty("tool" + i));
+            for (var key in data.filament) {
+                if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) continue;
+
+                result.push({
+                    name: ko.observable("Tool " + key.substr("tool".length)),
+                    data: ko.observable(data.filament[key])
+                });
+            }
         }
         self.filament(result);
     };

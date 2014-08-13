@@ -274,14 +274,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 var filament = data["gcodeAnalysis"]["filament"];
                 if (_.keys(filament).length == 1) {
                     output += "Filament: " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
-                } else {
-                    var i = 0;
-                    do {
-                        if (filament["tool" + i].hasOwnProperty("length") && filament["tool" + i]["length"] > 0) {
-                            output += "Filament (Tool " + i + "): " + formatFilament(filament["tool" + i]) + "<br>";
-                        }
-                        i++;
-                    } while (filament.hasOwnProperty("tool" + i));
+                } else if (_.keys(filament).length > 1) {
+                    for (var toolKey in filament) {
+                        if (!_.startsWith(toolKey, "tool") || !filament[toolKey] || !filament[toolKey].hasOwnProperty("length") || filament[toolKey]["length"] <= 0) continue;
+
+                        output += "Filament (Tool " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
+                    }
                 }
             }
             output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
