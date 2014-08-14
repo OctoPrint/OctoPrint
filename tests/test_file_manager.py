@@ -61,7 +61,7 @@ class FileManipulationTestCase(unittest.TestCase):
 
 		getterMock.assert_called_once_with(["cura", "enabled"])
 		self.assertTrue(process.called)
-		self.assertTrue(fake.filename == result)
+		self.assertTrue("test_stl.gcode" == result)
 		self.assertFalse(done)
 
 	def test_add_gcode_file(self):

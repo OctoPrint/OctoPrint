@@ -10,7 +10,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.appearance_name = ko.observable(undefined);
     self.appearance_color = ko.observable(undefined);
 
-    /* I did attempt to allow arbitrary gradients but cross browser support via knockout or jquery was going to be horrible */
     self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
 
     self.printer_movementSpeedX = ko.observable(undefined);
@@ -18,6 +17,70 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedZ = ko.observable(undefined);
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
+    self.printer_numExtruders = ko.observable(undefined);
+
+    self._printer_extruderOffsets = ko.observableArray([]);
+    self.printer_extruderOffsets = ko.computed({
+        read: function() {
+            var extruderOffsets = self._printer_extruderOffsets();
+            var result = [];
+            for (var i = 0; i < extruderOffsets.length; i++) {
+                result[i] = {
+                    x: parseFloat(extruderOffsets[i].x()),
+                    y: parseFloat(extruderOffsets[i].y())
+                }
+            }
+            return result;
+        },
+        write: function(value) {
+            var result = [];
+            if (value && Array.isArray(value)) {
+                for (var i = 0; i < value.length; i++) {
+                    result[i] = {
+                        x: ko.observable(value[i].x),
+                        y: ko.observable(value[i].y)
+                    }
+                }
+            }
+            self._printer_extruderOffsets(result);
+        },
+        owner: self
+    });
+    self.ko_printer_extruderOffsets = ko.computed(function() {
+        var extruderOffsets = self._printer_extruderOffsets();
+        var numExtruders = self.printer_numExtruders();
+        if (!numExtruders) {
+            numExtruders = 1;
+        }
+
+        if (numExtruders > extruderOffsets.length) {
+            for (var i = extruderOffsets.length; i < numExtruders; i++) {
+                extruderOffsets[i] = {
+                    x: ko.observable(0),
+                    y: ko.observable(0)
+                }
+            }
+            self._printer_extruderOffsets(extruderOffsets);
+        }
+
+        return extruderOffsets.slice(0, numExtruders);
+    });
+
+    self.printer_bedDimensionX = ko.observable(undefined);
+    self.printer_bedDimensionY = ko.observable(undefined);
+    self.printer_bedDimensions = ko.computed({
+        read: function () {
+            return {
+                x: parseFloat(self.printer_bedDimensionX()),
+                y: parseFloat(self.printer_bedDimensionY())
+            };
+        },
+        write: function(value) {
+            self.printer_bedDimensionX(value.x);
+            self.printer_bedDimensionY(value.y);
+        },
+        owner: self
+    });
 
     self.webcam_streamUrl = ko.observable(undefined);
     self.webcam_snapshotUrl = ko.observable(undefined);
@@ -34,6 +97,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.feature_sdSupport = ko.observable(undefined);
     self.feature_sdAlwaysAvailable = ko.observable(undefined);
     self.feature_swallowOkAfterResend = ko.observable(undefined);
+    self.feature_repetierTargetTemp = ko.observable(undefined);
 
     self.serial_port = ko.observable();
     self.serial_baudrate = ko.observable();
@@ -43,6 +107,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.serial_timeoutConnection = ko.observable(undefined);
     self.serial_timeoutDetection = ko.observable(undefined);
     self.serial_timeoutCommunication = ko.observable(undefined);
+    self.serial_timeoutTemperature = ko.observable(undefined);
+    self.serial_timeoutSdStatus = ko.observable(undefined);
     self.serial_log = ko.observable(undefined);
 
     self.folder_uploads = ko.observable(undefined);
@@ -101,14 +167,17 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_invertY = self.koInvertAxis('y');
     self.printer_invertZ = self.koInvertAxis('z');
 
-    self.requestData = function() {
+    self.requestData = function(callback) {
         $.ajax({
-            url: AJAX_BASEURL + "settings",
+            url: API_BASEURL + "settings",
             type: "GET",
             dataType: "json",
-            success: self.fromResponse
+            success: function(response) {
+                self.fromResponse(response);
+                if (callback) callback();
+            }
         });
-    }
+    };
 
     self.fromResponse = function(response) {
         self.api_enabled(response.api.enabled);
@@ -122,6 +191,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_movementSpeedZ(response.printer.movementSpeedZ);
         self.printer_movementSpeedE(response.printer.movementSpeedE);
         self.printer_invertAxes(response.printer.invertAxes);
+        self.printer_numExtruders(response.printer.numExtruders);
+        self.printer_extruderOffsets(response.printer.extruderOffsets);
+        self.printer_bedDimensions(response.printer.bedDimensions);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
         self.webcam_snapshotUrl(response.webcam.snapshotUrl);
@@ -138,6 +210,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_sdSupport(response.feature.sdSupport);
         self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
         self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
+        self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
 
         self.serial_port(response.serial.port);
         self.serial_baudrate(response.serial.baudrate);
@@ -147,6 +220,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.serial_timeoutConnection(response.serial.timeoutConnection);
         self.serial_timeoutDetection(response.serial.timeoutDetection);
         self.serial_timeoutCommunication(response.serial.timeoutCommunication);
+        self.serial_timeoutTemperature(response.serial.timeoutTemperature);
+        self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
         self.serial_log(response.serial.log);
 
         self.folder_uploads(response.folder.uploads);
@@ -163,7 +238,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.system_actions(response.system.actions);
 
         self.terminalFilters(response.terminalFilters);
-    }
+    };
 
     self.saveData = function() {
         var data = {
@@ -180,7 +255,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "movementSpeedY": self.printer_movementSpeedY(),
                 "movementSpeedZ": self.printer_movementSpeedZ(),
                 "movementSpeedE": self.printer_movementSpeedE(),
-                "invertAxes": self.printer_invertAxes()
+                "invertAxes": self.printer_invertAxes(),
+                "numExtruders": self.printer_numExtruders(),
+                "extruderOffsets": self.printer_extruderOffsets(),
+                "bedDimensions": self.printer_bedDimensions()
             },
             "webcam": {
                 "streamUrl": self.webcam_streamUrl(),
@@ -198,7 +276,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
                 "sdSupport": self.feature_sdSupport(),
                 "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
-                "swallowOkAfterResend": self.feature_swallowOkAfterResend()
+                "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
+                "repetierTargetTemp": self.feature_repetierTargetTemp()
             },
             "serial": {
                 "port": self.serial_port(),
@@ -207,6 +286,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "timeoutConnection": self.serial_timeoutConnection(),
                 "timeoutDetection": self.serial_timeoutDetection(),
                 "timeoutCommunication": self.serial_timeoutCommunication(),
+                "timeoutTemperature": self.serial_timeoutTemperature(),
+                "timeoutSdStatus": self.serial_timeoutSdStatus(),
                 "log": self.serial_log()
             },
             "folder": {
@@ -227,10 +308,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "config": self.cura_config()
             },
             "terminalFilters": self.terminalFilters()
-        }
+        };
 
         $.ajax({
-            url: AJAX_BASEURL + "settings",
+            url: API_BASEURL + "settings",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -239,7 +320,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 self.fromResponse(response);
                 $("#settings_dialog").modal("hide");
             }
-        })
+        });
     }
 
 }

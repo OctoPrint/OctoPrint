@@ -21,7 +21,10 @@ GCODE.gCodeReader = (function(){
     var gCodeOptions = {
         sortLayers: false,
         purgeEmptyLayers: true,
-        analyzeModel: false
+        analyzeModel: false,
+        toolOffsets: [
+            {x: 0, y: 0}
+        ]
     };
 
     var percentageTree = undefined;
@@ -65,8 +68,8 @@ GCODE.gCodeReader = (function(){
     var prepareLinesIndex = function(){
         percentageTree = undefined;
 
-        for (var l in model) {
-            for (var i=0; i< model[l].length; i++) {
+        for (var l = 0; l < model.length; l++) {
+            for (var i = 0; i < model[l].length; i++) {
                 var percentage = model[l][i].percentage;
                 var value = {layer: l, cmd: i};
                 if (!percentageTree) {
@@ -92,75 +95,87 @@ GCODE.gCodeReader = (function(){
     };
 
     var purgeLayers = function(){
-        var purge=true;
-        if(!model){
-            console.log("Something terribly wring just happened.");
-            return;
-        }
-        for(var i=0;i<model.length;i++){
-            purge=true;
-            if(typeof(model[i])==='undefined')purge=true;
-            else {
-                for(var j=0;j<model[i].length;j++){
-                    if(model[i][j].extrude)purge=false;
+        if(!model) return;
+
+        var purge;
+        for(var i = 0; i < model.length; i++){
+            purge = true;
+
+            if (typeof(model[i]) !== "undefined") {
+                for (var j = 0; j < model[i].length; j++) {
+                    if(model[i][j].extrude) {
+                        purge = false;
+                        break;
+                    }
                 }
             }
-            if(purge){
-                model.splice(i,1);
+
+            if (purge) {
+                model.splice(i, 1);
                 i--;
             }
         }
     };
 
-
-
 // ***** PUBLIC *******
     return {
-
-        loadFile: function(reader){
+        clear: function() {
             model = [];
             z_heights = [];
+        },
+
+        loadFile: function(reader){
+            this.clear();
 
             var totalSize = reader.target.result.length;
             lines = reader.target.result.split(/\n/);
             reader.target.result = null;
             prepareGCode(totalSize);
 
-            worker.postMessage({
+            GCODE.ui.worker.postMessage({
                     "cmd":"parseGCode",
                     "msg":{
                         gcode: gcode,
                         options: {
-                            firstReport: 5
+                            firstReport: 5,
+                            toolOffsets: gCodeOptions["toolOffsets"]
                         }
                     }
                 }
             );
-            delete lines;
-            delete gcode;
         },
+
         setOption: function(options){
+            var dirty = false;
             for(var opt in options){
+                if (options[opt] === undefined) continue;
+                dirty = dirty || (gCodeOptions[opt] != options[opt]);
                 gCodeOptions[opt] = options[opt];
             }
+            if (dirty) {
+                if (model && model.length > 0) this.passDataToRenderer();
+            }
         },
+
         passDataToRenderer: function(){
-            if(gCodeOptions["sortLayers"])sortLayers();
-            if(gCodeOptions["purgeEmptyLayers"])purgeLayers();
+            if (gCodeOptions["sortLayers"]) sortLayers();
+            if (gCodeOptions["purgeEmptyLayers"]) purgeLayers();
             prepareLinesIndex();
             GCODE.renderer.doRender(model, 0);
-
         },
+
         processLayerFromWorker: function(msg){
             model[msg.layerNum] = msg.cmds;
             z_heights[msg.zHeightObject.zValue] = msg.zHeightObject.layer;
         },
+
         processMultiLayerFromWorker: function(msg){
             for(var i=0;i<msg.layerNum.length;i++){
                 model[msg.layerNum[i]] = msg.model[msg.layerNum[i]];
                 z_heights[msg.zHeightObject.zValue[i]] = msg.layerNum[i];
             }
         },
+
         processAnalyzeModelDone: function(msg){
             min = msg.min;
             max = msg.max;
@@ -172,12 +187,15 @@ GCODE.gCodeReader = (function(){
             printTime = msg.printTime;
             printTimeByLayer = msg.printTimeByLayer;
         },
+
         getLayerFilament: function(z){
             return filamentByLayer[z];
         },
+
         getLayerSpeeds: function(z){
           return speedsByLayer[z]?speedsByLayer[z]:{};
         },
+
         getModelInfo: function(){
             return {
                 min: min,
@@ -190,11 +208,15 @@ GCODE.gCodeReader = (function(){
                 printTimeByLayer: printTimeByLayer
             };
         },
+
         getGCodeLines: function(layer, fromSegments, toSegments){
-            var i=0;
-            var result = {first: model[layer][fromSegments].gcodeLine, last: model[layer][toSegments].gcodeLine};
+            var result = {
+                first: model[layer][fromSegments].gcodeLine,
+                last: model[layer][toSegments].gcodeLine
+            };
             return result;
         },
+
         getCmdIndexForPercentage: function(percentage) {
             var command = searchInPercentageTree(percentage);
             if (command === undefined) {

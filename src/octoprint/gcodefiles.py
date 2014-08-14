@@ -1,11 +1,12 @@
 # coding=utf-8
+import re
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import os
 import Queue
 import threading
-import datetime
 import yaml
 import time
 import logging
@@ -13,7 +14,7 @@ import octoprint.util as util
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
 from octoprint.settings import settings
-from octoprint.events import eventManager
+from octoprint.events import eventManager, Events
 from octoprint.filemanager.destinations import FileDestinations
 
 from werkzeug.utils import secure_filename
@@ -76,7 +77,7 @@ class GcodeManager:
 
 		self._metadataAnalyzer = MetadataAnalyzer(getPathCallback=self.getAbsolutePath, loadedCallback=self._onMetadataAnalysisFinished)
 
-		self._loadMetadata()
+		self._loadMetadata(migrate=True)
 		self._processAnalysisBacklog()
 
 	def _processAnalysisBacklog(self):
@@ -108,12 +109,15 @@ class GcodeManager:
 		analysisResult = {}
 		dirty = False
 		if gcode.totalMoveTimeMinute:
-			analysisResult["estimatedPrintTime"] = util.getFormattedTimeDelta(datetime.timedelta(minutes=gcode.totalMoveTimeMinute))
+			analysisResult["estimatedPrintTime"] = gcode.totalMoveTimeMinute * 60
 			dirty = True
 		if gcode.extrusionAmount:
-			analysisResult["filament"] = "%.2fm" % (gcode.extrusionAmount / 1000)
-			if gcode.calculateVolumeCm3():
-				analysisResult["filament"] += " / %.2fcm³" % gcode.calculateVolumeCm3()
+			analysisResult["filament"] = {}
+			for i in range(len(gcode.extrusionAmount)):
+				analysisResult["filament"]["tool%d" % i] = {
+					"length": gcode.extrusionAmount[i],
+					"volume": gcode.extrusionVolume[i]
+				}
 			dirty = True
 
 		if dirty:
@@ -122,14 +126,81 @@ class GcodeManager:
 			self._metadata[basename] = metadata
 			self._metadataDirty = True
 			self._saveMetadata()
+		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"file": basename, "result": analysisResult})
 
-	def _loadMetadata(self):
+	def _loadMetadata(self, migrate=False):
 		if os.path.exists(self._metadataFile) and os.path.isfile(self._metadataFile):
 			with self._metadataFileAccessMutex:
 				with open(self._metadataFile, "r") as f:
 					self._metadata = yaml.safe_load(f)
+
 		if self._metadata is None:
 			self._metadata = {}
+
+		# TODO: Remove in a couple of versions (2013-12-21)
+		if migrate:
+			self._migrateMetadata()
+
+	def _migrateMetadata(self):
+		self._logger.info("Migrating metadata if necessary...")
+
+		printTimeRe = re.compile("(\d+):(\d{2}):(\d{2})")
+		filamentRe = re.compile("(\d*\.\d+)m(\s/\s(\d*\.\d+)cm.)?")
+
+		hoursToSeconds = 60 * 60
+		minutesToSeconds = 60
+
+		updateCount = 0
+		for metadata in self._metadata.values():
+			if not "gcodeAnalysis" in metadata:
+				continue
+
+			updated = False
+			if "estimatedPrintTime" in metadata["gcodeAnalysis"]:
+				estimatedPrintTime = metadata["gcodeAnalysis"]["estimatedPrintTime"]
+				if isinstance(estimatedPrintTime, (str, unicode)):
+					match = re.match(printTimeRe, estimatedPrintTime)
+					if match:
+						metadata["gcodeAnalysis"]["estimatedPrintTime"] = int(match.group(1)) * hoursToSeconds + int(match.group(2)) * minutesToSeconds + int(match.group(3))
+						self._metadataDirty = True
+						updated = True
+			if "filament" in metadata["gcodeAnalysis"]:
+				filament = metadata["gcodeAnalysis"]["filament"]
+				if isinstance(filament, (str, unicode)):
+					match = re.match(filamentRe, filament)
+					if match:
+						metadata["gcodeAnalysis"]["filament"] = {
+							"tool0": {
+								"length": int(float(match.group(1)) * 1000)
+							}
+						}
+						if match.group(3) is not None:
+							metadata["gcodeAnalysis"]["filament"]["tool0"].update({
+								"volume": float(match.group(3))
+							})
+						self._metadataDirty = True
+						updated = True
+				elif isinstance(filament, dict) and ("length" in filament.keys() or "volume" in filament.keys()):
+					metadata["gcodeAnalysis"]["filament"] = {
+						"tool0": {}
+					}
+					if "length" in filament.keys():
+						metadata["gcodeAnalysis"]["filament"]["tool0"].update({
+							"length": filament["length"]
+						})
+					if "volume" in filament.keys():
+						metadata["gcodeAnalysis"]["filament"]["tool0"].update({
+							"volume": filament["volume"]
+						})
+					self._metadataDirty = True
+					updated = True
+
+			if updated:
+				updateCount += 1
+
+		self._saveMetadata()
+
+		self._logger.info("Updated %d sets of metadata to new format" % updateCount)
 
 	def _saveMetadata(self, force=False):
 		if not self._metadataDirty and not force:
@@ -142,7 +213,6 @@ class GcodeManager:
 			util.safeRename(self._metadataTempFile, self._metadataFile)
 
 		self._loadMetadata()
-		self._sendUpdateTrigger("gcodeFiles")
 
 	def _getBasicFilename(self, filename):
 		if filename.startswith(self._uploadFolder):
@@ -161,7 +231,7 @@ class GcodeManager:
 
 	def _sendUpdateTrigger(self, type):
 		for callback in self._callbacks:
-			try: callback.sendUpdateTrigger(type)
+			try: callback.sendEvent(type)
 			except: pass
 
 	#~~ file handling
@@ -193,9 +263,9 @@ class GcodeManager:
 			return self.processGcode(absolutePath, destination, uploadCallback), True
 		else:
 			if curaEnabled and isSTLFileName(filename):
-				self.processStl(absolutePath, destination, uploadCallback)
-			return filename, False
-
+				return self.processStl(absolutePath, destination, uploadCallback), False
+			else:
+				return filename, False
 
 	def getFutureFileName(self, file):
 		if not file:
@@ -206,7 +276,6 @@ class GcodeManager:
 			return None
 
 		return self._getBasicFilename(absolutePath)
-
 
 	def processStl(self, absolutePath, destination, uploadCallback=None):
 		from octoprint.slicers.cura import CuraFactory
@@ -219,17 +288,18 @@ class GcodeManager:
 
 		def stlProcessed(stlPath, gcodePath, error=None):
 			if error:
-				eventManager().fire("SlicingFailed", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "reason": error})
+				eventManager().fire(Events.SLICING_FAILED, {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "reason": error})
 				if os.path.exists(stlPath):
 					os.remove(stlPath)
 			else:
 				slicingStop = time.time()
-				eventManager().fire("SlicingDone", {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": "%.2f" % (slicingStop - slicingStart)})
+				eventManager().fire(Events.SLICING_DONE, {"stl": self._getBasicFilename(stlPath), "gcode": self._getBasicFilename(gcodePath), "time": slicingStop - slicingStart})
 				self.processGcode(gcodePath, destination, uploadCallback)
 
-		eventManager().fire("SlicingStarted", {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})
+		eventManager().fire(Events.SLICING_STARTED, {"stl": self._getBasicFilename(absolutePath), "gcode": self._getBasicFilename(gcodePath)})
 		cura.process_file(config, gcodePath, absolutePath, stlProcessed, [absolutePath, gcodePath])
 
+		return self._getBasicFilename(gcodePath)
 
 	def processGcode(self, absolutePath, destination, uploadCallback=None):
 		if absolutePath is None:
@@ -246,8 +316,9 @@ class GcodeManager:
 		self._metadataAnalyzer.addFileToQueue(os.path.basename(absolutePath))
 
 		if uploadCallback is not None:
-			uploadCallback(filename, absolutePath, destination)
-		return filename
+			return uploadCallback(filename, absolutePath, destination)
+		else:
+			return filename
 
 	def getFutureFilename(self, file):
 		if not file:
@@ -302,6 +373,9 @@ class GcodeManager:
 
 		return secure
 
+	def getAllFilenames(self):
+		return map(lambda x: x["name"], self.getAllFileData())
+
 	def getAllFileData(self):
 		files = []
 		for osFile in os.listdir(self._uploadFolder):
@@ -327,9 +401,9 @@ class GcodeManager:
 		statResult = os.stat(absolutePath)
 		fileData = {
 			"name": filename,
-			"size": util.getFormattedSize(statResult.st_size),
-			"bytes": statResult.st_size,
-			"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(statResult.st_ctime))
+			"size": statResult.st_size,
+			"origin": FileDestinations.LOCAL,
+			"date": int(statResult.st_ctime)
 		}
 
 		# enrich with additional metadata from analysis if available
@@ -337,18 +411,18 @@ class GcodeManager:
 			for key in self._metadata[filename].keys():
 				if key == "prints":
 					val = self._metadata[filename][key]
-					formattedLast = None
+					last = None
 					if "last" in val and val["last"] is not None:
-						formattedLast = {
-							"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(val["last"]["date"])),
+						last = {
+							"date": val["last"]["date"],
 							"success": val["last"]["success"]
 						}
-					formattedPrints = {
+					prints = {
 						"success": val["success"],
 						"failure": val["failure"],
-						"last": formattedLast
+						"last": last
 					}
-					fileData["prints"] = formattedPrints
+					fileData["prints"] = prints
 				else:
 					fileData[key] = self._metadata[filename][key]
 
@@ -513,6 +587,7 @@ class MetadataAnalyzer:
 
 		try:
 			self._logger.debug("Starting analysis of file %s" % filename)
+			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"file": filename})
 			self._gcode = gcodeInterpreter.gcode()
 			self._gcode.progressCallback = self._onParsingProgress
 			self._gcode.load(path)
