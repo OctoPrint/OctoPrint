@@ -239,6 +239,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.folder_timelapse(response.folder.timelapse);
         self.folder_timelapseTmp(response.folder.timelapseTmp);
         self.folder_logs(response.folder.logs);
+        self.folder_watched(response.folder.watched);
 
         self.cura_enabled(response.cura.enabled);
         self.cura_path(response.cura.path);
@@ -307,7 +308,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "uploads": self.folder_uploads(),
                 "timelapse": self.folder_timelapse(),
                 "timelapseTmp": self.folder_timelapseTmp(),
-                "logs": self.folder_logs()
+                "logs": self.folder_logs(),
+                "watched": self.folder_watched()
             },
             "temperature": {
                 "profiles": self.temperature_profiles()

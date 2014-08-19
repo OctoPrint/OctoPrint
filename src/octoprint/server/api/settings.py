@@ -86,7 +86,8 @@ def getSettings():
 			"uploads": s.getBaseFolder("uploads"),
 			"timelapse": s.getBaseFolder("timelapse"),
 			"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
-			"logs": s.getBaseFolder("logs")
+			"logs": s.getBaseFolder("logs"),
+			"watched": s.getBaseFolder("watched")
 		},
 		"temperature": {
 			"profiles": s.get(["temperature", "profiles"])
@@ -177,6 +178,7 @@ def setSettings():
 			if "timelapse" in data["folder"].keys(): s.setBaseFolder("timelapse", data["folder"]["timelapse"])
 			if "timelapseTmp" in data["folder"].keys(): s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
 			if "logs" in data["folder"].keys(): s.setBaseFolder("logs", data["folder"]["logs"])
+			if "watched" in data["folder"].keys(): s.setBaseFolder("watched", data["folder"]["watched"])
 
 		if "temperature" in data.keys():
 			if "profiles" in data["temperature"].keys(): s.set(["temperature", "profiles"], data["temperature"]["profiles"])
