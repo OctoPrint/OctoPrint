@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.0-dev-122-ga9736b9-dirty\n"
+"Project-Id-Version: OctoPrint 1.2.0-dev-124-g571cf9c-dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2014-08-27 19:31+0200\n"
+"POT-Creation-Date: 2014-08-27 20:04+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -171,6 +171,13 @@ msgstr ""
 
 #: src/octoprint/static/js/app/main.js:151
 msgid "Saving ..."
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/appearance.js:9
+#: src/octoprint/static/js/app/viewmodels/appearance.js:11
+#: src/octoprint/static/js/app/viewmodels/appearance.js:16
+#: src/octoprint/static/js/app/viewmodels/appearance.js:18
+msgid "OctoPrint"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/connection.js:24

@@ -1,7 +1,7 @@
-# Translations template for OctoPrint.
+# German translations for OctoPrint.
 # Copyright (C) 2014 The OctoPrint Project
 # This file is distributed under the same license as the OctoPrint project.
-# 
+#
 # Translators:
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2014
 # Gina Häußge <gina@foosel.net>, 2014
@@ -10,31 +10,40 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2014-08-27 19:31+0200\n"
-"PO-Revision-Date: 2014-08-27 17:37+0000\n"
-"Last-Translator: Gina Häußge <gina@foosel.net>\n"
-"Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 1.3\n"
+"POT-Creation-Date: 2014-08-27 20:04+0200\n"
+"PO-Revision-Date: 2014-08-27 20:05+0100\n"
+"Last-Translator: Gina Häußge <osd@foosel.net>\n"
+"Language-Team: German (http://www.transifex.com/projects/p/octoprint/"
+"language/de/)\n"
 "Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 1.3\n"
+"X-Generator: Poedit 1.6.8\n"
 
 #: src/octoprint/static/js/app/dataupdater.js:43
 msgid ""
-"The server appears to be offline, at least I'm not getting any response from"
-" it. I'll try to reconnect automatically <strong>over the next couple of "
+"The server appears to be offline, at least I'm not getting any response from "
+"it. I'll try to reconnect automatically <strong>over the next couple of "
 "minutes</strong>, however you are welcome to try a manual reconnect anytime "
 "using the button below."
-msgstr "Der Server scheint offline zu sein, zumindest kann ich mich nicht mit ihm verbinden. Ich werde <strong>über die nächsten Minuten</strong> versuchen, zu reconnecten, aber Du kannst mittels des folgenden Buttons auch jederzeit einen manuellen Reconnect anstoßen."
+msgstr ""
+"Der Server scheint offline zu sein, zumindest kann ich mich nicht mit ihm "
+"verbinden. Ich werde <strong>über die nächsten Minuten</strong> versuchen, "
+"zu reconnecten, aber Du kannst mittels des folgenden Buttons auch jederzeit "
+"einen manuellen Reconnect anstoßen."
 
 #: src/octoprint/static/js/app/dataupdater.js:58
 msgid ""
-"The server appears to be offline, at least I'm not getting any response from"
-" it. I <strong>could not reconnect automatically</strong>, but you may try a"
-" manual reconnect using the button below."
-msgstr "Der Server scheint offline zu sein, zumindest kann ich mich nicht mit ihm verbinden. Ich <strong>konnte nicht automatisch reconnected</strong>, aber Du kannst mittels des folgenden Buttons einen manuellen Reconnect anstoßen."
+"The server appears to be offline, at least I'm not getting any response from "
+"it. I <strong>could not reconnect automatically</strong>, but you may try a "
+"manual reconnect using the button below."
+msgstr ""
+"Der Server scheint offline zu sein, zumindest kann ich mich nicht mit ihm "
+"verbinden. Ich <strong>konnte nicht automatisch reconnected</strong>, aber "
+"Du kannst mittels des folgenden Buttons einen manuellen Reconnect anstoßen."
 
 #: src/octoprint/static/js/app/dataupdater.js:126
 msgid "Rendering timelapse"
@@ -59,7 +68,9 @@ msgstr "Neue Zeitrafferaufnahme %(movie_basename)s wurde fertig gerendert"
 msgid ""
 "Rendering of timelapse %(movie_basename)s failedwith return code "
 "%(returncode)s"
-msgstr "Rendering der Zeitrafferaufnahme %(movie_basename)s fehlgeschlagen mit Returncode %(returncode)s"
+msgstr ""
+"Rendering der Zeitrafferaufnahme %(movie_basename)s fehlgeschlagen mit "
+"Returncode %(returncode)s"
 
 #: src/octoprint/static/js/app/dataupdater.js:133
 msgid "Rendering failed"
@@ -167,7 +178,11 @@ msgid ""
 "Could not upload the file. Make sure that it is a GCODE file and has the "
 "extension \".gcode\" or \".gco\" or that it is an STL file with the "
 "extension \".stl\" and slicing support is enabled and configured."
-msgstr "Konnte die Datei nicht hochladen. Bitte stelle sicher, dass es sich um eine GCODE-Datei mit der Extension \".gcode\" oder \".gco\" oder um eine STL-Datei mit der Extension \".stl\" handelt und in letzterem Fall auch der Slicingsupport aktiviert ist."
+msgstr ""
+"Konnte die Datei nicht hochladen. Bitte stelle sicher, dass es sich um eine "
+"GCODE-Datei mit der Extension \".gcode\" oder \".gco\" oder um eine STL-"
+"Datei mit der Extension \".stl\" handelt und in letzterem Fall auch der "
+"Slicingsupport aktiviert ist."
 
 #: src/octoprint/static/js/app/main.js:148
 msgid "Uploading ..."
@@ -176,6 +191,13 @@ msgstr "Uploade ..."
 #: src/octoprint/static/js/app/main.js:151
 msgid "Saving ..."
 msgstr "Speichere ..."
+
+#: src/octoprint/static/js/app/viewmodels/appearance.js:9
+#: src/octoprint/static/js/app/viewmodels/appearance.js:11
+#: src/octoprint/static/js/app/viewmodels/appearance.js:16
+#: src/octoprint/static/js/app/viewmodels/appearance.js:18
+msgid "OctoPrint"
+msgstr "OctoPrint"
 
 #: src/octoprint/static/js/app/viewmodels/connection.js:24
 #: src/octoprint/templates/index.jinja2:117
@@ -222,7 +244,10 @@ msgid ""
 "If you disable Access Control <strong>and</strong> your OctoPrint "
 "installation is accessible from the internet, your printer <strong>will be "
 "accessible by everyone - that also includes the bad guys!</strong>"
-msgstr "Wenn Du die Zugangsbeschränkung deaktivierst <strong>und</strong> Deine OctoPrint Installation vom Internet aus erreichbar ist, kann <strong>jeder auf Deinen Drucker zugreifen - auch die bösen Jungs!</strong>"
+msgstr ""
+"Wenn Du die Zugangsbeschränkung deaktivierst <strong>und</strong> Deine "
+"OctoPrint Installation vom Internet aus erreichbar ist, kann <strong>jeder "
+"auf Deinen Drucker zugreifen - auch die bösen Jungs!</strong>"
 
 #: src/octoprint/static/js/app/viewmodels/gcode.js:13
 msgid "Loading..."
@@ -478,20 +503,49 @@ msgstr "Zugangsbeschränkung konfigurieren"
 #: src/octoprint/templates/dialogs.jinja2:51
 msgid ""
 "<p>\n"
-"            <strong>Please read the following, it is very important for your printer's health!</strong>\n"
+"            <strong>Please read the following, it is very important for your "
+"printer's health!</strong>\n"
 "        </p>\n"
 "        <p>\n"
-"            OctoPrint by default now ships with Access Control enabled, meaning you won't be able to do anything with the\n"
-"            printer unless you login first as a configured user. This is to <strong>prevent strangers - possibly with\n"
-"            malicious intent - to gain access to your printer</strong> via the internet or another untrustworthy network\n"
-"            and using it in such a way that it is damaged or worse (i.e. causes a fire).\n"
+"            OctoPrint by default now ships with Access Control enabled, "
+"meaning you won't be able to do anything with the\n"
+"            printer unless you login first as a configured user. This is to "
+"<strong>prevent strangers - possibly with\n"
+"            malicious intent - to gain access to your printer</strong> via "
+"the internet or another untrustworthy network\n"
+"            and using it in such a way that it is damaged or worse (i.e. "
+"causes a fire).\n"
 "        </p>\n"
 "        <p>\n"
-"            It looks like you haven't configured access control yet. Please <strong>set up an username and password</strong> for the\n"
-"            initial administrator account who will have full access to both the printer and OctoPrint's settings, then click\n"
+"            It looks like you haven't configured access control yet. Please "
+"<strong>set up an username and password</strong> for the\n"
+"            initial administrator account who will have full access to both "
+"the printer and OctoPrint's settings, then click\n"
 "            on \"Keep Access Control Enabled\":\n"
 "        </p>"
-msgstr "<p>\n    <strong>Bitte lies die folgenden Zeilen aufmerksam durch, es ist sehr wichtig für die Gesundheit Deines Druckers!</strong>\n</p>\n<p>\n    OctoPrint wird nun standardmässig mit aktivierter Zugangsbeschränkung ausgeliefert, das heißt, dass Du mit dem Drucker nichts\n    anfangen kannst, wenn du nicht als einer der konfigurierten Nutzer eingeloggt bist. Das dient dem Zweck, <strong>Fremde mit\n    möglicherweise böswilligen Absichten davon abzuhalten</strong>, auf Deinen Drucker über das Internet oder ein anderes\n    unsicheres Netzwerk zuzugreifen und ihn auf eine Art zu nutzen, die ihn beschädigt oder schlimmeres (z.B. ein Feuer verursacht).\n</p>\n<p>\n    Es sieht so aus, als hättest Du die Zugriffsbeschränkung noch nicht konfiguriert. Bitte <strong>konfiguriere einen Usernamen\n    und ein Passwort</strong> für das initiale Administratorkonto, das vollen Zugang zu sowohl dem Drucker als auch OctoPrints\n    Einstellungen haben wird, und klicke dann auf \"Zugangsbeschränkung aktiviert lassen\".\n</p>"
+msgstr ""
+"<p>\n"
+"    <strong>Bitte lies die folgenden Zeilen aufmerksam durch, es ist sehr "
+"wichtig für die Gesundheit Deines Druckers!</strong>\n"
+"</p>\n"
+"<p>\n"
+"    OctoPrint wird nun standardmässig mit aktivierter Zugangsbeschränkung "
+"ausgeliefert, das heißt, dass Du mit dem Drucker nichts\n"
+"    anfangen kannst, wenn du nicht als einer der konfigurierten Nutzer "
+"eingeloggt bist. Das dient dem Zweck, <strong>Fremde mit\n"
+"    möglicherweise böswilligen Absichten davon abzuhalten</strong>, auf "
+"Deinen Drucker über das Internet oder ein anderes\n"
+"    unsicheres Netzwerk zuzugreifen und ihn auf eine Art zu nutzen, die ihn "
+"beschädigt oder schlimmeres (z.B. ein Feuer verursacht).\n"
+"</p>\n"
+"<p>\n"
+"    Es sieht so aus, als hättest Du die Zugriffsbeschränkung noch nicht "
+"konfiguriert. Bitte <strong>konfiguriere einen Usernamen\n"
+"    und ein Passwort</strong> für das initiale Administratorkonto, das "
+"vollen Zugang zu sowohl dem Drucker als auch OctoPrints\n"
+"    Einstellungen haben wird, und klicke dann auf \"Zugangsbeschränkung "
+"aktiviert lassen\".\n"
+"</p>"
 
 #: src/octoprint/templates/dialogs.jinja2:67
 #: src/octoprint/templates/index.jinja2:78
@@ -520,14 +574,31 @@ msgstr "Passwörter nicht identisch"
 #: src/octoprint/templates/dialogs.jinja2:86
 msgid ""
 "<p>\n"
-"            <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy network and you don't\n"
-"            need Access Control for other reasons, you may alternatively disable Access Control. You should only\n"
-"            do this if you are absolutely certain that only people you know and trust will be able to connect to it.\n"
+"            <strong>Note:</strong> In case that your OctoPrint installation "
+"is only accessible from within a trustworthy network and you don't\n"
+"            need Access Control for other reasons, you may alternatively "
+"disable Access Control. You should only\n"
+"            do this if you are absolutely certain that only people you know "
+"and trust will be able to connect to it.\n"
 "        </p>\n"
 "        <p>\n"
-"            <strong>Do NOT underestimate the risk of an unsecured access from the internet to your printer!</strong>\n"
+"            <strong>Do NOT underestimate the risk of an unsecured access "
+"from the internet to your printer!</strong>\n"
 "        </p>"
-msgstr "<p>\n    <strong>Beachte:</strong> Falls Deine OctoPrint Installation ausschließlich innerhalb eines vertrauenswürdigen Netzwerks\n    erreicht werden kann und Du die Zugangsbeschränkung nicht für andere Zwecke benötigst, kannst Du sie alternativ auch\n    deaktivieren. Du solltest das nur tun, wenn Du Dir absolut sicher bist, dass nur Leute darauf zugreifen können, die du kennst\n    und denen du vertraust\n</p>\n<p>\n    <strong>UNTERSCHÄTZE NICHT das Risiko eines ungesicherten Zugriffs aus dem Internet auf Deinen Drucker!</strong>\n</p>"
+msgstr ""
+"<p>\n"
+"    <strong>Beachte:</strong> Falls Deine OctoPrint Installation "
+"ausschließlich innerhalb eines vertrauenswürdigen Netzwerks\n"
+"    erreicht werden kann und Du die Zugangsbeschränkung nicht für andere "
+"Zwecke benötigst, kannst Du sie alternativ auch\n"
+"    deaktivieren. Du solltest das nur tun, wenn Du Dir absolut sicher bist, "
+"dass nur Leute darauf zugreifen können, die du kennst\n"
+"    und denen du vertraust\n"
+"</p>\n"
+"<p>\n"
+"    <strong>UNTERSCHÄTZE NICHT das Risiko eines ungesicherten Zugriffs aus "
+"dem Internet auf Deinen Drucker!</strong>\n"
+"</p>"
 
 #: src/octoprint/templates/dialogs.jinja2:96
 msgid "Disable Access Control"
@@ -707,7 +778,8 @@ msgstr "Frei"
 
 #: src/octoprint/templates/index.jinja2:233
 msgid "Hint: You can also drag and drop files on this page to upload them."
-msgstr "Hinweis: Du kannst auch Dateien auf diese Seite ziehen um sie hochzuladen."
+msgstr ""
+"Hinweis: Du kannst auch Dateien auf diese Seite ziehen um sie hochzuladen."
 
 #: src/octoprint/templates/index.jinja2:243
 msgid "Temperature"
@@ -963,7 +1035,9 @@ msgstr "Autodetectiontimeout"
 
 #: src/octoprint/templates/settings.jinja2:96
 msgid "Log communication to serial.log (might negatively impact performance)"
-msgstr "Logge die Kommunikation in das serial.log (kann die Performance negativ beeinflussen)"
+msgstr ""
+"Logge die Kommunikation in das serial.log (kann die Performance negativ "
+"beeinflussen)"
 
 #: src/octoprint/templates/settings.jinja2:96
 msgid "Warning"
@@ -1082,9 +1156,11 @@ msgstr "Eine Prüfsumme mit <strong>jedem</strong> Kommando senden"
 #: src/octoprint/templates/settings.jinja2:296
 #, python-format
 msgid ""
-"Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature"
-" format"
-msgstr "<code>TargetExtr%%n</code>/<code>TargetBed</code> Zieltemperaturformat unterstützen"
+"Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature "
+"format"
+msgstr ""
+"<code>TargetExtr%%n</code>/<code>TargetBed</code> Zieltemperaturformat "
+"unterstützen"
 
 #: src/octoprint/templates/settings.jinja2:303
 msgid "Swallow the first \"ok\" after a resend response"
