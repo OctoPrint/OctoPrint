@@ -7,9 +7,11 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, g, request
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
+from flask.ext.babel import Babel
+from babel import Locale
 from watchdog.observers import Observer
 
 import os
@@ -20,6 +22,7 @@ SUCCESS = {}
 NO_CONTENT = ("", 204)
 
 app = Flask("octoprint")
+babel = Babel(app)
 debug = False
 
 printer = None
@@ -47,6 +50,35 @@ from . import util
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 VERSION = octoprint._version.get_versions()['version']
+
+
+def get_available_locale_identifiers(locales):
+	result = set()
+
+	# add available translations
+	for locale in locales:
+		result.add(locale.language)
+		if locale.territory:
+			# if a territory is specified, add that too
+			result.add("%s_%s" % (locale.language, locale.territory))
+
+	return result
+
+
+LOCALES = [Locale.parse("en")] + babel.list_translations()
+LANGUAGES = get_available_locale_identifiers(LOCALES)
+
+
+@app.before_request
+def before_request():
+	g.locale = get_locale()
+
+
+@babel.localeselector
+def get_locale():
+	if "l10n" in request.values:
+		return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+	return request.accept_languages.best_match(LANGUAGES)
 
 
 @app.route("/")

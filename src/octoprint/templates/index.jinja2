@@ -42,6 +42,7 @@
 
             var UI_API_KEY = "{{ uiApiKey }}";
             var VERSION = "{{ version }}";
+            var LOCALE = "{{ g.locale }}";
         </script>
     </head>
     <body>
@@ -53,13 +54,13 @@
                         <ul class="nav pull-right">
                             <li style="display: none;" data-bind="visible: loginState.isAdmin">
                                 <a id="navbar_show_settings" class="pull-right" href="#settings_dialog">
-                                    <i class="icon-wrench"></i> Settings
+                                    <i class="icon-wrench"></i> {{ _('Settings') }}
                                 </a>
                             </li>
                             {% if enableSystemMenu %}
                             <li class="dropdown" style="display: none" data-bind="visible: loginState.isAdmin">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="icon-off"></i> System
+                                    <i class="icon-off"></i> {{ _('System') }}
                                     <b class="caret"></b>
                                 </a>
                                 <ul class="dropdown-menu" data-bind="foreach: systemActions">
@@ -70,22 +71,22 @@
                             {% if enableAccessControl %}
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="icon-user"></i> <span data-bind="text: loginState.userMenuText">Login</span>
+                                    <i class="icon-user"></i> <span data-bind="text: loginState.userMenuText">{{ _('Login') }}</span>
                                     <b class="caret"></b>
                                 </a>
                                 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
-                                    <label for="login_user">Username</label>
-                                    <input type="text" id="login_user" placeholder="Username">
-                                    <label for="login_pass">Password</label>
-                                    <input type="password" id="login_pass" placeholder="Password">
+                                    <label for="login_user">{{ _('Username') }}</label>
+                                    <input type="text" id="login_user" placeholder="{{ _('Username') }}">
+                                    <label for="login_pass">{{ _('Password') }}</label>
+                                    <input type="password" id="login_pass" placeholder="{{ _('Password') }}">
                                     <label class="checkbox">
-                                        <input type="checkbox" id="login_remember"> Remember me
+                                        <input type="checkbox" id="login_remember"> {{ _('Remember me') }}
                                     </label>
-                                    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">Login</button>
+                                    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">{{ _('Login') }}</button>
                                 </div>
                                 <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
-                                    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">Change Password</a></li>
-                                    <li><a href="#" id="logout_button" data-bind="click: loginState.logout">Logout</a></li>
+                                    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">{{ _('Change Password') }}</a></li>
+                                    <li><a href="#" id="logout_button" data-bind="click: loginState.logout">{{ _('Logout') }}</a></li>
                                 </ul>
                             </li>
                             {% endif %}
@@ -103,68 +104,68 @@
                         </div>
                         <div class="accordion-body collapse in" id="connection">
                             <div class="accordion-inner">
-                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Serial Port</label>
+                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">{{ _('Serial Port') }}</label>
                                 <select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
-                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">Baudrate</label>
+                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">{{ _('Baudrate') }}</label>
                                 <select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
                                 <label class="checkbox">
-                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Save connection settings
+                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> {{ _('Save connection settings') }}
                                 </label>
                                 <label class="checkbox">
-                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> Auto-connect on server startup
+                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> {{ _('Auto-connect on server startup') }}
                                 </label>
-                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser()">Connect</button>
+                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser()">{{ _('Connect') }}</button>
                             </div>
                         </div>
                     </div>
                     <div class="accordion-group" id="state_accordion">
                         <div class="accordion-heading">
-                            <a class="accordion-toggle" data-toggle="collapse" href="#state"><i class="icon-info-sign"></i> State</a>
+                            <a class="accordion-toggle" data-toggle="collapse" href="#state"><i class="icon-info-sign"></i> {{ _('State') }}</a>
                         </div>
                         <div class="accordion-body collapse in" id="state">
                             <div class="accordion-inner">
-                                Machine State: <strong data-bind="text: stateString"></strong><br>
-                                File: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
-                                Timelapse: <strong data-bind="text: timelapseString"></strong><br>
+                                {{ _('Machine State') }}: <strong data-bind="text: stateString"></strong><br>
+                                {{ _('File') }}: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
+                                {{ _('Timelapse') }}: <strong data-bind="text: timelapseString"></strong><br>
                                 <!-- ko foreach: filament -->
                                 <span data-bind="text: 'Filament (' + name() + '): '"></span><strong data-bind="text: formatFilament(data())"></strong><br>
                                 <!-- /ko -->
-                                Approx. Total Print Time: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
-                                Print Time: <strong data-bind="text: printTimeString"></strong><br>
-                                Print Time Left: <strong data-bind="text: printTimeLeftString"></strong><br>
-                                Printed: <strong data-bind="text: byteString"></strong><br>
+                                {{ _('Approx. Total Print Time') }}: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
+                                {{ _('Print Time') }}: <strong data-bind="text: printTimeString"></strong><br>
+                                {{ _('Print Time Left') }}: <strong data-bind="text: printTimeLeftString"></strong><br>
+                                {{ _('Printed') }}: <strong data-bind="text: byteString"></strong><br>
 
                                 <div class="progress">
                                     <div class="bar" id="job_progressBar" data-bind="style: { width: progressString() + '%' }"></div>
                                 </div>
 
                                 <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
-                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? 'Restart' : 'Print')">Print</span></button>
-                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>Pause</span></button>
-                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()"><i class="icon-stop"></i> Cancel</button>
+                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart') }}' : '{{ _('Print') }}')">{{ _('Print') }}</span></button>
+                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>{{ _('Pause') }}</span></button>
+                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()"><i class="icon-stop"></i> {{ _('Cancel') }}</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="accordion-group" id="files_accordion">
                         <div class="accordion-heading">
-                            <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> Files</a>
+                            <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> {{ _('Files') }}</a>
 
                             <div class="settings-trigger accordion-heading-button btn-group">
                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                                     <span class="icon-wrench"></span>
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> Sort by name (ascending)</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> Sort by upload date (descending)</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> Sort by file size (descending)</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
                                     {% if enableSdSupport %}
                                     <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> Only show files stored locally</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> Only show files stored on SD</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
                                     {% endif %}
                                     <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> Hide successfully printed files</a></li>
+                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
                                 </ul>
                             </div>
 
@@ -174,9 +175,9 @@
                                     <span class="icon-sd-black-14"></span>
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> Initialize SD card</a></li>
-                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> Refresh SD files</a></li>
-                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> Release SD card</a></li>
+                                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> {{ _('Initialize SD card') }}</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> {{ _('Refresh SD files') }}</a></li>
+                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> {{ _('Release SD card') }}</a></li>
                                 </ul>
                             </div>
                             {% endif %}
@@ -184,43 +185,43 @@
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
                                 <form class="form-search">
-                                    <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="Search...">
+                                    <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
                                 </form>
                                 <div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
                                     <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }">
                                         <div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
-                                        <div class="uploaded">Uploaded: <span data-bind="text: formatTimeAgo(date)"></span></div>
-                                        <div class="size">Size: <span data-bind="text: formatSize(size)"></span></div>
+                                        <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
+                                        <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
                                         <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
                                         <div class="btn-group action-buttons">
                                             <div class="btn btn-mini toggleAdditionalData" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }"><i class="icon-chevron-down"></i></div>
-                                            <a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="Download"></i></a>
-                                            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="Remove"></i></div>
-                                            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-folder-open" title="Load"></i></div>
-                                            <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-print" title="Load and Print"></i></div>
+                                            <a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="{{ _('Download') }}"></i></a>
+                                            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
+                                            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-folder-open" title="{{ _('Load') }}"></i></div>
+                                            <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-print" title="{{ _('Load and Print') }}"></i></div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="muted text-right">
-                                    <small>Free: <span data-bind="text: freeSpaceString"></span></small>
+                                    <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span></small>
                                 </div>
                                 <div style="display: none;" data-bind="visible: loginState.isUser">
                                     <div class="row-fluid upload-buttons">
                                         {% if enableSdSupport %}
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
-                                            <span>Upload</span>
+                                            <span>{{ _('Upload') }}</span>
                                             <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                                         </span>
                                         <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
-                                            <span>Upload to SD</span>
+                                            <span>{{ _('Upload to SD') }}</span>
                                             <input id="gcode_upload_sd" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
                                         </span>
                                         {% else %}
                                         <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                             <i class="icon-upload-alt icon-white"></i>
-                                            <span>Upload</span>
+                                            <span>{{ _('Upload') }}</span>
                                             <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                                         </span>
                                         {% endif %}
@@ -229,7 +230,7 @@
                                         <div class="bar" style="width: 0%"></div>
                                     </div>
                                     <div>
-                                        <small>Hint: You can also drag and drop files on this page to upload them.</small>
+                                        <small>{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
                                     </div>
                                 </div>
                             </div>
@@ -239,11 +240,11 @@
 
                 <div class="span8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
-                        <li class="active"><a href="#temp" data-toggle="tab">Temperature</a></li>
-                        <li><a href="#control" data-toggle="tab">Control</a></li>
-                        {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">GCode Viewer</a></li>{% endif %}
-                        <li><a href="#term" data-toggle="tab">Terminal</a></li>
-                        {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">Timelapse</a></li>{% endif %}
+                        <li class="active"><a href="#temp" data-toggle="tab">{{ _('Temperature') }}</a></li>
+                        <li><a href="#control" data-toggle="tab">{{ _('Control') }}</a></li>
+                        {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">{{ _('GCode Viewer') }}</a></li>{% endif %}
+                        <li><a href="#term" data-toggle="tab">{{ _('Terminal') }}</a></li>
+                        {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">{{ _('Timelapse') }}</a></li>{% endif %}
                     </ul>
 
                     <div class="tab-content">
@@ -258,9 +259,9 @@
                                 <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
                                     <tr>
                                         <th style="width: 18%"></th>
-                                        <th style="width: 12%; text-align: right">Actual</th>
-                                        <th style="width: 35%">Target</th>
-                                        <th style="width: 35%">Offset</th>
+                                        <th style="width: 12%; text-align: right">{{ _('Actual') }}</th>
+                                        <th style="width: 35%">{{ _('Target') }}</th>
+                                        <th style="width: 35%">{{ _('Offset') }}</th>
                                     </tr>
                                     <!-- ko foreach: tools -->
                                     <tr data-bind="template: { name: 'temprow-template' }"></tr>
@@ -276,7 +277,7 @@
                                             <input type="text" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
                                             <span class="add-on">&deg;C</span>
                                             <div class="btn-group">
-                                                <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">Set</button>
+                                                <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
                                                 <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
                                                     <span class="caret"></span>
                                                 </button>
@@ -288,7 +289,7 @@
                                                     <!-- /ko -->
                                                     <li class="divider"></li>
                                                     <li>
-                                                        <a href="#" data-bind="click: $root.setTargetToZero">Off</a>
+                                                        <a href="#" data-bind="click: $root.setTargetToZero">{{ _('Off') }}</a>
                                                     </li>
                                                 </ul>
                                             </div>
@@ -298,7 +299,7 @@
                                         <div class="input-append">
                                             <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
                                             <span class="add-on">&deg;C</span>
-                                            <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">Set</button>
+                                            <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
                                         </div>
                                     </td>
                                 </script>
@@ -356,28 +357,28 @@
                                 <div>
                                     <div class="btn-group control-box">
                                         <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && !isPrinting() && !isPaused() && loginState.isUser()">
-                                            Select Tool...
+                                            {{ _('Select Tool...') }}
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu" data-bind="foreach: tools">
-                                            <li><a href="#" data-bind="click: $root.sendSelectToolCommand, text: 'Select ' + name(), enable: $root.isOperational() && !$root.isPrinting() && !$root.isPaused() && $root.loginState.isUser()"></a></li>
+                                            <li><a href="#" data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational() && !$root.isPrinting() && !$root.isPaused() && $root.loginState.isUser()"></a></li>
                                         </ul>
                                     </div>
                                     <div class="input-append control-box">
                                         <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: settings.printer_defaultExtrusionLength}">
                                         <span class="add-on">mm</span>
                                     </div>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">Extrude</button>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">Retract</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">{{ _('Extrude') }}</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">{{ _('Retract') }}</button>
                                 </div>
                             </div>
                             <!-- General control panel -->
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>General</h1>
+                                <h1>{{ _('General') }}</h1>
                                 <div>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">Motors off</button>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">Fans on</button>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">Fans off</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">{{ _('Motors off') }}</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">{{ _('Fans on') }}</button>
+                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">{{ _('Fans off') }}</button>
                                 </div>
                             </div>
 
@@ -441,38 +442,38 @@
 
                                         <p>
                                             <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_syncProgress">Sync with job progress
+                                                <input type="checkbox" data-bind="checked: renderer_syncProgress">{{ _('Sync with job progress') }}
                                             </label>
                                         </p>
                                         <p>
                                             <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_centerViewport">Center viewport on model
+                                                <input type="checkbox" data-bind="checked: renderer_centerViewport">{{ _('Center viewport on model') }}
                                             </label>
                                             <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_zoomOnModel">Zoom in on model
-                                            </label>
-                                        </p>
-
-                                        <p>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showMoves">Show moves
-                                            </label>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showRetracts">Show retracts
+                                                <input type="checkbox" data-bind="checked: renderer_zoomOnModel">{{ _('Zoom in on model') }}
                                             </label>
                                         </p>
 
                                         <p>
                                             <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showPrevious">Also show previous layer
+                                                <input type="checkbox" data-bind="checked: renderer_showMoves">{{ _('Show moves') }}
                                             </label>
                                             <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showNext">Also show next layer
+                                                <input type="checkbox" data-bind="checked: renderer_showRetracts">{{ _('Show retracts') }}
                                             </label>
                                         </p>
 
                                         <p>
-                                            <button class="btn btn-block" data-bind="click: reload, enable: enableReload">Reload</button>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_showPrevious">{{ _('Also show previous layer') }}
+                                            </label>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: renderer_showNext">{{ _('Also show next layer') }}
+                                            </label>
+                                        </p>
+
+                                        <p>
+                                            <button class="btn btn-block" data-bind="click: reload, enable: enableReload">{{ _('Reload') }}</button>
                                         </p>
                                     </div>
                                 </div>
@@ -499,7 +500,7 @@
                         <div class="tab-pane" id="term">
                             <pre id="terminal-output" class="pre-scrollable"></pre>
                             <label class="checkbox">
-                                <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> Autoscroll
+                                <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> {{ _('Autoscroll') }}
                             </label>
                             <div data-bind="foreach: filters">
                                 <label class="checkbox">
@@ -509,57 +510,57 @@
 
                             <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
                                 <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
-                                <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">Send</button>
+                                <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</button>
                             </div>
                         </div>
                         {% if enableTimelapse %}
                         <div class="tab-pane" id="timelapse">
                             <div style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>Timelapse Configuration</h1>
+                                <h1>{{ _('Timelapse Configuration') }}</h1>
 
-                                <label for="webcam_timelapse_mode">Timelapse Mode</label>
+                                <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
                                 <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
-                                    <option value="off">Off</option>
-                                    <option value="zchange">On Z Change</option>
-                                    <option value="timed">Timed</option>
+                                    <option value="off">{{ _('Off') }}</option>
+                                    <option value="zchange">{{ _('On Z Change') }}</option>
+                                    <option value="timed">{{ _('Timed') }}</option>
                                 </select>
 
-                                <label for="webcam_timelapse_postRoll">Timelapse post roll (in rendered seconds)</label>
+                                <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
                                 <div class="input-append">
                                     <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
-                                    <span class="add-on">sec</span>
+                                    <span class="add-on">{{ _('sec') }}</span>
                                 </div>
 
                                 <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
-                                    <label for="webcam_timelapse_interval">Interval</label>
+                                    <label for="webcam_timelapse_interval">{{ _('Interval') }}</label>
                                     <div class="input-append">
                                         <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
-                                        <span class="add-on">sec</span>
+                                        <span class="add-on">{{ _('sec') }}</span>
                                     </div>
                                 </div>
 
                                 <div data-bind="visible: loginState.isAdmin">
                                     <label class="checkbox">
-                                        <input type="checkbox" data-bind="checked: persist"> Save as default
+                                        <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
                                     </label>
                                 </div>
 
                                 <div>
-                                    <button class="btn" data-bind="click: save, enable: saveButtonEnabled">Save config</button>
+                                    <button class="btn" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save config') }}</button>
                                 </div>
                             </div>
 
-                            <h1>Finished Timelapses</h1>
+                            <h1>{{ _('Finished Timelapses') }}</h1>
 
                             <div class="pull-right">
-                                <small>Sort by: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">Name (ascending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">Creation date (descending)</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">Size (descending)</a></small>
+                                <small>{{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">{{ _('Creation date') }} ({{ _('descending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">{{ _('Size') }} ({{ _('descending') }})</a></small>
                             </div>
                             <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
                                 <thead>
                                     <tr>
-                                        <th class="timelapse_files_name">Name</th>
-                                        <th class="timelapse_files_size">Size</th>
-                                        <th class="timelapse_files_action">Action</th>
+                                        <th class="timelapse_files_name">{{ _('Name') }}</th>
+                                        <th class="timelapse_files_size">{{ _('Size') }}</th>
+                                        <th class="timelapse_files_action">{{ _('Action') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody data-bind="foreach: listHelper.paginatedItems">
@@ -588,13 +589,13 @@
             </div>
             <div class="footer">
                 <ul class="pull-left muted">
-                    <li><small>Version: <span class="version">{{ version }}</span></small></li>
+                    <li><small>{{ _('Version') }}: <span class="version">{{ version }}</span></small></li>
                 </ul>
                 <ul class="pull-right">
-                    <li><a href="http://octoprint.org"><i class="icon-home"></i> Homepage</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> Sourcecode</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> Documentation</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> Bugs and Requests</a></li>
+                    <li><a href="http://octoprint.org"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>
+                    <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> {{ _('Sourcecode') }}</a></li>
+                    <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
+                    <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
                 </ul>
             </div>
         </div>
@@ -607,6 +608,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore-min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore.string.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/babel.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/avltree.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modalmanager.js') }}"></script>
@@ -620,7 +622,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.fileupload.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.slimscroll.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/sockjs-0.3.4.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment-with-locales.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pusher.color.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/detectmobilebrowser.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/md5.min.js') }}"></script>
@@ -649,6 +651,12 @@
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/main.js') }}"></script>
         <!-- /Include OctoPrint files -->
+
+        <!-- Include i18n language files -->
+        {% if g.locale != 'en' %}
+            <script type="text/javascript" src="{{ url_for('static', filename='js/i18n/%s.js' % g.locale) }}"></script>
+        {% endif %}
+        <!-- /Include i18n language files -->
 
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>

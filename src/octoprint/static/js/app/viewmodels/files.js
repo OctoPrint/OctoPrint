@@ -273,21 +273,21 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                 var filament = data["gcodeAnalysis"]["filament"];
                 if (_.keys(filament).length == 1) {
-                    output += "Filament: " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+                    output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
                 } else if (_.keys(filament).length > 1) {
                     for (var toolKey in filament) {
                         if (!_.startsWith(toolKey, "tool") || !filament[toolKey] || !filament[toolKey].hasOwnProperty("length") || filament[toolKey]["length"] <= 0) continue;
 
-                        output += "Filament (Tool " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
+                        output += gettext("Filament") + " (" + gettext("Tool") + " " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
                     }
                 }
             }
-            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+            output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
         }
         if (data["prints"] && data["prints"]["last"]) {
-            output += "Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+            output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
             if (data["prints"]["last"]["lastPrintTime"]) {
-                output += "Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
             }
         }
         return output;

@@ -63,9 +63,9 @@ function PrinterStateViewModel(loginStateViewModel) {
     });
     self.pauseString = ko.computed(function() {
         if (self.isPaused())
-            return "Continue";
+            return gettext("Continue");
         else
-            return "Pause";
+            return gettext("Pause");
     });
 
     self.timelapseString = ko.computed(function() {
@@ -76,9 +76,9 @@ function PrinterStateViewModel(loginStateViewModel) {
 
         var type = timelapse["type"];
         if (type == "zchange") {
-            return "On Z Change";
+            return gettext("On Z Change");
         } else if (type == "timed") {
-            return "Timed (" + timelapse["options"]["interval"] + "s)";
+            return gettext("Timed") + " (" + timelapse["options"]["interval"] + " " + gettext("sec") + ")";
         } else {
             return "-";
         }
@@ -104,7 +104,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     };
 
     self._processStateData = function(data) {
-        self.stateString(data.text);
+        self.stateString(gettext(data.text));
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);
@@ -134,7 +134,7 @@ function PrinterStateViewModel(loginStateViewModel) {
                 if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) continue;
 
                 result.push({
-                    name: ko.observable("Tool " + key.substr("tool".length)),
+                    name: ko.observable(gettext("Tool") + " " + key.substr("tool".length)),
                     data: ko.observable(data.filament[key])
                 });
             }
@@ -163,7 +163,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         };
 
         if (self.isPaused()) {
-            $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
+            $("#confirmation_dialog .confirmation_dialog_message").text(gettext("This will restart the print job from the beginning."));
             $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
             $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); restartCommand(); });
             $("#confirmation_dialog").modal("show");
