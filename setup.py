@@ -14,7 +14,6 @@ import shutil
 import glob
 
 from babel.messages import frontend as babel
-import po2json
 
 I18N_MAPPING_FILE = "babel.cfg"
 I18N_DOMAIN = "messages"
@@ -128,6 +127,8 @@ class CompileTranslation(Command):
 
 	def run(self):
 		self.babel_compile_messages.run()
+
+		import po2json
 
 		for lang_code in os.listdir(I18N_OUTPUT_DIR_PY):
 			full_path = os.path.join(I18N_OUTPUT_DIR_PY, lang_code)
