@@ -13,8 +13,6 @@ import os
 import shutil
 import glob
 
-from babel.messages import frontend as babel
-
 I18N_MAPPING_FILE = "babel.cfg"
 I18N_DOMAIN = "messages"
 I18N_INPUT_DIRS = "."
@@ -63,6 +61,7 @@ class NewTranslation(Command):
 	boolean_options = []
 
 	def __init__(self, dist, **kw):
+		from babel.messages import frontend as babel
 		self.babel_init_messages = babel.init_catalog(dist)
 		Command.__init__(self, dist, **kw)
 
@@ -86,6 +85,7 @@ class RefreshTranslation(Command):
 	boolean_options = []
 
 	def __init__(self, dist, **kw):
+		from babel.messages import frontend as babel
 		self.babel_extract_messages = babel.extract_messages(dist)
 		self.babel_update_messages = babel.update_catalog(dist)
 		Command.__init__(self, dist, **kw)
@@ -116,6 +116,7 @@ class CompileTranslation(Command):
 	boolean_options = []
 
 	def __init__(self, dist, **kw):
+		from babel.messages import frontend as babel
 		self.babel_compile_messages = babel.compile_catalog(dist)
 		Command.__init__(self, dist, **kw)
 
