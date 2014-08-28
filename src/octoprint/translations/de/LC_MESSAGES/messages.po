@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2014-08-27 20:04+0200\n"
-"PO-Revision-Date: 2014-08-27 20:05+0100\n"
+"POT-Creation-Date: 2014-08-28 15:52+0200\n"
+"PO-Revision-Date: 2014-08-28 15:53+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/"
 "language/de/)\n"
@@ -627,6 +627,10 @@ msgstr "Passwort ändern"
 #: src/octoprint/templates/index.jinja2:89
 msgid "Logout"
 msgstr "Logout"
+
+#: src/octoprint/templates/index.jinja2:103
+msgid "Connection"
+msgstr "Verbindung"
 
 #: src/octoprint/templates/index.jinja2:107
 #: src/octoprint/templates/settings.jinja2:30
