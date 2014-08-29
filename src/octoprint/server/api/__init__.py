@@ -235,8 +235,9 @@ def login():
 @restricted_access
 def logout():
 	# Remove session keys set by Flask-Principal
-	for key in ('identity.id', 'identity.auth_type'):
-		del session[key]
+	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
+		if key in session:
+			del session[key]
 	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
 
 	logout_user()
