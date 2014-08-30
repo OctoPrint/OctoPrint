@@ -18,7 +18,7 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="Octoprint Daemon"
 NAME="Octoprint"
-DAEMON=/usr/bin/octoprint
+DAEMON=/usr/local/bin/octoprint
 PIDFILE=/var/run/$NAME.pid
 PKGNAME=octoprint
 SCRIPTNAME=/etc/init.d/$PKGNAME
