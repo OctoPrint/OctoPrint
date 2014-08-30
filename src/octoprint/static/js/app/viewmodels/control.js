@@ -34,13 +34,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
                 tools[extruder] = self._createToolEntry();
-                tools[extruder]["name"]("Tool " + extruder);
+                tools[extruder]["name"](gettext("Tool") + " " + extruder);
                 tools[extruder]["key"]("tool" + extruder);
             }
         } else {
             // only one extruder, no need to add numbers
             tools[0] = self._createToolEntry();
-            tools[0]["name"]("Hotend");
+            tools[0]["name"](gettext("Hotend"));
             tools[0]["key"]("tool0");
         }
 
@@ -49,11 +49,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
@@ -63,13 +63,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
-    }
+    };
 
     self.fromFeedbackCommandData = function(data) {
         if (data.name in self.feedbackControlLookup) {
             self.feedbackControlLookup[data.name](data.output);
         }
-    }
+    };
 
     self.requestData = function() {
         $.ajax({
@@ -80,18 +80,18 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
                 self._fromResponse(response);
             }
         });
-    }
+    };
 
     self._fromResponse = function(response) {
         self.controls(self._processControls(response.controls));
-    }
+    };
 
     self._processControls = function(controls) {
         for (var i = 0; i < controls.length; i++) {
             controls[i] = self._processControl(controls[i]);
         }
         return controls;
-    }
+    };
 
     self._processControl = function(control) {
         if (control.type == "parametric_command" || control.type == "parametric_commands") {
@@ -105,7 +105,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             control.children = self._processControls(control.children);
         }
         return control;
-    }
+    };
 
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
@@ -116,7 +116,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
         var data = {
             "command": "jog"
-        }
+        };
         data[axis] = distance * multiplier;
 
         $.ajax({
@@ -126,13 +126,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         });
-    }
+    };
 
     self.sendHomeCommand = function(axis) {
         var data = {
             "command": "home",
             "axes": axis
-        }
+        };
 
         $.ajax({
             url: API_BASEURL + "printer/printhead",
@@ -141,7 +141,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         });
-    }
+    };
 
     self.sendExtrudeCommand = function() {
         self._sendECommand(1);
@@ -153,7 +153,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
-        if (!length) length = 5;
+        if (!length) length = self.settings.printer_defaultExtrusionLength();
 
         var data = {
             command: "extrude",
@@ -217,7 +217,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         })
-    }
+    };
 
     self.displayMode = function(customControl) {
         switch (customControl.type) {

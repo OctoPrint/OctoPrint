@@ -1,4 +1,30 @@
 $(function() {
+        //~~ Initialize i18n
+        var catalog = window["BABEL_TO_LOAD_" + LOCALE];
+        if (catalog === undefined) {
+            catalog = {messages: undefined, plural_expr: undefined, locale: undefined, domain: undefined}
+        }
+        babel.Translations.load(catalog).install();
+
+        moment.locale(LOCALE);
+
+        // Dummy translation requests for dynamic strings supplied by the backend
+        var dummyTranslations = [
+            // printer states
+            gettext("Offline"),
+            gettext("Opening serial port"),
+            gettext("Detecting serial port"),
+            gettext("Detecting baudrate"),
+            gettext("Connecting"),
+            gettext("Operational"),
+            gettext("Printing from SD"),
+            gettext("Sending file to SD"),
+            gettext("Printing"),
+            gettext("Paused"),
+            gettext("Closed"),
+            gettext("Transfering file to SD")
+        ];
+
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -92,7 +118,7 @@ $(function() {
         }
 
         function gcode_upload_fail(e, data) {
-            var error = "<p>Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and slicing support is enabled and configured.</p>";
+            var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and slicing support is enabled and configured.") + "</p>";
             error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
             new PNotify({
                 title: "Upload failed",
@@ -108,10 +134,10 @@ $(function() {
         function gcode_upload_progress(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             $("#gcode_upload_progress .bar").css("width", progress + "%");
-            $("#gcode_upload_progress .bar").text("Uploading ...");
+            $("#gcode_upload_progress .bar").text(gettext("Uploading ..."));
             if (progress >= 100) {
                 $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                $("#gcode_upload_progress .bar").text("Saving ...");
+                $("#gcode_upload_progress .bar").text(gettext("Saving ..."));
             }
         }
 
@@ -361,7 +387,15 @@ $(function() {
                 var webcamImage = $("#webcam_image");
                 var currentSrc = webcamImage.attr("src");
                 if (currentSrc === undefined || currentSrc.trim() == "") {
-                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                    var newSrc = CONFIG_WEBCAM_STREAM;
+                    if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
+                        newSrc += "&";
+                    } else {
+                        newSrc += "?";
+                    }
+                    newSrc += new Date().getTime();
+
+                    webcamImage.attr("src", newSrc);
                 }
             } else if (previous.hash == "#control") {
                 // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause

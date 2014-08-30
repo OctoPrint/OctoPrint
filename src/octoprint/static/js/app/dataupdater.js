@@ -40,11 +40,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
     };
 
     self._onclose = function() {
-        $("#offline_overlay_message").html(
-            "The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect " +
-                "automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect " +
-                "anytime using the button below."
-        );
+        $("#offline_overlay_message").html(gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."));
         if (!$("#offline_overlay").is(":visible"))
             $("#offline_overlay").show();
 
@@ -59,10 +55,7 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
     };
 
     self._onreconnectfailed = function() {
-        $("#offline_overlay_message").html(
-            "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
-                "but you may try a manual reconnect using the button below."
-        );
+        $("#offline_overlay_message").html(gettext("The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, but you may try a manual reconnect using the button below."));
     };
 
     self._onmessage = function(e) {
@@ -129,40 +122,40 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     if ((type == "UpdatedFiles" && payload.type == "gcode") || type == "MetadataAnalysisFinished") {
                         gcodeFilesViewModel.requestData();
                     } else if (type == "MovieRendering") {
-                        new PNotify({title: "Rendering timelapse", text: "Now rendering timelapse " + payload.movie_basename});
+                        new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
                     } else if (type == "MovieDone") {
-                        new PNotify({title: "Timelapse ready", text: "New timelapse " + payload.movie_basename + " is done rendering."});
+                        new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
                         timelapseViewModel.requestData();
                     } else if (type == "MovieFailed") {
-                        html = "<p>Rendering of timelapse " + payload.movie_basename + " failed with return code " + payload.returncode + "</p>";
+                        html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failedwith return code %(returncode)s"), payload) + "</p>";
                         html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
-                        new PNotify({title: "Rendering failed", text: html, type: "error", hide: false});
+                        new PNotify({title: gettext("Rendering failed"), text: html, type: "error", hide: false});
                     } else if (type == "SlicingStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
-                        gcodeUploadProgressBar.text("Slicing ...");
+                        gcodeUploadProgressBar.text(gettext("Slicing ..."));
                     } else if (type == "SlicingDone") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        new PNotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + _.sprintf("%.2f", payload.time) + " seconds"});
+                        new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload)});
                         gcodeFilesViewModel.requestData(payload.gcode);
                     } else if (type == "SlicingFailed") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
 
-                        html = "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason;
-                        new PNotify({title: "Slicing failed", text: html, type: "error", hide: false});
+                        html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
+                        new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
                     } else if (type == "TransferStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
-                        gcodeUploadProgressBar.text("Streaming ...");
+                        gcodeUploadProgressBar.text(gettext("Streaming ..."));
                     } else if (type == "TransferDone") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        new PNotify({title: "Streaming done", text: "Streamed " + payload.local + " to " + payload.remote + " on SD, took " + _.sprintf("%.2f", payload.time) + " seconds"});
+                        new PNotify({title: gettext("Streaming done"), text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload)});
                         gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
                     break;
