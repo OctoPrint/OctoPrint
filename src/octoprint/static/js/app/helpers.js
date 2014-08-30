@@ -19,6 +19,10 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     //~~ item handling
 
+    self.refresh = function() {
+        self._updateItems();
+    }
+
     self.updateItems = function(items) {
         self.allItems = items;
         self._updateItems();
@@ -272,4 +276,51 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self._loadCurrentFiltersFromLocalStorage();
     self._loadCurrentSortingFromLocalStorage();
+}
+
+function formatSize(bytes) {
+    if (!bytes) return "-";
+
+    var units = ["bytes", "KB", "MB", "GB"];
+    for (var i = 0; i < units.length; i++) {
+        if (bytes < 1024) {
+            return _.sprintf("%3.1f%s", bytes, units[i]);
+        }
+        bytes /= 1024;
+    }
+    return _.sprintf("%.1f%s", bytes, "TB");
+}
+
+function formatDuration(seconds) {
+    if (!seconds) return "-";
+
+    var s = seconds % 60;
+    var m = (seconds % 3600) / 60;
+    var h = seconds / 3600;
+
+    return _.sprintf("%02d:%02d:%02d", h, m, s);
+}
+
+function formatDate(unixTimestamp) {
+    if (!unixTimestamp) return "-";
+    return moment.unix(unixTimestamp).format("YYYY-MM-DD HH:mm");
+}
+
+function formatFilament(filament) {
+    if (!filament || !filament["length"]) return "-";
+    var result = _.sprintf("%.02fm", (filament["length"] / 1000));
+    if (filament.hasOwnProperty("volume") && filament.volume) {
+        result += " / " + _.sprintf("%.02fcm³", filament["volume"]);
+    }
+    return result;
+}
+
+function cleanTemperature(temp) {
+    if (!temp || temp < 10) return "off";
+    return temp;
+}
+
+function formatTemperature(temp) {
+    if (!temp || temp < 10) return "off";
+    return _.sprintf("%.1f&deg;C", temp);
 }

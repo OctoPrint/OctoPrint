@@ -31,7 +31,9 @@ default_settings = {
 		"timeout": {
 			"detection": 0.5,
 			"connection": 2,
-			"communication": 5
+			"communication": 5,
+			"temperature": 5,
+			"sdStatus": 1
 		},
 		"additionalPorts": []
 	},
@@ -52,17 +54,23 @@ default_settings = {
 		"flipV": False,
 		"timelapse": {
 			"type": "off",
-			"options": {}
+			"options": {},
+			"postRoll": 0
 		}
 	},
+	"gcodeViewer": {
+		"enabled": True,
+		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
+		"sizeThreshold": 20 * 1024 * 1024, # 20MB
+	},
 	"feature": {
-		"gCodeVisualizer": True,
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
 		"sdSupport": True,
 		"sdAlwaysAvailable": False,
-		"swallowOkAfterResend": True
+		"swallowOkAfterResend": True,
+		"repetierTargetTemp": False
 	},
 	"folder": {
 		"uploads": None,
@@ -86,7 +94,14 @@ default_settings = {
 			"e": 300
 		},
 		"pauseTriggers": [],
-		"invertAxes": []
+		"invertAxes": [],
+		"numExtruders": 1,
+		"extruderOffsets": [
+			{"x": 0.0, "y": 0.0}
+		],
+		"bedDimensions": {
+			"x": 200.0, "y": 200.0
+		}
 	},
 	"appearance": {
 		"name": "",
@@ -122,20 +137,25 @@ default_settings = {
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	},
 	"terminalFilters": [
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T:)" },
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
 	"devel": {
+		"stylesheet": "css",
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
-			"okWithLinenumber": False
+			"okWithLinenumber": False,
+			"numExtruders": 1,
+			"includeCurrentToolInTemps": True,
+			"hasBed": True,
+			"repetierStyleTargetTemperature": False
 		}
 	}
 }
 
-valid_boolean_trues = ["true", "yes", "y", "1"]
+valid_boolean_trues = [True, "true", "yes", "y", "1"]
 
 class Settings(object):
 
@@ -188,7 +208,7 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path):
+	def get(self, path, asdict=False):
 		if len(path) == 0:
 			return None
 
@@ -212,17 +232,28 @@ class Settings(object):
 		else:
 			keys = k
 
-		results = []
+		if asdict:
+			results = {}
+		else:
+			results = []
 		for key in keys:
 			if key in config.keys():
-				results.append(config[key])
+				value = config[key]
 			elif key in defaults:
-				results.append(defaults[key])
+				value = defaults[key]
 			else:
-				results.append(None)
+				value = None
+
+			if asdict:
+				results[key] = value
+			else:
+				results.append(value)
 
 		if not isinstance(k, (list, tuple)):
-			return results.pop()
+			if asdict:
+				return results.values().pop()
+			else:
+				return results.pop()
 		else:
 			return results
 

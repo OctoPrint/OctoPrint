@@ -10,7 +10,7 @@ import re
 import tempfile
 from flask import make_response
 
-from octoprint.settings import settings
+from octoprint.settings import settings, default_settings
 
 
 def getFormattedSize(num):
@@ -89,8 +89,9 @@ def getGitInfo():
 def getNewTimeout(type):
 	now = time.time()
 
-	if type not in ["connection", "detection", "communication"]:
-		return now # timeout immediately for unknown timeout type
+	if type not in default_settings["serial"]["timeout"].keys():
+		# timeout immediately for unknown timeout type
+		return now
 
 	return now + settings().getFloat(["serial", "timeout", type])
 

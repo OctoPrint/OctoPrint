@@ -1,5 +1,4 @@
 $(function() {
-
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -12,8 +11,9 @@ $(function() {
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
-        var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
+        var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var logViewModel = new LogViewModel(loginStateViewModel);
 
         var dataUpdater = new DataUpdater(
             loginStateViewModel,
@@ -24,7 +24,8 @@ $(function() {
             terminalViewModel,
             gcodeFilesViewModel,
             timelapseViewModel,
-            gcodeViewModel
+            gcodeViewModel,
+			logViewModel
         );
         
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
@@ -75,7 +76,17 @@ $(function() {
         //~~ Gcode upload
 
         function gcode_upload_done(e, data) {
-            gcodeFilesViewModel.fromResponse(data.result);
+            var filename = undefined;
+            var location = undefined;
+            if (data.result.files.hasOwnProperty("sdcard")) {
+                filename = data.result.files.sdcard.name;
+                location = "sdcard";
+            } else if (data.result.files.hasOwnProperty("local")) {
+                filename = data.result.files.local.name;
+                location = "local";
+            }
+            gcodeFilesViewModel.requestData(filename, location);
+
             if (data.result.done) {
                 $("#gcode_upload_progress .bar").css("width", "0%");
                 $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
@@ -107,7 +118,7 @@ $(function() {
 
         function enable_local_dropzone() {
             $("#gcode_upload").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/local",
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: localTarget,
                 done: gcode_upload_done,
@@ -118,7 +129,7 @@ $(function() {
 
         function disable_local_dropzone() {
             $("#gcode_upload").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/local",
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: null,
                 done: gcode_upload_done,
@@ -129,7 +140,7 @@ $(function() {
 
         function enable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/sdcard",
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: $("#drop_sd"),
                 done: gcode_upload_done,
@@ -140,10 +151,9 @@ $(function() {
 
         function disable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/sdcard",
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: null,
-                formData: {target: "sd"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -255,6 +265,10 @@ $(function() {
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
+        //~~ Underscore setup
+
+        _.mixin(_.str.exports());
+
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {
@@ -274,6 +288,12 @@ $(function() {
             }
         }
 
+        ko.bindingHandlers.allowBindings = {
+        	init: function (elem, valueAccessor) {
+        		return { controlsDescendantBindings: !valueAccessor() };
+        	}
+        };
+
         ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
@@ -282,20 +302,18 @@ $(function() {
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         var gcode = document.getElementById("gcode");
         if (gcode) {
+            gcodeViewModel.initialize();
             ko.applyBindings(gcodeViewModel, gcode);
         }
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
         ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+        ko.applyBindings(logViewModel, document.getElementById("logs"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
             ko.applyBindings(timelapseViewModel, timelapseElement);
-        }
-        var gCodeVisualizerElement = document.getElementById("gcode");
-        if (gCodeVisualizerElement) {
-            gcodeViewModel.initialize();
         }
 
         //~~ startup commands
@@ -305,12 +323,13 @@ $(function() {
         controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
+        settingsViewModel.requestData();
+        logViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
                 $("#gcode_upload").fileupload("enable");
 
-                settingsViewModel.requestData();
                 if (data.admin) {
                     usersViewModel.requestData();
                 }
@@ -345,6 +364,17 @@ $(function() {
 
         $(document).bind("drop dragover", function (e) {
             e.preventDefault();
+        });
+
+        $("#login_user").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_pass").focus();
+            }
+        });
+        $("#login_pass").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_button").click();
+            }
         });
 
         if (CONFIG_FIRST_RUN) {

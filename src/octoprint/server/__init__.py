@@ -2,8 +2,10 @@
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
+import flask
+import tornado.wsgi
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, make_response
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 
@@ -12,6 +14,7 @@ import logging
 import logging.config
 
 SUCCESS = {}
+NO_CONTENT = ("", 204)
 
 app = Flask("octoprint")
 debug = False
@@ -26,8 +29,8 @@ principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
 user_permission = Permission(RoleNeed("user"))
 
-
-from octoprint.server.util import LargeResponseHandler, ReverseProxied, restricted_access, PrinterStateConnection
+# only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
+from octoprint.server.util import LargeResponseHandler, ReverseProxied, restricted_access, PrinterStateConnection, admin_validator
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
 import octoprint.gcodefiles as gcodefiles
@@ -35,30 +38,29 @@ import octoprint.util as util
 import octoprint.users as users
 import octoprint.events as events
 import octoprint.timelapse
+import octoprint._version
+
+
+VERSION = octoprint._version.get_versions()['version']
 
 
 @app.route("/")
 def index():
-	branch = None
-	commit = None
-	try:
-		branch, commit = util.getGitInfo()
-	except:
-		pass
-
 	return render_template(
 		"index.jinja2",
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
-		enableGCodeVisualizer=settings().get(["feature", "gCodeVisualizer"]),
+		enableGCodeVisualizer=settings().get(["gcodeViewer", "enabled"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
 		debug=debug,
-		gitBranch=branch,
-		gitCommit=commit
+		version=VERSION,
+		stylesheet=settings().get(["devel", "stylesheet"]),
+		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
+		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"])
 	)
 
 
@@ -124,6 +126,8 @@ class Server():
 		self._initLogging(self._debug)
 		logger = logging.getLogger(__name__)
 
+		logger.info("Starting OctoPrint (%s)" % VERSION)
+
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
@@ -164,23 +168,35 @@ class Server():
 		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
-		from octoprint.server.ajax import ajax
 		from octoprint.server.api import api
 
-		app.register_blueprint(ajax, url_prefix="/ajax")
 		app.register_blueprint(api, url_prefix="/api")
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
+		def admin_access_validation(request):
+			"""
+			Creates a custom wsgi and Flask request context in order to be able to process user information
+			stored in the current session.
+
+			:param request: The Tornado request for which to create the environment and context
+			"""
+			wsgi_environ = tornado.wsgi.WSGIContainer.environ(request)
+			with app.request_context(wsgi_environ):
+				app.session_interface.open_session(app, flask.request)
+				loginManager.reload_user()
+				admin_validator(flask.request)
+
 		self._tornado_app = Application(self._router.urls + [
 			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),
-			(r"/downloads/gcode/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
+			(r"/downloads/files/local/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
+			(r"/downloads/logs/([^/]*)", LargeResponseHandler, {"path": settings().getBaseFolder("logs"), "as_attachment": True, "access_validation": admin_access_validation}),
 			(r".*", FallbackHandler, {"fallback": WSGIContainer(app.wsgi_app)})
 		])
 		self._server = HTTPServer(self._tornado_app)
 		self._server.listen(self._port, address=self._host)
 
-		eventManager.fire("Startup")
+		eventManager.fire(events.Events.STARTUP)
 		if settings().getBoolean(["serial", "autoconnect"]):
 			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
 			connectionOptions = getConnectionOptions()
@@ -188,6 +204,8 @@ class Server():
 				printer.connect(port, baudrate)
 		try:
 			IOLoop.instance().start()
+		except KeyboardInterrupt:
+			logger.info("Goodbye!")
 		except:
 			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			logger.exception("Stacktrace follows:")

@@ -1,5 +1,9 @@
 from __future__ import absolute_import
-__copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AGPLv3 License"
+# coding=utf-8
+__author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under terms of the AGPLv3 License"
+
 
 import math
 import os
@@ -9,30 +13,18 @@ import logging
 
 from octoprint.settings import settings
 
-preferences = {
-	"extruder_offset_x1": -22.0,
-	"extruder_offset_y1": 0.0,
-	"extruder_offset_x2": 0.0,
-	"extruder_offset_y2": 0.0,
-	"extruder_offset_x3": 0.0,
-	"extruder_offset_y3": 0.0,
-}
-
-def getPreference(key, default=None):
-	if preferences.has_key(key):
-		return preferences[key]
-	else:
-		return default
 
 class AnalysisAborted(Exception):
 	pass
+
 
 class gcode(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 
 		self.layerList = None
-		self.extrusionAmount = 0
+		self.extrusionAmount = [0]
+		self.extrusionVolume = [0]
 		self.totalMoveTimeMinute = 0
 		self.filename = None
 		self.progressCallback = None
@@ -49,23 +41,20 @@ class gcode(object):
 	def abort(self):
 		self._abort = True
 
-	def calculateVolumeCm3(self):
-		radius = self._filamentDiameter / 2
-		return (self.extrusionAmount * (math.pi * radius * radius)) / 1000
-			
 	def _load(self, gcodeFile):
 		filePos = 0
 		pos = [0.0, 0.0, 0.0]
 		posOffset = [0.0, 0.0, 0.0]
-		currentE = 0.0
-		totalExtrusion = 0.0
-		maxExtrusion = 0.0
+		currentE = [0.0]
+		totalExtrusion = [0.0]
+		maxExtrusion = [0.0]
 		currentExtruder = 0
 		totalMoveTimeMinute = 0.0
 		absoluteE = True
 		scale = 1.0
 		posAbs = True
 		feedRateXY = settings().getFloat(["printerParameters", "movementSpeed", "x"])
+		offsets = settings().get(["printerParameters", "extruderOffsets"])
 
 		for line in gcodeFile:
 			if self._abort:
@@ -96,13 +85,23 @@ class gcode(object):
 
 			T = getCodeInt(line, 'T')
 			if T is not None:
-				if currentExtruder > 0:
-					posOffset[0] -= getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
-					posOffset[1] -= getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
+				posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+
 				currentExtruder = T
-				if currentExtruder > 0:
-					posOffset[0] += getPreference('extruder_offset_x%d' % (currentExtruder), 0.0)
-					posOffset[1] += getPreference('extruder_offset_y%d' % (currentExtruder), 0.0)
+
+				posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+
+				if len(currentE) <= currentExtruder:
+					for i in range(len(currentE), currentExtruder + 1):
+						currentE.append(0.0)
+				if len(maxExtrusion) <= currentExtruder:
+					for i in range(len(maxExtrusion), currentExtruder + 1):
+						maxExtrusion.append(0.0)
+				if len(totalExtrusion) <= currentExtruder:
+					for i in range(len(totalExtrusion), currentExtruder + 1):
+						totalExtrusion.append(0.0)
 			
 			G = getCodeInt(line, 'G')
 			if G is not None:
@@ -130,24 +129,35 @@ class gcode(object):
 							pos[2] += z * scale
 					if f is not None:
 						feedRateXY = f
-					if x is not None or y is not None or z is not None:
-						diffX = oldPos[0] - pos[0]
-						diffY = oldPos[1] - pos[1]
-						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
+
 					moveType = 'move'
 					if e is not None:
 						if absoluteE:
-							e -= currentE
+							e -= currentE[currentExtruder]
 						if e > 0.0:
 							moveType = 'extrude'
 						if e < 0.0:
 							moveType = 'retract'
-						totalExtrusion += e
-						currentE += e
-						if totalExtrusion > maxExtrusion:
-							maxExtrusion = totalExtrusion
+						totalExtrusion[currentExtruder] += e
+						currentE[currentExtruder] += e
+						if totalExtrusion[currentExtruder] > maxExtrusion[currentExtruder]:
+							maxExtrusion[currentExtruder] = totalExtrusion[currentExtruder]
 					else:
 						e = 0.0
+
+					if x is not None or y is not None or z is not None:
+						diffX = oldPos[0] - pos[0]
+						diffY = oldPos[1] - pos[1]
+						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
+					elif moveType == "extrude":
+						diffX = oldPos[0] - pos[0]
+						diffY = oldPos[1] - pos[1]
+						time1 = math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
+						time2 = abs(e / feedRateXY)
+						totalMoveTimeMinute += max(time1, time2)
+					elif moveType == "retract":
+						totalMoveTimeMinute += abs(e / feedRateXY)
+
 					if moveType == 'move' and oldPos[2] != pos[2]:
 						if oldPos[2] > pos[2] and abs(oldPos[2] - pos[2]) > 5.0 and pos[2] < 1.0:
 							oldPos[2] = 0.0
@@ -187,7 +197,7 @@ class gcode(object):
 					z = getCodeFloat(line, 'Z')
 					e = getCodeFloat(line, 'E')
 					if e is not None:
-						currentE = e
+						currentE[currentExtruder] = e
 					if x is not None:
 						posOffset[0] = pos[0] - x
 					if y is not None:
@@ -203,11 +213,17 @@ class gcode(object):
 						absoluteE = False
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
+
 		self.extrusionAmount = maxExtrusion
+		self.extrusionVolume = [0] * len(maxExtrusion)
+		for i in range(len(maxExtrusion)):
+			radius = self._filamentDiameter / 2
+			self.extrusionVolume[i] = (self.extrusionAmount[i] * (math.pi * radius * radius)) / 1000
 		self.totalMoveTimeMinute = totalMoveTimeMinute
 
 	def _parseCuraProfileString(self, comment):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
+
 
 def getCodeInt(line, code):
 	n = line.find(code) + 1
@@ -220,6 +236,7 @@ def getCodeInt(line, code):
 		return int(line[n:m])
 	except:
 		return None
+
 
 def getCodeFloat(line, code):
 	n = line.find(code) + 1

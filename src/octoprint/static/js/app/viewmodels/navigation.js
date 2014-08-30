@@ -9,7 +9,7 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
     self.triggerAction = function(action) {
         var callback = function() {
             $.ajax({
-                url: AJAX_BASEURL + "system",
+                url: API_BASEURL + "system",
                 type: "POST",
                 dataType: "json",
                 data: "action=" + action.action,
@@ -22,14 +22,17 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
             })
         }
         if (action.confirm) {
-            $("#confirmation_dialog .confirmation_dialog_message").text(action.confirm);
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").bind("click", function(e) {
+            var confirmationDialog = $("#confirmation_dialog");
+            var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+
+            $(".confirmation_dialog_message", confirmationDialog).text(action.confirm);
+            confirmationDialogAck.unbind("click");
+            confirmationDialogAck.bind("click", function(e) {
                 e.preventDefault();
                 $("#confirmation_dialog").modal("hide");
                 callback();
             });
-            $("#confirmation_dialog").modal("show");
+            confirmationDialog.modal("show");
         } else {
             callback();
         }

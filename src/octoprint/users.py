@@ -7,6 +7,7 @@ from flask.ext.principal import Identity
 import hashlib
 import os
 import yaml
+import uuid
 
 from octoprint.settings import settings
 
@@ -70,7 +71,10 @@ class FilebasedUserManager(UserManager):
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]
-					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"])
+					apikey = None
+					if "apikey" in attributes:
+						apikey = attributes["apikey"]
+					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"], apikey)
 		else:
 			self._customized = False
 
@@ -84,7 +88,8 @@ class FilebasedUserManager(UserManager):
 			data[name] = {
 				"password": user._passwordHash,
 				"active": user._active,
-				"roles": user._roles
+				"roles": user._roles,
+				"apikey": user._apikey
 			}
 
 		with open(self._userfile, "wb") as f:
@@ -92,11 +97,11 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password, active=False, roles=["user"]):
+	def addUser(self, username, password, active=False, roles=["user"], apikey=None):
 		if username in self._users.keys():
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles)
+		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey)
 		self._dirty = True
 		self._save()
 
@@ -154,6 +159,25 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
+	def generateApiKey(self, username):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		user._apikey = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		self._dirty = True
+		self._save()
+		return user._apikey
+
+	def deleteApikey(self, username):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		user._apikey = None
+		self._dirty = True
+		self._save()
+
 	def removeUser(self, username):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
@@ -162,14 +186,19 @@ class FilebasedUserManager(UserManager):
 		self._dirty = True
 		self._save()
 
-	def findUser(self, username=None):
-		if username is None:
-			return None
+	def findUser(self, username=None, apikey=None):
+		if username is not None:
+			if username not in self._users.keys():
+				return None
 
-		if username not in self._users.keys():
+			return self._users[username]
+		elif apikey is not None:
+			for user in self._users.values():
+				if apikey == user._apikey:
+					return user
 			return None
-
-		return self._users[username]
+		else:
+			return None
 
 	def getAllUsers(self):
 		return map(lambda x: x.asDict(), self._users.values())
@@ -194,18 +223,20 @@ class UnknownRole(Exception):
 ##~~ User object
 
 class User(UserMixin):
-	def __init__(self, username, passwordHash, active, roles):
+	def __init__(self, username, passwordHash, active, roles, apikey=None):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
 		self._roles = roles
+		self._apikey = apikey
 
 	def asDict(self):
 		return {
 			"name": self._username,
 			"active": self.is_active(),
 			"admin": self.is_admin(),
-			"user": self.is_user()
+			"user": self.is_user(),
+			"apikey": self._apikey
 		}
 
 	def check_password(self, passwordHash):
@@ -241,3 +272,11 @@ class DummyIdentity(Identity):
 
 def dummy_identity_loader():
 	return DummyIdentity()
+
+
+##~~ Apiuser object to use when api key is used to access the API
+
+
+class ApiUser(User):
+	def __init__(self):
+		User.__init__(self, "api", "", True, UserManager.valid_roles)

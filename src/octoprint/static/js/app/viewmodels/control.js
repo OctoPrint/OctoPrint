@@ -4,6 +4,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.loginState = loginStateViewModel;
     self.settings = settingsViewModel;
 
+    self._createToolEntry = function() {
+        return {
+            name: ko.observable(),
+            key: ko.observable()
+        }
+    };
+
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
     self.isPrinting = ko.observable(undefined);
@@ -15,7 +22,30 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
 
+    self.tools = ko.observableArray([]);
+
     self.feedbackControlLookup = {};
+
+    self.settings.printer_numExtruders.subscribe(function(oldVal, newVal) {
+        var tools = [];
+
+        var numExtruders = self.settings.printer_numExtruders();
+        if (numExtruders > 1) {
+            // multiple extruders
+            for (var extruder = 0; extruder < numExtruders; extruder++) {
+                tools[extruder] = self._createToolEntry();
+                tools[extruder]["name"]("Tool " + extruder);
+                tools[extruder]["key"]("tool" + extruder);
+            }
+        } else {
+            // only one extruder, no need to add numbers
+            tools[0] = self._createToolEntry();
+            tools[0]["name"]("Hotend");
+            tools[0]["key"]("tool0");
+        }
+
+        self.tools(tools);
+    });
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
@@ -43,7 +73,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "control/custom",
+            url: API_BASEURL + "printer/command/custom",
             method: "GET",
             dataType: "json",
             success: function(response) {
@@ -80,47 +110,81 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
             distance = $('#jog_distance button.active').data('distance');
-
         if (self.settings.getPrinterInvertAxis(axis)) {
             multiplier *= -1;
         }
 
+        var data = {
+            "command": "jog"
+        }
+        data[axis] = distance * multiplier;
+
         $.ajax({
-            url: AJAX_BASEURL + "control/jog",
+            url: API_BASEURL + "printer/printhead",
             type: "POST",
             dataType: "json",
-            data: axis + "=" + ( distance * multiplier )
-        })
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        });
     }
 
     self.sendHomeCommand = function(axis) {
+        var data = {
+            "command": "home",
+            "axes": axis
+        }
+
         $.ajax({
-            url: AJAX_BASEURL + "control/jog",
+            url: API_BASEURL + "printer/printhead",
             type: "POST",
             dataType: "json",
-            data: "home" + axis
-        })
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        });
     }
 
     self.sendExtrudeCommand = function() {
         self._sendECommand(1);
-    }
+    };
 
     self.sendRetractCommand = function() {
         self._sendECommand(-1);
-    }
+    };
 
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
-        if (!length)
-            length = 5;
+        if (!length) length = 5;
+
+        var data = {
+            command: "extrude",
+            amount: length * dir
+        };
+
         $.ajax({
-            url: AJAX_BASEURL + "control/jog",
+            url: API_BASEURL + "printer/tool",
             type: "POST",
             dataType: "json",
-            data: "extrude=" + (dir * length)
-        })
-    }
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        });
+    };
+
+    self.sendSelectToolCommand = function(data) {
+        if (!data || !data.key()) return;
+
+        var data = {
+            command: "select",
+            tool: data.key()
+        }
+
+        $.ajax({
+            url: API_BASEURL + "printer/tool",
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json; charset=UTF-8",
+            data: JSON.stringify(data)
+        });
+    };
 
     self.sendCustomCommand = function(command) {
         if (!command)
@@ -143,11 +207,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             }
         }
 
-        if (!data)
+        if (data === undefined)
             return;
 
         $.ajax({
-            url: AJAX_BASEURL + "control/command",
+            url: API_BASEURL + "printer/command",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",

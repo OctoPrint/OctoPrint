@@ -15,11 +15,71 @@ from octoprint.settings import settings
 # singleton
 _instance = None
 
+
+class Events(object):
+	# application startup
+	STARTUP = "Startup"
+
+	# connect/disconnect to printer
+	CONNECTED = "Connected"
+	DISCONNECTED = "Disconnected"
+
+	# connect/disconnect by client
+	CLIENT_OPENED = "ClientOpened"
+	CLIENT_CLOSED = "ClientClosed"
+
+	# File management
+	UPLOAD = "Upload"
+	FILE_SELECTED = "FileSelected"
+	FILE_DESELECTED = "FileDeselected"
+	UPDATED_FILES = "UpdatedFiles"
+	METADATA_ANALYSIS_STARTED = "MetadataAnalysisStarted"
+	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
+
+	# SD Upload
+	TRANSFER_STARTED = "TransferStarted"
+	TRANSFER_DONE = "TransferDone"
+
+	# print job
+	PRINT_STARTED = "PrintStarted"
+	PRINT_DONE = "PrintDone"
+	PRINT_FAILED = "PrintFailed"
+	PRINT_CANCELLED = "PrintCancelled"
+	PRINT_PAUSED = "PrintPaused"
+	PRINT_RESUMED = "PrintResumed"
+	ERROR = "Error"
+
+	# print/gcode events
+	POWER_ON = "PowerOn"
+	POWER_OFF = "PowerOff"
+	HOME = "Home"
+	Z_CHANGE = "ZChange"
+	WAITING = "Waiting"
+	COOLING = "Cooling"
+	ALERT = "Alert"
+	CONVEYOR = "Conveyor"
+	EJECT = "Eject"
+	E_STOP = "EStop"
+
+	# Timelapse
+	CAPTURE_START = "CaptureStart"
+	CAPTURE_DONE = "CaptureDone"
+	MOVIE_RENDERING = "MovieRendering"
+	MOVIE_DONE = "MovieDone"
+	MOVIE_FAILED = "MovieFailed"
+
+	# Slicing
+	SLICING_STARTED = "SlicingStarted"
+	SLICING_DONE = "SlicingDone"
+	SLICING_FAILED = "SlicingFailed"
+
+
 def eventManager():
 	global _instance
 	if _instance is None:
 		_instance = EventManager()
 	return _instance
+
 
 class EventManager(object):
 	"""
@@ -97,6 +157,7 @@ class EventManager(object):
 		self._registeredListeners[event].remove(callback)
 		self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
 
+
 class GenericEventListener(object):
 	"""
 	The GenericEventListener can be subclassed to easily create custom event listeners.
@@ -128,19 +189,18 @@ class GenericEventListener(object):
 		"""
 		pass
 
+
 class DebugEventListener(GenericEventListener):
 	def __init__(self):
 		GenericEventListener.__init__(self)
 
-		events = ["Startup", "Connected", "Disconnected", "ClientOpen", "ClientClosed", "PowerOn", "PowerOff", "Upload",
-				  "FileSelected", "TransferStarted", "TransferDone", "PrintStarted", "PrintDone", "PrintFailed",
-				  "Cancelled", "Home", "ZChange", "Paused", "Waiting", "Cooling", "Alert", "Conveyor", "Eject",
-				  "CaptureStart", "CaptureDone", "MovieDone", "EStop", "Error"]
+		events = filter(lambda x: not x.startswith("__"), dir(Events))
 		self.subscribe(events)
 
 	def eventCallback(self, event, payload):
 		GenericEventListener.eventCallback(self, event, payload)
 		self._logger.debug("Received event: %s (Payload: %r)" % (event, payload))
+
 
 class CommandTrigger(GenericEventListener):
 	def __init__(self, triggerType, printer):
@@ -191,8 +251,11 @@ class CommandTrigger(GenericEventListener):
 			return
 
 		for command in self._subscriptions[event]:
-			processedCommand = self._processCommand(command, payload)
-			self.executeCommand(processedCommand)
+			try:
+				processedCommand = self._processCommand(command, payload)
+				self.executeCommand(processedCommand)
+			except KeyError, e:
+				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command):
 		"""
@@ -206,33 +269,40 @@ class CommandTrigger(GenericEventListener):
 
 		The following substitutions are currently supported:
 
-		  - %(currentZ)s : current Z position of the print head, or -1 if not available
-		  - %(filename)s : current selected filename, or "NO FILE" if no file is selected
-		  - %(progress)s : current print progress in percent, 0 if no print is in progress
-		  - %(data)s : the string representation of the event's payload
-		  - %(now)s : ISO 8601 representation of the current date and time
+		  - {__currentZ} : current Z position of the print head, or -1 if not available
+		  - {__filename} : current selected filename, or "NO FILE" if no file is selected
+		  - {__progress} : current print progress in percent, 0 if no print is in progress
+		  - {__data} : the string representation of the event's payload
+		  - {__now} : ISO 8601 representation of the current date and time
+
+		Additionally, the keys of the event's payload can also be used as placeholder.
 		"""
 
 		params = {
-			"currentZ": "-1",
-			"filename": "NO FILE",
-			"progress": "0",
-			"data": str(payload),
-			"now": datetime.datetime.now().isoformat()
+			"__currentZ": "-1",
+			"__filename": "NO FILE",
+			"__progress": "0",
+			"__data": str(payload),
+			"__now": datetime.datetime.now().isoformat()
 		}
 
 		currentData = self._printer.getCurrentData()
 
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
-			params["currentZ"] = str(currentData["currentZ"])
+			params["__currentZ"] = str(currentData["currentZ"])
 
 		if "job" in currentData.keys() and currentData["job"] is not None:
-			params["filename"] = currentData["job"]["filename"]
+			params["__filename"] = currentData["job"]["file"]["name"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
 				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None:
-				params["progress"] = str(round(currentData["progress"]["progress"] * 100))
+				params["__progress"] = str(round(currentData["progress"]["progress"] * 100))
 
-		return command % params
+		# now add the payload keys as well
+		if isinstance(payload, dict):
+			params.update(payload)
+
+		return command.format(**params)
+
 
 class SystemCommandTrigger(CommandTrigger):
 	"""
@@ -250,6 +320,7 @@ class SystemCommandTrigger(CommandTrigger):
 			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
 		except Exception, ex:
 			self._logger.exception("Command failed")
+
 
 class GcodeCommandTrigger(CommandTrigger):
 	"""

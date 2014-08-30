@@ -5,6 +5,7 @@ function TimelapseViewModel(loginStateViewModel) {
 
     self.timelapseType = ko.observable(undefined);
     self.timelapseTimedInterval = ko.observable(undefined);
+    self.timelapsePostRoll = ko.observable(undefined);
 
     self.persist = ko.observable(false);
     self.isDirty = ko.observable(false);
@@ -17,6 +18,9 @@ function TimelapseViewModel(loginStateViewModel) {
     self.isReady = ko.observable(undefined);
     self.isLoading = ko.observable(undefined);
 
+    self.timelapseTypeSelected = ko.computed(function() {
+        return ("off" != self.timelapseType());
+    });
     self.intervalInputEnabled = ko.computed(function() {
         return ("timed" == self.timelapseType());
     });
@@ -68,7 +72,7 @@ function TimelapseViewModel(loginStateViewModel) {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "timelapse",
+            url: API_BASEURL + "timelapse",
             type: "GET",
             dataType: "json",
             success: self.fromResponse
@@ -76,10 +80,13 @@ function TimelapseViewModel(loginStateViewModel) {
     };
 
     self.fromResponse = function(response) {
-        self.timelapseType(response.type);
+        var config = response.config;
+        if (config === undefined) return;
+
+        self.timelapseType(config.type);
         self.listHelper.updateItems(response.files);
 
-        if (response.type == "timed" && response.config && response.config.interval) {
+        if (config.type == "timed" && response.config.interval) {
             self.timelapseTimedInterval(response.config.interval);
         } else {
             self.timelapseTimedInterval(undefined);
@@ -109,7 +116,7 @@ function TimelapseViewModel(loginStateViewModel) {
 
     self.removeFile = function(filename) {
         $.ajax({
-            url: AJAX_BASEURL + "timelapse/" + filename,
+            url: API_BASEURL + "timelapse/" + filename,
             type: "DELETE",
             dataType: "json",
             success: self.requestData
@@ -119,6 +126,7 @@ function TimelapseViewModel(loginStateViewModel) {
     self.save = function(data, event) {
         var data = {
             "type": self.timelapseType(),
+            "postRoll": self.timelapsePostRoll(),
             "save": self.persist()
         }
 
@@ -127,7 +135,7 @@ function TimelapseViewModel(loginStateViewModel) {
         }
 
         $.ajax({
-            url: AJAX_BASEURL + "timelapse",
+            url: API_BASEURL + "timelapse",
             type: "POST",
             dataType: "json",
             data: data,
