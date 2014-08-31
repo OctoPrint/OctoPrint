@@ -79,9 +79,36 @@ class NewTranslation(Command):
 		self.babel_init_messages.run()
 
 
+class ExtractTranslation(Command):
+	description = "extract translations"
+	user_options = []
+	boolean_options = []
+
+	def __init__(self, dist, **kw):
+		from babel.messages import frontend as babel
+		self.babel_extract_messages = babel.extract_messages(dist)
+		Command.__init__(self, dist, **kw)
+
+	def initialize_options(self):
+		self.babel_extract_messages.initialize_options()
+
+	def finalize_options(self):
+		self.babel_extract_messages.mapping_file = I18N_MAPPING_FILE
+		self.babel_extract_messages.output_file = I18N_POT_FILE
+		self.babel_extract_messages.input_dirs = I18N_INPUT_DIRS
+		self.babel_extract_messages.msgid_bugs_address = "i18n@octoprint.org"
+		self.babel_extract_messages.copyright_holder = "The OctoPrint Project"
+		self.babel_extract_messages.finalize_options()
+
+	def run(self):
+		self.babel_extract_messages.run()
+
+
 class RefreshTranslation(Command):
 	description = "refresh translations"
-	user_options = []
+	user_options = [
+		('locale=', 'l', 'locale for the translation to refresh'),
+		]
 	boolean_options = []
 
 	def __init__(self, dist, **kw):
@@ -91,6 +118,7 @@ class RefreshTranslation(Command):
 		Command.__init__(self, dist, **kw)
 
 	def initialize_options(self):
+		self.locale = None
 		self.babel_extract_messages.initialize_options()
 		self.babel_update_messages.initialize_options()
 
@@ -104,6 +132,7 @@ class RefreshTranslation(Command):
 
 		self.babel_update_messages.input_file = I18N_MAPPING_FILE
 		self.babel_update_messages.output_dir = I18N_OUTPUT_DIR_PY
+		self.babel_update_messages.locale = self.locale
 
 	def run(self):
 		self.babel_extract_messages.run()
@@ -150,6 +179,7 @@ def get_cmdclass():
 	cmdclass.update({
 		'clean': CleanCommand,
 		'babel_new': NewTranslation,
+		'babel_extract': ExtractTranslation,
 		'babel_refresh': RefreshTranslation,
 		'babel_compile': CompileTranslation
 	})
