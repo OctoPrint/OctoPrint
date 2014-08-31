@@ -22,4 +22,5 @@ Contents
    :maxdepth: 2
 
    api/index.rst
+   events/index.rst
 
