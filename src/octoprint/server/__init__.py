@@ -165,6 +165,8 @@ class Server():
 
 		logger.info("Starting OctoPrint (%s)" % VERSION)
 
+		logger.info("Starting OctoPrint (%s)" % VERSION)
+
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
