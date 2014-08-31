@@ -1,5 +1,29 @@
 # OctoPrint Release Notes
 
+## 1.2.0 (In Development)
+
+### New Features
+
+* Added internationalization of UI. Translations of OctoPrint are being crowd sourced via [Transifex](https://www.transifex.com/projects/p/octoprint/).
+  The following translations are already available with more in the works:
+  - German (de)
+  - French (fr)
+  - Hebrew (he)
+  - Romanian (ro)
+* New file list: Pagination is gone, no more (mobile incompatible) pop overs, instead scrollable and with instant
+  search
+
+### Improvements
+
+* Logging is now configurable via config file
+* Added last print time to additional GCODE file information
+
+### Bug Fixes
+
+* [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
+  as 0
+
+
 ## 1.1.0
 
 ### New Features
