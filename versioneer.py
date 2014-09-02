@@ -425,7 +425,7 @@ def versions_from_lookup(lookup, root, verbose=False):
             if dirty:
                 version += "-dirty"
                 full += "-dirty"
-            return {"version": version, "full": full}
+            return {"version": version, "full": full, "branch": current_branch}
 
     return {}
 
@@ -454,7 +454,14 @@ def versions_from_vcs(tag_prefix, root, verbose=False):
     full = stdout.strip()
     if tag.endswith("-dirty"):
         full += "-dirty"
-    return {"version": tag, "full": full}
+
+    stdout = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"],
+                         cwd=root)
+    if stdout is None:
+        branch = None
+    else:
+        branch = stdout.strip()
+    return {"version": tag, "full": full, "branch": branch}
 
 
 def versions_from_parentdir(parentdir_prefix, root, verbose=False):
@@ -685,7 +692,7 @@ def versions_from_lookup(lookup, root, verbose=False):
             if dirty:
                 version += "-dirty"
                 full += "-dirty"
-            return {"version": version, "full": full}
+            return {"version": version, "full": full, "branch": current_branch}
 
     return {}
 
@@ -715,7 +722,14 @@ def versions_from_vcs(tag_prefix, root, verbose=False):
     full = stdout.strip()
     if tag.endswith("-dirty"):
         full += "-dirty"
-    return {"version": tag, "full": full}
+
+    stdout = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"],
+                         cwd=root)
+    if stdout is None:
+        branch = None
+    else:
+        branch = stdout.strip()
+    return {"version": tag, "full": full, "branch": branch}
 
 
 def versions_from_parentdir(parentdir_prefix, root, verbose=False):
@@ -787,7 +801,10 @@ SHORT_VERSION_PY = """
 
 version_version = '%(version)s'
 version_full = '%(full)s'
+version_branch = %(branch)r
 def get_versions(default={}, verbose=False):
+    if version_branch:
+        return {'version': version_version, 'full': version_full, 'branch': version_branch}
     return {'version': version_version, 'full': version_full}
 
 """

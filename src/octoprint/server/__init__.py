@@ -49,7 +49,12 @@ from . import util
 
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
-VERSION = octoprint._version.get_versions()['version']
+
+versions = octoprint._version.get_versions()
+VERSION = versions['version']
+BRANCH = versions['branch'] if 'branch' in versions else None
+DISPLAY_VERSION = "%s (%s branch)" % (VERSION, BRANCH) if BRANCH else VERSION
+del versions
 
 
 def get_available_locale_identifiers(locales):
@@ -95,6 +100,7 @@ def index():
 		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
 		debug=debug,
 		version=VERSION,
+		display_version=DISPLAY_VERSION,
 		stylesheet=settings().get(["devel", "stylesheet"]),
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
@@ -163,9 +169,7 @@ class Server():
 		self._initLogging(self._debug, self._logConf)
 		logger = logging.getLogger(__name__)
 
-		logger.info("Starting OctoPrint (%s)" % VERSION)
-
-		logger.info("Starting OctoPrint (%s)" % VERSION)
+		logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
 
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
