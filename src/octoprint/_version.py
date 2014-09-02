@@ -166,7 +166,7 @@ def versions_from_lookup(lookup, root, verbose=False):
             if dirty:
                 version += "-dirty"
                 full += "-dirty"
-            return {"version": version, "full": full}
+            return {"version": version, "full": full, "branch": current_branch}
 
     return {}
 
@@ -195,7 +195,14 @@ def versions_from_vcs(tag_prefix, root, verbose=False):
     full = stdout.strip()
     if tag.endswith("-dirty"):
         full += "-dirty"
-    return {"version": tag, "full": full}
+
+    stdout = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"],
+                         cwd=root)
+    if stdout is None:
+        branch = None
+    else:
+        branch = stdout.strip()
+    return {"version": tag, "full": full, "branch": branch}
 
 
 def versions_from_parentdir(parentdir_prefix, root, verbose=False):
