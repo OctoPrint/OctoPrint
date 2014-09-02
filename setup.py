@@ -7,6 +7,7 @@ versioneer.versionfile_source = 'src/octoprint/_version.py'
 versioneer.versionfile_build = 'octoprint/_version.py'
 versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = ''
+versioneer.lookupfile = '.versioneer-lookup'
 
 from setuptools import setup, find_packages, Command
 import os
