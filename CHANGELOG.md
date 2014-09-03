@@ -6,9 +6,11 @@
 
 * Added internationalization of UI. Translations of OctoPrint are being crowd sourced via [Transifex](https://www.transifex.com/projects/p/octoprint/).
   The following translations are already available with more in the works:
+  - Dutch (nl)
   - German (de)
   - French (fr)
   - Hebrew (he)
+  - Norwegian (no)
   - Romanian (ro)
 * New file list: Pagination is gone, no more (mobile incompatible) pop overs, instead scrollable and with instant
   search
