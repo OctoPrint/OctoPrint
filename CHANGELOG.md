@@ -1,4 +1,4 @@
-# OctoPrint Release Notes
+# OctoPrint Changelog
 
 ## 1.2.0 (In Development)
 
@@ -52,7 +52,9 @@
 * Support for circular beds in the GCODE viewer ([#407](https://github.com/foosel/OctoPrint/pull/407))
 * The dimensions of the print bed can now be configured via the Settings ([#396](https://github.com/foosel/OctoPrint/pull/396))
 * Target temperature reporting format of Repetier Firmware is now supported as well ([360](https://github.com/foosel/OctoPrint/issues/360))
-* Version tracking now based on git tagging and [versioneer](https://github.com/warner/python-versioneer/).
+* Version tracking now based on git tagging and [versioneer](https://github.com/warner/python-versioneer/). Version number,
+  git commit and branch get reported in the format `<version tag>-<commits since then>-g<commit hash> (<branch> branch)`, 
+  e.g. `1.2.0-dev-172-ga48b5de (devel branch)`.
 * Made "Center viewport on model" and "Zoom in on model" in the GCODE viewer automatically deselect and de-apply if 
   viewport gets manipulated by the user ([#398](https://github.com/foosel/OctoPrint/issues/398))
 * GCODE viewer now interprets inverted axes for printer control and mirrors print bed accordingly ([#431](https://github.com/foosel/OctoPrint/issues/431))

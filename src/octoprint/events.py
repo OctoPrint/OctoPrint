@@ -293,7 +293,7 @@ class CommandTrigger(GenericEventListener):
 	def _executeGcodeCommand(self, command):
 		commands = [command]
 		if isinstance(command, (list, tuple, set)):
-			self._logger.debug("Executing GCode commands: %r" % command)
+			self.logger.debug("Executing GCode commands: %r" % command)
 			commands = list(command)
 		else:
 			self._logger.debug("Executing GCode command: %s" % command)
