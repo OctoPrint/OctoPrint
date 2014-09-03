@@ -42,6 +42,7 @@
 
             var UI_API_KEY = "{{ uiApiKey }}";
             var VERSION = "{{ version }}";
+            var DISPLAY_VERSION = "{{ display_version }}";
             var LOCALE = "{{ g.locale }}";
         </script>
     </head>
@@ -589,7 +590,7 @@
             </div>
             <div class="footer">
                 <ul class="pull-left muted">
-                    <li><small>{{ _('Version') }}: <span class="version">{{ version }}</span></small></li>
+                    <li><small>{{ _('Version') }}: <span class="version">{{ display_version }}</span></small></li>
                 </ul>
                 <ul class="pull-right">
                     <li><a href="http://octoprint.org"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>

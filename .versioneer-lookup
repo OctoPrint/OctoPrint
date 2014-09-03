@@ -1,0 +1,18 @@
+# Configuration file for the versioneer lookup, manually mapping tags based on branches
+#
+# Format is
+#
+#   <branch-regex> <tag> <reference commit>
+#
+# The file is processed from top to bottom, the first matching line wins. If <tag> or <reference commit> are left out,
+# the lookup table does not apply to the matched branches
+
+# master and staging shall not use the lookup table
+master
+staging
+
+# fix/ branches are fixes for master, so we don't handle those either
+fix/.*
+
+# every other branch is a development branch and thus gets resolved to 1.2.0-dev for now
+.* 1.2.0-dev 50cf776e70b9

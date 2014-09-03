@@ -71,7 +71,8 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     });
 
                     VERSION = data["version"];
-                    $("span.version").text(VERSION);
+                    DISPLAY_VERSION = data["display_version"];
+                    $("span.version").text(DISPLAY_VERSION);
 
                     if ($("#offline_overlay").is(":visible")) {
                         $("#offline_overlay").hide();

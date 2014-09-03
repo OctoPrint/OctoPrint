@@ -54,6 +54,18 @@ import sys
 import re
 import os.path
 
+def get_gits(root, verbose=False):
+    if not os.path.exists(os.path.join(root, ".git")):
+        if verbose:
+            print("no .git in %s" % root)
+        return None
+
+    GITS = ["git"]
+    if sys.platform == "win32":
+        GITS = ["git.cmd", "git.exe"]
+    return GITS
+
+
 def get_expanded_variables(versionfile_abs):
     # the code embedded in _version.py can just fetch the value of these
     # variables. When used from setup.py, we don't want to import
@@ -114,20 +126,60 @@ def versions_from_expanded_variables(variables, tag_prefix, verbose=False):
     return { "version": variables["full"].strip(),
              "full": variables["full"].strip() }
 
+def versions_from_lookup(lookup, root, verbose=False):
+    GITS = get_gits(root, verbose=verbose)
+    if GITS is None:
+        return {}
+
+    stdout = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"],
+                         cwd=root)
+    if stdout is None:
+        return {}
+
+    current_branch = stdout.strip()
+    for matcher, tag, ref_commit in lookup:
+        if matcher.match(current_branch):
+            if tag is None or ref_commit is None:
+                return {}
+
+            stdout = run_command(GITS, ["rev-list", "%s..HEAD" % ref_commit, "--count"], cwd=root)
+            if stdout is None:
+                return {}
+            num_commits = stdout.strip()
+
+            stdout =run_command(GITS, ["rev-parse", "--short", "HEAD"], cwd=root)
+            if stdout is None:
+                return {}
+            short_hash = stdout.strip()
+
+            stdout = run_command(GITS, ["describe", "--tags", "--dirty", "--always"], cwd=root)
+            if stdout is None:
+                return {}
+            dirty = stdout.strip().endswith("-dirty")
+
+            stdout = run_command(GITS, ["rev-parse", "HEAD"], cwd=root)
+            if stdout is None:
+                return {}
+            full = stdout.strip()
+
+            version = "%s-%s-g%s" % (tag, num_commits, short_hash)
+            if dirty:
+                version += "-dirty"
+                full += "-dirty"
+            return {"version": version, "full": full, "branch": current_branch}
+
+    return {}
+
 def versions_from_vcs(tag_prefix, root, verbose=False):
     # this runs 'git' from the root of the source tree. This only gets called
     # if the git-archive 'subst' variables were *not* expanded, and
     # _version.py hasn't already been rewritten with a short version string,
     # meaning we're inside a checked out source tree.
 
-    if not os.path.exists(os.path.join(root, ".git")):
-        if verbose:
-            print("no .git in %s" % root)
+    GITS = get_gits(root, verbose=verbose)
+    if GITS is None:
         return {}
 
-    GITS = ["git"]
-    if sys.platform == "win32":
-        GITS = ["git.cmd", "git.exe"]
     stdout = run_command(GITS, ["describe", "--tags", "--dirty", "--always"],
                          cwd=root)
     if stdout is None:
@@ -143,7 +195,14 @@ def versions_from_vcs(tag_prefix, root, verbose=False):
     full = stdout.strip()
     if tag.endswith("-dirty"):
         full += "-dirty"
-    return {"version": tag, "full": full}
+
+    stdout = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"],
+                         cwd=root)
+    if stdout is None:
+        branch = None
+    else:
+        branch = stdout.strip()
+    return {"version": tag, "full": full, "branch": branch}
 
 
 def versions_from_parentdir(parentdir_prefix, root, verbose=False):
@@ -158,10 +217,39 @@ def versions_from_parentdir(parentdir_prefix, root, verbose=False):
     return {"version": dirname[len(parentdir_prefix):], "full": ""}
 
 tag_prefix = ""
-parentdir_prefix = "octoprint-"
+parentdir_prefix = ""
 versionfile_source = "src/octoprint/_version.py"
+lookupfile = ".versioneer-lookup"
 
-def get_versions(default={"version": "unknown", "full": ""}, verbose=False):
+def parse_lookup_file(root, lookup_path=None):
+    if not lookup_path:
+        lookup_path = lookupfile
+    if not lookup_path:
+        return []
+
+    path = os.path.join(root, lookup_path)
+    if not os.path.exists(path):
+        return []
+
+    import re
+    lookup = []
+    with open(os.path.join(root, lookup_path), "r") as f:
+        for line in f:
+            if '#' in line:
+                line = line[:line.rindex('#')]
+            line = line.strip()
+            try:
+                split_line = line.split()
+                if len(split_line) == 3:
+                    pattern, tag, ref_commit = split_line
+                    lookup.append([re.compile(pattern), tag, ref_commit])
+                elif len(split_line) >= 1:
+                    lookup.append([re.compile(split_line[0]), None, None])
+            except:
+                break
+    return lookup
+
+def get_versions(default={"version": "unknown", "full": ""}, lookup_path=None, verbose=False):
     # I am in _version.py, which lives at ROOT/VERSIONFILE_SOURCE. If we have
     # __file__, we can work backwards from there to the root. Some
     # py2exe/bbfreeze/non-CPython implementations don't do __file__, in which
@@ -182,7 +270,9 @@ def get_versions(default={"version": "unknown", "full": ""}, verbose=False):
     except NameError:
         return default
 
-    return (versions_from_vcs(tag_prefix, root, verbose)
+    lookup = parse_lookup_file(root, lookup_path=lookup_path)
+    return (versions_from_lookup(lookup, root, verbose)
+            or versions_from_vcs(tag_prefix, root, verbose)
             or versions_from_parentdir(parentdir_prefix, root, verbose)
             or default)
 
