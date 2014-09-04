@@ -100,6 +100,10 @@ gcodeToEvent = {
 	"M81": Events.POWER_OFF,
 }
 
+atcommandsToEvent = {
+	"pause": Events.WAITING,
+}
+
 class MachineCom(object):
 	STATE_NONE = 0
 	STATE_OPEN_SERIAL = 1
@@ -164,6 +168,7 @@ class MachineCom(object):
 		positiveFloatPattern = "[+]?[0-9]*\.?[0-9]+"
 		intPattern = "\d+"
 		self._regex_command = re.compile("^\s*([GM]\d+|T)")
+		self._regex_at_command = re.compile("^@(.*?)\s*(.*)")
 		self._regex_float = re.compile(floatPattern)
 		self._regex_paramZFloat = re.compile("Z(%s)" % floatPattern)
 		self._regex_paramSInt = re.compile("S(%s)" % intPattern)
@@ -1089,6 +1094,19 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
+				atcommand = self._regex_at_command.search(cmd)
+				if atcommand:
+					atcommand = atcommand.group(1)
+					if atcommand in atcommandsToEvent:
+						eventManager().fire(atcommandsToEvent[atcommand])
+					else:
+						#no printers are going to know how to handle an @ command, return if we can't parse it
+						return
+
+					atcommandHandler = "_atcommand_"+atcommand
+					if hasattr(self, atcommandHandler):
+						cmd = getattr(self, atcommandHandler)(cmd)
+
 				gcode = self._regex_command.search(cmd)
 				if gcode:
 					gcode = gcode.group(1)
@@ -1161,6 +1179,7 @@ class MachineCom(object):
 		self.setPause(True)
 		return "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 	_gcode_M1 = _gcode_M0
+	_atcommand_pause = _gcode_M0
 
 	def _gcode_M104(self, cmd):
 		toolNum = self._currentExtruder
