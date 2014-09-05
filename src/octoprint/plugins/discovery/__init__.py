@@ -13,9 +13,11 @@ import octoprint.plugin
 
 default_settings = {
 	"publicPort": None,
-    "pathPrefix": None
+	"pathPrefix": None,
+	"httpUsername": None,
+	"httpPassword": None
 }
-s = octoprint.plugin.plugin_settings("netconnectd", defaults=default_settings)
+s = octoprint.plugin.plugin_settings("discovery", defaults=default_settings)
 
 
 class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin):
@@ -44,18 +46,27 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin):
 
 	def on_settings_load(self):
 		return {
-			"publicPort": s.getInt(["publicPort"])
+			"publicPort": s.getInt(["publicPort"]),
+			"pathPrefix": s.get(["pathPrefix"]),
+			"httpUsername": s.get(["httpUsername"]),
+			"httpPassword": s.get(["httpPassword"])
 		}
 
 	def on_settings_save(self, data):
 		if "publicPort" in data and data["publicPort"]:
 			s.setInt(["publicPort"], data["publicPort"])
+		if "pathPrefix" in data and data["pathPrefix"]:
+			s.set(["pathPrefix"], data["pathPrefix"])
+		if "httpUsername" in data and data["httpUsername"]:
+			s.set(["httpUsername"], data["httpUsername"])
+		if "httpPassword" in data and data["httpPassword"]:
+			s.set(["httpPassword"], data["httpPassword"])
 
 	#~~ internals
 
 	def _bonjour_register(self, host, port):
 		import pybonjour
-		import octoprint._version
+		import socket
 
 		def register_callback(sd_ref, flags, error_code, name, reg_type, domain):
 			if error_code == pybonjour.kDNSServiceErr_NoError:
@@ -71,37 +82,61 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin):
 		elif prefix:
 			path = prefix
 
-		domain = "local"
+		name = "OctoPrint instance on {}".format(socket.gethostname())
 
 		self.octoprint_sd_ref = pybonjour.DNSServiceRegister(
-			name="OctoPrint API",
+			name=name,
 			regtype='_octoprint._tcp',
 			port=port,
-			domain=domain,
-			txtRecord=pybonjour.TXTRecord({'version': octoprint._version.get_versions()['version'], 'path': path}),
+			txtRecord=pybonjour.TXTRecord(self._create_octoprint_txt_record_dict()),
 			callBack=register_callback
 		)
 		pybonjour.DNSServiceProcessResult(self.octoprint_sd_ref)
 
 		self.http_sd_ref = pybonjour.DNSServiceRegister(
-			name="octoprint",
+			name=name,
 			regtype='_http._tcp',
 			port=port,
-			domain=domain,
-			txtRecord=pybonjour.TXTRecord({'path': path}),
+			txtRecord=pybonjour.TXTRecord(self._create_base_txt_record_dict()),
 			callBack=register_callback
 		)
 		pybonjour.DNSServiceProcessResult(self.http_sd_ref)
 
-		self.workstation_sd_ref = pybonjour.DNSServiceRegister(
-			name="octoprint",
-			regtype='_workstation._tcp',
-			host="octoprint.local",
-			port=9,
-			domain=domain,
-			callBack=register_callback
+	def _create_octoprint_txt_record_dict(self):
+		entries = self._create_base_txt_record_dict()
+
+		import octoprint.server
+		import octoprint.server.api
+
+		entries.update(dict(
+			version=octoprint.server.VERSION,
+			api=octoprint.server.api.VERSION,
+		))
+
+		return entries
+
+	def _create_base_txt_record_dict(self):
+		# determine path entry
+		path = "/"
+		if s.get(["pathPrefix"]):
+			path = s.get(["pathPrefix"])
+		else:
+			prefix = s.globalGet(["server", "reverseProxy", "prefixFallback"])
+			if prefix:
+				path = prefix
+
+		# fetch username and password (if set)
+		username = s.get(["httpUsername"])
+		password = s.get(["httpPassword"])
+
+		entries = dict(
+			path=path
 		)
-		pybonjour.DNSServiceProcessResult(self.workstation_sd_ref)
+
+		if username and password:
+			entries.update(dict(u=username, p=password))
+
+		return entries
 
 
 __plugin_name__ = "Discovery"
