@@ -16,6 +16,7 @@ from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
 import octoprint.util as util
 import octoprint.users
 import octoprint.server
+import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT, UI_API_KEY
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import get_api_key, get_user_for_apikey
@@ -107,10 +108,49 @@ def afterApiRequests(resp):
 	return resp
 
 
+#~~ data from plugins
+
+@api.route("/plugin/<string:name>", methods=["GET"])
+def pluginData(name):
+	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
+	if not name in api_plugins:
+		return make_response(404)
+
+	api_plugin = api_plugins[name]
+	response = api_plugin.on_api_get(request)
+
+	if response is not None:
+		return response
+	return NO_CONTENT
+
+#~~ commands for plugins
+
+@api.route("/plugin/<string:name>", methods=["POST"])
+@restricted_access
+def pluginCommand(name):
+	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
+	if not name in api_plugins:
+		return make_response(404)
+
+	api_plugin = api_plugins[name]
+	valid_commands = api_plugin.get_api_commands()
+	if valid_commands is None:
+		return make_response(405)
+
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	response = api_plugin.on_api_command(command, data)
+	if response is not None:
+		return response
+	return NO_CONTENT
+
 #~~ first run setup
 
 
 @api.route("/setup", methods=["POST"])
+@restricted_access
 def firstRunSetup():
 	if not s().getBoolean(["server", "firstRun"]):
 		abort(403)

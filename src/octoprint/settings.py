@@ -91,7 +91,8 @@ default_settings = {
 		"timelapse_tmp": None,
 		"logs": None,
 		"virtualSd": None,
-		"watched": None
+		"watched": None,
+		"plugins": None
 	},
 	"temperature": {
 		"profiles":
@@ -152,6 +153,7 @@ default_settings = {
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
+	"plugins": {},
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
@@ -301,19 +303,6 @@ class Settings(object):
 			self.save(force=True)
 			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
 
-		if migrate:
-			self._migrateConfig()
-
-	def _migrateConfig(self):
-		if not self._config:
-			return
-
-		dirty = False
-		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config):
-			dirty = migrate() or dirty
-		if dirty:
-			self.save(force=True)
-
 	def _migrate_reverse_proxy_config(self):
 		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
 			prefix = ""
@@ -435,12 +424,13 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False):
+	def get(self, path, asdict=False, defaults=None):
 		if len(path) == 0:
 			return None
 
 		config = self._config
-		defaults = default_settings
+		if defaults is None:
+			defaults = default_settings
 
 		while len(path) > 1:
 			key = path.pop(0)
@@ -484,8 +474,8 @@ class Settings(object):
 		else:
 			return results
 
-	def getInt(self, path):
-		value = self.get(path)
+	def getInt(self, path, defaults=None):
+		value = self.get(path, defaults=defaults)
 		if value is None:
 			return None
 
@@ -495,8 +485,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getFloat(self, path):
-		value = self.get(path)
+	def getFloat(self, path, defaults=None):
+		value = self.get(path, defaults=defaults)
 		if value is None:
 			return None
 
@@ -506,8 +496,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getBoolean(self, path):
-		value = self.get(path)
+	def getBoolean(self, path, defaults=None):
+		value = self.get(path, defaults=defaults)
 		if value is None:
 			return None
 		if isinstance(value, bool):
@@ -581,12 +571,13 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, force=False):
+	def set(self, path, value, force=False, defaults=None):
 		if len(path) == 0:
 			return
 
 		config = self._config
-		defaults = default_settings
+		if defaults is None:
+			defaults = default_settings
 
 		while len(path) > 1:
 			key = path.pop(0)
@@ -611,9 +602,9 @@ class Settings(object):
 				config[key] = value
 			self._dirty = True
 
-	def setInt(self, path, value, force=False):
+	def setInt(self, path, value, force=False, defaults=None):
 		if value is None:
-			self.set(path, None, force)
+			self.set(path, None, force=force, defaults=defaults)
 			return
 
 		try:
@@ -624,9 +615,9 @@ class Settings(object):
 
 		self.set(path, intValue, force)
 
-	def setFloat(self, path, value, force=False):
+	def setFloat(self, path, value, force=False, defaults=None):
 		if value is None:
-			self.set(path, None, force)
+			self.set(path, None, force=force, defaults=defaults)
 			return
 
 		try:
@@ -637,13 +628,13 @@ class Settings(object):
 
 		self.set(path, floatValue, force)
 
-	def setBoolean(self, path, value, force=False):
+	def setBoolean(self, path, value, force=False, defaults=None):
 		if value is None or isinstance(value, bool):
-			self.set(path, value, force)
+			self.set(path, value, force=force, defaults=defaults)
 		elif value.lower() in valid_boolean_trues:
-			self.set(path, True, force)
+			self.set(path, True, force=force, defaults=defaults)
 		else:
-			self.set(path, False, force)
+			self.set(path, False, force=force, defaults=defaults)
 
 	def setBaseFolder(self, type, path, force=False):
 		if type not in default_settings["folder"].keys():

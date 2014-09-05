@@ -16,6 +16,8 @@ from octoprint.server import admin_permission
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
 
+import octoprint.plugin
+
 
 #~~ settings
 
@@ -29,7 +31,7 @@ def getSettings():
 
 	connectionOptions = getConnectionOptions()
 
-	return jsonify({
+	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
 			"key": s.get(["api", "key"]),
@@ -102,7 +104,19 @@ def getSettings():
 			"path": s.get(["cura", "path"]),
 			"config": s.get(["cura", "config"])
 		}
-	})
+	}
+
+	settings_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin)
+	for name, plugin in settings_plugins.items():
+		plugin_data = plugin.on_settings_load()
+		if plugin_data:
+			if not "plugins" in data:
+				data["plugins"] = dict()
+			if "__enabled" in plugin_data:
+				del plugin_data["__enabled"]
+			data["plugins"][name] = plugin_data
+
+	return jsonify(data)
 
 
 @api.route("/settings", methods=["POST"])
@@ -203,6 +217,11 @@ def setSettings():
 			# Enabled is a boolean so we cannot check that we have a result
 			enabled = cura.get("enabled")
 			s.setBoolean(["cura", "enabled"], enabled)
+
+		settings_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin)
+		for name, plugin in settings_plugins.items():
+			if "plugins" in data and name in data["plugins"]:
+				plugin.on_settings_save(data["plugins"][name])
 
 		s.save()
 

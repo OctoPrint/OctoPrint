@@ -21,6 +21,14 @@
                 <li><a href="#settings_folder" data-toggle="tab">{{ _('Folders') }}</a></li>
                 <li><a href="#settings_appearance" data-toggle="tab">{{ _('Appearance') }}</a></li>
                 <li><a href="#settings_logs" data-toggle="tab">{{ _('Logs') }}</a></li>
+                {% if settingsPlugins %}
+                    <li class="nav-header">Plugins</li>
+                    {% for plugin_name, vars in settingsPlugins.items() %}
+                        {% if vars._settings_menu_entry %}
+                            <li><a href="#settings_plugin_{{ plugin_name }}" data-toggle="tab">{{ vars._settings_menu_entry }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
             </ul>
 
             <div class="tab-content span8">
@@ -620,6 +628,12 @@
 
                 </div>
                 {% endif %}
+
+                {% for plugin_name, vars in settingsPlugins.items() %}
+                    <div class="tab-pane" id="settings_plugin_{{ plugin_name }}" data-bind="allowBindings: false">
+                        {% include plugin_name+"_settings_dialog.jinja2" %}
+                    </div>
+                {% endfor %}
 
                 <div class="tab-pane" id="settings_logs" data-bind="allowBindings: false">
                     <div id="logs">

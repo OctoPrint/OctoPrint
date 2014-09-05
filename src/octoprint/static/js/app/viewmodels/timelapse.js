@@ -94,15 +94,15 @@ function TimelapseViewModel(loginStateViewModel) {
 
         self.persist(false);
         self.isDirty(false);
-    }
+    };
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
@@ -112,7 +112,7 @@ function TimelapseViewModel(loginStateViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
-    }
+    };
 
     self.removeFile = function(filename) {
         $.ajax({
@@ -121,25 +121,33 @@ function TimelapseViewModel(loginStateViewModel) {
             dataType: "json",
             success: self.requestData
         });
-    }
+    };
 
     self.save = function(data, event) {
-        var data = {
+        var payload = {
             "type": self.timelapseType(),
             "postRoll": self.timelapsePostRoll(),
             "save": self.persist()
-        }
+        };
 
         if (self.timelapseType() == "timed") {
-            data["interval"] = self.timelapseTimedInterval();
+            payload["interval"] = self.timelapseTimedInterval();
         }
 
         $.ajax({
             url: API_BASEURL + "timelapse",
             type: "POST",
             dataType: "json",
-            data: data,
+            data: payload,
             success: self.fromResponse
         });
-    }
+    };
+
+    self.onDataUpdaterReconnect = function() {
+        self.requestData();
+    };
+
+    self.onStartup = function() {
+        self.requestData();
+    };
 }

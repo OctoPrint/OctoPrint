@@ -25,35 +25,6 @@ $(function() {
             gettext("Transfering file to SD")
         ];
 
-        //~~ Initialize view models
-        var loginStateViewModel = new LoginStateViewModel();
-        var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
-        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
-        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
-        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
-        var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
-        var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
-        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
-        var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
-        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
-        var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
-        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
-        var logViewModel = new LogViewModel(loginStateViewModel);
-
-        var dataUpdater = new DataUpdater(
-            loginStateViewModel,
-            connectionViewModel, 
-            printerStateViewModel, 
-            temperatureViewModel, 
-            controlViewModel,
-            terminalViewModel,
-            gcodeFilesViewModel,
-            timelapseViewModel,
-            gcodeViewModel,
-            logViewModel
-        );
-
         PNotify.prototype.options.styling = "bootstrap2";
 
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
@@ -71,12 +42,69 @@ $(function() {
         //~~ Show settings - to ensure centered
         $('#navbar_show_settings').click(function() {
             $('#settings_dialog').modal()
-                 .css({
-                     width: 'auto',
-                     'margin-left': function() { return -($(this).width() /2); }
-                  });
+                .css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
             return false;
         });
+
+        //~~ Initialize view models
+        var loginStateViewModel = new LoginStateViewModel();
+        var usersViewModel = new UsersViewModel(loginStateViewModel);
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
+        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
+        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
+        var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
+        var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
+        var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
+        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
+        var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
+        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var logViewModel = new LogViewModel(loginStateViewModel);
+
+        var viewModelMap = {
+            loginStateViewModel: loginStateViewModel,
+            usersViewModel: usersViewModel,
+            settingsViewModel: settingsViewModel,
+            connectionViewModel: connectionViewModel,
+            timelapseViewModel: timelapseViewModel,
+            printerStateViewModel: printerStateViewModel,
+            appearanceViewModel: appearanceViewModel,
+            temperatureViewModel: temperatureViewModel,
+            controlViewModel: controlViewModel,
+            terminalViewModel: terminalViewModel,
+            gcodeFilesViewModel: gcodeFilesViewModel,
+            gcodeViewModel: gcodeViewModel,
+            navigationViewModel: navigationViewModel,
+            logViewModel: logViewModel
+        };
+
+        var allViewModels = _.values(viewModelMap);
+
+        var additionalViewModels = [];
+        _.each(ADDITIONAL_VIEWMODELS, function(viewModel) {
+            var viewModelClass = viewModel[0];
+            var viewModelParameters = viewModel[1];
+            var viewModelBindTarget = viewModel[2];
+
+            var constructorParameters = [];
+            _.each(viewModelParameters, function(parameter) {
+                if (_.has(viewModelMap, parameter)) {
+                    constructorParameters.push(viewModelMap[parameter]);
+                } else {
+                    constructorParameters.push(undefined);
+                }
+            });
+
+            var viewModelInstance = new viewModelClass(constructorParameters);
+            additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
+            allViewModels.push(viewModelInstance);
+        });
+
+        var dataUpdater = new DataUpdater(allViewModels);
 
         //~~ Temperature
 
@@ -331,37 +359,62 @@ $(function() {
             }
         };
 
-        ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
-        ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
-        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
-        ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-        ko.applyBindings(controlViewModel, document.getElementById("control"));
-        ko.applyBindings(terminalViewModel, document.getElementById("term"));
-        var gcode = document.getElementById("gcode");
-        if (gcode) {
-            gcodeViewModel.initialize();
-            ko.applyBindings(gcodeViewModel, gcode);
-        }
-        ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-        ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
-        ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
-        ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
-        ko.applyBindings(logViewModel, document.getElementById("logs"));
+        ko.bindingHandlers.invisible = {
+            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                if (!valueAccessor()) return;
+                ko.bindingHandlers.style.update(element, function() {
+                    return { visibility: 'hidden' };
+                })
+            }
+        };
 
-        var timelapseElement = document.getElementById("timelapse");
-        if (timelapseElement) {
-            ko.applyBindings(timelapseViewModel, timelapseElement);
-        }
+        settingsViewModel.requestData(function() {
+            ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+
+            ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+            ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
+            ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
+            ko.applyBindings(controlViewModel, document.getElementById("control"));
+            ko.applyBindings(terminalViewModel, document.getElementById("term"));
+            var gcode = document.getElementById("gcode");
+            if (gcode) {
+                gcodeViewModel.initialize();
+                ko.applyBindings(gcodeViewModel, gcode);
+            }
+            //ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+            ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
+            ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+            ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+            ko.applyBindings(logViewModel, document.getElementById("logs"));
+
+            var timelapseElement = document.getElementById("timelapse");
+            if (timelapseElement) {
+                ko.applyBindings(timelapseViewModel, timelapseElement);
+            }
+
+            // apply bindings and signal startup
+            _.each(additionalViewModels, function(additionalViewModel) {
+                if (additionalViewModel[0].hasOwnProperty("onBeforeBinding")) {
+                    additionalViewModel[0].onBeforeBinding();
+                }
+
+                // model instance, target container
+                ko.applyBindings(additionalViewModel[0], additionalViewModel[1]);
+
+                if (additionalViewModel[0].hasOwnProperty("onAfterBinding")) {
+                    additionalViewModel[0].onAfterBinding();
+                }
+            });
+        });
 
         //~~ startup commands
 
-        loginStateViewModel.requestData();
-        connectionViewModel.requestData();
-        controlViewModel.requestData();
-        gcodeFilesViewModel.requestData();
-        timelapseViewModel.requestData();
-        settingsViewModel.requestData();
-        logViewModel.requestData();
+        _.each(allViewModels, function(viewModel) {
+            if (viewModel.hasOwnProperty("onStartup")) {
+                viewModel.onStartup();
+            }
+        });
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {

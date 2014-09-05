@@ -13,11 +13,32 @@
         <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/pnotify.min.css') }}" rel="stylesheet" media="screen">
+
         {% if stylesheet == "less" %}
             <link href="{{ url_for('static', filename='less/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
+
+            <!-- Plugin files -->
+            {% for name, assets in assetPlugins.items() %}
+                {% if "less" in assets %}
+                    {% for asset in assets["less"] %}
+                        <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet/less" type="text/css" media="screen">
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            <!-- /Plugin files -->
+
             <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
         {% else %}
             <link href="{{ url_for('static', filename='css/octoprint.css') }}" rel="stylesheet" type="text/css" media="screen">
+            <!-- Plugin files -->
+            {% for name, assets in assetPlugins.items() %}
+                {% if "css" in assets %}
+                    {% for asset in assets["css"] %}
+                        <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet" type="text/css" media="screen">
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            <!-- /Plugin files -->
         {% endif %}
 
         <script lang="javascript">
@@ -44,6 +65,8 @@
             var VERSION = "{{ version }}";
             var DISPLAY_VERSION = "{{ display_version }}";
             var LOCALE = "{{ g.locale }}";
+
+            var ADDITIONAL_VIEWMODELS = [];
         </script>
     </head>
     <body>
@@ -609,6 +632,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore-min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore.string.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.mapping-latest.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/babel.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/avltree.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap.js') }}"></script>
@@ -646,6 +670,16 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
+
+        <!-- Plugin files -->
+        {% for name, assets in assetPlugins.items() %}
+            {% if "js" in assets %}
+                {% for asset in assets["js"] %}
+                    <script type="text/javascript" src="{{ url_for('plugin_assets', name=name, filename=asset) }}"></script>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+        <!-- /Plugin files -->
 
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>

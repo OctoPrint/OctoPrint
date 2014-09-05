@@ -1,0 +1,78 @@
+<div id="settings_plugin_netconnectd_dialog" data-bind="allowBindings: true">
+    <p>
+        <strong>{{ _('Connection state') }}:</strong> <span data-bind="text: connectionStateText"></span>
+    </p>
+
+    <div class="pull-right">
+        <small>
+            {{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('quality'); }">{{ _('Quality') }} ({{ _('descending') }})</a></a>
+        </small>
+    </div>
+    <table class="table table-striped table-hover table-condensed table-hover" id="log_files">
+        <thead>
+        <tr>
+            <th class="settings_plugin_netconnectd_wifis_name">{{ _('Name') }}</th>
+            <th class="settings_plugin_netconnectd_wifis_quality">{{ _('Quality') }}</th>
+            <th class="settings_plugin_netconnectd_wifis_action">{{ _('Action') }}</th>
+        </tr>
+        </thead>
+        <tbody data-bind="foreach: listHelper.paginatedItems">
+        <tr data-bind="attr: {title: name}">
+            <td class="settings_plugin_netconnectd_wifis_name"><span class="icon-lock" data-bind="invisible: !encrypted"></span> <span data-bind="text: name"></span></td>
+            <td class="settings_plugin_netconnectd_wifis_quality" data-bind="text: quality"></td>
+            <td class="settings_plugin_netconnectd_wifis_action">
+                <button class="button button-small" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.configureWifi($data); } else { return; } }, css: {disabled: !$root.loginState.isUser()}">{{ _('Connect') }}</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="pagination pagination-mini pagination-centered">
+        <ul>
+            <li data-bind="css: {disabled: listHelper.currentPage() === 0}">
+                <a href="#" data-bind="click: listHelper.prevPage">«</a>
+            </li>
+        </ul>
+        <ul data-bind="foreach: listHelper.pages">
+            <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }">
+                <a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a>
+            </li>
+        </ul>
+        <ul>
+            <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}">
+                <a href="#" data-bind="click: listHelper.nextPage">»</a>
+            </li>
+        </ul>
+    </div>
+
+    <div>
+        <small class="muted">{{ _('netconnectd socket') }}: <span data-bind="text: settings.plugins.netconnectd.socket"></span></small>
+    </div>
+
+    <div id="settings_plugin_netconnectd_wificonfig" class="modal hide fade">
+        <div class="modal-header">
+            <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+            <h3>{{ _('Configure secured Wifi connection to "%(ssid)s"', ssid='<span data-bind="text: $root.editorWifiSsid"></span>') }}</h3>
+        </div>
+        <div class="modal-body">
+            <form class="form-horizontal">
+                <div class="control-group">
+                    <label class="control-label" for="settings_plugin_netconnectd_wificonfig_passphrase1">{{ _('Password') }}</label>
+                    <div class="controls">
+                        <input type="password" class="input-block-level" id="settings_plugin_netconnectd_wificonfig_passphrase1" data-bind="value: $root.editorWifiPassphrase1" required>
+                    </div>
+                </div>
+                <div class="control-group" data-bind="css: {error: $root.editorWifiPassphraseMismatch()}">
+                    <label class="control-label" for="settings_plugin_netconnectd_wificonfig_passphrase2">{{ _('Repeat Password') }}</label>
+                    <div class="controls">
+                        <input type="password" class="input-block-level" id="settings_plugin_netconnectd_wificonfig_passphrase2" data-bind="value: $root.editorWifiPassphrase2, valueUpdate: 'afterkeydown'" required>
+                        <span class="help-inline" data-bind="visible: $root.editorWifiPassphraseMismatch()">{{ _('Passwords do not match') }}</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+            <button class="btn btn-primary" data-bind="click: function() { $root.confirmConfigureWifi(); }, enable: !$root.editorWifiPassphraseMismatch()">{{ _('Confirm') }}</button>
+        </div>
+    </div>
+</div>

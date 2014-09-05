@@ -1,16 +1,7 @@
-function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel, logViewModel) {
+function DataUpdater(allViewModels) {
     var self = this;
 
-    self.loginStateViewModel = loginStateViewModel;
-    self.connectionViewModel = connectionViewModel;
-    self.printerStateViewModel = printerStateViewModel;
-    self.temperatureViewModel = temperatureViewModel;
-    self.controlViewModel = controlViewModel;
-    self.terminalViewModel = terminalViewModel;
-    self.gcodeFilesViewModel = gcodeFilesViewModel;
-    self.timelapseViewModel = timelapseViewModel;
-    self.gcodeViewModel = gcodeViewModel;
-    self.logViewModel = logViewModel;
+    self.allViewModels = allViewModels;
 
     self._socket = undefined;
     self._autoReconnecting = false;
@@ -60,6 +51,10 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
 
     self._onmessage = function(e) {
         for (var prop in e.data) {
+            if (!e.data.hasOwnProperty(prop)) {
+                continue;
+            }
+
             var data = e.data[prop];
 
             switch (prop) {
@@ -76,12 +71,11 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
 
                     if ($("#offline_overlay").is(":visible")) {
                         $("#offline_overlay").hide();
-                        self.logViewModel.requestData();
-                        self.timelapseViewModel.requestData();
-                        $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-                        self.loginStateViewModel.requestData();
-                        self.gcodeFilesViewModel.requestData();
-                        self.gcodeViewModel.reset();
+                        _.each(self.allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onDataUpdaterReconnect")) {
+                                viewModel.onDataUpdaterReconnect();
+                            }
+                        });
 
                         if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                             $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
@@ -91,25 +85,19 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     break;
                 }
                 case "history": {
-                    self.connectionViewModel.fromHistoryData(data);
-                    self.printerStateViewModel.fromHistoryData(data);
-                    self.temperatureViewModel.fromHistoryData(data);
-                    self.controlViewModel.fromHistoryData(data);
-                    self.terminalViewModel.fromHistoryData(data);
-                    self.timelapseViewModel.fromHistoryData(data);
-                    self.gcodeViewModel.fromHistoryData(data);
-                    self.gcodeFilesViewModel.fromCurrentData(data);
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("fromHistoryData")) {
+                            viewModel.fromHistoryData(data);
+                        }
+                    });
                     break;
                 }
                 case "current": {
-                    self.connectionViewModel.fromCurrentData(data);
-                    self.printerStateViewModel.fromCurrentData(data);
-                    self.temperatureViewModel.fromCurrentData(data);
-                    self.controlViewModel.fromCurrentData(data);
-                    self.terminalViewModel.fromCurrentData(data);
-                    self.timelapseViewModel.fromCurrentData(data);
-                    self.gcodeViewModel.fromCurrentData(data);
-                    self.gcodeFilesViewModel.fromCurrentData(data);
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("fromCurrentData")) {
+                            viewModel.fromCurrentData(data);
+                        }
+                    });
                     break;
                 }
                 case "event": {
@@ -162,11 +150,19 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
                     break;
                 }
                 case "feedbackCommandOutput": {
-                    self.controlViewModel.fromFeedbackCommandData(data);
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("fromFeedbackCommandData")) {
+                            viewModel.fromFeedbackCommandData(data);
+                        }
+                    });
                     break;
                 }
                 case "timelapse": {
-                    self.printerStateViewModel.fromTimelapseData(data);
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("fromTimelapseData")) {
+                            viewModel.fromTimelapseData(data);
+                        }
+                    });
                     break;
                 }
             }

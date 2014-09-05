@@ -304,5 +304,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
     };
 
+    self.onDataUpdaterReconnect = function() {
+        self.requestData();
+    };
+
+    self.onStartup = function() {
+        self.requestData();
+    };
 }
 

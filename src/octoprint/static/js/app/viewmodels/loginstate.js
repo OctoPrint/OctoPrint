@@ -29,7 +29,7 @@ function LoginStateViewModel() {
             data: {"passive": true},
             success: self.fromResponse
         })
-    }
+    };
 
     self.fromResponse = function(response) {
         if (response && response.name) {
@@ -85,5 +85,13 @@ function LoginStateViewModel() {
                 self.fromResponse(response);
             }
         })
-    }
+    };
+
+    self.onDataUpdaterReconnect = function() {
+        self.requestData();
+    };
+
+    self.onStartup = function() {
+        self.requestData();
+    };
 }

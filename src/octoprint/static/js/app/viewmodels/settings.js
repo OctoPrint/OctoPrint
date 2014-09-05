@@ -19,8 +19,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         {key: "green", name: gettext("green")},
         {key: "blue", name: gettext("blue")},
         {key: "violet", name: gettext("violet")},
-        {key: "black", name: gettext("black")},
+        {key: "black", name: gettext("black")}
     ]);
+
     self.appearance_colorName = function(color) {
         switch (color) {
             case "red":
@@ -166,6 +167,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.terminalFilters = ko.observableArray([]);
 
+    self.settings = undefined;
+
     self.addTemperatureProfile = function() {
         self.temperature_profiles.push({name: "New", extruder:0, bed:0});
     };
@@ -220,6 +223,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     };
 
     self.fromResponse = function(response) {
+        if (self.settings === undefined) {
+            self.settings = ko.mapping.fromJS(response);
+        } else {
+            ko.mapping.fromJS(response, self.settings);
+        }
+
         self.api_enabled(response.api.enabled);
         self.api_key(response.api.key);
         self.api_allowCrossOrigin(response.api.allowCrossOrigin);
@@ -284,7 +293,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     };
 
     self.saveData = function() {
-        var data = {
+        var data = ko.mapping.toJS(self.settings);
+
+        data = _.extend(data, {
             "api" : {
                 "enabled": self.api_enabled(),
                 "key": self.api_key(),
@@ -354,7 +365,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "config": self.cura_config()
             },
             "terminalFilters": self.terminalFilters()
-        };
+        });
 
         $.ajax({
             url: API_BASEURL + "settings",
@@ -367,6 +378,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 $("#settings_dialog").modal("hide");
             }
         });
-    }
+    };
 
 }

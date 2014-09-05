@@ -405,4 +405,8 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         GCODE.ui.changeSelectedCommands(self.layerSlider.slider("getValue"), tuple[0], tuple[1]);
     };
 
+    self.onDataUpdaterReconnect = function() {
+        self.reset();
+    }
+
 }
