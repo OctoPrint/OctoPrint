@@ -190,7 +190,7 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 				sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
 				sock.bind((addr, 0))
 
-				location = "http://{addr}:{port}/plugins/discovery/discovery.xml".format(addr=addr, port=port)
+				location = "http://{addr}:{port}/plugin/discovery/discovery.xml".format(addr=addr, port=port)
 
 				self.logger.info("Sending NOTIFY alive")
 				notify_message = "".join(["NOTIFY * HTTP/1.1\r\n", "Server: Python/2.7\r\n", "Cache-Control: max-age=900\r\n", "Location: {location}\r\n", "NTS: {nts}\r\n", "NT: upnp:rootdevice\r\n", "USN: uuid:{uuid}::upnp:rootdevice\r\n", "Host: 239.255.255.250:1900\r\n\r\n"])
