@@ -106,15 +106,17 @@ def getSettings():
 		}
 	}
 
-	settings_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin)
-	for name, plugin in settings_plugins.items():
-		plugin_data = plugin.on_settings_load()
-		if plugin_data:
+	def process_plugin_result(name, plugin, result):
+		if result:
 			if not "plugins" in data:
 				data["plugins"] = dict()
-			if "__enabled" in plugin_data:
-				del plugin_data["__enabled"]
-			data["plugins"][name] = plugin_data
+			if "__enabled" in result:
+				del result["__enabled"]
+			data["plugins"][name] = result
+
+	octoprint.plugin.call_plugin(octoprint.plugin.SettingsPlugin,
+	                             "on_settings_load",
+	                             callback=process_plugin_result)
 
 	return jsonify(data)
 
@@ -218,10 +220,10 @@ def setSettings():
 			enabled = cura.get("enabled")
 			s.setBoolean(["cura", "enabled"], enabled)
 
-		settings_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin)
-		for name, plugin in settings_plugins.items():
-			if "plugins" in data and name in data["plugins"]:
-				plugin.on_settings_save(data["plugins"][name])
+		octoprint.plugin.call_plugin(octoprint.plugin.SettingsPlugin,
+		                             "on_settings_save",
+		                             args=(data["plugins"][name]))
+
 
 		s.save()
 

@@ -263,7 +263,13 @@ class Server():
 
 		from octoprint.server.api import api
 
+		# register API blueprint
 		app.register_blueprint(api, url_prefix="/api")
+
+		# also register any blueprints defined in BlueprintPlugins
+		octoprint.plugin.call_plugin(octoprint.plugin.types.BlueprintPlugin,
+		                             "get_blueprint",
+		                             callback=lambda name, _, blueprint: app.register_blueprint(blueprint, url_prefix="/plugin/{name}".format(name=name)))
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
@@ -295,9 +301,9 @@ class Server():
 		observer.start()
 
 		# now it's the turn of the startup plugins
-		startup_plugins = pluginManager.get_implementations(octoprint.plugin.StartupPlugin)
-		for name, plugin in startup_plugins.items():
-			plugin.on_startup(self._host, self._port)
+		octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
+		                             "on_startup",
+		                             args=(self._host, self._port))
 
 		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		try:

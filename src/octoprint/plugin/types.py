@@ -41,6 +41,11 @@ class SimpleApiPlugin(Plugin):
 		return None
 
 
+class BlueprintPlugin(Plugin):
+	def get_blueprint(self):
+		return None
+
+
 class SettingsPlugin(TemplatePlugin):
 	def on_settings_load(self):
 		return None
