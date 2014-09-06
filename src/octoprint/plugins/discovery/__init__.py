@@ -174,11 +174,13 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 
 	def _ssdp_notify(self, port, alive=True):
 		import socket
+		import netifaces
 
-		def interface_addresses(family=socket.AF_INET):
-			for fam, _, _, _, sockaddr in socket.getaddrinfo('', None):
-				if family == fam:
-					yield sockaddr[0]
+		def interface_addresses(family=netifaces.AF_INET):
+			for interface in netifaces.interfaces():
+				ifaddresses = netifaces.ifaddresses(interface)
+				if family in ifaddresses:
+					yield ifaddresses[family]
 
 		for addr in interface_addresses():
 			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)

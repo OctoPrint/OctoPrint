@@ -10,3 +10,4 @@ pyserial
 netaddr
 watchdog
 sarge
+netifaces
