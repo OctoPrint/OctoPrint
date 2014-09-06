@@ -172,18 +172,36 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 		self._ssdp_monitor_thread.daemon = True
 		self._ssdp_monitor_thread.start()
 
+	@classmethod
+	def interface_addresses(cls, family=None):
+		import netifaces
+		if not family:
+			family = netifaces.AF_INET
+
+		for interface in netifaces.interfaces():
+			ifaddresses = netifaces.ifaddresses(interface)
+			if family in ifaddresses:
+				for ifaddress in ifaddresses[family]:
+					yield ifaddress["addr"]
+
+	@classmethod
+	def address_for_client(cls, client):
+		import socket
+
+		for address in cls.interface_addresses():
+			try:
+				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+				sock.bind((address, 0))
+				sock.connect(client)
+				return address
+			except Exception as e:
+				pass
+
 	def _ssdp_notify(self, port, alive=True):
 		import socket
 		import netifaces
 
-		def interface_addresses(family=netifaces.AF_INET):
-			for interface in netifaces.interfaces():
-				ifaddresses = netifaces.ifaddresses(interface)
-				if family in ifaddresses:
-					for ifaddress in ifaddresses[family]:
-						yield ifaddress["addr"]
-
-		for addr in interface_addresses():
+		for addr in self.__class__.interface_addresses():
 			try:
 				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 				sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -255,7 +273,10 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 					data, address = sock.recvfrom(4096)
 					request = Request(data)
 					if not request.error_code and request.command == "M-SEARCH" and request.path == "*" and (request.headers["ST"] == "upnp:rootdevice" or request.headers["ST"] == "ssdp:all") and request.headers["MAN"] == '"ssdp:discover"':
-						message = location_message.format(uuid=UUID, location="http://192.168.1.3:5000/plugin/discovery/discovery.xml")
+						address_for_client = self.__class__.address_for_client(address)
+						if not address_for_client:
+							address_for_client = "192.168.1.3"
+						message = location_message.format(uuid=UUID, location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=address_for_client, port=port))
 						sock.sendto(message, address)
 						self.logger.info("Sent M-SEARCH reply for {path} and {st} to {address!r}".format(path=request.path, st=request.headers["ST"], address=address))
 				except socket.timeout:
