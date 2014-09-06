@@ -180,25 +180,29 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 			for interface in netifaces.interfaces():
 				ifaddresses = netifaces.ifaddresses(interface)
 				if family in ifaddresses:
-					yield ifaddresses[family]
+					for ifaddress in ifaddresses[family]:
+						yield ifaddress["addr"]
 
 		for addr in interface_addresses():
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-			sock.bind((addr, 0))
-
-			location = "http://{addr}:{port}/plugins/discovery/discovery.xml".format(addr=addr, port=port)
-
-			self.logger.info("Sending NOTIFY alive")
-			notify_message = "".join(["NOTIFY * HTTP/1.1\r\n", "Server: Python/2.7\r\n", "Cache-Control: max-age=900\r\n", "Location: {location}\r\n", "NTS: {nts}\r\n", "NT: upnp:rootdevice\r\n", "USN: uuid:{uuid}::upnp:rootdevice\r\n", "Host: 239.255.255.250:1900\r\n\r\n"])
-			message = notify_message.format(uuid=UUID, location=location, nts="ssdp:alive" if alive else "ssdp:byebye")
-			for _ in xrange(2):
-				sock.sendto(message, ("239.255.255.250", 1900))
-
 			try:
-				sock.recv(1024)
-			except socket.timeout:
+				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+				sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+				sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+				sock.bind((addr, 0))
+
+				location = "http://{addr}:{port}/plugins/discovery/discovery.xml".format(addr=addr, port=port)
+
+				self.logger.info("Sending NOTIFY alive")
+				notify_message = "".join(["NOTIFY * HTTP/1.1\r\n", "Server: Python/2.7\r\n", "Cache-Control: max-age=900\r\n", "Location: {location}\r\n", "NTS: {nts}\r\n", "NT: upnp:rootdevice\r\n", "USN: uuid:{uuid}::upnp:rootdevice\r\n", "Host: 239.255.255.250:1900\r\n\r\n"])
+				message = notify_message.format(uuid=UUID, location=location, nts="ssdp:alive" if alive else "ssdp:byebye")
+				for _ in xrange(2):
+					sock.sendto(message, ("239.255.255.250", 1900))
+
+				try:
+					sock.recv(1024)
+				except socket.timeout:
+					pass
+			except Exception as e:
 				pass
 
 	def _ssdp_monitor(self, port):
