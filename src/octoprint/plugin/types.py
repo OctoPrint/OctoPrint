@@ -14,6 +14,11 @@ class StartupPlugin(Plugin):
 		pass
 
 
+class ShutdownPlugin(Plugin):
+	def on_shutdown(self):
+		pass
+
+
 class AssetPlugin(Plugin):
 	def get_asset_folder(self):
 		return None
@@ -46,7 +51,7 @@ class BlueprintPlugin(Plugin):
 		return None
 
 
-class SettingsPlugin(TemplatePlugin):
+class SettingsPlugin(Plugin):
 	def on_settings_load(self):
 		return None
 

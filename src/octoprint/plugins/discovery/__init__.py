@@ -13,25 +13,35 @@ import flask
 import octoprint.plugin
 
 default_settings = {
+	"publicHost": None,
 	"publicPort": None,
 	"pathPrefix": None,
 	"httpUsername": None,
-	"httpPassword": None
+	"httpPassword": None,
+    "upnpUuid": None
 }
 s = octoprint.plugin.plugin_settings("discovery", defaults=default_settings)
 
 
 def get_uuid():
-	import uuid
-	return str(uuid.uuid4())
+	upnpUuid = s.get(["upnpUuid"])
+	if upnpUuid is None:
+		import uuid
+		upnpUuid = str(uuid.uuid4())
+		s.set(["upnpUuid"], upnpUuid)
+		s.save()
+	return upnpUuid
 UUID = get_uuid()
 del get_uuid
 
+
 def get_instance_name():
-	import socket
-	return "OctoPrint instance on {}".format(socket.gethostname())
-INSTANCENAME = get_instance_name()
-del get_instance_name
+	name = s.globalGet(["appearance", "name"])
+	if name:
+		return "OctoPrint instance \"{}\"".format(name)
+	else:
+		import socket
+		return "OctoPrint instance on {}".format(socket.gethostname())
 
 
 blueprint = flask.Blueprint("plugin.discovery", __name__, template_folder=os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates"))
@@ -40,23 +50,59 @@ blueprint = flask.Blueprint("plugin.discovery", __name__, template_folder=os.pat
 def discovery():
 	logging.getLogger("octoprint.plugins." + __name__).info("Rendering discovery.xml")
 	response = flask.make_response(flask.render_template("discovery.jinja2",
-	                             friendlyName=INSTANCENAME,
-	                             manufacturer="OctoPrint",
+	                             friendlyName=get_instance_name(),
+	                             manufacturer="The OctoPrint project",
 	                             manufacturerUrl="http://www.octoprint.org",
-	                             modelDescription="Some funny description",
-	                             modelName="Some funny name",
+	                             modelDescription="Some funny description", #TODO
+	                             modelName="Some funny name", #TODO
 	                             uuid=UUID,
 	                             presentationUrl=flask.url_for("index", _external=True)))
 	response.headers['Content-Type'] = 'application/xml'
 	return response
 
+def interface_addresses(family=None):
+	import netifaces
+	if not family:
+		family = netifaces.AF_INET
 
-class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.types.BlueprintPlugin, octoprint.plugin.SettingsPlugin):
+	for interface in netifaces.interfaces():
+		ifaddresses = netifaces.ifaddresses(interface)
+		if family in ifaddresses:
+			for ifaddress in ifaddresses[family]:
+				yield ifaddress["addr"]
+
+def address_for_client(client):
+	import socket
+
+	for address in interface_addresses():
+		try:
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.bind((address, 0))
+			sock.connect(client)
+			return address
+		except Exception as e:
+			pass
+
+
+class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
+                      octoprint.plugin.types.ShutdownPlugin,
+                      octoprint.plugin.types.BlueprintPlugin,
+                      octoprint.plugin.SettingsPlugin):
 	def __init__(self):
 		self.logger = logging.getLogger("octoprint.plugins." + __name__)
 
-		self.octoprint_sd_ref = None
-		self.http_sd_ref = None
+		self.host = None
+		self.port = None
+
+		# zeroconf
+		self._octoprint_sd_ref = None
+		self._http_sd_ref = None
+
+		# upnp/ssdp
+		self._ssdp_monitor_active = False
+		self._ssdp_monitor_thread = None
+		self._ssdp_notify_timeout = 10
+		self._ssdp_last_notify = 0
 
 	##~~ BlueprintPlugin API
 
@@ -76,13 +122,29 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 	#~~ StartupPlugin API
 
 	def on_startup(self, host, port):
-		self._bonjour_register(host, port)
-		self._ssdp_register(port)
+		public_host = s.get(["publicHost"])
+		if public_host:
+			host = public_host
+		public_port = s.get(["publicPort"])
+		if public_port:
+			port = public_port
+
+		self.host = host
+		self.port = port
+
+		self._zeroconf_register(host, port)
+		self._ssdp_register(host, port)
+
+	#~~ ShutdownPlugin API
+
+	def on_shutdown(self):
+		self._ssdp_unregister()
 
 	#~~ SettingsPlugin API
 
 	def on_settings_load(self):
 		return {
+			"publicHost": s.get(["publicHost"]),
 			"publicPort": s.getInt(["publicPort"]),
 			"pathPrefix": s.get(["pathPrefix"]),
 			"httpUsername": s.get(["httpUsername"]),
@@ -90,6 +152,8 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 		}
 
 	def on_settings_save(self, data):
+		if "publicHost" in data and data["publicHost"]:
+			s.set(["publicHost"], data["publicHost"])
 		if "publicPort" in data and data["publicPort"]:
 			s.setInt(["publicPort"], data["publicPort"])
 		if "pathPrefix" in data and data["pathPrefix"]:
@@ -101,33 +165,34 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 
 	#~~ internals
 
-	def _bonjour_register(self, host, port):
+	# ZeroConf
+
+	def _zeroconf_register(self, host, port):
 		import pybonjour
 
 		def register_callback(sd_ref, flags, error_code, name, reg_type, domain):
 			if error_code == pybonjour.kDNSServiceErr_NoError:
 				self.logger.info("Registered {name} for {reg_type} with domain {domain}".format(**locals()))
 
-		if s.getInt(["publicPort"]):
-			port = s.getInt(["publicPort"])
+		instance_name = get_instance_name()
 
-		self.octoprint_sd_ref = pybonjour.DNSServiceRegister(
-			name=INSTANCENAME,
+		self._octoprint_sd_ref = pybonjour.DNSServiceRegister(
+			name=instance_name,
 			regtype='_octoprint._tcp',
 			port=port,
 			txtRecord=pybonjour.TXTRecord(self._create_octoprint_txt_record_dict()),
 			callBack=register_callback
 		)
-		pybonjour.DNSServiceProcessResult(self.octoprint_sd_ref)
+		pybonjour.DNSServiceProcessResult(self._octoprint_sd_ref)
 
-		self.http_sd_ref = pybonjour.DNSServiceRegister(
-			name=INSTANCENAME,
+		self._http_sd_ref = pybonjour.DNSServiceRegister(
+			name=instance_name,
 			regtype='_http._tcp',
 			port=port,
 			txtRecord=pybonjour.TXTRecord(self._create_base_txt_record_dict()),
 			callBack=register_callback
 		)
-		pybonjour.DNSServiceProcessResult(self.http_sd_ref)
+		pybonjour.DNSServiceProcessResult(self._http_sd_ref)
 
 	def _create_octoprint_txt_record_dict(self):
 		entries = self._create_base_txt_record_dict()
@@ -165,43 +230,34 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 
 		return entries
 
+	# SSDP/UPNP
 
-	def _ssdp_register(self, port):
+	def _ssdp_register(self, host, port):
 		import threading
-		self._ssdp_monitor_thread = threading.Thread(target=self._ssdp_monitor, args=[port])
+
+		self._ssdp_monitor_active = True
+
+		self._ssdp_monitor_thread = threading.Thread(target=self._ssdp_monitor, args=[host, port], kwargs=dict(timeout=self._ssdp_notify_timeout))
 		self._ssdp_monitor_thread.daemon = True
 		self._ssdp_monitor_thread.start()
 
-	@classmethod
-	def interface_addresses(cls, family=None):
-		import netifaces
-		if not family:
-			family = netifaces.AF_INET
+	def _ssdp_unregister(self):
+		self._ssdp_monitor_active = False
+		if self.host and self.port:
+			for _ in xrange(2):
+				self._ssdp_notify(self.host, self.port, alive=False)
 
-		for interface in netifaces.interfaces():
-			ifaddresses = netifaces.ifaddresses(interface)
-			if family in ifaddresses:
-				for ifaddress in ifaddresses[family]:
-					yield ifaddress["addr"]
-
-	@classmethod
-	def address_for_client(cls, client):
+	def _ssdp_notify(self, host, port, alive=True):
 		import socket
+		import time
 
-		for address in cls.interface_addresses():
-			try:
-				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-				sock.bind((address, 0))
-				sock.connect(client)
-				return address
-			except Exception as e:
-				pass
+		if self._ssdp_last_notify + self._ssdp_notify_timeout > time.time():
+			return
 
-	def _ssdp_notify(self, port, alive=True):
-		import socket
-		import netifaces
+		if alive and not self._ssdp_monitor_active:
+			return
 
-		for addr in self.__class__.interface_addresses():
+		for addr in interface_addresses():
 			try:
 				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 				sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -223,15 +279,15 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 			except Exception as e:
 				pass
 
-	def _ssdp_monitor(self, port):
+		self._ssdp_last_notify = time.time()
+
+	def _ssdp_monitor(self, host, port, timeout=5):
 
 		from BaseHTTPServer import BaseHTTPRequestHandler
-		from httplib import HTTPResponse
 		from StringIO import StringIO
 		import socket
-		import struct
 
-		socket.setdefaulttimeout(5)
+		socket.setdefaulttimeout(timeout)
 
 		location_message = "".join(["HTTP/1.1 200 OK\r\n", "ST: upnp:rootdevice\r\n", "USN: uuid:{uuid}::upnp:rootdevice\r\n", "Location: {location}\r\n", "Cache-Control: max-age=60\r\n\r\n"])
 
@@ -247,15 +303,6 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 				self.error_code = code
 				self.error_message = message
 
-		class Response(HTTPResponse):
-			def __init__(self, response_text):
-				self.fp = StringIO(response_text)
-				self.debuglevel = 0
-				self.strict = 0
-				self.msg = None
-				self._method = None
-				self.begin()
-
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
@@ -263,24 +310,27 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 
 		sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton('239.255.255.250') + socket.inet_aton('0.0.0.0'))
 
-		self.logger.info("Registered {} for SSDP".format(INSTANCENAME))
+		self.logger.info("Registered {} for SSDP".format(get_instance_name()))
 
-		self._ssdp_notify(port, alive=True)
+		self._ssdp_notify(host, port, alive=True)
 
 		try:
-			while (True):
+			while (self._ssdp_monitor_active):
 				try:
 					data, address = sock.recvfrom(4096)
 					request = Request(data)
 					if not request.error_code and request.command == "M-SEARCH" and request.path == "*" and (request.headers["ST"] == "upnp:rootdevice" or request.headers["ST"] == "ssdp:all") and request.headers["MAN"] == '"ssdp:discover"':
-						address_for_client = self.__class__.address_for_client(address)
-						if not address_for_client:
-							address_for_client = "192.168.1.3"
-						message = location_message.format(uuid=UUID, location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=address_for_client, port=port))
+						interface_address = address_for_client(address)
+						if not interface_address:
+							self.logger.warn("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
+							continue
+						message = location_message.format(uuid=UUID, location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=interface_address, port=port))
 						sock.sendto(message, address)
-						self.logger.info("Sent M-SEARCH reply for {path} and {st} to {address!r}".format(path=request.path, st=request.headers["ST"], address=address))
+						self.logger.debug("Sent M-SEARCH reply for {path} and {st} to {address!r}".format(path=request.path, st=request.headers["ST"], address=address))
 				except socket.timeout:
-					self._ssdp_notify(port, alive=True)
+					pass
+				finally:
+					self._ssdp_notify(host, port, alive=True)
 		finally:
 			try:
 				sock.close()
@@ -290,7 +340,7 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin, octoprint.plugin.typ
 
 __plugin_name__ = "Discovery"
 __plugin_version__ = "0.1"
-__plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf"
+__plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
 __plugin_implementations__ = []
 
 def __plugin_check__():

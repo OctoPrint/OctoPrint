@@ -17,6 +17,7 @@ from watchdog.observers import Observer
 import os
 import logging
 import logging.config
+import atexit
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
@@ -90,7 +91,7 @@ def get_locale():
 
 @app.route("/")
 def index():
-	settings_plugins = pluginManager.get_implementations(octoprint.plugin.SettingsPlugin)
+	settings_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlugin)
 	settings_plugin_template_vars = dict()
 	for name, implementation in settings_plugins.items():
 		settings_plugin_template_vars[name] = implementation.get_template_vars()
@@ -305,17 +306,23 @@ class Server():
 		                             "on_startup",
 		                             args=(self._host, self._port))
 
+		# prepare our shutdown function
+		def on_shutdown():
+			logger.info("Goodbye!")
+			observer.stop()
+			observer.join()
+			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
+			                             "on_shutdown")
+		atexit.register(on_shutdown)
+
 		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		try:
 			IOLoop.instance().start()
 		except KeyboardInterrupt:
-			logger.info("Goodbye!")
+			pass
 		except:
 			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			logger.exception("Stacktrace follows:")
-		finally:
-			observer.stop()
-		observer.join()
 
 	def _createSocketConnection(self, session):
 		global printer, gcodeManager, userManager, eventManager
