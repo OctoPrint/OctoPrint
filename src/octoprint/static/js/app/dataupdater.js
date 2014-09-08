@@ -108,8 +108,18 @@ function DataUpdater(allViewModels) {
                     var gcodeUploadProgress = $("#gcode_upload_progress");
                     var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
 
-                    if ((type == "UpdatedFiles" && payload.type == "gcode") || type == "MetadataAnalysisFinished") {
-                        gcodeFilesViewModel.requestData();
+                    if (type == "UpdatedFiles") {
+                        _.each(self.allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onUpdatedFiles")) {
+                                viewModel.onUpdatedFiles(payload);
+                            }
+                        });
+                    } else if (type == "MetadataAnalysisFinished") {
+                        _.each(self.allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onMetadataAnalysisFinished")) {
+                                viewModel.onMetadataAnalysisFinished(payload);
+                            }
+                        });
                     } else if (type == "MovieRendering") {
                         new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
                     } else if (type == "MovieDone") {

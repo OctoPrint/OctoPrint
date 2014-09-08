@@ -40,12 +40,28 @@ $(function() {
         });
 
         //~~ Show settings - to ensure centered
+        var settingsDialog = $('#settings_dialog');
+        settingsDialog.on('show', function() {
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onSettingsShown")) {
+                    viewModel.onSettingsShown();
+                }
+            });
+        });
+        settingsDialog.on('hidden', function() {
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onSettingsHidden")) {
+                    viewModel.onSettingsHidden();
+                }
+            });
+        });
         $('#navbar_show_settings').click(function() {
-            $('#settings_dialog').modal()
+            settingsDialog.modal()
                 .css({
                     width: 'auto',
                     'margin-left': function() { return -($(this).width() /2); }
                 });
+
             return false;
         });
 

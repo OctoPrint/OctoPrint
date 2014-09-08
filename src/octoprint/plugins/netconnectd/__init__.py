@@ -21,10 +21,14 @@ default_settings = {
 s = octoprint.plugin.plugin_settings("netconnectd", defaults=default_settings)
 
 
-class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugin.SimpleApiPlugin, octoprint.plugin.AssetPlugin):
+class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin,
+                                octoprint.plugin.TemplatePlugin,
+                                octoprint.plugin.SimpleApiPlugin,
+                                octoprint.plugin.AssetPlugin):
 
 	def __init__(self):
-		self.logger = logging.getLogger(__name__)
+		self.logger = logging.getLogger("plugins.netconnectd." + __name__)
+		self.address = s.get(["socket"])
 
 	##~~ SettingsPlugin
 
@@ -36,6 +40,8 @@ class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugi
 	def on_settings_save(self, data):
 		if "socket" in data and data["socket"]:
 			s.set(["socket"], data["socket"])
+
+		self.address = s.get(["socket"])
 
 	##~~ TemplatePlugin API (part of SettingsPlugin)
 
@@ -79,6 +85,8 @@ class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugi
 			else:
 				self.logger.info("Configuring wifi {ssid}...".format(**data))
 
+			self._configure_and_select_wifi(data["ssid"], data["psk"], force=data["force"] if "force" in data else False)
+
 		elif command == "start_ap":
 			self.logger.info("Starting ap...")
 
@@ -100,20 +108,92 @@ class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugi
 	##~~ Private helpers
 
 	def _get_wifi_list(self, force=False):
+		payload = dict()
 		if force:
 			self.logger.info("Forcing wifi refresh...")
-		return [
-			{"name": "A Test Wifi", "quality": 59, "encrypted": True},
-			{"name": "TyrionDiesOnPage24", "quality": 90, "encrypted": True},
-			{"name": "Giraffenhaus", "quality": 78, "encrypted": False},
-		]
+			payload["force"] = True
+
+		flag, content = self._send_message("list_wifi", payload)
+		if not flag:
+			raise RuntimeError("Error while listing wifi: " + content)
+
+		result = []
+		for wifi in content:
+			result.append(dict(ssid=wifi["ssid"], address=wifi["address"], quality=wifi["signal"], encrypted=wifi["encrypted"]))
+		return result
 
 	def _get_status(self):
-		return {
-			"ap": False,
-			"connectedToWifi": True
-		}
+		payload = dict()
 
+		flag, content = self._send_message("status", payload)
+		if not flag:
+			raise RuntimeError("Error while querying status: " + content)
+
+		return dict(
+			ap=content["ap"],
+			link=content["link"],
+			wifi_available=content["wifi_available"]
+		)
+
+	def _configure_and_select_wifi(self, ssid, psk, force=False):
+		payload = dict(
+			ssid=ssid,
+			psk=psk,
+			force=force
+		)
+
+		flag, content = self._send_message("config_wifi", payload)
+		if not flag:
+			raise RuntimeError("Error while configuring wifi: " + content)
+
+		flag, content = self._send_message("start_wifi", dict())
+		if not flag:
+			raise RuntimeError("Error while selecting wifi: " + content)
+
+	def _send_message(self, message, data):
+		obj = dict()
+		obj[message] = data
+
+		import json
+		js = json.dumps(obj, encoding="utf8", separators=(",", ":"))
+
+		import socket
+		sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+		try:
+			sock.connect(self.address)
+			sock.sendall(js + '\x00')
+
+			buffer = []
+			while True:
+				chunk = sock.recv(16)
+				if chunk:
+					buffer.append(chunk)
+					if chunk.endswith('\x00'):
+						break
+
+			data = ''.join(buffer).strip()[:-1]
+
+			response = json.loads(data.strip())
+			if "result" in response:
+				return True, response["result"]
+
+			elif "error" in response:
+				# something went wrong
+				self.logger.warn("Request to netconnectd went wrong: " + response["error"])
+				return False, response["error"]
+
+			else:
+				output = "Unknown response from netconnectd: {response!r}".format(response=response)
+				self.logger.warn(output)
+				return False, output
+
+		except Exception as e:
+			output = "Error while talking to netconnectd: {}".format(e.message)
+			self.logger.warn(output)
+			return False, output
+
+		finally:
+			sock.close()
 
 __plugin_name__ = "netconnectd client"
 __plugin_version__ = "0.1"

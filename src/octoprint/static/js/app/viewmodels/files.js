@@ -311,5 +311,15 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.onStartup = function() {
         self.requestData();
     };
+
+    self.onUpdatedFiles = function(payload) {
+        if (payload.type == "gcode") {
+            self.requestData();
+        }
+    };
+
+    self.onMetadataAnalysisFinished = function(payload) {
+        self.requestData();
+    }
 }
 
