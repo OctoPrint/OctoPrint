@@ -252,3 +252,28 @@ def dict_merge(a, b):
 
 class Object(object):
 	pass
+
+def interface_addresses(family=None):
+	import netifaces
+	if not family:
+		family = netifaces.AF_INET
+
+	for interface in netifaces.interfaces():
+		ifaddresses = netifaces.ifaddresses(interface)
+		if family in ifaddresses:
+			for ifaddress in ifaddresses[family]:
+				yield ifaddress["addr"]
+
+def address_for_client(host, port):
+	import socket
+
+	for address in interface_addresses():
+		try:
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.bind((address, 0))
+			sock.connect((host, port))
+			return address
+		except Exception as e:
+			pass
+
+

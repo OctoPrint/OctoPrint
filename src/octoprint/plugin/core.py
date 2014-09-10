@@ -26,10 +26,12 @@ class PluginInfo(object):
 
 	attr_check = '__plugin_check__'
 
-	def __init__(self, key, location, instance):
+	def __init__(self, key, location, instance, version=None):
 		self.key = key
 		self.location = location
 		self.instance = instance
+
+		self._version = version
 
 	def __str__(self):
 		return "{name} ({version})".format(name=self.name, version=self.version if self.version else "unknown")
@@ -60,7 +62,7 @@ class PluginInfo(object):
 
 	@property
 	def version(self):
-		return self._get_instance_attribute(self.__class__.attr_version, default=None)
+		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=None)
 
 	@property
 	def hooks(self):
@@ -82,7 +84,7 @@ class PluginInfo(object):
 
 class PluginManager(object):
 
-	def __init__(self, plugin_folders, plugin_types, plugin_disabled_list=None):
+	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, plugin_disabled_list=None):
 		self.logger = logging.getLogger(__name__)
 
 		if plugin_disabled_list is None:
@@ -90,6 +92,7 @@ class PluginManager(object):
 
 		self.plugin_folders = plugin_folders
 		self.plugin_types = plugin_types
+		self.plugin_entry_points = plugin_entry_points
 		self.plugin_disabled_list = plugin_disabled_list
 
 		self.plugins = dict()
@@ -100,8 +103,14 @@ class PluginManager(object):
 
 	def _find_plugins(self):
 		plugins = dict()
+		if self.plugin_folders:
+			self._add_plugins_from_folders(self.plugin_folders, plugins)
+		if self.plugin_entry_points:
+			self._add_plugins_from_entry_points(self.plugin_entry_points, plugins)
+		return plugins
 
-		for folder in self.plugin_folders:
+	def _add_plugins_from_folders(self, folders, plugins):
+		for folder in folders:
 			if not os.path.exists(folder):
 				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
 				continue
@@ -110,38 +119,77 @@ class PluginManager(object):
 			for entry in entries:
 				path = os.path.join(folder, entry)
 				if os.path.isdir(path) and os.path.isfile(os.path.join(path, "__init__.py")):
-					id = entry
+					key = entry
 				elif os.path.isfile(path) and entry.endswith(".py"):
-					id = entry[:-3] # strip off the .py extension
+					key = entry[:-3] # strip off the .py extension
 				else:
 					continue
 
-				if self._is_plugin_disabled(id):
+				if self._is_plugin_disabled(key):
 					# plugin is disabled, ignore it
 					continue
 
-				if id in plugins:
+				if key in plugins:
 					# plugin is already defined, ignore it
 					continue
 
-				module = imp.find_module(id, [folder])
-				plugin = self._load_plugin(id, *module)
-				if plugin.check():
-					plugins[id] = plugin
-				else:
-					self.logger.warn("Plugin \"{plugin}\" did not pass check, disabling it".format(plugin=str(plugin)))
+				plugin = self._load_plugin_from_module(key, folder=folder)
+				if plugin:
+					plugins[key] = plugin
 
 		return plugins
 
-	def _load_plugin(self, id, f, filename, description):
+	def _add_plugins_from_entry_points(self, groups, plugins):
+		import pkg_resources
+
+		if not isinstance(groups, (list, tuple)):
+			groups = [groups]
+
+		for group in groups:
+			for entry_point in pkg_resources.iter_entry_points(group=group, name=None):
+				key = entry_point.name
+				module_name = entry_point.module_name
+				version = entry_point.dist.version
+
+				if self._is_plugin_disabled(key):
+					# plugin is disabled, ignore it
+					continue
+
+				if key in plugins:
+					# plugin is already defined, ignore it
+					continue
+
+				plugin = self._load_plugin_from_module(key, module_name=module_name, version=version)
+				if plugin:
+					plugins[id] = plugin
+
+		return plugins
+
+	def _load_plugin_from_module(self, id, folder=None, module_name=None, version=None):
+		# TODO error handling
+		if folder:
+			module = imp.find_module(id, [folder])
+		elif module_name:
+			module = imp.find_module(module_name)
+		else:
+			return None
+
+		plugin = self._load_plugin(id, *module, version=version)
+		if plugin.check():
+			return plugin
+		else:
+			self.logger.warn("Plugin \"{plugin}\" did not pass check, disabling it".format(plugin=str(plugin)))
+			return None
+
+	def _load_plugin(self, id, f, filename, description, version=None):
 		instance = imp.load_module(id, f, filename, description)
-		return PluginInfo(id, filename, instance)
+		return PluginInfo(id, filename, instance, version=version)
 
 	def _is_plugin_disabled(self, id):
 		return id in self.plugin_disabled_list or id.endswith('disabled')
 
 	def reload_plugins(self):
-		self.logger.info("Loading plugins from {folders}...".format(folders=", ".join(self.plugin_folders)))
+		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(self.plugin_folders)))
 		self.plugins = self._find_plugins()
 
 		for name, plugin in self.plugins.items():

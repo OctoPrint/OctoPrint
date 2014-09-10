@@ -301,10 +301,28 @@ class Server():
 		observer.schedule(util.watchdog.UploadCleanupWatchdogHandler(gcodeManager), settings().getBaseFolder("uploads"))
 		observer.start()
 
-		# now it's the turn of the startup plugins
+		ioloop = IOLoop.instance()
+
+		# run our startup plugins
 		octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
 		                             "on_startup",
 		                             args=(self._host, self._port))
+
+		# prepare our after startup function
+		def on_after_startup():
+			logger.info("Listening on http://%s:%d" % (self._host, self._port))
+
+			# now this is somewhat ugly, but the issue is the following: startup plugins might want to do things for
+			# which they need the server to be already alive (e.g. for being able to resolve urls, such as favicons
+			# or service xmls or the like). While they are working though the ioloop would block. Therefore we'll
+			# create a single use thread in which to perform our after-startup-tasks, start that and hand back
+			# control to the ioloop
+			def work():
+				octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
+				                             "on_after_startup")
+			import threading
+			threading.Thread(target=work).start()
+		ioloop.add_callback(on_after_startup)
 
 		# prepare our shutdown function
 		def on_shutdown():
@@ -315,9 +333,8 @@ class Server():
 			                             "on_shutdown")
 		atexit.register(on_shutdown)
 
-		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		try:
-			IOLoop.instance().start()
+			ioloop.start()
 		except KeyboardInterrupt:
 			pass
 		except:

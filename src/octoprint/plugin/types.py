@@ -13,6 +13,9 @@ class StartupPlugin(Plugin):
 	def on_startup(self, host, port):
 		pass
 
+	def on_after_startup(self):
+		pass
+
 
 class ShutdownPlugin(Plugin):
 	def on_shutdown(self):
@@ -58,5 +61,9 @@ class SettingsPlugin(Plugin):
 	def on_settings_save(self, data):
 		pass
 
+
+class EventHandlerPlugin(Plugin):
+	def on_event(self, event, payload):
+		pass
 
 

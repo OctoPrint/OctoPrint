@@ -14,16 +14,25 @@ from octoprint.plugin.types import *
 # singleton
 _instance = None
 
-def plugin_manager(init=False, plugin_folders=None, plugin_types=None):
+def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_entry_points=None):
 	global _instance
 	if _instance is None:
 		if init:
 			if plugin_folders is None:
 				plugin_folders = (settings().getBaseFolder("plugins"), os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")))
 			if plugin_types is None:
-				plugin_types = [StartupPlugin, TemplatePlugin, SettingsPlugin, SimpleApiPlugin, AssetPlugin, BlueprintPlugin]
+				plugin_types = [StartupPlugin,
+				                ShutdownPlugin,
+				                TemplatePlugin,
+				                SettingsPlugin,
+				                SimpleApiPlugin,
+				                AssetPlugin,
+				                BlueprintPlugin,
+				                EventHandlerPlugin]
+			if plugin_entry_points is None:
+				plugin_entry_points = "octoprint.plugin"
 
-			_instance = PluginManager(plugin_folders, plugin_types)
+			_instance = PluginManager(plugin_folders, plugin_types, plugin_entry_points)
 		else:
 			raise ValueError("Plugin Manager not initialized yet")
 	return _instance

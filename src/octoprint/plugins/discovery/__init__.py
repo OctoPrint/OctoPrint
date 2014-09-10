@@ -11,6 +11,7 @@ import os
 import flask
 
 import octoprint.plugin
+import octoprint.util
 
 default_settings = {
 	"publicHost": None,
@@ -18,7 +19,7 @@ default_settings = {
 	"pathPrefix": None,
 	"httpUsername": None,
 	"httpPassword": None,
-    "upnpUuid": None
+	"upnpUuid": None
 }
 s = octoprint.plugin.plugin_settings("discovery", defaults=default_settings)
 
@@ -60,34 +61,10 @@ def discovery():
 	response.headers['Content-Type'] = 'application/xml'
 	return response
 
-def interface_addresses(family=None):
-	import netifaces
-	if not family:
-		family = netifaces.AF_INET
-
-	for interface in netifaces.interfaces():
-		ifaddresses = netifaces.ifaddresses(interface)
-		if family in ifaddresses:
-			for ifaddress in ifaddresses[family]:
-				yield ifaddress["addr"]
-
-def address_for_client(client):
-	import socket
-
-	for address in interface_addresses():
-		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.bind((address, 0))
-			sock.connect(client)
-			return address
-		except Exception as e:
-			pass
-
-
 class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
                       octoprint.plugin.types.ShutdownPlugin,
                       octoprint.plugin.types.BlueprintPlugin,
-                      octoprint.plugin.SettingsPlugin):
+                      octoprint.plugin.types.SettingsPlugin):
 	def __init__(self):
 		self.logger = logging.getLogger("octoprint.plugins." + __name__)
 
@@ -257,7 +234,7 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 		if alive and not self._ssdp_monitor_active:
 			return
 
-		for addr in interface_addresses():
+		for addr in octoprint.util.interface_addresses():
 			try:
 				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 				sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -320,7 +297,7 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 					data, address = sock.recvfrom(4096)
 					request = Request(data)
 					if not request.error_code and request.command == "M-SEARCH" and request.path == "*" and (request.headers["ST"] == "upnp:rootdevice" or request.headers["ST"] == "ssdp:all") and request.headers["MAN"] == '"ssdp:discover"':
-						interface_address = address_for_client(address)
+						interface_address = octoprint.util.address_for_client(*address)
 						if not interface_address:
 							self.logger.warn("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
 							continue

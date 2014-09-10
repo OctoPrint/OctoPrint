@@ -1,19 +1,26 @@
 # coding=utf-8
+from __future__ import (print_function, absolute_import)
 
-__author__ = "Lars Norpchen"
-__author__ = "Gina Häußge <osd@foosel.net>"
+__author__ = "Gina Häußge <osd@foosel.net>, Lars Norpchen"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import datetime
 import logging
 import subprocess
 import Queue
 import threading
+import collections
 
 from octoprint.settings import settings
+import octoprint.plugin
 
 # singleton
 _instance = None
+
+
+def all_events():
+	return [name for name in Events.__dict__ if not name.startswith("__")]
 
 
 class Events(object):
@@ -87,7 +94,7 @@ class EventManager(object):
 	"""
 
 	def __init__(self):
-		self._registeredListeners = {}
+		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
 		self._queue = Queue.PriorityQueue()
@@ -99,9 +106,7 @@ class EventManager(object):
 		while True:
 			(event, payload) = self._queue.get(True)
 
-			eventListeners = self._registeredListeners.get(event, None)
-			if eventListeners is None:
-				return
+			eventListeners = self._registeredListeners[event]
 			self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
 
 			for listener in eventListeners:
@@ -110,6 +115,10 @@ class EventManager(object):
 					listener(event, payload)
 				except:
 					self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
+
+			octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
+			                             "on_event",
+			                             args=[event, payload])
 
 	def fire(self, event, payload=None):
 		"""
@@ -122,17 +131,12 @@ class EventManager(object):
 		payload being a payload object specific to the event.
 		"""
 
-		if not event in self._registeredListeners.keys():
-			return
 		self._queue.put((event, payload), 0)
 
 	def subscribe(self, event, callback):
 		"""
 		Subscribe a listener to an event -- pass in the event name (as a string) and the callback object
 		"""
-
-		if not event in self._registeredListeners.keys():
-			self._registeredListeners[event] = []
 
 		if callback in self._registeredListeners[event]:
 			# callback is already subscribed to the event
@@ -145,10 +149,6 @@ class EventManager(object):
 		"""
 		Unsubscribe a listener from an event -- pass in the event name (as string) and the callback object
 		"""
-
-		if not event in self._registeredListeners:
-			# no callback registered for callback, just return
-			return
 
 		if not callback in self._registeredListeners[event]:
 			# callback not subscribed to event, just return
