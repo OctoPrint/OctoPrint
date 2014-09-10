@@ -262,7 +262,8 @@ def interface_addresses(family=None):
 		ifaddresses = netifaces.ifaddresses(interface)
 		if family in ifaddresses:
 			for ifaddress in ifaddresses[family]:
-				yield ifaddress["addr"]
+				if not ifaddress["addr"].startswith("169.254."):
+					yield ifaddress["addr"]
 
 def address_for_client(host, port):
 	import socket

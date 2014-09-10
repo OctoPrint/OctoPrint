@@ -24,6 +24,8 @@ class PluginInfo(object):
 
 	attr_implementations = '__plugin_implementations__'
 
+	attr_helpers = '__plugin_helpers__'
+
 	attr_check = '__plugin_check__'
 
 	def __init__(self, key, location, instance, version=None):
@@ -71,6 +73,10 @@ class PluginInfo(object):
 	@property
 	def implementations(self):
 		return self._get_instance_attribute(self.__class__.attr_implementations, default=[])
+
+	@property
+	def helpers(self):
+		return self._get_instance_attribute(self.__class__.attr_helpers, default={})
 
 	@property
 	def check(self):
@@ -161,32 +167,32 @@ class PluginManager(object):
 
 				plugin = self._load_plugin_from_module(key, module_name=module_name, version=version)
 				if plugin:
-					plugins[id] = plugin
+					plugins[key] = plugin
 
 		return plugins
 
-	def _load_plugin_from_module(self, id, folder=None, module_name=None, version=None):
+	def _load_plugin_from_module(self, key, folder=None, module_name=None, version=None):
 		# TODO error handling
 		if folder:
-			module = imp.find_module(id, [folder])
+			module = imp.find_module(key, [folder])
 		elif module_name:
 			module = imp.find_module(module_name)
 		else:
 			return None
 
-		plugin = self._load_plugin(id, *module, version=version)
+		plugin = self._load_plugin(key, *module, version=version)
 		if plugin.check():
 			return plugin
 		else:
 			self.logger.warn("Plugin \"{plugin}\" did not pass check, disabling it".format(plugin=str(plugin)))
 			return None
 
-	def _load_plugin(self, id, f, filename, description, version=None):
-		instance = imp.load_module(id, f, filename, description)
-		return PluginInfo(id, filename, instance, version=version)
+	def _load_plugin(self, key, f, filename, description, version=None):
+		instance = imp.load_module(key, f, filename, description)
+		return PluginInfo(key, filename, instance, version=version)
 
-	def _is_plugin_disabled(self, id):
-		return id in self.plugin_disabled_list or id.endswith('disabled')
+	def _is_plugin_disabled(self, key):
+		return key in self.plugin_disabled_list or key.endswith('disabled')
 
 	def reload_plugins(self):
 		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(self.plugin_folders)))
@@ -227,6 +233,17 @@ class PluginManager(object):
 		if result is None:
 			return set()
 		return {impl[0]: impl[1] for impl in result}
+
+	def get_helpers(self, name, helpers=None):
+		if not name in self.plugins:
+			return None
+		plugin = self.plugins[name]
+
+		all_helpers = plugin.helpers
+		if helpers:
+			return dict((k, v) for (k, v) in all_helpers.items() if k in helpers)
+		else:
+			return all_helpers
 
 
 class Plugin(object):

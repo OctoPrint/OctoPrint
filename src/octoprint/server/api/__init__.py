@@ -114,7 +114,7 @@ def afterApiRequests(resp):
 def pluginData(name):
 	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
 	if not name in api_plugins:
-		return make_response(404)
+		make_response(404)
 
 	api_plugin = api_plugins[name]
 	response = api_plugin.on_api_get(request)
