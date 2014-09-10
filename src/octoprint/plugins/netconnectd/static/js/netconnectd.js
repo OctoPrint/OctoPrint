@@ -10,34 +10,52 @@ $(function() {
 
         self.enableQualitySorting = ko.observable(false);
 
-        self.statusAp = ko.observable();
-        self.statusLink = ko.observable();
-        self.statusWifiAvailable = ko.observable();
+        self.status = {
+            link: ko.observable(),
+            connections: {
+                ap: ko.observable(),
+                wifi: ko.observable(),
+                wired: ko.observable()
+            },
+            wifi: {
+                current_ssid: ko.observable(),
+                current_address: ko.observable()
+            }
+        };
+        self.statusCurrentWifi = ko.observable();
 
         self.editorWifi = undefined;
         self.editorWifiSsid = ko.observable();
         self.editorWifiPassphrase1 = ko.observable();
         self.editorWifiPassphrase2 = ko.observable();
-
-        self.working = ko.observable(false);
-
         self.editorWifiPassphraseMismatch = ko.computed(function() {
             return self.editorWifiPassphrase1() != self.editorWifiPassphrase2();
         });
 
+
+        self.working = ko.observable(false);
         self.error = ko.observable(false);
+
         self.connectionStateText = ko.computed(function() {
             if (self.error()) {
-                return gettext("Error while talking to netconnectd, is the service running?")
-            } else if (self.statusAp() && !self.statusWifiAvailable()) {
-                return gettext("Access Point is active, wifi configured but not available");
-            } else if (self.statusAp() && self.statusWifiAvailable()) {
-                return gettext("Access Point is active, wifi configured");
-            } else if (self.statusLink()) {
-                return gettext("Connected");
+                return gettext("Error while talking to netconnectd, is the service running?");
+            } else if (self.status.link()) {
+                if (self.status.connections.ap()) {
+                    return gettext("Acting as access point");
+                } else if (self.status.connections.wired()) {
+                    return gettext("Connected via wire");
+                } else if (self.status.connections.wifi()) {
+                    if (self.status.wifi.current_ssid()) {
+                        return _.sprintf(gettext("Connected via wifi (SSID \"%(ssid)s\")"), {ssid: self.status.wifi.current_ssid()});
+                    } else {
+                        return gettext("Connected via wifi (unknown SSID)")
+                    }
+                } else {
+                    return gettext("Connected (unknown connection)");
+                }
+            } else {
+                return gettext("Not connected to network");
             }
-
-            return gettext("Unknown connection state");
         });
 
         // initialize list helper
@@ -65,7 +83,7 @@ $(function() {
             10
         );
 
-        self.getEntryId = function(ssid) {
+        self.getEntryId = function(data) {
             return "settings_plugin_netconnectd_connectbutton_" + md5(data.ssid);
         };
 
@@ -81,9 +99,22 @@ $(function() {
                 self.error(false);
             }
 
-            self.statusAp(response.status.ap);
-            self.statusLink(response.status.link);
-            self.statusWifiAvailable(response.status.wifi_available);
+            self.status.link(response.status.link);
+            self.status.connections.ap(response.status.connections.ap);
+            self.status.connections.wifi(response.status.connections.wifi);
+            self.status.connections.wired(response.status.connections.wired);
+            self.status.wifi.current_ssid(response.status.wifi.current_ssid);
+            self.status.wifi.current_address(response.status.wifi.current_address);
+
+
+            self.statusCurrentWifi(undefined);
+            if (response.status.wifi.current_ssid && response.status.wifi.current_address) {
+                _.each(response.wifis, function(wifi) {
+                    if (wifi.ssid == response.status.wifi.current_ssid && wifi.address.toLowerCase() == response.status.wifi.current_address.toLowerCase()) {
+                        self.statusCurrentWifi(self.getEntryId(wifi));
+                    }
+                });
+            }
 
             var enableQualitySorting = false;
             _.each(response.wifis, function(wifi) {
@@ -93,7 +124,27 @@ $(function() {
             });
             self.enableQualitySorting(enableQualitySorting);
 
-            self.listHelper.updateItems(response.wifis);
+            var wifis = [];
+            _.each(response.wifis, function(wifi) {
+                var qualityInt = parseInt(wifi.quality);
+                var quality = undefined;
+                if (!isNaN(qualityInt)) {
+                    if (qualityInt <= 0) {
+                        qualityInt = (-1) * qualityInt;
+                    }
+                    quality = qualityInt;
+                }
+
+                wifis.push({
+                    ssid: wifi.ssid,
+                    address: wifi.address,
+                    encrypted: wifi.encrypted,
+                    quality: quality,
+                    qualityText: (quality != undefined) ? "" + quality + "%" : undefined
+                });
+            });
+
+            self.listHelper.updateItems(wifis);
             if (!enableQualitySorting) {
                 self.listHelper.changeSorting("ssid");
             }

@@ -16,8 +16,6 @@ import octoprint.plugin
 default_settings = {
 	"socket": "/var/run/netconnectd.sock"
 }
-
-
 s = octoprint.plugin.plugin_settings("netconnectd", defaults=default_settings)
 
 
@@ -129,11 +127,7 @@ class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin,
 		if not flag:
 			raise RuntimeError("Error while querying status: " + content)
 
-		return dict(
-			ap=content["ap"],
-			link=content["link"],
-			wifi_available=content["wifi_available"]
-		)
+		return content
 
 	def _configure_and_select_wifi(self, ssid, psk, force=False):
 		payload = dict(

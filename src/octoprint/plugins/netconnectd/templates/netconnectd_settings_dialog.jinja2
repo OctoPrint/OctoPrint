@@ -5,7 +5,7 @@
 
     <div class="pull-right" data-bind="visible: enableQualitySorting">
         <small>
-            {{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('quality'); }">{{ _('Quality') }} ({{ _('descending') }})</a>
+            {{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('ssid'); }">{{ _('SSID') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('quality'); }">{{ _('Quality') }} ({{ _('descending') }})</a>
         </small>
     </div>
     <table class="table table-striped table-hover table-condensed table-hover" id="log_files">
@@ -18,10 +18,10 @@
         </thead>
         <tbody data-bind="foreach: listHelper.paginatedItems">
             <tr data-bind="attr: {title: name}">
-                <td class="settings_plugin_netconnectd_wifis_ssid"><span class="icon-lock" data-bind="invisible: !encrypted"></span> <span data-bind="text: ssid"></span></td>
-                <td class="settings_plugin_netconnectd_wifis_quality" data-bind="visible: $root.enableQualitySorting, text: quality"></td>
+                <td class="settings_plugin_netconnectd_wifis_ssid"><span class="icon-lock" data-bind="invisible: !encrypted"></span> <span data-bind="text: ssid"></span> <small class="muted">({{ _('Address') }}: <span data-bind="text: address"></span>)</small></td>
+                <td class="settings_plugin_netconnectd_wifis_quality" data-bind="visible: $root.enableQualitySorting, text: qualityText"></td>
                 <td class="settings_plugin_netconnectd_wifis_action">
-                    <button class="btn btn-small" data-bind="click: function() { $parent.configureWifi($data); }, css: {disabled: !$root.loginState.isUser() || $root.working() || $root.error()}"><i class="icon-spinner icon-spin" data-bind="visible: $root.working"></i> {{ _('Connect') }}</button>
+                    <button class="btn btn-small" data-bind="click: function() { $parent.configureWifi($data); }, css: {disabled: !$root.loginState.isUser() || $root.working() || $root.error() || $root.getEntryId($data) == $root.statusCurrentWifi()}"><i class="icon-spinner icon-spin" data-bind="visible: $root.working"></i><i class="icon-signin" data-bind="visible: !$root.working()"></i> {{ _('Connect') }}</button>
                 </td>
             </tr>
         </tbody>
