@@ -196,9 +196,8 @@ __plugin_implementations__ = []
 
 def __plugin_check__():
 	import sys
-	# TODO arm the check
-	#if not sys.platform == 'linux2':
-	#	return False
+	if not sys.platform == 'linux2':
+		return False
 
 	global __plugin_implementations__
 	__plugin_implementations__ = [NetconnectdSettingsPlugin()]
