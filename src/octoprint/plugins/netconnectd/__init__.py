@@ -14,7 +14,8 @@ import octoprint.plugin
 
 
 default_settings = {
-	"socket": "/var/run/netconnectd.sock"
+	"socket": "/var/run/netconnectd.sock",
+	"hostname": None
 }
 s = octoprint.plugin.plugin_settings("netconnectd", defaults=default_settings)
 
@@ -28,20 +29,31 @@ class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin,
 		self.logger = logging.getLogger("plugins.netconnectd." + __name__)
 		self.address = s.get(["socket"])
 
+	@property
+	def hostname(self):
+		if s.get(["hostname"]):
+			return s.get(["hostname"])
+		else:
+			import socket
+			return socket.gethostname() + ".local"
+
 	##~~ SettingsPlugin
 
 	def on_settings_load(self):
 		return {
-			"socket": s.get(["socket"])
+			"socket": s.get(["socket"]),
+			"hostname": s.get(["hostname"])
 		}
 
 	def on_settings_save(self, data):
 		if "socket" in data and data["socket"]:
 			s.set(["socket"], data["socket"])
+		if "hostname" in data and data["hostname"]:
+			s.set(["hostname"], data["hostname"])
 
 		self.address = s.get(["socket"])
 
-	##~~ TemplatePlugin API (part of SettingsPlugin)
+	##~~ TemplatePlugin API
 
 	def get_template_vars(self):
 		return dict(
@@ -70,7 +82,8 @@ class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin,
 
 		return jsonify({
 			"wifis": wifis,
-			"status": status
+			"status": status,
+			"hostname": self.hostname
 		})
 
 	def on_api_command(self, command, data):
@@ -153,6 +166,7 @@ class NetconnectdSettingsPlugin(octoprint.plugin.SettingsPlugin,
 
 		import socket
 		sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+		sock.settimeout(10)
 		try:
 			sock.connect(self.address)
 			sock.sendall(js + '\x00')

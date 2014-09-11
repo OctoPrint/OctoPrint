@@ -114,7 +114,7 @@ def afterApiRequests(resp):
 def pluginData(name):
 	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
 	if not name in api_plugins:
-		make_response(404)
+		return make_response("Not found", 404)
 
 	api_plugin = api_plugins[name]
 	response = api_plugin.on_api_get(request)
@@ -130,12 +130,12 @@ def pluginData(name):
 def pluginCommand(name):
 	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
 	if not name in api_plugins:
-		return make_response(404)
+		return make_response("Not found", 404)
 
 	api_plugin = api_plugins[name]
 	valid_commands = api_plugin.get_api_commands()
 	if valid_commands is None:
-		return make_response(405)
+		return make_response("Method not allowed", 405)
 
 	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
 	if response is not None:

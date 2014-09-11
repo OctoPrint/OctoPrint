@@ -8,8 +8,12 @@ $(function() {
         self.pollingEnabled = false;
         self.pollingTimeoutId = undefined;
 
+        self.reconnectInProgress = false;
+        self.reconnectTimeout = undefined;
+
         self.enableQualitySorting = ko.observable(false);
 
+        self.hostname = ko.observable();
         self.status = {
             link: ko.observable(),
             connections: {
@@ -32,17 +36,16 @@ $(function() {
             return self.editorWifiPassphrase1() != self.editorWifiPassphrase2();
         });
 
-
         self.working = ko.observable(false);
         self.error = ko.observable(false);
 
         self.connectionStateText = ko.computed(function() {
             if (self.error()) {
                 return gettext("Error while talking to netconnectd, is the service running?");
+            } else if (self.status.connections.ap()) {
+                return gettext("Acting as access point");
             } else if (self.status.link()) {
-                if (self.status.connections.ap()) {
-                    return gettext("Acting as access point");
-                } else if (self.status.connections.wired()) {
+                if (self.status.connections.wired()) {
                     return gettext("Connected via wire");
                 } else if (self.status.connections.wifi()) {
                     if (self.status.wifi.current_ssid()) {
@@ -84,7 +87,7 @@ $(function() {
         );
 
         self.getEntryId = function(data) {
-            return "settings_plugin_netconnectd_connectbutton_" + md5(data.ssid);
+            return "settings_plugin_netconnectd_wifi_" + md5(data.ssid);
         };
 
         self.refresh = function() {
@@ -99,13 +102,14 @@ $(function() {
                 self.error(false);
             }
 
+            self.hostname(response.hostname);
+
             self.status.link(response.status.link);
             self.status.connections.ap(response.status.connections.ap);
             self.status.connections.wifi(response.status.connections.wifi);
             self.status.connections.wired(response.status.connections.wired);
             self.status.wifi.current_ssid(response.status.wifi.current_ssid);
             self.status.wifi.current_address(response.status.wifi.current_address);
-
 
             self.statusCurrentWifi(undefined);
             if (response.status.wifi.current_ssid && response.status.wifi.current_address) {
@@ -195,15 +199,52 @@ $(function() {
 
         self.sendWifiConfig = function(ssid, psk, successCallback, failureCallback) {
             self.working(true);
+            if (self.status.connections.ap()) {
+                self.reconnectInProgress = true;
+
+                var reconnectText = gettext("OctoPrint is now switching to your configured Wifi connection and therefore shutting down the Access Point. I'm continuously trying to reach it at <strong>%(hostname)s</strong> but it might take a while. If you are not reconnected over the next couple of minutes, please try to reconnect to OctoPrint manually because then I was unable to find it myself.");
+
+                showOfflineOverlay(
+                    gettext("Reconnecting..."),
+                    _.sprintf(reconnectText, {hostname: self.hostname()}),
+                    self.tryReconnect
+                );
+            }
             self._postCommand("configure_wifi", {ssid: ssid, psk: psk}, successCallback, failureCallback, function() {
                 self.working(false);
-            });
+                if (self.reconnectInProgress) {
+                    self.tryReconnect();
+                }
+            }, 5000);
         };
 
-        self._postCommand = function (command, data, successCallback, failureCallback, alwaysCallback) {
+        self.tryReconnect = function() {
+            var hostname = self.hostname();
+
+            var location = window.location.href
+            location = location.replace(location.match("https?\\://([^:@]+(:[^@]+)?@)?([^:/]+)")[3], hostname);
+
+            var pingCallback = function(result) {
+                if (!result) {
+                    return;
+                }
+
+                if (self.reconnectTimeout != undefined) {
+                    clearTimeout(self.reconnectTimeout);
+                    window.location.replace(location);
+                }
+                hideOfflineOverlay();
+                self.reconnectInProgress = false;
+            };
+
+            ping(location, pingCallback);
+            self.reconnectTimeout = setTimeout(self.tryReconnect, 1000);
+        };
+
+        self._postCommand = function (command, data, successCallback, failureCallback, alwaysCallback, timeout) {
             var payload = _.extend(data, {command: command});
 
-            $.ajax({
+            var params = {
                 url: API_BASEURL + "plugin/netconnectd",
                 type: "POST",
                 dataType: "json",
@@ -218,7 +259,13 @@ $(function() {
                 complete: function() {
                     if (alwaysCallback) alwaysCallback();
                 }
-            });
+            };
+
+            if (timeout != undefined) {
+                params.timeout = timeout;
+            }
+
+            $.ajax(params);
         };
 
         self.requestData = function () {
@@ -254,6 +301,10 @@ $(function() {
                 self.pollingTimeoutId = undefined;
             }
             self.pollingEnabled = false;
+        };
+
+        self.onServerDisconnect = function() {
+            return !self.reconnectInProgress;
         }
 
     }

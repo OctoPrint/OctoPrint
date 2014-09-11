@@ -31,9 +31,28 @@ function DataUpdater(allViewModels) {
     };
 
     self._onclose = function() {
-        $("#offline_overlay_message").html(gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."));
-        if (!$("#offline_overlay").is(":visible"))
-            $("#offline_overlay").show();
+        var handled = false;
+        _.each(self.allViewModels, function(viewModel) {
+            if (handled == true) {
+                return;
+            }
+
+            if (viewModel.hasattr("onServerDisconnect")) {
+                if (!viewModel.onServerDisconnect()) {
+                    handled = true;
+                }
+            }
+        });
+
+        if (handled) {
+            return;
+        }
+
+        showOfflineOverlay(
+            gettext("Server is offline"),
+            gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."),
+            self.reconnect
+        );
 
         if (self._autoReconnectTrial < self._autoReconnectTimeouts.length) {
             var timeout = self._autoReconnectTimeouts[self._autoReconnectTrial];
@@ -46,6 +65,24 @@ function DataUpdater(allViewModels) {
     };
 
     self._onreconnectfailed = function() {
+        var handled = false;
+        _.each(self.allViewModels, function(viewModel) {
+            if (handled == true) {
+                return;
+            }
+
+            if (viewModel.hasattr("onServerDisconnect")) {
+                if (!viewModel.onServerDisconnect()) {
+                    handled = true;
+                }
+            }
+        });
+
+        if (handled) {
+            return;
+        }
+
+        $("#offline_overlay_title").text(gettext("Server is offline"));
         $("#offline_overlay_message").html(gettext("The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, but you may try a manual reconnect using the button below."));
     };
 
@@ -70,7 +107,7 @@ function DataUpdater(allViewModels) {
                     $("span.version").text(DISPLAY_VERSION);
 
                     if ($("#offline_overlay").is(":visible")) {
-                        $("#offline_overlay").hide();
+                        hideOfflineOverlay();
                         _.each(self.allViewModels, function(viewModel) {
                             if (viewModel.hasOwnProperty("onDataUpdaterReconnect")) {
                                 viewModel.onDataUpdaterReconnect();

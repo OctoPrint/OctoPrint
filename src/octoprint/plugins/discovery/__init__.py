@@ -91,10 +91,10 @@ def discovery():
 	response.headers['Content-Type'] = 'application/xml'
 	return response
 
-class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
-                      octoprint.plugin.types.ShutdownPlugin,
-                      octoprint.plugin.types.BlueprintPlugin,
-                      octoprint.plugin.types.SettingsPlugin):
+class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
+                      octoprint.plugin.ShutdownPlugin,
+                      octoprint.plugin.BlueprintPlugin,
+                      octoprint.plugin.SettingsPlugin):
 
 	ssdp_multicast_addr = "239.255.255.250"
 
@@ -109,6 +109,7 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 
 		# zeroconf
 		self._sd_refs = dict()
+		self._cnames = dict()
 
 		# upnp/ssdp
 		self._ssdp_monitor_active = False
@@ -215,6 +216,9 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 		self.logger.info("Registered {name} for {reg_type}".format(**locals()))
 
 	def zeroconf_unregister(self, reg_type, port):
+		if not pybonjour:
+			return
+
 		key = (reg_type, port)
 		if not key in self._sd_refs:
 			return

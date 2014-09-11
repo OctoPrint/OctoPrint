@@ -359,3 +359,42 @@ function pnotifyAdditionalInfo(inner) {
         + '<div class="pnotify_more_container hide">' + inner + '</div>'
         + '</div>';
 }
+
+function ping(url, callback) {
+    var img = new Image();
+    var calledBack = false;
+
+    img.onload = function() {
+        callback(true);
+        calledBack = true;
+    };
+    img.onerror = function() {
+        if (!calledBack) {
+            callback(true);
+            calledBack = true;
+        }
+    };
+    img.src = url;
+    setTimeout(function() {
+        if (!calledBack) {
+            callback(false);
+            calledBack = true;
+        }
+    }, 1500);
+}
+
+function showOfflineOverlay(title, message, reconnectCallback) {
+    if (title == undefined) {
+        title = gettext("Server is offline");
+    }
+
+    $("#offline_overlay_title").text(title);
+    $("#offline_overlay_message").html(message);
+    $("#offline_overlay_reconnect").click(reconnectCallback);
+    if (!$("#offline_overlay").is(":visible"))
+        $("#offline_overlay").show();
+}
+
+function hideOfflineOverlay() {
+    $("#offline_overlay").hide();
+}
