@@ -8,19 +8,14 @@
         <deviceType>urn:schemas-upnp-org:device:Basic:1</deviceType>
         <friendlyName>{{ friendlyName }}</friendlyName>
         <manufacturer>{{ manufacturer }}</manufacturer>
-        <manufacturerURL>{{ manufacturerUrl }}</manufacturerURL>
-        <modelDescription>{{ modelDescription }}</modelDescription>
+        {% if manufacturerUrl %}<manufacturerURL>{{ manufacturerUrl }}</manufacturerURL>{% endif %}
         <modelName>{{ modelName }}</modelName>
+        {% if modelDescription %}<modelDescription>{{ modelDescription }}</modelDescription>{% endif %}
+        {% if modelNumber %}<modelNumber>{{ modelNumber }}</modelNumber>{% endif %}
+        {% if modelUrl %}<modelURL>{{ modelUrl }}</modelURL>{% endif %}
+        {% if serialNumber %}<serialNumber>{{ serialNumber }}</serialNumber>{% endif %}
         <UDN>uuid:{{ uuid }}</UDN>
         <serviceList>
-            <service>
-                <URLBase>{{ presentationUrl }}</URLBase>
-                <serviceType>urn:schemas-dummy-com:service:Dummy:1</serviceType>
-                <serviceId>urn:dummy-com:serviceId:dummy1</serviceId>
-                <controlURL>/dummy</controlURL>
-                <eventSubURL>/dummy</eventSubURL>
-                <SCPDURL>/dummy.xml</SCPDURL>
-            </service>
         </serviceList>
         <presentationURL>{{ presentationUrl }}</presentationURL>
     </device>

@@ -6,7 +6,6 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import collections
 import logging
 import os
 import flask
@@ -26,7 +25,16 @@ default_settings = {
 	"httpUsername": None,
 	"httpPassword": None,
 	"upnpUuid": None,
-	"zeroConf": []
+	"zeroConf": [],
+	"model": {
+		"name": None,
+		"description": None,
+		"number": None,
+		"url": None,
+		"serial": None,
+		"vendor": None,
+		"vendorUrl": None
+	}
 }
 s = octoprint.plugin.plugin_settings("discovery", defaults=default_settings)
 
@@ -56,12 +64,28 @@ blueprint = flask.Blueprint("plugin.discovery", __name__, template_folder=os.pat
 
 @blueprint.route("/discovery.xml")
 def discovery():
-	logging.getLogger("octoprint.plugins." + __name__).info("Rendering discovery.xml")
+	logging.getLogger("octoprint.plugins." + __name__).debug("Rendering discovery.xml")
+
+	modelName = s.get(["model", "name"])
+	if not modelName:
+		import octoprint.server
+		modelName = octoprint.server.DISPLAY_VERSION
+
+	vendor = s.get(["model", "vendor"])
+	vendorUrl = s.get(["model", "vendorUrl"])
+	if not vendor:
+		vendor = "The OctoPrint Project"
+		vendorUrl = "http://www.octoprint.org/"
+
 	response = flask.make_response(flask.render_template("discovery.jinja2",
 	                             friendlyName=get_instance_name(),
-	                             manufacturer="The OctoPrint project",
-	                             manufacturerUrl="http://www.octoprint.org",
-	                             modelName="OctoPrint",
+	                             manufacturer=vendor,
+	                             manufacturerUrl=vendorUrl,
+	                             modelName=modelName,
+	                             modelDescription=s.get(["model", "description"]),
+	                             modelNumber=s.get(["model", "number"]),
+	                             modelUrl=s.get(["model", "url"]),
+	                             serialNumber=s.get(["model", "serial"]),
 	                             uuid=UUID,
 	                             presentationUrl=flask.url_for("index", _external=True)))
 	response.headers['Content-Type'] = 'application/xml'
@@ -71,6 +95,12 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
                       octoprint.plugin.types.ShutdownPlugin,
                       octoprint.plugin.types.BlueprintPlugin,
                       octoprint.plugin.types.SettingsPlugin):
+
+	ssdp_multicast_addr = "239.255.255.250"
+
+	ssdp_multicast_port = 1900
+
+
 	def __init__(self):
 		self.logger = logging.getLogger("octoprint.plugins." + __name__)
 
@@ -78,7 +108,7 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 		self.port = None
 
 		# zeroconf
-		self._sd_refs = {}
+		self._sd_refs = dict()
 
 		# upnp/ssdp
 		self._ssdp_monitor_active = False
@@ -132,6 +162,10 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 	#~~ ShutdownPlugin API
 
 	def on_shutdown(self):
+		for key in self._sd_refs:
+			reg_type, port = key
+			self.zeroconf_unregister(reg_type, port)
+
 		self._ssdp_unregister()
 
 	#~~ SettingsPlugin API
@@ -161,27 +195,38 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 
 	# ZeroConf
 
-	def zeroconf_register(self, service_type, name, port=None, txt_record=None):
+	def zeroconf_register(self, reg_type, name, port=None, txt_record=None, timeout=5):
 		if not pybonjour:
 			return
 
-		def register_callback(sd_ref, flags, error_code, name, reg_type, domain):
-			if error_code == pybonjour.kDNSServiceErr_NoError:
-				self.logger.info("Registered {name} for {reg_type} with domain {domain}".format(**locals()))
+		if not port:
+			port = self.port
 
 		params = dict(
 			name=name,
-			regtype=service_type,
-			port=port if port else self.port,
-			callBack=register_callback
+			regtype=reg_type,
+			port=port
 		)
 		if txt_record:
 			params["txtRecord"] = pybonjour.TXTRecord(txt_record)
 
-		self._sd_refs[service_type] = pybonjour.DNSServiceRegister(**params)
-		pybonjour.DNSServiceProcessResult(self._sd_refs[service_type])
+		key = (reg_type, port)
+		self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
+		self.logger.info("Registered {name} for {reg_type}".format(**locals()))
 
-	def zeroconf_browse(self, service_type, block=False, callback=None, timeout=5):
+	def zeroconf_unregister(self, reg_type, port):
+		key = (reg_type, port)
+		if not key in self._sd_refs:
+			return
+
+		sd_ref = self._sd_refs[key]
+		try:
+			sd_ref.close()
+			self.logger.debug("Unregistered {reg_type} on port {port}".format(reg_type=reg_type, port=port))
+		except:
+			self.logger.exception("Could not unregister {reg_type} on port {port}".format(reg_type=reg_type, port=port))
+
+	def zeroconf_browse(self, service_type, block=False, callback=None, timeout=5, resolve_timeout=5):
 		if not pybonjour:
 			return None
 
@@ -223,7 +268,13 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 			self.logger.debug("Got a browsing result for Zeroconf resolution of {service_type}, resolving...".format(service_type=service_type))
 			resolve_ref = pybonjour.DNSServiceResolve(0, interface_index, service_name, regtype, reply_domain, resolve_callback)
 			try:
-				pybonjour.DNSServiceProcessResult(resolve_ref)
+				while True:
+					ready = select.select([resolve_ref], [], [], resolve_timeout)
+					if resolve_ref in ready[0]:
+						pybonjour.DNSServiceProcessResult(resolve_ref)
+					else:
+						self.logger.warn("Timeout while trying to resolve a service")
+						break
 			finally:
 				resolve_ref.close()
 
@@ -263,6 +314,13 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 			api=octoprint.server.api.VERSION,
 		))
 
+		modelName = s.get(["model", "name"])
+		if modelName:
+			entries.update(dict(model=modelName))
+		vendor = s.get(["model", "vendor"])
+		if vendor:
+			entries.update(dict(vendor=vendor))
+
 		return entries
 
 	def _create_base_txt_record_dict(self):
@@ -289,6 +347,8 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 		return entries
 
 	# SSDP/UPNP
+
+	## The SSDP/UPNP implementations has been largely inspired by https://gist.github.com/schlamar/2428250
 
 	def ssdp_browse(self, query, block=False, callback=None, timeout=1, retries=5):
 		import threading
@@ -318,7 +378,7 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 				"ST: {query}\r\n",
 				"MX: 3\r\n",
 				"MAN: \"ssdp:discovery\"\r\n",
-				"HOST: 239.255.255.250:1900\r\n\r\n"
+				"HOST: {mcast_addr}:{mcast_port}\r\n\r\n"
 			])
 
 			for _ in xrange(retries):
@@ -329,9 +389,11 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 						sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
 						sock.bind((addr, 0))
 
-						message = search_message.format(query=query)
+						message = search_message.format(query=query,
+						                                mcast_addr=self.__class__.ssdp_multicast_addr,
+						                                mcast_port=self.__class__.ssdp_multicast_port)
 						for _ in xrange(2):
-							sock.sendto(message, ("239.255.255.250", 1900))
+							sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
 
 						try:
 							data = sock.recv(1024)
@@ -342,7 +404,6 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 
 							result.append(response.getheader("Location"))
 					except Exception as e:
-						self.logger.exception("oops with {addr}".format(addr=addr))
 						pass
 
 			if callback:
@@ -401,11 +462,15 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 					"NTS: {nts}\r\n",
 					"NT: upnp:rootdevice\r\n",
 					"USN: uuid:{uuid}::upnp:rootdevice\r\n",
-					"Host: 239.255.255.250:1900\r\n\r\n"
+					"HOST: {mcast_addr}:{mcast_port}\r\n\r\n"
 				])
-				message = notify_message.format(uuid=UUID, location=location, nts="ssdp:alive" if alive else "ssdp:byebye")
+				message = notify_message.format(uuid=UUID,
+				                                location=location,
+				                                nts="ssdp:alive" if alive else "ssdp:byebye",
+				                                mcast_addr=self.__class__.ssdp_multicast_addr,
+				                                mcast_port=self.__class__.ssdp_multicast_port)
 				for _ in xrange(2):
-					sock.sendto(message, ("239.255.255.250", 1900))
+					sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
 			except Exception as e:
 				pass
 
@@ -442,9 +507,9 @@ class DiscoveryPlugin(octoprint.plugin.types.StartupPlugin,
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-		sock.bind(('', 1900))
+		sock.bind(('', self.__class__.ssdp_multicast_port))
 
-		sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton('239.255.255.250') + socket.inet_aton('0.0.0.0'))
+		sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.__class__.ssdp_multicast_addr) + socket.inet_aton('0.0.0.0'))
 
 		self.logger.info("Registered {} for SSDP".format(get_instance_name()))
 
@@ -494,6 +559,7 @@ def __plugin_check__():
 	)
 	if pybonjour:
 		__plugin_helpers__["zeroconf_browse"] = discovery_plugin.zeroconf_browse
+		__plugin_helpers__["zeroconf_register"] = discovery_plugin.zeroconf_register
 
 	return True
 

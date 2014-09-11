@@ -220,8 +220,10 @@ def setSettings():
 			enabled = cura.get("enabled")
 			s.setBoolean(["cura", "enabled"], enabled)
 
-		for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():
-			plugin.on_settings_save(data["plugins"][name])
+		if "plugins" in data:
+			for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():
+				if name in data["plugins"]:
+					plugin.on_settings_save(data["plugins"][name])
 
 
 		s.save()
