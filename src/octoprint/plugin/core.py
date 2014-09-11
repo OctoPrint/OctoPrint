@@ -181,15 +181,21 @@ class PluginManager(object):
 			return None
 
 		plugin = self._load_plugin(key, *module, version=version)
-		if plugin.check():
-			return plugin
-		else:
-			self.logger.warn("Plugin \"{plugin}\" did not pass check, disabling it".format(plugin=str(plugin)))
-			return None
+		if plugin:
+			if plugin.check():
+				return plugin
+			else:
+				self.logger.warn("Plugin \"{plugin}\" did not pass check, disabling it".format(plugin=str(plugin)))
+				return None
+            
 
 	def _load_plugin(self, key, f, filename, description, version=None):
-		instance = imp.load_module(key, f, filename, description)
-		return PluginInfo(key, filename, instance, version=version)
+		try:
+			instance = imp.load_module(key, f, filename, description)
+			return PluginInfo(key, filename, instance, version=version)
+		except:
+			self.logger.exception("Error loading plugin {key}, disabling it".format(key=key))
+			return None
 
 	def _is_plugin_disabled(self, key):
 		return key in self.plugin_disabled_list or key.endswith('disabled')
