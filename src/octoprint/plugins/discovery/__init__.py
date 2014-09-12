@@ -5,6 +5,9 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+"""
+The SSDP/UPNP implementations has been largely inspired by https://gist.github.com/schlamar/2428250
+"""
 
 import logging
 import os
@@ -17,6 +20,33 @@ try:
 	import pybonjour
 except:
 	pybonjour = False
+
+
+__plugin_name__ = "Discovery"
+__plugin_version__ = "0.1"
+__plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
+
+def __plugin_init__():
+	if not pybonjour:
+		# no pybonjour available, we can't use that
+		logging.getLogger("octoprint.plugins." + __name__).info("pybonjour is not installed, Zeroconf Discovery won't be available")
+
+	discovery_plugin = DiscoveryPlugin()
+
+	global __plugin_implementations__
+	__plugin_implementations__ = [discovery_plugin]
+
+	global __plugin_helpers__
+	__plugin_helpers__ = dict(
+		ssdp_browse=discovery_plugin.ssdp_browse
+	)
+	if pybonjour:
+		__plugin_helpers__.update(dict(
+			zeroconf_browse=discovery_plugin.zeroconf_browse,
+			zeroconf_register=discovery_plugin.zeroconf_register,
+			zeroconf_unregister=discovery_plugin.zeroconf_unregister
+		))
+
 
 default_settings = {
 	"publicHost": None,
@@ -38,7 +68,6 @@ default_settings = {
 }
 s = octoprint.plugin.plugin_settings("discovery", defaults=default_settings)
 
-
 def get_uuid():
 	upnpUuid = s.get(["upnpUuid"])
 	if upnpUuid is None:
@@ -59,6 +88,8 @@ def get_instance_name():
 		import socket
 		return "OctoPrint instance on {}".format(socket.gethostname())
 
+
+#~~ custom blueprint for providing discovery.xml
 
 blueprint = flask.Blueprint("plugin.discovery", __name__, template_folder=os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates"))
 
@@ -91,15 +122,14 @@ def discovery():
 	response.headers['Content-Type'] = 'application/xml'
 	return response
 
+
 class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
                       octoprint.plugin.ShutdownPlugin,
-                      octoprint.plugin.BlueprintPlugin,
-                      octoprint.plugin.SettingsPlugin):
+                      octoprint.plugin.BlueprintPlugin):
 
 	ssdp_multicast_addr = "239.255.255.250"
 
 	ssdp_multicast_port = 1900
-
 
 	def __init__(self):
 		self.logger = logging.getLogger("octoprint.plugins." + __name__)
@@ -117,22 +147,12 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self._ssdp_notify_timeout = 10
 		self._ssdp_last_notify = 0
 
-	##~~ BlueprintPlugin API
+	##~~ BlueprintPlugin API -- used for providing the SSDP device descriptor XML
 
 	def get_blueprint(self):
 		return blueprint
 
-	##~~ TemplatePlugin API (part of SettingsPlugin)
-
-	def get_template_vars(self):
-		return dict(
-			_settings_menu_entry="Network discovery"
-		)
-
-	def get_template_folder(self):
-		return os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
-
-	#~~ StartupPlugin API
+	##~~ StartupPlugin API -- used for registering OctoPrint's Zeroconf and SSDP services upon application startup
 
 	def on_startup(self, host, port):
 		public_host = s.get(["publicHost"])
@@ -146,7 +166,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self.port = port
 
 		# Zeroconf
-		self.zeroconf_register("_http._tcp", get_instance_name(), txt_record=self._create_base_txt_record_dict())
+		self.zeroconf_register("_http._tcp", get_instance_name(), txt_record=self._create_http_txt_record_dict())
 		self.zeroconf_register("_octoprint._tcp", get_instance_name(), txt_record=self._create_octoprint_txt_record_dict())
 		for zeroconf in s.get(["zeroConf"]):
 			if "service" in zeroconf:
@@ -160,7 +180,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		# SSDP
 		self._ssdp_register()
 
-	#~~ ShutdownPlugin API
+	##~~ ShutdownPlugin API -- used for unregistering OctoPrint's Zeroconf and SSDP service upon application shutdown
 
 	def on_shutdown(self):
 		for key in self._sd_refs:
@@ -169,37 +189,25 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		self._ssdp_unregister()
 
-	#~~ SettingsPlugin API
-
-	def on_settings_load(self):
-		return {
-			"publicHost": s.get(["publicHost"]),
-			"publicPort": s.getInt(["publicPort"]),
-			"pathPrefix": s.get(["pathPrefix"]),
-			"httpUsername": s.get(["httpUsername"]),
-			"httpPassword": s.get(["httpPassword"])
-		}
-
-	def on_settings_save(self, data):
-		if "publicHost" in data and data["publicHost"]:
-			s.set(["publicHost"], data["publicHost"])
-		if "publicPort" in data and data["publicPort"]:
-			s.setInt(["publicPort"], data["publicPort"])
-		if "pathPrefix" in data and data["pathPrefix"]:
-			s.set(["pathPrefix"], data["pathPrefix"])
-		if "httpUsername" in data and data["httpUsername"]:
-			s.set(["httpUsername"], data["httpUsername"])
-		if "httpPassword" in data and data["httpPassword"]:
-			s.set(["httpPassword"], data["httpPassword"])
-
-	#~~ internals
+	##~~ helpers
 
 	# ZeroConf
 
-	def zeroconf_register(self, reg_type, name, port=None, txt_record=None, timeout=5):
+	def zeroconf_register(self, reg_type, name=None, port=None, txt_record=None):
+		"""
+		Registers a new service with Zeroconf/Bonjour/Avahi.
+
+		:param reg_type: type of service to register, e.g. "_gntp._tcp"
+		:param name: displayable name of the service, if not given defaults to the OctoPrint instance name
+		:param port: port to register for the service, if not given defaults to OctoPrint's (public) port
+		:param txt_record: optional txt record to attach to the service, dictionary of key-value-pairs
+		"""
+
 		if not pybonjour:
 			return
 
+		if not name:
+			name = get_instance_name()
 		if not port:
 			port = self.port
 
@@ -215,9 +223,20 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
 		self.logger.info("Registered {name} for {reg_type}".format(**locals()))
 
-	def zeroconf_unregister(self, reg_type, port):
+	def zeroconf_unregister(self, reg_type, port=None):
+		"""
+		Unregisteres a previously registered Zeroconf/Bonjour/Avahi service identified by service and port.
+
+		:param reg_type: the type of the service to be unregistered
+		:param port: the port of the service to be unregistered, defaults to OctoPrint's (public) port if not given
+		:return:
+		"""
+
 		if not pybonjour:
 			return
+
+		if not port:
+			port = self.port
 
 		key = (reg_type, port)
 		if not key in self._sd_refs:
@@ -230,17 +249,55 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		except:
 			self.logger.exception("Could not unregister {reg_type} on port {port}".format(reg_type=reg_type, port=port))
 
-	def zeroconf_browse(self, service_type, block=False, callback=None, timeout=5, resolve_timeout=5):
+	def zeroconf_browse(self, service_type, block=True, callback=None, browse_timeout=5, resolve_timeout=5):
+		"""
+		Browses for services on the local network providing the specified service type. Can be used either blocking or
+		non-blocking.
+
+		The non-blocking version (default behaviour) will not return until the lookup has completed and
+		return all results that were found.
+
+		For non-blocking version, set `block` to `False` and provide a `callback` to be called once the lookup completes.
+		If no callback is provided in non-blocking mode, a ValueError will be raised.
+
+		The results are provided as a list of discovered services, with each service being described by a dictionary
+		with the following keys:
+
+		  * `name`: display name of the service
+		  * `host`: host name of the service
+		  * `post`: port the service is listening on
+		  * `txt_record`: TXT record of the service as a dictionary, exact contents depend on the service
+
+		Callbacks will be called with that list as the single parameter supplied to them. Thus, the following is an
+		example for a valid callback:
+
+		    def browse_callback(results):
+		      for result in results:
+		        print "Name: {name}, Host: {host}, Port: {port}, TXT: {txt_record!r}".format(**result)
+
+		:param service_type: the service type to browse for
+		:param block: whether to block, defaults to True
+		:param callback: callback to call once lookup has completed, must be set when `block` is set to `False`
+		:param browse_timeout: timeout for browsing operation
+		:param resolve_timeout: timeout for resolving operations for discovered records
+		:return: if `block` is `True` a list of the discovered services, an empty list otherwise (results will then be
+		         supplied to the callback instead)
+		"""
+
 		if not pybonjour:
 			return None
 
 		import threading
-		import time
 		import select
+
+		if not block and not callback:
+			raise ValueError("Non-blocking mode but no callback given")
 
 		result = []
 		result_available = threading.Event()
 		result_available.clear()
+
+		resolved = []
 
 		def resolve_callback(sd_ref, flags, interface_index, error_code, fullname, hosttarget, port, txt_record):
 			if error_code == pybonjour.kDNSServiceErr_NoError:
@@ -261,6 +318,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 					port=port,
 					txt_record=txt_record_dict
 				))
+				resolved.append(True)
 
 		def browse_callback(sd_ref, flags, interface_index, error_code, service_name, regtype, reply_domain):
 			if error_code != pybonjour.kDNSServiceErr_NoError:
@@ -271,14 +329,16 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 			self.logger.debug("Got a browsing result for Zeroconf resolution of {service_type}, resolving...".format(service_type=service_type))
 			resolve_ref = pybonjour.DNSServiceResolve(0, interface_index, service_name, regtype, reply_domain, resolve_callback)
+
 			try:
-				while True:
+				while not resolved:
 					ready = select.select([resolve_ref], [], [], resolve_timeout)
-					if resolve_ref in ready[0]:
-						pybonjour.DNSServiceProcessResult(resolve_ref)
-					else:
-						self.logger.warn("Timeout while trying to resolve a service")
+					if resolve_ref not in ready[0]:
 						break
+
+					pybonjour.DNSServiceProcessResult(resolve_ref)
+				else:
+					resolved.pop()
 			finally:
 				resolve_ref.close()
 
@@ -286,10 +346,13 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		def browse():
 			sd_ref = pybonjour.DNSServiceBrowse(regtype=service_type, callBack=browse_callback)
-			start = time.time()
 			try:
-				while start + timeout > time.time():
-					ready = select.select([sd_ref], [], [], timeout)
+				while True:
+					ready = select.select([sd_ref], [], [], browse_timeout)
+
+					if not ready[0]:
+						break
+
 					if sd_ref in ready[0]:
 						pybonjour.DNSServiceProcessResult(sd_ref)
 			finally:
@@ -305,56 +368,41 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		if block:
 			result_available.wait()
-		return result
-
-	def _create_octoprint_txt_record_dict(self):
-		entries = self._create_base_txt_record_dict()
-
-		import octoprint.server
-		import octoprint.server.api
-
-		entries.update(dict(
-			version=octoprint.server.VERSION,
-			api=octoprint.server.api.VERSION,
-		))
-
-		modelName = s.get(["model", "name"])
-		if modelName:
-			entries.update(dict(model=modelName))
-		vendor = s.get(["model", "vendor"])
-		if vendor:
-			entries.update(dict(vendor=vendor))
-
-		return entries
-
-	def _create_base_txt_record_dict(self):
-		# determine path entry
-		path = "/"
-		if s.get(["pathPrefix"]):
-			path = s.get(["pathPrefix"])
+			return result
 		else:
-			prefix = s.globalGet(["server", "reverseProxy", "prefixFallback"])
-			if prefix:
-				path = prefix
-
-		# fetch username and password (if set)
-		username = s.get(["httpUsername"])
-		password = s.get(["httpPassword"])
-
-		entries = dict(
-			path=path
-		)
-
-		if username and password:
-			entries.update(dict(u=username, p=password))
-
-		return entries
+			return []
 
 	# SSDP/UPNP
 
-	## The SSDP/UPNP implementations has been largely inspired by https://gist.github.com/schlamar/2428250
+	def ssdp_browse(self, query, block=True, callback=None, timeout=1, retries=5):
+		"""
+		Browses for UPNP services matching the supplied query. Can be used either blocking or
+		non-blocking.
 
-	def ssdp_browse(self, query, block=False, callback=None, timeout=1, retries=5):
+		The non-blocking version (default behaviour) will not return until the lookup has completed and
+		return all results that were found.
+
+		For non-blocking version, set `block` to `False` and provide a `callback` to be called once the lookup completes.
+		If no callback is provided in non-blocking mode, a ValueError will be raised.
+
+		The results are provided as a list of discovered locations of device descriptor files.
+
+		Callbacks will be called with that list as the single parameter supplied to them. Thus, the following is an
+		example for a valid callback:
+
+		    def browse_callback(results):
+		      for result in results:
+		        print "Location: {}".format(result)
+
+		:param query: the SSDP query to send, e.g. "upnp:rootdevice" to search for all devices
+		:param block: whether to block, defaults to True
+		:param callback: callback to call in non-blocking mode when lookup has finished, must be set if block is False
+		:param timeout: timeout in seconds to wait for replies to the M-SEARCH query per interface, defaults to 1
+		:param retries: number of retries to perform the lookup on all interfaces, defaults to 5
+		:return: if `block` is `True` a list of the discovered devices, an empty list otherwise (results will then be
+		         supplied to the callback instead)
+		"""
+
 		import threading
 
 		import httplib
@@ -407,7 +455,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 							response = Response(data)
 
 							result.append(response.getheader("Location"))
-					except Exception as e:
+					except:
 						pass
 
 			if callback:
@@ -420,10 +468,88 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		if block:
 			result_available.wait()
+			return result
+		else:
+			return []
 
-		return result
+	##~~ internals
+
+	# Zeroconf
+
+	def _create_http_txt_record_dict(self):
+		"""
+		Creates a TXT record for the _http._tcp Zeroconf service supplied by this OctoPrint instance.
+
+		Defines the keys for _http._tcp as defined in http://www.dns-sd.org/txtrecords.html
+
+		:return: a dictionary containing the defined key-value-pairs, ready to be turned into a TXT record
+		"""
+
+		# determine path entry
+		path = "/"
+		if s.get(["pathPrefix"]):
+			path = s.get(["pathPrefix"])
+		else:
+			prefix = s.globalGet(["server", "reverseProxy", "prefixFallback"])
+			if prefix:
+				path = prefix
+
+		# fetch username and password (if set)
+		username = s.get(["httpUsername"])
+		password = s.get(["httpPassword"])
+
+		entries = dict(
+			path=path
+		)
+
+		if username and password:
+			entries.update(dict(u=username, p=password))
+
+		return entries
+
+	def _create_octoprint_txt_record_dict(self):
+		"""
+		Creates a TXT record for the _octoprint._tcp Zeroconf service supplied by this OctoPrint instance.
+
+		The following keys are defined:
+
+		  * `path`: path prefix to actual OctoPrint instance, inherited from _http._tcp
+		  * `u`: username if HTTP Basic Auth is used, optional, inherited from _http._tcp
+		  * `p`: password if HTTP Basic Auth is used, optional, inherited from _http._tcp
+		  * `version`: OctoPrint software version
+		  * `api`: OctoPrint API version
+		  * `model`: Model of the device that is running OctoPrint
+		  * `vendor`: Vendor of the device that is running OctoPrint
+
+		:return: a dictionary containing the defined key-value-pairs, ready to be turned into a TXT record
+		"""
+
+		entries = self._create_http_txt_record_dict()
+
+		import octoprint.server
+		import octoprint.server.api
+
+		entries.update(dict(
+			version=octoprint.server.VERSION,
+			api=octoprint.server.api.VERSION,
+			))
+
+		modelName = s.get(["model", "name"])
+		if modelName:
+			entries.update(dict(model=modelName))
+		vendor = s.get(["model", "vendor"])
+		if vendor:
+			entries.update(dict(vendor=vendor))
+
+		return entries
+
+	# SSDP/UPNP
 
 	def _ssdp_register(self):
+		"""
+		Registers the OctoPrint instance as basic service with a presentation URL pointing to the web interface
+		"""
+
 		import threading
 
 		self._ssdp_monitor_active = True
@@ -433,19 +559,31 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self._ssdp_monitor_thread.start()
 
 	def _ssdp_unregister(self):
+		"""
+		Unregisters the OctoPrint instance again
+		"""
+
 		self._ssdp_monitor_active = False
 		if self.host and self.port:
 			for _ in xrange(2):
 				self._ssdp_notify(alive=False)
 
 	def _ssdp_notify(self, alive=True):
+		"""
+		Sends an SSDP notify message across the connected networks.
+
+		:param alive: True to send an "ssdp:alive" message, False to send an "ssdp:byebye" message
+		"""
+
 		import socket
 		import time
 
-		if self._ssdp_last_notify + self._ssdp_notify_timeout > time.time():
+		if alive and self._ssdp_last_notify + self._ssdp_notify_timeout > time.time():
+			# we just sent an alive, no need to send another one now
 			return
 
 		if alive and not self._ssdp_monitor_active:
+			# the monitor already shut down, alive messages don't make sense anymore as byebye will shortly follow
 			return
 
 		for addr in octoprint.util.interface_addresses():
@@ -474,13 +612,20 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				                                mcast_addr=self.__class__.ssdp_multicast_addr,
 				                                mcast_port=self.__class__.ssdp_multicast_port)
 				for _ in xrange(2):
+					# send twice, stuff might get lost, it's only UDP
 					sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
-			except Exception as e:
+			except:
 				pass
 
 		self._ssdp_last_notify = time.time()
 
 	def _ssdp_monitor(self, timeout=5):
+		"""
+		Monitor thread that listens on the multicast address for M-SEARCH requests and answers them if they are relevant
+
+		:param timeout: timeout after which to stop waiting for M-SEARCHs for a short while in order to put out an
+		                alive message
+		"""
 
 		from BaseHTTPServer import BaseHTTPRequestHandler
 		from StringIO import StringIO
@@ -542,28 +687,4 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			except:
 				pass
 
-
-__plugin_name__ = "Discovery"
-__plugin_version__ = "0.1"
-__plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
-
-def __plugin_check__():
-	if not pybonjour:
-		# no pybonjour available, we can't continue
-		logging.getLogger("octoprint.plugins." + __name__).info("pybonjour is not installed, Zeroconf Discovery won't be available")
-
-	discovery_plugin = DiscoveryPlugin()
-
-	global __plugin_implementations__
-	__plugin_implementations__ = [discovery_plugin]
-
-	global __plugin_helpers__
-	__plugin_helpers__ = dict(
-		ssdp_browse=discovery_plugin.ssdp_browse
-	)
-	if pybonjour:
-		__plugin_helpers__["zeroconf_browse"] = discovery_plugin.zeroconf_browse
-		__plugin_helpers__["zeroconf_register"] = discovery_plugin.zeroconf_register
-
-	return True
 
