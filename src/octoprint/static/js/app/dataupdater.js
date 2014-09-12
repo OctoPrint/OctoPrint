@@ -37,7 +37,7 @@ function DataUpdater(allViewModels) {
                 return;
             }
 
-            if (viewModel.hasattr("onServerDisconnect")) {
+            if (viewModel.hasOwnProperty("onServerDisconnect")) {
                 if (!viewModel.onServerDisconnect()) {
                     handled = true;
                 }
@@ -71,7 +71,7 @@ function DataUpdater(allViewModels) {
                 return;
             }
 
-            if (viewModel.hasattr("onServerDisconnect")) {
+            if (viewModel.hasOwnProperty("onServerDisconnect")) {
                 if (!viewModel.onServerDisconnect()) {
                     handled = true;
                 }
