@@ -28,6 +28,8 @@ class PluginInfo(object):
 
 	attr_check = '__plugin_check__'
 
+	attr_init = '__plugin_init__'
+
 	def __init__(self, key, location, instance, version=None):
 		self.key = key
 		self.location = location
@@ -81,6 +83,10 @@ class PluginInfo(object):
 	@property
 	def check(self):
 		return self._get_instance_attribute(self.__class__.attr_check, default=lambda: True)
+
+	@property
+	def init(self):
+		return self._get_instance_attribute(self.__class__.attr_init, default=lambda: True)
 
 	def _get_instance_attribute(self, attr, default=None):
 		if not hasattr(self.instance, attr):
@@ -205,8 +211,14 @@ class PluginManager(object):
 		self.plugins = self._find_plugins()
 
 		for name, plugin in self.plugins.items():
+			# initialize the plugin
+			plugin.init()
+
+			# evaluate registered hooks
 			for hook, callback in plugin.hooks.items():
 				self.plugin_hooks[hook].append((name, callback))
+
+			# evaluate registered implementations
 			for plugin_type in self.plugin_types:
 				implementations = plugin.get_implementations(plugin_type)
 				self.plugin_implementations[plugin_type] += ( (name, implementation) for implementation in implementations )
@@ -240,13 +252,13 @@ class PluginManager(object):
 			return set()
 		return {impl[0]: impl[1] for impl in result}
 
-	def get_helpers(self, name, helpers=None):
+	def get_helpers(self, name, *helpers):
 		if not name in self.plugins:
 			return None
 		plugin = self.plugins[name]
 
 		all_helpers = plugin.helpers
-		if helpers:
+		if len(helpers):
 			return dict((k, v) for (k, v) in all_helpers.items() if k in helpers)
 		else:
 			return all_helpers
