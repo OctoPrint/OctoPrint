@@ -18,4 +18,5 @@ Contents
 
    api/index.rst
    events/index.rst
+   plugins/index.rst
 
