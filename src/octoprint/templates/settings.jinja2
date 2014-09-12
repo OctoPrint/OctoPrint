@@ -631,7 +631,7 @@
 
                 {% for plugin_name, vars in settingsPlugins.items() %}
                     <div class="tab-pane" id="settings_plugin_{{ plugin_name }}" data-bind="allowBindings: false">
-                        {% include plugin_name+"_settings_dialog.jinja2" %}
+                        {% include plugin_name+"_settings_dialog.jinja2" ignore missing %}
                     </div>
                 {% endfor %}
 
