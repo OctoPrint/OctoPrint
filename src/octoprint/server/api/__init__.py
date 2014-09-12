@@ -150,7 +150,6 @@ def pluginCommand(name):
 
 
 @api.route("/setup", methods=["POST"])
-@restricted_access
 def firstRunSetup():
 	if not s().getBoolean(["server", "firstRun"]):
 		abort(403)
