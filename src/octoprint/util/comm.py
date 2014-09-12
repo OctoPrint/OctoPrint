@@ -13,6 +13,7 @@ import threading
 import Queue as queue
 import logging
 import serial
+import octoprint.plugin
 
 from collections import deque
 
@@ -150,6 +151,10 @@ class MachineCom(object):
 		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
+
+		# hooks
+		self._pluginManager = octoprint.plugin.plugin_manager()
+		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 
 		# SD status data
 		self._sdAvailable = False
@@ -1089,6 +1094,10 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
+				for hook in self._gcode_hooks:
+					hook_cmd = self._gcode_hooks[hook](self, cmd)
+					if hook_cmd and isinstance(hook_cmd, basestring):
+						cmd = hook_cmd
 				gcode = self._regex_command.search(cmd)
 				if gcode:
 					gcode = gcode.group(1)
