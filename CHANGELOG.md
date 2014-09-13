@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.2.0 - Unreleased
+## 1.2.0 (Unreleased)
 
 ### New Features
 
@@ -33,7 +33,13 @@
 * [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
   as 0
 
-## 1.1.0 - 2014-09-03
+## 1.1.1 (Unreleased)
+
+### Bug Fixes
+
+* [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
+
+## 1.1.0 (2014-09-03)
 
 ### New Features
 
@@ -103,6 +109,6 @@
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.0.0...1.1.0))
 
-## 1.0.0
+## 1.0.0 (2014-06-22)
 
 First release with new versioning scheme.
