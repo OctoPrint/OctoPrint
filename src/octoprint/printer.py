@@ -388,6 +388,17 @@ class Printer():
 			}
 		else:
 			self._selectedFile = None
+			self._stateMonitor.setJobData({
+				"file": {
+					"name": None,
+					"origin": None,
+					"size": None,
+					"date": None
+				},
+				"estimatedPrintTime": None,
+				"filament": None,
+			})
+			return
 
 		estimatedPrintTime = None
 		date = None
