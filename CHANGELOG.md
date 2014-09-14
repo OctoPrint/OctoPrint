@@ -16,6 +16,8 @@
   search
 * You can now define a folder (default: `~/.octoprint/watched`) to be watched for newly added GCODE (or -- if slicing
   support is enabled -- STL) files to automatically add.
+* OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its 
+  core functionality.
 
 ### Improvements
 

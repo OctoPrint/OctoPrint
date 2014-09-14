@@ -133,11 +133,11 @@ def plugin_assets(name, filename):
 	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
 
 	if not name in asset_plugins:
-		return make_response(404)
+		return make_response("Asset not found", 404)
 	asset_plugin = asset_plugins[name]
 	asset_folder = asset_plugin.get_asset_folder()
 	if asset_folder is None:
-		make_response(404)
+		return make_response("Asset not found", 404)
 
 	return send_from_directory(asset_folder, filename)
 

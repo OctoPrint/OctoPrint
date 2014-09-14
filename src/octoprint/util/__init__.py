@@ -259,7 +259,10 @@ def interface_addresses(family=None):
 		family = netifaces.AF_INET
 
 	for interface in netifaces.interfaces():
-		ifaddresses = netifaces.ifaddresses(interface)
+		try:
+			ifaddresses = netifaces.ifaddresses(interface)
+		except:
+			continue
 		if family in ifaddresses:
 			for ifaddress in ifaddresses[family]:
 				if not ifaddress["addr"].startswith("169.254."):
