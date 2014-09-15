@@ -236,6 +236,9 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             default:
                 return "customControls_emptyTemplate";
         }
-    }
+    };
 
+    self.onStartup = function() {
+        self.requestData();
+    };
 }

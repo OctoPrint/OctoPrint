@@ -25,6 +25,46 @@ $(function() {
             gettext("Transfering file to SD")
         ];
 
+        PNotify.prototype.options.styling = "bootstrap2";
+
+        // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
+        // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
+        $.ajaxSetup({
+            type: 'POST',
+            headers: { "cache-control": "no-cache" }
+        });
+
+        // send the current UI API key with any request
+        $.ajaxSetup({
+            headers: {"X-Api-Key": UI_API_KEY}
+        });
+
+        //~~ Show settings - to ensure centered
+        var settingsDialog = $('#settings_dialog');
+        settingsDialog.on('show', function() {
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onSettingsShown")) {
+                    viewModel.onSettingsShown();
+                }
+            });
+        });
+        settingsDialog.on('hidden', function() {
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onSettingsHidden")) {
+                    viewModel.onSettingsHidden();
+                }
+            });
+        });
+        $('#navbar_show_settings').click(function() {
+            settingsDialog.modal()
+                .css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
+
+            return false;
+        });
+
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -41,42 +81,46 @@ $(function() {
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
 
-        var dataUpdater = new DataUpdater(
-            loginStateViewModel,
-            connectionViewModel, 
-            printerStateViewModel, 
-            temperatureViewModel, 
-            controlViewModel,
-            terminalViewModel,
-            gcodeFilesViewModel,
-            timelapseViewModel,
-            gcodeViewModel,
-            logViewModel
-        );
+        var viewModelMap = {
+            loginStateViewModel: loginStateViewModel,
+            usersViewModel: usersViewModel,
+            settingsViewModel: settingsViewModel,
+            connectionViewModel: connectionViewModel,
+            timelapseViewModel: timelapseViewModel,
+            printerStateViewModel: printerStateViewModel,
+            appearanceViewModel: appearanceViewModel,
+            temperatureViewModel: temperatureViewModel,
+            controlViewModel: controlViewModel,
+            terminalViewModel: terminalViewModel,
+            gcodeFilesViewModel: gcodeFilesViewModel,
+            gcodeViewModel: gcodeViewModel,
+            navigationViewModel: navigationViewModel,
+            logViewModel: logViewModel
+        };
 
-        PNotify.prototype.options.styling = "bootstrap2";
+        var allViewModels = _.values(viewModelMap);
 
-        // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
-        // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
-        $.ajaxSetup({
-            type: 'POST',
-            headers: { "cache-control": "no-cache" }
+        var additionalViewModels = [];
+        _.each(ADDITIONAL_VIEWMODELS, function(viewModel) {
+            var viewModelClass = viewModel[0];
+            var viewModelParameters = viewModel[1];
+            var viewModelBindTarget = viewModel[2];
+
+            var constructorParameters = [];
+            _.each(viewModelParameters, function(parameter) {
+                if (_.has(viewModelMap, parameter)) {
+                    constructorParameters.push(viewModelMap[parameter]);
+                } else {
+                    constructorParameters.push(undefined);
+                }
+            });
+
+            var viewModelInstance = new viewModelClass(constructorParameters);
+            additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
+            allViewModels.push(viewModelInstance);
         });
 
-        // send the current UI API key with any request
-        $.ajaxSetup({
-            headers: {"X-Api-Key": UI_API_KEY}
-        });
-
-        //~~ Show settings - to ensure centered
-        $('#navbar_show_settings').click(function() {
-            $('#settings_dialog').modal()
-                 .css({
-                     width: 'auto',
-                     'margin-left': function() { return -($(this).width() /2); }
-                  });
-            return false;
-        });
+        var dataUpdater = new DataUpdater(allViewModels);
 
         //~~ Temperature
 
@@ -287,9 +331,6 @@ $(function() {
             }, 100);
         });
 
-        //~~ Offline overlay
-        $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
-
         //~~ Underscore setup
 
         _.mixin(_.str.exports());
@@ -331,37 +372,62 @@ $(function() {
             }
         };
 
-        ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
-        ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
-        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
-        ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-        ko.applyBindings(controlViewModel, document.getElementById("control"));
-        ko.applyBindings(terminalViewModel, document.getElementById("term"));
-        var gcode = document.getElementById("gcode");
-        if (gcode) {
-            gcodeViewModel.initialize();
-            ko.applyBindings(gcodeViewModel, gcode);
-        }
-        ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-        ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
-        ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
-        ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
-        ko.applyBindings(logViewModel, document.getElementById("logs"));
+        ko.bindingHandlers.invisible = {
+            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                if (!valueAccessor()) return;
+                ko.bindingHandlers.style.update(element, function() {
+                    return { visibility: 'hidden' };
+                })
+            }
+        };
 
-        var timelapseElement = document.getElementById("timelapse");
-        if (timelapseElement) {
-            ko.applyBindings(timelapseViewModel, timelapseElement);
-        }
+        settingsViewModel.requestData(function() {
+            ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+
+            ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+            ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
+            ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
+            ko.applyBindings(controlViewModel, document.getElementById("control"));
+            ko.applyBindings(terminalViewModel, document.getElementById("term"));
+            var gcode = document.getElementById("gcode");
+            if (gcode) {
+                gcodeViewModel.initialize();
+                ko.applyBindings(gcodeViewModel, gcode);
+            }
+            //ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+            ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
+            ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+            ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+            ko.applyBindings(logViewModel, document.getElementById("logs"));
+
+            var timelapseElement = document.getElementById("timelapse");
+            if (timelapseElement) {
+                ko.applyBindings(timelapseViewModel, timelapseElement);
+            }
+
+            // apply bindings and signal startup
+            _.each(additionalViewModels, function(additionalViewModel) {
+                if (additionalViewModel[0].hasOwnProperty("onBeforeBinding")) {
+                    additionalViewModel[0].onBeforeBinding();
+                }
+
+                // model instance, target container
+                ko.applyBindings(additionalViewModel[0], additionalViewModel[1]);
+
+                if (additionalViewModel[0].hasOwnProperty("onAfterBinding")) {
+                    additionalViewModel[0].onAfterBinding();
+                }
+            });
+        });
 
         //~~ startup commands
 
-        loginStateViewModel.requestData();
-        connectionViewModel.requestData();
-        controlViewModel.requestData();
-        gcodeFilesViewModel.requestData();
-        timelapseViewModel.requestData();
-        settingsViewModel.requestData();
-        logViewModel.requestData();
+        _.each(allViewModels, function(viewModel) {
+            if (viewModel.hasOwnProperty("onStartup")) {
+                viewModel.onStartup();
+            }
+        });
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {

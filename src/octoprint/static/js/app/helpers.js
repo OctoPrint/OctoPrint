@@ -11,7 +11,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.searchFunction = undefined;
 
     self.allItems = [];
-0
+
     self.items = ko.observableArray([]);
     self.pageSize = ko.observable(filesPerPage);
     self.currentPage = ko.observable(0);
@@ -358,4 +358,43 @@ function pnotifyAdditionalInfo(inner) {
         + '<div class="pnotify_more"><a href="#" onclick="$(this).children().toggleClass(\'icon-caret-right icon-caret-down\').parent().parent().next().slideToggle(\'fast\')">More <i class="icon-caret-right"></i></a></div>'
         + '<div class="pnotify_more_container hide">' + inner + '</div>'
         + '</div>';
+}
+
+function ping(url, callback) {
+    var img = new Image();
+    var calledBack = false;
+
+    img.onload = function() {
+        callback(true);
+        calledBack = true;
+    };
+    img.onerror = function() {
+        if (!calledBack) {
+            callback(true);
+            calledBack = true;
+        }
+    };
+    img.src = url;
+    setTimeout(function() {
+        if (!calledBack) {
+            callback(false);
+            calledBack = true;
+        }
+    }, 1500);
+}
+
+function showOfflineOverlay(title, message, reconnectCallback) {
+    if (title == undefined) {
+        title = gettext("Server is offline");
+    }
+
+    $("#offline_overlay_title").text(title);
+    $("#offline_overlay_message").html(message);
+    $("#offline_overlay_reconnect").click(reconnectCallback);
+    if (!$("#offline_overlay").is(":visible"))
+        $("#offline_overlay").show();
+}
+
+function hideOfflineOverlay() {
+    $("#offline_overlay").hide();
 }

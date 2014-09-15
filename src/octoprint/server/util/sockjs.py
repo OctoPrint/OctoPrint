@@ -15,10 +15,6 @@ from octoprint.events import Events
 
 
 class PrinterStateConnection(sockjs.tornado.SockJSConnection):
-	EVENTS = [Events.UPDATED_FILES, Events.METADATA_ANALYSIS_FINISHED, Events.MOVIE_RENDERING, Events.MOVIE_DONE,
-			  Events.MOVIE_FAILED, Events.SLICING_STARTED, Events.SLICING_DONE, Events.SLICING_FAILED,
-			  Events.TRANSFER_STARTED, Events.TRANSFER_DONE]
-
 	def __init__(self, printer, gcodeManager, userManager, eventManager, session):
 		sockjs.tornado.SockJSConnection.__init__(self, session)
 
@@ -54,7 +50,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		octoprint.timelapse.registerCallback(self)
 
 		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": remoteAddress})
-		for event in PrinterStateConnection.EVENTS:
+		for event in octoprint.events.all_events():
 			self._eventManager.subscribe(event, self._onEvent)
 
 		octoprint.timelapse.notifyCallbacks(octoprint.timelapse.current)
@@ -66,7 +62,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		octoprint.timelapse.unregisterCallback(self)
 
 		self._eventManager.fire(Events.CLIENT_CLOSED)
-		for event in PrinterStateConnection.EVENTS:
+		for event in octoprint.events.all_events():
 			self._eventManager.unsubscribe(event, self._onEvent)
 
 	def on_message(self, message):

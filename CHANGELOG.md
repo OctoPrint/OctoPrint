@@ -1,30 +1,47 @@
-# OctoPrint Release Notes
+# OctoPrint Changelog
 
-## 1.2.0 (In Development)
+## 1.2.0 (Unreleased)
 
 ### New Features
 
 * Added internationalization of UI. Translations of OctoPrint are being crowd sourced via [Transifex](https://www.transifex.com/projects/p/octoprint/).
   The following translations are already available with more in the works:
+  - Dutch (nl)
   - German (de)
   - French (fr)
   - Hebrew (he)
+  - Norwegian (no)
   - Romanian (ro)
 * New file list: Pagination is gone, no more (mobile incompatible) pop overs, instead scrollable and with instant
   search
+* You can now define a folder (default: `~/.octoprint/watched`) to be watched for newly added GCODE (or -- if slicing
+  support is enabled -- STL) files to automatically add.
+* OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its 
+  core functionality.
 
 ### Improvements
 
 * Logging is now configurable via config file
 * Added last print time to additional GCODE file information
+* Better error handling for capture issues during timelapse creation & more robust handling of missing images during
+  timelapse creation
+* Start counting the layers at 1 instead of 0 in the GCODE viewer
+* Upgraded [Font Awesome](https://fortawesome.github.io/Font-Awesome/) to version 3.2.1
+* Better error reporting for timelapse rendering and system commands
+* Supports
 
 ### Bug Fixes
 
 * [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
   as 0
 
+## 1.1.1 (Unreleased)
 
-## 1.1.0
+### Bug Fixes
+
+* [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
+
+## 1.1.0 (2014-09-03)
 
 ### New Features
 
@@ -52,7 +69,9 @@
 * Support for circular beds in the GCODE viewer ([#407](https://github.com/foosel/OctoPrint/pull/407))
 * The dimensions of the print bed can now be configured via the Settings ([#396](https://github.com/foosel/OctoPrint/pull/396))
 * Target temperature reporting format of Repetier Firmware is now supported as well ([360](https://github.com/foosel/OctoPrint/issues/360))
-* Version tracking now based on git tagging and [versioneer](https://github.com/warner/python-versioneer/).
+* Version tracking now based on git tagging and [versioneer](https://github.com/warner/python-versioneer/). Version number,
+  git commit and branch get reported in the format `<version tag>-<commits since then>-g<commit hash> (<branch> branch)`, 
+  e.g. `1.2.0-dev-172-ga48b5de (devel branch)`.
 * Made "Center viewport on model" and "Zoom in on model" in the GCODE viewer automatically deselect and de-apply if 
   viewport gets manipulated by the user ([#398](https://github.com/foosel/OctoPrint/issues/398))
 * GCODE viewer now interprets inverted axes for printer control and mirrors print bed accordingly ([#431](https://github.com/foosel/OctoPrint/issues/431))
@@ -92,6 +111,6 @@
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.0.0...1.1.0))
 
-## 1.0.0
+## 1.0.0 (2014-06-22)
 
 First release with new versioning scheme.

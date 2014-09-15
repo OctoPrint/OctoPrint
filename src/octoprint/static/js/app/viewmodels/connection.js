@@ -120,4 +120,8 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
             })
         }
     }
+
+    self.onStartup = function() {
+        self.requestData();
+    };
 }

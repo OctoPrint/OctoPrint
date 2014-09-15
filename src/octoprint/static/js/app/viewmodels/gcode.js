@@ -332,7 +332,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             }
             output.push(gettext("Estimated print time") + ": " + formatDuration(model.printTime));
             output.push(gettext("Estimated layer height") + ": " + model.layerHeight.toFixed(2) + gettext("mm"));
-            output.push(gettext("Layer count") + ": " + model.layersPrinted.toFixed(0) + " " + gettext(printed) + ", " + model.layersTotal.toFixed(0) + " " + gettext("visited"));
+            output.push(gettext("Layer count") + ": " + model.layersPrinted.toFixed(0) + " " + gettext("printed") + ", " + model.layersTotal.toFixed(0) + " " + gettext("visited"));
 
             self.ui_modelInfo(output.join("<br>"));
 
@@ -404,5 +404,9 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
         GCODE.ui.changeSelectedCommands(self.layerSlider.slider("getValue"), tuple[0], tuple[1]);
     };
+
+    self.onDataUpdaterReconnect = function() {
+        self.reset();
+    }
 
 }

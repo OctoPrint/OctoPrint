@@ -710,7 +710,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	CHUNK_SIZE = 16 * 1024
 
 	def initialize(self, path, default_filename=None, as_attachment=False, access_validation=None):
-		tornado.web.StaticFileHandler.initialize(self, path, default_filename)
+		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
 		self._access_validation = access_validation
 
