@@ -36,6 +36,12 @@ class UserManager(object):
 	def changeUserPassword(self, username, password):
 		pass
 
+	def getUserSetting(self, username, key):
+		return None
+
+	def changeUserSetting(self, username, key, value):
+		pass
+
 	def removeUser(self, username):
 		pass
 
@@ -89,7 +95,8 @@ class FilebasedUserManager(UserManager):
 				"password": user._passwordHash,
 				"active": user._active,
 				"roles": user._roles,
-				"apikey": user._apikey
+				"apikey": user._apikey,
+				"settings": user._settings
 			}
 
 		with open(self._userfile, "wb") as f:
@@ -159,6 +166,24 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
+	def changeUserSetting(self, username, key, value):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		current = user.get_setting(key)
+		if not current or current != value:
+			user.set_setting(key, value)
+			self._dirty = True
+			self._save()
+
+	def getUserSetting(self, username, key):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		return user.get_setting(key)
+
 	def generateApiKey(self, username):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
@@ -223,12 +248,16 @@ class UnknownRole(Exception):
 ##~~ User object
 
 class User(UserMixin):
-	def __init__(self, username, passwordHash, active, roles, apikey=None):
+	def __init__(self, username, passwordHash, active, roles, apikey=None, settings=None):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
 		self._roles = roles
 		self._apikey = apikey
+
+		if not settings:
+			settings = dict()
+		self._settings = settings
 
 	def asDict(self):
 		return {
@@ -236,7 +265,8 @@ class User(UserMixin):
 			"active": self.is_active(),
 			"admin": self.is_admin(),
 			"user": self.is_user(),
-			"apikey": self._apikey
+			"apikey": self._apikey,
+			"settings": self._settings
 		}
 
 	def check_password(self, passwordHash):
@@ -256,6 +286,12 @@ class User(UserMixin):
 
 	def is_admin(self):
 		return "admin" in self._roles
+
+	def get_setting(self, key):
+		return self._settings[key] if key in self._settings else None
+
+	def set_setting(self, key, value):
+		self._settings[key] = value
 
 ##~~ DummyUser object to use when accessControl is disabled
 
