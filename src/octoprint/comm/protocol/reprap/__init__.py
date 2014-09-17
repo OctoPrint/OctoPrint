@@ -587,7 +587,7 @@ class RepRapProtocol(Protocol):
 	def _gcode_M0(self, command, with_checksum, with_line_number):
 		self.pause_print()
 		# Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-		return None
+		return None, with_checksum, with_line_number
 	_gcode_M1 = _gcode_M0
 
 	def _gcode_M104(self, command, with_checksum, with_line_number):
