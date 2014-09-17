@@ -665,6 +665,8 @@ class RepRapProtocol(Protocol):
 		gcode_command_handler = "_gcode_%s" % command.command
 		if hasattr(self, gcode_command_handler) and not self.is_streaming():
 			command, with_checksum, with_line_number = getattr(self, gcode_command_handler)(command, with_checksum, with_line_number)
+			if command is None:
+				return None
 
 		if with_checksum:
 			if with_line_number is not None:
