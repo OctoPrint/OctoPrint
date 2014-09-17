@@ -143,7 +143,7 @@ class RepRapProtocol(Protocol):
 		self._lastTemperatureUpdate = time.time()
 		self._lastSdProgressUpdate = time.time()
 
-		self._startSeen = False
+		self._startSeen = not settings().get(["feature", "waitForStartOnConnect"])
 		self._receivingSdFileList = False
 
 		self._clear_for_send.clear()
