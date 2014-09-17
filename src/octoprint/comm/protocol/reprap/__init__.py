@@ -397,7 +397,7 @@ class RepRapProtocol(Protocol):
 				self._heatupDone()
 
 			if self.is_printing() or self.is_streaming():
-				if not self.is_sd_printing():
+				if not self.is_sd_printing() and not self._state == State.PAUSED:
 					self._send_next()
 				if self._resend_delta is None and not self.is_streaming():
 					if time.time() > self._lastTemperatureUpdate + 5:
@@ -657,6 +657,9 @@ class RepRapProtocol(Protocol):
 
 				if with_checksum:
 					self._last_lines.append(command)
+			else:
+				# reset clear for send flag, since we didn't send a command just now
+				self._clear_for_send.set()
 
 	def _preprocess_command(self, command, with_checksum=False, with_line_number=None):
 		if command is None:
