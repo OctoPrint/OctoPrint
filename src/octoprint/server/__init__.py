@@ -193,7 +193,7 @@ class Server():
 
 		self._tornado_app = Application(self._router.urls + [
 			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),
-			(r"/downloads/files/local/([^/]*\.(gco|gcode))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
+			(r"/downloads/files/local/([^/]*\.(gco|gcode|g))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
 			(r"/downloads/logs/([^/]*)", LargeResponseHandler, {"path": settings().getBaseFolder("logs"), "as_attachment": True, "access_validation": admin_access_validation}),
 			(r".*", FallbackHandler, {"fallback": WSGIContainer(app.wsgi_app)})
 		])
