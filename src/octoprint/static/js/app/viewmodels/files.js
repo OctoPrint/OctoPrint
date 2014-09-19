@@ -318,8 +318,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
     };
 
+    self.onSlicingDone = function(payload) {
+        self.requestData();
+    };
+
     self.onMetadataAnalysisFinished = function(payload) {
         self.requestData();
-    }
+    };
 }
 

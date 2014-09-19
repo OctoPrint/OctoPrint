@@ -177,8 +177,8 @@ function DataUpdater(allViewModels) {
                         new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload)});
 
                         _.each(self.allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onUpdatedFiles")) {
-                                viewModel.onUpdatedFiles(payload);
+                            if (viewModel.hasOwnProperty("onSlicingDone")) {
+                                viewModel.onSlicingDone(payload);
                             }
                         });
                     } else if (type == "SlicingFailed") {
