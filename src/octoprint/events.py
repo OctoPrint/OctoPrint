@@ -20,7 +20,7 @@ _instance = None
 
 
 def all_events():
-	return [name for name in Events.__dict__ if not name.startswith("__")]
+	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("__")]
 
 
 class Events(object):
