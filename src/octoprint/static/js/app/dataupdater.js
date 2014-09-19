@@ -175,7 +175,12 @@ function DataUpdater(allViewModels) {
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
                         new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload)});
-                        gcodeFilesViewModel.requestData(payload.gcode);
+
+                        _.each(self.allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onUpdatedFiles")) {
+                                viewModel.onUpdatedFiles(payload);
+                            }
+                        });
                     } else if (type == "SlicingFailed") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
