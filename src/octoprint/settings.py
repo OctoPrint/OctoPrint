@@ -198,8 +198,8 @@ class Settings(object):
 			self.settings_dir = _resolveSettingsDir(APPNAME)
 
 	def _init_user_dirs(self):
-		for dirName in self.get(["folder"], True):
-			self.getBaseFolder(dirName)
+		for dirName, path in self.get(["folder"], True).iteritems():
+			self.setBaseFolder(dirName, path)
 
 	def _getDefaultFolder(self, type):
 		folder = default_settings["folder"][type]
@@ -475,42 +475,17 @@ class Settings(object):
 			if value is None:
 				del config[key]
 			else:
-				config[key] = value
+				config[key] = coercePrimative(value)
 			self._dirty = True
 
 	def setInt(self, path, value, force=False):
-		if value is None:
-			self.set(path, None, force)
-			return
-
-		try:
-			intValue = int(value)
-		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
-			return
-
-		self.set(path, intValue, force)
+		self.set(path, value, force)
 
 	def setFloat(self, path, value, force=False):
-		if value is None:
-			self.set(path, None, force)
-			return
-
-		try:
-			floatValue = float(value)
-		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
-			return
-
-		self.set(path, floatValue, force)
+		self.set(path, value, force)
 
 	def setBoolean(self, path, value, force=False):
-		if value is None or isinstance(value, bool):
 			self.set(path, value, force)
-		elif value.lower() in valid_boolean_trues:
-			self.set(path, True, force)
-		else:
-			self.set(path, False, force)
 
 	def setBaseFolder(self, type, path, force=False):
 		if type not in default_settings["folder"].keys():
