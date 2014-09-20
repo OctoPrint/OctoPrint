@@ -189,12 +189,17 @@ class Settings(object):
 		else:
 			self._configfile = os.path.join(self.settings_dir, "config.yaml")
 		self.load(migrate=True)
+		self._init_user_dirs()
 
 	def _init_settings_dir(self, basedir):
 		if basedir is not None:
 			self.settings_dir = basedir
 		else:
 			self.settings_dir = _resolveSettingsDir(APPNAME)
+
+	def _init_user_dirs(self):
+		for dirName in self.get(["folder"], True):
+			self.getBaseFolder(dirName)
 
 	def _getDefaultFolder(self, type):
 		folder = default_settings["folder"][type]
@@ -366,47 +371,32 @@ class Settings(object):
 			return results
 
 	def getInt(self, path):
-		value = self.get(path)
-		if value is None:
-			return None
-
-		try:
-			return int(value)
-		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
-			return None
+		return self.get(path)
 
 	def getFloat(self, path):
-		value = self.get(path)
-		if value is None:
-			return None
-
-		try:
-			return float(value)
-		except ValueError:
-			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
-			return None
+		return self.get(path)
 
 	def getBoolean(self, path):
-		value = self.get(path)
-		if value is None:
-			return None
-		if isinstance(value, bool):
-			return value
-		return value.lower() in valid_boolean_trues
+		return self.get(path)
 
+	# Returns the path of the folder of the specified type/name, first
+	# from user settings, then falling back on app defaults. Creates
+	# the folder if not present
 	def getBaseFolder(self, type):
 		if type not in default_settings["folder"].keys():
 			return None
 
-		folder = self.get(["folder", type])
-		if folder is None:
-			folder = self._getDefaultFolder(type)
+		folderPath = self.get(["folder", type])
+		if folderPath is None:
+			folderPath = self._getDefaultFolder(type)
 
-		if not os.path.isdir(folder):
-			os.makedirs(folder)
+		if not os.path.isdir(folderPath):
+			try:
+				os.makedirs(folderPath)
+			except Exception, e:
+				self._logger.warn("Could not create directory: %s" % e)
 
-		return folder
+		return folderPath
 
 	def getFeedbackControls(self):
 		feedbackControls = []
