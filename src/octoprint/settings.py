@@ -10,8 +10,29 @@ import re
 import uuid
 
 APPNAME = "OctoPrint"
-
 instance = None
+valid_boolean_trues = [True, "true", "yes", "y"]
+valid_boolean_falses = [False, "false", "no", "n"]
+
+# converts stringified primatives to their primitives, or returns the
+# value otherwise unchanged
+def coercePrimative(value):
+	if value is None:
+		return value
+	if (isinstance(value, str)):
+		if value in valid_boolean_trues:
+			return True
+		if value in valid_boolean_falses:
+			return False
+	try:
+		intVal = int(value)
+		floatVal = float(value)
+		if (intVal - floatVal == 0):
+			return intVal
+		return floatVal
+	except:
+		pass
+	return value
 
 def settings(init=False, configfile=None, basedir=None):
 	global instance
@@ -150,8 +171,6 @@ default_settings = {
 		"watermark": True
 	}
 }
-
-valid_boolean_trues = [True, "true", "yes", "y", "1"]
 
 class Settings(object):
 
@@ -298,10 +317,10 @@ class Settings(object):
 	def get(self, path, asdict=False):
 		if len(path) == 0:
 			return None
-
 		config = self._config
 		defaults = default_settings
 
+		# Find requested value in user config and defaults
 		while len(path) > 1:
 			key = path.pop(0)
 			if key in config.keys() and key in defaults.keys():
@@ -319,6 +338,7 @@ class Settings(object):
 		else:
 			keys = k
 
+		# Wrap results in collection
 		if asdict:
 			results = {}
 		else:
@@ -330,12 +350,13 @@ class Settings(object):
 				value = defaults[key]
 			else:
 				value = None
-
+			value = coercePrimative(value)
 			if asdict:
 				results[key] = value
 			else:
 				results.append(value)
 
+		# Return in requested format
 		if not isinstance(k, (list, tuple)):
 			if asdict:
 				return results.values().pop()
