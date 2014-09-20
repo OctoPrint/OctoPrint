@@ -7,95 +7,46 @@ import logging
 from flask import request, jsonify
 
 from octoprint.settings import settings
-from octoprint.printer import getConnectionOptions
 
 from octoprint.server import restricted_access, admin_permission
 from octoprint.server.api import api
 
+# Setting helpers
+def setCura(data):
+	s = settings()
+	cura = data.get("cura", None)
+	if cura:
+		path = cura.get("path")
+		if path:
+			s.set(["cura", "path"], path)
 
-#~~ settings
+		config = cura.get("config")
+		if config:
+			s.set(["cura", "config"], config)
+
+		# Enabled is a boolean so we cannot check that we have a result
+		enabled = cura.get("enabled")
+		s.setBoolean(["cura", "enabled"], enabled)
+
+def setLog(data):
+	s = settings()
+	oldLog = s.getBoolean(["serial", "log"])
+	if "log" in data["serial"].keys():
+		s.setBoolean(["serial", "log"], data["serial"]["log"])
+	if oldLog and not s.getBoolean(["serial", "log"]):
+		# disable debug logging to serial.log
+		logging.getLogger("SERIAL").debug("Disabling serial logging")
+		logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
+	elif not oldLog and s.getBoolean(["serial", "log"]):
+		# enable debug logging to serial.log
+		logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+		logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 
 @api.route("/settings", methods=["GET"])
 def getSettings():
 	s = settings()
-
-	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] \
-		= s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
-
-	connectionOptions = getConnectionOptions()
-
-	return jsonify({
-		"api": {
-			"enabled": s.getBoolean(["api", "enabled"]),
-			"key": s.get(["api", "key"])
-		},
-		"appearance": {
-			"name": s.get(["appearance", "name"]),
-			"color": s.get(["appearance", "color"])
-		},
-		"printer": {
-			"movementSpeedX": movementSpeedX,
-			"movementSpeedY": movementSpeedY,
-			"movementSpeedZ": movementSpeedZ,
-			"movementSpeedE": movementSpeedE,
-			"invertAxes": s.get(["printerParameters", "invertAxes"]),
-			"numExtruders": s.get(["printerParameters", "numExtruders"]),
-			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
-			"bedDimensions": s.get(["printerParameters", "bedDimensions"])
-		},
-		"webcam": {
-			"streamUrl": s.get(["webcam", "stream"]),
-			"snapshotUrl": s.get(["webcam", "snapshot"]),
-			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
-			"bitrate": s.get(["webcam", "bitrate"]),
-			"watermark": s.getBoolean(["webcam", "watermark"]),
-			"flipH": s.getBoolean(["webcam", "flipH"]),
-			"flipV": s.getBoolean(["webcam", "flipV"])
-		},
-		"feature": {
-			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
-			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
-			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
-			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
-			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
-			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
-			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
-			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"])
-		},
-		"serial": {
-			"port": connectionOptions["portPreference"],
-			"baudrate": connectionOptions["baudratePreference"],
-			"portOptions": connectionOptions["ports"],
-			"baudrateOptions": connectionOptions["baudrates"],
-			"autoconnect": s.getBoolean(["serial", "autoconnect"]),
-			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
-			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
-			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
-			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
-			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
-			"log": s.getBoolean(["serial", "log"])
-		},
-		"folder": {
-			"uploads": s.getBaseFolder("uploads"),
-			"timelapse": s.getBaseFolder("timelapse"),
-			"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
-			"logs": s.getBaseFolder("logs")
-		},
-		"temperature": {
-			"profiles": s.get(["temperature", "profiles"])
-		},
-		"system": {
-			"actions": s.get(["system", "actions"]),
-			"events": s.get(["system", "events"])
-		},
-		"terminalFilters": s.get(["terminalFilters"]),
-		"cura": {
-			"enabled": s.getBoolean(["cura", "enabled"]),
-			"path": s.get(["cura", "path"]),
-			"config": s.get(["cura", "config"])
-		}
-	})
+	return jsonify(s.clientSettings())
 
 
 @api.route("/settings", methods=["POST"])
@@ -106,6 +57,7 @@ def setSettings():
 		data = request.json
 		s = settings()
 
+		setLog(data)
 		if "api" in data.keys():
 			if "enabled" in data["api"].keys(): s.set(["api", "enabled"], data["api"]["enabled"])
 			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
@@ -153,17 +105,6 @@ def setSettings():
 			if "timeoutTemperature" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
 			if "timeoutSdStatus" in data["serial"].keys(): s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 
-			oldLog = s.getBoolean(["serial", "log"])
-			if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
-			if oldLog and not s.getBoolean(["serial", "log"]):
-				# disable debug logging to serial.log
-				logging.getLogger("SERIAL").debug("Disabling serial logging")
-				logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
-			elif not oldLog and s.getBoolean(["serial", "log"]):
-				# enable debug logging to serial.log
-				logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-				logging.getLogger("SERIAL").debug("Enabling serial logging")
-
 		if "folder" in data.keys():
 			if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
 			if "timelapse" in data["folder"].keys(): s.setBaseFolder("timelapse", data["folder"]["timelapse"])
@@ -180,21 +121,9 @@ def setSettings():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
 			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
-		cura = data.get("cura", None)
-		if cura:
-			path = cura.get("path")
-			if path:
-				s.set(["cura", "path"], path)
+		setCura(data)
 
-			config = cura.get("config")
-			if config:
-				s.set(["cura", "config"], config)
-
-			# Enabled is a boolean so we cannot check that we have a result
-			enabled = cura.get("enabled")
-			s.setBoolean(["cura", "enabled"], enabled)
-
+		# TODO after setting all vals generically, call s.setUserDirs()
 		s.save()
 
 	return getSettings()
-
