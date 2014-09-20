@@ -4,6 +4,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import sys
 import os
+import copy
 import yaml
 import logging
 import re
@@ -15,7 +16,7 @@ valid_boolean_trues = [True, "true", "yes", "y"]
 valid_boolean_falses = [False, "false", "no", "n"]
 
 # converts stringified primatives to their primitives, or returns the
-# value otherwise unchanged
+# value unchanged
 def coercePrimative(value):
 	if value is None:
 		return value
@@ -189,7 +190,7 @@ class Settings(object):
 		else:
 			self._configfile = os.path.join(self.settings_dir, "config.yaml")
 		self.load(migrate=True)
-		self._init_user_dirs()
+		self.setUserDirs()
 
 	def _init_settings_dir(self, basedir):
 		if basedir is not None:
@@ -197,8 +198,9 @@ class Settings(object):
 		else:
 			self.settings_dir = _resolveSettingsDir(APPNAME)
 
-	def _init_user_dirs(self):
-		for dirName, path in self.get(["folder"], True).iteritems():
+	def setUserDirs(self):
+		userFolders = self.get(["folder"], True).items()
+		for dirName, path in userFolders:
 			self.setBaseFolder(dirName, path)
 
 	def _getDefaultFolder(self, type):
@@ -364,11 +366,11 @@ class Settings(object):
 		# Return in requested format
 		if not isinstance(k, (list, tuple)):
 			if asdict:
-				return results.values().pop()
+				return copy.deepcopy(results.values().pop())
 			else:
 				return results.pop()
 		else:
-			return results
+			return copy.deepcopy(results)
 
 	def getInt(self, path):
 		return self.get(path)
@@ -493,11 +495,13 @@ class Settings(object):
 
 		currentPath = self.getBaseFolder(type)
 		defaultPath = self._getDefaultFolder(type)
+		# Remove frivolous config entry if it is the default value
 		if (path is None or path == defaultPath) and "folder" in self._config.keys() and type in self._config["folder"].keys():
 			del self._config["folder"][type]
 			if not self._config["folder"]:
 				del self._config["folder"]
 			self._dirty = True
+		# Else update config with newly created dir
 		elif (path != currentPath and path != defaultPath) or force:
 			if not "folder" in self._config.keys():
 				self._config["folder"] = {}
