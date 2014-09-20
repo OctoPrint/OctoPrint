@@ -9,7 +9,7 @@ import logging
 import re
 import uuid
 
-APPNAME="OctoPrint"
+APPNAME = "OctoPrint"
 
 instance = None
 
@@ -23,119 +23,28 @@ def settings(init=False, configfile=None, basedir=None):
 	return instance
 
 default_settings = {
-	"serial": {
-		"port": None,
-		"baudrate": None,
-		"autoconnect": False,
-		"log": False,
-		"timeout": {
-			"detection": 0.5,
-			"connection": 2,
-			"communication": 5,
-			"temperature": 5,
-			"sdStatus": 1
-		},
-		"additionalPorts": []
-	},
-	"server": {
-		"host": "0.0.0.0",
-		"port": 5000,
-		"firstRun": True,
-		"baseUrl": "",
-		"scheme": ""
-	},
-	"webcam": {
-		"stream": None,
-		"snapshot": None,
-		"ffmpeg": None,
-		"bitrate": "5000k",
-		"watermark": True,
-		"flipH": False,
-		"flipV": False,
-		"timelapse": {
-			"type": "off",
-			"options": {},
-			"postRoll": 0
-		}
-	},
-	"gcodeViewer": {
+	"accessControl": {
+		"autologinLocal": False,
+		"autXologinAs": None,
 		"enabled": True,
-		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
-		"sizeThreshold": 20 * 1024 * 1024, # 20MB
-	},
-	"feature": {
-		"temperatureGraph": True,
-		"waitForStartOnConnect": False,
-		"alwaysSendChecksum": False,
-		"sdSupport": True,
-		"sdAlwaysAvailable": False,
-		"swallowOkAfterResend": True,
-		"repetierTargetTemp": False
-	},
-	"folder": {
-		"uploads": None,
-		"timelapse": None,
-		"timelapse_tmp": None,
-		"logs": None,
-		"virtualSd": None
-	},
-	"temperature": {
-		"profiles":
-			[
-				{"name": "ABS", "extruder" : 210, "bed" : 100 },
-				{"name": "PLA", "extruder" : 180, "bed" : 60 }
-			]
-	},
-	"printerParameters": {
-		"movementSpeed": {
-			"x": 6000,
-			"y": 6000,
-			"z": 200,
-			"e": 300
-		},
-		"pauseTriggers": [],
-		"invertAxes": [],
-		"numExtruders": 1,
-		"extruderOffsets": [
-			{"x": 0.0, "y": 0.0}
-		],
-		"bedDimensions": {
-			"x": 200.0, "y": 200.0
-		}
+		"localNetworks": ["127.0.0.0/8"],
+		"userfile": None,
+		"userManager": "octoprint.users.FilebasedUserManager"
 	},
 	"appearance": {
-		"name": "",
-		"color": "default"
-	},
-	"controls": [],
-	"system": {
-		"actions": []
-	},
-	"accessControl": {
-		"enabled": True,
-		"userManager": "octoprint.users.FilebasedUserManager",
-		"userfile": None,
-		"autologinLocal": False,
-		"localNetworks": ["127.0.0.0/8"],
-		"autologinAs": None
-	},
-	"cura": {
-		"enabled": False,
-		"path": "/default/path/to/cura",
-		"config": "/default/path/to/your/cura/config.ini"
-	},
-	"events": {
-		"enabled": False,
-		"subscriptions": []
+		"color": "default",
+		"name": ""
 	},
 	"api": {
 		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	},
-	"terminalFilters": [
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
-		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
-	],
+	"controls": [],
+	"cura": {
+		"config": "/default/path/to/your/cura/config.ini",
+		"enabled": False,
+		"path": "/default/path/to/cura"
+	},
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
@@ -148,6 +57,97 @@ default_settings = {
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False
 		}
+	},
+	"events": {
+		"enabled": False,
+		"subscriptions": []
+	},
+	"feature": {
+		"alwaysSendChecksum": False,
+		"repetierTargetTemp": False,
+		"sdAlwaysAvailable": False,
+		"sdSupport": True,
+		"swallowOkAfterResend": True,
+		"temperatureGraph": True,
+		"waitForStartOnConnect": False
+	},
+	"folder": {
+		"logs": None,
+		"timelapse": None,
+		"timelapse_tmp": None,
+		"uploads": None,
+		"virtualSd": None
+	},
+	"gcodeViewer": {
+		"enabled": True,
+		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
+		"sizeThreshold": 20 * 1024 * 1024, # 20MB
+	},
+	"printerParameters": {
+		"bedDimensions": {
+			"x": 200.0, "y": 200.0
+		},
+		"extruderOffsets": [
+			{"x": 0.0, "y": 0.0}
+		],
+		"invertAxes": [],
+		"pauseTriggers": [],
+		"movementSpeed": {
+			"x": 6000,
+			"y": 6000,
+			"z": 200,
+			"e": 300
+		},
+		"numExtruders": 1
+	},
+	"terminalFilters": [
+		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" },
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" }
+	],
+	"serial": {
+		"additionalPorts": [], # TODO appears unused.  Ref'd in comm.py Scrap?
+		"autoconnect": False,
+		"baudrate": None,
+		"log": False,
+		"port": None,
+		"timeout": {
+			"communication": 5,
+			"connection": 2,
+			"detection": 0.5,
+			"sdStatus": 1,
+			"temperature": 5
+		}
+	},
+	"server": {
+		"baseUrl": "",
+		"firstRun": True,
+		"host": "0.0.0.0",
+		"port": 5000,
+		"scheme": ""
+	},
+	"system": {
+		"actions": []
+	},
+	"temperature": {
+		"profiles":
+			[
+				{"name": "ABS", "extruder": 210, "bed": 100 },
+				{"name": "PLA", "extruder": 180, "bed": 60 }
+			]
+	},
+	"webcam": {
+		"bitrate": "5000k",
+		"ffmpeg": None,
+		"flipH": False,
+		"flipV": False,
+		"snapshot": None,
+		"stream": None,
+		"timelapse": {
+			"options": {},
+			"postRoll": 0,
+			"type": "off"
+		},
+		"watermark": True
 	}
 }
 
