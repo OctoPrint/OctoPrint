@@ -35,6 +35,45 @@ def coercePrimative(value):
 		pass
 	return value
 
+def dict_merge(a, b):
+	'''recursively merges dict's. not just simple a['key'] = b['key'], if
+	both a and bhave a key who's value is a dict then dict_merge is called
+	on both values and the result stored in the returned dictionary.'''
+	# credit: https://www.xormedia.com/recursively-merge-dictionaries-in-python/
+	if not isinstance(b, dict):
+		return b
+	result = copy.deepcopy(a)
+	for k, v in b.iteritems():
+		if k in result and isinstance(result[k], dict):
+				result[k] = dict_merge(result[k], v)
+		else:
+			result[k] = copy.deepcopy(v)
+	return result
+
+def eachDeep(node, config):
+	if node is None or not isinstance(node, dict):
+		# return config["on"](node, config)
+		return config["on"](node, config)
+	if "_init" not in config.keys():
+		config["_init"] = True
+		config["path"] = []
+		if "mode" not in config.keys():
+			config["mode"] = None
+	nodeResults = []
+	for k, v in node.items():
+		config["path"].append(k)
+		if isinstance(v, dict):
+			subResults = eachDeep(v, config)
+			if config["mode"] == "array":
+				nodeResults.extend(subResults)
+		else:
+			subResults = config["on"](node, config)
+			if config["mode"] == "array":
+				nodeResults.extend(subResults)
+		if config["path"]:
+			config["path"].pop()
+	return nodeResults
+
 def settings(init=False, configfile=None, basedir=None):
 	global instance
 	if instance is None:
@@ -44,7 +83,7 @@ def settings(init=False, configfile=None, basedir=None):
 			raise ValueError("Settings not initialized yet")
 	return instance
 
-default_settings = {
+default_settings_client_public = {
 	"accessControl": {
 		"autologinLocal": False,
 		"autXologinAs": None,
@@ -122,10 +161,6 @@ default_settings = {
 		},
 		"numExtruders": 1
 	},
-	"terminalFilters": [
-		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" },
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" }
-	],
 	"serial": {
 		"additionalPorts": [], # TODO appears unused.  Ref'd in comm.py Scrap?
 		"autoconnect": False,
@@ -157,6 +192,10 @@ default_settings = {
 				{"name": "PLA", "extruder": 180, "bed": 60 }
 			]
 	},
+	"terminalFilters": [
+		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" },
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" }
+	],
 	"webcam": {
 		"bitrate": "5000k",
 		"ffmpeg": None,
@@ -172,6 +211,10 @@ default_settings = {
 		"watermark": True
 	}
 }
+
+default_settings_client_private = {}
+
+default_settings = dict_merge(default_settings_client_public, default_settings_client_private)
 
 class Settings(object):
 
@@ -208,6 +251,29 @@ class Settings(object):
 		if folder is None:
 			folder = os.path.join(self.settings_dir, type.replace("_", os.path.sep))
 		return folder
+
+	def clientSettings(self):
+		# recurse over settings, generating new nested dict of kv pairs
+		self._clientSettingsPayload = {}
+		getClientConfig = {
+			"on": self.clientSettingsDeepEachGetWrapper
+		}
+		eachDeep(default_settings_client_public, getClientConfig)
+		return self._clientSettingsPayload
+
+	# appends nested values to client payload as self.clientSettings() summoned iterator
+	# fetches all client settings values
+	def clientSettingsDeepEachGetWrapper(self, value, config):
+		refObj = self._clientSettingsPayload # init to payload root then traverse
+		finalKey = config["path"][len(config["path"]) - 1]
+		for pathSeg in config["path"]:
+			if pathSeg in refObj.keys():
+				refObj = refObj[pathSeg]
+			else:
+				if not pathSeg == finalKey:
+					refObj[pathSeg] = {}
+					refObj = refObj[pathSeg]
+		refObj[finalKey] = self.get(config["path"])
 
 	#~~ load and save
 
@@ -321,7 +387,8 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False):
+	def get(self, pathRef, asdict=False):
+		path = copy.deepcopy(pathRef)
 		if len(path) == 0:
 			return None
 		config = self._config
