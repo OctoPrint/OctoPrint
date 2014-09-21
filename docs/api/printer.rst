@@ -801,70 +801,17 @@ Temperature State
      - Description
    * - ``tool{n}``
      - 0..*
-     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
+     - :ref:`Temperature Data <sec-api-datamodel-printer-tempdata>`
      - Current temperature stats for tool *n*. Enumeration starts at 0 for the first tool. Not included if querying
        only bed state.
    * - ``bed``
      - 0..1
-     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
+     - :ref:`Temperature Data <sec-api-datamodel-printer-tempdata>`
      - Current temperature stats for the printer's heated bed. Not included if querying only tool state.
    * - ``history``
      - 0..1
-     - List of :ref:`Historic Temperature Datapoint <sec-api-printer-datamodel-temphistory>`
+     - List of :ref:`Historic Temperature Datapoint <sec-api-datamodel-printer-temphistory>`
      - Temperature history
-
-.. _sec-api-printer-datamodel-temphistory:
-
-Historic Temperature Data Point
--------------------------------
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``time``
-     - 1
-     - Unix Timestamp
-     - Timestamp of this data point
-   * - ``tool{n}``
-     - 0..*
-     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
-     - Temperature stats for tool *n*. Enumeration starts at 0 for the first tool. Not included if querying only
-       bed state.
-   * - ``bed``
-     - 0..*
-     - :ref:`Temperature Data <sec-api-printer-datamodel-tempdata>`
-     - Temperature stats for the printer's heated bed. Not included if querying only tool state.
-
-.. _sec-api-printer-datamodel-tempdata:
-
-Temperature Data
-----------------
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``actual``
-     - 1
-     - Number
-     - Current temperature
-   * - ``target``
-     - 1
-     - Number
-     - Target temperature, may be ``null`` if no target temperature is set.
-   * - ``offset``
-     - 0..1
-     - Number
-     - Currently configured temperature offset to apply, will be left out for historic temperature information.
 
 .. _sec-api-printer-datamodel-sdstate:
 
@@ -884,53 +831,3 @@ SD State
      - Boolean
      - Whether the SD card has been initialized (``true``) or not (``false``).
 
-.. _sec-api-printer-datamodel-printerstate:
-
-Printer State
--------------
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``text``
-     - 1
-     - String
-     - A textual representation of the current state of the printer, e.g. "Operational" or "Printing"
-   * - ``flags``
-     - 1
-     - Printer state flags
-     - A couple of boolean printer state flags
-   * - ``flags.operational``
-     - 1
-     - Boolean
-     - ``true`` if the printer is operational, ``false`` otherwise
-   * - ``flags.paused``
-     - 1
-     - Boolean
-     - ``true`` if the printer is currently paused, ``false`` otherwise
-   * - ``flags.printing``
-     - 1
-     - Boolean
-     - ``true`` if the printer is currently printing, ``false`` otherwise
-   * - ``flags.sdReady``
-     - 1
-     - Boolean
-     - ``true`` if the printer's SD card is available and initialized, ``false`` otherwise. This is redundant information
-       to :ref:`the SD State <sec-api-printer-datamodel-sdstate>`.
-   * - ``flags.error``
-     - 1
-     - Boolean
-     - ``true`` if an unrecoverable error occurred, ``false`` otherwise
-   * - ``flags.ready``
-     - 1
-     - Boolean
-     - ``true`` if the printer is operational and no data is currently being streamed to SD, so ready to receive instructions
-   * - ``flags.closedOrError``
-     - 1
-     - Boolean
-     - ``true`` if the printer is disconnected (possibly due to an error), ``false`` otherwise

@@ -1,4 +1,70 @@
 $(function() {
+        //~~ Initialize i18n
+        var catalog = window["BABEL_TO_LOAD_" + LOCALE];
+        if (catalog === undefined) {
+            catalog = {messages: undefined, plural_expr: undefined, locale: undefined, domain: undefined}
+        }
+        babel.Translations.load(catalog).install();
+
+        moment.locale(LOCALE);
+
+        // Dummy translation requests for dynamic strings supplied by the backend
+        var dummyTranslations = [
+            // printer states
+            gettext("Offline"),
+            gettext("Opening serial port"),
+            gettext("Detecting serial port"),
+            gettext("Detecting baudrate"),
+            gettext("Connecting"),
+            gettext("Operational"),
+            gettext("Printing from SD"),
+            gettext("Sending file to SD"),
+            gettext("Printing"),
+            gettext("Paused"),
+            gettext("Closed"),
+            gettext("Transfering file to SD")
+        ];
+
+        PNotify.prototype.options.styling = "bootstrap2";
+
+        // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
+        // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
+        $.ajaxSetup({
+            type: 'POST',
+            headers: { "cache-control": "no-cache" }
+        });
+
+        // send the current UI API key with any request
+        $.ajaxSetup({
+            headers: {"X-Api-Key": UI_API_KEY}
+        });
+
+        //~~ Show settings - to ensure centered
+        var settingsDialog = $('#settings_dialog');
+        settingsDialog.on('show', function() {
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onSettingsShown")) {
+                    viewModel.onSettingsShown();
+                }
+            });
+        });
+        settingsDialog.on('hidden', function() {
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onSettingsHidden")) {
+                    viewModel.onSettingsHidden();
+                }
+            });
+        });
+        $('#navbar_show_settings').click(function() {
+            settingsDialog.modal()
+                .css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
+
+            return false;
+        });
+
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -16,67 +82,52 @@ $(function() {
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
 
-        var dataUpdater = new DataUpdater(
-            loginStateViewModel,
-            connectionViewModel, 
-            printerStateViewModel, 
-            temperatureViewModel, 
-            controlViewModel,
-            terminalViewModel,
-            gcodeFilesViewModel,
-            timelapseViewModel,
-            gcodeViewModel,
-            logViewModel
-        );
-        
-        // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
-        // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
-        $.ajaxSetup({
-            type: 'POST',
-            headers: { "cache-control": "no-cache" }
+        var viewModelMap = {
+            loginStateViewModel: loginStateViewModel,
+            usersViewModel: usersViewModel,
+            settingsViewModel: settingsViewModel,
+            connectionViewModel: connectionViewModel,
+            timelapseViewModel: timelapseViewModel,
+            printerStateViewModel: printerStateViewModel,
+            appearanceViewModel: appearanceViewModel,
+            temperatureViewModel: temperatureViewModel,
+            controlViewModel: controlViewModel,
+            terminalViewModel: terminalViewModel,
+            gcodeFilesViewModel: gcodeFilesViewModel,
+            gcodeViewModel: gcodeViewModel,
+            navigationViewModel: navigationViewModel,
+            logViewModel: logViewModel
+        };
+
+        var allViewModels = _.values(viewModelMap);
+
+        var additionalViewModels = [];
+        _.each(ADDITIONAL_VIEWMODELS, function(viewModel) {
+            var viewModelClass = viewModel[0];
+            var viewModelParameters = viewModel[1];
+            var viewModelBindTarget = viewModel[2];
+
+            var constructorParameters = [];
+            _.each(viewModelParameters, function(parameter) {
+                if (_.has(viewModelMap, parameter)) {
+                    constructorParameters.push(viewModelMap[parameter]);
+                } else {
+                    constructorParameters.push(undefined);
+                }
+            });
+
+            var viewModelInstance = new viewModelClass(constructorParameters);
+            additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
+            allViewModels.push(viewModelInstance);
         });
 
-        // send the current UI API key with any request
-        $.ajaxSetup({
-            headers: {"X-Api-Key": UI_API_KEY}
-        });
-
-        //~~ Show settings - to ensure centered
-        $('#navbar_show_settings').click(function() {
-            $('#settings_dialog').modal()
-                 .css({
-                     width: 'auto',
-                     'margin-left': function() { return -($(this).width() /2); }
-                  });
-            return false;
-        });
+        var dataUpdater = new DataUpdater(allViewModels);
 
         //~~ Temperature
 
         $('#tabs a[data-toggle="tab"]').on('shown', function (e) {
             temperatureViewModel.updatePlot();
             terminalViewModel.updateOutput();
-        });
-
-        var webcamDisableTimeout;
-        $('#tabs a[data-toggle="tab"]').on('show', function (e) {
-            var current = e.target;
-            var previous = e.relatedTarget;
-
-            if (current.hash == "#control") {
-                clearTimeout(webcamDisableTimeout);
-                var webcamImage = $("#webcam_image");
-                var currentSrc = webcamImage.attr("src");
-                if (currentSrc === undefined || currentSrc.trim() == "") {
-                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-                }
-            } else if (previous.hash == "#control") {
-                // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
-                // more load by the constant connection creation than by the actual webcam stream
-                webcamDisableTimeout = setTimeout(function() {
-                    $("#webcam_image").attr("src", "");
-                }, 5000);
-            }
         });
 
         //~~ File list
@@ -112,9 +163,11 @@ $(function() {
         }
 
         function gcode_upload_fail(e, data) {
-            $.pnotify({
+            var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and slicing support is enabled and configured.") + "</p>";
+            error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+            new PNotify({
                 title: "Upload failed",
-                text: "<p>Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and Cura support is enabled and configured.</p><p>Server reported: <pre>" + data.jqXHR.responseText + "</pre></p>",
+                text: error,
                 type: "error",
                 hide: false
             });
@@ -126,10 +179,10 @@ $(function() {
         function gcode_upload_progress(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             $("#gcode_upload_progress .bar").css("width", progress + "%");
-            $("#gcode_upload_progress .bar").text("Uploading ...");
+            $("#gcode_upload_progress .bar").text(gettext("Uploading ..."));
             if (progress >= 100) {
                 $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                $("#gcode_upload_progress .bar").text("Saving ...");
+                $("#gcode_upload_progress .bar").text(gettext("Saving ..."));
             }
         }
 
@@ -278,9 +331,6 @@ $(function() {
                 if (dropZone) dropZoneBackground.removeClass("hover");
             }, 100);
         });
-
-        //~~ Offline overlay
-        $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
         //~~ Underscore setup
 
@@ -475,6 +525,7 @@ $(function() {
             }
         };
 
+<<<<<<< HEAD
         ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
         ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
@@ -492,20 +543,73 @@ $(function() {
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
         ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
         ko.applyBindings(logViewModel, document.getElementById("logs"));
+=======
+        ko.bindingHandlers.invisible = {
+            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                if (!valueAccessor()) return;
+                ko.bindingHandlers.style.update(element, function() {
+                    return { visibility: 'hidden' };
+                })
+            }
+        };
+>>>>>>> refs/remotes/upstream/devel
 
-        var timelapseElement = document.getElementById("timelapse");
-        if (timelapseElement) {
-            ko.applyBindings(timelapseViewModel, timelapseElement);
-        }
+        settingsViewModel.requestData(function() {
+            ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+
+            ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+            ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
+            ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
+            ko.applyBindings(controlViewModel, document.getElementById("control"));
+            ko.applyBindings(terminalViewModel, document.getElementById("term"));
+            var gcode = document.getElementById("gcode");
+            if (gcode) {
+                gcodeViewModel.initialize();
+                ko.applyBindings(gcodeViewModel, gcode);
+            }
+            //ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+            ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
+            ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+            ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+            ko.applyBindings(logViewModel, document.getElementById("logs"));
+
+            var timelapseElement = document.getElementById("timelapse");
+            if (timelapseElement) {
+                ko.applyBindings(timelapseViewModel, timelapseElement);
+            }
+
+            // apply bindings and signal startup
+            _.each(additionalViewModels, function(additionalViewModel) {
+                if (additionalViewModel[0].hasOwnProperty("onBeforeBinding")) {
+                    additionalViewModel[0].onBeforeBinding();
+                }
+
+                // model instance, target container
+                ko.applyBindings(additionalViewModel[0], additionalViewModel[1]);
+
+                if (additionalViewModel[0].hasOwnProperty("onAfterBinding")) {
+                    additionalViewModel[0].onAfterBinding();
+                }
+            });
+        });
 
         //~~ startup commands
 
+<<<<<<< HEAD
         loginStateViewModel.requestData();
         connectionViewModel.requestData();
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
         settingsViewModel.requestData();
         logViewModel.requestData();
+=======
+        _.each(allViewModels, function(viewModel) {
+            if (viewModel.hasOwnProperty("onStartup")) {
+                viewModel.onStartup();
+            }
+        });
+>>>>>>> refs/remotes/upstream/devel
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
@@ -521,17 +625,45 @@ $(function() {
 
         //~~ UI stuff
 
+        var webcamDisableTimeout;
+        $('#tabs a[data-toggle="tab"]').on('show', function (e) {
+            var current = e.target;
+            var previous = e.relatedTarget;
+
+            if (current.hash == "#control") {
+                clearTimeout(webcamDisableTimeout);
+                var webcamImage = $("#webcam_image");
+                var currentSrc = webcamImage.attr("src");
+                if (currentSrc === undefined || currentSrc.trim() == "") {
+                    var newSrc = CONFIG_WEBCAM_STREAM;
+                    if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
+                        newSrc += "&";
+                    } else {
+                        newSrc += "?";
+                    }
+                    newSrc += new Date().getTime();
+
+                    webcamImage.attr("src", newSrc);
+                }
+            } else if (previous.hash == "#control") {
+                // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
+                // more load by the constant connection creation than by the actual webcam stream
+                webcamDisableTimeout = setTimeout(function() {
+                    $("#webcam_image").attr("src", "");
+                }, 5000);
+            }
+        });
+
         $(".accordion-toggle[href='#files']").click(function() {
-            if ($("#files").hasClass("in")) {
-                $("#files").removeClass("overflow_visible");
+            var files = $("#files");
+            if (files.hasClass("in")) {
+                files.removeClass("overflow_visible");
             } else {
                 setTimeout(function() {
-                    $("#files").addClass("overflow_visible");
+                    files.addClass("overflow_visible");
                 }, 1000);
             }
-        })
-
-        $.pnotify.defaults.history = false;
+        });
 
         $.fn.modal.defaults.maxHeight = function(){
             // subtract the height of the modal header and footer
@@ -547,11 +679,23 @@ $(function() {
             e.preventDefault();
         });
 
+        $("#login_user").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_pass").focus();
+            }
+        });
+        $("#login_pass").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_button").click();
+            }
+        });
+
         if (CONFIG_FIRST_RUN) {
             var firstRunViewModel = new FirstRunViewModel();
             ko.applyBindings(firstRunViewModel, document.getElementById("first_run_dialog"));
             firstRunViewModel.showDialog();
         }
+
     }
 );
 

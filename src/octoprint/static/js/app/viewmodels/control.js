@@ -36,13 +36,13 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
                 tools[extruder] = self._createToolEntry();
-                tools[extruder]["name"]("Tool " + extruder);
+                tools[extruder]["name"](gettext("Tool") + " " + extruder);
                 tools[extruder]["key"]("tool" + extruder);
             }
         } else {
             // only one extruder, no need to add numbers
             tools[0] = self._createToolEntry();
-            tools[0]["name"]("Hotend");
+            tools[0]["name"](gettext("Hotend"));
             tools[0]["key"]("tool0");
         }
 
@@ -81,11 +81,11 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
@@ -95,13 +95,56 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
-    }
+    };
 
     self.fromFeedbackCommandData = function(data) {
+<<<<<<< HEAD
     	if (data.name in self.feedbackControlLookup) {
     		self.feedbackControlLookup[data.name](data.output);
     	}
     }
+=======
+        if (data.name in self.feedbackControlLookup) {
+            self.feedbackControlLookup[data.name](data.output);
+        }
+    };
+
+    self.requestData = function() {
+        $.ajax({
+            url: API_BASEURL + "printer/command/custom",
+            method: "GET",
+            dataType: "json",
+            success: function(response) {
+                self._fromResponse(response);
+            }
+        });
+    };
+
+    self._fromResponse = function(response) {
+        self.controls(self._processControls(response.controls));
+    };
+
+    self._processControls = function(controls) {
+        for (var i = 0; i < controls.length; i++) {
+            controls[i] = self._processControl(controls[i]);
+        }
+        return controls;
+    };
+
+    self._processControl = function(control) {
+        if (control.type == "parametric_command" || control.type == "parametric_commands") {
+            for (var i = 0; i < control.input.length; i++) {
+                control.input[i].value = control.input[i].default;
+            }
+        } else if (control.type == "feedback_command" || control.type == "feedback") {
+            control.output = ko.observable("");
+            self.feedbackControlLookup[control.name] = control.output;
+        } else if (control.type == "section") {
+            control.children = self._processControls(control.children);
+        }
+        return control;
+    };
+>>>>>>> refs/remotes/upstream/devel
 
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
@@ -112,7 +155,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
         var data = {
             "command": "jog"
-        }
+        };
         data[axis] = distance * multiplier;
 
         $.ajax({
@@ -122,13 +165,13 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         });
-    }
+    };
 
     self.sendHomeCommand = function(axis) {
         var data = {
             "command": "home",
             "axes": axis
-        }
+        };
 
         $.ajax({
             url: API_BASEURL + "printer/printhead",
@@ -137,7 +180,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         });
-    }
+    };
 
     self.sendExtrudeCommand = function() {
         self._sendECommand(1);
@@ -149,7 +192,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
 
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
-        if (!length) length = 5;
+        if (!length) length = self.settings.printer_defaultExtrusionLength();
 
         var data = {
             command: "extrude",
@@ -218,7 +261,7 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         })
-    }
+    };
 
     self.displayMode = function(customControl) {
 		if (!customControl)
@@ -247,8 +290,9 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
             default:
                 return "customControls_emptyTemplate";
         }
-    }
+    };
 
+<<<<<<< HEAD
 	// Dynamic Commands
     self.toggleCollapse = function () {
     	var elementParent = $('#title_' + self.getEntryId(this));
@@ -284,4 +328,9 @@ function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel
     self.bgImage = function(data) { 
     	return data.backgroundColor1() != '' && data.backgroundColor2() != '' ? "linear-gradient(to bottom," + data.backgroundColor1() + "," + data.backgroundColor2() + ")" : '';    	
 	}
+=======
+    self.onStartup = function() {
+        self.requestData();
+    };
+>>>>>>> refs/remotes/upstream/devel
 }

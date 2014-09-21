@@ -10,15 +10,15 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         var text = "";
         switch (self.ui_progress_type()) {
             case "loading": {
-                text = "Loading... (" + self.ui_progress_percentage().toFixed(0) + "%)";
+                text = gettext("Loading...") + " (" + self.ui_progress_percentage().toFixed(0) + "%)";
                 break;
             }
             case "analyzing": {
-                text = "Analyzing... (" + self.ui_progress_percentage().toFixed(0) + "%)";
+                text = gettext("Analyzing...") + " (" + self.ui_progress_percentage().toFixed(0) + "%)";
                 break;
             }
             case "done": {
-                text = "Analyzed";
+                text = gettext("Analyzed");
                 break;
             }
         }
@@ -60,7 +60,8 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             extrusionWidth: self.renderer_extrusionWidthEnabled() ? self.renderer_extrusionWidth() : 1,
             showNextLayer: self.renderer_showNext(),
             showPreviousLayer: self.renderer_showPrevious(),
-            zoomInOnModel: self.renderer_zoomOnModel()
+            zoomInOnModel: self.renderer_zoomOnModel(),
+            onInternalOptionChange: self._onInternalRendererOptionChange
         };
         if (additionalRendererOptions) {
             _.extend(renderer, additionalRendererOptions);
@@ -172,7 +173,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
     self.clear = function() {
         GCODE.ui.clear();
-    }
+    };
 
     self._configureLayerSlider = function() {
         self.layerSlider = $("#gcode_slider_layers").slider({
@@ -321,17 +322,17 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             self.currentLayer = 0;
         } else {
             var output = [];
-            output.push("Model size is: " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
+            output.push(gettext("Model size") + ": " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
             if (model.filament.length == 0) {
-                output.push("Total filament used: " + model.filament.toFixed(2) + "mm");
+                output.push(gettext("Total filament used") + ": " + model.filament.toFixed(2) + gettext("mm"));
             } else {
                 for (var i = 0; i < model.filament.length; i++) {
-                    output.push("Total filament used (Tool " + i + "): " + model.filament[i].toFixed(2) + "mm");
+                    output.push(gettext("Total filament used") + " (" + gettext("Tool") + " " + i + "): " + model.filament[i].toFixed(2) + gettext("mm"));
                 }
             }
-            output.push("Estimated print time: " + formatDuration(model.printTime));
-            output.push("Estimated layer height: " + model.layerHeight.toFixed(2) + "mm");
-            output.push("Layer count: " + model.layersPrinted.toFixed(0) + " printed, " + model.layersTotal.toFixed(0) + " visited");
+            output.push(gettext("Estimated print time") + ": " + formatDuration(model.printTime));
+            output.push(gettext("Estimated layer height") + ": " + model.layerHeight.toFixed(2) + gettext("mm"));
+            output.push(gettext("Layer count") + ": " + model.layersPrinted.toFixed(0) + " " + gettext("printed") + ", " + model.layersTotal.toFixed(0) + " " + gettext("visited"));
 
             self.ui_modelInfo(output.join("<br>"));
 
@@ -350,23 +351,37 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             self.currentCommand = [0, 1];
         } else {
             var output = [];
-            output.push("Layer number: " + (layer.number + 1));
-            output.push("Layer height (mm): " + layer.height);
-            output.push("GCODE commands in layer: " + layer.commands);
+            output.push(gettext("Layer number") + ": " + (layer.number + 1));
+            output.push(gettext("Layer height") + " (mm): " + layer.height);
+            output.push(gettext("GCODE commands in layer") + ": " + layer.commands);
             if (layer.filament.length == 1) {
-                output.push("Filament used by layer: " + layer.filament[0].toFixed(2) + "mm");
+                output.push(gettext("Filament used by layer") + ": " + layer.filament[0].toFixed(2) + "mm");
             } else {
                 for (var i = 0; i < layer.filament.length; i++) {
-                    output.push("Filament used by layer (Tool " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                    output.push(gettext("Filament used by layer") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
                 }
             }
-            output.push("Print time for layer: " + formatDuration(layer.printTime));
+            output.push(gettext("Print time for layer") + ": " + formatDuration(layer.printTime));
 
             self.ui_layerInfo(output.join("<br>"));
 
             self.layerCommandSlider.slider("enable");
             self.layerCommandSlider.slider("setMax", layer.commands - 1);
             self.layerCommandSlider.slider("setValue", [0, layer.commands - 1]);
+        }
+    };
+
+    self._onInternalRendererOptionChange = function(options) {
+        if (!options) return;
+
+        for (var opt in options) {
+            if (opt == "zoomInOnModel" && options[opt] != self.renderer_zoomOnModel()) {
+                self.renderer_zoomOnModel(false);
+            } else if (opt == "centerViewport" && options[opt] != self.renderer_centerViewport()) {
+                self.renderer_centerViewport(false);
+            } else if (opt == "moveModel" && options[opt] != self.renderer_centerModel()) {
+                self.renderer_centerModel(false);
+            }
         }
     };
 
@@ -389,4 +404,9 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
         GCODE.ui.changeSelectedCommands(self.layerSlider.slider("getValue"), tuple[0], tuple[1]);
     };
+
+    self.onDataUpdaterReconnect = function() {
+        self.reset();
+    }
+
 }

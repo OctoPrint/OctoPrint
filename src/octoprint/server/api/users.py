@@ -1,14 +1,18 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, abort, make_response
 from flask.ext.login import current_user
 
 import octoprint.users as users
 
-from octoprint.server import restricted_access, SUCCESS, admin_permission, userManager
+from octoprint.server import SUCCESS, admin_permission, userManager
 from octoprint.server.api import api
+from octoprint.server.util.flask import restricted_access
 
 
 #~~ user settings

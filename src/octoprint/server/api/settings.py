@@ -1,6 +1,9 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 
@@ -9,8 +12,11 @@ from flask import request, jsonify
 from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
 
-from octoprint.server import restricted_access, admin_permission
+from octoprint.server import admin_permission
 from octoprint.server.api import api
+from octoprint.server.util.flask import restricted_access
+
+import octoprint.plugin
 
 
 #~~ settings
@@ -25,10 +31,11 @@ def getSettings():
 
 	connectionOptions = getConnectionOptions()
 
-	return jsonify({
+	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
-			"key": s.get(["api", "key"])
+			"key": s.get(["api", "key"]),
+			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
@@ -42,7 +49,8 @@ def getSettings():
 			"invertAxes": s.get(["printerParameters", "invertAxes"]),
 			"numExtruders": s.get(["printerParameters", "numExtruders"]),
 			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
-			"bedDimensions": s.get(["printerParameters", "bedDimensions"])
+			"bedDimensions": s.get(["printerParameters", "bedDimensions"]),
+			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
 		},
 		"webcam": {
 			"streamUrl": s.get(["webcam", "stream"]),
@@ -80,7 +88,8 @@ def getSettings():
 			"uploads": s.getBaseFolder("uploads"),
 			"timelapse": s.getBaseFolder("timelapse"),
 			"timelapseTmp": s.getBaseFolder("timelapse_tmp"),
-			"logs": s.getBaseFolder("logs")
+			"logs": s.getBaseFolder("logs"),
+			"watched": s.getBaseFolder("watched")
 		},
 		"temperature": {
 			"profiles": s.get(["temperature", "profiles"])
@@ -96,20 +105,34 @@ def getSettings():
 			"config": s.get(["cura", "config"])
 		},
 		"controls": s.get(["controls"])
-	})
+	}
+    
+    def process_plugin_result(name, plugin, result):
+        if result:
+            if not "plugins" in data:
+                data["plugins"] = dict()
+            if "__enabled" in result:
+                del result["__enabled"]
+            data["plugins"][name] = result
 
+    octoprint.plugin.call_plugin(octoprint.plugin.SettingsPlugin,
+                                 "on_settings_load",
+                                 callback=process_plugin_result)
+
+    return jsonify(data)
 
 @api.route("/settings", methods=["POST"])
 @restricted_access
-#@admin_permission.require(403)
+@admin_permission.require(403)
 def setSettings():
 	if "application/json" in request.headers["Content-Type"]:
 		data = request.json
 		s = settings()
 
 		if "api" in data.keys():
-			if "enabled" in data["api"].keys(): s.set(["api", "enabled"], data["api"]["enabled"])
+			if "enabled" in data["api"].keys(): s.setBoolean(["api", "enabled"], data["api"]["enabled"])
 			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
+			if "allowCrossOrigin" in data["api"].keys(): s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
 		if "appearance" in data.keys():
 			if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
@@ -124,6 +147,7 @@ def setSettings():
 			if "numExtruders" in data["printer"].keys(): s.setInt(["printerParameters", "numExtruders"], data["printer"]["numExtruders"])
 			if "extruderOffsets" in data["printer"].keys(): s.set(["printerParameters", "extruderOffsets"], data["printer"]["extruderOffsets"])
 			if "bedDimensions" in data["printer"].keys(): s.set(["printerParameters", "bedDimensions"], data["printer"]["bedDimensions"])
+			if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
 		if "webcam" in data.keys():
 			if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
@@ -170,6 +194,7 @@ def setSettings():
 			if "timelapse" in data["folder"].keys(): s.setBaseFolder("timelapse", data["folder"]["timelapse"])
 			if "timelapseTmp" in data["folder"].keys(): s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
 			if "logs" in data["folder"].keys(): s.setBaseFolder("logs", data["folder"]["logs"])
+			if "watched" in data["folder"].keys(): s.setBaseFolder("watched", data["folder"]["watched"])
 
 		if "temperature" in data.keys():
 			if "profiles" in data["temperature"].keys(): s.set(["temperature", "profiles"], data["temperature"]["profiles"])
@@ -198,6 +223,12 @@ def setSettings():
 			# Enabled is a boolean so we cannot check that we have a result
 			enabled = cura.get("enabled")
 			s.setBoolean(["cura", "enabled"], enabled)
+
+		if "plugins" in data:
+			for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():
+				if name in data["plugins"]:
+					plugin.on_settings_save(data["plugins"][name])
+
 
 		s.save()
 

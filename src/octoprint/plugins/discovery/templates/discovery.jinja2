@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+    <specVersion>
+        <major>1</major>
+        <minor>0</minor>
+    </specVersion>
+    <device>
+        <deviceType>urn:schemas-upnp-org:device:Basic:1</deviceType>
+        <friendlyName>{{ friendlyName }}</friendlyName>
+        <manufacturer>{{ manufacturer }}</manufacturer>
+        {% if manufacturerUrl %}<manufacturerURL>{{ manufacturerUrl }}</manufacturerURL>{% endif %}
+        <modelName>{{ modelName }}</modelName>
+        {% if modelDescription %}<modelDescription>{{ modelDescription }}</modelDescription>{% endif %}
+        {% if modelNumber %}<modelNumber>{{ modelNumber }}</modelNumber>{% endif %}
+        {% if modelUrl %}<modelURL>{{ modelUrl }}</modelURL>{% endif %}
+        {% if serialNumber %}<serialNumber>{{ serialNumber }}</serialNumber>{% endif %}
+        <UDN>uuid:{{ uuid }}</UDN>
+        <serviceList>
+        </serviceList>
+        <presentationURL>{{ presentationUrl }}</presentationURL>
+    </device>
+</root>
