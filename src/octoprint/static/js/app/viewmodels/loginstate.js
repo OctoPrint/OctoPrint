@@ -12,15 +12,15 @@ function LoginStateViewModel() {
         if (self.loggedIn()) {
             return "\"" + self.username() + "\"";
         } else {
-            return "Login";
+            return gettext("Login");
         }
-    })
+    });
 
     self.subscribers = [];
     self.subscribe = function(callback) {
         if (callback === undefined) return;
         self.subscribers.push(callback);
-    }
+    };
 
     self.requestData = function() {
         $.ajax({
@@ -29,7 +29,7 @@ function LoginStateViewModel() {
             data: {"passive": true},
             success: self.fromResponse
         })
-    }
+    };
 
     self.fromResponse = function(response) {
         if (response && response.name) {
@@ -51,7 +51,7 @@ function LoginStateViewModel() {
 
             _.each(self.subscribers, function(callback) { callback("logout", {}); });
         }
-    }
+    };
 
     self.login = function() {
         var username = $("#login_user").val();
@@ -67,23 +67,31 @@ function LoginStateViewModel() {
             type: "POST",
             data: {"user": username, "pass": password, "remember": remember},
             success: function(response) {
-                $.pnotify({title: "Login successful", text: "You are now logged in as \"" + response.name + "\"", type: "success"});
+                new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}), type: "success"});
                 self.fromResponse(response);
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                $.pnotify({title: "Login failed", text: "User unknown or wrong password", type: "error"});
+                new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
             }
         })
-    }
+    };
 
     self.logout = function() {
         $.ajax({
             url: API_BASEURL + "logout",
             type: "POST",
             success: function(response) {
-                $.pnotify({title: "Logout successful", text: "You are now logged out", type: "success"});
+                new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
                 self.fromResponse(response);
             }
         })
-    }
+    };
+
+    self.onDataUpdaterReconnect = function() {
+        self.requestData();
+    };
+
+    self.onStartup = function() {
+        self.requestData();
+    };
 }
