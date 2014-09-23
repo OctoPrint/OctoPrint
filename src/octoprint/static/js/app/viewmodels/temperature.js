@@ -13,7 +13,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             offset: ko.observable(0),
             newTarget: ko.observable(),
             newOffset: ko.observable()
-        }
+        };
     };
 
     self.tools = ko.observableArray([]);
@@ -35,16 +35,17 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.heaterOptions = ko.observable({});
 
     self._numExtrudersUpdated = function() {
-        var graphColors = ["red", "orange", "green", "brown", "purple"];
-        var heaterOptions = {};
-        var tools = self.tools();
+        var graphColors = ["red", "orange", "green", "brown", "purple"],
+            heaterOptions = {},
+            tools = self.tools(),
+            color;
 
         // tools
-        var numExtruders = self.settingsViewModel.printer_numExtruders();
+        var numExtruders = self.settingsViewModel.printerParameters_numExtruders();
         if (numExtruders && numExtruders > 1) {
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
-                var color = graphColors.shift();
+                color = graphColors.shift();
                 if (!color) color = "black";
                 heaterOptions["tool" + extruder] = {name: "T" + extruder, color: color};
 
@@ -56,7 +57,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             }
         } else {
             // only one extruder, no need to add numbers
-            var color = graphColors[0];
+            color = graphColors[0];
             heaterOptions["tool0"] = {name: "T", color: color};
 
             if (tools.length < 1 || !tools[0]) {
@@ -73,7 +74,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self.heaterOptions(heaterOptions);
         self.tools(tools);
     };
-    self.settingsViewModel.printer_numExtruders.subscribe(self._numExtrudersUpdated);
+    self.settingsViewModel.printerParameters_numExtruders.subscribe(self._numExtrudersUpdated);
 
     self.temperatures = [];
     self.plotOptions = {
@@ -86,7 +87,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             mode: "time",
             minTickSize: [2, "minute"],
             tickFormatter: function(val, axis) {
-                if (val == undefined || val == 0)
+                if (val === undefined || val === 0)
                     return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
 
                 // current time in milliseconds in UTC
@@ -97,7 +98,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
 
                 // convert to minutes
                 var diffInMins = Math.round(diff / (60 * 1000));
-                if (diffInMins == 0)
+                if (diffInMins === 0)
                     return "just now";
                 else
                     return "- " + diffInMins + " min";
@@ -133,7 +134,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self._processTemperatureUpdateData = function(data) {
-        if (data.length == 0)
+        if (data.length === 0)
             return;
 
         var lastData = data[data.length - 1];
@@ -208,7 +209,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
                 result[type].target.push([time, d[type].target]);
 
                 self.hasBed(self.hasBed() || (type == "bed"));
-            })
+            });
         });
 
         return result;
@@ -267,7 +268,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.setTargetFromProfile = function(item, profile) {
         if (!profile) return;
 
-        var value = undefined;
+        var value;
         if (item.key() == "bed") {
             value = profile.bed;
         } else {

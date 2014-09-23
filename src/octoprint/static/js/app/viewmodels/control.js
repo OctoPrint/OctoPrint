@@ -8,7 +8,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         return {
             name: ko.observable(),
             key: ko.observable()
-        }
+        };
     };
 
     self.isErrorOrClosed = ko.observable(undefined);
@@ -26,10 +26,10 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.feedbackControlLookup = {};
 
-    self.settings.printer_numExtruders.subscribe(function(oldVal, newVal) {
+    self.settings.printerParameters_numExtruders.subscribe(function(oldVal, newVal) {
         var tools = [];
 
-        var numExtruders = self.settings.printer_numExtruders();
+        var numExtruders = self.settings.printerParameters_numExtruders();
         if (numExtruders > 1) {
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
@@ -49,11 +49,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self._processStateData = function(data) {
         self.isErrorOrClosed(data.flags.closedOrError);
@@ -63,13 +63,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isLoading(data.flags.loading);
-    }
+    };
 
     self.fromFeedbackCommandData = function(data) {
         if (data.name in self.feedbackControlLookup) {
             self.feedbackControlLookup[data.name](data.output);
         }
-    }
+    };
 
     self.requestData = function() {
         $.ajax({
@@ -80,18 +80,18 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
                 self._fromResponse(response);
             }
         });
-    }
+    };
 
     self._fromResponse = function(response) {
         self.controls(self._processControls(response.controls));
-    }
+    };
 
     self._processControls = function(controls) {
         for (var i = 0; i < controls.length; i++) {
             controls[i] = self._processControl(controls[i]);
         }
         return controls;
-    }
+    };
 
     self._processControl = function(control) {
         if (control.type == "parametric_command" || control.type == "parametric_commands") {
@@ -105,7 +105,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             control.children = self._processControls(control.children);
         }
         return control;
-    }
+    };
 
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
@@ -116,7 +116,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
         var data = {
             "command": "jog"
-        }
+        };
         data[axis] = distance * multiplier;
 
         $.ajax({
@@ -126,13 +126,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         });
-    }
+    };
 
     self.sendHomeCommand = function(axis) {
         var data = {
             "command": "home",
             "axes": axis
-        }
+        };
 
         $.ajax({
             url: API_BASEURL + "printer/printhead",
@@ -141,7 +141,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
         });
-    }
+    };
 
     self.sendExtrudeCommand = function() {
         self._sendECommand(1);
@@ -172,10 +172,10 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.sendSelectToolCommand = function(data) {
         if (!data || !data.key()) return;
 
-        var data = {
+        data = {
             command: "select",
             tool: data.key()
-        }
+        };
 
         $.ajax({
             url: API_BASEURL + "printer/tool",
@@ -190,7 +190,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         if (!command)
             return;
 
-        var data = undefined;
+        var data;
         if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
             // single command
             data = {"command" : command.command};
@@ -216,8 +216,8 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
             data: JSON.stringify(data)
-        })
-    }
+        });
+    };
 
     self.displayMode = function(customControl) {
         switch (customControl.type) {
@@ -236,6 +236,6 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             default:
                 return "customControls_emptyTemplate";
         }
-    }
+    };
 
 }

@@ -95,20 +95,20 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     self.reader_hideEmptyLayers.subscribe(self.synchronizeOptions);
 
     // subscribe to relevant printer settings...
-    self.settings.printer_extruderOffsets.subscribe(function() {
+    self.settings.printerParameters_extruderOffsets.subscribe(function() {
         if (!self.enabled) return;
-        if (!self.settings.printer_extruderOffsets()) return;
+        if (!self.settings.printerParameters_extruderOffsets()) return;
 
         GCODE.ui.updateOptions({
             reader: {
-                toolOffsets: self.settings.printer_extruderOffsets()
+                toolOffsets: self.settings.printerParameters_extruderOffsets()
             }
         });
     });
-    self.settings.printer_bedDimensions.subscribe(function() {
+    self.settings.printerParameters_bedDimensions.subscribe(function() {
         if (!self.enabled) return;
 
-        var bedDimensions = self.settings.printer_bedDimensions();
+        var bedDimensions = self.settings.printerParameters_bedDimensions();
         if (!bedDimensions || (!bedDimensions.hasOwnProperty("x") && !bedDimensions.hasOwnProperty("y") && !bedDimensions.hasOwnProperty("r"))) return;
 
         GCODE.ui.updateOptions({
@@ -117,15 +117,15 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             }
         });
     });
-    self.settings.printer_invertAxes.subscribe(function() {
+    self.settings.printerParameters_invertAxes.subscribe(function() {
         if (!self.enabled) return;
-        if (!self.settings.printer_invertAxes()) return;
+        if (!self.settings.printerParameters_invertAxes()) return;
 
         GCODE.ui.updateOptions({
             renderer: {
                 invertAxes: {
-                    x: self.settings.printer_invertX(),
-                    y: self.settings.printer_invertY()
+                    x: self.settings.printerParameters_invertX(),
+                    y: self.settings.printerParameters_invertY()
                 }
             }
         });
@@ -156,8 +156,8 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
                 onProgress: self._onProgress,
                 onModelLoaded: self._onModelLoaded,
                 onLayerSelected: self._onLayerSelected,
-                bed: self.settings.printer_bedDimensions(),
-                toolOffsets: self.settings.printer_extruderOffsets()
+                bed: self.settings.printerParameters_bedDimensions(),
+                toolOffsets: self.settings.printerParameters_extruderOffsets()
             });
             self.synchronizeOptions();
             self.enabled = true;
@@ -269,7 +269,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         if (!self.enabled) return;
         self.currentlyPrinting = data.state.flags && (data.state.flags.printing || data.state.flags.paused);
 
-        if(self.loadedFilename
+        if (self.loadedFilename
                 && self.loadedFilename == data.job.file.name
                 && self.loadedFileDate == data.job.file.date) {
             if (self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
@@ -282,7 +282,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
                     self.layerCommandSlider.slider("setValue", [0, cmdIndex.cmd]);
                 }
             }
-            self.errorCount = 0
+            self.errorCount = 0;
         } else {
             self.clear();
             if (data.job.file.name && data.job.file.origin != "sdcard"
@@ -323,7 +323,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         } else {
             var output = [];
             output.push("Model size is: " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
-            if (model.filament.length == 0) {
+            if (model.filament.length === 0) {
                 output.push("Total filament used: " + model.filament.toFixed(2) + "mm");
             } else {
                 for (var i = 0; i < model.filament.length; i++) {

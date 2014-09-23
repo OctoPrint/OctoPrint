@@ -12,6 +12,7 @@
                 <li><a href="#settings_temperature" data-toggle="tab">Temperatures</a></li>
                 <li><a href="#settings_terminalFilters" data-toggle="tab">Terminal filters</a></li>
                 <li class="nav-header">Features</li>
+                <li><a href="#settings_notifications" data-toggle="tab">Notifications</a></li>
                 <li><a href="#settings_features" data-toggle="tab">Features</a></li>
                 <li><a href="#settings_webcam" data-toggle="tab">Webcam</a></li>
                 <li><a href="#settings_cura" data-toggle="tab">Cura</a></li>
@@ -29,19 +30,30 @@
                         <div class="control-group">
                             <label class="control-label" for="settings-serialPort">Serial Port</label>
                             <div class="controls">
-                                <select id="settings-serialPort" data-bind="options: serial_portOptions, optionsCaption: 'AUTO', value: serial_port"></select>
+                                <select id="settings-serialPort"
+                                    data-bind="options: serial_ports,
+                                        optionsCaption: 'AUTO',
+                                        value:
+                                        serial_port">
+                                </select>
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="settings-baudrate">Baudrate</label>
                             <div class="controls">
-                                <select id="settings-baudrate" data-bind="options: serial_baudrateOptions, optionsCaption: 'AUTO', value: serial_baudrate"></select>
+                                <select id="settings-baudrate"
+                                    data-bind="options:
+                                        serial_baudrates,
+                                        optionsCaption: 'AUTO',
+                                        value: serial_baudrate">
+                                </select>
                             </div>
                         </div>
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: serial_autoconnect" id="settings-serialAutoconnect"> Auto-connect to printer on server start
+                                    <input type="checkbox"
+                                        data-bind="checked: serial_autoconnect" id="settings-serialAutoconnect"> Auto-connect to printer on server start
                                 </label>
                             </div>
                         </div>
@@ -49,16 +61,16 @@
                             <label class="control-label" for="settings-serialTimeoutCommunication">Communication timeout</label>
                             <div class="controls">
                                 <div class="input-append">
-                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeout_communication" id="settings-serialTimeoutCommunication">
                                     <span class="add-on">s</span>
                                 </div>
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="control-label" for="settings-movementSpeedE">Temperature timeout</label>
+                            <label class="control-label" for="settings-movementSpeed_e">Temperature timeout</label>
                             <div class="controls">
                                 <div class="input-append">
-                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutTemperature" id="settings-serialTimeoutTemperature">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeout_temperature" id="settings-serialTimeoutTemperature">
                                     <span class="add-on">s</span>
                                 </div>
                             </div>
@@ -67,7 +79,7 @@
                             <label class="control-label" for="settings-serialTimeoutSdStatus">SD status timeout</label>
                             <div class="controls">
                                 <div class="input-append">
-                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutSdStatus" id="settings-serialTimeoutSdStatus">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeout_sdStatus" id="settings-serialTimeoutSdStatus">
                                     <span class="add-on">s</span>
                                 </div>
                             </div>
@@ -76,7 +88,7 @@
                             <label class="control-label" for="settings-serialTimeoutConnection">Connection timeout</label>
                             <div class="controls">
                                 <div class="input-append">
-                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutConnection" id="settings-serialTimeoutConnection">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeout_connection" id="settings-serialTimeoutConnection">
                                     <span class="add-on">s</span>
                                 </div>
                             </div>
@@ -85,7 +97,7 @@
                             <label class="control-label" for="settings-serialTimeoutDetection">Autodetection timeout</label>
                             <div class="controls">
                                 <div class="input-append">
-                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutDetection" id="settings-serialTimeoutDetection">
+                                    <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeout_detection" id="settings-serialTimeoutDetection">
                                     <span class="add-on">s</span>
                                 </div>
                             </div>
@@ -106,37 +118,37 @@
                             <div class="controls form-inline">
                                 <label>X:</label>
                                 <div class="input-append">
-                                    <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedX" id="settings-movementSpeedX">
+                                    <input type="number" class="input-mini text-right" data-bind="value: printerParameters_movementSpeed_x" id="settings-movementSpeed_x">
                                     <span class="add-on">mm/min</span>
                                 </div>
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertX" id="settings-printerInvertX"> Invert control
+                                    <input type="checkbox" data-bind="checked: printerParameters_invertX" id="settings-printerInvertX"> Invert control
                                 </label>
                             </div>
                             <div class="controls form-inline">
                                 <label>Y:</label>
                                 <div class="input-append">
-                                    <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedY" id="settings-movementSpeedY">
+                                    <input type="number" class="input-mini text-right" data-bind="value: printerParameters_movementSpeed_y" id="settings-movementSpeed_y">
                                     <span class="add-on">mm/min</span>
                                 </div>
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertY" id="settings-printerInvertY"> Invert control
+                                    <input type="checkbox" data-bind="checked: printerParameters_invertY" id="settings-printerInvertY"> Invert control
                                 </label>
                             </div>
                             <div class="controls form-inline">
                                 <label>Z:</label>
                                 <div class="input-append">
-                                    <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedZ" id="settings-movementSpeedZ">
+                                    <input type="number" class="input-mini text-right" data-bind="value: printerParameters_movementSpeed_z" id="settings-movementSpeed_z">
                                     <span class="add-on">mm/min</span>
                                 </div>
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: printer_invertZ" id="settings-printerInvertZ"> Invert control
+                                    <input type="checkbox" data-bind="checked: printerParameters_invertZ" id="settings-printerInvertZ"> Invert control
                                 </label>
                             </div>
                             <div class="controls form-inline">
                                 <label>E:</label>
                                 <div class="input-append">
-                                    <input type="number" class="input-mini text-right" data-bind="value: printer_movementSpeedE" id="settings-movementSpeedE">
+                                    <input type="number" class="input-mini text-right" data-bind="value: printerParameters_movementSpeed_e" id="settings-movementSpeed_e">
                                     <span class="add-on">mm/min</span>
                                 </div>
                             </div>
@@ -144,12 +156,12 @@
                         <div class="control-group">
                             <label class="control-label" for="settings-numExtruders">Number of Extruders</label>
                             <div class="controls">
-                                <input type="number" class="input-mini text-right" min="1" max="5" data-bind="value: printer_numExtruders" id="settings-numExtruders">
+                                <input type="number" class="input-mini text-right" min="1" max="5" data-bind="value: printerParameters_numExtruders" id="settings-numExtruders">
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="settings-extruderOffsets">Extruder Offsets</label>
-                            <!-- ko foreach: ko_printer_extruderOffsets -->
+                            <!-- ko foreach: ko_printerParameters_extruderOffsets -->
                             <div class="controls form-inline">
                                 <label>X:</label>
                                 <div class="input-append">
@@ -169,14 +181,133 @@
                             <div class="controls form-inline">
                                 <label>X:</label>
                                 <div class="input-append">
-                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printer_bedDimensionX" id="settings-bedX">
+                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printerParameters_bedDimensions_x" id="settings-bedX">
                                     <span class="add-on">mm</span>
                                 </div>
                                 <label>Y:</label>
                                 <div class="input-append">
-                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printer_bedDimensionY" id="settings-bedY">
+                                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printerParameters_bedDimensions_y" id="settings-bedY">
                                     <span class="add-on">mm</span>
                                 </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <!-- Notification Center -->
+                <div class="tab-pane" id="settings_notifications">
+                    <div class="notification-description">
+                    <h4>Notifications</h4>
+                    <span class="inline">
+                        Enable
+                        <input id="settings_notifications_enabled" type="checkbox"
+                            data-bind="checked: notifications_enabled">
+                    </span>
+                    <p>Enable print warnings and errors to be messaged or logged</p>
+                </div>
+                    <form class="form-horizontal" role="form">
+                        <!-- Text Msg -->
+                        <h4>Text Message</h4>
+                        <span class="inline">
+                            via <a src="http:/twilio.com/">Twilio</a>
+                        </span>
+                        <span class="inline right">
+                            Enable
+                            <input id="settings_notifications_textMsg_enabled" type="checkbox"
+                                data-bind="checked: notifications_textMessage_enabled">
+                        </span>
+                        <div class="control-group">
+                            <label class="control-label" for="">Country Code</label>
+                            <div class="controls">
+                                <select id="settings_notifications_textMessage_countryCode"
+                                    data-bind="options:
+                                        window.iso3166.codes,
+                                        optionsCaption: 'name',
+                                        value: notifications_textMessage_country">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="">To</label>
+                            <div class="controls">
+                                <input id="settings_notifications_textMessage_countryCode"
+                                    data-bind="value: notifications_textMessage_toNumber">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="">From</label>
+                            <div class="controls">
+                                <input id="settings_notifications_textMessage_countryCode"
+                                    data-bind="value: notifications_textMessage_fromNumber">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="">Twilio ID</label>
+                            <div class="controls">
+                                <input id="settings_notifications_textMessage_twilioAcctId"
+                                    data-bind="value: notifications_textMessage_twilioAcctId">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="">Twilio Key</label>
+                            <div class="controls">
+                                <input id="settings_notifications_textMessage_twilioAcctKey"
+                                    data-bind="value: notifications_textMessage_twilioAcctKey">
+                            </div>
+                        </div>
+
+                        <h4>Email</h4>
+                        <span class="inline">
+                            via <a src="http://sendgrid.com/">SendGrid</a>
+                        </span>
+                        <span class="inline right">
+                            Enable
+                            <input id="settings_notifications_email_enabled" type="checkbox"
+                                data-bind="checked: notifications_textMessage_enabled">
+                        </span>
+                        <div class="control-group">
+                            <label class="control-label" for="">SendGrid Username</label>
+                            <div class="controls">
+                                <input id="settings_notifications_email_sendgridId"
+                                    placeholder="sendgridUsername"
+                                    type="text"
+                                    class="input-block-level"
+                                    data-bind="value: notifications_email_sendgridId">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="">SendGrid Password</label>
+                            <div class="controls">
+                                <input id="settings-notifications_email_sendgridKey"
+                                    type="password"
+                                    class="input-block-level"
+                                    data-bind="value: notifications_email_sendgridKey">
+                            </div>
+                        </div>
+
+                        <h4>Cloud</h4>
+                        <span class="inline">
+                            via <a src="https://orchestrate.io/">Orchestrate</a>
+                        </span>
+                        <span class="inline right">
+                            Enable
+                            <input id="settings_notifications_cloud_enabled" type="checkbox"
+                                data-bind="checked: notifications_cloud_enabled">
+                        </span>
+                        <div class="control-group">
+                            <label class="control-label" for="">Orchestrate ID</label>
+                            <div class="controls">
+                                <input id="settings_notifications_cloud_orchestrateId"
+                                    type="password"
+                                    class="input-block-level"
+                                    data-bind="value: notifications_cloud_orchestrateId">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="">Orchestrate Key</label>
+                            <div class="controls">
+                                <input id="settings_notifications_cloud_orchestrateKey"
+                                    type="password"
+                                    class="input-block-level"
+                                    data-bind="value: notifications_cloud_orchestrateKey">
                             </div>
                         </div>
                     </form>
@@ -186,19 +317,19 @@
                         <div class="control-group">
                             <label class="control-label" for="settings-webcamStreamUrl">Stream URL</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: webcam_streamUrl" id="settings-webcamStreamUrl">
+                                <input type="text" class="input-block-level" data-bind="value: webcam_stream" id="settings-webcamStreamUrl">
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="settings-webcamStreamUrl">Snapshot URL</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: webcam_snapshotUrl" id="settings-webcamSnapshotUrl">
+                                <input type="text" class="input-block-level" data-bind="value: webcam_snapshot" id="settings-webcamSnapshotUrl">
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="settings-webcamStreamUrl">Path to FFMPEG</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: webcam_ffmpegPath" id="settings-webcamFfmpegPath">
+                                <input type="text" class="input-block-level" data-bind="value: webcam_ffmpeg" id="settings-webcamFfmpeg">
                             </div>
                         </div>
                         <div class="control-group">
@@ -240,7 +371,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_gcodeViewer" id="settings-featureGcodeViewer"> Enable GCode Visualizer
+                                    <input type="checkbox" data-bind="checked: gcodeViewer_enabled" id="settings-featureGcodeViewer"> Enable GCode Visualizer
                                 </label>
                             </div>
                         </div>
@@ -261,7 +392,7 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> Wait for <code>start</code> on connect
+                                    <input type="checkbox" data-bind="checked: feature_waitForStartOnConnect" id="settings-featureWaitForStart"> Wait for <code>start</code> on connect
                                 </label>
                             </div>
                         </div>
@@ -305,7 +436,7 @@
                         <div class="control-group">
                             <label class="control-label" for="settings-folderTimelapseTemp">Timelapse Temp Folder</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: folder_timelapseTmp" id="settings-folderTimelapseTemp">
+                                <input type="text" class="input-block-level" data-bind="value: folder_timelapse_tmp" id="settings-folderTimelapseTemp">
                             </div>
                         </div>
                         <div class="control-group">

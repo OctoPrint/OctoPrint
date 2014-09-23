@@ -1,54 +1,221 @@
+/**
+ * Iterates through each node of an Object, recursively
+ * on property values of type Object.
+ * @param  {*} node initially fed the root object to recurse through
+ * @param  {Object} config {
+ *     on: function(...) // executes at each node
+ *     mode: "array"|null // determines what is returned
+ *     _init: indicates whether first node has been or is immedately about to be processed
+ *     _path: ["prop", "subprop_of_prop", ...etc]. path array of current node
+ * }
+ * @return {Array}
+ */
+function eachDeep(node, config) {
+    var nodeResults = [],
+        subResults = [],
+        k, v;
+    if (!config.hasOwnProperty("_init")) {
+        config._init = true;
+        config._path = [];
+        if (!config.hasOwnProperty("mode")) {
+            config.mode = null;
+        }
+    }
+    if (!node || node.constructor !== Object) {
+        return config.on(node, config);
+    }
+    for (k in node) {
+        v = node[k];
+        config._path.push(k);
+        if (node.constructor === Object) {
+            subResults = eachDeep(v, config);
+            if (config.mode === "array") nodeResults = nodeResults.concat(subResults);
+        } else {
+            subResults = config.on(node, config);
+            if (config.mode === "array") nodeResults = nodeResults.concat(subResults);
+        }
+        if (config._path) {
+            config._path.pop();
+        }
+    }
+    return nodeResults;
+}
+
 function SettingsViewModel(loginStateViewModel, usersViewModel) {
     var self = this;
+    var settingKoos = {
+        "appearance": {
+            "color": ko.observable(undefined),
+            "name": ko.observable(undefined)
+        },
+        "api": {
+            "enabled": ko.observable(undefined),
+            "key": ko.observable(undefined)
+        },
+        "cura": {
+            "config": ko.observable(undefined),
+            "enabled": ko.observable(undefined),
+            "path": ko.observable(undefined)
+        },
+        "feature": {
+            "alwaysSendChecksum": ko.observable(undefined),
+            "repetierTargetTemp": ko.observable(undefined),
+            "sdAlwaysAvailable": ko.observable(undefined),
+            "sdSupport": ko.observable(undefined),
+            "swallowOkAfterResend": ko.observable(undefined),
+            "temperatureGraph": ko.observable(undefined),
+            "waitForStartOnConnect": ko.observable(undefined)
+        },
+        "folder": {
+            "logs": ko.observable(undefined),
+            "timelapse": ko.observable(undefined),
+            "timelapse_tmp": ko.observable(undefined),
+            "uploads": ko.observable(undefined),
+            "virtualSd": ko.observable(undefined)
+        },
+        "gcodeViewer": {
+            "enabled": ko.observable(undefined),
+            "mobileSizeThreshold": ko.observable(undefined),
+            "sizeThreshold": ko.observable(undefined)
+        },
+        "notifications": {
+            "email": {
+                "enabled": ko.observable(undefined),
+                "sendgridId": ko.observable(undefined),
+                "sendgridKey": ko.observable(undefined)
+            },
+            "enabled": ko.observable(undefined),
+            "textMessage": {
+                "countryPrefix": ko.observable(undefined),
+                "enabled": ko.observable(undefined),
+                "toNumber": ko.observable(undefined),
+                "fromNumber": ko.observable(undefined),
+                "twilioAcctId": ko.observable(undefined),
+                "twilioAcctKey": ko.observable(undefined)
+            },
+            "cloud": {
+                "enabled": ko.observable(undefined),
+                "orchestrateId": ko.observable(undefined),
+                "orchestrateKey": ko.observable(undefined)
+            }
+        },
+        "printerParameters": {
+            "bedDimensions": {
+                "x": ko.observable(undefined),
+                "y": ko.observable(undefined)
+            },
+            "extruderOffsets": ko.observableArray([]),
+            "invertAxes": ko.observable(undefined),
+            "pauseTriggers": ko.observable(undefined),
+            "movementSpeed": {
+                "x": ko.observable(undefined),
+                "y": ko.observable(undefined),
+                "z": ko.observable(undefined),
+                "e": ko.observable(undefined)
+            },
+            "numExtruders": ko.observable(undefined)
+        },
+        "serial": {
+            "additionalPorts": ko.observable(undefined),
+            "autoconnect": ko.observable(undefined),
+            "baudrate": ko.observable(undefined),
+            "baudrates": ko.observableArray([]),
+            "log": ko.observable(undefined),
+            "port": ko.observable(undefined),
+            "ports": ko.observableArray([]),
+            "timeout": {
+                "communication": ko.observable(undefined),
+                "connection": ko.observable(undefined),
+                "detection": ko.observable(undefined),
+                "sdStatus": ko.observable(undefined),
+                "temperature": ko.observable(undefined)
+            }
+        },
+        "system": {
+            "actions": ko.observableArray([])
+        },
+        "temperature": {
+            "profiles": ko.observableArray(undefined)
+        },
+        "terminalFilters": ko.observableArray(undefined),
+        "webcam": {
+            "bitrate": ko.observable(undefined),
+            "ffmpeg": ko.observable(undefined),
+            "flipH": ko.observable(undefined),
+            "flipV": ko.observable(undefined),
+            "snapshot": ko.observable(undefined),
+            "stream": ko.observable(undefined),
+            "timelapse": {
+                "options": ko.observable(undefined),
+                "postRoll": ko.observable(undefined),
+                "type": ko.observable(undefined)
+            },
+            "watermark": ko.observable(undefined)
+        }
+    };
 
+    self.flattenKoos = function() {
+        eachDeep(settingKoos,{
+            on: function bindKooDirectlyToSelf(koo, config) {
+                self[config._path.join("_")] = koo;
+            }
+        });
+    };
+    self.flattenKoos();
+
+    // Client-only koos & settings
+    self._printerParameters_extruderOffsets = ko.observableArray([]);
+    self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
     self.loginState = loginStateViewModel;
+    self.notifications_textMessage_country = ko.observable(undefined);
+    self.terminalFilters = ko.observableArray([]);
     self.users = usersViewModel;
 
-    self.api_enabled = ko.observable(undefined);
-    self.api_key = ko.observable(undefined);
+    // Computed koos
+    self.printerParameters_bedDimensions = ko.computed({
+        read: function readBedDimensions() {
+            return {
+                x: parseFloat(self.printerParameters_bedDimensions_x()),
+                y: parseFloat(self.printerParameters_bedDimensions_y())
+            };
+        },
+        write: function writeBedDimensions(value) {
+            self.printerParameters_bedDimensions_x(value.x);
+            self.printerParameters_bedDimensions_y(value.y);
+        },
+        owner: self
+    });
 
-    self.appearance_name = ko.observable(undefined);
-    self.appearance_color = ko.observable(undefined);
-
-    self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
-
-    self.printer_movementSpeedX = ko.observable(undefined);
-    self.printer_movementSpeedY = ko.observable(undefined);
-    self.printer_movementSpeedZ = ko.observable(undefined);
-    self.printer_movementSpeedE = ko.observable(undefined);
-    self.printer_invertAxes = ko.observable(undefined);
-    self.printer_numExtruders = ko.observable(undefined);
-
-    self._printer_extruderOffsets = ko.observableArray([]);
-    self.printer_extruderOffsets = ko.computed({
-        read: function() {
-            var extruderOffsets = self._printer_extruderOffsets();
+    self.printerParameters_extruderOffsets = ko.computed({
+        read: function readExtruderOffsets() {
+            var extruderOffsets = self._printerParameters_extruderOffsets();
             var result = [];
             for (var i = 0; i < extruderOffsets.length; i++) {
                 result[i] = {
                     x: parseFloat(extruderOffsets[i].x()),
                     y: parseFloat(extruderOffsets[i].y())
-                }
+                };
             }
             return result;
         },
-        write: function(value) {
+        write: function writeExtruderOffsets(value) {
             var result = [];
             if (value && Array.isArray(value)) {
                 for (var i = 0; i < value.length; i++) {
                     result[i] = {
                         x: ko.observable(value[i].x),
                         y: ko.observable(value[i].y)
-                    }
+                    };
                 }
             }
-            self._printer_extruderOffsets(result);
+            self._printerParameters_extruderOffsets(result);
         },
         owner: self
     });
-    self.ko_printer_extruderOffsets = ko.computed(function() {
-        var extruderOffsets = self._printer_extruderOffsets();
-        var numExtruders = self.printer_numExtruders();
+
+    self.ko_printerParameters_extruderOffsets = ko.computed(function computeOffsets() {
+        var extruderOffsets = self._printerParameters_extruderOffsets();
+        var numExtruders = self.printerParameters_numExtruders();
         if (!numExtruders) {
             numExtruders = 1;
         }
@@ -58,114 +225,43 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 extruderOffsets[i] = {
                     x: ko.observable(0),
                     y: ko.observable(0)
-                }
+                };
             }
-            self._printer_extruderOffsets(extruderOffsets);
+            self._printerParameters_extruderOffsets(extruderOffsets);
         }
 
         return extruderOffsets.slice(0, numExtruders);
     });
+    /* end computed koos */
 
-    self.printer_bedDimensionX = ko.observable(undefined);
-    self.printer_bedDimensionY = ko.observable(undefined);
-    self.printer_bedDimensions = ko.computed({
-        read: function () {
-            return {
-                x: parseFloat(self.printer_bedDimensionX()),
-                y: parseFloat(self.printer_bedDimensionY())
-            };
-        },
-        write: function(value) {
-            self.printer_bedDimensionX(value.x);
-            self.printer_bedDimensionY(value.y);
-        },
-        owner: self
-    });
-
-    self.webcam_streamUrl = ko.observable(undefined);
-    self.webcam_snapshotUrl = ko.observable(undefined);
-    self.webcam_ffmpegPath = ko.observable(undefined);
-    self.webcam_bitrate = ko.observable(undefined);
-    self.webcam_watermark = ko.observable(undefined);
-    self.webcam_flipH = ko.observable(undefined);
-    self.webcam_flipV = ko.observable(undefined);
-
-    self.feature_gcodeViewer = ko.observable(undefined);
-    self.feature_temperatureGraph = ko.observable(undefined);
-    self.feature_waitForStart = ko.observable(undefined);
-    self.feature_alwaysSendChecksum = ko.observable(undefined);
-    self.feature_sdSupport = ko.observable(undefined);
-    self.feature_sdAlwaysAvailable = ko.observable(undefined);
-    self.feature_swallowOkAfterResend = ko.observable(undefined);
-    self.feature_repetierTargetTemp = ko.observable(undefined);
-
-    self.serial_port = ko.observable();
-    self.serial_baudrate = ko.observable();
-    self.serial_portOptions = ko.observableArray([]);
-    self.serial_baudrateOptions = ko.observableArray([]);
-    self.serial_autoconnect = ko.observable(undefined);
-    self.serial_timeoutConnection = ko.observable(undefined);
-    self.serial_timeoutDetection = ko.observable(undefined);
-    self.serial_timeoutCommunication = ko.observable(undefined);
-    self.serial_timeoutTemperature = ko.observable(undefined);
-    self.serial_timeoutSdStatus = ko.observable(undefined);
-    self.serial_log = ko.observable(undefined);
-
-    self.folder_uploads = ko.observable(undefined);
-    self.folder_timelapse = ko.observable(undefined);
-    self.folder_timelapseTmp = ko.observable(undefined);
-    self.folder_logs = ko.observable(undefined);
-
-    self.cura_enabled = ko.observable(undefined);
-    self.cura_path = ko.observable(undefined);
-    self.cura_config = ko.observable(undefined);
-
-    self.temperature_profiles = ko.observableArray(undefined);
-
-    self.system_actions = ko.observableArray([]);
-
-    self.terminalFilters = ko.observableArray([]);
-
+    // Member functions
     self.addTemperatureProfile = function() {
         self.temperature_profiles.push({name: "New", extruder:0, bed:0});
     };
 
-    self.removeTemperatureProfile = function(profile) {
-        self.temperature_profiles.remove(profile);
+    self.addTerminalFilter = function() {
+        self.terminalFilters.push({name: "New", regex: "(Send: M105)|(Recv: ok T:)"});
     };
 
-    self.addTerminalFilter = function() {
-        self.terminalFilters.push({name: "New", regex: "(Send: M105)|(Recv: ok T:)"})
+    self.getPrinterInvertAxis = function(axis) {
+        return _.contains((self.printerParameters_invertAxes() || []), axis.toLowerCase());
+    };
+
+    self.koInvertAxis = function(axis) {
+        return ko.computed({
+            read: function () { return self.getPrinterInvertAxis(axis); },
+            write: function (value) { self.setPrinterInvertAxis(axis, value); },
+            owner: self
+        });
     };
 
     self.removeTerminalFilter = function(filter) {
         self.terminalFilters.remove(filter);
     };
 
-    self.getPrinterInvertAxis = function(axis) {
-        return _.contains((self.printer_invertAxes() || []), axis.toLowerCase());
+    self.removeTemperatureProfile = function(profile) {
+        self.temperature_profiles.remove(profile);
     };
-
-    self.setPrinterInvertAxis = function(axis, value) {
-        var currInvert = self.printer_invertAxes() || [];
-        var currValue = self.getPrinterInvertAxis(axis);
-        if (value && !currValue) {
-            currInvert.push(axis.toLowerCase());
-        } else if (!value && currValue) {
-            currInvert = _.without(currInvert, axis.toLowerCase());
-        }
-        self.printer_invertAxes(currInvert);
-    };
-
-    self.koInvertAxis = function (axis) { return ko.computed({
-        read: function () { return self.getPrinterInvertAxis(axis); },
-        write: function (value) { self.setPrinterInvertAxis(axis, value); },
-        owner: self
-    })};
-
-    self.printer_invertX = self.koInvertAxis('x');
-    self.printer_invertY = self.koInvertAxis('y');
-    self.printer_invertZ = self.koInvertAxis('z');
 
     self.requestData = function(callback) {
         $.ajax({
@@ -173,154 +269,75 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             type: "GET",
             dataType: "json",
             success: function(response) {
-                self.fromResponse(response);
+                eachDeep(response, {"on": self._setKooFromResponse});
                 if (callback) callback();
             }
         });
     };
 
-    self.fromResponse = function(response) {
-        self.api_enabled(response.api.enabled);
-        self.api_key(response.api.key);
+    self._setGetPayloadProp = function(value, config) {
+        refObj = self._saveGetPayload; // init to payload root then traverse
+        if (!config || !config._path || !config._path.hasOwnProperty(length)) {
+            throw new Error("invalid config");
+        }
+        finalKey = config._path[config._path.length - 1];
+        config._path.forEach(function traverseGetObj(pathSeg) {
+            if (refObj.hasOwnProperty(pathSeg) && pathSeg !== finalKey) {
+                refObj = refObj[pathSeg];
+            } else if (pathSeg !== finalKey) {
+                refObj[pathSeg] = {};
+                refObj = refObj[pathSeg];
+            }
+        });
+        refObj[finalKey] = value();
+    };
 
-        self.appearance_name(response.appearance.name);
-        self.appearance_color(response.appearance.color);
-
-        self.printer_movementSpeedX(response.printer.movementSpeedX);
-        self.printer_movementSpeedY(response.printer.movementSpeedY);
-        self.printer_movementSpeedZ(response.printer.movementSpeedZ);
-        self.printer_movementSpeedE(response.printer.movementSpeedE);
-        self.printer_invertAxes(response.printer.invertAxes);
-        self.printer_numExtruders(response.printer.numExtruders);
-        self.printer_extruderOffsets(response.printer.extruderOffsets);
-        self.printer_bedDimensions(response.printer.bedDimensions);
-
-        self.webcam_streamUrl(response.webcam.streamUrl);
-        self.webcam_snapshotUrl(response.webcam.snapshotUrl);
-        self.webcam_ffmpegPath(response.webcam.ffmpegPath);
-        self.webcam_bitrate(response.webcam.bitrate);
-        self.webcam_watermark(response.webcam.watermark);
-        self.webcam_flipH(response.webcam.flipH);
-        self.webcam_flipV(response.webcam.flipV);
-
-        self.feature_gcodeViewer(response.feature.gcodeViewer);
-        self.feature_temperatureGraph(response.feature.temperatureGraph);
-        self.feature_waitForStart(response.feature.waitForStart);
-        self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
-        self.feature_sdSupport(response.feature.sdSupport);
-        self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
-        self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
-        self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
-
-        self.serial_port(response.serial.port);
-        self.serial_baudrate(response.serial.baudrate);
-        self.serial_portOptions(response.serial.portOptions);
-        self.serial_baudrateOptions(response.serial.baudrateOptions);
-        self.serial_autoconnect(response.serial.autoconnect);
-        self.serial_timeoutConnection(response.serial.timeoutConnection);
-        self.serial_timeoutDetection(response.serial.timeoutDetection);
-        self.serial_timeoutCommunication(response.serial.timeoutCommunication);
-        self.serial_timeoutTemperature(response.serial.timeoutTemperature);
-        self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
-        self.serial_log(response.serial.log);
-
-        self.folder_uploads(response.folder.uploads);
-        self.folder_timelapse(response.folder.timelapse);
-        self.folder_timelapseTmp(response.folder.timelapseTmp);
-        self.folder_logs(response.folder.logs);
-
-        self.cura_enabled(response.cura.enabled);
-        self.cura_path(response.cura.path);
-        self.cura_config(response.cura.config);
-
-        self.temperature_profiles(response.temperature.profiles);
-
-        self.system_actions(response.system.actions);
-
-        self.terminalFilters(response.terminalFilters);
+    self._setKooFromResponse = function(value, config) {
+        refObj = settingKoos;
+        if (!config || !config._path || !config._path.hasOwnProperty(length)) {
+            throw new Error("invalid config");
+        }
+        finalKey = config._path[config._path.length - 1];
+        config._path.forEach(function traverseGetObj(pathSeg) {
+            if (refObj.hasOwnProperty(pathSeg) && pathSeg !== finalKey) {
+                refObj = refObj[pathSeg];
+            } else if (pathSeg !== finalKey) {
+                refObj[pathSeg] = {};
+                refObj = refObj[pathSeg];
+            }
+        });
+        refObj[finalKey](value);
     };
 
     self.saveData = function() {
-        var data = {
-            "api" : {
-                "enabled": self.api_enabled(),
-                "key": self.api_key()
-            },
-            "appearance" : {
-                "name": self.appearance_name(),
-                "color": self.appearance_color()
-            },
-            "printer": {
-                "movementSpeedX": self.printer_movementSpeedX(),
-                "movementSpeedY": self.printer_movementSpeedY(),
-                "movementSpeedZ": self.printer_movementSpeedZ(),
-                "movementSpeedE": self.printer_movementSpeedE(),
-                "invertAxes": self.printer_invertAxes(),
-                "numExtruders": self.printer_numExtruders(),
-                "extruderOffsets": self.printer_extruderOffsets(),
-                "bedDimensions": self.printer_bedDimensions()
-            },
-            "webcam": {
-                "streamUrl": self.webcam_streamUrl(),
-                "snapshotUrl": self.webcam_snapshotUrl(),
-                "ffmpegPath": self.webcam_ffmpegPath(),
-                "bitrate": self.webcam_bitrate(),
-                "watermark": self.webcam_watermark(),
-                "flipH": self.webcam_flipH(),
-                "flipV": self.webcam_flipV()
-            },
-            "feature": {
-                "gcodeViewer": self.feature_gcodeViewer(),
-                "temperatureGraph": self.feature_temperatureGraph(),
-                "waitForStart": self.feature_waitForStart(),
-                "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
-                "sdSupport": self.feature_sdSupport(),
-                "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
-                "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
-                "repetierTargetTemp": self.feature_repetierTargetTemp()
-            },
-            "serial": {
-                "port": self.serial_port(),
-                "baudrate": self.serial_baudrate(),
-                "autoconnect": self.serial_autoconnect(),
-                "timeoutConnection": self.serial_timeoutConnection(),
-                "timeoutDetection": self.serial_timeoutDetection(),
-                "timeoutCommunication": self.serial_timeoutCommunication(),
-                "timeoutTemperature": self.serial_timeoutTemperature(),
-                "timeoutSdStatus": self.serial_timeoutSdStatus(),
-                "log": self.serial_log()
-            },
-            "folder": {
-                "uploads": self.folder_uploads(),
-                "timelapse": self.folder_timelapse(),
-                "timelapseTmp": self.folder_timelapseTmp(),
-                "logs": self.folder_logs()
-            },
-            "temperature": {
-                "profiles": self.temperature_profiles()
-            },
-            "system": {
-                "actions": self.system_actions()
-            },
-            "cura": {
-                "enabled": self.cura_enabled(),
-                "path": self.cura_path(),
-                "config": self.cura_config()
-            },
-            "terminalFilters": self.terminalFilters()
-        };
-
+        self._saveGetPayload = {};
+        eachDeep(settingKoos, {"on": self._setGetPayloadProp});
         $.ajax({
             url: API_BASEURL + "settings",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data),
+            data: JSON.stringify(self._saveGetPayload),
             success: function(response) {
-                self.fromResponse(response);
+                eachDeep(response, {"on": self._setKooFromResponse});
                 $("#settings_dialog").modal("hide");
             }
         });
-    }
+    };
 
+    self.setPrinterInvertAxis = function(axis, value) {
+        var currInvert = self.printerParameters_invertAxes() || [];
+        var currValue = self.getPrinterInvertAxis(axis);
+        if (value && !currValue) {
+            currInvert.push(axis.toLowerCase());
+        } else if (!value && currValue) {
+            currInvert = _.without(currInvert, axis.toLowerCase());
+        }
+        self.printerParameters_invertAxes(currInvert);
+    };
+
+    // Init
+    self.printerParameters_invertX = self.koInvertAxis('x');
+    self.printerParameters_invertY = self.koInvertAxis('y');
+    self.printerParameters_invertZ = self.koInvertAxis('z');
 }

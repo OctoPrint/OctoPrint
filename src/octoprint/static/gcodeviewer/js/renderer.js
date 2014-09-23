@@ -248,8 +248,6 @@ GCODE.renderer = (function(){
     };
 
     var drawGrid = function() {
-        console.log("Drawing grid");
-
         ctx.translate(offsetBedX, offsetBedY);
 
         ctx.beginPath();

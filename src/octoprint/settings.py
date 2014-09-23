@@ -84,14 +84,6 @@ def settings(init=False, configfile=None, basedir=None):
 	return instance
 
 default_settings_client_public = {
-	"accessControl": {
-		"autologinLocal": False,
-		"autXologinAs": None,
-		"enabled": True,
-		"localNetworks": ["127.0.0.0/8"],
-		"userfile": None,
-		"userManager": "octoprint.users.FilebasedUserManager"
-	},
 	"appearance": {
 		"color": "default",
 		"name": ""
@@ -100,28 +92,10 @@ default_settings_client_public = {
 		"enabled": False,
 		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 	},
-	"controls": [],
 	"cura": {
 		"config": "/default/path/to/your/cura/config.ini",
 		"enabled": False,
 		"path": "/default/path/to/cura"
-	},
-	"devel": {
-		"stylesheet": "css",
-		"virtualPrinter": {
-			"enabled": False,
-			"okAfterResend": False,
-			"forceChecksum": False,
-			"okWithLinenumber": False,
-			"numExtruders": 1,
-			"includeCurrentToolInTemps": True,
-			"hasBed": True,
-			"repetierStyleTargetTemperature": False
-		}
-	},
-	"events": {
-		"enabled": False,
-		"subscriptions": []
 	},
 	"feature": {
 		"alwaysSendChecksum": False,
@@ -143,6 +117,27 @@ default_settings_client_public = {
 		"enabled": True,
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
+	},
+	"notifications": {
+		"email": {
+			"enabled": False,
+			"sendgridId": None,
+			"sendgridKey": None
+		},
+		"enabled": False,
+		"textMessage": {
+			"countryPrefix": None,
+			"enabled": False,
+			"toNumber": None,
+			"fromNumber": None,
+			"twilioAcctId": None,
+			"twilioAcctKey": None
+		},
+		"cloud": {
+			"enabled": False,
+			"orchestrateId": None,
+			"orchestrateKey": None
+		}
 	},
 	"printerParameters": {
 		"bedDimensions": {
@@ -175,13 +170,6 @@ default_settings_client_public = {
 			"temperature": 5
 		}
 	},
-	"server": {
-		"baseUrl": "",
-		"firstRun": True,
-		"host": "0.0.0.0",
-		"port": 5000,
-		"scheme": ""
-	},
 	"system": {
 		"actions": []
 	},
@@ -212,7 +200,41 @@ default_settings_client_public = {
 	}
 }
 
-default_settings_client_private = {}
+default_settings_client_private = {
+	"accessControl": {
+		"autologinLocal": False,
+		"autXologinAs": None,
+		"enabled": True,
+		"localNetworks": ["127.0.0.0/8"],
+		"userfile": None,
+		"userManager": "octoprint.users.FilebasedUserManager"
+	},
+	"controls": [],
+	"devel": {
+		"stylesheet": "css",
+		"virtualPrinter": {
+			"enabled": False,
+			"okAfterResend": False,
+			"forceChecksum": False,
+			"okWithLinenumber": False,
+			"numExtruders": 1,
+			"includeCurrentToolInTemps": True,
+			"hasBed": True,
+			"repetierStyleTargetTemperature": False
+		}
+	},
+	"events": {
+		"enabled": False,
+		"subscriptions": []
+	},
+	"server": {
+		"baseUrl": "",
+		"firstRun": True,
+		"host": "0.0.0.0",
+		"port": 5000,
+		"scheme": ""
+	}
+}
 
 default_settings = dict_merge(default_settings_client_public, default_settings_client_private)
 
@@ -267,10 +289,9 @@ class Settings(object):
 		refObj = self._clientSettingsPayload # init to payload root then traverse
 		finalKey = config["path"][len(config["path"]) - 1]
 		for pathSeg in config["path"]:
-			if pathSeg in refObj.keys():
+			if (pathSeg in refObj.keys() and not pathSeg == finalKey):
 				refObj = refObj[pathSeg]
-			else:
-				if not pathSeg == finalKey:
+			elif not pathSeg == finalKey:
 					refObj[pathSeg] = {}
 					refObj = refObj[pathSeg]
 		refObj[finalKey] = self.get(config["path"])

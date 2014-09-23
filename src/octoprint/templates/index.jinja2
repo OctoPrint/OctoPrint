@@ -610,7 +610,6 @@
 
         {% include 'settings.jinja2' %}
         {% include 'dialogs.jinja2' %}
-
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/modernizr.custom.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore-min.js') }}"></script>
@@ -632,6 +631,8 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pusher.color.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/detectmobilebrowser.js') }}"></script>
+
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/iso3166.js') }}"></script>
 
         <!-- Include OctoPrint files -->
         <!-- TODO: merge/minimize in the future -->
