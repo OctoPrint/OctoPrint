@@ -1,3 +1,5 @@
+import sarge
+
 __author__ = "Ross Hendrickson savorywatt"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -49,14 +51,19 @@ class Cura(object):
 		import threading
 
 		def start_thread(call_back, call_back_args, call_args, cwd):
-			import subprocess
 			self._logger.info("Running %r in %s" % (call_args, cwd))
+			command = " ".join(call_args)
 			try:
-				subprocess.check_call(call_args, cwd=cwd)
-				call_back(*call_back_args)
-			except subprocess.CalledProcessError as (e):
-				self._logger.warn("Could not slice via Cura, got return code %r" % e.returncode)
-				call_back_args.append("Got returncode %r" % e.returncode)
+				p = sarge.run(command, cwd=cwd)
+				if p.returncode == 0:
+					call_back(*call_back_args)
+				else:
+					self._logger.warn("Could not slice via Cura, got return code %r" % p.returncode)
+					call_back_args.append("Got returncode %r" % p.returncode)
+					call_back(*call_back_args)
+			except:
+				self._logger.exception("Could not slice via Cura, got an unknown error")
+				call_back_args.append("Unknown error, please consult the log file")
 				call_back(*call_back_args)
 
 		executable = self.cura_path

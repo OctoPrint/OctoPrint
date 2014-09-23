@@ -46,6 +46,10 @@ Issue a job command
         "command": "start"
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Restart Request**
 
    .. sourcecode:: http
@@ -58,6 +62,10 @@ Issue a job command
       {
         "command": "restart"
       }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
 
    **Example Pause Request**
 
@@ -72,6 +80,10 @@ Issue a job command
         "command": "pause"
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Cancel Request**
 
    .. sourcecode:: http
@@ -84,6 +96,10 @@ Issue a job command
       {
         "command": "cancel"
       }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
 
    :json string command: The command to issue, either ``start``, ``restart``, ``pause`` or ``cancel``
    :statuscode 204:      No error
@@ -101,14 +117,13 @@ Retrieve information about the current job
 
    Returns a :http:statuscode:`200` with a :ref:`sec-api-job-datamodel-response` in the body.
 
-   **Example Request**
+   **Example**
 
    .. sourcecode:: http
 
       GET /api/job HTTP/1.1
       Host: example.com
-
-   **Example Response**
+      X-Api-Key: abcdef...
 
    .. sourcecode:: http
 
@@ -159,90 +174,10 @@ Job information response
      - Description
    * - ``job``
      - 1
-     - :ref:`sec-api-job-datamodel-job`
+     - :ref:`sec-api-datamodel-jobs-job`
      - Information regarding the target of the current print job
    * - ``progress``
      - 1
-     - :ref:`sec-api-job-datamodel-progress`
+     - :ref:`sec-api-datamodel-jobs-progress`
      - Information regarding the progress of the current print job
-
-.. _sec-api-job-datamodel-job:
-
-Job information
----------------
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``file``
-     - 1
-     - Object
-     - The file that is the target of the current print job
-   * - ``file.name``
-     - 1
-     - String
-     - The file's name
-   * - ``file.origin``
-     - 1
-     - String, either ``local`` or ``sdcard``
-     - The file's origin, either ``local`` or ``sdcard``
-   * - ``file.size``
-     - 0..1
-     - Integer
-     - The file's size, in bytes. Only available for files stored locally.
-   * - ``file.date``
-     - 0..1
-     - Unix timestamp
-     - The file's upload date. Only available for files stored locally.
-   * - ``estimatedPrintTime``
-     - 0..1
-     - Integer
-     - The estimated print time for the file, in seconds.
-   * - ``filament``
-     - 0..1
-     - Object
-     - Information regarding the estimated filament usage of the print job
-   * - ``filament.length``
-     - 0..1
-     - Integer
-     - Length of filament used, in mm
-   * - ``filament.volume``
-     - 0..1
-     - Float
-     - Volume of filament used, in cm³
-
-.. _sec-api-job-datamodel-progress:
-
-Progress information
---------------------
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``completion``
-     - 1
-     - Float
-     - Percentage of completion of the current print job
-   * - ``filepos``
-     - 1
-     - Integer
-     - Current position in the file being printed, in bytes from the beginning
-   * - ``printTime``
-     - 1
-     - Integer
-     - Time already spent printing, in seconds
-   * - ``printTimeLeft``
-     - 1
-     - Integer
-     - Estimate of time left to print, in seconds
 

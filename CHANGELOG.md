@@ -1,5 +1,40 @@
 # OctoPrint Changelog
 
+## 1.2.0 (Unreleased)
+
+### New Features
+
+* Added internationalization of UI. Translations of OctoPrint are being crowd sourced via [Transifex](https://www.transifex.com/projects/p/octoprint/).
+  The following translations are already available with more in the works:
+  - Dutch (nl)
+  - German (de)
+  - French (fr)
+  - Hebrew (he)
+  - Norwegian (no)
+  - Romanian (ro)
+* New file list: Pagination is gone, no more (mobile incompatible) pop overs, instead scrollable and with instant
+  search
+* You can now define a folder (default: `~/.octoprint/watched`) to be watched for newly added GCODE (or -- if slicing
+  support is enabled -- STL) files to automatically add.
+* OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its 
+  core functionality.
+
+### Improvements
+
+* Logging is now configurable via config file
+* Added last print time to additional GCODE file information
+* Better error handling for capture issues during timelapse creation & more robust handling of missing images during
+  timelapse creation
+* Start counting the layers at 1 instead of 0 in the GCODE viewer
+* Upgraded [Font Awesome](https://fortawesome.github.io/Font-Awesome/) to version 3.2.1
+* Better error reporting for timelapse rendering and system commands
+* Supports
+
+### Bug Fixes
+
+* [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
+  as 0
+
 ## 1.1.1 (Unreleased)
 
 ### Bug Fixes

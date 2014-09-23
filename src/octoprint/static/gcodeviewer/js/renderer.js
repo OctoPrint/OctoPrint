@@ -248,25 +248,34 @@ GCODE.renderer = (function(){
     };
 
     var drawGrid = function() {
-        console.log("Drawing grid");
-
         ctx.translate(offsetBedX, offsetBedY);
+        if(renderOptions["bed"]["circular"]) {
+            drawCircularGrid();
+        } else {
+            drawRectangularGrid();
+        }
+        ctx.translate(-offsetBedX, -offsetBedY);
+    };
 
-        ctx.beginPath();
+    var drawRectangularGrid = function() {
+        var i;
         var width = renderOptions["bed"]["x"] * zoomFactor;
         var height = renderOptions["bed"]["y"] * zoomFactor;
         var origin = {
             x: 0,
             y: -1 * renderOptions["bed"]["y"] * zoomFactor
         };
+
+        ctx.beginPath();
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.fillStyle = "#ffffff";
         ctx.lineWidth = 2;
+
         ctx.rect(origin.x, origin.y, width, height);
+
         ctx.fill();
         ctx.stroke();
 
-        var i;
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.lineWidth = 1;
 
@@ -283,8 +292,53 @@ GCODE.renderer = (function(){
             ctx.lineTo(renderOptions["bed"]["x"] * zoomFactor, -1 * i * zoomFactor);
         }
         ctx.stroke();
+    };
 
-        ctx.translate(-offsetBedX, -offsetBedY);
+    var drawCircularGrid = function() {
+        var i;
+
+        ctx.strokeStyle = renderOptions["colorGrid"];
+        ctx.fillStyle = "#ffffff";
+        ctx.lineWidth = 2;
+
+        //~~ bed outline & origin
+        ctx.beginPath();
+
+        // outline
+        ctx.arc(0, 0, renderOptions["bed"]["r"] * zoomFactor, 0, Math.PI * 2, true);
+
+        // origin
+        ctx.moveTo(-1 * renderOptions["bed"]["r"] * zoomFactor, 0);
+        ctx.lineTo(renderOptions["bed"]["r"] * zoomFactor, 0);
+        ctx.moveTo(0, -1 * renderOptions["bed"]["r"] * zoomFactor);
+        ctx.lineTo(0, renderOptions["bed"]["r"] * zoomFactor);
+
+        // draw
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = renderOptions["colorGrid"];
+        ctx.lineWidth = 1;
+
+        //~~ grid starting from origin
+        ctx.beginPath();
+        for (i = 0; i <= renderOptions["bed"]["r"]; i += gridStep) {
+            var x = i;
+            var y = Math.sqrt(Math.pow(renderOptions["bed"]["r"], 2) - Math.pow(x, 2));
+
+            ctx.moveTo(x * zoomFactor, y * zoomFactor);
+            ctx.lineTo(x * zoomFactor, -1 * y * zoomFactor);
+
+            ctx.moveTo(y * zoomFactor, x * zoomFactor);
+            ctx.lineTo(-1 * y * zoomFactor, x * zoomFactor);
+
+            ctx.moveTo(-1 * x * zoomFactor, y * zoomFactor);
+            ctx.lineTo(-1 * x * zoomFactor, -1 * y * zoomFactor);
+
+            ctx.moveTo(y * zoomFactor, -1 * x * zoomFactor);
+            ctx.lineTo(-1 * y * zoomFactor, -1 * x * zoomFactor);
+        }
+        ctx.stroke();
     };
 
     var drawLayer = function(layerNum, fromProgress, toProgress, isNotCurrentLayer){
@@ -422,10 +476,12 @@ GCODE.renderer = (function(){
     };
 
     var applyOffsets = function(mdlInfo) {
+        var canvasCenter;
+
         // determine bed and model offsets
         if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
         if (renderOptions["centerViewport"] || renderOptions["zoomInOnModel"]) {
-            var canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
+            canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
             if (mdlInfo) {
                 offsetModelX = canvasCenter.x - (mdlInfo.min.x + mdlInfo.modelSize.x / 2) * zoomFactor;
                 offsetModelY = canvasCenter.y + (mdlInfo.min.y + mdlInfo.modelSize.y / 2) * zoomFactor;
@@ -440,6 +496,12 @@ GCODE.renderer = (function(){
             offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
             offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
             offsetBedY = (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
+        } else if (renderOptions["bed"]["circular"]) {
+            canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
+            offsetModelX = canvasCenter.x;
+            offsetModelY = canvasCenter.y;
+            offsetBedX = 0;
+            offsetBedY = 0;
         } else {
             offsetModelX = 0;
             offsetModelY = 0;
@@ -486,18 +548,23 @@ GCODE.renderer = (function(){
         var width = canvas.width - 10;
         var height = canvas.height - 10;
 
+        // de-invert
         if (currentInvertX || currentInvertY) {
             ctx.scale(currentInvertX ? -1 : 1, currentInvertY ? -1 : 1);
             ctx.translate(currentInvertX ? -width : 0, currentInvertY ? height : 0);
         }
 
+        // get settings
         var invertX = renderOptions["invertAxes"]["x"];
         var invertY = renderOptions["invertAxes"]["y"];
+
+        // invert
         if (invertX || invertY) {
             ctx.translate(invertX ? width : 0, invertY ? -height : 0);
             ctx.scale(invertX ? -1 : 1, invertY ? -1 : 1);
         }
 
+        // save for later
         currentInvertX = invertX;
         currentInvertY = invertY;
     };
@@ -513,6 +580,16 @@ GCODE.renderer = (function(){
                 bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
             }
             zoomFactor = Math.min((canvas.width - 10) / bedWidth, (canvas.height - 10) / bedHeight);
+
+            var translationX, translationY;
+            if (renderOptions["bed"]["circular"]) {
+                translationX = canvas.width / 2;
+                translationY = canvas.height / 2;
+            } else {
+                translationX = (canvas.width - bedWidth * zoomFactor) / 2;
+                translationY = bedHeight * zoomFactor + (canvas.height - bedHeight * zoomFactor) / 2;
+            }
+            ctx.translate(translationX, translationY);
 
             offsetModelX = 0;
             offsetModelY = 0;

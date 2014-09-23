@@ -1,0 +1,1303 @@
+# Hebrew translations for OctoPrint.
+# Copyright (C) 2014 The OctoPrint Project
+# This file is distributed under the same license as the OctoPrint project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: OctoPrint 1.2.0-dev-131-g854387b\n"
+"Report-Msgid-Bugs-To: i18n@octoprint.org\n"
+"POT-Creation-Date: 2014-08-31 12:52+0300\n"
+"PO-Revision-Date: 2014-08-31 18:44+0200\n"
+"Last-Translator: Guy Sheffer <guysoft@gmail.com>\n"
+"Language-Team: he <guysoft@gmail.com>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.3\n"
+"X-Generator: Poedit 1.5.4\n"
+"Language: Hebrew\n"
+
+#: src/octoprint/static/js/app/dataupdater.js:43
+msgid ""
+"The server appears to be offline, at least I'm not getting any response from "
+"it. I'll try to reconnect automatically <strong>over the next couple of "
+"minutes</strong>, however you are welcome to try a manual reconnect anytime "
+"using the button below."
+msgstr ""
+"נראה שהשרת לא מחובר, או לפחות אני לא מצליח לקבל כל תגובה ממנו. אנסה להתחבר "
+"מחדש אוטומטית <strong>בעוד מספר דקות</strong>, אבל ניתן גם לנסות להתחבר מחדש "
+"עם הכפתור להלן."
+
+#: src/octoprint/static/js/app/dataupdater.js:58
+msgid ""
+"The server appears to be offline, at least I'm not getting any response from "
+"it. I <strong>could not reconnect automatically</strong>, but you may try a "
+"manual reconnect using the button below."
+msgstr ""
+"נראה שהשרת לא מחורב, או לפחות אני לא מצליח לקבל כל תגובה ממנו. "
+"<strong>החיבור האוטומאטי נכשל</strong>, אבל ניתן גם לנסות להתחבר מחדש עם "
+"הכפתור להלן."
+
+#: src/octoprint/static/js/app/dataupdater.js:125
+msgid "Rendering timelapse"
+msgstr "מרנדר timelapse"
+
+#: src/octoprint/static/js/app/dataupdater.js:125
+#, python-format
+msgid "Now rendering timelapse %(movie_basename)s"
+msgstr "כעת מרנדר timelapse  %(movie_basename)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:127
+msgid "Timelapse ready"
+msgstr "Timelapse מוכן"
+
+#: src/octoprint/static/js/app/dataupdater.js:127
+#, python-format
+msgid "New timelapse %(movie_basename)s is done rendering."
+msgstr "סיים לרנדר את ה-timelapse %(movie_basename)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:130
+#, python-format
+msgid ""
+"Rendering of timelapse %(movie_basename)s failedwith return code "
+"%(returncode)s"
+msgstr ""
+"מרנדר timelapse %(movie_basename)s הסתיים בשגיאה בעלת קוד מספר %(returncode)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:132
+msgid "Rendering failed"
+msgstr "רינדור נכשל"
+
+#: src/octoprint/static/js/app/dataupdater.js:136
+msgid "Slicing ..."
+msgstr "פורס..."
+
+#: src/octoprint/static/js/app/dataupdater.js:141
+msgid "Slicing done"
+msgstr "פריסה הושלמה"
+
+#: src/octoprint/static/js/app/dataupdater.js:141
+#, python-format
+msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
+msgstr "פריסה של %(stl)s אל %(gcode)s, לקח %(time).2f שניות"
+
+#: src/octoprint/static/js/app/dataupdater.js:148
+#, python-format
+msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
+msgstr "לא היה ניתן לפרוס %(stl)s  אל %(gcode)s: %(reason)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:149
+msgid "Slicing failed"
+msgstr "פריסה נכשלה"
+
+#: src/octoprint/static/js/app/dataupdater.js:153
+msgid "Streaming ..."
+msgstr "משדר ..."
+
+#: src/octoprint/static/js/app/dataupdater.js:158
+msgid "Streaming done"
+msgstr "השידור הסתיים"
+
+#: src/octoprint/static/js/app/dataupdater.js:158
+#, python-format
+msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
+msgstr "שודר %(local)s אל%(remote)s על SD, לקח %(time).2f שניות"
+
+#: src/octoprint/static/js/app/helpers.js:324
+#, python-format
+msgid "%(hour)02d:%(minute)02d:%(second)02d"
+msgstr "%(hour)02d:%(minute)02d:%(second)02d"
+
+#: src/octoprint/static/js/app/helpers.js:329
+msgid "YYYY-MM-DD HH:mm"
+msgstr "YYYY-MM-DD HH:mm"
+
+#: src/octoprint/static/js/app/helpers.js:347
+#: src/octoprint/static/js/app/helpers.js:352
+msgid "off"
+msgstr "כיבוי"
+
+#: src/octoprint/static/js/app/main.js:14
+msgid "Offline"
+msgstr "לא מחובר"
+
+#: src/octoprint/static/js/app/main.js:15
+msgid "Opening serial port"
+msgstr "פותח יצירה טורית"
+
+#: src/octoprint/static/js/app/main.js:16
+msgid "Detecting serial port"
+msgstr "מאתר יצירה טורית"
+
+#: src/octoprint/static/js/app/main.js:17
+msgid "Detecting baudrate"
+msgstr "מאתר מהירות העברה"
+
+#: src/octoprint/static/js/app/main.js:18
+msgid "Connecting"
+msgstr "מתחבר"
+
+#: src/octoprint/static/js/app/main.js:19
+msgid "Operational"
+msgstr "אופציונלי"
+
+#: src/octoprint/static/js/app/main.js:20
+msgid "Printing from SD"
+msgstr "הדפסה מ-SD"
+
+#: src/octoprint/static/js/app/main.js:21
+msgid "Sending file to SD"
+msgstr "שולח קובץ אל SD"
+
+#: src/octoprint/static/js/app/main.js:22
+msgid "Printing"
+msgstr "מדפיס"
+
+#: src/octoprint/static/js/app/main.js:23
+msgid "Paused"
+msgstr "בהפסקה"
+
+#: src/octoprint/static/js/app/main.js:24
+msgid "Closed"
+msgstr "סגור"
+
+#: src/octoprint/static/js/app/main.js:25
+msgid "Transfering file to SD"
+msgstr "מעביר קובץ ל-SD"
+
+#: src/octoprint/static/js/app/main.js:121
+msgid ""
+"Could not upload the file. Make sure that it is a GCODE file and has the "
+"extension \".gcode\" or \".gco\" or that it is an STL file with the "
+"extension \".stl\" and slicing support is enabled and configured."
+msgstr ""
+"לא היה ניתן להעלות קובץ. יש וודא שזה הוא קובץ GCODE ושסיומת הקובץ היא \"."
+"gcode\" או \".gco\". או שהקובץ הוא STL עם הסיומת \".stl\" כאשר פריסה מתמכת, "
+"מופעלת ומוגדרת."
+
+#: src/octoprint/static/js/app/main.js:137
+msgid "Uploading ..."
+msgstr "מעלה ..."
+
+#: src/octoprint/static/js/app/main.js:140
+msgid "Saving ..."
+msgstr "שומר ..."
+
+#: src/octoprint/static/js/app/viewmodels/appearance.js:9
+#: src/octoprint/static/js/app/viewmodels/appearance.js:11
+#: src/octoprint/static/js/app/viewmodels/appearance.js:16
+#: src/octoprint/static/js/app/viewmodels/appearance.js:18
+msgid "OctoPrint"
+msgstr "אוקטופרינט"
+
+#: src/octoprint/static/js/app/viewmodels/connection.js:24
+#: src/octoprint/templates/index.jinja2:117
+msgid "Connect"
+msgstr "התחבר"
+
+#: src/octoprint/static/js/app/viewmodels/connection.js:26
+msgid "Disconnect"
+msgstr "התנתק"
+
+#: src/octoprint/static/js/app/viewmodels/control.js:37
+#: src/octoprint/static/js/app/viewmodels/files.js:281
+#: src/octoprint/static/js/app/viewmodels/gcode.js:330
+#: src/octoprint/static/js/app/viewmodels/gcode.js:361
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:137
+#: src/octoprint/static/js/app/viewmodels/temperature.js:54
+msgid "Tool"
+msgstr "כלי"
+
+#: src/octoprint/static/js/app/viewmodels/control.js:43
+#: src/octoprint/static/js/app/viewmodels/temperature.js:65
+msgid "Hotend"
+msgstr "קצה חם"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:276
+#: src/octoprint/static/js/app/viewmodels/files.js:281
+msgid "Filament"
+msgstr "סיב חומר"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:285
+msgid "Estimated Print Time"
+msgstr "זמן הדפסה מוערך"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:288
+msgid "Last Printed"
+msgstr "הודפס לאחרונה"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:290
+msgid "Last Print Time"
+msgstr "זמן הדפסה אחרון"
+
+#: src/octoprint/static/js/app/viewmodels/firstrun.js:37
+msgid ""
+"If you disable Access Control <strong>and</strong> your OctoPrint "
+"installation is accessible from the internet, your printer <strong>will be "
+"accessible by everyone - that also includes the bad guys!</strong>"
+msgstr ""
+"אם ברצוך לבטל את ההרשאות גישה <strong>וגם</strong> ההתקנה של אוקטופרינט "
+"ניתנת לגישה דרך האינטרנט, אז <strong>כל אחד יוכל לשלוט על המדפסת שלך, זה "
+"כולל אנשים רעים!</strong>"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:13
+msgid "Loading..."
+msgstr "טוען"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:17
+msgid "Analyzing..."
+msgstr "מנתח נתונים ..."
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:21
+msgid "Analyzed"
+msgstr "נתונים נותחו"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:325
+msgid "Model size"
+msgstr "גודל מודל"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:327
+#: src/octoprint/static/js/app/viewmodels/gcode.js:330
+msgid "Total filament used"
+msgstr "סך הכל סיב חומר שנדרש"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:327
+#: src/octoprint/static/js/app/viewmodels/gcode.js:330
+#: src/octoprint/static/js/app/viewmodels/gcode.js:334
+msgid "mm"
+msgstr "מ\"מ"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:333
+msgid "Estimated print time"
+msgstr "זמן הדפסה משוער"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:334
+msgid "Estimated layer height"
+msgstr "גובה שכבות משוער"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:335
+msgid "Layer count"
+msgstr "מספר שכבות"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:335
+msgid "visited"
+msgstr "בִּקֵּר"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:354
+msgid "Layer number"
+msgstr "שכבה מספר"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:355
+msgid "Layer height"
+msgstr "גובה שכבה"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:356
+msgid "GCODE commands in layer"
+msgstr "פקודות GCODE בשכבה"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:358
+#: src/octoprint/static/js/app/viewmodels/gcode.js:361
+msgid "Filament used by layer"
+msgstr "סיב חומר שנדש בשכבה"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:364
+msgid "Print time for layer"
+msgstr "זמן הדפסה עבור שכבה"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:15
+#: src/octoprint/templates/index.jinja2:74
+#: src/octoprint/templates/index.jinja2:85
+msgid "Login"
+msgstr "כניסה"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:70
+msgid "Login successful"
+msgstr "כניסה למערכת התבצעה בהצלחה"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:70
+#, python-format
+msgid "You are now logged in as \"%(username)s\""
+msgstr "מחובר כעת בתור \"%(username)s\""
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:74
+msgid "Login failed"
+msgstr "כניסה למערכת נכשלה"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:74
+msgid "User unknown or wrong password"
+msgstr "שם משתמש לא מוכר, או שגיאה בסיסמה"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:84
+msgid "Logout successful"
+msgstr "כניסה התבצעה בהצלחה"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:84
+msgid "You are now logged out"
+msgstr "התנתקת מהמערכת"
+
+#: src/octoprint/static/js/app/viewmodels/navigation.js:17
+#, python-format
+msgid "The command \"%(command)s\" executed successfully"
+msgstr "הפקודה \"%(command)s\" התבצעה בהצלחה"
+
+#: src/octoprint/static/js/app/viewmodels/navigation.js:20
+#, python-format
+msgid "The command \"%(command)s\" could not be executed."
+msgstr "לא ניתן לבצע את הפקודה  \"%(command)s\"."
+
+#: src/octoprint/static/js/app/viewmodels/navigation.js:22
+msgid "Error"
+msgstr "שגיאה"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:66
+msgid "Continue"
+msgstr "המשך"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:68
+#: src/octoprint/templates/index.jinja2:144
+msgid "Pause"
+msgstr "הפסק"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:79
+#: src/octoprint/templates/index.jinja2:524
+msgid "On Z Change"
+msgstr "שינוי ציר Z"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
+#: src/octoprint/templates/index.jinja2:525
+msgid "Timed"
+msgstr "מתוזמן"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
+#: src/octoprint/templates/index.jinja2:531
+#: src/octoprint/templates/index.jinja2:538
+msgid "sec"
+msgstr "שנ'"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:166
+msgid "This will restart the print job from the beginning."
+msgstr "פעולה זו תתחיל מחדש את ההדפסה מהתחלה"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:15
+#: src/octoprint/static/js/app/viewmodels/settings.js:41
+msgid "default"
+msgstr "ברית מחדל"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:16
+#: src/octoprint/static/js/app/viewmodels/settings.js:27
+msgid "red"
+msgstr "אדום"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:17
+#: src/octoprint/static/js/app/viewmodels/settings.js:29
+msgid "orange"
+msgstr "כתום"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:18
+#: src/octoprint/static/js/app/viewmodels/settings.js:31
+msgid "yellow"
+msgstr "צהוב"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:19
+#: src/octoprint/static/js/app/viewmodels/settings.js:33
+msgid "green"
+msgstr "ירוק"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:20
+#: src/octoprint/static/js/app/viewmodels/settings.js:35
+msgid "blue"
+msgstr "כחול"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:21
+#: src/octoprint/static/js/app/viewmodels/settings.js:37
+msgid "violet"
+msgstr "סגול"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:22
+#: src/octoprint/static/js/app/viewmodels/settings.js:39
+msgid "black"
+msgstr "שחור"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:22
+#: src/octoprint/static/js/app/viewmodels/temperature.js:70
+#: src/octoprint/templates/settings.jinja2:347
+msgid "Bed"
+msgstr "מיטה"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:101
+msgid "just now"
+msgstr "זה הרגע"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:103
+msgid "min"
+msgstr "דקו'"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:241
+#: src/octoprint/templates/index.jinja2:262
+msgid "Actual"
+msgstr "נוכחי"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:246
+#: src/octoprint/templates/index.jinja2:263
+msgid "Target"
+msgstr "מטרה"
+
+#: src/octoprint/templates/dialogs.jinja2:6
+msgid "Server is offline"
+msgstr "שרת לא מחובר"
+
+#: src/octoprint/templates/dialogs.jinja2:9
+msgid "Attempt to reconnect"
+msgstr "נסיון חיבור מחדש"
+
+#: src/octoprint/templates/dialogs.jinja2:20
+msgid "Upload locally"
+msgstr "העלאה מקומית"
+
+#: src/octoprint/templates/dialogs.jinja2:22
+#: src/octoprint/templates/index.jinja2:218
+msgid "Upload to SD"
+msgstr "העלאה לכרטיס SD"
+
+#: src/octoprint/templates/dialogs.jinja2:22
+msgid "SD not initialized"
+msgstr "SD לא מאותחל"
+
+#: src/octoprint/templates/dialogs.jinja2:25
+#: src/octoprint/templates/index.jinja2:213
+#: src/octoprint/templates/index.jinja2:224
+msgid "Upload"
+msgstr "העלאה"
+
+#: src/octoprint/templates/dialogs.jinja2:34
+msgid "Are you sure?"
+msgstr "האם את/ה בטוח?"
+
+#: src/octoprint/templates/dialogs.jinja2:38
+msgid "Are you sure you want to proceed?"
+msgstr "האם באמת להמשיך?"
+
+#: src/octoprint/templates/dialogs.jinja2:41
+#: src/octoprint/templates/index.jinja2:145
+#: src/octoprint/templates/settings.jinja2:676
+msgid "Cancel"
+msgstr "ביטול"
+
+#: src/octoprint/templates/dialogs.jinja2:42
+msgid "Proceed"
+msgstr "המשך"
+
+#: src/octoprint/templates/dialogs.jinja2:48
+msgid "Configure Access Control"
+msgstr "הגדרות לוח בקרה"
+
+#: src/octoprint/templates/dialogs.jinja2:51
+msgid ""
+"<p>\n"
+"            <strong>Please read the following, it is very important for your "
+"printer's health!</strong>\n"
+"        </p>\n"
+"        <p>\n"
+"            OctoPrint by default now ships with Access Control enabled, "
+"meaning you won't be able to do anything with the\n"
+"            printer unless you login first as a configured user. This is to "
+"<strong>prevent strangers - possibly with\n"
+"            malicious intent - to gain access to your printer</strong> via "
+"the internet or another untrustworthy network\n"
+"            and using it in such a way that it is damaged or worse (i.e. "
+"causes a fire).\n"
+"        </p>\n"
+"        <p>\n"
+"            It looks like you haven't configured access control yet. Please "
+"<strong>set up an username and password</strong> for the\n"
+"            initial administrator account who will have full access to both "
+"the printer and OctoPrint's settings, then click\n"
+"            on \"Keep Access Control Enabled\":\n"
+"        </p>"
+msgstr ""
+"<p>\n"
+"            <strong>יש לקרוא את המידה הבא, הוא חשוב לבריאות המדפסת שלך!</"
+"strong>\n"
+"        </p>\n"
+"        <p>\n"
+"            אוקטופרינט בברית מחדל מגיע הם בקרת גישה מופעלת, כלומר לא יהיה "
+"ניתן לבצע דבר עם המדפסת\n"
+"            אלה אם הכניסה הראשונית מוגדרת עם המשתמש. זאת כדי <strong>למנוע "
+"מאנשים זרים - ככל הנראה עם\n"
+"            מטרות זדון - לשיג גישה למדפסת שלך</strong> דרך האינטרנט או רשת "
+"לא מאובטחת\n"
+"            ושימוש במדפסת בדרך שתגרום נזק למדפסת, או גרוע מכך (למשל, גרמה של "
+"שריפה)..\n"
+"        </p>\n"
+"        <p>\n"
+"            נראה שעדין לא הוגדרה בקרת גישה. אנא <strong>הגדר שם משתמש "
+"וסיסמה</strong> עבור\n"
+"            מנהל המערכת הראשון שיהיה בעל גישה למדפסת וההגדרות של "
+"אוקטופרינט,\n"
+"            לאחר מכן יש ללחוץ על \"שמור על לוח בקרה מופעל\":\n"
+"        </p>"
+
+#: src/octoprint/templates/dialogs.jinja2:67
+#: src/octoprint/templates/index.jinja2:78
+#: src/octoprint/templates/index.jinja2:79
+#: src/octoprint/templates/settings.jinja2:510
+msgid "Username"
+msgstr "שם משתמש"
+
+#: src/octoprint/templates/dialogs.jinja2:73
+#: src/octoprint/templates/index.jinja2:80
+#: src/octoprint/templates/index.jinja2:81
+#: src/octoprint/templates/settings.jinja2:516
+msgid "Password"
+msgstr "סיסמה"
+
+#: src/octoprint/templates/dialogs.jinja2:79
+msgid "Confirm Password"
+msgstr "אישור סיסמה"
+
+#: src/octoprint/templates/dialogs.jinja2:82
+#: src/octoprint/templates/settings.jinja2:525
+#: src/octoprint/templates/settings.jinja2:596
+msgid "Passwords do not match"
+msgstr "סיסמאות לא תואמות"
+
+#: src/octoprint/templates/dialogs.jinja2:86
+msgid ""
+"<p>\n"
+"            <strong>Note:</strong> In case that your OctoPrint installation "
+"is only accessible from within a trustworthy network and you don't\n"
+"            need Access Control for other reasons, you may alternatively "
+"disable Access Control. You should only\n"
+"            do this if you are absolutely certain that only people you know "
+"and trust will be able to connect to it.\n"
+"        </p>\n"
+"        <p>\n"
+"            <strong>Do NOT underestimate the risk of an unsecured access "
+"from the internet to your printer!</strong>\n"
+"        </p>"
+msgstr ""
+"<p>\n"
+"            <strong>הערה:</strong> במקרה שההתקנה של אוקטופרינט ניתנת לגישה "
+"מתוך רשת לא מאובטחת, ואין צורך\n"
+"            בניהול הרשאות גישה מסיבות אחרות, ניתן לבטל את ההשאות ניהול "
+"הגישה. אבל יש לעשות זאת רק\n"
+"            אם בטוח לחלוטין שרק אנשים שמכירים וסומכים עליהם יהיו בעלי יכולת "
+"להתחבר למדפסת.\n"
+"</p>\n"
+"        <p>\n"
+"            <strong>נא לא לזלזל בסיכון של רשתות לא מאובטחות מהאינטרנט למדפסת "
+"שלך!!</strong>\n"
+"        </p>"
+
+#: src/octoprint/templates/dialogs.jinja2:96
+msgid "Disable Access Control"
+msgstr "ביטול לוח בקרה"
+
+#: src/octoprint/templates/dialogs.jinja2:97
+msgid "Keep Access Control Enabled"
+msgstr "שמור על לוח בקרה מופעל"
+
+#: src/octoprint/templates/index.jinja2:57
+msgid "Settings"
+msgstr "הגדרות"
+
+#: src/octoprint/templates/index.jinja2:63
+msgid "System"
+msgstr "מערכת"
+
+#: src/octoprint/templates/index.jinja2:83
+msgid "Remember me"
+msgstr "זכור אותי"
+
+#: src/octoprint/templates/index.jinja2:88
+msgid "Change Password"
+msgstr "החלף סיסמה"
+
+#: src/octoprint/templates/index.jinja2:89
+msgid "Logout"
+msgstr "התנתקות"
+
+#: src/octoprint/templates/index.jinja2:103
+msgid "Connection"
+msgstr "חיבור"
+
+#: src/octoprint/templates/index.jinja2:107
+#: src/octoprint/templates/settings.jinja2:30
+msgid "Serial Port"
+msgstr "יציאה טורית"
+
+#: src/octoprint/templates/index.jinja2:109
+#: src/octoprint/templates/settings.jinja2:36
+msgid "Baudrate"
+msgstr "קצב באוד (Baudrate)"
+
+#: src/octoprint/templates/index.jinja2:112
+msgid "Save connection settings"
+msgstr "שמור הגדרות חיבור"
+
+#: src/octoprint/templates/index.jinja2:115
+msgid "Auto-connect on server startup"
+msgstr "חיבור מחדש עם עליית השרת"
+
+#: src/octoprint/templates/index.jinja2:123
+msgid "State"
+msgstr "מצב"
+
+#: src/octoprint/templates/index.jinja2:127
+msgid "Machine State"
+msgstr "מצב מכונה"
+
+#: src/octoprint/templates/index.jinja2:128
+msgid "File"
+msgstr "קובץ"
+
+#: src/octoprint/templates/index.jinja2:129
+#: src/octoprint/templates/index.jinja2:247
+msgid "Timelapse"
+msgstr "Timelapse"
+
+#: src/octoprint/templates/index.jinja2:133
+msgid "Approx. Total Print Time"
+msgstr "זמן הדפסה סופי מוערך"
+
+#: src/octoprint/templates/index.jinja2:134
+msgid "Print Time"
+msgstr "זמן הדפסה"
+
+#: src/octoprint/templates/index.jinja2:135
+msgid "Print Time Left"
+msgstr "זמן הדפסה נותר"
+
+#: src/octoprint/templates/index.jinja2:136
+msgid "Printed"
+msgstr "הודפס"
+
+#: src/octoprint/templates/index.jinja2:143
+msgid "Restart"
+msgstr "אתחול"
+
+#: src/octoprint/templates/index.jinja2:143
+msgid "Print"
+msgstr "הדפסה"
+
+#: src/octoprint/templates/index.jinja2:152
+msgid "Files"
+msgstr "קבצים"
+
+#: src/octoprint/templates/index.jinja2:159
+msgid "Sort by name"
+msgstr "מיין לפי שם"
+
+#: src/octoprint/templates/index.jinja2:159
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/settings.jinja2:630
+msgid "ascending"
+msgstr "סדר עולה"
+
+#: src/octoprint/templates/index.jinja2:160
+msgid "Sort by upload date"
+msgstr "מיין לפי זמן העלאה"
+
+#: src/octoprint/templates/index.jinja2:160
+#: src/octoprint/templates/index.jinja2:161
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/settings.jinja2:630
+msgid "descending"
+msgstr "סדר יורד"
+
+#: src/octoprint/templates/index.jinja2:161
+msgid "Sort by file size"
+msgstr "מיין לפי גודל קובץ"
+
+#: src/octoprint/templates/index.jinja2:164
+msgid "Only show files stored locally"
+msgstr "הצג רק קבצים השמורים מקומית"
+
+#: src/octoprint/templates/index.jinja2:165
+msgid "Only show files stored on SD"
+msgstr "הצג רק קבצים השמורים על SD"
+
+#: src/octoprint/templates/index.jinja2:168
+msgid "Hide successfully printed files"
+msgstr "הסתר קבצים שהודפסו בהצלחה"
+
+#: src/octoprint/templates/index.jinja2:178
+msgid "Initialize SD card"
+msgstr "מאתכל כרטיס SD"
+
+#: src/octoprint/templates/index.jinja2:179
+msgid "Refresh SD files"
+msgstr "מרענן קבצי SD"
+
+#: src/octoprint/templates/index.jinja2:180
+msgid "Release SD card"
+msgstr "משחזר כרטיס SD"
+
+#: src/octoprint/templates/index.jinja2:188
+msgid "Search..."
+msgstr "חיפוש..."
+
+#: src/octoprint/templates/index.jinja2:193
+msgid "Uploaded"
+msgstr "הועלה"
+
+#: src/octoprint/templates/index.jinja2:194
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/index.jinja2:562
+#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/settings.jinja2:637
+msgid "Size"
+msgstr "גודל"
+
+#: src/octoprint/templates/index.jinja2:198
+msgid "Download"
+msgstr "הורד"
+
+#: src/octoprint/templates/index.jinja2:199
+msgid "Remove"
+msgstr "הסר"
+
+#: src/octoprint/templates/index.jinja2:200
+msgid "Load"
+msgstr "טעינה"
+
+#: src/octoprint/templates/index.jinja2:201
+msgid "Load and Print"
+msgstr "טען והדפס"
+
+#: src/octoprint/templates/index.jinja2:206
+msgid "Free"
+msgstr "פנוי"
+
+#: src/octoprint/templates/index.jinja2:233
+msgid "Hint: You can also drag and drop files on this page to upload them."
+msgstr "טיפ: ניתן לגרור קבצים אל דף זה כדי להעלות אותם"
+
+#: src/octoprint/templates/index.jinja2:243
+msgid "Temperature"
+msgstr "טמפרטורה"
+
+#: src/octoprint/templates/index.jinja2:244
+msgid "Control"
+msgstr "שליטה"
+
+#: src/octoprint/templates/index.jinja2:245
+msgid "GCode Viewer"
+msgstr "מציג Gcode"
+
+#: src/octoprint/templates/index.jinja2:246
+msgid "Terminal"
+msgstr "מסוף"
+
+#: src/octoprint/templates/index.jinja2:264
+msgid "Offset"
+msgstr "הסט"
+
+#: src/octoprint/templates/index.jinja2:280
+#: src/octoprint/templates/index.jinja2:302
+msgid "Set"
+msgstr "קבע"
+
+#: src/octoprint/templates/index.jinja2:292
+#: src/octoprint/templates/index.jinja2:523
+msgid "Off"
+msgstr "כבוי"
+
+#: src/octoprint/templates/index.jinja2:360
+msgid "Select Tool..."
+msgstr "כלי בחירה"
+
+#: src/octoprint/templates/index.jinja2:371
+msgid "Extrude"
+msgstr "הוצא סיב חומר"
+
+#: src/octoprint/templates/index.jinja2:372
+msgid "Retract"
+msgstr "נסוג"
+
+#: src/octoprint/templates/index.jinja2:377
+msgid "General"
+msgstr "כללי"
+
+#: src/octoprint/templates/index.jinja2:379
+msgid "Motors off"
+msgstr "כבה מנועים"
+
+#: src/octoprint/templates/index.jinja2:380
+msgid "Fans on"
+msgstr "מאוורר דלוק"
+
+#: src/octoprint/templates/index.jinja2:381
+msgid "Fans off"
+msgstr "מאוורר כבוי"
+
+#: src/octoprint/templates/index.jinja2:445
+msgid "Sync with job progress"
+msgstr "סנכרן עם העבודה"
+
+#: src/octoprint/templates/index.jinja2:450
+msgid "Center viewport on model"
+msgstr "מרכז תצוגה על מודל"
+
+#: src/octoprint/templates/index.jinja2:453
+msgid "Zoom in on model"
+msgstr "זום לתוך מודל"
+
+#: src/octoprint/templates/index.jinja2:459
+msgid "Show moves"
+msgstr "הצג תזוזות"
+
+#: src/octoprint/templates/index.jinja2:462
+msgid "Show retracts"
+msgstr "הצג נסיגות"
+
+#: src/octoprint/templates/index.jinja2:468
+msgid "Also show previous layer"
+msgstr "אפשר הצגה של שכבה קודמת"
+
+#: src/octoprint/templates/index.jinja2:471
+msgid "Also show next layer"
+msgstr "אפשר הצגה של שכבה הבאה"
+
+#: src/octoprint/templates/index.jinja2:476
+msgid "Reload"
+msgstr "רענן"
+
+#: src/octoprint/templates/index.jinja2:503
+msgid "Autoscroll"
+msgstr "גלילה אוטומאטית"
+
+#: src/octoprint/templates/index.jinja2:513
+msgid "Send"
+msgstr "שלח"
+
+#: src/octoprint/templates/index.jinja2:519
+msgid "Timelapse Configuration"
+msgstr "הגדרות timelapse"
+
+#: src/octoprint/templates/index.jinja2:521
+msgid "Timelapse Mode"
+msgstr "מצב timelapse"
+
+#: src/octoprint/templates/index.jinja2:528
+msgid "Timelapse post roll (in rendered seconds)"
+msgstr "עיבוד Timelapse (בשניות שרונדרו)"
+
+#: src/octoprint/templates/index.jinja2:535
+msgid "Interval"
+msgstr "אינטרוול"
+
+#: src/octoprint/templates/index.jinja2:544
+msgid "Save as default"
+msgstr "שמור כברית מחדל"
+
+#: src/octoprint/templates/index.jinja2:549
+msgid "Save config"
+msgstr "שמור הגדרות"
+
+#: src/octoprint/templates/index.jinja2:553
+msgid "Finished Timelapses"
+msgstr "Timelapses שהסתיימו"
+
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/settings.jinja2:630
+msgid "Sort by"
+msgstr "מיין לפי"
+
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/index.jinja2:561
+#: src/octoprint/templates/settings.jinja2:377
+#: src/octoprint/templates/settings.jinja2:469
+#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/settings.jinja2:636
+msgid "Name"
+msgstr "שם"
+
+#: src/octoprint/templates/index.jinja2:556
+msgid "Creation date"
+msgstr "תאריך יצירה"
+
+#: src/octoprint/templates/index.jinja2:563
+#: src/octoprint/templates/settings.jinja2:472
+#: src/octoprint/templates/settings.jinja2:639
+msgid "Action"
+msgstr "פעולה"
+
+#: src/octoprint/templates/index.jinja2:592
+msgid "Version"
+msgstr "גירסה"
+
+#: src/octoprint/templates/index.jinja2:595
+msgid "Homepage"
+msgstr "דף בית"
+
+#: src/octoprint/templates/index.jinja2:596
+msgid "Sourcecode"
+msgstr "קוד מקור"
+
+#: src/octoprint/templates/index.jinja2:597
+msgid "Documentation"
+msgstr "תיעוד"
+
+#: src/octoprint/templates/index.jinja2:598
+msgid "Bugs and Requests"
+msgstr "באגים ובקשות"
+
+#: src/octoprint/templates/settings.jinja2:4
+msgid "OctoPrint Settings"
+msgstr "הגדרות אוקטופרינט"
+
+#: src/octoprint/templates/settings.jinja2:9
+msgid "Printer"
+msgstr "מדפסת"
+
+#: src/octoprint/templates/settings.jinja2:10
+msgid "Serial Connection"
+msgstr "חיבור טורי"
+
+#: src/octoprint/templates/settings.jinja2:11
+msgid "Printer Parameters"
+msgstr "פרמטרים של המדפסת"
+
+#: src/octoprint/templates/settings.jinja2:12
+msgid "Temperatures"
+msgstr "טמפרטורות"
+
+#: src/octoprint/templates/settings.jinja2:13
+msgid "Terminal filters"
+msgstr "פילטרי מסוף"
+
+#: src/octoprint/templates/settings.jinja2:14
+#: src/octoprint/templates/settings.jinja2:15
+msgid "Features"
+msgstr "פיצ'רים"
+
+#: src/octoprint/templates/settings.jinja2:16
+msgid "Webcam"
+msgstr "מצלמת רשת"
+
+#: src/octoprint/templates/settings.jinja2:17
+msgid "Cura"
+msgstr "Cura"
+
+#: src/octoprint/templates/settings.jinja2:18
+msgid "Access Control"
+msgstr "בקרת גישה"
+
+#: src/octoprint/templates/settings.jinja2:19
+msgid "API"
+msgstr "API"
+
+#: src/octoprint/templates/settings.jinja2:21
+msgid "Folders"
+msgstr "תיקיות"
+
+#: src/octoprint/templates/settings.jinja2:22
+msgid "Appearance"
+msgstr "מראה"
+
+#: src/octoprint/templates/settings.jinja2:23
+#: src/octoprint/templates/settings.jinja2:626
+msgid "Logs"
+msgstr "לוגים"
+
+#: src/octoprint/templates/settings.jinja2:44
+msgid "Auto-connect to printer on server start"
+msgstr "התחבר מחדש למדפסת עם העלייה של השרת"
+
+#: src/octoprint/templates/settings.jinja2:49
+msgid "Communication timeout"
+msgstr "חיבור לא עובד עקב timeout"
+
+#: src/octoprint/templates/settings.jinja2:58
+msgid "Temperature timeout"
+msgstr "טמפרטורה timeout"
+
+#: src/octoprint/templates/settings.jinja2:67
+msgid "SD status timeout"
+msgstr "מצב SD ב-timeout"
+
+#: src/octoprint/templates/settings.jinja2:76
+msgid "Connection timeout"
+msgstr "חישוב פסק, timeout"
+
+#: src/octoprint/templates/settings.jinja2:85
+msgid "Autodetection timeout"
+msgstr "זהוי timeout אוטמטי"
+
+#: src/octoprint/templates/settings.jinja2:96
+msgid "Log communication to serial.log (might negatively impact performance)"
+msgstr ""
+"שמור יומן תקשורת על serial.log (פעולה זו עלולה להשפיע בצורה שלילית על "
+"ביצועים)"
+
+#: src/octoprint/templates/settings.jinja2:96
+msgid "Warning"
+msgstr "אזהרה"
+
+#: src/octoprint/templates/settings.jinja2:105
+msgid "Axis"
+msgstr "צירים"
+
+#: src/octoprint/templates/settings.jinja2:107
+#: src/octoprint/templates/settings.jinja2:176
+msgid "X"
+msgstr "X"
+
+#: src/octoprint/templates/settings.jinja2:113
+#: src/octoprint/templates/settings.jinja2:123
+#: src/octoprint/templates/settings.jinja2:133
+msgid "Invert control"
+msgstr "הפוך שליטה"
+
+#: src/octoprint/templates/settings.jinja2:117
+#: src/octoprint/templates/settings.jinja2:181
+msgid "Y"
+msgstr "Y"
+
+#: src/octoprint/templates/settings.jinja2:127
+msgid "Z"
+msgstr "Z"
+
+#: src/octoprint/templates/settings.jinja2:137
+msgid "E"
+msgstr "E"
+
+#: src/octoprint/templates/settings.jinja2:145
+msgid "Default extrusion length"
+msgstr "אורך ברית מחדל של הוצאת סיב חומר"
+
+#: src/octoprint/templates/settings.jinja2:151
+msgid "Number of Extruders"
+msgstr "מספר אקסטרודרים"
+
+#: src/octoprint/templates/settings.jinja2:157
+msgid "Extruder Offsets"
+msgstr "הסט אקסטרודר"
+
+#: src/octoprint/templates/settings.jinja2:174
+msgid "Bed Size"
+msgstr "גודל מיטה"
+
+#: src/octoprint/templates/settings.jinja2:188
+msgid "Radius"
+msgstr "רדיוס"
+
+#: src/octoprint/templates/settings.jinja2:196
+msgid "Circular"
+msgstr "מעגלי"
+
+#: src/octoprint/templates/settings.jinja2:205
+msgid "Stream URL"
+msgstr "כתובת שידור וידאו"
+
+#: src/octoprint/templates/settings.jinja2:211
+msgid "Snapshot URL"
+msgstr "כתובת שידור תמונה"
+
+#: src/octoprint/templates/settings.jinja2:217
+msgid "Path to FFMPEG"
+msgstr "נתיב עבור FFMPEG"
+
+#: src/octoprint/templates/settings.jinja2:223
+msgid "Timelapse bitrate"
+msgstr "איכות timelapse"
+
+#: src/octoprint/templates/settings.jinja2:231
+msgid "Enable OctoPrint watermark in timelapse movies"
+msgstr "הוסף סימן מים של אוקטופרינט עבור סרטונים"
+
+#: src/octoprint/templates/settings.jinja2:238
+msgid "Flip webcam horizontally"
+msgstr "הפוך תמונת מצלמה אופקית"
+
+#: src/octoprint/templates/settings.jinja2:243
+msgid "Flip webcam vertically"
+msgstr "הפוך תמונת מצלמה אנכית"
+
+#: src/octoprint/templates/settings.jinja2:254
+msgid "Enable Temperature Graph"
+msgstr "הפעל גרף טמפרטורה"
+
+#: src/octoprint/templates/settings.jinja2:261
+msgid "Enable GCode Visualizer"
+msgstr "הפעל ויזואליזציה של GCode"
+
+#: src/octoprint/templates/settings.jinja2:268
+msgid "Enable SD support"
+msgstr "הפעל תמיכה ב-SD"
+
+#: src/octoprint/templates/settings.jinja2:275
+msgid "Always assume SD card is present"
+msgstr "תמיד תניח שכרטיס SD נמצא"
+
+#: src/octoprint/templates/settings.jinja2:275
+#: src/octoprint/templates/settings.jinja2:289
+#: src/octoprint/templates/settings.jinja2:296
+msgid "Repetier"
+msgstr "Repetier"
+
+#: src/octoprint/templates/settings.jinja2:282
+msgid "Wait for <code>start</code> on connect"
+msgstr "המתן עבור <code>start</code> בחיבור"
+
+#: src/octoprint/templates/settings.jinja2:289
+msgid "Send a checksum with <strong>every</strong> command"
+msgstr "המתן עבור סיכום ביקורת (checksum) עבור <strong>כל</strong> פקודה"
+
+#: src/octoprint/templates/settings.jinja2:296
+#, python-format
+msgid ""
+"Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature "
+"format"
+msgstr ""
+"תמוך עבור  <code>TargetExtr%%n</code>/<code>TargetBed</code> פורמט טמפרטורת "
+"ייעד"
+
+#: src/octoprint/templates/settings.jinja2:303
+msgid "Swallow the first \"ok\" after a resend response"
+msgstr "לבלוע את ה-\"ok\" הראשון אחרי שנשלחה מחדשה תגובה"
+
+#: src/octoprint/templates/settings.jinja2:312
+msgid "Upload Folder"
+msgstr "תקיית העלאה"
+
+#: src/octoprint/templates/settings.jinja2:318
+msgid "Timelapse Folder"
+msgstr "תקיית timelapse"
+
+#: src/octoprint/templates/settings.jinja2:324
+msgid "Timelapse Temp Folder"
+msgstr "תקייה זמנית ל-timelapse"
+
+#: src/octoprint/templates/settings.jinja2:330
+msgid "Logs Folder"
+msgstr "תקיית לוגים"
+
+#: src/octoprint/templates/settings.jinja2:336
+msgid "Watched Folder"
+msgstr "תקייה שנצפתה"
+
+#: src/octoprint/templates/settings.jinja2:346
+msgid "Extruder"
+msgstr "אקסטרודר"
+
+#: src/octoprint/templates/settings.jinja2:378
+msgid "RegExp"
+msgstr "ביטוי רגולרי"
+
+#: src/octoprint/templates/settings.jinja2:403
+msgid "Title"
+msgstr "כותרת"
+
+#: src/octoprint/templates/settings.jinja2:409
+msgid "Color"
+msgstr "צבע"
+
+#: src/octoprint/templates/settings.jinja2:420
+msgid "Enable slicing via Cura"
+msgstr "הפעל פריסה באמצעות Cura"
+
+#: src/octoprint/templates/settings.jinja2:426
+msgid "Path to Cura"
+msgstr "נתיב ל-Cura"
+
+#: src/octoprint/templates/settings.jinja2:432
+msgid "Path to Cura config"
+msgstr "נתיב להגדרות של Cura"
+
+#: src/octoprint/templates/settings.jinja2:444
+msgid "Enable"
+msgstr "אפשר"
+
+#: src/octoprint/templates/settings.jinja2:451
+#, python-format
+msgid "Allow <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
+msgstr "אפשר <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
+
+#: src/octoprint/templates/settings.jinja2:456
+#: src/octoprint/templates/settings.jinja2:477
+msgid "API Key"
+msgstr "מפתח API"
+
+#: src/octoprint/templates/settings.jinja2:470
+#: src/octoprint/templates/settings.jinja2:531
+#: src/octoprint/templates/settings.jinja2:560
+msgid "Active"
+msgstr "פעיל"
+
+#: src/octoprint/templates/settings.jinja2:471
+#: src/octoprint/templates/settings.jinja2:538
+#: src/octoprint/templates/settings.jinja2:567
+msgid "Admin"
+msgstr "מנהל"
+
+#: src/octoprint/templates/settings.jinja2:481
+msgid "Update User"
+msgstr "עדכן משתמש"
+
+#: src/octoprint/templates/settings.jinja2:481
+msgid "Change password"
+msgstr "שינוי סיסמה"
+
+#: src/octoprint/templates/settings.jinja2:481
+msgid "Delete user"
+msgstr "מחק משתמש"
+
+#: src/octoprint/templates/settings.jinja2:498
+#: src/octoprint/templates/settings.jinja2:505
+msgid "Add user"
+msgstr "הוסף משתמש"
+
+#: src/octoprint/templates/settings.jinja2:522
+#: src/octoprint/templates/settings.jinja2:593
+msgid "Repeat Password"
+msgstr "חזור על סיסמה"
+
+#: src/octoprint/templates/settings.jinja2:545
+#: src/octoprint/templates/settings.jinja2:574
+#: src/octoprint/templates/settings.jinja2:616
+msgid "Abort"
+msgstr "ביטול"
+
+#: src/octoprint/templates/settings.jinja2:546
+#: src/octoprint/templates/settings.jinja2:575
+#: src/octoprint/templates/settings.jinja2:617
+msgid "Confirm"
+msgstr "אישור"
+
+#: src/octoprint/templates/settings.jinja2:553
+#, python-format
+msgid "Edit user \"%(user)s\""
+msgstr "ערוך משתמש  \"%(user)s\""
+
+#: src/octoprint/templates/settings.jinja2:582
+#, python-format
+msgid "Change password for user \"%(user)s\""
+msgstr "החלף סיסמה עבור משתמש \"%(user)s\""
+
+#: src/octoprint/templates/settings.jinja2:587
+msgid "New Password"
+msgstr "סיסמה חדשה"
+
+#: src/octoprint/templates/settings.jinja2:602
+msgid "Current API Key"
+msgstr "מפתח API נוכחי"
+
+#: src/octoprint/templates/settings.jinja2:605
+msgid "N/A"
+msgstr "לא זמין"
+
+#: src/octoprint/templates/settings.jinja2:630
+msgid "Modification date"
+msgstr "תאריך שינוי"
+
+#: src/octoprint/templates/settings.jinja2:638
+msgid "Date"
+msgstr "תאריך"
+
+#: src/octoprint/templates/settings.jinja2:677
+msgid "Save"
+msgstr "שמור"

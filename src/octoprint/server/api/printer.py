@@ -1,24 +1,48 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, Response
 import re
 
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.server import printer, restricted_access, NO_CONTENT
+from octoprint.server import printer, NO_CONTENT
 from octoprint.server.api import api
+from octoprint.server.util.flask import restricted_access
 import octoprint.util as util
 
 #~~ Printer
+
 
 @api.route("/printer", methods=["GET"])
 def printerState():
 	if not printer.isOperational():
 		return make_response("Printer is not operational", 409)
 
+	# process excludes
+	excludes = []
+	if "exclude" in request.values:
+		excludeStr = request.values["exclude"]
+		if len(excludeStr.strip()) > 0:
+			excludes = filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(",")))
+
 	result = {}
-	result.update(_getTemperatureData(lambda x: x))
+
+	# add temperature information
+	if not "temperature" in excludes:
+		result.update({"temperature": _getTemperatureData(lambda x: x)})
+
+	# add sd information
+	if not "sd" in excludes and settings().getBoolean(["feature", "sdSupport"]):
+		result.update({"sd": {"ready": printer.isSdReady()}})
+
+	# add state information
+	if not "state" in excludes:
+		state = printer.getCurrentData()["state"]
+		result.update({"state": state})
 
 	return jsonify(result)
 
@@ -105,6 +129,9 @@ def printerToolCommand():
 
 @api.route("/printer/tool", methods=["GET"])
 def printerToolState():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
 	def deleteBed(x):
 		data = dict(x)
 
@@ -145,7 +172,7 @@ def printerBedCommand():
 
 	##~~ temperature offset
 	elif command == "offset":
-		offset = data["offsets"]
+		offset = data["offset"]
 
 		# make sure the offset is valid
 		if not isinstance(offset, (int, long, float)):
@@ -161,6 +188,9 @@ def printerBedCommand():
 
 @api.route("/printer/bed", methods=["GET"])
 def printerBedState():
+	if not printer.isOperational():
+		return make_response("Printer is not operational", 409)
+
 	def deleteTools(x):
 		data = dict(x)
 
@@ -169,7 +199,11 @@ def printerBedState():
 				del data[k]
 		return data
 
-	return jsonify(_getTemperatureData(deleteTools))
+	data = _getTemperatureData(deleteTools)
+	if isinstance(data, Response):
+		return data
+	else:
+		return jsonify(data)
 
 
 ##~~ Print head
@@ -276,11 +310,14 @@ def printerCommand():
 	data = request.json
 
 	parameters = {}
-	if "parameters" in data.keys(): parameters = data["parameters"]
+	if "parameters" in data.keys():
+		parameters = data["parameters"]
 
 	commands = []
-	if "command" in data.keys(): commands = [data["command"]]
-	elif "commands" in data.keys(): commands = data["commands"]
+	if "command" in data.keys():
+		commands = [data["command"]]
+	elif "commands" in data.keys():
+		commands = data["commands"]
 
 	commandsToSend = []
 	for command in commands:
@@ -306,9 +343,6 @@ def _getTemperatureData(filter):
 		return make_response("Printer is not operational", 409)
 
 	tempData = printer.getCurrentTemperatures()
-	result = {
-		"temps": filter(tempData)
-	}
 
 	if "history" in request.values.keys() and request.values["history"] in valid_boolean_trues:
 		tempHistory = printer.getTemperatureHistory()
@@ -320,9 +354,9 @@ def _getTemperatureData(filter):
 		history = list(tempHistory)
 		limit = min(limit, len(history))
 
-		result.update({
+		tempData.update({
 			"history": map(lambda x: filter(x), history[-limit:])
 		})
 
-	return result
+	return filter(tempData)
 

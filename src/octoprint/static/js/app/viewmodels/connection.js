@@ -21,9 +21,9 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
 
     self.buttonText = ko.computed(function() {
         if (self.isErrorOrClosed())
-            return "Connect";
+            return gettext("Connect");
         else
-            return "Disconnect";
+            return gettext("Disconnect");
     })
 
     self.previousIsOperational = undefined;
@@ -120,4 +120,8 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
             })
         }
     }
+
+    self.onStartup = function() {
+        self.requestData();
+    };
 }

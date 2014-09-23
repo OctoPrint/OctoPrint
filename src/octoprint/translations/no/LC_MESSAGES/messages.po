@@ -1,0 +1,1243 @@
+# Translations template for OctoPrint.
+# Copyright (C) 2014 The OctoPrint Project
+# This file is distributed under the same license as the OctoPrint project.
+# 
+# Translators:
+# lobster2b <ch.eikefjord@gmail.com>, 2014
+# zelluz <tmidtbo@gmail.com>, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: OctoPrint\n"
+"Report-Msgid-Bugs-To: i18n@octoprint.org\n"
+"POT-Creation-Date: 2014-08-28 15:52+0200\n"
+"PO-Revision-Date: 2014-09-03 16:07+0000\n"
+"Last-Translator: lobster2b <ch.eikefjord@gmail.com>\n"
+"Language-Team: Norwegian (http://www.transifex.com/projects/p/octoprint/language/no/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.3\n"
+"Language: no\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/octoprint/static/js/app/dataupdater.js:43
+msgid ""
+"The server appears to be offline, at least I'm not getting any response from"
+" it. I'll try to reconnect automatically <strong>over the next couple of "
+"minutes</strong>, however you are welcome to try a manual reconnect anytime "
+"using the button below."
+msgstr "Serveren er tilsynelatende frakoblet, i det minste får jeg ikke noen respons fra den. Jeg prøver å koble til automatisk <strong>over de neste minuttene</strong>, du kan prøve en manuell oppkobling når du ønsker det ved å bruke knappen nedenfor."
+
+#: src/octoprint/static/js/app/dataupdater.js:58
+msgid ""
+"The server appears to be offline, at least I'm not getting any response from"
+" it. I <strong>could not reconnect automatically</strong>, but you may try a"
+" manual reconnect using the button below."
+msgstr "Serveren er tilsynelatende frakoblet, i det minste får jeg ikke noen respons fra den. Jeg <strong>kan ikke koble til den automatisk</strong>, du kan prøve en manuell oppkobling når du ønsker det ved å bruke knappen nedenfor."
+
+#: src/octoprint/static/js/app/dataupdater.js:126
+msgid "Rendering timelapse"
+msgstr "Sammensetter timelapse"
+
+#: src/octoprint/static/js/app/dataupdater.js:126
+#, python-format
+msgid "Now rendering timelapse %(movie_basename)s"
+msgstr "Sammensetter timelapse %(movie_basename)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:128
+msgid "Timelapse ready"
+msgstr "Timelapse klar"
+
+#: src/octoprint/static/js/app/dataupdater.js:128
+#, python-format
+msgid "New timelapse %(movie_basename)s is done rendering."
+msgstr "Ny timelapse for %(movie_basename)s er ferdig sammensatt"
+
+#: src/octoprint/static/js/app/dataupdater.js:131
+#, python-format
+msgid ""
+"Rendering of timelapse %(movie_basename)s failedwith return code "
+"%(returncode)s"
+msgstr "Sammensetting av timelapse %(movie_basename)s feilet med feilkode %(returncode)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:133
+msgid "Rendering failed"
+msgstr "Sammensetting feilet"
+
+#: src/octoprint/static/js/app/dataupdater.js:137
+msgid "Slicing ..."
+msgstr "Slicing ..."
+
+#: src/octoprint/static/js/app/dataupdater.js:142
+msgid "Slicing done"
+msgstr "Slicing ferdig"
+
+#: src/octoprint/static/js/app/dataupdater.js:142
+#, python-format
+msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
+msgstr "Sliced %(stl)s til %(gcode)s, tok %(time).2f sekunder"
+
+#: src/octoprint/static/js/app/dataupdater.js:149
+#, python-format
+msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
+msgstr "Feilet å slice %(stl)s til %(gcode)s: %(reason)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:150
+msgid "Slicing failed"
+msgstr "Slicing feilet"
+
+#: src/octoprint/static/js/app/dataupdater.js:154
+msgid "Streaming ..."
+msgstr "Streaming ..."
+
+#: src/octoprint/static/js/app/dataupdater.js:159
+msgid "Streaming done"
+msgstr "Streaming ferdig"
+
+#: src/octoprint/static/js/app/dataupdater.js:159
+#, python-format
+msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
+msgstr "Streamed %(local)s il %(remote)s på minnekort, took %(time).2f sekunder"
+
+#: src/octoprint/static/js/app/helpers.js:337
+#, python-format
+msgid "%(hour)02d:%(minute)02d:%(second)02d"
+msgstr "%(hour)02d:%(minute)02d:%(second)02d"
+
+#: src/octoprint/static/js/app/helpers.js:342
+msgid "YYYY-MM-DD HH:mm"
+msgstr "YYYY-MM-DD HH:mm"
+
+#: src/octoprint/static/js/app/helpers.js:360
+#: src/octoprint/static/js/app/helpers.js:365
+msgid "off"
+msgstr "Av"
+
+#: src/octoprint/static/js/app/main.js:17
+msgid "Offline"
+msgstr "Frakoblet"
+
+#: src/octoprint/static/js/app/main.js:18
+msgid "Opening serial port"
+msgstr "Åpner serialport"
+
+#: src/octoprint/static/js/app/main.js:19
+msgid "Detecting serial port"
+msgstr "Finner serialport"
+
+#: src/octoprint/static/js/app/main.js:20
+msgid "Detecting baudrate"
+msgstr "Finner seriell hastighet"
+
+#: src/octoprint/static/js/app/main.js:21
+msgid "Connecting"
+msgstr "Kobler til"
+
+#: src/octoprint/static/js/app/main.js:22
+msgid "Operational"
+msgstr "Operativ"
+
+#: src/octoprint/static/js/app/main.js:23
+msgid "Printing from SD"
+msgstr "Utskrift fra minnekort"
+
+#: src/octoprint/static/js/app/main.js:24
+msgid "Sending file to SD"
+msgstr "Sender fil til minnekort"
+
+#: src/octoprint/static/js/app/main.js:25
+msgid "Printing"
+msgstr "Skriver ut"
+
+#: src/octoprint/static/js/app/main.js:26
+msgid "Paused"
+msgstr "Pause"
+
+#: src/octoprint/static/js/app/main.js:27
+msgid "Closed"
+msgstr "Lukket"
+
+#: src/octoprint/static/js/app/main.js:28
+msgid "Transfering file to SD"
+msgstr "Overfører til minnekort"
+
+#: src/octoprint/static/js/app/main.js:132
+msgid ""
+"Could not upload the file. Make sure that it is a GCODE file and has the "
+"extension \".gcode\" or \".gco\" or that it is an STL file with the "
+"extension \".stl\" and slicing support is enabled and configured."
+msgstr "Klarte ikke å laste opp filen, Sørg for at det er en GCODE fil med filtype \".gcode\" eller \".gco\" eller det er en STL fil med filtype \".stl\" og at slicing er aktivert og konfigurert."
+
+#: src/octoprint/static/js/app/main.js:148
+msgid "Uploading ..."
+msgstr "Laster opp ..."
+
+#: src/octoprint/static/js/app/main.js:151
+msgid "Saving ..."
+msgstr "Lagrer ..."
+
+#: src/octoprint/static/js/app/viewmodels/appearance.js:9
+#: src/octoprint/static/js/app/viewmodels/appearance.js:11
+#: src/octoprint/static/js/app/viewmodels/appearance.js:16
+#: src/octoprint/static/js/app/viewmodels/appearance.js:18
+msgid "OctoPrint"
+msgstr "OctoPrint"
+
+#: src/octoprint/static/js/app/viewmodels/connection.js:24
+#: src/octoprint/templates/index.jinja2:117
+msgid "Connect"
+msgstr "Koble til"
+
+#: src/octoprint/static/js/app/viewmodels/connection.js:26
+msgid "Disconnect"
+msgstr "Koble fra"
+
+#: src/octoprint/static/js/app/viewmodels/control.js:38
+#: src/octoprint/static/js/app/viewmodels/files.js:286
+#: src/octoprint/static/js/app/viewmodels/gcode.js:332
+#: src/octoprint/static/js/app/viewmodels/gcode.js:363
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:137
+#: src/octoprint/static/js/app/viewmodels/temperature.js:56
+msgid "Tool"
+msgstr "Verktøy"
+
+#: src/octoprint/static/js/app/viewmodels/control.js:45
+#: src/octoprint/static/js/app/viewmodels/temperature.js:68
+msgid "Hotend"
+msgstr "Dyse"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:281
+#: src/octoprint/static/js/app/viewmodels/files.js:286
+msgid "Filament"
+msgstr "Tråd"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:290
+msgid "Estimated Print Time"
+msgstr "Bergenet utskriftstid"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:293
+msgid "Last Printed"
+msgstr "Sist utskrevet"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:295
+msgid "Last Print Time"
+msgstr "Siste utskriftstid"
+
+#: src/octoprint/static/js/app/viewmodels/firstrun.js:37
+msgid ""
+"If you disable Access Control <strong>and</strong> your OctoPrint "
+"installation is accessible from the internet, your printer <strong>will be "
+"accessible by everyone - that also includes the bad guys!</strong>"
+msgstr "Hvis du slår av adgangskontroll <strong>og</strong> din OctoPrint innstallasjon er  tilgjengelig fra internett, din printer <strong>vil bli tilgjengelig for alle - inkluderer også dei med uærlige intensjoner</strong>"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:13
+msgid "Loading..."
+msgstr "Laster..."
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:17
+msgid "Analyzing..."
+msgstr "Analyserer..."
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:21
+msgid "Analyzed"
+msgstr "Analysert"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:327
+msgid "Model size"
+msgstr "Modellstørrelse"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:329
+#: src/octoprint/static/js/app/viewmodels/gcode.js:332
+msgid "Total filament used"
+msgstr "Totalt trådforbruk"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:329
+#: src/octoprint/static/js/app/viewmodels/gcode.js:332
+#: src/octoprint/static/js/app/viewmodels/gcode.js:336
+msgid "mm"
+msgstr "mm"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:335
+msgid "Estimated print time"
+msgstr "Beregnet printtid"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:336
+msgid "Estimated layer height"
+msgstr "Estimert laghøyde"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:337
+msgid "Layer count"
+msgstr "Antall lag"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:337
+msgid "visited"
+msgstr "besøkt"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:356
+msgid "Layer number"
+msgstr "Lag nummer"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:357
+msgid "Layer height"
+msgstr "Lag høyde"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:358
+msgid "GCODE commands in layer"
+msgstr "GCODE kommandoer i lag"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:360
+#: src/octoprint/static/js/app/viewmodels/gcode.js:363
+msgid "Filament used by layer"
+msgstr "Tråd brukt i laget"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:366
+msgid "Print time for layer"
+msgstr "Printtid for lag"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:15
+#: src/octoprint/templates/index.jinja2:74
+#: src/octoprint/templates/index.jinja2:85
+msgid "Login"
+msgstr "Logg inn"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:70
+msgid "Login successful"
+msgstr "Logg inn vellykket"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:70
+#, python-format
+msgid "You are now logged in as \"%(username)s\""
+msgstr "Du er no logget inn som \"%(username)s\""
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:74
+msgid "Login failed"
+msgstr "Logg inn misslykkes"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:74
+msgid "User unknown or wrong password"
+msgstr "Bruker ukjent eller feil passord"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:84
+msgid "Logout successful"
+msgstr "Logg ut vellykket"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:84
+msgid "You are now logged out"
+msgstr "Du er nå logget ut"
+
+#: src/octoprint/static/js/app/viewmodels/navigation.js:17
+#, python-format
+msgid "The command \"%(command)s\" executed successfully"
+msgstr "Kommando \"%(command)s\" vellykket"
+
+#: src/octoprint/static/js/app/viewmodels/navigation.js:20
+#, python-format
+msgid "The command \"%(command)s\" could not be executed."
+msgstr "Kommando \"%(command)s\" mislykkes"
+
+#: src/octoprint/static/js/app/viewmodels/navigation.js:22
+msgid "Error"
+msgstr "Feil"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:66
+msgid "Continue"
+msgstr "Fortsett"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:68
+#: src/octoprint/templates/index.jinja2:144
+msgid "Pause"
+msgstr "Pause"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:79
+#: src/octoprint/templates/index.jinja2:524
+msgid "On Z Change"
+msgstr "På Z endring"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
+#: src/octoprint/templates/index.jinja2:525
+msgid "Timed"
+msgstr "Tidtakes"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
+#: src/octoprint/templates/index.jinja2:531
+#: src/octoprint/templates/index.jinja2:538
+msgid "sec"
+msgstr "sek"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:166
+msgid "This will restart the print job from the beginning."
+msgstr "Dette vil starte utskriftsjobbene fra starten"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:15
+#: src/octoprint/static/js/app/viewmodels/settings.js:41
+msgid "default"
+msgstr "standard"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:16
+#: src/octoprint/static/js/app/viewmodels/settings.js:27
+msgid "red"
+msgstr "rød"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:17
+#: src/octoprint/static/js/app/viewmodels/settings.js:29
+msgid "orange"
+msgstr "orange"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:18
+#: src/octoprint/static/js/app/viewmodels/settings.js:31
+msgid "yellow"
+msgstr "gul"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:19
+#: src/octoprint/static/js/app/viewmodels/settings.js:33
+msgid "green"
+msgstr "grønn"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:20
+#: src/octoprint/static/js/app/viewmodels/settings.js:35
+msgid "blue"
+msgstr "blå"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:21
+#: src/octoprint/static/js/app/viewmodels/settings.js:37
+msgid "violet"
+msgstr "fiolett"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:22
+#: src/octoprint/static/js/app/viewmodels/settings.js:39
+msgid "black"
+msgstr "svart"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:22
+#: src/octoprint/static/js/app/viewmodels/temperature.js:74
+#: src/octoprint/templates/settings.jinja2:347
+msgid "Bed"
+msgstr "Bord"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:110
+msgid "just now"
+msgstr "Akkurat no"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:112
+msgid "min"
+msgstr "min"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:252
+#: src/octoprint/templates/index.jinja2:262
+msgid "Actual"
+msgstr "Faktisk"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:257
+#: src/octoprint/templates/index.jinja2:263
+msgid "Target"
+msgstr "Mål"
+
+#: src/octoprint/templates/dialogs.jinja2:6
+msgid "Server is offline"
+msgstr "Server er frakoblet"
+
+#: src/octoprint/templates/dialogs.jinja2:9
+msgid "Attempt to reconnect"
+msgstr "Forsøk å koble til på nytt"
+
+#: src/octoprint/templates/dialogs.jinja2:20
+msgid "Upload locally"
+msgstr "Last opp lokalt"
+
+#: src/octoprint/templates/dialogs.jinja2:22
+#: src/octoprint/templates/index.jinja2:218
+msgid "Upload to SD"
+msgstr "Last opp til minnekort"
+
+#: src/octoprint/templates/dialogs.jinja2:22
+msgid "SD not initialized"
+msgstr "Minnekort er ikke startet"
+
+#: src/octoprint/templates/dialogs.jinja2:25
+#: src/octoprint/templates/index.jinja2:213
+#: src/octoprint/templates/index.jinja2:224
+msgid "Upload"
+msgstr "Last opp"
+
+#: src/octoprint/templates/dialogs.jinja2:34
+msgid "Are you sure?"
+msgstr "Er du sikker?"
+
+#: src/octoprint/templates/dialogs.jinja2:38
+msgid "Are you sure you want to proceed?"
+msgstr "Er du sikker du vil fortsette?"
+
+#: src/octoprint/templates/dialogs.jinja2:41
+#: src/octoprint/templates/index.jinja2:145
+#: src/octoprint/templates/settings.jinja2:676
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: src/octoprint/templates/dialogs.jinja2:42
+msgid "Proceed"
+msgstr "Fortsett"
+
+#: src/octoprint/templates/dialogs.jinja2:48
+msgid "Configure Access Control"
+msgstr "Konfigurer adgangskontroll"
+
+#: src/octoprint/templates/dialogs.jinja2:51
+msgid ""
+"<p>\n"
+"            <strong>Please read the following, it is very important for your printer's health!</strong>\n"
+"        </p>\n"
+"        <p>\n"
+"            OctoPrint by default now ships with Access Control enabled, meaning you won't be able to do anything with the\n"
+"            printer unless you login first as a configured user. This is to <strong>prevent strangers - possibly with\n"
+"            malicious intent - to gain access to your printer</strong> via the internet or another untrustworthy network\n"
+"            and using it in such a way that it is damaged or worse (i.e. causes a fire).\n"
+"        </p>\n"
+"        <p>\n"
+"            It looks like you haven't configured access control yet. Please <strong>set up an username and password</strong> for the\n"
+"            initial administrator account who will have full access to both the printer and OctoPrint's settings, then click\n"
+"            on \"Keep Access Control Enabled\":\n"
+"        </p>"
+msgstr "<p>\n<strong>Vennligst les følgende, det er veldig viktig for din printers helse!!</strong>\n</p>\n<p>\nOctoPrint kommer originalt med adgangskontroll aktivert, som betyr at du ikke får gjort noe med\nprinteren med mindre du logger inn med en konfigurert bruker. Dette er for å <strong>forhindre ukjente - med potensielt\nuærlige intensjoner - fra å få tilgang til din printer</strong> via Internett eller et usikret nettverk\nog bruker den i en slik måte at skade oppstår eller verre (f.eks forårsaker en brann).\n</p>\n<p>\nDu har ikke konfigurert adgangskontrollen enda. Vennligst <strong>sett et brukernavn og passord</strong> for den\nførste administratorkontoen som vil ha full adgang til både skriveren og OctoPrint innstillinger, klikk deretter på\n\"Behold adgangskontroll aktivert\":\n</p>"
+
+#: src/octoprint/templates/dialogs.jinja2:67
+#: src/octoprint/templates/index.jinja2:78
+#: src/octoprint/templates/index.jinja2:79
+#: src/octoprint/templates/settings.jinja2:510
+msgid "Username"
+msgstr "Brukernavn"
+
+#: src/octoprint/templates/dialogs.jinja2:73
+#: src/octoprint/templates/index.jinja2:80
+#: src/octoprint/templates/index.jinja2:81
+#: src/octoprint/templates/settings.jinja2:516
+msgid "Password"
+msgstr "Passord"
+
+#: src/octoprint/templates/dialogs.jinja2:79
+msgid "Confirm Password"
+msgstr "Bekreft passord"
+
+#: src/octoprint/templates/dialogs.jinja2:82
+#: src/octoprint/templates/settings.jinja2:525
+#: src/octoprint/templates/settings.jinja2:596
+msgid "Passwords do not match"
+msgstr "Passordet er ikke likt"
+
+#: src/octoprint/templates/dialogs.jinja2:86
+msgid ""
+"<p>\n"
+"            <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy network and you don't\n"
+"            need Access Control for other reasons, you may alternatively disable Access Control. You should only\n"
+"            do this if you are absolutely certain that only people you know and trust will be able to connect to it.\n"
+"        </p>\n"
+"        <p>\n"
+"            <strong>Do NOT underestimate the risk of an unsecured access from the internet to your printer!</strong>\n"
+"        </p>"
+msgstr "<p>\n<strong>Noter:</strong> Hvis din OctoPrint installasjon er på et nettverk som du er helt sikker på at det er kun du eller folk du stoler på og du ikke ønsker adgangskontroll av en eller annen grunn,\nkan du deaktivere adgangskontrollen. Du burde kun\ngjøre dette vist du er helt sikker på at det er bare folk du kjenner og stoler på som vil koble til printeren.\n</p>\n<p>\n<strong>IKKE undervurder faren ved en usikret adgang fra Internett til din printer!</strong>\n</p>"
+
+#: src/octoprint/templates/dialogs.jinja2:96
+msgid "Disable Access Control"
+msgstr "Deaktiver adgangskontroll"
+
+#: src/octoprint/templates/dialogs.jinja2:97
+msgid "Keep Access Control Enabled"
+msgstr "Behold adgangskontroll aktivert"
+
+#: src/octoprint/templates/index.jinja2:57
+msgid "Settings"
+msgstr "Innstillinger"
+
+#: src/octoprint/templates/index.jinja2:63
+msgid "System"
+msgstr "System"
+
+#: src/octoprint/templates/index.jinja2:83
+msgid "Remember me"
+msgstr "Husk meg"
+
+#: src/octoprint/templates/index.jinja2:88
+msgid "Change Password"
+msgstr "Endre passord"
+
+#: src/octoprint/templates/index.jinja2:89
+msgid "Logout"
+msgstr "Logg ut"
+
+#: src/octoprint/templates/index.jinja2:103
+msgid "Connection"
+msgstr "Tilkobling"
+
+#: src/octoprint/templates/index.jinja2:107
+#: src/octoprint/templates/settings.jinja2:30
+msgid "Serial Port"
+msgstr "Seriellport"
+
+#: src/octoprint/templates/index.jinja2:109
+#: src/octoprint/templates/settings.jinja2:36
+msgid "Baudrate"
+msgstr "Datemengde"
+
+#: src/octoprint/templates/index.jinja2:112
+msgid "Save connection settings"
+msgstr "Lagre tilkoblingsinnstillinger"
+
+#: src/octoprint/templates/index.jinja2:115
+msgid "Auto-connect on server startup"
+msgstr "Koble til automatisk ved oppstart"
+
+#: src/octoprint/templates/index.jinja2:123
+msgid "State"
+msgstr "Tilstand"
+
+#: src/octoprint/templates/index.jinja2:127
+msgid "Machine State"
+msgstr "Maskintilstand"
+
+#: src/octoprint/templates/index.jinja2:128
+msgid "File"
+msgstr "Fil"
+
+#: src/octoprint/templates/index.jinja2:129
+#: src/octoprint/templates/index.jinja2:247
+msgid "Timelapse"
+msgstr "Timelapse"
+
+#: src/octoprint/templates/index.jinja2:133
+msgid "Approx. Total Print Time"
+msgstr "Beregnet total utskriftstid"
+
+#: src/octoprint/templates/index.jinja2:134
+msgid "Print Time"
+msgstr "Utskriftstid"
+
+#: src/octoprint/templates/index.jinja2:135
+msgid "Print Time Left"
+msgstr "Gjenstående utskriftstid"
+
+#: src/octoprint/templates/index.jinja2:136
+msgid "Printed"
+msgstr "Utskrevet"
+
+#: src/octoprint/templates/index.jinja2:143
+msgid "Restart"
+msgstr "Omstart"
+
+#: src/octoprint/templates/index.jinja2:143
+msgid "Print"
+msgstr "Utskriv"
+
+#: src/octoprint/templates/index.jinja2:152
+msgid "Files"
+msgstr "Filer"
+
+#: src/octoprint/templates/index.jinja2:159
+msgid "Sort by name"
+msgstr "Sorter ved navn"
+
+#: src/octoprint/templates/index.jinja2:159
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/settings.jinja2:630
+msgid "ascending"
+msgstr "stigende"
+
+#: src/octoprint/templates/index.jinja2:160
+msgid "Sort by upload date"
+msgstr "Sorter ved opplastningsdato"
+
+#: src/octoprint/templates/index.jinja2:160
+#: src/octoprint/templates/index.jinja2:161
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/settings.jinja2:630
+msgid "descending"
+msgstr "synkende"
+
+#: src/octoprint/templates/index.jinja2:161
+msgid "Sort by file size"
+msgstr "Sorter filer etter størrelse"
+
+#: src/octoprint/templates/index.jinja2:164
+msgid "Only show files stored locally"
+msgstr "Bare vis filer lagret lokalt"
+
+#: src/octoprint/templates/index.jinja2:165
+msgid "Only show files stored on SD"
+msgstr "Bare vis filer lagret på minnekortet"
+
+#: src/octoprint/templates/index.jinja2:168
+msgid "Hide successfully printed files"
+msgstr "Skjul vellykkede utskriftsfiler"
+
+#: src/octoprint/templates/index.jinja2:178
+msgid "Initialize SD card"
+msgstr "Start minnekortet"
+
+#: src/octoprint/templates/index.jinja2:179
+msgid "Refresh SD files"
+msgstr "Oppdater minnekort"
+
+#: src/octoprint/templates/index.jinja2:180
+msgid "Release SD card"
+msgstr "Løs ut minnekort"
+
+#: src/octoprint/templates/index.jinja2:188
+msgid "Search..."
+msgstr "Søk..."
+
+#: src/octoprint/templates/index.jinja2:193
+msgid "Uploaded"
+msgstr "Opplastet"
+
+#: src/octoprint/templates/index.jinja2:194
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/index.jinja2:562
+#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/settings.jinja2:637
+msgid "Size"
+msgstr "Størrelse"
+
+#: src/octoprint/templates/index.jinja2:198
+msgid "Download"
+msgstr "Last ned"
+
+#: src/octoprint/templates/index.jinja2:199
+msgid "Remove"
+msgstr "Fjern"
+
+#: src/octoprint/templates/index.jinja2:200
+msgid "Load"
+msgstr "Last"
+
+#: src/octoprint/templates/index.jinja2:201
+msgid "Load and Print"
+msgstr "Last og skriv ut"
+
+#: src/octoprint/templates/index.jinja2:206
+msgid "Free"
+msgstr "Ledig"
+
+#: src/octoprint/templates/index.jinja2:233
+msgid "Hint: You can also drag and drop files on this page to upload them."
+msgstr "Tips: Du kan også dra og slippe filer på denne siden for å laste de opp"
+
+#: src/octoprint/templates/index.jinja2:243
+msgid "Temperature"
+msgstr "Temperatur"
+
+#: src/octoprint/templates/index.jinja2:244
+msgid "Control"
+msgstr "Kontroll"
+
+#: src/octoprint/templates/index.jinja2:245
+msgid "GCode Viewer"
+msgstr "GCode framviser"
+
+#: src/octoprint/templates/index.jinja2:246
+msgid "Terminal"
+msgstr "Terminal"
+
+#: src/octoprint/templates/index.jinja2:264
+msgid "Offset"
+msgstr "Avvik"
+
+#: src/octoprint/templates/index.jinja2:280
+#: src/octoprint/templates/index.jinja2:302
+msgid "Set"
+msgstr "Velg"
+
+#: src/octoprint/templates/index.jinja2:292
+#: src/octoprint/templates/index.jinja2:523
+msgid "Off"
+msgstr "Av"
+
+#: src/octoprint/templates/index.jinja2:360
+msgid "Select Tool..."
+msgstr "Velg verktøy"
+
+#: src/octoprint/templates/index.jinja2:371
+msgid "Extrude"
+msgstr "Extrude"
+
+#: src/octoprint/templates/index.jinja2:372
+msgid "Retract"
+msgstr "Tilbaketrekking"
+
+#: src/octoprint/templates/index.jinja2:377
+msgid "General"
+msgstr "Generell"
+
+#: src/octoprint/templates/index.jinja2:379
+msgid "Motors off"
+msgstr "Motorer av"
+
+#: src/octoprint/templates/index.jinja2:380
+msgid "Fans on"
+msgstr "Vifter på"
+
+#: src/octoprint/templates/index.jinja2:381
+msgid "Fans off"
+msgstr "Vifter av"
+
+#: src/octoprint/templates/index.jinja2:445
+msgid "Sync with job progress"
+msgstr "Synkroniser med jobbprogresjon"
+
+#: src/octoprint/templates/index.jinja2:450
+msgid "Center viewport on model"
+msgstr "Sentrer bilde på modell"
+
+#: src/octoprint/templates/index.jinja2:453
+msgid "Zoom in on model"
+msgstr "Zoom inn på modell"
+
+#: src/octoprint/templates/index.jinja2:459
+msgid "Show moves"
+msgstr "Vis forflyttninger"
+
+#: src/octoprint/templates/index.jinja2:462
+msgid "Show retracts"
+msgstr "Vis tilbaketrekninger"
+
+#: src/octoprint/templates/index.jinja2:468
+msgid "Also show previous layer"
+msgstr "Også vis forrige lag"
+
+#: src/octoprint/templates/index.jinja2:471
+msgid "Also show next layer"
+msgstr "Også vis neste lag"
+
+#: src/octoprint/templates/index.jinja2:476
+msgid "Reload"
+msgstr "Last på nytt"
+
+#: src/octoprint/templates/index.jinja2:503
+msgid "Autoscroll"
+msgstr "Autoscroll"
+
+#: src/octoprint/templates/index.jinja2:513
+msgid "Send"
+msgstr "Send"
+
+#: src/octoprint/templates/index.jinja2:519
+msgid "Timelapse Configuration"
+msgstr "Timelapse konfigurasjon"
+
+#: src/octoprint/templates/index.jinja2:521
+msgid "Timelapse Mode"
+msgstr "Timelapse modus"
+
+#: src/octoprint/templates/index.jinja2:528
+msgid "Timelapse post roll (in rendered seconds)"
+msgstr "Timelapse etter opptak (i sekunder)"
+
+#: src/octoprint/templates/index.jinja2:535
+msgid "Interval"
+msgstr "Interval"
+
+#: src/octoprint/templates/index.jinja2:544
+msgid "Save as default"
+msgstr "Lagre som standard"
+
+#: src/octoprint/templates/index.jinja2:549
+msgid "Save config"
+msgstr "Lagre konfigurasjon"
+
+#: src/octoprint/templates/index.jinja2:553
+msgid "Finished Timelapses"
+msgstr "Ferdig timelapser"
+
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/settings.jinja2:630
+msgid "Sort by"
+msgstr "Sorter etter"
+
+#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/index.jinja2:561
+#: src/octoprint/templates/settings.jinja2:377
+#: src/octoprint/templates/settings.jinja2:469
+#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/settings.jinja2:636
+msgid "Name"
+msgstr "Navn"
+
+#: src/octoprint/templates/index.jinja2:556
+msgid "Creation date"
+msgstr "Opprettelsesdato"
+
+#: src/octoprint/templates/index.jinja2:563
+#: src/octoprint/templates/settings.jinja2:472
+#: src/octoprint/templates/settings.jinja2:639
+msgid "Action"
+msgstr "Handling"
+
+#: src/octoprint/templates/index.jinja2:592
+msgid "Version"
+msgstr "Versjon"
+
+#: src/octoprint/templates/index.jinja2:595
+msgid "Homepage"
+msgstr "Hjemmeside"
+
+#: src/octoprint/templates/index.jinja2:596
+msgid "Sourcecode"
+msgstr "Kildekode"
+
+#: src/octoprint/templates/index.jinja2:597
+msgid "Documentation"
+msgstr "Dokumentasjon"
+
+#: src/octoprint/templates/index.jinja2:598
+msgid "Bugs and Requests"
+msgstr "Feilrapportering og ønsker"
+
+#: src/octoprint/templates/settings.jinja2:4
+msgid "OctoPrint Settings"
+msgstr "OctoPrint innstillinger"
+
+#: src/octoprint/templates/settings.jinja2:9
+msgid "Printer"
+msgstr "Printer"
+
+#: src/octoprint/templates/settings.jinja2:10
+msgid "Serial Connection"
+msgstr "Seriell kontakt"
+
+#: src/octoprint/templates/settings.jinja2:11
+msgid "Printer Parameters"
+msgstr "Printer parametere"
+
+#: src/octoprint/templates/settings.jinja2:12
+msgid "Temperatures"
+msgstr "Temperaturer"
+
+#: src/octoprint/templates/settings.jinja2:13
+msgid "Terminal filters"
+msgstr "Terminal filtre"
+
+#: src/octoprint/templates/settings.jinja2:14
+#: src/octoprint/templates/settings.jinja2:15
+msgid "Features"
+msgstr "Funksjoner"
+
+#: src/octoprint/templates/settings.jinja2:16
+msgid "Webcam"
+msgstr "Nettkamera"
+
+#: src/octoprint/templates/settings.jinja2:17
+msgid "Cura"
+msgstr "Cura"
+
+#: src/octoprint/templates/settings.jinja2:18
+msgid "Access Control"
+msgstr "Adgangskontroll"
+
+#: src/octoprint/templates/settings.jinja2:19
+msgid "API"
+msgstr "API"
+
+#: src/octoprint/templates/settings.jinja2:21
+msgid "Folders"
+msgstr "Mapper"
+
+#: src/octoprint/templates/settings.jinja2:22
+msgid "Appearance"
+msgstr "Utseende"
+
+#: src/octoprint/templates/settings.jinja2:23
+#: src/octoprint/templates/settings.jinja2:626
+msgid "Logs"
+msgstr "Logger"
+
+#: src/octoprint/templates/settings.jinja2:44
+msgid "Auto-connect to printer on server start"
+msgstr "Koble til printer automatisk ved oppstart"
+
+#: src/octoprint/templates/settings.jinja2:49
+msgid "Communication timeout"
+msgstr "Kommunikasjon tidsavbrudd"
+
+#: src/octoprint/templates/settings.jinja2:58
+msgid "Temperature timeout"
+msgstr "Temperatur tidsavbrudd"
+
+#: src/octoprint/templates/settings.jinja2:67
+msgid "SD status timeout"
+msgstr "Minnekort tidsavbrudd"
+
+#: src/octoprint/templates/settings.jinja2:76
+msgid "Connection timeout"
+msgstr "Oppkoblingstidsavbrudd"
+
+#: src/octoprint/templates/settings.jinja2:85
+msgid "Autodetection timeout"
+msgstr "Automatisk detekteringstidsavbrudd"
+
+#: src/octoprint/templates/settings.jinja2:96
+msgid "Log communication to serial.log (might negatively impact performance)"
+msgstr "Skriv logg til serial.log (kan redusere ytelsen)"
+
+#: src/octoprint/templates/settings.jinja2:96
+msgid "Warning"
+msgstr "Advarsel"
+
+#: src/octoprint/templates/settings.jinja2:105
+msgid "Axis"
+msgstr "Akse"
+
+#: src/octoprint/templates/settings.jinja2:107
+#: src/octoprint/templates/settings.jinja2:176
+msgid "X"
+msgstr "X"
+
+#: src/octoprint/templates/settings.jinja2:113
+#: src/octoprint/templates/settings.jinja2:123
+#: src/octoprint/templates/settings.jinja2:133
+msgid "Invert control"
+msgstr "Inverter kontroller"
+
+#: src/octoprint/templates/settings.jinja2:117
+#: src/octoprint/templates/settings.jinja2:181
+msgid "Y"
+msgstr "Y"
+
+#: src/octoprint/templates/settings.jinja2:127
+msgid "Z"
+msgstr "Z"
+
+#: src/octoprint/templates/settings.jinja2:137
+msgid "E"
+msgstr "E"
+
+#: src/octoprint/templates/settings.jinja2:145
+msgid "Default extrusion length"
+msgstr "Standard extrusion lengde "
+
+#: src/octoprint/templates/settings.jinja2:151
+msgid "Number of Extruders"
+msgstr "Antall dyser"
+
+#: src/octoprint/templates/settings.jinja2:157
+msgid "Extruder Offsets"
+msgstr "Extruder avvik"
+
+#: src/octoprint/templates/settings.jinja2:174
+msgid "Bed Size"
+msgstr "Plattformstørrelse"
+
+#: src/octoprint/templates/settings.jinja2:188
+msgid "Radius"
+msgstr "Radius"
+
+#: src/octoprint/templates/settings.jinja2:196
+msgid "Circular"
+msgstr "Sirkulær"
+
+#: src/octoprint/templates/settings.jinja2:205
+msgid "Stream URL"
+msgstr "Stream URL"
+
+#: src/octoprint/templates/settings.jinja2:211
+msgid "Snapshot URL"
+msgstr "Hurtigbilde URL"
+
+#: src/octoprint/templates/settings.jinja2:217
+msgid "Path to FFMPEG"
+msgstr "Sti til FFMPEG"
+
+#: src/octoprint/templates/settings.jinja2:223
+msgid "Timelapse bitrate"
+msgstr "Timelapse bitrate"
+
+#: src/octoprint/templates/settings.jinja2:231
+msgid "Enable OctoPrint watermark in timelapse movies"
+msgstr "Aktiver OctoPrint vannmerke i timelapsefilmer"
+
+#: src/octoprint/templates/settings.jinja2:238
+msgid "Flip webcam horizontally"
+msgstr "Horisontal invertere webcam"
+
+#: src/octoprint/templates/settings.jinja2:243
+msgid "Flip webcam vertically"
+msgstr "Vertikal invertere webcam"
+
+#: src/octoprint/templates/settings.jinja2:254
+msgid "Enable Temperature Graph"
+msgstr "Aktiver temperaturgraf"
+
+#: src/octoprint/templates/settings.jinja2:261
+msgid "Enable GCode Visualizer"
+msgstr "Aktiver GCode framviser"
+
+#: src/octoprint/templates/settings.jinja2:268
+msgid "Enable SD support"
+msgstr "Aktiver støtte for minnekort"
+
+#: src/octoprint/templates/settings.jinja2:275
+msgid "Always assume SD card is present"
+msgstr "Alltid anta at minnekort er på plass"
+
+#: src/octoprint/templates/settings.jinja2:275
+#: src/octoprint/templates/settings.jinja2:289
+#: src/octoprint/templates/settings.jinja2:296
+msgid "Repetier"
+msgstr "Repeter"
+
+#: src/octoprint/templates/settings.jinja2:282
+msgid "Wait for <code>start</code> on connect"
+msgstr "Vent for <code>start</code> på tilkobling"
+
+#: src/octoprint/templates/settings.jinja2:289
+msgid "Send a checksum with <strong>every</strong> command"
+msgstr "Send en kontrollsum med <strong>alle</strong> kommandoer"
+
+#: src/octoprint/templates/settings.jinja2:296
+#, python-format
+msgid ""
+"Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature"
+" format"
+msgstr "Støtte <code>TargetExtr%%n</code>/<code>TargetBed</code> mål pemperatur format"
+
+#: src/octoprint/templates/settings.jinja2:303
+msgid "Swallow the first \"ok\" after a resend response"
+msgstr "Svelg unna første \"ok\" etter omsendt svar"
+
+#: src/octoprint/templates/settings.jinja2:312
+msgid "Upload Folder"
+msgstr "Opplastningsmappe"
+
+#: src/octoprint/templates/settings.jinja2:318
+msgid "Timelapse Folder"
+msgstr "Timelapse mappe"
+
+#: src/octoprint/templates/settings.jinja2:324
+msgid "Timelapse Temp Folder"
+msgstr "Timelapse midlertidig mappe"
+
+#: src/octoprint/templates/settings.jinja2:330
+msgid "Logs Folder"
+msgstr "Loggmappe"
+
+#: src/octoprint/templates/settings.jinja2:336
+msgid "Watched Folder"
+msgstr "Kontrollert mappe"
+
+#: src/octoprint/templates/settings.jinja2:346
+msgid "Extruder"
+msgstr "Extruder"
+
+#: src/octoprint/templates/settings.jinja2:378
+msgid "RegExp"
+msgstr "RegExp"
+
+#: src/octoprint/templates/settings.jinja2:403
+msgid "Title"
+msgstr "Tittel"
+
+#: src/octoprint/templates/settings.jinja2:409
+msgid "Color"
+msgstr "Farge"
+
+#: src/octoprint/templates/settings.jinja2:420
+msgid "Enable slicing via Cura"
+msgstr "Aktiver slicing via Cura"
+
+#: src/octoprint/templates/settings.jinja2:426
+msgid "Path to Cura"
+msgstr "Sti til Cura"
+
+#: src/octoprint/templates/settings.jinja2:432
+msgid "Path to Cura config"
+msgstr "Sti til Curakonfigurasjon"
+
+#: src/octoprint/templates/settings.jinja2:444
+msgid "Enable"
+msgstr "Aktiver"
+
+#: src/octoprint/templates/settings.jinja2:451
+#, python-format
+msgid "Allow <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
+msgstr "Tillat <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
+
+#: src/octoprint/templates/settings.jinja2:456
+#: src/octoprint/templates/settings.jinja2:477
+msgid "API Key"
+msgstr "API nøkkel"
+
+#: src/octoprint/templates/settings.jinja2:470
+#: src/octoprint/templates/settings.jinja2:531
+#: src/octoprint/templates/settings.jinja2:560
+msgid "Active"
+msgstr "Aktiv"
+
+#: src/octoprint/templates/settings.jinja2:471
+#: src/octoprint/templates/settings.jinja2:538
+#: src/octoprint/templates/settings.jinja2:567
+msgid "Admin"
+msgstr "Admin"
+
+#: src/octoprint/templates/settings.jinja2:481
+msgid "Update User"
+msgstr "Oppdater bruker"
+
+#: src/octoprint/templates/settings.jinja2:481
+msgid "Change password"
+msgstr "Endre passord"
+
+#: src/octoprint/templates/settings.jinja2:481
+msgid "Delete user"
+msgstr "Slett bruker"
+
+#: src/octoprint/templates/settings.jinja2:498
+#: src/octoprint/templates/settings.jinja2:505
+msgid "Add user"
+msgstr "Legg til bruker"
+
+#: src/octoprint/templates/settings.jinja2:522
+#: src/octoprint/templates/settings.jinja2:593
+msgid "Repeat Password"
+msgstr "Gjenta passord"
+
+#: src/octoprint/templates/settings.jinja2:545
+#: src/octoprint/templates/settings.jinja2:574
+#: src/octoprint/templates/settings.jinja2:616
+msgid "Abort"
+msgstr "Avbryt"
+
+#: src/octoprint/templates/settings.jinja2:546
+#: src/octoprint/templates/settings.jinja2:575
+#: src/octoprint/templates/settings.jinja2:617
+msgid "Confirm"
+msgstr "Bekreft"
+
+#: src/octoprint/templates/settings.jinja2:553
+#, python-format
+msgid "Edit user \"%(user)s\""
+msgstr "Endre bruker \"%(user)s\""
+
+#: src/octoprint/templates/settings.jinja2:582
+#, python-format
+msgid "Change password for user \"%(user)s\""
+msgstr "Endre passord for bruker \"%(user)s\""
+
+#: src/octoprint/templates/settings.jinja2:587
+msgid "New Password"
+msgstr "Nytt passord"
+
+#: src/octoprint/templates/settings.jinja2:602
+msgid "Current API Key"
+msgstr "Nåværende API nøkkel"
+
+#: src/octoprint/templates/settings.jinja2:605
+msgid "N/A"
+msgstr "N/A"
+
+#: src/octoprint/templates/settings.jinja2:630
+msgid "Modification date"
+msgstr "Endret dato"
+
+#: src/octoprint/templates/settings.jinja2:638
+msgid "Date"
+msgstr "Dato"
+
+#: src/octoprint/templates/settings.jinja2:677
+msgid "Save"
+msgstr "Lagre"
