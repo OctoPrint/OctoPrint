@@ -27,13 +27,8 @@ function eachDeep(node, config) {
     for (k in node) {
         v = node[k];
         config._path.push(k);
-        if (node.constructor === Object) {
-            subResults = eachDeep(v, config);
-            if (config.mode === "array") nodeResults = nodeResults.concat(subResults);
-        } else {
-            subResults = config.on(node, config);
-            if (config.mode === "array") nodeResults = nodeResults.concat(subResults);
-        }
+        subResults = eachDeep(v, config);
+        if (config.mode === "array") nodeResults = nodeResults.concat(subResults);
         if (config._path) {
             config._path.pop();
         }
@@ -168,7 +163,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
     self.loginState = loginStateViewModel;
     self.notifications_textMessage_country = ko.observable(undefined);
-    self.terminalFilters = ko.observableArray([]);
     self.users = usersViewModel;
 
     // Computed koos
@@ -312,6 +306,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.saveData = function() {
         self._saveGetPayload = {};
         eachDeep(settingKoos, {"on": self._setGetPayloadProp});
+
+        // Remove client-only settings
+        delete self._saveGetPayload.serial.ports;
+        delete self._saveGetPayload.serial.baudrates;
+
         $.ajax({
             url: API_BASEURL + "settings",
             type: "POST",
