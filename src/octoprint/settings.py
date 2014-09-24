@@ -10,6 +10,8 @@ import logging
 import re
 import uuid
 
+from octoprint.collectionUtils import dict_merge, eachDeep
+
 APPNAME = "OctoPrint"
 instance = None
 valid_boolean_trues = [True, "true", "yes", "y"]
@@ -18,13 +20,12 @@ valid_boolean_falses = [False, "false", "no", "n"]
 # converts stringified primatives to their primitives, or returns the
 # value unchanged
 def coercePrimative(value):
-	if value is None:
-		return value
-	if (isinstance(value, str)):
-		if value in valid_boolean_trues:
-			return True
-		if value in valid_boolean_falses:
-			return False
+	if value is None or value == "null":
+		return None
+	if value in valid_boolean_trues:
+		return True
+	if value in valid_boolean_falses:
+		return False
 	try:
 		intVal = int(value)
 		floatVal = float(value)
@@ -34,45 +35,6 @@ def coercePrimative(value):
 	except:
 		pass
 	return value
-
-def dict_merge(a, b):
-	'''recursively merges dict's. not just simple a['key'] = b['key'], if
-	both a and bhave a key who's value is a dict then dict_merge is called
-	on both values and the result stored in the returned dictionary.'''
-	# credit: https://www.xormedia.com/recursively-merge-dictionaries-in-python/
-	if not isinstance(b, dict):
-		return b
-	result = copy.deepcopy(a)
-	for k, v in b.iteritems():
-		if k in result and isinstance(result[k], dict):
-				result[k] = dict_merge(result[k], v)
-		else:
-			result[k] = copy.deepcopy(v)
-	return result
-
-def eachDeep(node, config):
-	if node is None or not isinstance(node, dict):
-		# return config["on"](node, config)
-		return config["on"](node, config)
-	if "_init" not in config.keys():
-		config["_init"] = True
-		config["path"] = []
-		if "mode" not in config.keys():
-			config["mode"] = None
-	nodeResults = []
-	for k, v in node.items():
-		config["path"].append(k)
-		if isinstance(v, dict):
-			subResults = eachDeep(v, config)
-			if config["mode"] == "array":
-				nodeResults.extend(subResults)
-		else:
-			subResults = config["on"](node, config)
-			if config["mode"] == "array":
-				nodeResults.extend(subResults)
-		if config["path"]:
-			config["path"].pop()
-	return nodeResults
 
 def settings(init=False, configfile=None, basedir=None):
 	global instance
@@ -274,27 +236,49 @@ class Settings(object):
 			folder = os.path.join(self.settings_dir, type.replace("_", os.path.sep))
 		return folder
 
-	def clientSettings(self):
+	# getter/setter for settings I/O between server & client
+	def clientSettings(self, data=None):
+		if data is None:
+			return self._getClientSettings()
+		return self._setClientSettings(data)
+
+	def _getClientSettings(self):
 		# recurse over settings, generating new nested dict of kv pairs
 		self._clientSettingsPayload = {}
 		getClientConfig = {
-			"on": self.clientSettingsDeepEachGetWrapper
+			"on": self._setPropForClient
 		}
 		eachDeep(default_settings_client_public, getClientConfig)
+
+		# manually append 1-way serial settings
+		from octoprint.printer import getConnectionOptions
+		connectionOps = getConnectionOptions()
+		self._clientSettingsPayload["serial"]["ports"] = connectionOps["ports"]
+		self._clientSettingsPayload["serial"]["baudrates"] = connectionOps["baudrates"]
 		return self._clientSettingsPayload
+
+	def _setClientSettings(self, data):
+		setClientConfig = {
+			"on": self._setPropFromClient
+		}
+		eachDeep(data, setClientConfig)
+		return self._getClientSettings()
 
 	# appends nested values to client payload as self.clientSettings() summoned iterator
 	# fetches all client settings values
-	def clientSettingsDeepEachGetWrapper(self, value, config):
+	def _setPropForClient(self, value, config):
 		refObj = self._clientSettingsPayload # init to payload root then traverse
-		finalKey = config["path"][len(config["path"]) - 1]
-		for pathSeg in config["path"]:
+		finalKey = config["_path"][len(config["_path"]) - 1]
+		for pathSeg in config["_path"]:
 			if (pathSeg in refObj.keys() and not pathSeg == finalKey):
 				refObj = refObj[pathSeg]
 			elif not pathSeg == finalKey:
-					refObj[pathSeg] = {}
-					refObj = refObj[pathSeg]
-		refObj[finalKey] = self.get(config["path"])
+				refObj[pathSeg] = {}
+				refObj = refObj[pathSeg]
+		refObj[finalKey] = self.get(config["_path"])
+
+	def _setPropFromClient(self, value, config):
+		self.set(config["_path"], value)
 
 	#~~ load and save
 
@@ -538,9 +522,12 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, force=False):
+	def set(self, pathRef, value, force=False):
+		path = copy.deepcopy(pathRef)
 		if len(path) == 0:
 			return
+
+		value = coercePrimative(value)
 
 		config = self._config
 		defaults = default_settings
@@ -558,15 +545,30 @@ class Settings(object):
 				return
 
 		key = path.pop(0)
-		if not force and key in defaults.keys() and key in config.keys() and defaults[key] == value:
+		# Test if value is now default and has also been previously configured
+		if not force and key in defaults.keys() and defaults[key] == value and key in config.keys():
 			del config[key]
 			self._dirty = True
+		# Test if value was previously unconfigured and is now different than default, or if value was simply updated
 		elif force or (not key in config.keys() and defaults[key] != value) or (key in config.keys() and config[key] != value):
 			if value is None:
 				del config[key]
 			else:
-				config[key] = coercePrimative(value)
+				config[key] = value
 			self._dirty = True
+		else:
+			# purge unused dictionary extensions from self._config
+			for x in xrange(1, 2):
+				config = self._config
+				for p in pathRef:
+					if p in config.keys():
+						if not config[p]:
+							del config[p]
+							break
+						else:
+							config = config[p]
+					else:
+						break
 
 	def setInt(self, path, value, force=False):
 		self.set(path, value, force)
@@ -590,7 +592,7 @@ class Settings(object):
 				del self._config["folder"]
 			self._dirty = True
 		# Else update config with newly created dir
-		elif (path != currentPath and path != defaultPath) or force:
+		elif (path != currentPath and path != defaultPath and not path is None) or force:
 			if not "folder" in self._config.keys():
 				self._config["folder"] = {}
 			self._config["folder"][type] = path
