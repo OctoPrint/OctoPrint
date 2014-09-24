@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
+* [IRC] Also allow downloading .g files via Tornado
 
 ## 1.1.0 (2014-09-03)
 
