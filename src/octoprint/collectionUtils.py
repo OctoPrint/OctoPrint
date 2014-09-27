@@ -1,5 +1,5 @@
 # coding=utf-8
-__author__ = "Chris Dieringer <osd@foosel.net>"
+__author__ = "Chris Dieringer <cdaringe@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import copy
@@ -29,7 +29,7 @@ def _dict_merge(a, b):
 
 # Iterates through each node of an Dictionary, recursively
 # on property values of type Dictionary.
-# @param  {*} node initially fed the root Dictionary to recurse through
+# @param  {*} initially to be provided a root Dictionary to recurse through
 # @param  {Dictionary} config {
 #     on: function(...) // executes at each node
 #     mode: "array"|null // what is returned by the root call
