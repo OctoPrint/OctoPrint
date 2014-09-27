@@ -44,6 +44,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "name": ko.observable(undefined)
         },
         "api": {
+            "allowCrossOrigin": ko.observable(undefined),
             "enabled": ko.observable(undefined),
             "key": ko.observable(undefined)
         },
@@ -63,10 +64,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         },
         "folder": {
             "logs": ko.observable(undefined),
+            "plugins": ko.observable(undefined),
             "timelapse": ko.observable(undefined),
             "timelapse_tmp": ko.observable(undefined),
             "uploads": ko.observable(undefined),
-            "virtualSd": ko.observable(undefined)
+            "virtualSd": ko.observable(undefined),
+            "watched": ko.observable(undefined)
         },
         "gcodeViewer": {
             "enabled": ko.observable(undefined),
@@ -94,11 +97,15 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "orchestrateKey": ko.observable(undefined)
             }
         },
+        "plugins": ko.observable(undefined),
         "printerParameters": {
             "bedDimensions": {
+                "circular": ko.observable(undefined),
                 "x": ko.observable(undefined),
-                "y": ko.observable(undefined)
+                "y": ko.observable(undefined),
+                "r": ko.observable(undefined)
             },
+            "defaultExtrusionLength": ko.observable(undefined),
             "extruderOffsets": ko.observableArray([]),
             "invertAxes": ko.observable(undefined),
             "pauseTriggers": ko.observable(undefined),
@@ -160,22 +167,35 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     // Client-only koos & settings
     self._printerParameters_extruderOffsets = ko.observableArray([]);
-    self.appearance_available_colors = ko.observable(["default", "red", "orange", "yellow", "green", "blue", "violet", "black"]);
+    self.appearance_available_colors = ko.observable([
+        {key: "default", name: gettext("default")},
+        {key: "red", name: gettext("red")},
+        {key: "orange", name: gettext("orange")},
+        {key: "yellow", name: gettext("yellow")},
+        {key: "green", name: gettext("green")},
+        {key: "blue", name: gettext("blue")},
+        {key: "violet", name: gettext("violet")},
+        {key: "black", name: gettext("black")}
+    ]);
     self.loginState = loginStateViewModel;
     self.notifications_textMessage_country = ko.observable(undefined);
     self.users = usersViewModel;
 
     // Computed koos
     self.printerParameters_bedDimensions = ko.computed({
-        read: function readBedDimensions() {
+        read: function () {
             return {
                 x: parseFloat(self.printerParameters_bedDimensions_x()),
-                y: parseFloat(self.printerParameters_bedDimensions_y())
+                y: parseFloat(self.printerParameters_bedDimensions_y()),
+                r: parseFloat(self.printerParameters_bedDimensions_r()),
+                circular: self.printerParameters_bedDimensions_circular()
             };
         },
-        write: function writeBedDimensions(value) {
-            self.printerParameters_bedDimensions_x(value.x);
-            self.printerParameters_bedDimensions_y(value.y);
+        write: function(value) {
+            self.printerParameters_bedDimensionX(value.x);
+            self.printerParameters_bedDimensionY(value.y);
+            self.printerParameters_bedDimensionR(value.r);
+            self.printerParameters_bedDimensions_circular(value.circular);
         },
         owner: self
     });
@@ -229,12 +249,36 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     /* end computed koos */
 
     // Member functions
+
     self.addTemperatureProfile = function() {
         self.temperature_profiles.push({name: "New", extruder:0, bed:0});
     };
 
     self.addTerminalFilter = function() {
         self.terminalFilters.push({name: "New", regex: "(Send: M105)|(Recv: ok T:)"});
+    };
+
+    self.appearance_colorName = function(color) {
+        switch (color) {
+            case "red":
+                return gettext("red");
+            case "orange":
+                return gettext("orange");
+            case "yellow":
+                return gettext("yellow");
+            case "green":
+                return gettext("green");
+            case "blue":
+                return gettext("blue");
+            case "violet":
+                return gettext("violet");
+            case "black":
+                return gettext("black");
+            case "default":
+                return gettext("default");
+            default:
+                return color;
+        }
     };
 
     self.getPrinterInvertAxis = function(axis) {
@@ -307,7 +351,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self._saveGetPayload = {};
         eachDeep(settingKoos, {"on": self._setGetPayloadProp});
 
-        // Remove client-only settings
+        // Remove client-only settings (not saved/used by server)
         delete self._saveGetPayload.serial.ports;
         delete self._saveGetPayload.serial.baudrates;
 

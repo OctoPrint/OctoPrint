@@ -1,22 +1,29 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import flask
-import tornado.wsgi
+import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory, make_response
+from flask import Flask, render_template, send_from_directory, g, request, make_response
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
+from flask.ext.babel import Babel
+from babel import Locale
+from watchdog.observers import Observer
 
 import os
 import logging
 import logging.config
+import atexit
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
 
 app = Flask("octoprint")
+babel = Babel(app)
 debug = False
 
 printer = None
@@ -24,23 +31,27 @@ gcodeManager = None
 userManager = None
 eventManager = None
 loginManager = None
+pluginManager = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
 user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
-from octoprint.server.util import LargeResponseHandler, ReverseProxied, restricted_access, PrinterStateConnection, admin_validator
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
 import octoprint.gcodefiles as gcodefiles
-import octoprint.util as util
 import octoprint.users as users
 import octoprint.events as events
+import octoprint.plugin
 import octoprint.timelapse
 import octoprint._version
+import octoprint.util
+
+from . import util
 
 
+UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 
 versions = octoprint._version.get_versions()
 VERSION = versions['version']
@@ -48,8 +59,48 @@ BRANCH = versions['branch'] if 'branch' in versions else None
 DISPLAY_VERSION = "%s (%s branch)" % (VERSION, BRANCH) if BRANCH else VERSION
 del versions
 
+
+def get_available_locale_identifiers(locales):
+	result = set()
+
+	# add available translations
+	for locale in locales:
+		result.add(locale.language)
+		if locale.territory:
+			# if a territory is specified, add that too
+			result.add("%s_%s" % (locale.language, locale.territory))
+
+	return result
+
+
+LOCALES = [Locale.parse("en")] + babel.list_translations()
+LANGUAGES = get_available_locale_identifiers(LOCALES)
+
+
+@app.before_request
+def before_request():
+	g.locale = get_locale()
+
+
+@babel.localeselector
+def get_locale():
+	if "l10n" in request.values:
+		return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+	return request.accept_languages.best_match(LANGUAGES)
+
+
 @app.route("/")
 def index():
+	settings_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlugin)
+	settings_plugin_template_vars = dict()
+	for name, implementation in settings_plugins.items():
+		settings_plugin_template_vars[name] = implementation.get_template_vars()
+
+	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
+	asset_plugin_urls = dict()
+	for name, implementation in asset_plugins.items():
+		asset_plugin_urls[name] = implementation.get_assets()
+
 	return render_template(
 		"index.jinja2",
 		webcamStream=settings().get(["webcam", "stream"]),
@@ -65,13 +116,30 @@ def index():
 		display_version=DISPLAY_VERSION,
 		stylesheet=settings().get(["devel", "stylesheet"]),
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
-		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"])
+		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+		uiApiKey=UI_API_KEY,
+		settingsPlugins=settings_plugin_template_vars,
+		assetPlugins=asset_plugin_urls
 	)
 
 
 @app.route("/robots.txt")
 def robotsTxt():
 	return send_from_directory(app.static_folder, "robots.txt")
+
+
+@app.route("/plugin_assets/<string:name>/<path:filename>")
+def plugin_assets(name, filename):
+	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
+
+	if not name in asset_plugins:
+		return make_response("Asset not found", 404)
+	asset_plugin = asset_plugins[name]
+	asset_folder = asset_plugin.get_asset_folder()
+	if asset_folder is None:
+		return make_response("Asset not found", 404)
+
+	return send_from_directory(asset_folder, filename)
 
 
 @identity_loaded.connect_via(app)
@@ -97,15 +165,16 @@ def load_user(id):
 
 
 class Server():
-	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False):
+	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False, logConf=None):
 		self._configfile = configfile
 		self._basedir = basedir
 		self._host = host
 		self._port = port
 		self._debug = debug
 		self._allowRoot = allowRoot
+		self._logConf = logConf
+		self._server = None
 
-		  
 	def run(self):
 		if not self._allowRoot:
 			self._checkForRoot()
@@ -115,12 +184,11 @@ class Server():
 		global userManager
 		global eventManager
 		global loginManager
+		global pluginManager
 		global debug
 
-		from tornado.wsgi import WSGIContainer
-		from tornado.httpserver import HTTPServer
 		from tornado.ioloop import IOLoop
-		from tornado.web import Application, FallbackHandler
+		from tornado.web import Application
 
 		debug = self._debug
 
@@ -128,7 +196,7 @@ class Server():
 		self._initSettings(self._configfile, self._basedir)
 
 		# then initialize logging
-		self._initLogging(self._debug)
+		self._initLogging(self._debug, self._logConf)
 		logger = logging.getLogger(__name__)
 
 		logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
@@ -136,6 +204,23 @@ class Server():
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
 		printer = Printer(gcodeManager)
+		pluginManager = octoprint.plugin.plugin_manager(init=True)
+
+		# configure additional template folders for jinja2
+		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
+		additional_template_folders = []
+		for plugin in template_plugins.values():
+			folder = plugin.get_template_folder()
+			if folder is not None:
+				additional_template_folders.append(plugin.get_template_folder())
+
+		import jinja2
+		jinja_loader = jinja2.ChoiceLoader([
+			app.jinja_loader,
+			jinja2.FileSystemLoader(additional_template_folders)
+		])
+		app.jinja_loader = jinja_loader
+		del jinja2
 
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
@@ -148,12 +233,18 @@ class Server():
 		if settings().getBoolean(["accessControl", "enabled"]):
 			userManagerName = settings().get(["accessControl", "userManager"])
 			try:
-				clazz = util.getClass(userManagerName)
+				clazz = octoprint.util.getClass(userManagerName)
 				userManager = clazz()
 			except AttributeError, e:
 				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
 
-		app.wsgi_app = ReverseProxied(app.wsgi_app)
+		app.wsgi_app = util.ReverseProxied(
+			app.wsgi_app,
+			settings().get(["server", "reverseProxy", "prefixHeader"]),
+			settings().get(["server", "reverseProxy", "schemeHeader"]),
+			settings().get(["server", "reverseProxy", "prefixFallback"]),
+			settings().get(["server", "reverseProxy", "prefixScheme"])
+		)
 
 		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
 		loginManager = LoginManager()
@@ -169,35 +260,32 @@ class Server():
 		if self._port is None:
 			self._port = settings().getInt(["server", "port"])
 
-		logger.info("Listening on http://%s:%d" % (self._host, self._port))
 		app.debug = self._debug
 
 		from octoprint.server.api import api
 
+		# register API blueprint
 		app.register_blueprint(api, url_prefix="/api")
+
+		# also register any blueprints defined in BlueprintPlugins
+		octoprint.plugin.call_plugin(octoprint.plugin.types.BlueprintPlugin,
+		                             "get_blueprint",
+		                             callback=lambda name, _, blueprint: app.register_blueprint(blueprint, url_prefix="/plugin/{name}".format(name=name)))
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
-		def admin_access_validation(request):
-			"""
-			Creates a custom wsgi and Flask request context in order to be able to process user information
-			stored in the current session.
-
-			:param request: The Tornado request for which to create the environment and context
-			"""
-			wsgi_environ = tornado.wsgi.WSGIContainer.environ(request)
-			with app.request_context(wsgi_environ):
-				app.session_interface.open_session(app, flask.request)
-				loginManager.reload_user()
-				admin_validator(flask.request)
-
+		upload_suffixes = dict(name=settings().get(["server", "uploads", "nameSuffix"]), path=settings().get(["server", "uploads", "pathSuffix"]))
 		self._tornado_app = Application(self._router.urls + [
-			(r"/downloads/timelapse/([^/]*\.mpg)", LargeResponseHandler, {"path": settings().getBaseFolder("timelapse"), "as_attachment": True}),
-			(r"/downloads/files/local/([^/]*\.(gco|gcode|g))", LargeResponseHandler, {"path": settings().getBaseFolder("uploads"), "as_attachment": True}),
-			(r"/downloads/logs/([^/]*)", LargeResponseHandler, {"path": settings().getBaseFolder("logs"), "as_attachment": True, "access_validation": admin_access_validation}),
-			(r".*", FallbackHandler, {"fallback": WSGIContainer(app.wsgi_app)})
+			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("timelapse"), as_attachment=True)),
+			(r"/downloads/files/local/([^/]*\.(gco|gcode|g))", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("uploads"), as_attachment=True)),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("logs"), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))),
+			(r"/downloads/camera/current", util.tornado.UrlForwardHandler, dict(url=settings().get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			(r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp", suffixes=upload_suffixes))
 		])
-		self._server = HTTPServer(self._tornado_app)
+		max_body_sizes = [
+			("POST", r"/api/files/([^/]*)", settings().getInt(["server", "uploads", "maxSize"]))
+		]
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=settings().getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire(events.Events.STARTUP)
@@ -206,17 +294,56 @@ class Server():
 			connectionOptions = getConnectionOptions()
 			if port in connectionOptions["ports"]:
 				printer.connect(port, baudrate)
-		try:
-			IOLoop.instance().start()
-		except KeyboardInterrupt:
+
+		# start up watchdogs
+		observer = Observer()
+		observer.schedule(util.watchdog.GcodeWatchdogHandler(gcodeManager, printer), settings().getBaseFolder("watched"))
+		observer.schedule(util.watchdog.UploadCleanupWatchdogHandler(gcodeManager), settings().getBaseFolder("uploads"))
+		observer.start()
+
+		ioloop = IOLoop.instance()
+
+		# run our startup plugins
+		octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
+		                             "on_startup",
+		                             args=(self._host, self._port))
+
+		# prepare our after startup function
+		def on_after_startup():
+			logger.info("Listening on http://%s:%d" % (self._host, self._port))
+
+			# now this is somewhat ugly, but the issue is the following: startup plugins might want to do things for
+			# which they need the server to be already alive (e.g. for being able to resolve urls, such as favicons
+			# or service xmls or the like). While they are working though the ioloop would block. Therefore we'll
+			# create a single use thread in which to perform our after-startup-tasks, start that and hand back
+			# control to the ioloop
+			def work():
+				octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
+				                             "on_after_startup")
+			import threading
+			threading.Thread(target=work).start()
+		ioloop.add_callback(on_after_startup)
+
+		# prepare our shutdown function
+		def on_shutdown():
 			logger.info("Goodbye!")
+			observer.stop()
+			observer.join()
+			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
+			                             "on_shutdown")
+		atexit.register(on_shutdown)
+
+		try:
+			ioloop.start()
+		except KeyboardInterrupt:
+			pass
 		except:
 			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
 			logger.exception("Stacktrace follows:")
 
 	def _createSocketConnection(self, session):
 		global printer, gcodeManager, userManager, eventManager
-		return PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session)
+		return util.sockjs.PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session)
 
 	def _checkForRoot(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
@@ -225,8 +352,8 @@ class Server():
 	def _initSettings(self, configfile, basedir):
 		settings(init=True, basedir=basedir, configfile=configfile)
 
-	def _initLogging(self, debug):
-		config = {
+	def _initLogging(self, debug, logConf=None):
+		defaultConfig = {
 			"version": 1,
 			"formatters": {
 				"simple": {
@@ -257,12 +384,6 @@ class Server():
 				}
 			},
 			"loggers": {
-				#"octoprint.timelapse": {
-				#	"level": "DEBUG"
-				#},
-				#"octoprint.events": {
-				#	"level": "DEBUG"
-				#},
 				"SERIAL": {
 					"level": "CRITICAL",
 					"handlers": ["serialFile"],
@@ -276,8 +397,18 @@ class Server():
 		}
 
 		if debug:
-			config["root"]["level"] = "DEBUG"
+			defaultConfig["root"]["level"] = "DEBUG"
 
+		if logConf is None:
+			logConf = os.path.join(settings().settings_dir, "logging.yaml")
+
+		configFromFile = {}
+		if os.path.exists(logConf) and os.path.isfile(logConf):
+			import yaml
+			with open(logConf, "r") as f:
+				configFromFile = yaml.safe_load(f)
+
+		config = octoprint.util.dict_merge(defaultConfig, configFromFile)
 		logging.config.dictConfig(config)
 
 		if settings().getBoolean(["serial", "log"]):
@@ -286,5 +417,5 @@ class Server():
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 if __name__ == "__main__":
-	octoprint = Server()
-	octoprint.run()
+	server = Server()
+	server.run()

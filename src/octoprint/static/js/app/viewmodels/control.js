@@ -34,13 +34,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
                 tools[extruder] = self._createToolEntry();
-                tools[extruder]["name"]("Tool " + extruder);
+                tools[extruder]["name"](gettext("Tool") + " " + extruder);
                 tools[extruder]["key"]("tool" + extruder);
             }
         } else {
             // only one extruder, no need to add numbers
             tools[0] = self._createToolEntry();
-            tools[0]["name"]("Hotend");
+            tools[0]["name"](gettext("Hotend"));
             tools[0]["key"]("tool0");
         }
 
@@ -153,7 +153,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
-        if (!length) length = 5;
+        if (!length) length = self.settings.printer_defaultExtrusionLength();
 
         var data = {
             command: "extrude",
@@ -187,10 +187,17 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self.sendCustomCommand = function(command) {
-        if (!command)
-            return;
-
+        if (!command) return;
         var data;
+        var callback = function (){
+            $.ajax({
+                url: API_BASEURL + "printer/command",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify(data)
+            });
+        };
         if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
             // single command
             data = {"command" : command.command};
@@ -207,16 +214,23 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             }
         }
 
-        if (data === undefined)
-            return;
+        if (command.confirm) {
+            var confirmationDialog = $("#confirmation_dialog");
+            var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
 
-        $.ajax({
-            url: API_BASEURL + "printer/command",
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data)
-        });
+            $(".confirmation_dialog_message", confirmationDialog).text(command.confirm);
+            confirmationDialogAck.unbind("click");
+            confirmationDialogAck.bind("click", function(e) {
+                e.preventDefault();
+                $("#confirmation_dialog").modal("hide");
+                callback();
+            });
+            confirmationDialog.modal("show");
+        } else {
+            callback();
+        }
+
+        if (data === undefined) return;
     };
 
     self.displayMode = function(customControl) {
@@ -238,4 +252,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
     };
 
+    self.onStartup = function() {
+        self.requestData();
+    };
 }

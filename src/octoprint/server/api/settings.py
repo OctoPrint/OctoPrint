@@ -1,6 +1,9 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 
@@ -8,8 +11,11 @@ from flask import request, jsonify
 
 from octoprint.settings import settings
 
-from octoprint.server import restricted_access, admin_permission
+from octoprint.server import admin_permission
 from octoprint.server.api import api
+from octoprint.server.util.flask import restricted_access
+
+import octoprint.plugin
 
 # Setting helpers
 def setCura(data):
@@ -42,11 +48,20 @@ def setLog(data):
 		logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 		logging.getLogger("SERIAL").debug("Enabling serial logging")
 
-
 @api.route("/settings", methods=["GET"])
 def getSettings():
-	return jsonify(settings().clientSettings())
+	data = settings().clientSettings()
 
+	def process_plugin_result(name, plugin, result):
+		if result:
+			if not "plugins" in data:
+				data["plugins"] = dict()
+			if "__enabled" in result:
+				del result["__enabled"]
+			data["plugins"][name] = result
+
+	octoprint.plugin.call_plugin(octoprint.plugin.SettingsPlugin, "on_settings_load", callback=process_plugin_result)
+	return jsonify(data)
 
 @api.route("/settings", methods=["POST"])
 @restricted_access
@@ -56,8 +71,12 @@ def setSettings():
 		data = request.json
 		s = settings()
 		setLog(data) # call before bulk setting op to compare old vs new
-		clientSettings = s.clientSettings(data)
+		s.clientSettings(data)
 		setCura(data)
 		s.setUserDirs()
+		if "plugins" in data:
+			for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():
+				if name in data["plugins"]:
+					plugin.on_settings_save(data["plugins"][name])
 		s.save()
 	return getSettings()

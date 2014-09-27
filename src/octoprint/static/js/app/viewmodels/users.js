@@ -61,11 +61,11 @@ function UsersViewModel(loginStateViewModel) {
             dataType: "json",
             success: self.fromResponse
         });
-    }
+    };
 
     self.fromResponse = function(response) {
         self.listHelper.updateItems(response.users);
-    }
+    };
 
     self.showAddUserDialog = function() {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -73,7 +73,7 @@ function UsersViewModel(loginStateViewModel) {
         self.currentUser(undefined);
         self.editorActive(true);
         $("#settings-usersDialogAddUser").modal("show");
-    }
+    };
 
     self.confirmAddUser = function() {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -84,14 +84,14 @@ function UsersViewModel(loginStateViewModel) {
             self.currentUser(undefined);
             $("#settings-usersDialogAddUser").modal("hide");
         });
-    }
+    };
 
     self.showEditUserDialog = function(user) {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         self.currentUser(user);
         $("#settings-usersDialogEditUser").modal("show");
-    }
+    };
 
     self.confirmEditUser = function() {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -106,14 +106,14 @@ function UsersViewModel(loginStateViewModel) {
             self.currentUser(undefined);
             $("#settings-usersDialogEditUser").modal("hide");
         });
-    }
+    };
 
     self.showChangePasswordDialog = function(user) {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         self.currentUser(user);
         $("#settings-usersDialogChangePassword").modal("show");
-    }
+    };
 
     self.confirmChangePassword = function() {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -123,28 +123,28 @@ function UsersViewModel(loginStateViewModel) {
             self.currentUser(undefined);
             $("#settings-usersDialogChangePassword").modal("hide");
         });
-    }
+    };
 
     self.confirmGenerateApikey = function() {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         self.generateApikey(self.currentUser().name, function(response) {
             self._updateApikey(response.apikey);
-        })
-    }
+        });
+    };
 
     self.confirmDeleteApikey = function() {
         if (!CONFIG_ACCESS_CONTROL) return;
 
         self.deleteApikey(self.currentUser().name, function() {
             self._updateApikey(undefined);
-        })
-    }
+        });
+    };
 
     self._updateApikey = function(apikey) {
         self.editorApikey(apikey);
         self.requestData();
-    }
+    };
 
     //~~ AJAX calls
 
@@ -162,7 +162,7 @@ function UsersViewModel(loginStateViewModel) {
                 callback();
             }
         });
-    }
+    };
 
     self.removeUser = function(user, callback) {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -170,7 +170,7 @@ function UsersViewModel(loginStateViewModel) {
 
         if (user.name == loginStateViewModel.username()) {
             // we do not allow to delete ourselves
-            $.pnotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
+            new PNotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
             return;
         }
 
@@ -179,10 +179,12 @@ function UsersViewModel(loginStateViewModel) {
             type: "DELETE",
             success: function(response) {
                 self.fromResponse(response);
-                callback();
+                if (callback && typeof callback === "function") {
+                    callback();
+                }
             }
         });
-    }
+    };
 
     self.updateUser = function(user, callback) {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -198,7 +200,7 @@ function UsersViewModel(loginStateViewModel) {
                 callback();
             }
         });
-    }
+    };
 
     self.updatePassword = function(username, password, callback) {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -210,7 +212,7 @@ function UsersViewModel(loginStateViewModel) {
             data: JSON.stringify({password: password}),
             success: callback
         });
-    }
+    };
 
     self.generateApikey = function(username, callback) {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -220,7 +222,7 @@ function UsersViewModel(loginStateViewModel) {
             type: "POST",
             success: callback
         });
-    }
+    };
 
     self.deleteApikey = function(username, callback) {
         if (!CONFIG_ACCESS_CONTROL) return;
@@ -230,5 +232,5 @@ function UsersViewModel(loginStateViewModel) {
             type: "DELETE",
             success: callback
         });
-    }
+    };
 }

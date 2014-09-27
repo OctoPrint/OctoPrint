@@ -16,16 +16,13 @@ Get connection settings
    Retrieve the current connection settings, including information regarding the available baudrates and
    serial ports and the current connection state.
 
-   **Example Request**
+   **Example**
 
    .. sourcecode:: http
 
       GET /api/connection HTTP/1.1
       Host: example.com
-      Content-Type: application/json
       X-Api-Key: abcdef...
-
-   **Example Response**
 
    .. sourcecode:: http
 
@@ -90,6 +87,10 @@ Issue a connection command
         "autoconnect": true
       }
 
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Disconnect Request**
 
    .. sourcecode:: http
@@ -102,6 +103,10 @@ Issue a connection command
       {
         "command": "disconnect"
       }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
 
    :json string command:      The command to issue, either ``connect`` or ``disconnect``
    :json string port:         ``connect`` command: The port to connect to. If left out either the existing ``portPreference``
