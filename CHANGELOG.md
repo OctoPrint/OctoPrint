@@ -2,6 +2,11 @@
 
 ## 1.1.1 (Unreleased)
 
+### Improvements
+
+* The API is now enabled by default and the API key -- if not yet set -- will be automatically generated on first
+  server start and written back into ``config.yaml``
+
 ### Bug Fixes
 
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
