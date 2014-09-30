@@ -10,7 +10,7 @@ function LoginStateViewModel() {
 
     self.userMenuText = ko.computed(function() {
         if (self.loggedIn()) {
-            return "\"" + self.username() + "\"";
+            return self.username();
         } else {
             return gettext("Login");
         }
