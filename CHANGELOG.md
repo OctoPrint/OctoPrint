@@ -43,6 +43,7 @@
 
 * The API is now enabled by default and the API key -- if not yet set -- will be automatically generated on first
   server start and written back into ``config.yaml``
+* Event subscriptions are now enabled by default (it was an accident that they weren't)
 
 ### Bug Fixes
 
