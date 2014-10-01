@@ -103,23 +103,23 @@ def getSettings():
 			"enabled": s.getBoolean(["cura", "enabled"]),
 			"path": s.get(["cura", "path"]),
 			"config": s.get(["cura", "config"])
-		}
+		},
+		"controls": s.get(["controls"])
 	}
+    
+    def process_plugin_result(name, plugin, result):
+        if result:
+            if not "plugins" in data:
+                data["plugins"] = dict()
+            if "__enabled" in result:
+                del result["__enabled"]
+            data["plugins"][name] = result
 
-	def process_plugin_result(name, plugin, result):
-		if result:
-			if not "plugins" in data:
-				data["plugins"] = dict()
-			if "__enabled" in result:
-				del result["__enabled"]
-			data["plugins"][name] = result
+    octoprint.plugin.call_plugin(octoprint.plugin.SettingsPlugin,
+                                 "on_settings_load",
+                                 callback=process_plugin_result)
 
-	octoprint.plugin.call_plugin(octoprint.plugin.SettingsPlugin,
-	                             "on_settings_load",
-	                             callback=process_plugin_result)
-
-	return jsonify(data)
-
+    return jsonify(data)
 
 @api.route("/settings", methods=["POST"])
 @restricted_access
@@ -201,6 +201,10 @@ def setSettings():
 
 		if "terminalFilters" in data.keys():
 			s.set(["terminalFilters"], data["terminalFilters"])
+
+		if "controls" in data.keys():
+			s.set(["controls"], data["controls"])
+			s.controlsChanged = True
 
 		if "system" in data.keys():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])

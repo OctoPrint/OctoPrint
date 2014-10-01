@@ -199,6 +199,21 @@ function UsersViewModel(loginStateViewModel) {
             }
         });
     }
+    self.updateUserOptions = function (user, callback) {
+    	if (!CONFIG_ACCESS_CONTROL) return;
+    	if (user === undefined) return;
+
+    	$.ajax({
+    		url: API_BASEURL + "users/" + user.name + '/options',
+    		type: "PUT",
+    		contentType: "application/json; charset=UTF-8",
+    		data: JSON.stringify({options: user.options }),
+    		success: function (response) {
+    			self.fromResponse(response);
+    			callback();
+    		}
+    	});
+    }
 
     self.updatePassword = function(username, password, callback) {
         if (!CONFIG_ACCESS_CONTROL) return;

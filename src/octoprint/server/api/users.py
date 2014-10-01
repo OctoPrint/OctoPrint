@@ -87,9 +87,29 @@ def updateUser(username):
 				roles.append("admin")
 			userManager.changeUserRoles(username, roles)
 
+			if "options" in data.keys():
+				userManager.changeUserOptions(username, data["options"]);
+
 			# change activation
 			if "active" in data.keys():
 				userManager.changeUserActivation(username, data["active"])
+		return getUsers()
+	else:
+		abort(404)
+
+@api.route("/users/<username>/options", methods=["PUT"])
+@restricted_access
+def updateUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	user = userManager.findUser(username)
+	if user is not None:
+		if "application/json" in request.headers["Content-Type"]:
+			data = request.json
+
+			if "options" in data.keys():
+				userManager.changeUserOptions(username, data["options"]);
 		return getUsers()
 	else:
 		abort(404)

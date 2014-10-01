@@ -1,8 +1,9 @@
-function ControlViewModel(loginStateViewModel, settingsViewModel) {
+function ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.settings = settingsViewModel;
+    self.users = usersViewModel;
 
     self._createToolEntry = function() {
         return {
@@ -21,10 +22,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.extrusionAmount = ko.observable(undefined);
     self.controls = ko.observableArray([]);
-
-    self.tools = ko.observableArray([]);
+    self.collapseState = ko.observableArray([]);
 
     self.feedbackControlLookup = {};
+
+    self.tools = ko.observableArray([]);
 
     self.settings.printer_numExtruders.subscribe(function(oldVal, newVal) {
         var tools = [];
@@ -47,6 +49,36 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         self.tools(tools);
     });
 
+    self.settings.children.subscribe(function (newVal) {
+    	var feedback = function (controls) {
+    		for (var i = 0; i < controls.length; i++) {
+    			if (controls[i].type == "section")
+    				feedback(controls[i].children());
+    			else if (controls[i].type == "feedback_command_output" || controls[i].type == "feedback_commands_output" || controls[i].type == "feedback")
+    				self.feedbackControlLookup[controls[i].name()] = controls[i].output;
+    		}
+    	};
+
+    	feedback(newVal);
+    	self.controls(newVal);
+    });
+
+    self.loginState.subscribe(function (change, newVal) {
+    	if ("login" == change)
+    	{
+    		if (newVal.options.collapseState !== undefined)
+    		{
+    			self.collapseState(newVal.options.collapseState);
+    			setTimeout(function () {
+    				for (var i = 0; i < self.collapseState().length; i++) {
+    					var element = $('#title_' + self.collapseState()[i]);
+    					element.addClass("in");
+					}
+    			}, 500);
+    		}
+		}
+    });
+
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
     };
@@ -66,6 +98,12 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self.fromFeedbackCommandData = function(data) {
+<<<<<<< HEAD
+    	if (data.name in self.feedbackControlLookup) {
+    		self.feedbackControlLookup[data.name](data.output);
+    	}
+    }
+=======
         if (data.name in self.feedbackControlLookup) {
             self.feedbackControlLookup[data.name](data.output);
         }
@@ -106,6 +144,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
         return control;
     };
+>>>>>>> refs/remotes/upstream/devel
 
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
@@ -200,20 +239,25 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             })
         }
         var data = undefined;
-        if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
-            // single command
-            data = {"command" : command.command};
-        } else if (command.type == "commands" || command.type == "parametric_commands") {
-            // multi command
-            data = {"commands": command.commands};
+        if (command.type.indexOf("commands") != -1) {
+        	// multi command
+        	data = { "commands": command.commands().toString().split('\n') };
+        } else if (command.type.indexOf("command") != -1) {
+        	// single command
+        	data = { "command": command.command() };
         }
 
-        if (command.type == "parametric_command" || command.type == "parametric_commands") {
+        if (command.type.indexOf("parametric_c") != -1) {
             // parametric command(s)
             data["parameters"] = {};
-            for (var i = 0; i < command.input.length; i++) {
-                data["parameters"][command.input[i].parameter] = command.input[i].value;
+            for (var i = 0; i < command.input().length; i++) {
+                data["parameters"][command.input()[i].parameter()] = command.input()[i].value();
             }
+        }
+        else if (command.type.indexOf("parametric_s") != -1) {
+        	// parametric command(s)
+        	data["parameters"] = {};
+        	data["parameters"][command.slideInput().parameter()] = command.slideInput().value();
         }
 
         if (command.confirm) {
@@ -238,6 +282,9 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self.displayMode = function(customControl) {
+		if (!customControl)
+            return "customControls_emptyTemplate";
+			
         switch (customControl.type) {
             case "section":
                 return "customControls_sectionTemplate";
@@ -246,9 +293,16 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
                 return "customControls_commandTemplate";
             case "parametric_command":
             case "parametric_commands":
-                return "customControls_parametricCommandTemplate";
-            case "feedback_command":
-                return "customControls_feedbackCommandTemplate";
+            	return "customControls_parametricCommandTemplate";
+			case "parametric_slider_command":
+        	case "parametric_slider_commands":
+        		return "customControls_parametricSliderCommandTemplate";
+        	case "feedback_command":
+        	case "feedback_commands":
+        		return "customControls_feedbackCommandTemplate";
+			case "feedback_command_output":
+        	case "feedback_commands_output":
+				return "customControls_feedbackCommandOutputTemplate";
             case "feedback":
                 return "customControls_feedbackTemplate";
             default:
@@ -256,7 +310,45 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
     };
 
+<<<<<<< HEAD
+	// Dynamic Commands
+    self.toggleCollapse = function () {
+    	var elementParent = $('#title_' + self.getEntryId(this));
+
+		// Height calculation
+    	var element = elementParent.children('div.accordion-inner');
+
+    	var padding_top = parseInt(element.css("padding-top").replace("px", ""));
+
+    	var maxHeight = 0;
+    	element.children().each(function (index, value) {
+    		var e = $(value);
+    		var height = e.position().top + e.outerHeight() - padding_top;
+    		maxHeight = height > maxHeight ? height : maxHeight;
+    	});
+
+    	this.height(maxHeight);
+
+    	// User save state
+    	if (elementParent.hasClass("in"))
+    		self.collapseState.remove(self.getEntryId(this));
+    	else
+    		self.collapseState.push(self.getEntryId(this));
+
+    	_.extend(self.loginState.currentUser().options, { collapseState: self.collapseState() });
+    	self.users.updateUserOptions(self.loginState.currentUser());
+    }
+
+    self.getEntryId = function (data) {
+    	return "custom_command_" + md5(data.name() + ":" + data.type);
+    }
+
+    self.bgImage = function(data) { 
+    	return data.backgroundColor1() != '' && data.backgroundColor2() != '' ? "linear-gradient(to bottom," + data.backgroundColor1() + "," + data.backgroundColor2() + ")" : '';    	
+	}
+=======
     self.onStartup = function() {
         self.requestData();
     };
+>>>>>>> refs/remotes/upstream/devel
 }

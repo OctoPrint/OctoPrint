@@ -405,41 +405,60 @@
                                     <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">{{ _('Fans off') }}</button>
                                 </div>
                             </div>
-
-                            <!-- Container for custom controls -->
-                            <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
+							
+                            <div class="jog-panel" style="width: 99.8%; margin-top: 5px">
+							    <div style="text-align: start" id="customControls" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }">
+							    </div>
+                            </div>
 
                             <!-- Templates for custom controls -->
                             <script type="text/html" id="customControls_sectionTemplate">
-                                <h1 data-bind="text: name"></h1>
-
-                                <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+                                <div class="accordion-group" style="width: 100%;" data-bind="attr: { 'id': $root.getEntryId($data) }">
+									<div class="accordion-heading"><a class="accordion-toggle" data-toggle="collapse" style="vertical-align: -webkit-baseline-middle" data-bind="click: $root.toggleCollapse, attr: { 'href': '#title_' + $root.getEntryId($data) }"><h1 style="line-height: 30px; margin: 0 0; border-bottom: none; width: auto" data-bind="text: name"></h1></a></div>
+									<div class="accordion-body collapse" data-bind="attr: { 'id': 'title_' + $root.getEntryId($data) }">
+										<div class="accordion-inner" data-bind="style: { height: height() + 'px' },  template: { name: $root.displayMode, foreach: children }">
+										</div>
+									</div>
+								</div>
                             </script>
                             <script type="text/html" id="customControls_commandTemplate">
-                                <form class="form-inline">
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
-                                </form>
+                                <div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, attr: { 'id': $root.getEntryId($data) }">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button>
+                                </div>
+                            </script>
+                            <script type="text/html" id="customControls_feedbackCommandOutputTemplate">
+                                <div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, attr: { 'id': $root.getEntryId($data) }">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button> 
+									<span data-bind="text: output"></span>
+                                </div>
                             </script>
                             <script type="text/html" id="customControls_feedbackCommandTemplate">
-                                <form class="form-inline">
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button> <span data-bind="text: output"></span>
-                                </form>
+                                <div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, attr: { 'id': $root.getEntryId($data) }">
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button> 
+                                </div>
                             </script>
                             <script type="text/html" id="customControls_feedbackTemplate">
-                                <div>
+                                <div class="draggable"  style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, attr: { 'id': $root.getEntryId($data) }">
                                     <strong data-bind="text: name"></strong>: <span data-bind="text: output"></span>
                                 </div>
                             </script>
                             <script type="text/html" id="customControls_parametricCommandTemplate">
-                                <form class="form-inline">
+                                <div class="draggable form-inline" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, attr: { 'id': $root.getEntryId($data) }">
                                     <!-- ko foreach: input -->
                                         <label data-bind="text: name"></label>
                                         <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
                                     <!-- /ko -->
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
-                                </form>
+                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }, css: css, style: { color: foregroundColor, backgroundColor: backgroundColor2, backgroundImage: $root.bgImage($data) }"></button>
+                                </div>
                             </script>
-                            <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
+                            <script type="text/html" id="customControls_parametricSliderCommandTemplate">
+						        <div class="draggable" style="display: inline-block" data-bind="style: { position: top() >0 || left() > 0 ? 'absolute' : 'relative', top: top()+'px', left: left()+'px' }, contextMenu: { menuSelector: '#settingsCommandContextMenu', preFunction: function(event) { $root.setData(event, $parent, $data); } }, drag: { grid: [5, 5], containment: 'parent', start: function( event, ui ) { $(this).data('preventBehaviour', true); }, drag: $root.adjustContainer, stop: function( event, ui ) { $root.movementStopped(ui, $data, $parent); } }, attr: { 'id': $root.getEntryId($data) }">
+							        <label style="display: inline-block; padding-right: 5px" data-bind="text: name() + ': '"></label>
+                                    <div class="input-large" data-bind="slider: { slideStop: function(newVal, oldVal) { $root.sendCustomCommand($data); }, min: slideInput().min, max: slideInput().max, value: slideInput().value, formatter: function(value) { return $data.slideInput().name() + ': ' + value; } }"></input>
+						        </div>
+					        </script>
+                            <script type="text/html" id="customControls_emptyTemplate">
+							</script>
                             <!-- End of templates for custom controls -->
                         </div>
                         {% if enableGCodeVisualizer %}
@@ -642,6 +661,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.core.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.widget.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.mouse.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.draggable.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.flot.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.iframe-transport.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.fileupload.js') }}"></script>
@@ -664,6 +684,7 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/loginstate.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/navigation.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/printerstate.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/dialogs.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/settings.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/temperature.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>

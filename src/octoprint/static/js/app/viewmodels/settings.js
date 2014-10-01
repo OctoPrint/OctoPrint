@@ -1,8 +1,9 @@
-function SettingsViewModel(loginStateViewModel, usersViewModel) {
+function SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.users = usersViewModel;
+    self.dialogs = dialogsViewModel;
 
     self.api_enabled = ko.observable(undefined);
     self.api_key = ko.observable(undefined);
@@ -169,6 +170,17 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
 
     self.settings = undefined;
 
+    self.children = ko.observableArray([]); // Controls
+    self.sortControls = function (left, right) {
+    	if (left.row() < right.row())
+    		return -1;
+
+    	if (left.row() > right.row())
+    		return 1;
+
+    	return 0;
+    };
+
     self.addTemperatureProfile = function() {
         self.temperature_profiles.push({name: "New", extruder:0, bed:0});
     };
@@ -290,12 +302,252 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.system_actions(response.system.actions);
 
         self.terminalFilters(response.terminalFilters);
-    };
 
+<<<<<<< HEAD
+        var children = [];
+        for (var i = 0; i < response.controls.length; i++)
+        {
+        	children.push(self._processControl(response.controls[i]));
+        }
+        self.children(children.sort(self.sortControls));
+    }
+
+    self._processControl = function (customControl)
+    {
+    	customControl.name = ko.observable(customControl.name);
+    	if (customControl.type != "section") {
+    		if (customControl.hasOwnProperty("command"))
+    			customControl.command = ko.observable(customControl.command);
+
+    		if (customControl.hasOwnProperty("commands"))
+    			if (customControl.commands.indexOf(',') >= 0)
+    				customControl.commands = ko.observable(customControl.commands);
+    			else
+    				customControl.commands = ko.observable(customControl.commands.toString().replace(/\,/g, '\n'));
+
+			if (!customControl.hasOwnProperty("left"))
+				customControl.left = ko.observable(0);
+			else
+				customControl.left = ko.observable(customControl.left);
+
+			if (!customControl.hasOwnProperty("top"))
+				customControl.top = ko.observable(0);
+			else
+				customControl.top = ko.observable(customControl.top);
+    	}
+    	else 
+		{
+			var c = [];
+    		for (var j = 0; j < customControl.children.length; j++)
+    			c[j] = self._processControl(customControl.children[j]);
+
+    		customControl.children = ko.observableArray(c);
+
+    		if (!customControl.hasOwnProperty("height"))
+    			customControl.height = ko.observable(0);
+    		else
+    			customControl.height = ko.observable(customControl.height);
+
+			customControl.settingsHeight = ko.observable(0);
+
+    		if (!customControl.hasOwnProperty("row"))
+    			customControl.row = ko.observable(0);
+    		else
+    			customControl.row = ko.observable(customControl.row);
+    	}
+
+    	if (customControl.type.indexOf("parametric_c") != -1) {
+    		for (var j = 0; j < customControl.input.length; j++)
+    			customControl.input[j] = { name: ko.observable(customControl.input[j].name), parameter: ko.observable(customControl.input[j].parameter), defaultValue: ko.observable(customControl.input[j].default), value: ko.observable(customControl.input[j].default) };
+
+    		customControl.input = ko.observableArray(customControl.input);
+    	}
+    	if (customControl.type.indexOf("parametric_s") != -1) {
+    		customControl.slideInput = {
+    			name: ko.observable(customControl.slideInput.name),
+    			parameter: ko.observable(customControl.slideInput.parameter),
+    			min: ko.observable(customControl.slideInput.min),
+    			max: ko.observable(customControl.slideInput.max),
+    			defaultValue: ko.observable(customControl.slideInput.default),
+    			value: ko.observable(customControl.slideInput.default)
+    		};
+
+    		customControl.slideInput = ko.observable(customControl.slideInput);
+    	}
+
+    	if (customControl.type.indexOf("feedback_command") != -1)
+    	{
+    		customControl.regex = ko.observable(customControl.regex);
+    		customControl.template = ko.observable(customControl.template);
+    		if (customControl.type.indexOf("output") != -1)
+    			customControl.output = ko.observable("");
+    	}
+
+    	if (customControl.type == "feedback" || customControl.type == "feedback") {
+    		customControl.output = ko.observable("");
+    	}
+
+    	if (!customControl.hasOwnProperty("css"))
+    		customControl.css = ko.observable("");
+    	else
+    		customControl.css = ko.observable(customControl.css);
+		
+		if (!customControl.hasOwnProperty("backgroundColor1"))
+        	customControl.backgroundColor1 = ko.observable("");
+        else
+        	customControl.backgroundColor1 = ko.observable(customControl.backgroundColor1);
+
+    	if (!customControl.hasOwnProperty("backgroundColor2"))
+    		customControl.backgroundColor2 = ko.observable("");
+    	else
+    		customControl.backgroundColor2 = ko.observable(customControl.backgroundColor2);
+
+        if (!customControl.hasOwnProperty("foregroundColor"))
+        	customControl.foregroundColor = ko.observable("");
+        else
+        	customControl.foregroundColor = ko.observable(customControl.foregroundColor);
+
+    	return customControl;
+    }
+
+    self._customControlToArray = function (customControl)
+    {
+    	var c = { 
+			name: customControl.name(), 
+			foregroundColor: customControl.foregroundColor(), 
+			backgroundColor1: customControl.backgroundColor1(), 
+			backgroundColor2: customControl.backgroundColor2(),
+			css: customControl.css()
+    	};
+
+    	if (customControl.hasOwnProperty("height")) c.height = customControl.height();
+    	if (customControl.hasOwnProperty("left")) c.left = customControl.left();
+    	if (customControl.hasOwnProperty("top")) c.top = customControl.top();
+				
+    	switch(customControl.type)
+    	{
+    		case "command":
+    		case "commands":
+    			if (customControl.hasOwnProperty("command"))
+    			{
+    				if (customControl.command().indexOf('\n') == -1)
+					{
+    					c.type = "command";
+    					c.command = customControl.command();
+    				}
+    				else {
+    					c.type = "commands";
+    					c.commands = customControl.command().toString().split('\n');
+    				}
+    			}
+    			else
+    			{
+    				c.type = "commands";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+    			break;
+    		case "parametric_command":
+    		case "parametric_commands":
+    			if (customControl.hasOwnProperty("command")) {
+    				if (customControl.command().indexOf('\n') == -1) {
+    					c.type = "parametric_command";
+    					c.command = customControl.command();
+    				}
+    				else {
+    					c.type = "parametric_commands";
+    					c.commands = customControl.command().toString().split('\n');
+    				}
+    			}
+    			else {
+    				c.type = "parametric_commands";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+
+    			c.input = [];
+    			for (var i = 0; i < customControl.input().length; i++)
+    				c.input.push({ name: customControl.input()[i].name(), parameter: customControl.input()[i].parameter(), default: customControl.input()[i].defaultValue() });
+
+    			break;
+			case "parametric_slider_command":
+    		case "parametric_slider_commands":
+				if (customControl.hasOwnProperty("command")) {
+					if (customControl.command().indexOf('\n') == -1) {
+						c.type = "parametric_slider_command";
+						c.command = customControl.command();
+					}
+					else {
+						c.type = "parametric_slider_commands";
+						c.commands = customControl.command().toString().split('\n');
+					}
+				}
+				else {
+					c.type = "parametric_slider_commands";
+					c.commands = customControl.commands().toString().split('\n');
+				}
+
+				c.slideInput = {
+					name: customControl.slideInput().name(),
+					parameter: customControl.slideInput().parameter(),
+					min: customControl.slideInput().min(),
+					max: customControl.slideInput().max(),
+					default: customControl.slideInput().defaultValue()
+				};
+
+				break;
+			case "feedback_command":
+    		case "feedback_commands":
+    			if (customControl.hasOwnProperty("command") && customControl.command().indexOf('\n') == -1) {
+    				c.type = "feedback_command";
+    				c.command = customControl.command();
+    			}
+    			else {
+    				c.type = "feedback_commands";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+
+    			c.regex = customControl.regex();
+    			c.template = customControl.template();
+    			break;
+    		case "feedback_command_output":
+    		case "feedback_commands_output":
+    			if (customControl.hasOwnProperty("command") && customControl.command().indexOf('\n') == -1) {
+    				c.type = "feedback_command_output";
+    				c.command = customControl.command();
+    			}
+    			else {
+    				c.type = "feedback_commands_output";
+    				c.commands = customControl.commands().toString().split('\n');
+    			}
+
+    			c.regex = customControl.regex();
+    			c.template = customControl.template();
+    			break;
+    		case "feedback":
+    			c.type = "feedback";
+    			break;
+    		case "section":
+    			c.type = "section";
+    			c.children = [];
+    			for (var i = 0; i < customControl.children().length; i++)
+    				c.children.push(self._customControlToArray(customControl.children()[i]));
+    			break;
+    	}
+
+    	return c;
+    }
+
+    self.saveData = function () {
+    	var controls = [];
+    	for (var i = 0; i < self.children().length; i++)
+    		controls.push(self._customControlToArray(self.children()[i]));
+
+        var data = {
+=======
     self.saveData = function() {
         var data = ko.mapping.toJS(self.settings);
 
         data = _.extend(data, {
+>>>>>>> refs/remotes/upstream/devel
             "api" : {
                 "enabled": self.api_enabled(),
                 "key": self.api_key(),
@@ -364,8 +616,14 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "path": self.cura_path(),
                 "config": self.cura_config()
             },
+<<<<<<< HEAD
+            "terminalFilters": self.terminalFilters(),
+            "controls": controls
+        };
+=======
             "terminalFilters": self.terminalFilters()
         });
+>>>>>>> refs/remotes/upstream/devel
 
         $.ajax({
             url: API_BASEURL + "settings",
@@ -380,4 +638,284 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         });
     };
 
+    self.displayMode = function (customControl) {
+    	if (!customControl)
+    		return "customControls_emptyTemplate";
+
+    	switch (customControl.type) {
+    		case "section":
+    			return "settings_customControls_sectionTemplate";
+    		case "command":
+    		case "commands":
+    			return "settings_customControls_commandTemplate";
+    		case "parametric_command":
+    		case "parametric_commands":
+    			return "settings_customControls_parametricCommandTemplate";
+			case "parametric_slider_command":
+    		case "parametric_slider_commands":
+				return "settings_customControls_parametricSliderCommandTemplate";
+    		case "feedback_command":
+    		case "feedback_commands":
+    			return "settings_customControls_feedbackCommandTemplate";
+			case "feedback_command_output":
+    		case "feedback_commands_output":
+				return "settings_customControls_feedbackCommandOutputTemplate";
+    		case "feedback":
+    			return "settings_customControls_feedbackTemplate";
+    		default:
+    			return "settings_customControls_emptyTemplate";
+    	}
+    }
+
+	// Dynamic Commands
+    self.customCommandData = ko.observable(self._processControl({name: "", type: ""}));
+    self.customCommandParent = undefined;
+    self.event = undefined;
+
+    self.editStyle = function (type) {
+    	return ko.computed({
+    		read: function () {
+    			if (self.customCommandData() == undefined || !self.customCommandData().hasOwnProperty("backgroundColor1"))
+    				return "";
+
+    			if (type == "bgColor1")
+    				return self.customCommandData().backgroundColor1();
+
+    			if (type == "bgColor2")
+    				return self.customCommandData().backgroundColor2();
+
+    			if (type == "fgColor")
+    				return self.customCommandData().foregroundColor();
+
+    			if (type == "bgImage")
+    				return self.customCommandData().backgroundColor1() != '' && self.customCommandData().backgroundColor2() != '' ? "linear-gradient(to bottom," + self.customCommandData().backgroundColor1() + "," + self.customCommandData().backgroundColor2() + ")" : '';
+
+    			return self.customCommandData().css();
+    		},
+    		write: function (value) {
+    			self.customCommandData().backgroundColor1(type == "bgColor1" ? value : (type == "bgColor2" || type == "fgColor" ? self.customCommandData().backgroundColor1() : ""));
+    			self.customCommandData().backgroundColor2(type == "bgColor2" ? value : (type == "bgColor1" || type == "fgColor" ? self.customCommandData().backgroundColor2() : ""));
+    			self.customCommandData().foregroundColor(type == "fgColor" ? value : (type == "bgColor1" || type == "bgColor2" ? self.customCommandData().foregroundColor() : ""));
+    			self.customCommandData().css(type == "css" ? value : "");
+    		},
+    		owner: this
+    	});
+    }
+
+    self.bgImage = function(data) {
+    	return ko.computed(function () {
+    		return data.backgroundColor1() != '' && data.backgroundColor2() != '' ? "linear-gradient(to bottom," + data.backgroundColor1() + "," + data.backgroundColor2() + ")" : '';
+    	});
+	}
+
+    self.showChevron = function (dir, index) {
+    	if (dir == "down") {
+    		return index < self.children().length - 1;
+    	}
+
+    	return index > 0;
+    }
+
+    self.switchPlaces = function (index1, index2) {
+    	self.children()[index1].row(index2);
+    	self.children()[index2].row(index1);
+
+    	self.children(self.children().sort(self.sortControls));
+    }
+
+    self.toggleCollapse = function () {
+    	var element = $('#title_' + self.getEntryId(this) + ' div.accordion-inner');
+
+    	var padding_top = parseInt(element.css("padding-top").replace("px", ""));
+
+    	var maxHeight = 0;
+    	element.children().each(function (index, value) {
+    		var e = $(value);
+    		var height = e.position().top + e.outerHeight() - padding_top;
+    		maxHeight = height > maxHeight ? height : maxHeight;
+    	});
+
+    	this.height(maxHeight);
+    }
+
+    self.getEntryId = function (data) {
+    	return "settings_custom_command_" + md5(data.name() + ":" + data.type);
+    }
+
+    self.adjustContainer = function () {
+    	var element = $(this);
+    	var pos = element.position();
+    	var parent = element.parents("div.accordion-inner");
+
+    	var maxHeight = 0;
+    	parent.children().each(function (index, value) {
+    		var e = $(value);
+    		maxHeight = e.position().top + e.outerHeight() > maxHeight ? e.position().top + e.outerHeight() : maxHeight;
+    	});
+
+    	parent.height(maxHeight + 50);
+    }
+
+    self.movementStopped = function (ui, data, parentData) {
+    	data.left(ui.position.left);
+    	data.top(ui.position.top);
+
+    	parentData.height(0);
+    	self.toggleCollapse.call(parentData);
+    }
+
+    self.setData = function (event, parent, data) {
+    	self.event = event;
+    	self.customCommandParent = parent;
+    	self.customCommandData(data);
+    }
+
+    self.createCommand = function (command) {
+    	var customControlType = $("#customControl_create_overlay");
+    	var customControlTypeAck = $(".confirmation_dialog_acknowledge", customControlType);
+
+    	self.dialogs.name("");
+    	self.dialogs.commands("");
+    	self.dialogs.type(command);
+
+    	if (command.indexOf('parametric_c') != -1)
+    		self.dialogs.inputs([{ name: "", parameter: "", defaultValue: "" }]);
+
+    	customControlTypeAck.unbind("click");
+    	customControlTypeAck.bind("click", function (e) {
+    		e.preventDefault();
+    		customControlType.modal("hide");
+
+    		switch (command) {
+    			case "command":
+    				self.customCommandData().children.push(self._processControl({ type: "commands", name: self.dialogs.name(), commands: self.dialogs.commands(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				break;
+    			case "parametric_command":
+    				var inputs = [];
+    				for (var i = 0; i < self.dialogs.inputs().length; i++)
+    				{
+    					var input = self.dialogs.inputs()[i];
+    					if (input.name != "" && input.parameter != "")
+    						inputs.push({ name: input.name, parameter: input.parameter, default: input.defaultValue });
+    				}
+
+    				self.customCommandData().children.push(self._processControl({ type: "parametric_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), input: inputs, top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				break;
+				case "parametric_slider_command":
+					var input = { name: self.dialogs.slideInput().name, parameter: self.dialogs.slideInput().parameter, min: self.dialogs.slideInput().min, max: self.dialogs.slideInput().max, default: self.dialogs.slideInput().defaultValue };
+					self.customCommandData().children.push(self._processControl({ type: "parametric_slider_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), slideInput: input, top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+					break;
+    			case "feedback_command":
+    				self.customCommandData().children.push(self._processControl({ type: "feedback_commands", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+    				break;
+				case "feedback_command_output":
+					self.customCommandData().children.push(self._processControl({ type: "feedback_commands_output", name: self.dialogs.name(), commands: self.dialogs.commands(), regex: self.dialogs.regex(), template: self.dialogs.template(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+					break;
+				case "feedback":
+					self.customCommandData().children.push(self._processControl({ type: "feedback", name: self.dialogs.name(), top: Math.round(self.event.offsetY / 5) * 5, left: Math.round(self.event.offsetX / 5) * 5 }));
+					break;
+    			case "section":
+    				self.children.push(self._processControl({ type: "section", name: self.dialogs.name(), children: [], height: 30 }));
+    				break;
+
+    		}
+    	});
+    	customControlType.modal("show");
+    }
+    self.deleteCommand = function () {
+    	if (self.customCommandParent === self)
+    		self.children.remove(self.customCommandData());
+    	else {
+    		self.customCommandParent.children.remove(self.customCommandData());
+
+    		self.customCommandParent.settingsHeight(0);
+    		self.toggleCollapse.call(self.customCommandParent);
+    	}
+    }
+    self.editCommand = function () {
+    	var customControlType = $("#customControl_create_overlay");
+    	var customControlTypeAck = $(".confirmation_dialog_acknowledge", customControlType);
+
+    	self.dialogs.name(self.customCommandData().name());
+
+    	self.dialogs.type(self.customCommandData().type);
+
+    	if (self.customCommandData().hasOwnProperty("commands"))
+    		self.dialogs.commands(self.customCommandData().commands());
+    	if (self.customCommandData().hasOwnProperty("command"))
+    		self.dialogs.commands(self.customCommandData().command());
+
+    	if (self.customCommandData().hasOwnProperty("input"))
+    	{
+    		var inputs = [];
+    		for (var i = 0; i < self.customCommandData().input().length; i++) {
+    			var input = self.customCommandData().input()[i];
+    			if (input.name != "" && input.parameter != "")
+    				inputs.push({ name: input.name(), parameter: input.parameter(), defaultValue: input.defaultValue() });
+    		}
+
+    		self.dialogs.inputs(inputs);
+    	}
+    	if (self.customCommandData().hasOwnProperty("slideInput"))
+    	{
+    		var input = {
+    			name: self.customCommandData().slideInput().name(),
+    			parameter: self.customCommandData().slideInput().parameter(),
+    			min: self.customCommandData().slideInput().min(),
+    			max: self.customCommandData().slideInput().max(),
+    			defaultValue: self.customCommandData().slideInput().defaultValue()
+    		};
+
+    		self.dialogs.slideInput(input);
+    	}
+
+    	if (self.customCommandData().hasOwnProperty("template"))
+    		self.dialogs.template(self.customCommandData().template());
+
+    	if (self.customCommandData().hasOwnProperty("regex"))
+    		self.dialogs.regex(self.customCommandData().regex());
+
+    	customControlTypeAck.unbind("click");
+    	customControlTypeAck.bind("click", function (e) {
+    		e.preventDefault();
+    		customControlType.modal("hide");
+
+    		self.customCommandData().name(self.dialogs.name());
+    		self.customCommandData().commands(self.dialogs.commands());
+
+    		switch (self.customCommandData().type) {
+				case "parametric_command":
+    			case "parametric_commands":
+    				var inputs = [];
+    				for (var i = 0; i < self.dialogs.inputs().length; i++) {
+    					var input = self.dialogs.inputs()[i];
+    					if (input.name != "" && input.parameter != "")
+    						inputs.push({ name: ko.observable(input.name), parameter: ko.observable(input.parameter), defaultValue: ko.observable(input.defaultValue), value: ko.observable(input.defaultValue) });
+    				}
+
+    				self.customCommandData().input(inputs);
+    				break;
+				case "parametric_slider_command":
+    			case "parametric_slider_commands":
+    				var input = {
+    					name: ko.observable(self.dialogs.slideInput().name),
+    					parameter: ko.observable(self.dialogs.slideInput().parameter),
+    					min: ko.observable(self.dialogs.slideInput().min),
+    					max: ko.observable(self.dialogs.slideInput().max),
+    					defaultValue: ko.observable(self.dialogs.slideInput().defaultValue)
+    				};
+
+					self.customCommandData().slideInput(input);
+					break;
+    			case "feedback_command":
+    			case "feedback_commands":
+    			case "feedback_command_output":
+    			case "feedback_commands_output":
+    				self.customCommandData().regex(self.dialogs.regex());
+    				self.customCommandData().template(self.dialogs.template());
+    				break;
+    		}
+    	});
+    	customControlType.modal("show");
+    }
 }

@@ -68,13 +68,14 @@ $(function() {
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
+        var dialogsViewModel = new DialogsViewModel();
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel, dialogsViewModel);
         var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
-        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel, usersViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
@@ -335,7 +336,159 @@ $(function() {
 
         _.mixin(_.str.exports());
 
-        //~~ knockout.js bindings
+        $.fn.isChildOf = function (element) {
+        	return $(element).has(this).length > 0;
+        }
+
+        var contextMenuList = [];
+		// from http://jsfiddle.net/KyleMit/X9tgY/
+        $.fn.contextMenu = function (settings) {
+        	contextMenuList.push(settings.menuSelector);
+        	return this.each(function () {
+        		// Open context menu
+        		$(this).on("contextmenu", function (e) {
+        			contextMenuList.forEach(function (e) {
+        				$(e).hide();
+        			});
+
+        			if (settings.preFunction)
+        				settings.preFunction(e);
+
+        			$(settings.menuSelector)
+					.show()
+					.css({
+						position: "absolute",
+						left: getLeftLocation(e),
+						top: getTopLocation(e),
+						"z-index": 9999
+					});
+
+        			return false;
+        		});
+
+        		// click handler for context menu
+        		$(settings.menuSelector).click(function (e) {
+        			if (e.target.tagName.toLowerCase() == "input")
+        				return;
+
+        			$(this).hide();
+        		});
+        	});
+
+        	function getLeftLocation(e) {
+        		var mouseWidth = e.pageX;
+        		var pageWidth = $(window).width();
+        		var menuWidth = $(settings.menuSelector).width();
+
+        		// opening menu would pass the side of the page
+        		if (mouseWidth + menuWidth > pageWidth &&
+					menuWidth < mouseWidth) {
+        			return mouseWidth - menuWidth;
+        		}
+        		return mouseWidth;
+        	}
+        	function getTopLocation(e) {
+        		var mouseHeight = e.pageY;
+        		var pageHeight = $(window).height();
+        		var menuHeight = $(settings.menuSelector).height();
+
+        		// opening menu would pass the bottom of the page
+        		if (mouseHeight + menuHeight > pageHeight &&
+					menuHeight < mouseHeight) {
+        			return mouseHeight - menuHeight;
+        		}
+        		return mouseHeight;
+        	}
+        };
+		//make sure any menu closes on any click
+        $(document).click(function (e) {
+        	contextMenuList.forEach(function (i) {
+        		if ($(e.target).isChildOf(i))
+        			return;
+
+        		$(i).hide();
+        	});
+        });
+
+		//~~ knockout.js bindings
+
+        ko.bindingHandlers.contextMenu = {
+        	init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        		var val = ko.utils.unwrapObservable(valueAccessor());
+
+        		$(element).contextMenu(val);
+        	},
+        	update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        		var val = ko.utils.unwrapObservable(valueAccessor());
+
+        		$(element).contextMenu(val);
+			}
+        }
+
+        function objectForEach(obj, action) {
+        	for (var prop in obj) {
+        		if (obj.hasOwnProperty(prop)) {
+        			action(prop, obj[prop]);
+        		}
+        	}
+        }
+
+        ko.bindingHandlers.slider = {
+        	init: function (element, valueAccessor, allBindingsAccessor, viewmodel, bindingContext) {
+        		var val = {};
+
+        		objectForEach(ko.utils.unwrapObservable(valueAccessor()), function (a, b) { val[a] = ko.utils.unwrapObservable(b); });
+        		$(element).slider(val)
+					.on("slide", val["slide"])
+					.on("slideChange", val["slideChange"])
+					.on("slideStop", function (v) {
+							if (val.hasOwnProperty("value"))
+								valueAccessor().value(v.value);
+
+							if (val.hasOwnProperty("slideStop"))
+								val["slideStop"](v);
+					});
+        	},
+        	update: function (element, valueAccessor, allBindingsAccessor, viewmodel, bindingContext) {
+        		var val = {};
+
+        		objectForEach(ko.utils.unwrapObservable(valueAccessor()), function (a, b) { val[a] = ko.utils.unwrapObservable(b); });
+        		$(element).slider(val);
+        	}
+        }
+
+        ko.bindingHandlers.drag = {
+        	init: function (element, valueAccessor, allBindingsAccessor, viewModel) {
+        		$(element).find(":input").on('mousedown', function (e) {
+        			var mdown = document.createEvent("MouseEvents");
+        			mdown.initMouseEvent("mousedown", false, true, window, 0, e.screenX, e.screenY, e.clientX, e.clientY, true, false, false, true, 0, null);
+        			$(this).closest(element)[0].dispatchEvent(mdown);
+        		}).on('click', function (e) {
+        			var $draggable = $(this).closest(element);
+        			if ($draggable.data("preventBehaviour")) {
+        				e.preventDefault();
+        				$draggable.data("preventBehaviour", false)
+        			}
+        		});
+
+        		$(element).draggable(valueAccessor());
+        	},
+        	update: function (element, valueAccessor, allBindingsAccessor, viewModel) {
+        		$(element).find(":input").on('mousedown', function (e) {
+        			var mdown = document.createEvent("MouseEvents");
+        			mdown.initMouseEvent("mousedown", false, true, window, 0, e.screenX, e.screenY, e.clientX, e.clientY, true, false, false, true, 0, null);
+        			$(this).closest(element)[0].dispatchEvent(mdown);
+        		}).on('click', function (e) {
+        			var $draggable = $(this).closest(element);
+        			if ($draggable.data("preventBehaviour")) {
+        				e.preventDefault();
+        				$draggable.data("preventBehaviour", false)
+        			}
+        		});
+
+        		$(element).draggable(valueAccessor());
+        	}
+        };
 
         ko.bindingHandlers.popover = {
             init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
@@ -372,6 +525,25 @@ $(function() {
             }
         };
 
+<<<<<<< HEAD
+        ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+        ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
+        ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
+        ko.applyBindings(controlViewModel, document.getElementById("control"));
+        ko.applyBindings(terminalViewModel, document.getElementById("term"));
+        var gcode = document.getElementById("gcode");
+        if (gcode) {
+            gcodeViewModel.initialize();
+            ko.applyBindings(gcodeViewModel, gcode);
+        }
+        ko.applyBindings(dialogsViewModel, document.getElementById("customControl_create_overlay"));
+        ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+        ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
+        ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+        ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+        ko.applyBindings(logViewModel, document.getElementById("logs"));
+=======
         ko.bindingHandlers.invisible = {
             init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
                 if (!valueAccessor()) return;
@@ -380,6 +552,7 @@ $(function() {
                 })
             }
         };
+>>>>>>> refs/remotes/upstream/devel
 
         settingsViewModel.requestData(function() {
             ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
@@ -423,11 +596,20 @@ $(function() {
 
         //~~ startup commands
 
+<<<<<<< HEAD
+        loginStateViewModel.requestData();
+        connectionViewModel.requestData();
+        gcodeFilesViewModel.requestData();
+        timelapseViewModel.requestData();
+        settingsViewModel.requestData();
+        logViewModel.requestData();
+=======
         _.each(allViewModels, function(viewModel) {
             if (viewModel.hasOwnProperty("onStartup")) {
                 viewModel.onStartup();
             }
         });
+>>>>>>> refs/remotes/upstream/devel
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
