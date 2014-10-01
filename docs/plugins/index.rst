@@ -4,13 +4,12 @@
 Plugins Documentation
 #####################
 
-.. contents::
-
 Starting with OctoPrint 1.2.0, there's now a plugin system in place which allows to individually
 extend OctoPrint's functionality.
 
 Right now plugins can be used to extend OctoPrint's settings dialog, to execute specific tasks on server startup and
-shutdown or to provide custom (API) endpoints with special functionality. More plugin types are planned for the future.
+shutdown, to provide custom (API) endpoints with special functionality, to react on system events or to add support for
+additional slicers. More plugin types are planned for the future.
 
 .. _sec-plugins-installation:
 
@@ -50,12 +49,12 @@ Currently there's no such thing as a centralized plugin repository for available
 Plugins may be found in the lists provided in `the OctoPrint wiki <https://github.com/foosel/OctoPrint/wiki#plugins>`_
 and on the `OctoPrint organization Github page <https://github.com/OctoPrint>`_.
 
-.. _sec-plugins-developing:
-
 Developing Plugins
 ==================
 
-.. todo::
+Please see the following sub topics for information on how to develop your own OctoPrint plugins.
 
-   A section on how to develop plugins yourself, including a tutorial creating an exemplatory plugin as well as
-   a documentation of the plugin API, will be added in the near future.
+.. toctree::
+   :maxdepth: 2
+
+   developing.rst
