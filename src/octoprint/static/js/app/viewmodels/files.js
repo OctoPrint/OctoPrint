@@ -1,6 +1,8 @@
 function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     var self = this;
 
+    self.filename = "";
+
     self.printerState = printerStateViewModel;
     self.loginState = loginStateViewModel;
 
@@ -18,6 +20,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.performSearch();
     });
 
+    self.selectedItem = ko.observable(undefined);
+    self.requestResponse = ko.observable(undefined);
+
     self.freeSpace = ko.observable(undefined);
     self.freeSpaceString = ko.computed(function() {
         if (!self.freeSpace())
@@ -26,24 +31,36 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     });
 
     // initialize list helper
-    self.listHelper = new ItemListHelper(
+    self.listHelper = new RecursiveItemListHelper(
         "gcodeFiles",
+		function (d) { return d.data; },
+		function (d) { return d.filteredData; },
+		function (k, v) { k.filteredData = v; },
         {
             "name": function(a, b) {
                 // sorts ascending
+            	if (a["type"] == "dir" && b["type"] == "file") return -1;
+            	if (a["type"] == "file" && b["type"] == "dir") return 1;
+
                 if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
                 if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
                 return 0;
             },
             "upload": function(a, b) {
                 // sorts descending
+            	if (a["type"] == "dir" && b["type"] == "file") return -1;
+            	if (a["type"] == "file" && b["type"] == "dir") return 1;
+
                 if (b["date"] === undefined || a["date"] > b["date"]) return -1;
                 if (a["date"] < b["date"]) return 1;
                 return 0;
             },
             "size": function(a, b) {
                 // sorts descending
-                if (b["bytes"] === undefined || a["bytes"] > b["bytes"]) return -1;
+            	if (a["type"] == "dir" && b["type"] == "file") return -1;
+            	if (a["type"] == "file" && b["type"] == "dir") return 1;
+
+            	if (b["bytes"] === undefined || a["bytes"] > b["bytes"]) return -1;
                 if (a["bytes"] < b["bytes"]) return 1;
                 return 0;
             }
@@ -65,6 +82,11 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         0
     );
 
+    self.onClick = function(data)
+    {
+    	var obj = $("#image_" + self.getEntryId(data)).toggleClass("icon-folder-close icon-folder-open");
+	}
+
     self.isLoadActionPossible = ko.computed(function() {
         return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
     });
@@ -81,9 +103,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         if (filename == undefined) {
             self.listHelper.selectNone();
         } else {
-            self.listHelper.selectItem(function(item) {
-                return item.name == filename;
-            });
+        	if (self.listHelper.items().length == 0)
+        		return;
+
+        	self.listHelper.selectItem(function(item) {
+        		return item.relativepath == filename;
+        	});
         }
     };
 
@@ -106,6 +131,10 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isSdReady(data.flags.sdReady);
     };
 
+    self.displayMode = function (item) {
+    	return item.type == "file" ? "fileTemplate" : "dirTemplate";
+    };
+
     self._otherRequestInProgress = false;
     self.requestData = function(filenameToFocus, locationToFocus) {
         if (self._otherRequestInProgress) return;
@@ -126,12 +155,19 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     };
 
     self.fromResponse = function(response, filenameToFocus, locationToFocus) {
-        var files = response.files;
-        _.each(files, function(element, index, list) {
+    	var i = 0;
+    	recursiveCheck = function (element, index, list) {
+    		element.relativepath = element.relativepath.replace(/\//g, '\\');
             if (!element.hasOwnProperty("size")) element.size = undefined;
             if (!element.hasOwnProperty("date")) element.date = undefined;
-        });
-        self.listHelper.updateItems(files);
+
+            if (element.type != "file")
+            	element.filteredData = element.data;
+
+    		_.each(element.data, recursiveCheck);
+    	};
+    	_.each(response.directories, recursiveCheck);
+        self.listHelper.updateItems(response.directories);
 
         if (filenameToFocus) {
             // got a file to scroll to
@@ -150,10 +186,11 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
 
         self.highlightFilename(self.printerState.filename());
+        self.requestResponse(response);
     };
 
-    self.loadFile = function(filename, printAfterLoad) {
-        var file = self.listHelper.getItem(function(item) {return item.name == filename});
+    self.loadFile = function(path, printAfterLoad) {
+        var file = self.listHelper.getItem(function(item) {return item.relativepath == path});
         if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
         $.ajax({
@@ -165,8 +202,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         });
     };
 
-    self.removeFile = function(filename) {
-        var file = self.listHelper.getItem(function(item) {return item.name == filename});
+    self.removeFile = function(path) {
+        var file = self.listHelper.getItem(function(item) {return item.relativepath == path});
         if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
         var origin;
@@ -231,7 +268,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     };
 
     self.getEntryId = function(data) {
-        return "gcode_file_" + md5(data["name"] + ":" + data["origin"]);
+    	return "gcode_file_" + md5(data["relativepath"] + ":" + data["name"] + ":" + data["origin"]);
     };
 
     self.getEntryElement = function(data) {
@@ -296,14 +333,30 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     self.performSearch = function() {
         var query = self.searchQuery();
         if (query !== undefined && query.trim() != "") {
-            self.listHelper.changeSearchFunction(function(entry) {
-                return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+        	self.listHelper.changeSearchFunction(function (entry) {
+				
+        		return entry && ((entry.type == "file" && entry["name"].toLocaleLowerCase().indexOf(query) > -1) || (entry.filteredData && entry.filteredData.length > 0));
             });
         } else {
             self.listHelper.resetSearch();
         }
     };
 
+    self.isSelected = function (data) {
+    	if (data == undefined || self.selectedItem() == undefined)
+    		return false;
+
+    	var selectedItem = self.selectedItem();
+    	return selectedItem.relativepath == data.relativepath;
+    };
+    self.isPartiallySelected = function (data) {
+    	if (data == undefined || self.selectedItem() == undefined)
+    		return false;
+
+    	var selectedItem = self.selectedItem();
+    	return selectedItem.relativepath.substring(0, data.relativepath.length) == data.relativepath;
+    };
+    
     self.onDataUpdaterReconnect = function() {
         self.requestData();
     };

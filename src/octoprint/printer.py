@@ -410,7 +410,7 @@ class Printer():
 			if not sd:
 				date = int(os.stat(filename).st_ctime)
 
-			fileData = self._gcodeManager.getFileData(filename)
+			fileData = self._gcodeManager.getFileData("", filename)
 			if fileData is not None:
 				if "gcodeAnalysis" in fileData:
 					if estimatedPrintTime is None and "estimatedPrintTime" in fileData["gcodeAnalysis"]:
@@ -422,7 +422,7 @@ class Printer():
 
 		self._stateMonitor.setJobData({
 			"file": {
-				"name": os.path.basename(filename) if filename is not None else None,
+				"name": self._gcodeManager._getBasicFilename(filename) if filename is not None else None,
 				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
 				"size": filesize,
 				"date": date

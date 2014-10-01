@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from os.path import isdir, sep, join, basename;
 from flask import request, jsonify, make_response, url_for
 
 import octoprint.gcodefiles as gcodefiles
@@ -24,8 +25,7 @@ from octoprint.events import Events
 def readGcodeFiles():
 	files = _getFileList(FileDestinations.LOCAL)
 	files.extend(_getFileList(FileDestinations.SDCARD))
-	return jsonify(files=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
-
+	return jsonify(directories=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
 
 @api.route("/files/<string:origin>", methods=["GET"])
 def readGcodeFilesForOrigin(origin):
@@ -39,7 +39,6 @@ def readGcodeFilesForOrigin(origin):
 	else:
 		return jsonify(files=files)
 
-
 def _getFileDetails(origin, filename):
 	files = _getFileList(origin)
 	for file in files:
@@ -47,44 +46,64 @@ def _getFileDetails(origin, filename):
 			return file
 	return None
 
-
 def _getFileList(origin):
 	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.getSdFiles()
 
-		files = []
+		data = [gcodeManager.getFolderData("SDCard", "")]
+		data[0].update({
+				"origin": FileDestinations.SDCARD,
+				"refs": {
+					"resource": url_for(".deleteGcodeFile", target=FileDestinations.SDCARD, filename=data[0]["relativepath"], _external=True)
+				}
+		})
 		if sdFileList is not None:
 			for sdFile, sdSize in sdFileList:
 				file = {
 					"name": sdFile,
+					"relativepath": sdFile.replace(sep, "/"),
+					"type": "file",
 					"origin": FileDestinations.SDCARD,
 					"refs": {
-						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile, _external=True)
+						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile.replace(sep, "/"), _external=True)
 					}
 				}
 				if sdSize is not None:
 					file.update({"size": sdSize})
-				files.append(file)
+				data[0]["data"].append(file)
 	else:
-		files = gcodeManager.getAllFileData()
-		for file in files:
-			file.update({
+		data = gcodeManager.getAllData()
+		data[0].update({ "origin": FileDestinations.LOCAL });
+		for d in data:
+			_recursiveUpdateData(d)
+
+	return data
+
+def _recursiveUpdateData(dir):
+	dir.update({
 				"refs": {
-					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["name"], _external=True),
-					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file["name"]
+				"resource": url_for(".deleteGcodeFile", target=FileDestinations.LOCAL, filename=dir["relativepath"], _external=True)
 				}
 			})
-	return files
 
+	for d in dir["data"]:
+		if d["type"] is "dir":
+			_recursiveUpdateData(d)
+		else:
+			d.update({
+				"refs": {
+					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=d["relativepath"], _external=True),
+					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" +  d["relativepath"]
+				}
+			})
 
 def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
 		availableFiles = map(lambda x: x[0], printer.getSdFiles())
 	else:
-		availableFiles = gcodeManager.getAllFilenames()
+		availableFiles = gcodeManager.getAllRelativePathes()
 
 	return filename in availableFiles
-
 
 @api.route("/files/<string:target>", methods=["POST"])
 @restricted_access
@@ -108,6 +127,11 @@ def uploadGcodeFile(target):
 	if target == FileDestinations.SDCARD and not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD card support is disabled", 404)
 
+	try:
+		directories = eval(request.form["directories"])
+	except:
+		directories = [""]
+
 	sd = target == FileDestinations.SDCARD
 	selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues
 	printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues
@@ -129,8 +153,10 @@ def uploadGcodeFile(target):
 			currentFilename = currentJobFile["name"]
 			currentOrigin = currentJobFile["origin"]
 
+	for subdir in directories:
 	# determine future filename of file to be uploaded, abort if it can't be uploaded
-	futureFilename = gcodeManager.getFutureFilename(upload)
+		futureFilename = gcodeManager.getFutureFilename(subdir, upload)
+
 	if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
 		return make_response("Can not upload file %s, wrong format?" % upload.filename, 415)
 
@@ -163,7 +189,7 @@ def uploadGcodeFile(target):
 		if selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination):
 			printer.selectFile(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
-	filename, done = gcodeManager.addFile(upload, target, fileProcessingFinished)
+	filename, done = gcodeManager.addFile(subdir, upload, target, fileProcessingFinished)
 	if filename is None:
 		return make_response("Could not upload the file %s" % upload.filename, 500)
 
@@ -214,7 +240,6 @@ def readGcodeFile(target, filename):
 
 	return jsonify(file)
 
-
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
 @restricted_access
 def gcodeFileCommand(filename, target):
@@ -243,10 +268,11 @@ def gcodeFileCommand(filename, target):
 
 		sd = False
 		if target == FileDestinations.SDCARD:
-			filenameToSelect = filename
+			filenameToSelect = filename.replace("/", sep)
 			sd = True
 		else:
-			filenameToSelect = gcodeManager.getAbsolutePath(filename)
+			filenameToSelect = gcodeManager.getAbsolutePath(filename.replace("/", sep))
+
 		printer.selectFile(filenameToSelect, sd, printAfterLoading)
 
 	return NO_CONTENT
@@ -280,9 +306,111 @@ def deleteGcodeFile(filename, target):
 
 	# delete it
 	if sd:
-		printer.deleteSdFile(filename)
+		printer.deleteSdFile(filename.replace("/", sep))
 	else:
-		gcodeManager.removeFile(filename)
+		gcodeManager.removeFile(filename.replace("/", sep))
 
 	return NO_CONTENT
 
+@api.route("/files/command", methods=["POST"])
+@restricted_access
+def filesCommand():
+	# valid file commands, dict mapping command name to mandatory parameters
+	valid_commands = {
+		"create": ["type", "targets"],
+		"delete": ["type", "targets"],
+		"copy": ["type", "targets", "destinations"],
+		"cut": ["type", "targets", "destinations"]
+	}
+
+	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	if response is not None:
+		return response
+
+	if data["type"] == "dir":
+		for target in data["targets"]:
+			target = target.replace("/", sep)
+			absPath = join(gcodeManager._uploadFolder, target)
+			if command == "create":
+				if not isdir(absPath):
+					gcodeManager.createDir(absPath)
+			elif command == "delete":
+				if not isdir(absPath):
+					return make_response("Directory not found: %s" % target, 404)
+
+				currentJob = printer.getCurrentJob()
+				currentFilename = None
+				if currentJob is not None and "file" in currentJob.keys():
+					currentFilename = currentJob["file"]["name"]
+
+				# prohibit deleting the file that is currently being printed
+				if currentFilename is not None and currentFilename.startswith(target) and (printer.isPrinting() or printer.isPaused()):
+					return make_response("Trying to delete folder where a file that is currently being printed is inside: %s" % target, 409)
+
+				# deselect the file if it's currently selected
+				if currentFilename is not None and currentFilename.startswith(target):
+					printer.unselectFile()
+
+				gcodeManager.removeDir(target)
+			elif command == "copy":
+				if not isdir(absPath):
+					return make_response("Directory not found: %s" % target, 404)
+
+				for dst in data["destinations"]:
+					gcodeManager.copy(target, join(dst.replace("/", sep), basename(target)))
+			elif command == "cut":
+				if not isdir(absPath):
+					return make_response("Directory not found: %s" % target, 404)
+
+				currentJob = printer.getCurrentJob()
+				currentFilename = None
+				if currentJob is not None and "file" in currentJob.keys():
+					currentFilename = currentJob["file"]["name"]
+
+				# prohibit deleting the file that is currently being printed
+				if currentFilename is not None and currentFilename.startswith(target) and (printer.isPrinting() or printer.isPaused()):
+					return make_response("Trying to delete folder where a file that is currently being printed is inside: %s" % target, 409)
+
+				# deselect the file if it's currently selected
+				if currentFilename is not None and currentFilename.startswith(target):
+					printer.unselectFile()
+
+				for dst in data["destinations"]:
+					gcodeManager.copy(target, join(dst.replace("/", sep), basename(target)))
+
+				gcodeManager.removeDir(target)
+
+	if data["type"] == "file":
+		for target in data["targets"]:
+			if command == "copy":
+				if not _verifyFileExists(FileDestinations.LOCAL, target):
+					return make_response("Directory not found: %s" % target, 404)
+
+				target = target.replace("/", sep)
+				for dst in data["destinations"]:
+					gcodeManager.copy(target, dst.replace("/", sep))
+			elif command == "cut":
+				if not _verifyFileExists(FileDestinations.LOCAL, target):
+					return make_response("Directory not found: %s" % target, 404)
+
+				target = target.replace("/", sep)
+				currentJob = printer.getCurrentJob()
+				currentFilename = None
+				if currentJob is not None and "file" in currentJob.keys():
+					currentFilename = currentJob["file"]["name"]
+
+				# prohibit deleting the file that is currently being printed
+				if currentFilename is not None and currentFilename == target and (printer.isPrinting() or printer.isPaused()):
+					return make_response("Trying to delete a file that is currently being printed: %s" % target, 409)
+
+				# deselect the file if it's currently selected
+				if currentFilename is not None and currentFilename == target:
+					printer.unselectFile()
+
+				for dst in data["destinations"]:
+					gcodeManager.copy(target, dst.replace("/", sep))
+
+				gcodeManager.removeFile(target)
+
+	# return an updated list of files
+	return readGcodeFiles()

@@ -79,6 +79,7 @@ $(function() {
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var filemanagerViewModel = new FilemanagerViewModel(gcodeFilesViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
 
         var viewModelMap = {
@@ -95,7 +96,8 @@ $(function() {
             gcodeFilesViewModel: gcodeFilesViewModel,
             gcodeViewModel: gcodeViewModel,
             navigationViewModel: navigationViewModel,
-            logViewModel: logViewModel
+            logViewModel: logViewModel,
+            filemanagerViewModel: filemanagerViewModel
         };
 
         var allViewModels = _.values(viewModelMap);
@@ -158,6 +160,10 @@ $(function() {
                 $("#gcode_upload_progress .bar").css("width", "0%");
                 $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
                 $("#gcode_upload_progress .bar").text("");
+
+                $("#filemanager_gcode_upload_progress .bar").css("width", "0%");
+                $("#filemanager_gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                $("#filemanager_gcode_upload_progress .bar").text("");
             }
         }
 
@@ -173,15 +179,26 @@ $(function() {
             $("#gcode_upload_progress .bar").css("width", "0%");
             $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
             $("#gcode_upload_progress .bar").text("");
+
+            $("#filemanager_gcode_upload_progress .bar").css("width", "0%");
+            $("#filemanager_gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+            $("#filemanager_gcode_upload_progress .bar").text("");
         }
 
         function gcode_upload_progress(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             $("#gcode_upload_progress .bar").css("width", progress + "%");
             $("#gcode_upload_progress .bar").text(gettext("Uploading ..."));
+
+            $("#filemanager_gcode_upload_progress .bar").css("width", progress + "%");
+            $("#filemanager_gcode_upload_progress .bar").text(gettext("Uploading ..."));
+
             if (progress >= 100) {
                 $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
                 $("#gcode_upload_progress .bar").text(gettext("Saving ..."));
+
+                $("#filemanager_gcode_upload_progress").addClass("progress-striped").addClass("active");
+                $("#filemanager_gcode_upload_progress .bar").text(gettext("Saving ..."));
             }
         }
 
@@ -190,6 +207,7 @@ $(function() {
                 url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: localTarget,
+                submit: filemanagerViewModel.formData,
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -335,6 +353,66 @@ $(function() {
 
         _.mixin(_.str.exports());
 
+        var contextMenuList = [];
+		// from http://jsfiddle.net/KyleMit/X9tgY/
+        $.fn.contextMenu = function (settings) {
+        	contextMenuList.push(settings.menuSelector);
+        	return this.each(function () {
+        		// Open context menu
+        		$(this).on("contextmenu", function (e) {
+        			contextMenuList.forEach(function (e) {
+        				$(e).hide();
+        			});
+
+        			$(settings.menuSelector)
+					.show()
+					.css({
+						position: "absolute",
+						left: getLeftLocation(e),
+						top: getTopLocation(e)
+					});
+
+        			return false;
+        		});
+
+        		// click handler for context menu
+        		$(settings.menuSelector).click(function (e) {
+        			$(this).hide();
+        		});
+        	});
+
+        	function getLeftLocation(e) {
+        		var mouseWidth = e.pageX;
+        		var pageWidth = $(window).width();
+        		var menuWidth = $(settings.menuSelector).width();
+
+        		// opening menu would pass the side of the page
+        		if (mouseWidth + menuWidth > pageWidth &&
+					menuWidth < mouseWidth) {
+        			return mouseWidth - menuWidth;
+        		}
+        		return mouseWidth;
+        	}
+        	function getTopLocation(e) {
+        		var mouseHeight = e.pageY;
+        		var pageHeight = $(window).height();
+        		var menuHeight = $(settings.menuSelector).height();
+
+        		// opening menu would pass the bottom of the page
+        		if (mouseHeight + menuHeight > pageHeight &&
+					menuHeight < mouseHeight) {
+        			return mouseHeight - menuHeight;
+        		}
+        		return mouseHeight;
+        	}
+        };
+		//make sure any menu closes on any click
+        $(document).click(function () {
+        	contextMenuList.forEach(function (e) {
+        		$(e).hide();
+        	});
+        });
+
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {
@@ -353,6 +431,13 @@ $(function() {
                 $(element).popover(options);
             }
         };
+
+        ko.bindingHandlers.contextMenu = {
+        	init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        		var option = { menuSelector: valueAccessor() };
+        		$(element).contextMenu(option);
+        	}
+        }
 
         ko.bindingHandlers.allowBindings = {
             init: function (elem, valueAccessor) {
@@ -399,6 +484,7 @@ $(function() {
             ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
             ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
             ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+	        ko.applyBindings(filemanagerViewModel, document.getElementById("filemanager_dialog"));
             ko.applyBindings(logViewModel, document.getElementById("logs"));
 
             var timelapseElement = document.getElementById("timelapse");
