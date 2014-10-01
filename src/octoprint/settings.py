@@ -125,7 +125,7 @@ default_settings = {
 		"config": "/default/path/to/your/cura/config.ini"
 	},
 	"events": {
-		"enabled": False,
+		"enabled": True,
 		"subscriptions": []
 	},
 	"api": {
