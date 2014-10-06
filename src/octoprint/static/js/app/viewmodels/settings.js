@@ -3,7 +3,7 @@
  * on property values of type Object.
  * @param  {*} node initially fed the root object to recurse through
  * @param  {Object} config {
- *     on: function(...) // executes at each node
+ *     on: function(node, config) // executes at each node
  *     mode: "array"|null // determines what is returned
  *     _init: indicates whether first node has been or is immedately about to be processed
  *     _path: ["prop", "subprop_of_prop", ...etc]. path array of current node
@@ -76,27 +76,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "mobileSizeThreshold": ko.observable(undefined),
             "sizeThreshold": ko.observable(undefined)
         },
-        "notifications": {
-            "email": {
-                "enabled": ko.observable(undefined),
-                "sendgridId": ko.observable(undefined),
-                "sendgridKey": ko.observable(undefined)
-            },
-            "enabled": ko.observable(undefined),
-            "textMessage": {
-                "countryPrefix": ko.observable(undefined),
-                "enabled": ko.observable(undefined),
-                "toNumber": ko.observable(undefined),
-                "fromNumber": ko.observable(undefined),
-                "twilioAcctId": ko.observable(undefined),
-                "twilioAcctKey": ko.observable(undefined)
-            },
-            "cloud": {
-                "enabled": ko.observable(undefined),
-                "orchestrateId": ko.observable(undefined),
-                "orchestrateKey": ko.observable(undefined)
-            }
-        },
         "plugins": ko.observable(undefined),
         "printerParameters": {
             "bedDimensions": {
@@ -156,6 +135,12 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         }
     };
 
+    /**
+     * Creates pointers to koos directly from the SettingsViewModel.  References koos
+     * initialized from `settingKoos`.  I.e. the private/local var
+     * settingKoos.webcam.timelapse.options => SVM public attr .webcam_timelapse_options,
+     * both pointing to the same koo.
+     */
     self.flattenKoos = function() {
         eachDeep(settingKoos,{
             on: function bindKooDirectlyToSelf(koo, config) {
@@ -178,7 +163,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         {key: "black", name: gettext("black")}
     ]);
     self.loginState = loginStateViewModel;
-    self.notifications_textMessage_country = ko.observable(undefined);
     self.users = usersViewModel;
 
     // Computed koos

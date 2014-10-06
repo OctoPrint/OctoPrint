@@ -15,9 +15,6 @@
                 <li><a href="#settings_api" data-toggle="tab">{{ _('API') }}</a></li>
                 <li><a href="#settings_cura" data-toggle="tab">{{ _('Cura') }}</a></li>
                 <li><a href="#settings_features" data-toggle="tab">Features</a></li>
-                <!-- TODO enable // git user cdaringe
-                <li><a href="#settings_notifications" data-toggle="tab">{{ _('Notifications') }}</a></li>
-                -->
                 <li><a href="#settings_webcam" data-toggle="tab">{{ _('Webcam') }}</a></li>
                 <li class="nav-header">OctoPrint</li>
                 <li><a href="#settings_appearance" data-toggle="tab">{{ _('Appearance') }}</a></li>
@@ -215,125 +212,6 @@
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: printerParameters_bedDimensions_circular" id="settings-bedCircular"> {{ _('Circular') }}
                                 </label>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <!-- Notification Center -->
-                <div class="tab-pane" id="settings_notifications">
-                    <div class="notification-description">
-                    <h4>Notifications</h4>
-                    <span class="inline">
-                        Enable
-                        <input id="settings_notifications_enabled" type="checkbox"
-                            data-bind="checked: notifications_enabled">
-                    </span>
-                    <p>Enable print warnings and errors to be messaged or logged</p>
-                </div>
-                    <form class="form-horizontal" role="form">
-                        <!-- Text Msg -->
-                        <h4>Text Message</h4>
-                        <span class="inline">
-                            via <a src="http:/twilio.com/">Twilio</a>
-                        </span>
-                        <span class="inline right">
-                            Enable
-                            <input id="settings_notifications_textMsg_enabled" type="checkbox"
-                                data-bind="checked: notifications_textMessage_enabled">
-                        </span>
-                        <div class="control-group">
-                            <label class="control-label" for="">Country Code</label>
-                            <div class="controls">
-                                <select id="settings_notifications_textMessage_countryCode"
-                                    data-bind="options:
-                                        window.iso3166.codes,
-                                        optionsCaption: 'name',
-                                        value: notifications_textMessage_country">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="">To</label>
-                            <div class="controls">
-                                <input id="settings_notifications_textMessage_countryCode"
-                                    data-bind="value: notifications_textMessage_toNumber">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="">From</label>
-                            <div class="controls">
-                                <input id="settings_notifications_textMessage_countryCode"
-                                    data-bind="value: notifications_textMessage_fromNumber">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="">Twilio ID</label>
-                            <div class="controls">
-                                <input id="settings_notifications_textMessage_twilioAcctId"
-                                    data-bind="value: notifications_textMessage_twilioAcctId">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="">Twilio Key</label>
-                            <div class="controls">
-                                <input id="settings_notifications_textMessage_twilioAcctKey"
-                                    data-bind="value: notifications_textMessage_twilioAcctKey">
-                            </div>
-                        </div>
-
-                        <h4>Email</h4>
-                        <span class="inline">
-                            via <a src="http://sendgrid.com/">SendGrid</a>
-                        </span>
-                        <span class="inline right">
-                            Enable
-                            <input id="settings_notifications_email_enabled" type="checkbox"
-                                data-bind="checked: notifications_textMessage_enabled">
-                        </span>
-                        <div class="control-group">
-                            <label class="control-label" for="">SendGrid Username</label>
-                            <div class="controls">
-                                <input id="settings_notifications_email_sendgridId"
-                                    placeholder="sendgridUsername"
-                                    type="text"
-                                    class="input-block-level"
-                                    data-bind="value: notifications_email_sendgridId">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="">SendGrid Password</label>
-                            <div class="controls">
-                                <input id="settings-notifications_email_sendgridKey"
-                                    type="password"
-                                    class="input-block-level"
-                                    data-bind="value: notifications_email_sendgridKey">
-                            </div>
-                        </div>
-
-                        <h4>Cloud</h4>
-                        <span class="inline">
-                            via <a src="https://orchestrate.io/">Orchestrate</a>
-                        </span>
-                        <span class="inline right">
-                            Enable
-                            <input id="settings_notifications_cloud_enabled" type="checkbox"
-                                data-bind="checked: notifications_cloud_enabled">
-                        </span>
-                        <div class="control-group">
-                            <label class="control-label" for="">Orchestrate ID</label>
-                            <div class="controls">
-                                <input id="settings_notifications_cloud_orchestrateId"
-                                    type="password"
-                                    class="input-block-level"
-                                    data-bind="value: notifications_cloud_orchestrateId">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="">Orchestrate Key</label>
-                            <div class="controls">
-                                <input id="settings_notifications_cloud_orchestrateKey"
-                                    type="password"
-                                    class="input-block-level"
-                                    data-bind="value: notifications_cloud_orchestrateKey">
                             </div>
                         </div>
                     </form>

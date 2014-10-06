@@ -69,27 +69,6 @@ default_settings_client_public = {
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
-	"notifications": {
-		"email": {
-			"enabled": False,
-			"sendgridId": None,
-			"sendgridKey": None
-		},
-		"enabled": False,
-		"textMessage": {
-			"countryPrefix": None,
-			"enabled": False,
-			"toNumber": None,
-			"fromNumber": None,
-			"twilioAcctId": None,
-			"twilioAcctKey": None
-		},
-		"cloud": {
-			"enabled": False,
-			"orchestrateId": None,
-			"orchestrateKey": None
-		}
-	},
 	"printerParameters": {
 		"bedDimensions": {
 			"circular": False,
