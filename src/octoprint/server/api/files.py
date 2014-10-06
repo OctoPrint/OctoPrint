@@ -359,17 +359,15 @@ def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename):
 		return make_response("File not found on '%s': %s" % (target, filename), 404)
 
-	sd = target == FileDestinations.SDCARD
-
 	currentJob = printer.getCurrentJob()
 	currentFilename = None
-	currentSd = None
-	if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
-		currentFilename = currentJob["filename"]
-		currentSd = currentJob["sd"]
+	currentOrigin = None
+	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"] and "origin" in currentJob["file"]:
+		currentFilename = currentJob["file"]["name"]
+		currentOrigin = currentJob["file"]["origin"]
 
 	# prohibit deleting the file that is currently being printed
-	if currentFilename == filename and currentSd == sd and (printer.isPrinting() or printer.isPaused()):
+	if currentFilename == filename and currentOrigin == target and (printer.isPrinting() or printer.isPaused()):
 		make_response("Trying to delete file that is currently being printed: %s" % filename, 409)
 
 	# deselect the file if it's currently selected
@@ -377,7 +375,7 @@ def deleteGcodeFile(filename, target):
 		printer.unselectFile()
 
 	# delete it
-	if sd:
+	if target == FileDestinations.SDCARD:
 		printer.deleteSdFile(filename)
 	else:
 		fileManager.remove_file(target, filename)
