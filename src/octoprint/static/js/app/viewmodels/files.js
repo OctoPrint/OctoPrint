@@ -1,8 +1,9 @@
-function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
+function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicingViewModel) {
     var self = this;
 
     self.printerState = printerStateViewModel;
     self.loginState = loginStateViewModel;
+    self.slicing = slicingViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -57,11 +58,17 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             },
             "local": function(file) {
                 return !(file["origin"] && file["origin"] == "sdcard");
+            },
+            "machinecode": function(file) {
+                return file["type"] && file["type"] == "machinecode";
+            },
+            "model": function(file) {
+                return file["type"] && file["type"] == "model";
             }
         },
         "name",
-        [],
-        [["sd", "local"]],
+        ["machinecode"],
+        [["sd", "local"], ["machinecode", "model"]],
         0
     );
 
@@ -152,8 +159,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.highlightFilename(self.printerState.filename());
     };
 
-    self.loadFile = function(filename, printAfterLoad) {
-        var file = self.listHelper.getItem(function(item) {return item.name == filename});
+    self.loadFile = function(file, printAfterLoad) {
         if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
         $.ajax({
@@ -165,16 +171,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         });
     };
 
-    self.removeFile = function(filename) {
-        var file = self.listHelper.getItem(function(item) {return item.name == filename});
+    self.removeFile = function(file) {
         if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
-
-        var origin;
-        if (file.origin === undefined) {
-            origin = "local";
-        } else {
-            origin = file.origin;
-        }
 
         $.ajax({
             url: file.refs.resource,
@@ -183,6 +181,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                 self.requestData();
             }
         });
+    };
+
+    self.sliceFile = function(file) {
+        if (!file) return;
+
+        self.slicing.show(file.origin, file.name);
     };
 
     self.initSdCard = function() {
@@ -228,6 +232,10 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             return "";
         }
         return data["prints"]["last"]["success"] ? "text-success" : "text-error";
+    };
+
+    self.templateFor = function(data) {
+        return "files_template_" + data.type;
     };
 
     self.getEntryId = function(data) {

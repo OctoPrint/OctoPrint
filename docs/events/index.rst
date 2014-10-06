@@ -132,7 +132,14 @@ UpdatedFiles
 
    Payload:
 
-     * ``type``: the type of file list that was modified, currently only ``gcode`` is supported here
+     * ``type``: the type of file list that was modified. Currently only ``printables`` and ``gcode`` (DEPRECATED) are supported here.
+
+       .. note::
+
+          The type ``gcode`` has been renamed to ``printables`` with the introduction of a new file management layer that
+          supports STL files as first class citizens as well. For reasons of backwards compatibility the ``UpdatedFiles``
+          event for printable files will be fired twice, once with ``type`` set to ``gcode``, once set to ``printables``.
+          Support for the ``gcode`` type will be removed in the next release after version 1.2.0.
 
 MetadataAnalysisStarted
    The metadata analysis of a GCODE file has started.

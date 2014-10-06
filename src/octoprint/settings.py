@@ -49,8 +49,8 @@ default_settings = {
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
-			"nameSuffix": ".name",
-			"pathSuffix": ".path"
+			"nameSuffix": "name",
+			"pathSuffix": "path"
 		},
 		"maxSize": 100 * 1024, # 100 KB
 	},
@@ -92,14 +92,14 @@ default_settings = {
 		"logs": None,
 		"virtualSd": None,
 		"watched": None,
-		"plugins": None
+		"plugins": None,
+		"slicingProfiles": None
 	},
 	"temperature": {
-		"profiles":
-			[
-				{"name": "ABS", "extruder" : 210, "bed" : 100 },
-				{"name": "PLA", "extruder" : 180, "bed" : 60 }
-			]
+		"profiles": [
+			{"name": "ABS", "extruder" : 210, "bed" : 100 },
+			{"name": "PLA", "extruder" : 180, "bed" : 60 }
+		]
 	},
 	"printerParameters": {
 		"movementSpeed": {
@@ -115,7 +115,7 @@ default_settings = {
 			{"x": 0.0, "y": 0.0}
 		],
 		"bedDimensions": {
-			"x": 200.0, "y": 200.0, "r": 100
+			"x": 200.0, "y": 200.0, "r": 100, "circular": False
 		},
 		"defaultExtrusionLength": 5
 	},
@@ -139,6 +139,11 @@ default_settings = {
 		"enabled": False,
 		"path": "/default/path/to/cura",
 		"config": "/default/path/to/your/cura/config.ini"
+	},
+	"slicing": {
+		"enabled": True,
+		"defaultSlicer": "cura",
+		"defaultProfiles": None
 	},
 	"events": {
 		"enabled": True,

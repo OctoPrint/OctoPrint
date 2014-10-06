@@ -76,7 +76,8 @@ $(function() {
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
-        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
+        var slicingViewModel = new SlicingViewModel(loginStateViewModel);
+        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicingViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
@@ -95,7 +96,8 @@ $(function() {
             gcodeFilesViewModel: gcodeFilesViewModel,
             gcodeViewModel: gcodeViewModel,
             navigationViewModel: navigationViewModel,
-            logViewModel: logViewModel
+            logViewModel: logViewModel,
+            slicingViewModel: slicingViewModel
         };
 
         var allViewModels = _.values(viewModelMap);
@@ -153,6 +155,10 @@ $(function() {
                 location = "local";
             }
             gcodeFilesViewModel.requestData(filename, location);
+
+            if (_.endsWith(filename.toLowerCase(), ".stl")) {
+                slicingViewModel.show(location, filename);
+            }
 
             if (data.result.done) {
                 $("#gcode_upload_progress .bar").css("width", "0%");
@@ -292,7 +298,7 @@ $(function() {
 
             var foundLocal = false;
             var foundSd = false;
-            var found = false
+            var found = false;
             var node = e.target;
             do {
                 if (dropZoneLocal && node === dropZoneLocal[0]) {
@@ -405,6 +411,8 @@ $(function() {
             if (timelapseElement) {
                 ko.applyBindings(timelapseViewModel, timelapseElement);
             }
+
+            ko.applyBindings(slicingViewModel, document.getElementById("slicing_configuration_dialog"));
 
             // apply bindings and signal startup
             _.each(additionalViewModels, function(additionalViewModel) {

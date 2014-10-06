@@ -145,6 +145,8 @@ function DataUpdater(allViewModels) {
                     var gcodeUploadProgress = $("#gcode_upload_progress");
                     var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
 
+                    console.log("Got event " + type + " with payload: " + JSON.stringify(payload))
+
                     if (type == "UpdatedFiles") {
                         _.each(self.allViewModels, function(viewModel) {
                             if (viewModel.hasOwnProperty("onUpdatedFiles")) {

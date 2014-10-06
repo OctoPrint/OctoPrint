@@ -133,6 +133,15 @@ class EventManager(object):
 
 		self._queue.put((event, payload), 0)
 
+		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
+			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
+			# TODO v1.3.0 Remove again
+			import copy
+			legacy_payload = copy.deepcopy(payload)
+			legacy_payload["type"] = "gcode"
+			self._queue.put((event, legacy_payload), 0)
+
+
 	def subscribe(self, event, callback):
 		"""
 		Subscribe a listener to an event -- pass in the event name (as a string) and the callback object

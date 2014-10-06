@@ -132,7 +132,7 @@ def getDosFilename(input, existingFilenames, extension=None):
 
 
 def findCollisionfreeName(input, extension, existingFilenames):
-	filename = re.sub(r"\s+", "_", input.lower().translate(None, ".\"/\\[]:;=,"))
+	filename = re.sub(r"\s+", "_", input.lower().translate({ord(i):None for i in ".\"/\\[]:;=,"}))
 
 	counter = 1
 	power = 1

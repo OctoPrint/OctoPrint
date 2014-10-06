@@ -14,5 +14,6 @@ API Documentation
    printer.rst
    job.rst
    logs.rst
+   slicing.rst
    push.rst
    datamodel.rst

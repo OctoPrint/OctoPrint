@@ -4,7 +4,6 @@
 *.pyc
 *.zip
 *.exe
-*.gcode
 *.swp
 darwin-Cura-*
 win32-Cura-*

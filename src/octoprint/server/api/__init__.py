@@ -35,6 +35,7 @@ from . import settings as api_settings
 from . import timelapse as api_timelapse
 from . import users as api_users
 from . import log as api_logs
+from . import slicing as api_slicing
 
 
 VERSION = "0.1"

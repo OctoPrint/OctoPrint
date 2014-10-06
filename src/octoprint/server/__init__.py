@@ -27,7 +27,9 @@ babel = Babel(app)
 debug = False
 
 printer = None
-gcodeManager = None
+fileManager = None
+slicingManager = None
+analysisQueue = None
 userManager = None
 eventManager = None
 loginManager = None
@@ -40,13 +42,15 @@ user_permission = Permission(RoleNeed("user"))
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint.printer import Printer, getConnectionOptions
 from octoprint.settings import settings
-import octoprint.gcodefiles as gcodefiles
 import octoprint.users as users
 import octoprint.events as events
 import octoprint.plugin
 import octoprint.timelapse
 import octoprint._version
 import octoprint.util
+import octoprint.filemanager.storage
+import octoprint.filemanager.analysis
+import octoprint.slicing
 
 from . import util
 
@@ -180,7 +184,9 @@ class Server():
 			self._checkForRoot()
 
 		global printer
-		global gcodeManager
+		global fileManager
+		global slicingManager
+		global analysisQueue
 		global userManager
 		global eventManager
 		global loginManager
@@ -194,6 +200,7 @@ class Server():
 
 		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
 		self._initSettings(self._configfile, self._basedir)
+		pluginManager = octoprint.plugin.plugin_manager(init=True)
 
 		# then initialize logging
 		self._initLogging(self._debug, self._logConf)
@@ -202,9 +209,12 @@ class Server():
 		logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
 
 		eventManager = events.eventManager()
-		gcodeManager = gcodefiles.GcodeManager()
-		printer = Printer(gcodeManager)
-		pluginManager = octoprint.plugin.plugin_manager(init=True)
+		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
+		slicingManager = octoprint.slicing.SlicingManager(settings().getBaseFolder("slicingProfiles"))
+		storage_managers = dict()
+		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(settings().getBaseFolder("uploads"))
+		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, initial_storage_managers=storage_managers)
+		printer = Printer(fileManager, analysisQueue)
 
 		# configure additional template folders for jinja2
 		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
@@ -297,8 +307,7 @@ class Server():
 
 		# start up watchdogs
 		observer = Observer()
-		observer.schedule(util.watchdog.GcodeWatchdogHandler(gcodeManager, printer), settings().getBaseFolder("watched"))
-		observer.schedule(util.watchdog.UploadCleanupWatchdogHandler(gcodeManager), settings().getBaseFolder("uploads"))
+		observer.schedule(util.watchdog.GcodeWatchdogHandler(fileManager, printer), settings().getBaseFolder("watched"))
 		observer.start()
 
 		ioloop = IOLoop.instance()
@@ -342,8 +351,8 @@ class Server():
 			logger.exception("Stacktrace follows:")
 
 	def _createSocketConnection(self, session):
-		global printer, gcodeManager, userManager, eventManager
-		return util.sockjs.PrinterStateConnection(printer, gcodeManager, userManager, eventManager, session)
+		global printer, fileManager, analysisQueue, userManager, eventManager
+		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, eventManager, session)
 
 	def _checkForRoot(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:

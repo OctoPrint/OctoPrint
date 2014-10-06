@@ -28,9 +28,16 @@
 * Start counting the layers at 1 instead of 0 in the GCODE viewer
 * Upgraded [Font Awesome](https://fortawesome.github.io/Font-Awesome/) to version 3.2.1
 * Better error reporting for timelapse rendering and system commands
-* Supports
 * Custom control can now be defined so that they show a Confirm dialog with configurable text before executing 
   ([#532](https://github.com/foosel/OctoPrint/issues/532) and [#590](https://github.com/foosel/OctoPrint/pull/590))
+* Slicing has been greatly improved and now allows for a definition of slicing profiles to use for slicing plus overrides
+  which can be defined per slicing job. Slicers themselves are integrated into the system via ``SlicingPlugins``. Please
+  note that the [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the 
+  [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See 
+  [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to 
+  accommodate the new integration.
+* File management now supports STL files as first class citizens (including UI adjustments to allow management of
+  uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
 
 ### Bug Fixes
 

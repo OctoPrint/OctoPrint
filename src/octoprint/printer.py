@@ -30,11 +30,11 @@ def getConnectionOptions():
 	}
 
 class Printer():
-	def __init__(self, gcodeManager):
+	def __init__(self, fileManager, analysisQueue):
 		from collections import deque
 
-		self._gcodeManager = gcodeManager
-		self._gcodeManager.registerCallback(self)
+		self._analysisQueue = analysisQueue
+		self._fileManager = fileManager
 
 		# state
 		# TODO do we really need to hold the temperature here?
@@ -146,14 +146,6 @@ class Printer():
 		for callback in self._callbacks:
 			try: callback.sendFeedbackCommandOutput(name, output)
 			except: pass
-
-	#~~ callback from gcodemanager
-
-	def sendUpdateTrigger(self, type):
-		if type == "gcodeFiles" and self._selectedFile:
-			self._setJobData(self._selectedFile["filename"],
-				self._selectedFile["filesize"],
-				self._selectedFile["sd"])
 
 	#~~ callback from metadata analysis event
 
@@ -316,7 +308,7 @@ class Printer():
 
 		# mark print as failure
 		if self._selectedFile is not None:
-			self._gcodeManager.printFailed(self._selectedFile["filename"], self._comm.getPrintTime())
+			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False)
 			payload = {
 				"file": self._selectedFile["filename"],
 				"origin": FileDestinations.LOCAL
@@ -410,13 +402,16 @@ class Printer():
 			if not sd:
 				date = int(os.stat(filename).st_ctime)
 
-			fileData = self._gcodeManager.getFileData(filename)
+			try:
+				fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, filename)
+			except:
+				fileData = None
 			if fileData is not None:
-				if "gcodeAnalysis" in fileData:
-					if estimatedPrintTime is None and "estimatedPrintTime" in fileData["gcodeAnalysis"]:
-						estimatedPrintTime = fileData["gcodeAnalysis"]["estimatedPrintTime"]
-					if "filament" in fileData["gcodeAnalysis"].keys():
-						filament = fileData["gcodeAnalysis"]["filament"]
+				if "analysis" in fileData:
+					if estimatedPrintTime is None and "estimatedPrintTime" in fileData["analysis"]:
+						estimatedPrintTime = fileData["analysis"]["estimatedPrintTime"]
+					if "filament" in fileData["analysis"].keys():
+						filament = fileData["analysis"]["filament"]
 				if "prints" in fileData and fileData["prints"] and "last" in fileData["prints"] and fileData["prints"]["last"] and "lastPrintTime" in fileData["prints"]["last"]:
 					lastPrintTime = fileData["prints"]["last"]["lastPrintTime"]
 
@@ -478,12 +473,12 @@ class Printer():
 		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if self._selectedFile is not None:
 				if state == self._comm.STATE_OPERATIONAL:
-					self._gcodeManager.printSucceeded(self._selectedFile["filename"], self._comm.getPrintTime())
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True)
 				elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
-					self._gcodeManager.printFailed(self._selectedFile["filename"], self._comm.getPrintTime())
-			self._gcodeManager.resumeAnalysis() # printing done, put those cpu cycles to good use
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False)
+			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
-			self._gcodeManager.pauseAnalysis() # do not analyse gcode while printing
+			self._analysisQueue.pause() # do not analyse files while printing
 
 		self._setState(state)
 

@@ -304,7 +304,19 @@ Issue a file command
        is not operational when this parameter is present and set to ``true``, the request will fail with a response
        of ``409 Conflict``.
 
-   Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+   slice
+     Slices an STL file into GCODE. Note that this is an asynchronous operation that will take place in the background
+     after the response has been sent back to the client. Additional parameters are:
+
+     * ``slicer``: The slicing engine to use, defaults to ``cura`` if not set, which is also the only supported slicer right now.
+     * ``gcode``: Name of the GCODE file to generated, in the same location as the STL file. Defaults to the STL file name
+       with extension ``.gco`` if not set.
+     * ``profile``: Name of the slicing profile to use, if not set the default slicing profile of the slicer will be used.
+     * ``profile.*``: Override parameters, the ``profile.`` prefix will be stripped and the matching profile key will
+       be overridden with the supplied value. Use this if you want to specify things that change often like a different
+       temperature, filament diameter or infill percentage. Profile keys are slicer specific.
+
+   Upon success, a status code of :http:statuscode:`204` and an empty body is returned, unless specified otherwise.
 
    **Example Select Request**
 
@@ -324,6 +336,39 @@ Issue a file command
 
       HTTP/1.1 204 No Content
 
+   **Example Slice Request**
+
+   .. sourcecode:: http
+
+      POST /api/files/local/some_model.stl HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "slice",
+        "slicer": "cura",
+        "gcode": "some_model.first_try.gcode",
+        "profile": "high_quality",
+        "profile.infill": 75,
+        "profile.fill_density": 15
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 202 Accepted
+      Content-Type: application/json
+
+      {
+        "origin": "local",
+        "name": "some_model.first_try.gcode",
+        "refs": {
+          "download": "http://example.com/downloads/files/local/some_model.first_try.gcode",
+          "resource": "http://example.com/api/files/local/some_model.first_try.gcode"
+        }
+      }
+
+
    :param target:        The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
                          folder) or ``sdcard`` for the printer's SD card (if available)
    :param filename:      The filename of the file for which to issue the command
@@ -331,7 +376,9 @@ Issue a file command
    :json boolean print:  ``select`` command: Optional, whether to start printing the file directly after selection,
                          defaults to ``false``.
    :statuscode 200:      No error
+   :statuscode 202:      No error for a ``slice`` command.
    :statuscode 400:      If the `command` is unknown or the request is otherwise invalid
+   :statuscode 415:      If a ``slice`` command was issued against something other than an STL file.
    :statuscode 404:      If `target` is neither ``local`` nor ``sdcard`` or the requested file was not found
    :statuscode 409:      If a selected file is supposed to start printing directly but the printer is not operational.
 

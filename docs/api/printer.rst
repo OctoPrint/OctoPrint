@@ -783,7 +783,7 @@ Full State Response
      - The printer's sd state data
    * - ``state``
      - 0..1
-     - :ref:`Printer State <sec-api-printer-datamodel-printerstate>`
+     - :ref:`Printer State <sec-api-datamodel-printer-state>`
      - The printer's general state
 
 .. _sec-api-printer-datamodel-temps:
