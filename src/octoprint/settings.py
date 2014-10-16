@@ -181,6 +181,9 @@ class Settings(object):
 		else:
 			self.settings_dir = _resolveSettingsDir(APPNAME)
 
+		if not os.path.isdir(self.settings_dir):
+			os.makedirs(self.settings_dir)
+
 	def _getDefaultFolder(self, type):
 		folder = default_settings["folder"][type]
 		if folder is None:
