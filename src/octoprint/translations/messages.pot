@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.0-dev-126-g2943343-dirty\n"
+"Project-Id-Version: OctoPrint 1.2.0-dev-239-g1acbbba-dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2014-08-28 15:52+0200\n"
+"POT-Creation-Date: 2014-10-20 09:44+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
 
-#: src/octoprint/static/js/app/dataupdater.js:43
+#: src/octoprint/static/js/app/dataupdater.js:52
+#: src/octoprint/static/js/app/dataupdater.js:85
+#: src/octoprint/static/js/app/helpers.js:419
+#: src/octoprint/templates/dialogs.jinja2:43
+msgid "Server is offline"
+msgstr ""
+
+#: src/octoprint/static/js/app/dataupdater.js:53
 msgid ""
 "The server appears to be offline, at least I'm not getting any response "
 "from it. I'll try to reconnect automatically <strong>over the next couple"
@@ -25,88 +32,88 @@ msgid ""
 "anytime using the button below."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:58
+#: src/octoprint/static/js/app/dataupdater.js:86
 msgid ""
 "The server appears to be offline, at least I'm not getting any response "
 "from it. I <strong>could not reconnect automatically</strong>, but you "
 "may try a manual reconnect using the button below."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:126
+#: src/octoprint/static/js/app/dataupdater.js:164
 msgid "Rendering timelapse"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:126
+#: src/octoprint/static/js/app/dataupdater.js:164
 #, python-format
 msgid "Now rendering timelapse %(movie_basename)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:128
+#: src/octoprint/static/js/app/dataupdater.js:166
 msgid "Timelapse ready"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:128
+#: src/octoprint/static/js/app/dataupdater.js:166
 #, python-format
 msgid "New timelapse %(movie_basename)s is done rendering."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:131
+#: src/octoprint/static/js/app/dataupdater.js:169
 #, python-format
 msgid ""
 "Rendering of timelapse %(movie_basename)s failedwith return code "
 "%(returncode)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:133
+#: src/octoprint/static/js/app/dataupdater.js:171
 msgid "Rendering failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:137
+#: src/octoprint/static/js/app/dataupdater.js:175
 msgid "Slicing ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:142
+#: src/octoprint/static/js/app/dataupdater.js:180
 msgid "Slicing done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:142
+#: src/octoprint/static/js/app/dataupdater.js:180
 #, python-format
 msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:149
+#: src/octoprint/static/js/app/dataupdater.js:192
 #, python-format
 msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:150
+#: src/octoprint/static/js/app/dataupdater.js:193
 msgid "Slicing failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:154
+#: src/octoprint/static/js/app/dataupdater.js:197
 msgid "Streaming ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:159
+#: src/octoprint/static/js/app/dataupdater.js:202
 msgid "Streaming done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:159
+#: src/octoprint/static/js/app/dataupdater.js:202
 #, python-format
 msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/helpers.js:337
+#: src/octoprint/static/js/app/helpers.js:355
 #, python-format
 msgid "%(hour)02d:%(minute)02d:%(second)02d"
 msgstr ""
 
-#: src/octoprint/static/js/app/helpers.js:342
+#: src/octoprint/static/js/app/helpers.js:360
 msgid "YYYY-MM-DD HH:mm"
 msgstr ""
 
-#: src/octoprint/static/js/app/helpers.js:360
-#: src/octoprint/static/js/app/helpers.js:365
+#: src/octoprint/static/js/app/helpers.js:378
+#: src/octoprint/static/js/app/helpers.js:383
 msgid "off"
 msgstr ""
 
@@ -158,18 +165,18 @@ msgstr ""
 msgid "Transfering file to SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:132
+#: src/octoprint/static/js/app/main.js:182
 msgid ""
 "Could not upload the file. Make sure that it is a GCODE file and has the "
 "extension \".gcode\" or \".gco\" or that it is an STL file with the "
 "extension \".stl\" and slicing support is enabled and configured."
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:148
+#: src/octoprint/static/js/app/main.js:198
 msgid "Uploading ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:151
+#: src/octoprint/static/js/app/main.js:201
 msgid "Saving ..."
 msgstr ""
 
@@ -181,7 +188,7 @@ msgid "OctoPrint"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/connection.js:24
-#: src/octoprint/templates/index.jinja2:117
+#: src/octoprint/templates/index.jinja2:141
 msgid "Connect"
 msgstr ""
 
@@ -190,10 +197,10 @@ msgid "Disconnect"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/control.js:38
-#: src/octoprint/static/js/app/viewmodels/files.js:286
+#: src/octoprint/static/js/app/viewmodels/files.js:294
 #: src/octoprint/static/js/app/viewmodels/gcode.js:332
 #: src/octoprint/static/js/app/viewmodels/gcode.js:363
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:137
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:157
 #: src/octoprint/static/js/app/viewmodels/temperature.js:56
 msgid "Tool"
 msgstr ""
@@ -203,20 +210,20 @@ msgstr ""
 msgid "Hotend"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:281
-#: src/octoprint/static/js/app/viewmodels/files.js:286
+#: src/octoprint/static/js/app/viewmodels/files.js:289
+#: src/octoprint/static/js/app/viewmodels/files.js:294
 msgid "Filament"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:290
+#: src/octoprint/static/js/app/viewmodels/files.js:298
 msgid "Estimated Print Time"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:293
+#: src/octoprint/static/js/app/viewmodels/files.js:301
 msgid "Last Printed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:295
+#: src/octoprint/static/js/app/viewmodels/files.js:303
 msgid "Last Print Time"
 msgstr ""
 
@@ -267,6 +274,10 @@ msgid "Layer count"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/gcode.js:337
+msgid "printed"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:337
 msgid "visited"
 msgstr ""
 
@@ -292,8 +303,8 @@ msgid "Print time for layer"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/loginstate.js:15
-#: src/octoprint/templates/index.jinja2:74
-#: src/octoprint/templates/index.jinja2:85
+#: src/octoprint/templates/index.jinja2:98
+#: src/octoprint/templates/index.jinja2:109
 msgid "Login"
 msgstr ""
 
@@ -336,78 +347,99 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:66
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:31
+msgid "Restarts the print job from the beginning"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:32
+msgid "Starts the print job"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:33
+msgid "Resumes the print job"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:34
+msgid "Pauses the print job"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:74
 msgid "Continue"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:68
-#: src/octoprint/templates/index.jinja2:144
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:76
+#: src/octoprint/templates/index.jinja2:168
 msgid "Pause"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:79
-#: src/octoprint/templates/index.jinja2:524
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:87
+#: src/octoprint/templates/index.jinja2:567
 msgid "On Z Change"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
-#: src/octoprint/templates/index.jinja2:525
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:89
+#: src/octoprint/templates/index.jinja2:568
 msgid "Timed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
-#: src/octoprint/templates/index.jinja2:531
-#: src/octoprint/templates/index.jinja2:538
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:89
+#: src/octoprint/templates/index.jinja2:574
+#: src/octoprint/templates/index.jinja2:581
 msgid "sec"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:166
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:186
 msgid "This will restart the print job from the beginning."
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:15
-#: src/octoprint/static/js/app/viewmodels/settings.js:41
+#: src/octoprint/static/js/app/viewmodels/settings.js:42
 msgid "default"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:16
-#: src/octoprint/static/js/app/viewmodels/settings.js:27
+#: src/octoprint/static/js/app/viewmodels/settings.js:28
 msgid "red"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:17
-#: src/octoprint/static/js/app/viewmodels/settings.js:29
+#: src/octoprint/static/js/app/viewmodels/settings.js:30
 msgid "orange"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:18
-#: src/octoprint/static/js/app/viewmodels/settings.js:31
+#: src/octoprint/static/js/app/viewmodels/settings.js:32
 msgid "yellow"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:19
-#: src/octoprint/static/js/app/viewmodels/settings.js:33
+#: src/octoprint/static/js/app/viewmodels/settings.js:34
 msgid "green"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:20
-#: src/octoprint/static/js/app/viewmodels/settings.js:35
+#: src/octoprint/static/js/app/viewmodels/settings.js:36
 msgid "blue"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:21
-#: src/octoprint/static/js/app/viewmodels/settings.js:37
+#: src/octoprint/static/js/app/viewmodels/settings.js:38
 msgid "violet"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:22
-#: src/octoprint/static/js/app/viewmodels/settings.js:39
+#: src/octoprint/static/js/app/viewmodels/settings.js:40
 msgid "black"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:21
+#, python-format
+msgid "Slicing %(filename)s"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:22
 #: src/octoprint/static/js/app/viewmodels/temperature.js:74
-#: src/octoprint/templates/settings.jinja2:347
+#: src/octoprint/templates/settings.jinja2:354
 msgid "Bed"
 msgstr ""
 
@@ -420,65 +452,94 @@ msgid "min"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:252
-#: src/octoprint/templates/index.jinja2:262
+#: src/octoprint/templates/index.jinja2:305
 msgid "Actual"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:257
-#: src/octoprint/templates/index.jinja2:263
+#: src/octoprint/templates/index.jinja2:306
 msgid "Target"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:6
-msgid "Server is offline"
+#: src/octoprint/templates/dialogs.jinja2:7
+msgid ""
+"Please configure which slicer and which slicing profile to use and name "
+"the GCode file to slice to below, or click \"Cancel\" if you do not wish "
+"to slice the file now."
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:9
-msgid "Attempt to reconnect"
+#: src/octoprint/templates/dialogs.jinja2:10
+msgid "Slicer"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:20
-msgid "Upload locally"
+#: src/octoprint/templates/dialogs.jinja2:12
+msgid "Select a slicer..."
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:16
+msgid "Slicing Profile"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:18
+msgid "Select a profile..."
 msgstr ""
 
 #: src/octoprint/templates/dialogs.jinja2:22
-#: src/octoprint/templates/index.jinja2:218
-msgid "Upload to SD"
+msgid "GCode Filename"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:22
-msgid "SD not initialized"
-msgstr ""
-
-#: src/octoprint/templates/dialogs.jinja2:25
-#: src/octoprint/templates/index.jinja2:213
-#: src/octoprint/templates/index.jinja2:224
-msgid "Upload"
-msgstr ""
-
-#: src/octoprint/templates/dialogs.jinja2:34
-msgid "Are you sure?"
-msgstr ""
-
-#: src/octoprint/templates/dialogs.jinja2:38
-msgid "Are you sure you want to proceed?"
-msgstr ""
-
-#: src/octoprint/templates/dialogs.jinja2:41
-#: src/octoprint/templates/index.jinja2:145
-#: src/octoprint/templates/settings.jinja2:676
+#: src/octoprint/templates/dialogs.jinja2:33
+#: src/octoprint/templates/dialogs.jinja2:78
+#: src/octoprint/templates/index.jinja2:169
+#: src/octoprint/templates/settings.jinja2:667
 msgid "Cancel"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:42
+#: src/octoprint/templates/dialogs.jinja2:34
+#: src/octoprint/templates/index.jinja2:240
+msgid "Slice"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:46
+msgid "Attempt to reconnect"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:57
+msgid "Upload locally"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:59
+#: src/octoprint/templates/index.jinja2:261
+msgid "Upload to SD"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:59
+msgid "SD not initialized"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:62
+#: src/octoprint/templates/index.jinja2:256
+#: src/octoprint/templates/index.jinja2:267
+msgid "Upload"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:71
+msgid "Are you sure?"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:75
+msgid "Are you sure you want to proceed?"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:79
 msgid "Proceed"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:48
+#: src/octoprint/templates/dialogs.jinja2:85
 msgid "Configure Access Control"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:51
+#: src/octoprint/templates/dialogs.jinja2:88
 msgid ""
 "<p>\n"
 "            <strong>Please read the following, it is very important for "
@@ -503,31 +564,31 @@ msgid ""
 "        </p>"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:67
-#: src/octoprint/templates/index.jinja2:78
-#: src/octoprint/templates/index.jinja2:79
-#: src/octoprint/templates/settings.jinja2:510
+#: src/octoprint/templates/dialogs.jinja2:104
+#: src/octoprint/templates/index.jinja2:102
+#: src/octoprint/templates/index.jinja2:103
+#: src/octoprint/templates/settings.jinja2:495
 msgid "Username"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:73
-#: src/octoprint/templates/index.jinja2:80
-#: src/octoprint/templates/index.jinja2:81
-#: src/octoprint/templates/settings.jinja2:516
+#: src/octoprint/templates/dialogs.jinja2:110
+#: src/octoprint/templates/index.jinja2:104
+#: src/octoprint/templates/index.jinja2:105
+#: src/octoprint/templates/settings.jinja2:501
 msgid "Password"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:79
+#: src/octoprint/templates/dialogs.jinja2:116
 msgid "Confirm Password"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:82
-#: src/octoprint/templates/settings.jinja2:525
-#: src/octoprint/templates/settings.jinja2:596
+#: src/octoprint/templates/dialogs.jinja2:119
+#: src/octoprint/templates/settings.jinja2:510
+#: src/octoprint/templates/settings.jinja2:581
 msgid "Passwords do not match"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:86
+#: src/octoprint/templates/dialogs.jinja2:123
 msgid ""
 "<p>\n"
 "            <strong>Note:</strong> In case that your OctoPrint "
@@ -544,357 +605,376 @@ msgid ""
 "        </p>"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:96
+#: src/octoprint/templates/dialogs.jinja2:133
 msgid "Disable Access Control"
 msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:97
+#: src/octoprint/templates/dialogs.jinja2:134
 msgid "Keep Access Control Enabled"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:57
+#: src/octoprint/templates/index.jinja2:81
 msgid "Settings"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:63
+#: src/octoprint/templates/index.jinja2:87
 msgid "System"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:83
+#: src/octoprint/templates/index.jinja2:107
 msgid "Remember me"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:88
+#: src/octoprint/templates/index.jinja2:112
 msgid "Change Password"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:89
+#: src/octoprint/templates/index.jinja2:113
 msgid "Logout"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:103
+#: src/octoprint/templates/index.jinja2:127
 msgid "Connection"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:107
-#: src/octoprint/templates/settings.jinja2:30
+#: src/octoprint/templates/index.jinja2:131
+#: src/octoprint/templates/settings.jinja2:37
 msgid "Serial Port"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:109
-#: src/octoprint/templates/settings.jinja2:36
+#: src/octoprint/templates/index.jinja2:133
+#: src/octoprint/templates/settings.jinja2:43
 msgid "Baudrate"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:112
+#: src/octoprint/templates/index.jinja2:136
 msgid "Save connection settings"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:115
+#: src/octoprint/templates/index.jinja2:139
 msgid "Auto-connect on server startup"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:123
+#: src/octoprint/templates/index.jinja2:147
 msgid "State"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:127
+#: src/octoprint/templates/index.jinja2:151
 msgid "Machine State"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:128
+#: src/octoprint/templates/index.jinja2:152
 msgid "File"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:129
-#: src/octoprint/templates/index.jinja2:247
+#: src/octoprint/templates/index.jinja2:153
+#: src/octoprint/templates/index.jinja2:290
 msgid "Timelapse"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:133
+#: src/octoprint/templates/index.jinja2:157
 msgid "Approx. Total Print Time"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:134
+#: src/octoprint/templates/index.jinja2:158
 msgid "Print Time"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:135
+#: src/octoprint/templates/index.jinja2:159
 msgid "Print Time Left"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:136
+#: src/octoprint/templates/index.jinja2:160
 msgid "Printed"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:143
+#: src/octoprint/templates/index.jinja2:167
 msgid "Restart"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:143
+#: src/octoprint/templates/index.jinja2:167
 msgid "Print"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:152
+#: src/octoprint/templates/index.jinja2:168
+msgid "Resume"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:169
+msgid "Cancels the print job"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:176
 msgid "Files"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:159
+#: src/octoprint/templates/index.jinja2:183
 msgid "Sort by name"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:159
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/index.jinja2:183
+#: src/octoprint/templates/index.jinja2:599
+#: src/octoprint/templates/settings.jinja2:621
 msgid "ascending"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:160
+#: src/octoprint/templates/index.jinja2:184
 msgid "Sort by upload date"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:160
-#: src/octoprint/templates/index.jinja2:161
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/index.jinja2:184
+#: src/octoprint/templates/index.jinja2:185
+#: src/octoprint/templates/index.jinja2:599
+#: src/octoprint/templates/settings.jinja2:621
 msgid "descending"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:161
+#: src/octoprint/templates/index.jinja2:185
 msgid "Sort by file size"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:164
-msgid "Only show files stored locally"
-msgstr ""
-
-#: src/octoprint/templates/index.jinja2:165
-msgid "Only show files stored on SD"
-msgstr ""
-
-#: src/octoprint/templates/index.jinja2:168
-msgid "Hide successfully printed files"
-msgstr ""
-
-#: src/octoprint/templates/index.jinja2:178
-msgid "Initialize SD card"
-msgstr ""
-
-#: src/octoprint/templates/index.jinja2:179
-msgid "Refresh SD files"
-msgstr ""
-
-#: src/octoprint/templates/index.jinja2:180
-msgid "Release SD card"
+#: src/octoprint/templates/index.jinja2:187
+msgid "Only show GCode files"
 msgstr ""
 
 #: src/octoprint/templates/index.jinja2:188
-msgid "Search..."
+msgid "Only show STL files"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:193
-msgid "Uploaded"
+#: src/octoprint/templates/index.jinja2:191
+msgid "Only show files stored locally"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:194
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/index.jinja2:562
-#: src/octoprint/templates/settings.jinja2:630
-#: src/octoprint/templates/settings.jinja2:637
-msgid "Size"
+#: src/octoprint/templates/index.jinja2:192
+msgid "Only show files stored on SD"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:198
-msgid "Download"
+#: src/octoprint/templates/index.jinja2:195
+msgid "Hide successfully printed files"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:199
-msgid "Remove"
-msgstr ""
-
-#: src/octoprint/templates/index.jinja2:200
-msgid "Load"
-msgstr ""
-
-#: src/octoprint/templates/index.jinja2:201
-msgid "Load and Print"
+#: src/octoprint/templates/index.jinja2:205
+msgid "Initialize SD card"
 msgstr ""
 
 #: src/octoprint/templates/index.jinja2:206
+msgid "Refresh SD files"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:207
+msgid "Release SD card"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:215
+msgid "Search..."
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:222
+#: src/octoprint/templates/index.jinja2:236
+msgid "Uploaded"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:223
+#: src/octoprint/templates/index.jinja2:237
+#: src/octoprint/templates/index.jinja2:599
+#: src/octoprint/templates/index.jinja2:605
+#: src/octoprint/templates/settings.jinja2:621
+#: src/octoprint/templates/settings.jinja2:628
+msgid "Size"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:227
+msgid "Download"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:228
+#: src/octoprint/templates/index.jinja2:239
+msgid "Remove"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:229
+msgid "Load"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:230
+msgid "Load and Print"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:249
 msgid "Free"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:233
+#: src/octoprint/templates/index.jinja2:276
 msgid "Hint: You can also drag and drop files on this page to upload them."
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:243
+#: src/octoprint/templates/index.jinja2:286
 msgid "Temperature"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:244
+#: src/octoprint/templates/index.jinja2:287
 msgid "Control"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:245
+#: src/octoprint/templates/index.jinja2:288
 msgid "GCode Viewer"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:246
+#: src/octoprint/templates/index.jinja2:289
 msgid "Terminal"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:264
+#: src/octoprint/templates/index.jinja2:307
 msgid "Offset"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:280
-#: src/octoprint/templates/index.jinja2:302
+#: src/octoprint/templates/index.jinja2:323
+#: src/octoprint/templates/index.jinja2:345
 msgid "Set"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:292
-#: src/octoprint/templates/index.jinja2:523
+#: src/octoprint/templates/index.jinja2:335
+#: src/octoprint/templates/index.jinja2:566
 msgid "Off"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:360
+#: src/octoprint/templates/index.jinja2:403
 msgid "Select Tool..."
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:371
+#: src/octoprint/templates/index.jinja2:414
 msgid "Extrude"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:372
+#: src/octoprint/templates/index.jinja2:415
 msgid "Retract"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:377
+#: src/octoprint/templates/index.jinja2:420
 msgid "General"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:379
+#: src/octoprint/templates/index.jinja2:422
 msgid "Motors off"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:380
+#: src/octoprint/templates/index.jinja2:423
 msgid "Fans on"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:381
+#: src/octoprint/templates/index.jinja2:424
 msgid "Fans off"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:445
+#: src/octoprint/templates/index.jinja2:488
 msgid "Sync with job progress"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:450
+#: src/octoprint/templates/index.jinja2:493
 msgid "Center viewport on model"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:453
+#: src/octoprint/templates/index.jinja2:496
 msgid "Zoom in on model"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:459
+#: src/octoprint/templates/index.jinja2:502
 msgid "Show moves"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:462
+#: src/octoprint/templates/index.jinja2:505
 msgid "Show retracts"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:468
+#: src/octoprint/templates/index.jinja2:511
 msgid "Also show previous layer"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:471
+#: src/octoprint/templates/index.jinja2:514
 msgid "Also show next layer"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:476
+#: src/octoprint/templates/index.jinja2:519
 msgid "Reload"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:503
+#: src/octoprint/templates/index.jinja2:546
 msgid "Autoscroll"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:513
+#: src/octoprint/templates/index.jinja2:556
 msgid "Send"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:519
+#: src/octoprint/templates/index.jinja2:562
 msgid "Timelapse Configuration"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:521
+#: src/octoprint/templates/index.jinja2:564
 msgid "Timelapse Mode"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:528
+#: src/octoprint/templates/index.jinja2:571
 msgid "Timelapse post roll (in rendered seconds)"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:535
+#: src/octoprint/templates/index.jinja2:578
 msgid "Interval"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:544
+#: src/octoprint/templates/index.jinja2:587
 msgid "Save as default"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:549
+#: src/octoprint/templates/index.jinja2:592
 msgid "Save config"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:553
+#: src/octoprint/templates/index.jinja2:596
 msgid "Finished Timelapses"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/index.jinja2:599
+#: src/octoprint/templates/settings.jinja2:621
 msgid "Sort by"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/index.jinja2:561
-#: src/octoprint/templates/settings.jinja2:377
-#: src/octoprint/templates/settings.jinja2:469
-#: src/octoprint/templates/settings.jinja2:630
-#: src/octoprint/templates/settings.jinja2:636
+#: src/octoprint/templates/index.jinja2:599
+#: src/octoprint/templates/index.jinja2:604
+#: src/octoprint/templates/settings.jinja2:384
+#: src/octoprint/templates/settings.jinja2:454
+#: src/octoprint/templates/settings.jinja2:621
+#: src/octoprint/templates/settings.jinja2:627
 msgid "Name"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/index.jinja2:599
 msgid "Creation date"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:563
-#: src/octoprint/templates/settings.jinja2:472
-#: src/octoprint/templates/settings.jinja2:639
+#: src/octoprint/templates/index.jinja2:606
+#: src/octoprint/templates/settings.jinja2:457
+#: src/octoprint/templates/settings.jinja2:630
 msgid "Action"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:592
+#: src/octoprint/templates/index.jinja2:635
 msgid "Version"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:595
+#: src/octoprint/templates/index.jinja2:638
 msgid "Homepage"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:596
+#: src/octoprint/templates/index.jinja2:639
 msgid "Sourcecode"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:597
+#: src/octoprint/templates/index.jinja2:640
 msgid "Documentation"
 msgstr ""
 
-#: src/octoprint/templates/index.jinja2:598
+#: src/octoprint/templates/index.jinja2:641
 msgid "Bugs and Requests"
 msgstr ""
 
@@ -932,322 +1012,306 @@ msgid "Webcam"
 msgstr ""
 
 #: src/octoprint/templates/settings.jinja2:17
-msgid "Cura"
-msgstr ""
-
-#: src/octoprint/templates/settings.jinja2:18
 msgid "Access Control"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:19
+#: src/octoprint/templates/settings.jinja2:18
 msgid "API"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:21
+#: src/octoprint/templates/settings.jinja2:20
 msgid "Folders"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:22
+#: src/octoprint/templates/settings.jinja2:21
 msgid "Appearance"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:23
-#: src/octoprint/templates/settings.jinja2:626
+#: src/octoprint/templates/settings.jinja2:22
+#: src/octoprint/templates/settings.jinja2:617
 msgid "Logs"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:44
+#: src/octoprint/templates/settings.jinja2:51
 msgid "Auto-connect to printer on server start"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:49
+#: src/octoprint/templates/settings.jinja2:56
 msgid "Communication timeout"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:58
+#: src/octoprint/templates/settings.jinja2:65
 msgid "Temperature timeout"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:67
+#: src/octoprint/templates/settings.jinja2:74
 msgid "SD status timeout"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:76
+#: src/octoprint/templates/settings.jinja2:83
 msgid "Connection timeout"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:85
+#: src/octoprint/templates/settings.jinja2:92
 msgid "Autodetection timeout"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:96
+#: src/octoprint/templates/settings.jinja2:103
 msgid "Log communication to serial.log (might negatively impact performance)"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:96
+#: src/octoprint/templates/settings.jinja2:103
 msgid "Warning"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:105
+#: src/octoprint/templates/settings.jinja2:112
 msgid "Axis"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:107
-#: src/octoprint/templates/settings.jinja2:176
+#: src/octoprint/templates/settings.jinja2:114
+#: src/octoprint/templates/settings.jinja2:183
 msgid "X"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:113
-#: src/octoprint/templates/settings.jinja2:123
-#: src/octoprint/templates/settings.jinja2:133
+#: src/octoprint/templates/settings.jinja2:120
+#: src/octoprint/templates/settings.jinja2:130
+#: src/octoprint/templates/settings.jinja2:140
 msgid "Invert control"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:117
-#: src/octoprint/templates/settings.jinja2:181
+#: src/octoprint/templates/settings.jinja2:124
+#: src/octoprint/templates/settings.jinja2:188
 msgid "Y"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:127
+#: src/octoprint/templates/settings.jinja2:134
 msgid "Z"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:137
+#: src/octoprint/templates/settings.jinja2:144
 msgid "E"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:145
+#: src/octoprint/templates/settings.jinja2:152
 msgid "Default extrusion length"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:151
+#: src/octoprint/templates/settings.jinja2:158
 msgid "Number of Extruders"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:157
+#: src/octoprint/templates/settings.jinja2:164
 msgid "Extruder Offsets"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:174
+#: src/octoprint/templates/settings.jinja2:181
 msgid "Bed Size"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:188
+#: src/octoprint/templates/settings.jinja2:195
 msgid "Radius"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:196
+#: src/octoprint/templates/settings.jinja2:203
 msgid "Circular"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:205
+#: src/octoprint/templates/settings.jinja2:212
 msgid "Stream URL"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:211
+#: src/octoprint/templates/settings.jinja2:218
 msgid "Snapshot URL"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:217
+#: src/octoprint/templates/settings.jinja2:224
 msgid "Path to FFMPEG"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:223
+#: src/octoprint/templates/settings.jinja2:230
 msgid "Timelapse bitrate"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:231
+#: src/octoprint/templates/settings.jinja2:238
 msgid "Enable OctoPrint watermark in timelapse movies"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:238
+#: src/octoprint/templates/settings.jinja2:245
 msgid "Flip webcam horizontally"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:243
+#: src/octoprint/templates/settings.jinja2:250
 msgid "Flip webcam vertically"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:254
+#: src/octoprint/templates/settings.jinja2:261
 msgid "Enable Temperature Graph"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:261
+#: src/octoprint/templates/settings.jinja2:268
 msgid "Enable GCode Visualizer"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:268
+#: src/octoprint/templates/settings.jinja2:275
 msgid "Enable SD support"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:275
+#: src/octoprint/templates/settings.jinja2:282
 msgid "Always assume SD card is present"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:275
-#: src/octoprint/templates/settings.jinja2:289
+#: src/octoprint/templates/settings.jinja2:282
 #: src/octoprint/templates/settings.jinja2:296
+#: src/octoprint/templates/settings.jinja2:303
 msgid "Repetier"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:282
+#: src/octoprint/templates/settings.jinja2:289
 msgid "Wait for <code>start</code> on connect"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:289
+#: src/octoprint/templates/settings.jinja2:296
 msgid "Send a checksum with <strong>every</strong> command"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:296
+#: src/octoprint/templates/settings.jinja2:303
 #, python-format
 msgid ""
 "Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target "
 "temperature format"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:303
+#: src/octoprint/templates/settings.jinja2:310
 msgid "Swallow the first \"ok\" after a resend response"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:312
+#: src/octoprint/templates/settings.jinja2:319
 msgid "Upload Folder"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:318
+#: src/octoprint/templates/settings.jinja2:325
 msgid "Timelapse Folder"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:324
+#: src/octoprint/templates/settings.jinja2:331
 msgid "Timelapse Temp Folder"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:330
+#: src/octoprint/templates/settings.jinja2:337
 msgid "Logs Folder"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:336
+#: src/octoprint/templates/settings.jinja2:343
 msgid "Watched Folder"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:346
+#: src/octoprint/templates/settings.jinja2:353
 msgid "Extruder"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:378
+#: src/octoprint/templates/settings.jinja2:385
 msgid "RegExp"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:403
+#: src/octoprint/templates/settings.jinja2:410
 msgid "Title"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:409
+#: src/octoprint/templates/settings.jinja2:416
 msgid "Color"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:420
-msgid "Enable slicing via Cura"
-msgstr ""
-
-#: src/octoprint/templates/settings.jinja2:426
-msgid "Path to Cura"
-msgstr ""
-
-#: src/octoprint/templates/settings.jinja2:432
-msgid "Path to Cura config"
-msgstr ""
-
-#: src/octoprint/templates/settings.jinja2:444
+#: src/octoprint/templates/settings.jinja2:429
 msgid "Enable"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:451
+#: src/octoprint/templates/settings.jinja2:436
 #, python-format
 msgid "Allow <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:456
-#: src/octoprint/templates/settings.jinja2:477
+#: src/octoprint/templates/settings.jinja2:441
+#: src/octoprint/templates/settings.jinja2:462
 msgid "API Key"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:470
-#: src/octoprint/templates/settings.jinja2:531
-#: src/octoprint/templates/settings.jinja2:560
+#: src/octoprint/templates/settings.jinja2:455
+#: src/octoprint/templates/settings.jinja2:516
+#: src/octoprint/templates/settings.jinja2:545
 msgid "Active"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:471
-#: src/octoprint/templates/settings.jinja2:538
-#: src/octoprint/templates/settings.jinja2:567
+#: src/octoprint/templates/settings.jinja2:456
+#: src/octoprint/templates/settings.jinja2:523
+#: src/octoprint/templates/settings.jinja2:552
 msgid "Admin"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:481
+#: src/octoprint/templates/settings.jinja2:466
 msgid "Update User"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:481
+#: src/octoprint/templates/settings.jinja2:466
 msgid "Change password"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:481
+#: src/octoprint/templates/settings.jinja2:466
 msgid "Delete user"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:498
-#: src/octoprint/templates/settings.jinja2:505
+#: src/octoprint/templates/settings.jinja2:483
+#: src/octoprint/templates/settings.jinja2:490
 msgid "Add user"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:522
-#: src/octoprint/templates/settings.jinja2:593
+#: src/octoprint/templates/settings.jinja2:507
+#: src/octoprint/templates/settings.jinja2:578
 msgid "Repeat Password"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:545
-#: src/octoprint/templates/settings.jinja2:574
-#: src/octoprint/templates/settings.jinja2:616
+#: src/octoprint/templates/settings.jinja2:530
+#: src/octoprint/templates/settings.jinja2:559
+#: src/octoprint/templates/settings.jinja2:601
 msgid "Abort"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:546
-#: src/octoprint/templates/settings.jinja2:575
-#: src/octoprint/templates/settings.jinja2:617
+#: src/octoprint/templates/settings.jinja2:531
+#: src/octoprint/templates/settings.jinja2:560
+#: src/octoprint/templates/settings.jinja2:602
 msgid "Confirm"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:553
+#: src/octoprint/templates/settings.jinja2:538
 #, python-format
 msgid "Edit user \"%(user)s\""
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:582
+#: src/octoprint/templates/settings.jinja2:567
 #, python-format
 msgid "Change password for user \"%(user)s\""
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:587
+#: src/octoprint/templates/settings.jinja2:572
 msgid "New Password"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:602
+#: src/octoprint/templates/settings.jinja2:587
 msgid "Current API Key"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:605
+#: src/octoprint/templates/settings.jinja2:590
 msgid "N/A"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/settings.jinja2:621
 msgid "Modification date"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:638
+#: src/octoprint/templates/settings.jinja2:629
 msgid "Date"
 msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:677
+#: src/octoprint/templates/settings.jinja2:668
 msgid "Save"
 msgstr ""
 

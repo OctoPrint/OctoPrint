@@ -28,6 +28,14 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.currentHeight = ko.observable(undefined);
 
+    self.TITLE_PRINT_BUTTON_PAUSED = gettext("Restarts the print job from the beginning");
+    self.TITLE_PRINT_BUTTON_UNPAUSED = gettext("Starts the print job");
+    self.TITLE_PAUSE_BUTTON_PAUSED = gettext("Resumes the print job");
+    self.TITLE_PAUSE_BUTTON_UNPAUSED = gettext("Pauses the print job");
+
+    self.titlePrintButton = ko.observable(self.TITLE_PRINT_BUTTON_UNPAUSED);
+    self.titlePauseButton = ko.observable(self.TITLE_PAUSE_BUTTON_UNPAUSED);
+
     self.estimatedPrintTimeString = ko.computed(function() {
         if (self.lastPrintTime())
             return formatDuration(self.lastPrintTime());
@@ -104,6 +112,8 @@ function PrinterStateViewModel(loginStateViewModel) {
     };
 
     self._processStateData = function(data) {
+        var prevPaused = self.isPaused();
+
         self.stateString(gettext(data.text));
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
@@ -112,6 +122,16 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isSdReady(data.flags.sdReady);
+
+        if (self.isPaused() != prevPaused) {
+            if (self.isPaused()) {
+                self.titlePrintButton(self.TITLE_PRINT_BUTTON_PAUSED);
+                self.titlePauseButton(self.TITLE_PAUSE_BUTTON_PAUSED);
+            } else {
+                self.titlePrintButton(self.TITLE_PRINT_BUTTON_UNPAUSED);
+                self.titlePauseButton(self.TITLE_PAUSE_BUTTON_UNPAUSED);
+            }
+        }
     };
 
     self._processJobData = function(data) {
@@ -181,13 +201,18 @@ function PrinterStateViewModel(loginStateViewModel) {
         self._jobCommand("cancel");
     };
 
-    self._jobCommand = function(command) {
+    self._jobCommand = function(command, callback) {
         $.ajax({
             url: API_BASEURL + "job",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify({command: command})
+            data: JSON.stringify({command: command}),
+            success: function(response) {
+                if (callback != undefined) {
+                    callback();
+                }
+            }
         });
     }
 }
