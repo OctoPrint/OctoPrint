@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
+import pylru
 
 import octoprint.filemanager
 
@@ -88,6 +89,8 @@ class LocalFileStorage(StorageInterface):
 
 		import threading
 		self._metadata_lock = threading.Lock()
+
+		self._metadata_cache = pylru.lrucache(10)
 
 	@property
 	def analysis_backlog(self):
@@ -764,6 +767,9 @@ class LocalFileStorage(StorageInterface):
 		return path
 
 	def _get_metadata(self, path):
+		if path in self._metadata_cache:
+			return self._metadata_cache[path]
+
 		metadata_path = os.path.join(path, ".metadata.yaml")
 		if os.path.exists(metadata_path):
 			with self._metadata_lock:
@@ -785,3 +791,5 @@ class LocalFileStorage(StorageInterface):
 					yaml.safe_dump(metadata, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
 				except:
 					self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
+				else:
+					self._metadata_cache[path] = metadata
