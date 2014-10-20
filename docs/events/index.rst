@@ -338,6 +338,15 @@ SlicingDone
      * ``gcode``: the sliced GCODE's filename
      * ``time``: the time needed for slicing, in seconds (float)
 
+SlicingCancelled
+   The slicing of a file has been cancelled. This will happen if a second slicing job
+   targeting the same GCODE file has been started by the user.
+
+   Payload:
+
+     * ``stl``: the STL's filename
+     * ``gcode``: the sliced GCODE's filename
+
 SlicingFailed
    The slicing of a file has failed.
 

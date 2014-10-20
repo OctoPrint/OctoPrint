@@ -101,6 +101,10 @@ class FileManager(object):
 
 		self._slicing_manager = slicing_manager
 
+		import threading
+		self._slicing_jobs = dict()
+		self._slicing_jobs_mutex = threading.Lock()
+
 		for storage_type, storage_manager in self._storage_managers.items():
 			self._determine_analysis_backlog(storage_type, storage_manager)
 
@@ -136,10 +140,12 @@ class FileManager(object):
 	def slice(self, slicer_name, source_location, source_path, dest_location, dest_path, profile=None, overrides=None, callback=None, callback_args=None):
 		absolute_source_path = self.get_absolute_path(source_location, source_path)
 
-		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, callback, callback_args, _error=None):
+		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, callback, callback_args, _error=None, _cancelled=False):
 			try:
 				if _error:
 					eventManager().fire(Events.SLICING_FAILED, {"stl": source_path, "gcode": dest_path, "reason": _error})
+				elif _cancelled:
+					eventManager().fire(Events.SLICING_CANCELLED, {"stl": source_path, "gcode": dest_path})
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
 					hash = source_meta["hash"]
@@ -180,6 +186,15 @@ class FileManager(object):
 		f = tempfile.NamedTemporaryFile(suffix=".gco", delete=False)
 		temp_path = f.name
 		f.close()
+
+		with self._slicing_jobs_mutex:
+			if dest_location in self._slicing_jobs:
+				job_slicer_name, job_absolute_source_path, job_temp_path = self._slicing_jobs[dest_location]
+
+				self._slicing_manager.cancel_slicing(job_slicer_name, job_absolute_source_path, job_temp_path)
+				del self._slicing_jobs[dest_location]
+
+			self._slicing_jobs[dest_location] = (slicer_name, absolute_source_path, temp_path)
 
 		args = (source_location, source_path, temp_path, dest_location, dest_path, start_time, callback, callback_args)
 		return self._slicing_manager.slice(slicer_name, absolute_source_path, temp_path, profile, stlProcessed, callback_args=args, overrides=overrides)

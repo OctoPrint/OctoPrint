@@ -215,4 +215,7 @@ class SlicerPlugin(Plugin):
 	def do_slice(self, model_path, machinecode_path=None, profile_path=None):
 		pass
 
+	def cancel_slicing(self, machinecode_path):
+		pass
+
 

@@ -106,6 +106,12 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	def __init__(self):
 		self._logger = logging.getLogger("octoprint.plugins." + __name__)
 
+		import threading
+		self._slicing_commands = dict()
+		self._slicing_commands_mutex = threading.Lock()
+		self._cancelled_jobs = []
+		self._cancelled_jobs_mutex = threading.Lock()
+
 	##~~ BlueprintPlugin API
 
 	def get_blueprint(self):
@@ -215,16 +221,42 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		command = " ".join(args)
 		self._logger.info("Running %r in %s" % (command, working_dir))
 		try:
-			p = sarge.run(command, cwd=working_dir)
+			p = sarge.run(command, cwd=working_dir, async=True)
+			with self._slicing_commands_mutex:
+				self._slicing_commands[machinecode_path] = p.commands[0]
+			p.wait()
+
+			with self._cancelled_jobs_mutex:
+				if machinecode_path in self._cancelled_jobs:
+					raise octoprint.slicing.SlicingCancelled()
+
 			if p.returncode == 0:
 				return True, None
 			else:
 				self._logger.warn("Could not slice via Cura, got return code %r" % p.returncode)
 				return False, "Got returncode %r" % p.returncode
+
+		except octoprint.slicing.SlicingCancelled as e:
+			raise e
 		except:
 			self._logger.exception("Could not slice via Cura, got an unknown error")
 			return False, "Unknown error, please consult the log file"
 
+		finally:
+			with self._cancelled_jobs_mutex:
+				if machinecode_path in self._cancelled_jobs:
+					self._cancelled_jobs.remove(machinecode_path)
+			with self._slicing_commands_mutex:
+				if machinecode_path in self._slicing_commands:
+					del self._slicing_commands[machinecode_path]
+
+	def cancel_slicing(self, machinecode_path):
+		with self._slicing_commands_mutex:
+			if machinecode_path in self._slicing_commands:
+				with self._cancelled_jobs_mutex:
+					self._cancelled_jobs.append(machinecode_path)
+				self._slicing_commands[machinecode_path].terminate()
+				self._logger.info("Cancelled slicing of %s" % machinecode_path)
 
 	def _load_profile(self, path):
 		import yaml

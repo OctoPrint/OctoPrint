@@ -44,6 +44,10 @@ class TemporaryProfile(object):
 			pass
 
 
+class SlicingCancelled(BaseException):
+	pass
+
+
 class SlicingManager(object):
 	def __init__(self, profile_path):
 		self._profile_path = profile_path
@@ -92,12 +96,16 @@ class SlicingManager(object):
 		slicer = self.get_slicer(slicer_name)
 
 		def slicer_worker(slicer, model_path, machinecode_path, profile_name, overrides, callback, callback_args, callback_kwargs):
-			with self.temporary_profile(slicer.get_slicer_type(), name=profile_name, overrides=overrides) as profile_path:
-				ok, result = slicer.do_slice(model_path, machinecode_path=machinecode_path, profile_path=profile_path)
+			try:
+				with self.temporary_profile(slicer.get_slicer_type(), name=profile_name, overrides=overrides) as profile_path:
+					ok, result = slicer.do_slice(model_path, machinecode_path=machinecode_path, profile_path=profile_path)
 
-			if not ok:
-				callback_kwargs.update(dict(_error=result))
-			callback(*callback_args, **callback_kwargs)
+				if not ok:
+					callback_kwargs.update(dict(_error=result))
+				callback(*callback_args, **callback_kwargs)
+			except SlicingCancelled:
+				callback_kwargs.update(dict(_cancelled=True))
+				callback(*callback_args, **callback_kwargs)
 
 		import threading
 		slicer_worker_thread = threading.Thread(target=slicer_worker,
@@ -106,6 +114,11 @@ class SlicingManager(object):
 		slicer_worker_thread.start()
 		return True, None
 
+	def cancel_slicing(self, slicer_name, source_path, dest_path):
+		if not slicer_name in self.registered_slicers:
+			return
+		slicer = self.get_slicer(slicer_name)
+		slicer.cancel_slicing(dest_path)
 
 	def load_profile(self, slicer, name):
 		if not slicer in self.registered_slicers:

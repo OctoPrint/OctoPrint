@@ -316,6 +316,9 @@ Issue a file command
        be overridden with the supplied value. Use this if you want to specify things that change often like a different
        temperature, filament diameter or infill percentage. Profile keys are slicer specific.
 
+     If consecutive slicing calls are made targeting the same GCODE filename (that also holds true if the default is used),
+     the slicing job already running in the background will be cancelled before the new one is started.
+
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned, unless specified otherwise.
 
    **Example Select Request**
