@@ -56,6 +56,15 @@ class SlicingManager(object):
 		self._slicer_names = dict()
 		self._load_slicers()
 
+		self._progress_callbacks = []
+		self._last_progress_report = None
+
+	def register_progress_callback(self, callback):
+		self._progress_callbacks.append(callback)
+
+	def unregister_progress_callback(self, callback):
+		self._progress_callbacks.remove(callback)
+
 	def _load_slicers(self):
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
 		for name, plugin in plugins.items():
@@ -81,7 +90,7 @@ class SlicingManager(object):
 	def get_slicer(self, slicer):
 		return self._slicers[slicer] if slicer in self._slicers else None
 
-	def slice(self, slicer_name, source_path, dest_path, profile_name, callback, callback_args=None, callback_kwargs=None, overrides=None):
+	def slice(self, slicer_name, source_path, dest_path, profile_name, callback, callback_args=None, callback_kwargs=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		if callback_args is None:
 			callback_args = ()
 		if callback_kwargs is None:
@@ -97,8 +106,16 @@ class SlicingManager(object):
 
 		def slicer_worker(slicer, model_path, machinecode_path, profile_name, overrides, callback, callback_args, callback_kwargs):
 			try:
-				with self.temporary_profile(slicer.get_slicer_type(), name=profile_name, overrides=overrides) as profile_path:
-					ok, result = slicer.do_slice(model_path, machinecode_path=machinecode_path, profile_path=profile_path)
+				slicer_name = slicer.get_slicer_type()
+				with self.temporary_profile(slicer_name, name=profile_name, overrides=overrides) as profile_path:
+					ok, result = slicer.do_slice(
+						model_path,
+						machinecode_path=machinecode_path,
+						profile_path=profile_path,
+						on_progress=on_progress,
+						on_progress_args=on_progress_args,
+						on_progress_kwargs=on_progress_kwargs
+					)
 
 				if not ok:
 					callback_kwargs.update(dict(_error=result))

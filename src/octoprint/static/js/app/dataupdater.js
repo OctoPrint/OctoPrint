@@ -94,6 +94,9 @@ function DataUpdater(allViewModels) {
 
             var data = e.data[prop];
 
+            var gcodeUploadProgress = $("#gcode_upload_progress");
+            var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
+
             switch (prop) {
                 case "connected": {
                     // update the current UI API key and send it with any request
@@ -137,13 +140,20 @@ function DataUpdater(allViewModels) {
                     });
                     break;
                 }
+                case "slicingProgress": {
+                    gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(data["progress"])}));
+
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onSlicingProgress")) {
+                            viewModel.onSlicingProgress(data["slicer"], data["model_path"], data["machinecode_path"], data["progress"]);
+                        }
+                    });
+                    break;
+                }
                 case "event": {
                     var type = data["type"];
                     var payload = data["payload"];
                     var html = "";
-
-                    var gcodeUploadProgress = $("#gcode_upload_progress");
-                    var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
 
                     console.log("Got event " + type + " with payload: " + JSON.stringify(payload))
 
@@ -171,16 +181,25 @@ function DataUpdater(allViewModels) {
                     } else if (type == "SlicingStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
-                        gcodeUploadProgressBar.text(gettext("Slicing ..."));
+                        gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
                     } else if (type == "SlicingDone") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
                         new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload)});
 
-                        _.each(self.allViewModels, function(viewModel) {
+                        _.each(self.allViewModels, function (viewModel) {
                             if (viewModel.hasOwnProperty("onSlicingDone")) {
                                 viewModel.onSlicingDone(payload);
+                            }
+                        });
+                    } else if (type == "SlicingCancelled") {
+                        gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
+                        gcodeUploadProgressBar.css("width", "0%");
+                        gcodeUploadProgressBar.text("");
+                        _.each(self.allViewModels, function (viewModel) {
+                            if (viewModel.hasOwnProperty("onSlicingCancelled")) {
+                                viewModel.onSlicingCancelled(payload);
                             }
                         });
                     } else if (type == "SlicingFailed") {
@@ -190,6 +209,11 @@ function DataUpdater(allViewModels) {
 
                         html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
                         new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
+                        _.each(self.allViewModels, function (viewModel) {
+                            if (viewModel.hasOwnProperty("onSlicingFailed")) {
+                                viewModel.onSlicingFailed(payload);
+                            }
+                        });
                     } else if (type == "TransferStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");

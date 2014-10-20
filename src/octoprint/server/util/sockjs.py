@@ -47,6 +47,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY, "version": octoprint.server.VERSION, "display_version": octoprint.server.DISPLAY_VERSION})
 
 		self._printer.registerCallback(self)
+		self._fileManager.register_slicingprogress_callback(self)
 		octoprint.timelapse.registerCallback(self)
 
 		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": remoteAddress})
@@ -58,6 +59,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 	def on_close(self):
 		self._logger.info("Client connection closed")
 		self._printer.unregisterCallback(self)
+		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregisterCallback(self)
 
 		self._eventManager.fire(Events.CLIENT_CLOSED)
@@ -99,6 +101,11 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 
 	def sendTimelapseConfig(self, timelapseConfig):
 		self._emit("timelapse", timelapseConfig)
+
+	def sendSlicingProgress(self, slicer, source_location, source_path, dest_location, dest_path, progress):
+		self._emit("slicingProgress",
+		           dict(slicer=slicer, source_location=source_location, source_path=source_path, dest_location=dest_location, dest_path=dest_path, progress=progress)
+		)
 
 	def addLog(self, data):
 		with self._logBacklogMutex:

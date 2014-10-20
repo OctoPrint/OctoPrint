@@ -198,12 +198,18 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 		self._save_profile(path, new_profile, allow_overwrite=allow_overwrite)
 
-	def do_slice(self, model_path, machinecode_path=None, profile_path=None):
+	def do_slice(self, model_path, machinecode_path=None, profile_path=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		if not profile_path:
 			profile_path = s.get(["default_profile"])
 		if not machinecode_path:
 			path, _ = os.path.splitext(model_path)
 			machinecode_path = path + ".gco"
+
+		if on_progress:
+			if not on_progress_args:
+				on_progress_args = ()
+			if not on_progress_kwargs:
+				on_progress_kwargs = dict()
 
 		engine_settings = self._convert_to_engine(profile_path)
 
@@ -221,10 +227,75 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		command = " ".join(args)
 		self._logger.info("Running %r in %s" % (command, working_dir))
 		try:
-			p = sarge.run(command, cwd=working_dir, async=True)
-			with self._slicing_commands_mutex:
-				self._slicing_commands[machinecode_path] = p.commands[0]
-			p.wait()
+			p = sarge.run(command, cwd=working_dir, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
+			try:
+				with self._slicing_commands_mutex:
+					self._slicing_commands[machinecode_path] = p.commands[0]
+
+				if on_progress is not None:
+					# The Cura slicing process has three individual steps, each consisting of <layer_count> substeps:
+					#
+					#   - inset
+					#   - skin
+					#   - export
+					#
+					# So each layer will be processed three times, once for each step, resulting in a total amount of
+					# substeps of 3 * <layer_count>.
+					#
+					# The CuraEngine reports the calculated layer count and the continuous progress on stderr.
+					# The layer count gets reported right at the beginning in a line of the format:
+					#
+					#   Layer count: <layer_count>
+					#
+					# The individual progress per each of the three steps gets reported on stderr in a line of
+					# the format:
+					#
+					#   Progress:<step>:<current_layer>:<layer_count>
+					#
+					# Thus, for determining the overall progress the following formula applies:
+					#
+					#   progress = <step_factor> * <layer_count> + <current_layer> / <layer_count> * 3
+					#
+					# with <step_factor> being 0 for "inset", 1 for "skin" and 2 for "export".
+
+					import time
+					layer_count = None
+					line_seen = False
+					step_factor = dict(
+					    inset=0,
+					    skin=1,
+					    export=2
+					)
+					while p.returncode is None:
+						line = p.stderr.readline(timeout=0.5)
+						if not line:
+							if line_seen:
+								break
+							else:
+								continue
+
+						line_seen = True
+						if line.startswith("Layer count:") and layer_count is None:
+							try:
+								layer_count = float(line[len("Layer count:"):].strip())
+							except:
+								pass
+
+						elif line.startswith("Progress:"):
+							split_line = line[len("Progress:"):].strip().split(":")
+							if len(split_line) == 3:
+								step, current_layer, _ = split_line
+								try:
+									current_layer = float(current_layer)
+								except:
+									pass
+								else:
+									if not step in step_factor:
+										continue
+									on_progress_kwargs["_progress"] = (step_factor[step] * layer_count + current_layer) / (layer_count * 3)
+									on_progress(*on_progress_args, **on_progress_kwargs)
+			finally:
+				p.close()
 
 			with self._cancelled_jobs_mutex:
 				if machinecode_path in self._cancelled_jobs:

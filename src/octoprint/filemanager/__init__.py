@@ -105,8 +105,17 @@ class FileManager(object):
 		self._slicing_jobs = dict()
 		self._slicing_jobs_mutex = threading.Lock()
 
+		self._slicing_progress_callbacks = []
+		self._last_slicing_progress = None
+
 		for storage_type, storage_manager in self._storage_managers.items():
 			self._determine_analysis_backlog(storage_type, storage_manager)
+
+	def register_slicingprogress_callback(self, callback):
+		self._slicing_progress_callbacks.append(callback)
+
+	def unregister_slicingprogress_callback(self, callback):
+		self._slicing_progress_callbacks.remove(callback)
 
 	def _determine_analysis_backlog(self, storage_type, storage_manager):
 		self._logger.info("Adding backlog items from {storage_type} to analysis queue".format(**locals()))
@@ -197,7 +206,30 @@ class FileManager(object):
 			self._slicing_jobs[dest_location] = (slicer_name, absolute_source_path, temp_path)
 
 		args = (source_location, source_path, temp_path, dest_location, dest_path, start_time, callback, callback_args)
-		return self._slicing_manager.slice(slicer_name, absolute_source_path, temp_path, profile, stlProcessed, callback_args=args, overrides=overrides)
+		return self._slicing_manager.slice(
+			slicer_name,
+			absolute_source_path,
+			temp_path,
+			profile,
+			stlProcessed,
+			callback_args=args,
+			overrides=overrides,
+			on_progress=self.on_slicing_progress,
+			on_progress_args=(slicer_name, source_location, source_path, dest_location, dest_path))
+
+	def on_slicing_progress(self, slicer, source_location, source_path, dest_location, dest_path, _progress=None):
+		if not _progress:
+			return
+
+		progress_int = int(_progress * 100)
+		if self._last_slicing_progress == progress_int:
+			return
+		else:
+			self._last_slicing_progress = progress_int
+
+		for callback in self._slicing_progress_callbacks:
+			try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
+			except: pass
 
 	def file_exists(self, destination, path):
 		return self._storage(destination).file_exists(path)
