@@ -248,7 +248,7 @@ class FileManager(object):
 	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False):
 		file_path = self._storage(destination).add_file(path, file_object, links=links, allow_overwrite=allow_overwrite)
 		absolute_path = self._storage(destination).get_absolute_path(file_path)
-		file_type = get_file_type(file_path[-1])
+		file_type = get_file_type(file_path)[-1]
 
 		queue_entry = QueueEntry(file_path, file_type, destination, absolute_path)
 		self._analysis_queue.enqueue(queue_entry, high_priority=True)
