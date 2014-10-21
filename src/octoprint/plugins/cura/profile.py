@@ -510,11 +510,12 @@ class Profile(object):
 	def get(self, key):
 		if key in ("machine_width", "machine_depth", "machine_center_is_zero"):
 			bedDimensions = s.globalGet(["printerParameters", "bedDimensions"])
-			circular = bedDimensions["circular"]
+			circular = bedDimensions["circular"] if "circular" in bedDimensions else False
+			radius = bedDimensions["radius"] if "radius" in bedDimensions and bedDimensions["radius"] is not None else 0
 			if key == "machine_width":
-				return bedDimensions["radius"] * 2 if circular else bedDimensions["x"]
+				return radius * 2 if circular else bedDimensions["x"]
 			elif key == "machine_depth":
-				return bedDimensions["radius"] * 2 if circular else bedDimensions["y"]
+				return radius * 2 if circular else bedDimensions["y"]
 			elif key == "machine_center_is_zero":
 				return circular
 			else:
