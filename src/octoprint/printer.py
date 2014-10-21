@@ -33,6 +33,8 @@ class Printer():
 	def __init__(self, fileManager, analysisQueue):
 		from collections import deque
 
+		self._logger = logging.getLogger(__name__)
+
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
 
@@ -120,32 +122,32 @@ class Printer():
 	def _sendAddTemperatureCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addTemperature(data)
-			except: pass
+			except: self._logger.exception("Exception while adding temperature data point")
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addLog(data)
-			except: pass
+			except: self._logger.exception("Exception while adding communication log entry")
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addMessage(data)
-			except: pass
+			except: self._logger.exception("Exception while adding printer message")
 
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.sendCurrentData(copy.deepcopy(data))
-			except: pass
+			except: self._logger.exception("Exception while pushing current data")
 
 	def _sendTriggerUpdateCallbacks(self, type):
 		for callback in self._callbacks:
 			try: callback.sendEvent(type)
-			except: pass
+			except: self._logger.exception("Exception while pushing trigger update")
 
 	def _sendFeedbackCommandOutput(self, name, output):
 		for callback in self._callbacks:
 			try: callback.sendFeedbackCommandOutput(name, output)
-			except: pass
+			except: self._logger.exception("Exception while pushing feedback command output")
 
 	#~~ callback from metadata analysis event
 
@@ -248,7 +250,7 @@ class Printer():
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
-			logging.info("Cannot load file: printer not connected or currently busy")
+			self._logger.info("Cannot load file: printer not connected or currently busy")
 			return
 
 		self._printAfterSelect = printAfterSelect
@@ -559,7 +561,7 @@ class Printer():
 
 	def addSdFile(self, filename, absolutePath, streamingFinishedCallback):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
-			logging.error("No connection to printer or printer is busy")
+			self._logger.error("No connection to printer or printer is busy")
 			return
 
 		self._streamingFinishedCallback = streamingFinishedCallback

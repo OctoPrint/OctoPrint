@@ -119,9 +119,9 @@ class SlicingManager(object):
 
 				if not ok:
 					callback_kwargs.update(dict(_error=result))
-				callback(*callback_args, **callback_kwargs)
 			except SlicingCancelled:
 				callback_kwargs.update(dict(_cancelled=True))
+			finally:
 				callback(*callback_args, **callback_kwargs)
 
 		import threading

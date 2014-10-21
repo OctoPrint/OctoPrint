@@ -187,6 +187,15 @@ class FileManager(object):
 			finally:
 				os.remove(tmp_path)
 
+				source_job_key = (source_location, source_path)
+				dest_job_key = (dest_location, dest_path)
+
+				with self._slicing_jobs_mutex:
+					if source_job_key in self._slicing_jobs:
+						del self._slicing_jobs[source_job_key]
+					if dest_job_key in self._slicing_jobs:
+						del self._slicing_jobs[dest_job_key]
+
 		import time
 		start_time = time.time()
 		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path, "gcode": dest_path})
@@ -197,13 +206,15 @@ class FileManager(object):
 		f.close()
 
 		with self._slicing_jobs_mutex:
-			if dest_location in self._slicing_jobs:
-				job_slicer_name, job_absolute_source_path, job_temp_path = self._slicing_jobs[dest_location]
+			source_job_key = (source_location, source_path)
+			dest_job_key = (dest_location, dest_path)
+			if dest_job_key in self._slicing_jobs:
+				job_slicer_name, job_absolute_source_path, job_temp_path = self._slicing_jobs[dest_job_key]
 
 				self._slicing_manager.cancel_slicing(job_slicer_name, job_absolute_source_path, job_temp_path)
-				del self._slicing_jobs[dest_location]
+				del self._slicing_jobs[dest_job_key]
 
-			self._slicing_jobs[dest_location] = (slicer_name, absolute_source_path, temp_path)
+			self._slicing_jobs[dest_job_key] = self._slicing_jobs[source_job_key] = (slicer_name, absolute_source_path, temp_path)
 
 		args = (source_location, source_path, temp_path, dest_location, dest_path, start_time, callback, callback_args)
 		return self._slicing_manager.slice(
@@ -229,7 +240,10 @@ class FileManager(object):
 
 		for callback in self._slicing_progress_callbacks:
 			try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
-			except: pass
+			except: self._logger.exception("Exception while pushing slicing progress")
+
+	def get_busy_files(self):
+		return self._slicing_jobs.keys()
 
 	def file_exists(self, destination, path):
 		return self._storage(destination).file_exists(path)

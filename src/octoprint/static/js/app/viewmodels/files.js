@@ -239,7 +239,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
     };
 
     self.getEntryId = function(data) {
-        return "gcode_file_" + md5(data["name"] + ":" + data["origin"]);
+        return "gcode_file_" + md5(data["origin"] + ":" + data["name"]);
     };
 
     self.getEntryElement = function(data) {
@@ -253,7 +253,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
     };
 
     self.enableRemove = function(data) {
-        return self.loginState.isUser() && !(self.listHelper.isSelected(data) && (self.isPrinting() || self.isPaused()));
+        return self.loginState.isUser() && !_.contains(self.printerState.busyFiles(), data.origin + ":" + data.name);
     };
 
     self.enableSelect = function(data, printAfterSelect) {

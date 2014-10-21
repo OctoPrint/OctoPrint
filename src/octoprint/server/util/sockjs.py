@@ -83,10 +83,18 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 			messages = self._messageBacklog
 			self._messageBacklog = []
 
+		busy_files = [dict(origin=v[0], name=v[1]) for v in self._fileManager.get_busy_files()]
+		if "job" in data and data["job"] is not None \
+				and "file" in data["job"] and "name" in data["job"]["file"] and "origin" in data["job"]["file"] \
+				and data["job"]["file"]["name"] is not None and data["job"]["file"]["origin"] is not None \
+				and (self._printer.isPrinting() or self._printer.isPaused()):
+			busy_files.append(dict(origin=data["job"]["file"]["origin"], name=data["job"]["file"]["name"]))
+
 		data.update({
 			"temps": temperatures,
 			"logs": logs,
-			"messages": messages
+			"messages": messages,
+			"busyFiles": busy_files,
 		})
 		self._emit("current", data)
 

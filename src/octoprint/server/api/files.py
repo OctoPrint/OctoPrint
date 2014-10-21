@@ -370,10 +370,13 @@ def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename):
 		return make_response("File not found on '%s': %s" % (target, filename), 404)
 
-	# prohibit deleting the file that is currently being printed
+	# prohibit deleting files that are currently in use
 	currentOrigin, currentFilename = _getCurrentFile()
 	if currentFilename == filename and currentOrigin == target and (printer.isPrinting() or printer.isPaused()):
 		make_response("Trying to delete file that is currently being printed: %s" % filename, 409)
+
+	if (target, filename) in fileManager.get_busy_files():
+		make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
 
 	# deselect the file if it's currently selected
 	if currentFilename is not None and filename == currentFilename:

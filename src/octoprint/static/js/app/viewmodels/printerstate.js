@@ -22,6 +22,8 @@ function PrinterStateViewModel(loginStateViewModel) {
     self.sd = ko.observable(undefined);
     self.timelapse = ko.observable(undefined);
 
+    self.busyFiles = ko.observableArray([]);
+
     self.filament = ko.observableArray([]);
     self.estimatedPrintTime = ko.observable(undefined);
     self.lastPrintTime = ko.observable(undefined);
@@ -109,6 +111,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         self._processJobData(data.job);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
+        self._processBusyFiles(data.busyFiles);
     };
 
     self._processStateData = function(data) {
@@ -175,6 +178,16 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self._processZData = function(data) {
         self.currentHeight(data);
+    };
+
+    self._processBusyFiles = function(data) {
+        var busyFiles = [];
+        _.each(data, function(entry) {
+            if (entry.hasOwnProperty("name") && entry.hasOwnProperty("origin")) {
+                busyFiles.push(entry.origin + ":" + entry.name);
+            }
+        });
+        self.busyFiles(busyFiles);
     };
 
     self.print = function() {
