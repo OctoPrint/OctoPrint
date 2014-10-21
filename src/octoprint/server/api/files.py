@@ -311,7 +311,7 @@ def gcodeFileCommand(filename, target):
 		if not octoprint.filemanager.valid_file_type(filename, type="stl"):
 			return make_response("Cannot slice {filename}, not an STL file".format(**locals()), 415)
 
-		if slicer_instance.get_slicer_properties()["same_device"] and (printer.isPrinting or printer.isPaused()):
+		if slicer_instance.get_slicer_properties()["same_device"] and (printer.isPrinting() or printer.isPaused()):
 			# slicer runs on same device as OctoPrint, slicing while printing is hence disabled
 			return make_response("Cannot slice on {slicer} while printing due to performance reasons".format(**locals()), 409)
 
