@@ -261,6 +261,10 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
         return isLoadActionPossible && !self.listHelper.isSelected(data);
     };
 
+    self.enableSlicing = function(data) {
+        return self.loginState.isUser() && !(self.isPrinting() || self.isPaused());
+    };
+
     self.enableAdditionalData = function(data) {
         return data["gcodeAnalysis"] || data["prints"] && data["prints"]["last"];
     };

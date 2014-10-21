@@ -137,12 +137,16 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.add_file.side_effect = add_file
 
 		# mock slice method on slicing manager
-		def slice(slicer_name, source_path, dest_path, profile, done_cb, callback_args=None, overrides=None):
+		def slice(slicer_name, source_path, dest_path, profile, done_cb, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 			self.assertEquals("some_slicer", slicer_name)
 			self.assertEquals("prefix/source.file", source_path)
 			self.assertEquals("tmp.file", dest_path)
 			self.assertIsNone(profile)
 			self.assertIsNone(overrides)
+			self.assertIsNotNone(on_progress)
+			self.assertIsNotNone(on_progress_args)
+			self.assertTupleEqual(("some_slicer", octoprint.filemanager.FileDestinations.LOCAL, "source.file", octoprint.filemanager.FileDestinations.LOCAL, "dest.file"), on_progress_args)
+			self.assertIsNone(on_progress_kwargs)
 
 			if not callback_args:
 				callback_args = ()
@@ -199,12 +203,16 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.get_absolute_path.side_effect = get_absolute_path
 
 		# mock slice method on slicing manager
-		def slice(slicer_name, source_path, dest_path, profile, done_cb, callback_args=None, overrides=None):
+		def slice(slicer_name, source_path, dest_path, profile, done_cb, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 			self.assertEquals("some_slicer", slicer_name)
 			self.assertEquals("prefix/source.file", source_path)
 			self.assertEquals("tmp.file", dest_path)
 			self.assertIsNone(profile)
 			self.assertIsNone(overrides)
+			self.assertIsNotNone(on_progress)
+			self.assertIsNotNone(on_progress_args)
+			self.assertTupleEqual(("some_slicer", octoprint.filemanager.FileDestinations.LOCAL, "source.file", octoprint.filemanager.FileDestinations.LOCAL, "dest.file"), on_progress_args)
+			self.assertIsNone(on_progress_kwargs)
 
 			if not callback_args:
 				callback_args = ()

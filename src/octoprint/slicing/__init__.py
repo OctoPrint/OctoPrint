@@ -69,7 +69,7 @@ class SlicingManager(object):
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
 		for name, plugin in plugins.items():
 			if plugin.is_slicer_configured():
-				self._slicers[plugin.get_slicer_type()] = plugin
+				self._slicers[plugin.get_slicer_properties()["type"]] = plugin
 
 	@property
 	def slicing_enabled(self):
@@ -106,7 +106,7 @@ class SlicingManager(object):
 
 		def slicer_worker(slicer, model_path, machinecode_path, profile_name, overrides, callback, callback_args, callback_kwargs):
 			try:
-				slicer_name = slicer.get_slicer_type()
+				slicer_name = slicer.get_slicer_properties()["type"]
 				with self.temporary_profile(slicer_name, name=profile_name, overrides=overrides) as profile_path:
 					ok, result = slicer.do_slice(
 						model_path,

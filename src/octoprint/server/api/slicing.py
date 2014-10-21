@@ -22,7 +22,7 @@ def slicingListAll():
 	for slicer in slicingManager.registered_slicers:
 		result[slicer] = dict(
 			key=slicer,
-			displayName=slicingManager.get_slicer(slicer).get_slicer_name(),
+			displayName=slicingManager.get_slicer(slicer).get_slicer_properties()["name"],
 			default=default_slicer == slicer,
 			profiles=_getSlicingProfilesData(slicer)
 		)

@@ -237,7 +237,7 @@
                                         <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
                                         <div class="btn-group action-buttons">
                                             <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
-                                            <div class="btn btn-mini"  data-bind="click: function() { $root.sliceFile($data); }"><i class="icon-magic" title="{{ _('Slice') }}"></i></div>
+                                            <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSlicing($data)) { $root.sliceFile($data); } else { return; } }, css: {disabled: !$root.enableSlicing($data)}"><i class="icon-magic" title="{{ _('Slice') }}"></i></div>
                                         </div>
                                     </script>
 

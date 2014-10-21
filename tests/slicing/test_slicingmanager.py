@@ -19,7 +19,7 @@ class TestSlicingManager(unittest.TestCase):
 		self.profile_path = tempfile.mkdtemp()
 
 		self.slicer_plugin = mock.MagicMock()
-		self.slicer_plugin.get_slicer_type.return_value = "mock"
+		self.slicer_plugin.get_slicer_properties.return_value = dict(type="mock", name="Mock", same_device=True)
 
 		# mock plugin manager
 		self.plugin_manager_patcher = mock.patch("octoprint.plugin.plugin_manager")
@@ -45,7 +45,7 @@ class TestSlicingManager(unittest.TestCase):
 		def get_implementations(*types):
 			import octoprint.plugin
 			if octoprint.plugin.SlicerPlugin in types:
-				return dict(("slicer_" + plugin.get_slicer_type(), plugin) for plugin in plugins)
+				return dict(("slicer_" + plugin.get_slicer_properties()["type"], plugin) for plugin in plugins)
 			return dict()
 		self.plugin_manager.return_value.get_implementations.side_effect = get_implementations
 
@@ -135,7 +135,7 @@ class TestSlicingManager(unittest.TestCase):
 		mock_thread.mock.start.assert_called_once()
 
 		# assert that slicer was called correctly
-		self.slicer_plugin.do_slice.assert_called_once_with("prefix/source.file", machinecode_path="prefix/dest.file", profile_path="tmp.file")
+		self.slicer_plugin.do_slice.assert_called_once_with("prefix/source.file", machinecode_path="prefix/dest.file", profile_path="tmp.file", on_progress=None, on_progress_args=None, on_progress_kwargs=None)
 
 		# assert that temporary profile was deleted again
 		mocked_os_remove.assert_called_once_with("tmp.file")

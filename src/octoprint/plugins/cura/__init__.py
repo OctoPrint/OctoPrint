@@ -190,11 +190,12 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		cura_engine = s.get(["cura_engine"])
 		return cura_engine is not None and os.path.exists(cura_engine)
 
-	def get_slicer_type(self):
-		return "cura"
-
-	def get_slicer_name(self):
-		return "CuraEngine"
+	def get_slicer_properties(self):
+		return dict(
+			type="cura",
+			name="CuraEngine",
+			same_device=True
+		)
 
 	def get_slicer_default_profile(self):
 		path = s.get(["default_profile"])
@@ -214,7 +215,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			description = profile_dict["_description"]
 			del profile_dict["_description"]
 
-		return octoprint.slicing.SlicingProfile(self.get_slicer_type(), "unknown", profile_dict, display_name=display_name, description=description)
+		properties = self.get_slicer_properties()
+		return octoprint.slicing.SlicingProfile(properties["type"], "unknown", profile_dict, display_name=display_name, description=description)
 
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
 		new_profile = Profile.merge_profile(profile.data, overrides=overrides)

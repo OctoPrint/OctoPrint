@@ -194,11 +194,12 @@ class SlicerPlugin(Plugin):
 	def is_slicer_configured(self):
 		return False
 
-	def get_slicer_type(self):
-		return None
-
-	def get_slicer_name(self):
-		return None
+	def get_slicer_properties(self):
+		return dict(
+			type=None,
+			name=None,
+			same_device=True,
+		)
 
 	def get_slicer_profile_options(self):
 		return None
