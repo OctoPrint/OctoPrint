@@ -6,16 +6,19 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import logging.handlers
 import os
 import flask
 
 import octoprint.plugin
 import octoprint.util
 import octoprint.slicing
+import octoprint.settings
 
 default_settings = {
 	"cura_engine": None,
-	"default_profile": None
+	"default_profile": None,
+	"debug_logging": False
 }
 s = octoprint.plugin.plugin_settings("cura", defaults=default_settings)
 
@@ -101,16 +104,31 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
                  octoprint.plugin.SettingsPlugin,
                  octoprint.plugin.TemplatePlugin,
                  octoprint.plugin.AssetPlugin,
-                 octoprint.plugin.BlueprintPlugin):
+                 octoprint.plugin.BlueprintPlugin,
+                 octoprint.plugin.StartupPlugin):
 
 	def __init__(self):
-		self._logger = logging.getLogger("octoprint.plugins." + __name__)
+		self._logger = logging.getLogger("octoprint.plugins.cura")
+		self._cura_logger = logging.getLogger("octoprint.plugins.cura.engine")
 
+		# setup job tracking across threads
 		import threading
 		self._slicing_commands = dict()
 		self._slicing_commands_mutex = threading.Lock()
 		self._cancelled_jobs = []
 		self._cancelled_jobs_mutex = threading.Lock()
+
+	##~~ StartupPlugin API
+
+	def on_startup(self, host, port):
+		# setup our custom logger
+		cura_logging_handler = logging.handlers.RotatingFileHandler(s.getPluginLogfilePath(postfix="engine"), maxBytes=2*1024*1024)
+		cura_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+		cura_logging_handler.setLevel(logging.DEBUG)
+
+		self._cura_logger.addHandler(cura_logging_handler)
+		self._cura_logger.setLevel(logging.DEBUG if s.getBoolean(["debug_logging"]) else logging.CRITICAL)
+		self._cura_logger.propagate = False
 
 	##~~ BlueprintPlugin API
 
@@ -136,7 +154,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	def on_settings_load(self):
 		return dict(
 			cura_engine=s.get(["cura_engine"]),
-			default_profile=s.get(["default_profile"])
+			default_profile=s.get(["default_profile"]),
+			debug_logging=s.getBoolean(["debug_logging"])
 		)
 
 	def on_settings_save(self, data):
@@ -144,6 +163,15 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			s.set(["cura_engine"], data["cura_engine"])
 		if "default_profile" in data and data["default_profile"]:
 			s.set(["default_profile"], data["default_profile"])
+		if "debug_logging" in data:
+			old_debug_logging = s.getBoolean(["debug_logging"])
+			new_debug_logging = data["debug_logging"] in octoprint.settings.valid_boolean_trues
+			if old_debug_logging != new_debug_logging:
+				if new_debug_logging:
+					self._cura_logger.setLevel(logging.DEBUG)
+				else:
+					self._cura_logger.setLevel(logging.CRITICAL)
+			s.setBoolean(["debug_logging"], new_debug_logging)
 
 	##~~ TemplatePlugin API
 
@@ -211,6 +239,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			if not on_progress_kwargs:
 				on_progress_kwargs = dict()
 
+		self._cura_logger.info("### Slicing %s to %s using profile stored at %s" % (model_path, machinecode_path, profile_path))
+
 		engine_settings = self._convert_to_engine(profile_path)
 
 		executable = s.get(["cura_engine"])
@@ -232,49 +262,50 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				with self._slicing_commands_mutex:
 					self._slicing_commands[machinecode_path] = p.commands[0]
 
-				if on_progress is not None:
-					# The Cura slicing process has three individual steps, each consisting of <layer_count> substeps:
-					#
-					#   - inset
-					#   - skin
-					#   - export
-					#
-					# So each layer will be processed three times, once for each step, resulting in a total amount of
-					# substeps of 3 * <layer_count>.
-					#
-					# The CuraEngine reports the calculated layer count and the continuous progress on stderr.
-					# The layer count gets reported right at the beginning in a line of the format:
-					#
-					#   Layer count: <layer_count>
-					#
-					# The individual progress per each of the three steps gets reported on stderr in a line of
-					# the format:
-					#
-					#   Progress:<step>:<current_layer>:<layer_count>
-					#
-					# Thus, for determining the overall progress the following formula applies:
-					#
-					#   progress = <step_factor> * <layer_count> + <current_layer> / <layer_count> * 3
-					#
-					# with <step_factor> being 0 for "inset", 1 for "skin" and 2 for "export".
+				line_seen = False
+				layer_count = None
+				step_factor = dict(
+					inset=0,
+					skin=1,
+					export=2
+				)
+				while p.returncode is None:
+					line = p.stderr.readline(timeout=0.5)
+					if not line:
+						if line_seen:
+							break
+						else:
+							continue
 
-					import time
-					layer_count = None
-					line_seen = False
-					step_factor = dict(
-					    inset=0,
-					    skin=1,
-					    export=2
-					)
-					while p.returncode is None:
-						line = p.stderr.readline(timeout=0.5)
-						if not line:
-							if line_seen:
-								break
-							else:
-								continue
+					line_seen = True
+					self._cura_logger.debug(line.strip())
 
-						line_seen = True
+					if on_progress is not None:
+						# The Cura slicing process has three individual steps, each consisting of <layer_count> substeps:
+						#
+						#   - inset
+						#   - skin
+						#   - export
+						#
+						# So each layer will be processed three times, once for each step, resulting in a total amount of
+						# substeps of 3 * <layer_count>.
+						#
+						# The CuraEngine reports the calculated layer count and the continuous progress on stderr.
+						# The layer count gets reported right at the beginning in a line of the format:
+						#
+						#   Layer count: <layer_count>
+						#
+						# The individual progress per each of the three steps gets reported on stderr in a line of
+						# the format:
+						#
+						#   Progress:<step>:<current_layer>:<layer_count>
+						#
+						# Thus, for determining the overall progress the following formula applies:
+						#
+						#   progress = <step_factor> * <layer_count> + <current_layer> / <layer_count> * 3
+						#
+						# with <step_factor> being 0 for "inset", 1 for "skin" and 2 for "export".
+
 						if line.startswith("Layer count:") and layer_count is None:
 							try:
 								layer_count = float(line[len("Layer count:"):].strip())
@@ -299,8 +330,10 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 			with self._cancelled_jobs_mutex:
 				if machinecode_path in self._cancelled_jobs:
+					self._cura_logger.info("### Cancelled")
 					raise octoprint.slicing.SlicingCancelled()
 
+			self._cura_logger.info("### Finished, returncode %d" % p.returncode)
 			if p.returncode == 0:
 				return True, None
 			else:
@@ -320,6 +353,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			with self._slicing_commands_mutex:
 				if machinecode_path in self._slicing_commands:
 					del self._slicing_commands[machinecode_path]
+
+			self._cura_logger.info("-" * 40)
 
 	def cancel_slicing(self, machinecode_path):
 		with self._slicing_commands_mutex:

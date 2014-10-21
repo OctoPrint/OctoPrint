@@ -130,6 +130,16 @@ class PluginSettings(object):
 	def globalSetBoolean(self, path, value):
 		self.settings.setBoolean(path, value)
 
+	def globalGetBaseFolder(self, folder_type):
+		return self.settings.getBaseFolder(folder_type)
+
+	def getPluginLogfilePath(self, postfix=None):
+		filename = "plugin_" + self.plugin_key
+		if postfix is not None:
+			filename += "_" + postfix
+		filename += ".log"
+		return os.path.join(self.settings.getBaseFolder("logs"), filename)
+
 	def __getattr__(self, item):
 		if item in self.access_methods and hasattr(self.settings, item) and callable(getattr(self.settings, item)):
 			orig_item = getattr(self.settings, item)
