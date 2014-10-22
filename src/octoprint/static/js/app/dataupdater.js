@@ -155,7 +155,7 @@ function DataUpdater(allViewModels) {
                     var payload = data["payload"];
                     var html = "";
 
-                    console.log("Got event " + type + " with payload: " + JSON.stringify(payload))
+                    console.log("Got event " + type + " with payload: " + JSON.stringify(payload));
 
                     if (type == "UpdatedFiles") {
                         _.each(self.allViewModels, function(viewModel) {
@@ -186,7 +186,7 @@ function DataUpdater(allViewModels) {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload)});
+                        new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload), type: "success"});
 
                         _.each(self.allViewModels, function (viewModel) {
                             if (viewModel.hasOwnProperty("onSlicingDone")) {
