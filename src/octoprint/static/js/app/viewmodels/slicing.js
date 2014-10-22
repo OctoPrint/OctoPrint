@@ -7,6 +7,9 @@ function SlicingViewModel(loginStateViewModel) {
     self.file = undefined;
     self.data = undefined;
 
+    self.defaultSlicer = undefined;
+    self.defaultProfile = undefined;
+
     self.gcodeFilename = ko.observable();
 
     self.title = ko.observable();
@@ -67,6 +70,8 @@ function SlicingViewModel(loginStateViewModel) {
         if (selectedSlicer != undefined) {
             self.slicer(selectedSlicer);
         }
+
+        self.defaultSlicer = selectedSlicer;
     };
 
     self.profilesForSlicer = function(key) {
@@ -99,6 +104,8 @@ function SlicingViewModel(loginStateViewModel) {
         if (selectedProfile != undefined) {
             self.profile(selectedProfile);
         }
+
+        self.defaultProfile = selectedProfile;
     };
 
     self.slice = function() {
@@ -127,8 +134,8 @@ function SlicingViewModel(loginStateViewModel) {
         $("#slicing_configuration_dialog").modal("hide");
 
         self.gcodeFilename(undefined);
-        self.slicer(undefined);
-        self.profile(undefined);
+        self.slicer(self.defaultSlicer);
+        self.profile(self.defaultProfile);
     };
 
     self._sanitize = function(name) {
