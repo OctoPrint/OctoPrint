@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
+        self.slicingViewModel = parameters[2];
 
         self.fileName = ko.observable();
 
@@ -101,6 +102,7 @@ $(function() {
 
                 $("#settings-plugin-cura-import").modal("hide");
                 self.requestData();
+                self.slicingViewModel.requestData();
             }
         });
 
@@ -118,6 +120,7 @@ $(function() {
                 type: "DELETE",
                 success: function() {
                     self.requestData();
+                    self.slicingViewModel.requestData();
                 }
             });
         };
@@ -184,5 +187,5 @@ $(function() {
     }
 
     // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([CuraViewModel, ["loginStateViewModel", "settingsViewModel"], document.getElementById("settings_plugin_cura_dialog")]);
+    ADDITIONAL_VIEWMODELS.push([CuraViewModel, ["loginStateViewModel", "settingsViewModel", "slicingViewModel"], document.getElementById("settings_plugin_cura_dialog")]);
 });
