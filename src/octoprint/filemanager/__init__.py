@@ -89,6 +89,10 @@ def get_file_type(filename):
 	return get_path_for_extension(extension)
 
 
+class NoSuchStorage(Exception):
+	pass
+
+
 class FileManager(object):
 	def __init__(self, analysis_queue, slicing_manager, initial_storage_managers=None):
 		self._logger = logging.getLogger(__name__)
@@ -293,7 +297,11 @@ class FileManager(object):
 		self._storage(destination).remove_link(path, rel, data)
 
 	def log_print(self, destination, path, timestamp, print_time, success):
-		self._storage(destination).add_history(path, dict(timestamp=timestamp, printTime=print_time, success=success))
+		try:
+			self._storage(destination).add_history(path, dict(timestamp=timestamp, printTime=print_time, success=success))
+		except NoSuchStorage:
+			# if there's no storage configured where to log the print, we'll just not log it
+			pass
 
 	def set_additional_metadata(self, destination, path, key, data, overwrite=False, merge=False):
 		self._storage(destination).set_additional_metadata(path, key, data, overwrite=overwrite, merge=merge)
@@ -324,7 +332,7 @@ class FileManager(object):
 
 	def _storage(self, destination):
 		if not destination in self._storage_managers:
-			raise RuntimeError("No storage configured for destination {destination}".format(**locals()))
+			raise NoSuchStorage("No storage configured for destination {destination}".format(**locals()))
 		return self._storage_managers[destination]
 
 	def _on_analysis_finished(self, entry, result):
