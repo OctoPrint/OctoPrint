@@ -256,7 +256,15 @@ class Server():
 			settings().get(["server", "reverseProxy", "prefixScheme"])
 		)
 
-		app.secret_key = "k3PuVYgtxNm8DXKKTw2nWmFQQun9qceV"
+		secret_key = settings().get(["server", "secretKey"])
+		if not secret_key:
+			import string
+			from random import choice
+			chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
+			secret_key = "".join(choice(chars) for _ in xrange(32))
+			settings().set(["server", "secretKey"], secret_key)
+			settings().save()
+		app.secret_key = secret_key
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
