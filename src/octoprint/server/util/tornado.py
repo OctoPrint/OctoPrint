@@ -24,6 +24,7 @@ import tornado.httpclient
 import tornado.http1connection
 import tornado.iostream
 import tornado.tcpserver
+import tornado.util
 
 import octoprint.util
 
@@ -707,8 +708,6 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 
 class LargeResponseHandler(tornado.web.StaticFileHandler):
 
-	CHUNK_SIZE = 16 * 1024
-
 	def initialize(self, path, default_filename=None, as_attachment=False, access_validation=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
@@ -717,70 +716,18 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
 			self._access_validation(self.request)
-
-		path = self.parse_url_path(path)
-		abspath = os.path.abspath(os.path.join(self.root, path))
-		# os.path.abspath strips a trailing /
-		# it needs to be temporarily added back for requests to root/
-		if not (abspath + os.path.sep).startswith(self.root):
-			raise tornado.web.HTTPError(403, "%s is not in root static directory", path)
-		if os.path.isdir(abspath) and self.default_filename is not None:
-			# need to look at the request.path here for when path is empty
-			# but there is some prefix to the path that was already
-			# trimmed by the routing
-			if not self.request.path.endswith("/"):
-				self.redirect(self.request.path + "/")
-				return
-			abspath = os.path.join(abspath, self.default_filename)
-		if not os.path.exists(abspath):
-			raise tornado.web.HTTPError(404)
-		if not os.path.isfile(abspath):
-			raise tornado.web.HTTPError(403, "%s is not a file", path)
-
-		stat_result = os.stat(abspath)
-		modified = datetime.datetime.fromtimestamp(stat_result[stat.ST_MTIME])
-
-		self.set_header("Last-Modified", modified)
-
-		mime_type, encoding = mimetypes.guess_type(abspath)
-		if mime_type:
-			self.set_header("Content-Type", mime_type)
-
-		cache_time = self.get_cache_time(path, modified, mime_type)
-
-		if cache_time > 0:
-			self.set_header("Expires", datetime.datetime.utcnow() +
-							datetime.timedelta(seconds=cache_time))
-			self.set_header("Cache-Control", "max-age=" + str(cache_time))
-
-		self.set_extra_headers(path)
-
-		# Check the If-Modified-Since, and don't send the result if the
-		# content has not been modified
-		ims_value = self.request.headers.get("If-Modified-Since")
-		if ims_value is not None:
-			date_tuple = email.utils.parsedate(ims_value)
-			if_since = datetime.datetime.fromtimestamp(time.mktime(date_tuple))
-			if if_since >= modified:
-				self.set_status(304)
-				return
-
-		if not include_body:
-			assert self.request.method == "HEAD"
-			self.set_header("Content-Length", stat_result[stat.ST_SIZE])
-		else:
-			with open(abspath, "rb") as file:
-				while True:
-					data = file.read(LargeResponseHandler.CHUNK_SIZE)
-					if not data:
-						break
-					self.write(data)
-					self.flush()
+		result = tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
+		return result
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
 			self.set_header("Content-Disposition", "attachment")
 
+	@classmethod
+	def get_content_version(cls, abspath):
+		import os
+		import stat
+		return os.stat(abspath)[stat.ST_MTIME]
 
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
 
