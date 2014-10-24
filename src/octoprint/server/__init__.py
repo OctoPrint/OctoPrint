@@ -413,6 +413,9 @@ class Server():
 					"level": "CRITICAL",
 					"handlers": ["serialFile"],
 					"propagate": False
+				},
+				"tornado.application": {
+					"level": "ERROR"
 				}
 			},
 			"root": {
