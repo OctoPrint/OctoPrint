@@ -244,15 +244,26 @@ def login():
 		else:
 			remember = False
 
+		if "usersession.id" in session:
+			_logout(current_user)
+
 		user = octoprint.server.userManager.findUser(username)
 		if user is not None:
 			if user.check_password(octoprint.users.UserManager.createPasswordHash(password)):
+				if octoprint.server.userManager is not None:
+					user = octoprint.server.userManager.login_user(user)
+					session["usersession.id"] = user.get_session()
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 				return jsonify(user.asDict())
 		return make_response(("User unknown or password incorrect", 401, []))
+
 	elif "passive" in request.values.keys():
-		user = current_user
+		if octoprint.server.userManager is not None:
+			user = octoprint.server.userManager.login_user(current_user)
+		else:
+			user = current_user
+
 		if user is not None and not user.is_anonymous():
 			identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 			return jsonify(user.asDict())
@@ -288,7 +299,12 @@ def logout():
 			del session[key]
 	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
 
+	_logout(current_user)
 	logout_user()
 
 	return NO_CONTENT
 
+def _logout(user):
+	if "usersession.id" in session:
+		del session["usersession.id"]
+	octoprint.server.userManager.logout_user(user)

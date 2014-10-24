@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory, g, request, make_response
+from flask import Flask, render_template, send_from_directory, g, request, make_response, session
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel
@@ -160,8 +160,16 @@ def on_identity_loaded(sender, identity):
 
 
 def load_user(id):
+	if session and "usersession.id" in session:
+		sessionid = session["usersession.id"]
+	else:
+		sessionid = None
+
 	if userManager is not None:
-		return userManager.findUser(id)
+		if sessionid:
+			return userManager.findUser(username=id, session=sessionid)
+		else:
+			return userManager.findUser(username=id)
 	return users.DummyUser()
 
 
