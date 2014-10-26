@@ -352,6 +352,12 @@ class RepRapProtocol(Protocol):
 			self._handle_resend_request(message)
 			return
 
+		if self._resend_delta is None and not self.is_streaming():
+			if time.time() > self._lastTemperatureUpdate + 5:
+				self._send_temperature_query(withType=True)
+			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
+				self._send_sd_progress_query(withType=True)
+
 		# ok == go ahead with sending
 		if RepRapProtocol.MESSAGE_OK(message):
 			if self._state == State.CONNECTED and self._startSeen:
@@ -370,13 +376,6 @@ class RepRapProtocol(Protocol):
 		if RepRapProtocol.MESSAGE_WAIT(message):
 			with self._nack_lock:
 				self._clear_for_send.set()
-
-
-		if self._resend_delta is None and not self.is_streaming():
-			if time.time() > self._lastTemperatureUpdate + 5:
-				self._send_temperature_query(withType=True)
-			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
-				self._send_sd_progress_query(withType=True)
 
 		# SD file list
 		if self._receivingSdFileList and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
