@@ -19,6 +19,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="Octoprint Daemon"
 NAME="Octoprint"
 DAEMON=/usr/local/bin/octoprint
+NICE=10
 PIDFILE=/var/run/$NAME.pid
 PKGNAME=octoprint
 SCRIPTNAME=/etc/init.d/$PKGNAME
@@ -72,7 +73,7 @@ do_start()
    RETVAL="$?"
 
    if [ $RETVAL != 0 ]; then
-       start-stop-daemon --start --background --quiet --pidfile $PIDFILE --make-pidfile \
+       start-stop-daemon --start --background --quiet --pidfile $PIDFILE --make-pidfile --nicelevel $NICE\
        --exec $DAEMON --chuid $OCTOPRINT_USER --user $OCTOPRINT_USER --umask $UMASK -- $DAEMON_ARGS
        RETVAL="$?"
    fi
