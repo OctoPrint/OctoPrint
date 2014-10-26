@@ -325,6 +325,11 @@ class RepRapProtocol(Protocol):
 	def _fileTransferFinished(self, current_file):
 		if isinstance(current_file, StreamingGcodeFileInformation):
 			self.send_manually(RepRapProtocol.COMMAND_SD_END_WRITE(current_file.getRemoteFilename()))
+			eventManager().fire(Events.TRANSFER_DONE, {
+				"local": local,
+				"remote": remote,
+				"time": self.getPrintTime()
+			})
 		else:
 			self._logger.warn("Finished file transfer to printer's SD card, but could not determine remote filename, assuming 'unknown.gco' for end-write-command")
 			self.send_manually(RepRapProtocol.COMMAND_SD_END_WRITE("unknown.gco"))

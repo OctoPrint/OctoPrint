@@ -5,6 +5,7 @@ __copyright__ = "Copyright (C) 2014 Gina Häußge - Released under terms of the 
 
 import logging
 
+from octoprint.events import eventManager, Events
 
 class Transport(object):
 
@@ -35,7 +36,7 @@ class Transport(object):
 			self.changeState(State.DISCONNECTED_WITH_ERROR)
 		else:
 			self.changeState(State.DISCONNECTED)
-
+		eventManager().fire(Events.DISCONNECTED)
 	def send(self, command):
 		pass
 

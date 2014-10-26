@@ -17,7 +17,7 @@ from . import Transport, TransportProperties, State
 from octoprint.util import getExceptionString
 from octoprint.util.virtual import VirtualPrinter
 from octoprint.settings import settings
-
+from octoprint.events import eventManager, Events
 
 class SerialTransport(Transport):
 
@@ -126,17 +126,17 @@ class SerialTransport(Transport):
 			self._serial = VirtualPrinter(timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
 			self.changeState(State.CONNECTED)
 			self._transport_logger.debug("Connected to VIRTUAL printer")
-			return True
 		else:
 			try:
 				self._serial = serial.Serial(self._port, self._baudrate, timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
 				self.changeState(State.CONNECTED)
 				self._transport_logger.debug("Connected to %s" % self._serial)
-				return True
 			except:
 				self.logError("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 				self.onError("Failed to open serial port, permissions correct?")
 				return False
+		eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
+		return True
 
 	def _readline(self):
 		if self._serial is None:
