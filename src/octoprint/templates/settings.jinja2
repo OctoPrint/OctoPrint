@@ -294,7 +294,14 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> {{ _('Send a checksum with <strong>every</strong> command') }}  <span class="label">{{ _('Repetier') }}</span>
+                                    <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> {{ _('Send a checksum with <strong>every</strong> command (reconnect after changing)') }}  <span class="label">{{ _('Repetier') }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: feature_pingPong" id="settings-featurePingPong"> {{ _('Use <strong>ping-pong</strong> communication (reconnect after changing)') }}
                                 </label>
                             </div>
                         </div>

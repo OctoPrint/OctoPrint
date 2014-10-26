@@ -79,8 +79,8 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		self._heatup_start_time = None
 		self._heatup_time_lost = 0.0
 
-		self._changeState(State.PRINTING)
 		self._current_file.start()
+		self._changeState(State.PRINTING)
 
 	def pause_print(self):
 		if self._state == State.PRINTING:

@@ -59,6 +59,7 @@ class RepRapProtocol(Protocol):
 	## Commands
 	COMMAND_GET_TEMP = staticmethod(lambda: GcodeCommand("M105"))
 	COMMAND_SET_EXTRUDER_TEMP = staticmethod(lambda s, t, w: GcodeCommand("M109", s=s, t=t) if w else GcodeCommand("M104", s=s, t=t))
+	COMMAND_SET_LINE = staticmethod(lambda n: GcodeCommand("M110 N%d" % n))
 	COMMAND_SET_BED_TEMP = staticmethod(lambda s, w: GcodeCommand("M190", s=s) if w else GcodeCommand("M140", s=s))
 	COMMAND_SET_RELATIVE_POSITIONING = staticmethod(lambda: GcodeCommand("G91"))
 	COMMAND_SET_ABSOLUTE_POSITIONING = staticmethod(lambda: GcodeCommand("G90"))
@@ -128,10 +129,22 @@ class RepRapProtocol(Protocol):
 		self._resend_delta = None
 		self._last_resend_request = None
 
+		self._force_checksum = False
+		self._pingpong = False
+		self._rx_cache_fill = 0
+		self._rx_cache_size = 127
+		self._nack_lines = deque([])
+		self._nack_lock = threading.Lock()
+
 		self._send_queue_processing = True
 		self._thread = threading.Thread(target=self._handle_send_queue, name="SendQueueHandler")
 		self._thread.daemon = True
 		self._thread.start()
+
+		self._fill_queue_processing = True
+		self._fill_thread = threading.Thread(target=self._fill_send_queue, name="FillQueueHandler")
+		self._fill_thread.daemon = True
+		self._fill_thread.start()
 
 		self._current_line = 1
 		self._currentExtruder = 0
@@ -143,14 +156,26 @@ class RepRapProtocol(Protocol):
 		self._lastTemperatureUpdate = time.time()
 		self._lastSdProgressUpdate = time.time()
 
-		self._startSeen = not settings().get(["feature", "waitForStartOnConnect"])
+		if settings().get(["feature", "waitForStartOnConnect"]) == True:
+			self._startSeen = False
+			self._clear_for_send.clear()
+		else:
+			self._startSeen = True
+			self._clear_for_send.set()
+
 		self._receivingSdFileList = False
 
-		self._clear_for_send.clear()
+		# create a new queue to clear the old one
+		self._send_queue = CommandQueue()
 
 		self._last_lines.clear()
 		self._resend_delta = None
 		self._last_resend_request = None
+
+		self._force_checksum = self._useChecksum()
+		self._pingpong = self._usePingPong()
+		self._rx_cache_fill = 0
+		self._nack_lines.clear()
 
 		self._current_line = 1
 		self._currentExtruder = 0
@@ -158,11 +183,16 @@ class RepRapProtocol(Protocol):
 	def connect(self, opt):
 		self._reset()
 
+		# connect
+		Protocol.connect(self, opt)
+
 		# enqueue our first temperature query so it get's sent right on establishment of the connection
 		self._send_temperature_query(withType=True)
 
-		# connect
-		Protocol.connect(self, opt)
+	def disconnect(self):
+		self._clear_for_send.clear()
+		# disconnect
+		Protocol.disconnect(self)
 
 	def select_file(self, filename, origin):
 		if origin == FileDestinations.SDCARD:
@@ -181,8 +211,6 @@ class RepRapProtocol(Protocol):
 				self._send(RepRapProtocol.COMMAND_SD_SET_POS(0))
 				self._current_file.setFilepos(0)
 			self._send(RepRapProtocol.COMMAND_SD_START())
-		else:
-			self._send_next()
 
 	def cancel_print(self):
 		if isinstance(self._current_file, PrintingSdFileInformation):
@@ -194,10 +222,14 @@ class RepRapProtocol(Protocol):
 	def init_sd(self):
 		Protocol.init_sd(self)
 		self._send(RepRapProtocol.COMMAND_SD_INIT())
+		if settings().getBoolean(["feature", "sdAlwaysAvailable"]) == True:
+			self._changeSdState(True)
 
 	def release_sd(self):
 		Protocol.release_sd(self)
 		self._send(RepRapProtocol.COMMAND_SD_RELEASE())
+		if settings().getBoolean(["feature", "sdAlwaysAvailable"]) == True:
+			self._changeSdState(False)
 
 	def refresh_sd_files(self):
 		if not self._sd_available:
@@ -215,12 +247,12 @@ class RepRapProtocol(Protocol):
 
 		self._current_file = StreamingGcodeFileInformation(path, local, remote)
 
-		self._changeState(State.STREAMING)
 		self._current_file.start()
 
 		eventManager().fire(Events.TRANSFER_STARTED, {"local": local, "remote": remote})
 
 		self._startFileTransfer(remote, self._current_file.getFilesize())
+		self._changeState(State.STREAMING)
 
 	def remove_sd_file(self, filename):
 		Protocol.remove_sd_file(self, filename)
@@ -286,9 +318,9 @@ class RepRapProtocol(Protocol):
 			return
 		if isinstance(command, (tuple, list)):
 			for c in command:
-				self._send(c, highPriority=high_priority, withChecksum=self._useChecksum())
+				self._send(c, highPriority=high_priority)
 		else:
-			self._send(command, highPriority=high_priority, withChecksum=self._useChecksum())
+			self._send(command, highPriority=high_priority)
 
 	def _fileTransferFinished(self, current_file):
 		if isinstance(current_file, StreamingGcodeFileInformation):
@@ -305,6 +337,41 @@ class RepRapProtocol(Protocol):
 			return
 
 		message = self._handle_errors(message.strip())
+
+		# resend == roll back time a bit
+		if RepRapProtocol.MESSAGE_RESEND(message):
+			# zero cache fill count
+			with self._nack_lock:
+				self._rx_cache_fill = 0
+				self._nack_lines.clear()
+			self._handle_resend_request(message)
+			return
+
+		# ok == go ahead with sending
+		if RepRapProtocol.MESSAGE_OK(message):
+			if self._state == State.CONNECTED and self._startSeen:
+				# if we are currently connected, have seen start and just gotten an "ok" we are now operational
+				self._changeState(State.OPERATIONAL)
+			if self.is_heating_up():
+				self._heatupDone()
+
+			# lower cache fill count since the command went through
+			with self._nack_lock:
+				if len(self._nack_lines) > 0:
+					self._rx_cache_fill -= self._nack_lines.popleft()
+			self._clear_for_send.set()
+			return
+
+		if RepRapProtocol.MESSAGE_WAIT(message):
+			with self._nack_lock:
+				self._clear_for_send.set()
+
+
+		if self._resend_delta is None and not self.is_streaming():
+			if time.time() > self._lastTemperatureUpdate + 5:
+				self._send_temperature_query(withType=True)
+			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
+				self._send_sd_progress_query(withType=True)
 
 		# SD file list
 		if self._receivingSdFileList and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
@@ -378,42 +445,23 @@ class RepRapProtocol(Protocol):
 			return
 
 		# initial handshake with the firmware
-		if not self._startSeen and RepRapProtocol.MESSAGE_START(message):
-			# if we did not see "start" from the firmware yet and we just did we are cleared for sending
+		if RepRapProtocol.MESSAGE_START(message):
+			if self._state != State.CONNECTED:
+				# we received a "start" while running, this means the printer has unexpectedly reset
+				self._reset()
+				self._changeState(State.CONNECTED)
+			# otherwise we did not see "start" from the firmware yet and we just did; we are cleared for sending
 			self._startSeen = True
-			self._clear_for_send.set()
-
-		if self._state == State.CONNECTED and self._startSeen and RepRapProtocol.MESSAGE_OK(message):
-			# if we are currently connected, have seen start and just gotten an "ok" we are now operational
-			self._changeState(State.OPERATIONAL)
-
-		# resend == roll back time a bit
-		if RepRapProtocol.MESSAGE_RESEND(message):
-			self._handle_resend_request(message)
-
-		# ok == go ahead with sending
-		if RepRapProtocol.MESSAGE_OK(message):
-			if self.is_heating_up():
-				self._heatupDone()
-
-			if self.is_printing() or self.is_streaming():
-				if not self.is_sd_printing() and not self._state == State.PAUSED:
-					self._send_next()
-				if self._resend_delta is None and not self.is_streaming():
-					if time.time() > self._lastTemperatureUpdate + 5:
-						self._send_temperature_query(withType=True)
-					elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
-						self._send_sd_progress_query(withType=True)
 			self._clear_for_send.set()
 
 	def onTimeoutReceived(self, source):
 		if self._transport != source:
 			return
-
-		if self._state == State.CONNECTED:
-			# it might be that the printer controller did not reset on connect and therefore we won't ever see a start => try clearing for send
+		self._logger.warn("Communication timeout")
+		# allow sending to restart communcation
+		if self._state != State.OFFLINE:
 			self._clear_for_send.set()
-		self._send_temperature_query(withType=True)
+
 
 	##~~ private
 
@@ -422,17 +470,25 @@ class RepRapProtocol(Protocol):
 
 	def _send(self, command, highPriority=False, commandType=None, withChecksum=None, withLinenumber=None):
 		if withChecksum is None:
-			withChecksum = self._useChecksum()
-		commandTuple = (command, withChecksum, withLinenumber)
+			withChecksum = self._force_checksum
 
 		priority = 100
 		if highPriority:
 			priority = 1
-		if commandType is not None:
-			self._send_queue.put((priority, commandTuple, commandType))
-		else:
-			self._send_queue.put((priority, commandTuple))
 
+		if not isinstance(command, GcodeCommand):
+			command = GcodeCommand.from_line(command)
+		preprocessed = self._preprocess_command(command, with_checksum=withChecksum, with_line_number=withLinenumber)
+
+		if withChecksum == False:
+			command = None
+
+		if commandType is not None:
+			self._send_queue.put((priority, command, preprocessed, commandType))
+		else:
+			self._send_queue.put((priority, command, preprocessed))
+
+	# Called only from worker thread, not thread safe
 	def _send_next(self):
 		if self._resend_delta is not None:
 			command = self._last_lines[-self._resend_delta]
@@ -568,8 +624,17 @@ class RepRapProtocol(Protocol):
 					# reset resend delta, we can't do anything about it
 					self._resend_delta = None
 
+				# reset line number local and remote
+				self._current_line = 1
+				self._last_lines.clear()
+				self._resend_delta = None
+				self._send(RepRapProtocol.COMMAND_SET_LINE(0))
+
 	def _useChecksum(self):
-		return settings().getBoolean(["feature", "alwaysSendChecksum"]) or (not self._transport_properties[TransportProperties.FLOWCONTROL] and self.is_busy())
+		return settings().getBoolean(["feature", "alwaysSendChecksum"])
+
+	def _usePingPong(self):
+		return settings().getBoolean(["feature", "pingPong"])
 
 	##~~ specific command actions
 
@@ -635,31 +700,60 @@ class RepRapProtocol(Protocol):
 		self.cancel_print()
 		return command, with_checksum, with_line_number
 
+
+	##~~ handle queue filling in this thread when printing or streaming
+
+	def _fill_send_queue(self):
+		while self._fill_queue_processing:
+			# queue is full, wait a bit before checking again
+			if self._send_queue.qsize() > 20:
+				time.sleep(0.05)
+			# -send_next only if printing (not SD) or streaming
+			elif ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
+			     or self._state == State.STREAMING):
+				self._send_next()
+			# not printing or streaming
+			else:
+				time.sleep(0.1)
+
+
 	##~~ the actual send queue handling starts here
 
 	def _handle_send_queue(self):
 		while self._send_queue_processing:
-			self._clear_for_send.wait()
-			self._clear_for_send.clear()
-			entry = self._send_queue.get()
-			if len(entry) == 3:
-				priority, command_tuple, command_type = entry
+			if self._send_queue.qsize() == 0:
+				# queue is empty, wait a bit before checking again
+				time.sleep(0.1)
+				continue
+			entry = self._send_queue.peek()
+			if len(entry) == 4:
+				priority, command, preprocessed, command_type = entry
 			else:
-				priority, command_tuple = entry
+				priority, command, preprocessed = entry
 
-			command, with_checksum, with_line_number = command_tuple
-			if not isinstance(command, GcodeCommand):
-				command = GcodeCommand.from_line(command)
-			preprocessed_command = self._preprocess_command(command, with_checksum=with_checksum, with_line_number=with_line_number)
+			size = len(preprocessed) + 1
+			# deassert _clear_for_send to wait for an "ok" if cache full
+			self._nack_lock.acquire()
+			if self._rx_cache_fill + size > self._rx_cache_size:
+				self._nack_lock.release()
+				self._clear_for_send.clear()
+				self._clear_for_send.wait()
+				continue
+			# put tx size into the list so we can pop it later when we get "ok"
+			self._nack_lines.append(size)
+			self._rx_cache_fill += size
+			self._nack_lock.release()
+			# send the command
+			self._transport.send(preprocessed)
+			# remove from queue
+			self._send_queue.get()
 
-			if preprocessed_command is not None:
-				self._transport.send(preprocessed_command)
+			if command is not None:
+				self._last_lines.append(command)
+			if self._pingpong == True:
+				self._clear_for_send.clear()
+				self._clear_for_send.wait()
 
-				if with_checksum:
-					self._last_lines.append(command)
-			else:
-				# reset clear for send flag, since we didn't send a command just now
-				self._clear_for_send.set()
 
 	def _preprocess_command(self, command, with_checksum=False, with_line_number=None):
 		if command is None:

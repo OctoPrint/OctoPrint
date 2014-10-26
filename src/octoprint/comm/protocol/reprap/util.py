@@ -121,10 +121,10 @@ class CommandQueue(Queue.Queue):
 		return len(self.queue)
 
 	def _put(self, item, heappush=heapq.heappush):
-		if len(item) == 3:
-			priority, command, commandType = item
+		if len(item) == 4:
+			priority, command, preprocessed, commandType = item
 		else:
-			priority, command = item
+			priority, command, preprocessed = item
 			commandType = None
 
 		if commandType is not None:
@@ -133,14 +133,17 @@ class CommandQueue(Queue.Queue):
 			else:
 				return
 
-		heappush(self.queue, (priority, next(self.counter), command, commandType))
+		heappush(self.queue, (priority, next(self.counter), command, preprocessed, commandType))
 
 	def _get(self, heappop=heapq.heappop):
-		priority, count, command, commandType = heappop(self.queue)
+		priority, count, command, preprocessed, commandType = heappop(self.queue)
 		if commandType in self.lookup:
 			del self.lookup[commandType]
-		return priority, command, commandType
+		return priority, command, preprocessed, commandType
 
+	def peek(self):
+		priority, count, command, preprocessed, commandType = self.queue[0]
+		return priority, command, preprocessed, commandType
 
 class PrintingGcodeFileInformation(PrintingFileInformation):
 	"""
@@ -156,6 +159,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 		self._offsetCallback = offsetCallback
 
+		self._fileHandle = None
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
 		self._filesize = os.stat(self._filename).st_size
