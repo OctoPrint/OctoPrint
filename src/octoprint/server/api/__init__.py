@@ -249,7 +249,7 @@ def login():
 
 		user = octoprint.server.userManager.findUser(username)
 		if user is not None:
-			if user.check_password(octoprint.users.UserManager.createPasswordHash(password)):
+			if octoprint.server.userManager.checkPassword(username, password):
 				if octoprint.server.userManager is not None:
 					user = octoprint.server.userManager.login_user(user)
 					session["usersession.id"] = user.get_session()

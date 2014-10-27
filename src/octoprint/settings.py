@@ -130,6 +130,7 @@ default_settings = {
 	},
 	"accessControl": {
 		"enabled": True,
+		"salt": None,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": False,

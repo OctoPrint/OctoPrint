@@ -58,6 +58,7 @@
   server start and written back into ``config.yaml``
 * Event subscriptions are now enabled by default (it was an accident that they weren't)
 * Generate the key used for session hashing individually for each server instance
+* Generate the salt used for hashing user passwords individually for each server instance
 
 ### Bug Fixes
 

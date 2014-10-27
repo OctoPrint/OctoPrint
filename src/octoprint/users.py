@@ -70,8 +70,38 @@ class UserManager(object):
 				self.logout_user(user)
 
 	@staticmethod
-	def createPasswordHash(password):
-		return hashlib.sha512(password + "mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW").hexdigest()
+	def createPasswordHash(password, salt=None):
+		if not salt:
+			salt = settings().get(["accessControl", "salt"])
+			if salt is None:
+				import string
+				from random import choice
+				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
+				salt = "".join(choice(chars) for _ in xrange(32))
+				settings().set(["accessControl", "salt"], salt)
+				settings().save()
+
+		return hashlib.sha512(password + salt).hexdigest()
+
+	def checkPassword(self, username, password):
+		user = self.findUser(username)
+		if not user:
+			return False
+
+		hash = UserManager.createPasswordHash(password)
+		if user.check_password(hash):
+			# new hash matches, correct password
+			return True
+		else:
+			# new hash doesn't match, but maybe the old one does, so check that!
+			oldHash = UserManager.createPasswordHash(password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
+			if user.check_password(oldHash):
+				# old hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
+				self.changeUserPassword(username, password)
+				return True
+			else:
+				# old hash doesn't match either, wrong password
+				return False
 
 	def addUser(self, username, password, active, roles):
 		pass
@@ -165,7 +195,10 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password, active=False, roles=["user"], apikey=None):
+	def addUser(self, username, password, active=False, roles=None, apikey=None):
+		if not roles:
+			roles = ["user"]
+
 		if username in self._users.keys():
 			raise UserAlreadyExists(username)
 
