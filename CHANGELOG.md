@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.1.1 (Unreleased)
+## 1.1.1 (2014-10-27)
 
 ### Improvements
 
