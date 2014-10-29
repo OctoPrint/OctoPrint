@@ -181,7 +181,11 @@ function DataUpdater(allViewModels) {
                     } else if (type == "SlicingStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
-                        gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
+                        if (payload.progressAvailable) {
+                            gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
+                        } else {
+                            gcodeUploadProgressBar.text(gettext("Slicing ..."));
+                        }
                     } else if (type == "SlicingDone") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");

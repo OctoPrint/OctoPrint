@@ -199,6 +199,7 @@ class SlicerPlugin(Plugin):
 			type=None,
 			name=None,
 			same_device=True,
+			progress_report=False
 		)
 
 	def get_slicer_profile_options(self):

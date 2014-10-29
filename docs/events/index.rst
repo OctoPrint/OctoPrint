@@ -328,6 +328,7 @@ SlicingStarted
 
      * ``stl``: the STL's filename
      * ``gcode``: the sliced GCODE's filename
+     * ``progressAvailable``: true if progress information via the ``slicingProgress`` push update will be available, false if not
 
 SlicingDone
    The slicing of a file has completed.

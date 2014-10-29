@@ -73,22 +73,26 @@ class SlicingManager(object):
 
 	@property
 	def slicing_enabled(self):
-		return len(self.registered_slicers) > 0
+		return len(self.configured_slicers) > 0
 
 	@property
 	def registered_slicers(self):
 		return self._slicers.keys()
 
 	@property
+	def configured_slicers(self):
+		return map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values()))
+
+	@property
 	def default_slicer(self):
 		slicer_name = settings().get(["slicing", "defaultSlicer"])
-		if slicer_name in self.registered_slicers:
+		if slicer_name in self.configured_slicers:
 			return slicer_name
 		else:
 			return None
 
-	def get_slicer(self, slicer):
-		return self._slicers[slicer] if slicer in self._slicers else None
+	def get_slicer(self, slicer, require_configured=True):
+		return self._slicers[slicer] if slicer in self._slicers and (not require_configured or self._slicers[slicer].is_slicer_configured()) else None
 
 	def slice(self, slicer_name, source_path, dest_path, profile_name, callback, callback_args=None, callback_kwargs=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		if callback_args is None:
@@ -96,8 +100,11 @@ class SlicingManager(object):
 		if callback_kwargs is None:
 			callback_kwargs = dict()
 
-		if not slicer_name in self.registered_slicers:
-			error = "No such slicer: {slicer_name}".format(**locals())
+		if not slicer_name in self.configured_slicers:
+			if not slicer_name in self.registered_slicers:
+				error = "No such slicer: {slicer_name}".format(**locals())
+			else:
+				error = "Slicer not configured: {slicer_name}".format(**locals())
 			callback_kwargs.update(dict(_error=error))
 			callback(*callback_args, **callback_kwargs)
 			return False, error

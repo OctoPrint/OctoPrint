@@ -194,7 +194,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		return dict(
 			type="cura",
 			name="CuraEngine",
-			same_device=True
+			same_device=True,
+			progress_report=True
 		)
 
 	def get_slicer_default_profile(self):
