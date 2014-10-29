@@ -457,55 +457,70 @@ class Profile(object):
 
 	@classmethod
 	def merge_profile(cls, profile, overrides=None):
-		import copy
-
-		result = copy.deepcopy(defaults)
-		for k in result.keys():
-			profile_value = None
-			override_value = None
-
-			if k in profile:
-				profile_value = profile[k]
-			if overrides and k in overrides:
-				override_value = overrides[k]
-
-			if profile_value is None and override_value is None:
-				# neither override nor profile, no need to handle this key further
-				continue
-
-			if k in ("filament_diameter", "print_temperature", "start_gcode", "end_gcode"):
-				# the array fields need some special treatment. Basically something like this:
-				#
-				#    override_value: [None, "b"]
-				#    profile_value : ["a" , None, "c"]
-				#    default_value : ["d" , "e" , "f", "g"]
-				#
-				# should merge to something like this:
-				#
-				#                    ["a" , "b" , "c", "g"]
-				#
-				# So override > profile > default, if neither override nor profile value are available
-				# the default value should just be left as is
-
-				for x in xrange(len(result[k])):
-					if override_value is not None and  x < len(override_value) and override_value[x] is not None:
-						# we have an override value for this location, so we use it
-						result[k][x] = override_value[x]
-					elif profile_value is not None and x < len(profile_value) and profile_value[x] is not None:
-						# we have a profile value for this location, so we use it
-						result[k][x] = profile_value[x]
-
-			else:
-				# just change the result value to the override_value if available, otherwise to the profile_value if
-				# that is given, else just leave as is
-				if override_value is not None:
-					result[k] = override_value
-				elif profile_value is not None:
-					result[k] = profile_value
+		result = dict()
+		for key in defaults.keys():
+			r = cls.merge_profile_key(key, profile, overrides=overrides)
+			if r is not None:
+				result[key] = r
 		return result
 
-	def __init__(self, profile):
-		self.profile = profile
+	@classmethod
+	def merge_profile_key(cls, key, profile, overrides=None):
+		profile_value = None
+		override_value = None
+
+		if not key in defaults:
+			return None
+		import copy
+		result = copy.deepcopy(defaults[key])
+
+		if key in profile:
+			profile_value = profile[key]
+		if overrides and key in overrides:
+			override_value = overrides[key]
+
+		if profile_value is None and override_value is None:
+			# neither override nor profile, no need to handle this key further
+			return None
+
+		if key in ("filament_diameter", "print_temperature", "start_gcode", "end_gcode"):
+			# the array fields need some special treatment. Basically something like this:
+			#
+			#    override_value: [None, "b"]
+			#    profile_value : ["a" , None, "c"]
+			#    default_value : ["d" , "e" , "f", "g"]
+			#
+			# should merge to something like this:
+			#
+			#                    ["a" , "b" , "c", "g"]
+			#
+			# So override > profile > default, if neither override nor profile value are available
+			# the default value should just be left as is
+
+			for x in xrange(len(result)):
+				if override_value is not None and  x < len(override_value) and override_value[x] is not None:
+					# we have an override value for this location, so we use it
+					result[x] = override_value[x]
+				elif profile_value is not None and x < len(profile_value) and profile_value[x] is not None:
+					# we have a profile value for this location, so we use it
+					result[x] = profile_value[x]
+
+		else:
+			# just change the result value to the override_value if available, otherwise to the profile_value if
+			# that is given, else just leave as is
+			if override_value is not None:
+				result = override_value
+			elif profile_value is not None:
+				result = profile_value
+
+		return result
+
+	def __init__(self, profile, overrides=None):
+		self._profile = self.__class__.merge_profile(profile, overrides=overrides)
+
+	def profile(self):
+		import copy
+		return copy.deepcopy(self._profile)
 
 	def get(self, key):
 		if key in ("machine_width", "machine_depth", "machine_center_is_zero"):
@@ -547,7 +562,7 @@ class Profile(object):
 			if not match:
 				return 0.0
 
-			diameters = defaults["filament_diameter"]
+			diameters = self._get("filament_diameter")
 			if not match.group(1):
 				return diameters[0]
 			index = int(match.group(1))
@@ -560,7 +575,7 @@ class Profile(object):
 			if not match:
 				return 0.0
 
-			temperatures = defaults["print_temperature"]
+			temperatures = self._get("print_temperature")
 			if not match.group(1):
 				return temperatures[0]
 			index = int(match.group(1))
@@ -569,12 +584,15 @@ class Profile(object):
 			return temperatures[index]
 
 		else:
-			if key in self.profile:
-				return self.profile[key]
-			elif key in defaults:
-				return defaults[key]
-			else:
-				return None
+			return self._get(key)
+
+	def _get(self, key):
+		if key in self._profile:
+			return self._profile[key]
+		elif key in defaults:
+			return defaults[key]
+		else:
+			return None
 
 	def get_int(self, key, default=None):
 		value = self.get(key)
@@ -622,8 +640,8 @@ class Profile(object):
 	def get_gcode_template(self, key):
 		extruder_count = s.globalGetInt(["printerParameters", "numExtruders"])
 
-		if key in self.profile:
-			gcode = self.profile[key]
+		if key in self._profile:
+			gcode = self._profile[key]
 		else:
 			gcode = defaults[key]
 
@@ -646,7 +664,7 @@ class Profile(object):
 
 		import copy
 		profile = copy.deepcopy(defaults)
-		profile.update(self.profile)
+		profile.update(self._profile)
 		for key in ("print_temperature", "print_temperature2", "print_temperature3", "print_temperature4",
 		            "filament_diameter", "filament_diameter2", "filament_diameter3", "filament_diameter4"):
 			profile[key] = self.get(key)
