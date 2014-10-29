@@ -200,9 +200,11 @@ class FileManager(object):
 					if dest_job_key in self._slicing_jobs:
 						del self._slicing_jobs[dest_job_key]
 
+		slicer = self._slicing_manager.get_slicer(slicer_name)
+
 		import time
 		start_time = time.time()
-		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path, "gcode": dest_path})
+		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path, "gcode": dest_path, "progressAvailable": slicer.get_slicer_properties()["progress_report"] if slicer else False})
 
 		import tempfile
 		f = tempfile.NamedTemporaryFile(suffix=".gco", delete=False)
@@ -266,10 +268,11 @@ class FileManager(object):
 	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False):
 		file_path = self._storage(destination).add_file(path, file_object, links=links, allow_overwrite=allow_overwrite)
 		absolute_path = self._storage(destination).get_absolute_path(file_path)
-		file_type = get_file_type(file_path)[-1]
 
-		queue_entry = QueueEntry(file_path, file_type, destination, absolute_path)
-		self._analysis_queue.enqueue(queue_entry, high_priority=True)
+		file_type = get_file_type(absolute_path)
+		if file_type:
+			queue_entry = QueueEntry(file_path, file_type[-1], destination, absolute_path)
+			self._analysis_queue.enqueue(queue_entry, high_priority=True)
 
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 		return file_path
