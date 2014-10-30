@@ -59,7 +59,7 @@ $(function() {
             settingsDialog.modal()
                 .css({
                     width: 'auto',
-                    'margin-left': function() { return -($(this).width() /2); }
+                    'margin-left': function() { return -($(this).width() / 2); }
                 });
 
             return false;

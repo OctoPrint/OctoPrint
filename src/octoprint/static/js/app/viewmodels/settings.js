@@ -157,9 +157,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.folder_logs = ko.observable(undefined);
     self.folder_watched = ko.observable(undefined);
 
-    self.cura_enabled = ko.observable(undefined);
-    self.cura_path = ko.observable(undefined);
-    self.cura_config = ko.observable(undefined);
+    self.scripts_gcode_beforePrintStarted = ko.observable(undefined);
+    self.scripts_gcode_afterPrintDone = ko.observable(undefined);
+    self.scripts_gcode_afterPrintCancelled = ko.observable(undefined);
+    self.scripts_gcode_afterPrintPaused = ko.observable(undefined);
+    self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
 
     self.temperature_profiles = ko.observableArray(undefined);
 
@@ -281,9 +283,11 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.folder_logs(response.folder.logs);
         self.folder_watched(response.folder.watched);
 
-        self.cura_enabled(response.cura.enabled);
-        self.cura_path(response.cura.path);
-        self.cura_config(response.cura.config);
+        self.scripts_gcode_beforePrintStarted(response.scripts.gcode.beforePrintStarted);
+        self.scripts_gcode_afterPrintDone(response.scripts.gcode.afterPrintDone);
+        self.scripts_gcode_afterPrintCancelled(response.scripts.gcode.afterPrintCancelled);
+        self.scripts_gcode_afterPrintPaused(response.scripts.gcode.afterPrintPaused);
+        self.scripts_gcode_beforePrintResumed(response.scripts.gcode.beforePrintResumed);
 
         self.temperature_profiles(response.temperature.profiles);
 
@@ -359,12 +363,16 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             "system": {
                 "actions": self.system_actions()
             },
-            "cura": {
-                "enabled": self.cura_enabled(),
-                "path": self.cura_path(),
-                "config": self.cura_config()
-            },
-            "terminalFilters": self.terminalFilters()
+            "terminalFilters": self.terminalFilters(),
+            "scripts": {
+                "gcode": {
+                    "beforePrintStarted": self.scripts_gcode_beforePrintStarted(),
+                    "afterPrintDone": self.scripts_gcode_afterPrintDone(),
+                    "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
+                    "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
+                    "beforePrintResumed": self.scripts_gcode_beforePrintResumed()
+                }
+            }
         });
 
         $.ajax({

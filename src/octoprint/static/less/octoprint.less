@@ -599,7 +599,16 @@ ul.dropdown-menu li a {
   overflow: visible !important;
 }
 
+.border_box {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
 
+textarea.block {
+  .border_box;
+  width: 100%;
+}
 
 #drop_overlay {
   position: fixed;

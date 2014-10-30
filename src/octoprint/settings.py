@@ -161,6 +161,15 @@ default_settings = {
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
 	"plugins": {},
+	"scripts": {
+		"gcode": {
+			"beforePrintStarted": None,
+			"afterPrintDone": None,
+			"afterPrintCancelled": None,
+			"afterPrintPaused": None,
+			"beforePrintResumed": None
+		}
+	},
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {

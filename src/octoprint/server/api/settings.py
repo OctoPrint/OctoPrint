@@ -99,11 +99,7 @@ def getSettings():
 			"events": s.get(["system", "events"])
 		},
 		"terminalFilters": s.get(["terminalFilters"]),
-		"cura": {
-			"enabled": s.getBoolean(["cura", "enabled"]),
-			"path": s.get(["cura", "path"]),
-			"config": s.get(["cura", "config"])
-		}
+		"scripts": s.get(["scripts"])
 	}
 
 	def process_plugin_result(name, plugin, result):
@@ -206,19 +202,8 @@ def setSettings():
 			if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
 			if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
-		cura = data.get("cura", None)
-		if cura:
-			path = cura.get("path")
-			if path:
-				s.set(["cura", "path"], path)
-
-			config = cura.get("config")
-			if config:
-				s.set(["cura", "config"], config)
-
-			# Enabled is a boolean so we cannot check that we have a result
-			enabled = cura.get("enabled")
-			s.setBoolean(["cura", "enabled"], enabled)
+		if "scripts" in data:
+			if "gcode" in data["scripts"]: s.set(["scripts", "gcode"], data["scripts"]["gcode"])
 
 		if "plugins" in data:
 			for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():

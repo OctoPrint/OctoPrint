@@ -381,6 +381,24 @@ class MachineCom(object):
 		elif self.isOperational():
 			self._sendCommand(cmd)
 
+	def sendGcodeScript(self, scriptName):
+		gcodeScripts = settings().get(["scripts", "gcode"])
+
+		if scriptName in gcodeScripts and gcodeScripts[scriptName] is not None:
+			script = gcodeScripts[scriptName]
+		else:
+			if scriptName == "afterPrintCancelled":
+				commands = ["M84"]
+				commands.extend(map(lambda x: "M104 T%d S0" % x, range(settings().getInt(["printerParameters", "numExtruders"]))))
+				commands.extend(["M140 S0", "M106 S0"])
+				script = "\n".join(commands)
+			else:
+				return
+
+		scriptLines = map(str.strip, script.split("\n"))
+		for line in scriptLines:
+			self.sendCommand(line)
+
 	def startPrint(self):
 		if not self.isOperational() or self.isPrinting():
 			return
@@ -399,13 +417,17 @@ class MachineCom(object):
 				"origin": self._currentFile.getFileLocation()
 			})
 
+			self.sendGcodeScript("beforePrintStarted")
+
 			if self.isSdFileSelected():
 				if wasPaused:
 					self.sendCommand("M26 S0")
 					self._currentFile.setFilepos(0)
 				self.sendCommand("M24")
 			else:
-				self._sendNext()
+				line = self._getNext()
+				if line is not None:
+					self.sendCommand(line)
 		except:
 			self._logger.exception("Error while trying to start printing")
 			self._errorValue = getExceptionString()
@@ -459,6 +481,8 @@ class MachineCom(object):
 			self.sendCommand("M25")    # pause print
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 
+		self.sendGcodeScript("afterPrintCancelled")
+
 		eventManager().fire(Events.PRINT_CANCELLED, {
 			"file": self._currentFile.getFilename(),
 			"filename": os.path.basename(self._currentFile.getFilename()),
@@ -471,10 +495,13 @@ class MachineCom(object):
 
 		if not pause and self.isPaused():
 			self._changeState(self.STATE_PRINTING)
+			self.sendGcodeScript("beforePrintResumed")
 			if self.isSdFileSelected():
 				self.sendCommand("M24")
 			else:
-				self._sendNext()
+				line = self._getNext()
+				if line is not None:
+					self.sendCommand(line)
 
 			eventManager().fire(Events.PRINT_RESUMED, {
 				"file": self._currentFile.getFilename(),
@@ -485,6 +512,7 @@ class MachineCom(object):
 			self._changeState(self.STATE_PAUSED)
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
+			self.sendGcodeScript("afterPrintPaused")
 
 			eventManager().fire(Events.PRINT_PAUSED, {
 				"file": self._currentFile.getFilename(),
@@ -878,8 +906,12 @@ class MachineCom(object):
 
 				### Operational
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
+					# if we still have commands to process, process them
+					if "ok" in line and not self._commandQueue.empty():
+						self._sendCommand(self._commandQueue.get())
+
 					#Request the temperature on comm timeout (every 5 seconds) when we are not printing.
-					if line == "" or "wait" in line:
+					elif line == "" or "wait" in line:
 						if self._resendDelta is not None:
 							self._resendNextCommand()
 						elif not self._commandQueue.empty():
@@ -887,6 +919,7 @@ class MachineCom(object):
 						else:
 							self._sendCommand("M105")
 						tempRequestTimeout = getNewTimeout("temperature")
+
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						if settings().get(["feature", "swallowOkAfterResend"]):
@@ -1018,39 +1051,44 @@ class MachineCom(object):
 		self._log("Recv: %s" % sanitizeAscii(ret))
 		return ret
 
+	def _getNext(self):
+		line = self._currentFile.getNext()
+		if line is None:
+			if self.isStreaming():
+				self._sendCommand("M29")
+
+				remote = self._currentFile.getRemoteFilename()
+				payload = {
+					"local": self._currentFile.getLocalFilename(),
+					"remote": remote,
+					"time": self.getPrintTime()
+				}
+
+				self._currentFile = None
+				self._changeState(self.STATE_OPERATIONAL)
+				self._callback.mcFileTransferDone(remote)
+				eventManager().fire(Events.TRANSFER_DONE, payload)
+				self.refreshSdFiles()
+			else:
+				payload = {
+					"file": self._currentFile.getFilename(),
+					"filename": os.path.basename(self._currentFile.getFilename()),
+					"origin": self._currentFile.getFileLocation(),
+					"time": self.getPrintTime()
+				}
+				self._callback.mcPrintjobDone()
+				self._changeState(self.STATE_OPERATIONAL)
+				eventManager().fire(Events.PRINT_DONE, payload)
+
+			self.sendGcodeScript("afterPrintDone")
+		return line
+
 	def _sendNext(self):
 		with self._sendNextLock:
-			line = self._currentFile.getNext()
-			if line is None:
-				if self.isStreaming():
-					self._sendCommand("M29")
-
-					remote = self._currentFile.getRemoteFilename()
-					payload = {
-						"local": self._currentFile.getLocalFilename(),
-						"remote": remote,
-						"time": self.getPrintTime()
-					}
-
-					self._currentFile = None
-					self._changeState(self.STATE_OPERATIONAL)
-					self._callback.mcFileTransferDone(remote)
-					eventManager().fire(Events.TRANSFER_DONE, payload)
-					self.refreshSdFiles()
-				else:
-					payload = {
-						"file": self._currentFile.getFilename(),
-						"filename": os.path.basename(self._currentFile.getFilename()),
-						"origin": self._currentFile.getFileLocation(),
-						"time": self.getPrintTime()
-					}
-					self._callback.mcPrintjobDone()
-					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire(Events.PRINT_DONE, payload)
-				return
-
-			self._sendCommand(line, True)
-			self._callback.mcProgress()
+			line = self._getNext()
+			if line is not None:
+				self._sendCommand(line, True)
+				self._callback.mcProgress()
 
 	def _handleResendRequest(self, line):
 		lineToResend = None

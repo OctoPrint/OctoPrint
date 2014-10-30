@@ -288,7 +288,7 @@ class Printer():
 
 		self._comm.setPause(not self._comm.isPaused())
 
-	def cancelPrint(self, disableMotorsAndHeater=True):
+	def cancelPrint(self):
 		"""
 		 Cancel the current printjob.
 		"""
@@ -296,13 +296,6 @@ class Printer():
 			return
 
 		self._comm.cancelPrint()
-
-		if disableMotorsAndHeater:
-			# disable motors, switch off hotends, bed and fan
-			commands = ["M84"]
-			commands.extend(map(lambda x: "M104 T%d S0" % x, range(settings().getInt(["printerParameters", "numExtruders"]))))
-			commands.extend(["M140 S0", "M106 S0"])
-			self.commands(commands)
 
 		# reset progress, height, print time
 		self._setCurrentZ(None)
