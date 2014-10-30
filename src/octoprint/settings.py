@@ -60,6 +60,7 @@ default_settings = {
 		"host": "0.0.0.0",
 		"port": 5000,
 		"firstRun": True,
+		"secretKey": None,
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",
 			"schemeHeader": "X-Scheme",
@@ -68,8 +69,8 @@ default_settings = {
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
-			"nameSuffix": ".name",
-			"pathSuffix": ".path"
+			"nameSuffix": "name",
+			"pathSuffix": "path"
 		},
 		"maxSize": 100 * 1024, # 100 KB
 	},
@@ -111,14 +112,14 @@ default_settings = {
 		"logs": None,
 		"virtualSd": None,
 		"watched": None,
-		"plugins": None
+		"plugins": None,
+		"slicingProfiles": None
 	},
 	"temperature": {
-		"profiles":
-			[
-				{"name": "ABS", "extruder" : 210, "bed" : 100 },
-				{"name": "PLA", "extruder" : 180, "bed" : 60 }
-			]
+		"profiles": [
+			{"name": "ABS", "extruder" : 210, "bed" : 100 },
+			{"name": "PLA", "extruder" : 180, "bed" : 60 }
+		]
 	},
 	"printerParameters": {
 		"movementSpeed": {
@@ -134,7 +135,7 @@ default_settings = {
 			{"x": 0.0, "y": 0.0}
 		],
 		"bedDimensions": {
-			"x": 200.0, "y": 200.0, "r": 100
+			"x": 200.0, "y": 200.0, "r": 100, "circular": False
 		},
 		"defaultExtrusionLength": 5
 	},
@@ -148,6 +149,7 @@ default_settings = {
 	},
 	"accessControl": {
 		"enabled": True,
+		"salt": None,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": False,
@@ -159,13 +161,18 @@ default_settings = {
 		"path": "/default/path/to/cura",
 		"config": "/default/path/to/your/cura/config.ini"
 	},
+	"slicing": {
+		"enabled": True,
+		"defaultSlicer": "cura",
+		"defaultProfiles": None
+	},
 	"events": {
-		"enabled": False,
+		"enabled": True,
 		"subscriptions": []
 	},
 	"api": {
-		"enabled": False,
-		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes),
+		"enabled": True,
+		"key": None,
 		"allowCrossOrigin": False
 	},
 	"terminalFilters": [
@@ -217,11 +224,18 @@ class Settings(object):
 			self._configfile = os.path.join(self.settings_dir, "config.yaml")
 		self.load(migrate=True)
 
+		if self.get(["api", "key"]) is None:
+			self.set(["api", "key"], ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes))
+			self.save(force=True)
+
 	def _init_settings_dir(self, basedir):
 		if basedir is not None:
 			self.settings_dir = basedir
 		else:
 			self.settings_dir = _resolveSettingsDir(APPNAME)
+
+		if not os.path.isdir(self.settings_dir):
+			os.makedirs(self.settings_dir)
 
 	def _getDefaultFolder(self, type):
 		folder = default_settings["folder"][type]

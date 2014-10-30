@@ -35,6 +35,9 @@ following message types are currently available for usage by 3rd party clients:
     payload data model as ``current``, see :ref:`below <sec-api-push-datamodel-currentandhistory>`.
   * ``event``: Events triggered within OctoPrint, such as e.g. ``PrintFailed`` or ``MovieRenderDone``. Payload is the event
     type and payload, see :ref:`below <sec-api-push-datamodel-event>`. Sent when an event is triggered internally.
+  * ``slicingProgress``: Progress updates from an active slicing background job, payload contains information about the
+    model being sliced, the target file, the slicer being used and the progress as a percentage.
+    See :ref:`the payload data model <sec-api-push-datamodel-slicingprogress>`.
 
 Clients must ignore any unknown messages.
 
@@ -112,3 +115,41 @@ Datamodel
      - 1
      - Object
      - Payload associated with the event
+
+.. _sec-api-push-datamodel-slicingprogress:
+
+``slicingProgress`` payload
+---------------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``slicer``
+     - 1
+     - String
+     - Name of the slicer used
+   * - ``source_location``
+     - 1
+     - String
+     - Location of the source file being sliced, at the moment either ``local`` or ``sdcard``
+   * - ``source_path``
+     - 1
+     - String
+     - Path of the source file being sliced (e.g. an STL file)
+   * - ``dest_location``
+     - 1
+     - String
+     - Location of the destination file being created, at the moment either ``local`` or ``sdcard``
+   * - ``dest_path``
+     - 1
+     - String
+     - Path of the destination file being sliced (e.g. a GCODE file)
+   * - ``progress``
+     - 1
+     - Number (Float)
+     - Percentage of slicing job already completed

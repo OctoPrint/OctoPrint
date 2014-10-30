@@ -13,10 +13,10 @@ class PluginTestCase(unittest.TestCase):
 		# TODO mock pkg_resources to return some defined entry_points
 
 		import os
-		plugin_folders = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_plugins")]
+		plugin_folders = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "_plugins")]
 		plugin_types = [octoprint.plugin.SettingsPlugin, octoprint.plugin.StartupPlugin]
 		plugin_entry_points = None
-		self.plugin_manager = octoprint.plugin.core.PluginManager(plugin_folders, plugin_types, plugin_entry_points)
+		self.plugin_manager = octoprint.plugin.core.PluginManager(plugin_folders, plugin_types, plugin_entry_points, plugin_disabled_list=[])
 
 	def test_plugin_loading(self):
 		self.assertEquals(4, len(self.plugin_manager.plugins))

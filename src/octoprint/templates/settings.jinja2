@@ -14,7 +14,6 @@
                 <li class="nav-header">{{ _('Features') }}</li>
                 <li><a href="#settings_features" data-toggle="tab">{{ _('Features') }}</a></li>
                 <li><a href="#settings_webcam" data-toggle="tab">{{ _('Webcam') }}</a></li>
-                <li><a href="#settings_cura" data-toggle="tab">{{ _('Cura') }}</a></li>
                 {% if enableAccessControl %}<li><a href="#settings_users" data-toggle="tab">{{ _('Access Control') }}</a></li>{% endif %}
                 <li><a href="#settings_api" data-toggle="tab">{{ _('API') }}</a></li>
                 <li class="nav-header">OctoPrint</li>
@@ -418,28 +417,6 @@
                             <div class="controls">
                                 <select id="settings-appearanceColor" data-bind="value: appearance_color, options: appearance_available_colors, optionsText: 'name', optionsValue: 'key'">
                                 </select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="tab-pane" id="settings_cura">
-                    <form class="form-horizontal">
-                        <div class="control-group">
-                            <label class="control-label" for="settings-curaEnabled">{{ _('Enable slicing via Cura') }}</label>
-                            <div class="controls">
-                                <input type="checkbox" data-bind="checked: cura_enabled">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="settings-curaPath">{{ _('Path to Cura') }}</label>
-                            <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: cura_path">
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="settings-curaConfig">{{ _('Path to Cura config') }}</label>
-                            <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: cura_config">
                             </div>
                         </div>
                     </form>

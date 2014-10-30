@@ -6,31 +6,10 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
-import os
 import watchdog.events
 
-import octoprint.gcodefiles
+import octoprint.filemanager
 import octoprint.util
-from octoprint.settings import settings
-
-
-class UploadCleanupWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
-	"""
-	Takes care of automatically deleting metadata entries for files that get deleted from the uploads folder
-	"""
-
-	patterns = map(lambda x: "*.%s" % x, octoprint.gcodefiles.GCODE_EXTENSIONS)
-
-	def __init__(self, gcode_manager):
-		watchdog.events.PatternMatchingEventHandler.__init__(self)
-		self._gcode_manager = gcode_manager
-
-	def on_deleted(self, event):
-		filename = self._gcode_manager._getBasicFilename(event.src_path)
-		if not filename:
-			return
-
-		self._gcode_manager.removeFileFromMetadata(filename)
 
 
 class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
@@ -38,27 +17,28 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 	Takes care of automatically "uploading" files that get added to the watched folder.
 	"""
 
-	patterns = map(lambda x: "*.%s" % x, octoprint.gcodefiles.SUPPORTED_EXTENSIONS)
+	patterns = map(lambda x: "*.%s" % x, octoprint.filemanager.get_all_extensions())
 
-	def __init__(self, gcodeManager, printer):
+	def __init__(self, file_manager, printer):
 		watchdog.events.PatternMatchingEventHandler.__init__(self)
 
 		self._logger = logging.getLogger(__name__)
 
-		self._gcodeManager = gcodeManager
+		self._file_manager = file_manager
 		self._printer = printer
 
 	def _upload(self, path):
 		class WatchdogFileWrapper(object):
 
 			def __init__(self, path):
+				import os
 				self._path = path
 				self.filename = os.path.basename(self._path)
 
 			def save(self, target):
 				octoprint.util.safeRename(self._path, target)
 
-		fileWrapper = WatchdogFileWrapper(path)
+		file_wrapper = WatchdogFileWrapper(path)
 
 		# determine current job
 		currentFilename = None
@@ -71,17 +51,35 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 				currentOrigin = currentJobFile["origin"]
 
 		# determine future filename of file to be uploaded, abort if it can't be uploaded
-		futureFilename = self._gcodeManager.getFutureFilename(fileWrapper)
-		if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not octoprint.gcodefiles.isGcodeFileName(futureFilename)):
-			self._logger.warn("Could not add %s: Invalid file" % fileWrapper.filename)
+		try:
+			futureFilename = self._file_manager.sanitize_name(octoprint.filemanager.FileDestinations.LOCAL, file_wrapper.filename)
+		except:
+			futureFilename = None
+		if futureFilename is None or (len(self._file_manager.registered_slicers) == 0 and not octoprint.filemanager.valid_file_type(futureFilename, type="gcode")):
 			return
 
 		# prohibit overwriting currently selected file while it's being printed
-		if futureFilename == currentFilename and not currentOrigin == octoprint.gcodefiles.FileDestinations.SDCARD and self._printer.isPrinting() or self._printer.isPaused():
-			self._logger.warn("Could not add %s: Trying to overwrite file that is currently being printed" % fileWrapper.filename)
+		if futureFilename == currentFilename and currentOrigin == octoprint.filemanager.FileDestinations.LOCAL and self._printer.isPrinting() or self._printer.isPaused():
 			return
 
-		self._gcodeManager.addFile(fileWrapper, octoprint.gcodefiles.FileDestinations.LOCAL)
+		added_file = self._file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL,
+		                                         file_wrapper.filename,
+		                                         file_wrapper,
+		                                         allow_overwrite=True)
+		if added_file is None:
+			return
+
+		slicer_name = self._file_manager.default_slicer
+		if octoprint.filemanager.valid_file_type(added_file, "stl") and slicer_name:
+			# if it's an STL we now have to slice it before we can continue
+			import os
+			name, ext = os.path.splitext(added_file)
+			gcode_path = name + ".gco"
+			self._file_manager.slice(slicer_name,
+			                         octoprint.filemanager.FileDestinations.LOCAL,
+			                         added_file,
+			                         octoprint.filemanager.FileDestinations.LOCAL,
+			                         gcode_path)
 
 	def on_created(self, event):
 		self._upload(event.src_path)

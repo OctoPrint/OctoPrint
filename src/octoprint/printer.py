@@ -38,11 +38,13 @@ def getConnectionOptions():
 	}
 
 class Printer():
-	def __init__(self, gcodeManager):
+	def __init__(self, fileManager, analysisQueue):
 		from collections import deque
 
-		self._gcodeManager = gcodeManager
-		self._gcodeManager.registerCallback(self)
+		self._logger = logging.getLogger(__name__)
+
+		self._analysisQueue = analysisQueue
+		self._fileManager = fileManager
 
 		# state
 		self._temps = deque([], 300)
@@ -168,40 +170,32 @@ class Printer():
 	def _sendAddTemperatureCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addTemperature(data)
-			except: pass
+			except: self._logger.exception("Exception while adding temperature data point")
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addLog(data)
-			except: pass
+			except: self._logger.exception("Exception while adding communication log entry")
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addMessage(data)
-			except: pass
+			except: self._logger.exception("Exception while adding printer message")
 
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.sendCurrentData(copy.deepcopy(data))
-			except: pass
+			except: self._logger.exception("Exception while pushing current data")
 
 	def _sendTriggerUpdateCallbacks(self, type):
 		for callback in self._callbacks:
 			try: callback.sendEvent(type)
-			except: pass
+			except: self._logger.exception("Exception while pushing trigger update")
 
 	def _sendFeedbackCommandOutput(self, name, output):
 		for callback in self._callbacks:
 			try: callback.sendFeedbackCommandOutput(name, output)
-			except: pass
-
-	#~~ callback from gcodemanager
-
-	def sendUpdateTrigger(self, type):
-		if type == "gcodeFiles" and self._selectedFile:
-			self._setJobData(self._selectedFile["filename"],
-				self._selectedFile["filesize"],
-				self._selectedFile["sd"])
+			except: self._logger.exception("Exception while pushing feedback command output")
 
 	#~~ callbacks from protocol
 
@@ -213,18 +207,14 @@ class Printer():
 		if oldState == ProtocolState.PRINTING:
 			if self._selectedFile is not None:
 				if newState == ProtocolState.OPERATIONAL:
-					self._gcodeManager.printSucceeded(self._selectedFile["filename"], self._protocol.get_print_time())
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._protocol.get_print_time(), True)
 				elif newState == ProtocolState.OFFLINE or newState == ProtocolState.ERROR:
-					self._gcodeManager.printFailed(self._selectedFile["filename"], self._protocol.get_print_time())
-
-			# printing done, put those cpu cycles to good use
-			self._gcodeManager.resumeAnalysis()
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._protocol.get_print_time(), False)
+			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif newState == ProtocolState.PRINTING:
-			# do not analyse gcode while printing
-			self._gcodeManager.pauseAnalysis()
+			self._analysisQueue.pause()  # do not analyse files while printing
 
 		self._setState(newState)
-		pass
 
 	def onTemperatureUpdate(self, source, temperatureData):
 		if not source == self._protocol:
@@ -442,7 +432,7 @@ class Printer():
 
 		# mark print as failure
 		if self._selectedFile is not None:
-			self._gcodeManager.printFailed(self._selectedFile["filename"], self._protocol.get_print_time())
+			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._protocol.get_print_time(), False)
 			payload = {
 				"file": self._selectedFile["filename"],
 				"origin": FileDestinations.LOCAL
@@ -525,13 +515,16 @@ class Printer():
 			if not sd:
 				date = int(os.stat(filename).st_ctime)
 
-			fileData = self._gcodeManager.getFileData(filename)
+			try:
+				fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, filename)
+			except:
+				fileData = None
 			if fileData is not None:
-				if "gcodeAnalysis" in fileData:
-					if estimatedPrintTime is None and "estimatedPrintTime" in fileData["gcodeAnalysis"]:
-						estimatedPrintTime = fileData["gcodeAnalysis"]["estimatedPrintTime"]
-					if "filament" in fileData["gcodeAnalysis"].keys():
-						filament = fileData["gcodeAnalysis"]["filament"]
+				if "analysis" in fileData:
+					if estimatedPrintTime is None and "estimatedPrintTime" in fileData["analysis"]:
+						estimatedPrintTime = fileData["analysis"]["estimatedPrintTime"]
+					if "filament" in fileData["analysis"].keys():
+						filament = fileData["analysis"]["filament"]
 				if "prints" in fileData and fileData["prints"] and "last" in fileData["prints"] and fileData["prints"]["last"] and "lastPrintTime" in fileData["prints"]["last"]:
 					lastPrintTime = fileData["prints"]["last"]["lastPrintTime"]
 

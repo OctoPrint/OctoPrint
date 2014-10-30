@@ -20,7 +20,7 @@ _instance = None
 
 
 def all_events():
-	return [name for name in Events.__dict__ if not name.startswith("__")]
+	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("__")]
 
 
 class Events(object):
@@ -79,6 +79,7 @@ class Events(object):
 	SLICING_STARTED = "SlicingStarted"
 	SLICING_DONE = "SlicingDone"
 	SLICING_FAILED = "SlicingFailed"
+	SLICING_CANCELLED = "SlicingCancelled"
 
 
 def eventManager():
@@ -132,6 +133,15 @@ class EventManager(object):
 		"""
 
 		self._queue.put((event, payload), 0)
+
+		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
+			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
+			# TODO v1.3.0 Remove again
+			import copy
+			legacy_payload = copy.deepcopy(payload)
+			legacy_payload["type"] = "gcode"
+			self._queue.put((event, legacy_payload), 0)
+
 
 	def subscribe(self, event, callback):
 		"""

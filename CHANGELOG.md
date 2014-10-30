@@ -28,18 +28,43 @@
 * Start counting the layers at 1 instead of 0 in the GCODE viewer
 * Upgraded [Font Awesome](https://fortawesome.github.io/Font-Awesome/) to version 3.2.1
 * Better error reporting for timelapse rendering and system commands
-* Supports
+* Custom control can now be defined so that they show a Confirm dialog with configurable text before executing 
+  ([#532](https://github.com/foosel/OctoPrint/issues/532) and [#590](https://github.com/foosel/OctoPrint/pull/590))
+* Slicing has been greatly improved:
+  * It now allows for a definition of slicing profiles to use for slicing plus overrides which can be defined per slicing 
+    job (defining overrides is not yet part of the UI but it's on the roadmap). 
+  * Slicers themselves are integrated into the system via ``SlicingPlugins``. 
+  * The [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the 
+    [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See 
+    [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to 
+    accommodate the new integration.
+  * The "Slicing done" notification is now colored green ([#558](https://github.com/foosel/OctoPrint/issues/558)).
+* File management now supports STL files as first class citizens (including UI adjustments to allow management of
+  uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
 
 ### Bug Fixes
 
 * [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
   as 0
+* Various fixes of bugs in newly introduced features and improvements:
+  * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
+    queue
 
 ## 1.1.1 (Unreleased)
+
+### Improvements
+
+* The API is now enabled by default and the API key -- if not yet set -- will be automatically generated on first
+  server start and written back into ``config.yaml``
+* Event subscriptions are now enabled by default (it was an accident that they weren't)
+* Generate the key used for session hashing individually for each server instance
+* Generate the salt used for hashing user passwords individually for each server instance
 
 ### Bug Fixes
 
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
+* [#604](https://github.com/foosel/OctoPrint/issues/604) - Properly initialize settings basedir on server startup
+* [IRC] Also allow downloading .g files via Tornado
 
 ## 1.1.0 (2014-09-03)
 

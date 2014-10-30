@@ -190,6 +190,15 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         if (!command)
             return;
 
+        var callback = function (){
+            $.ajax({
+                url: API_BASEURL + "printer/command",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify(data)
+            })
+        }
         var data = undefined;
         if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
             // single command
@@ -207,16 +216,25 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             }
         }
 
+        if (command.confirm) {
+            var confirmationDialog = $("#confirmation_dialog");
+            var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+
+            $(".confirmation_dialog_message", confirmationDialog).text(command.confirm);
+            confirmationDialogAck.unbind("click");
+            confirmationDialogAck.bind("click", function(e) {
+                e.preventDefault();
+                $("#confirmation_dialog").modal("hide");
+                callback();
+            });
+            confirmationDialog.modal("show");
+        } else {
+            callback();
+        }
+
         if (data === undefined)
             return;
 
-        $.ajax({
-            url: API_BASEURL + "printer/command",
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data)
-        })
     };
 
     self.displayMode = function(customControl) {

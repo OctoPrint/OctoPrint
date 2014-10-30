@@ -83,10 +83,10 @@ del get_uuid
 def get_instance_name():
 	name = s.globalGet(["appearance", "name"])
 	if name:
-		return "OctoPrint instance \"{}\"".format(name)
+		return u"OctoPrint instance \"{}\"".format(name)
 	else:
 		import socket
-		return "OctoPrint instance on {}".format(socket.gethostname())
+		return u"OctoPrint instance on {}".format(socket.gethostname())
 
 
 #~~ custom blueprint for providing discovery.xml
@@ -221,7 +221,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		key = (reg_type, port)
 		self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
-		self.logger.info("Registered {name} for {reg_type}".format(**locals()))
+		self.logger.info(u"Registered {name} for {reg_type}".format(**locals()))
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
@@ -660,7 +660,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.__class__.ssdp_multicast_addr) + socket.inet_aton('0.0.0.0'))
 
-		self.logger.info("Registered {} for SSDP".format(get_instance_name()))
+		self.logger.info(u"Registered {} for SSDP".format(get_instance_name()))
 
 		self._ssdp_notify(alive=True)
 

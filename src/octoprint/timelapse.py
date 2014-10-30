@@ -61,7 +61,7 @@ def notifyCallbacks(timelapse):
 		config = timelapse.configData()
 	for callback in updateCallbacks:
 		try: callback.sendTimelapseConfig(config)
-		except: pass
+		except: logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
 
 
 def configureTimelapse(config=None, persist=False):
