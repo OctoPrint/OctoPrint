@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from flask.ext.login import UserMixin
 from flask.ext.principal import Identity
+from werkzeug.local import LocalProxy
 import hashlib
 import os
 import yaml
@@ -27,7 +28,9 @@ class UserManager(object):
 	def login_user(self, user):
 		self._cleanup_sessions()
 
-		if user is None:
+		if user is None \
+		        or (isinstance(user, LocalProxy) and not isinstance(user._get_current_object(), User)) \
+		        or (not isinstance(user, LocalProxy) and not isinstance(user, User)):
 			return None
 
 		if not isinstance(user, SessionUser):
