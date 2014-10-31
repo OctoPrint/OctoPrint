@@ -15,8 +15,8 @@ from octoprint.comm.protocol import ProtocolListener, State, Protocol, PrintingS
 from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, PrintingGcodeFileInformation, \
 	StreamingGcodeFileInformation
 from octoprint.comm.transport import TransportProperties
+from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.gcodefiles import isGcodeFileName
 from octoprint.comm.transport.serialTransport import SerialTransport
 from octoprint.settings import settings
 
@@ -326,9 +326,9 @@ class RepRapProtocol(Protocol):
 		if isinstance(current_file, StreamingGcodeFileInformation):
 			self.send_manually(RepRapProtocol.COMMAND_SD_END_WRITE(current_file.getRemoteFilename()))
 			eventManager().fire(Events.TRANSFER_DONE, {
-				"local": local,
-				"remote": remote,
-				"time": self.getPrintTime()
+				"local": current_file.getLocalFilename(),
+				"remote": current_file.getRemoteFilename(),
+				"time": self.get_print_time()
 			})
 		else:
 			self._logger.warn("Finished file transfer to printer's SD card, but could not determine remote filename, assuming 'unknown.gco' for end-write-command")
@@ -392,7 +392,7 @@ class RepRapProtocol(Protocol):
 				filename = fileinfo[0].lower()
 				size = None
 
-			if isGcodeFileName(filename):
+			if valid_file_type(filename, "gcode"):
 				if filterNonAscii(filename):
 					self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 				else:
