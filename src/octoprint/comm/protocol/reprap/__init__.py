@@ -454,7 +454,6 @@ class RepRapProtocol(Protocol):
 	def onTimeoutReceived(self, source):
 		if self._transport != source:
 			return
-		self._logger.warn("Communication timeout")
 		# allow sending to restart communcation
 		if self._state != State.OFFLINE:
 			self._clear_for_send.set()
