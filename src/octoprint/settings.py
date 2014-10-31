@@ -101,7 +101,7 @@ default_settings = {
 	"feature": {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
-		"alwaysSendChecksum": False,
+		"alwaysSendChecksum": True,
 		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
