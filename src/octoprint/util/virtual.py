@@ -66,7 +66,7 @@ class VirtualPrinter():
 
 	def _clearQueue(self, queue):
 		try:
-			while queue.get():
+			while queue.get(block=False):
 				continue
 		except Queue.Empty:
 			pass
@@ -76,7 +76,7 @@ class VirtualPrinter():
 			self._simulateTemps()
 
 			try:
-				data = self.incoming.get(timeout=0.5)
+				data = self.incoming.get(timeout=0.01)
 			except Queue.Empty:
 				continue
 
@@ -111,8 +111,8 @@ class VirtualPrinter():
 					continue
 				elif self.currentLine == 100:
 					# simulate a resend at line 100 of the last 5 lines
-					self._clearQueue(self.incoming)
 					self.lastN = 94
+					self._clearQueue(self.incoming)
 					self.outgoing.put("Error: Line Number is not Last Line Number\n")
 					self.outgoing.put("rs %d\n" % (self.currentLine - 5))
 					self.outgoing.put("ok")
