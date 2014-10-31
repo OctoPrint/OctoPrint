@@ -185,10 +185,10 @@ class RepRapProtocol(Protocol):
 		# enqueue our first temperature query so it get's sent right on establishment of the connection
 		self._send_temperature_query(withType=True)
 
-	def disconnect(self):
+	def disconnect(self, on_error=False):
 		self._clear_for_send.clear()
 		# disconnect
-		Protocol.disconnect(self)
+		Protocol.disconnect(self, on_error=on_error)
 
 	def select_file(self, filename, origin):
 		if origin == FileDestinations.SDCARD:
