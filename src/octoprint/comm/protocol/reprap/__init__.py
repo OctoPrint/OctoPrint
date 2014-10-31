@@ -345,27 +345,6 @@ class RepRapProtocol(Protocol):
 			self._handle_resend_request(message)
 			return
 
-		if self._resend_delta is None and not self.is_streaming():
-			if time.time() > self._lastTemperatureUpdate + 5:
-				self._send_temperature_query(withType=True)
-			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
-				self._send_sd_progress_query(withType=True)
-
-		# ok == go ahead with sending
-		if RepRapProtocol.MESSAGE_OK(message):
-			if self._state == State.CONNECTED and self._startSeen:
-				# if we are currently connected, have seen start and just gotten an "ok" we are now operational
-				self._changeState(State.OPERATIONAL)
-			if self.is_heating_up():
-				self._heatupDone()
-
-			# lower cache fill count since the command went through
-			with self._nack_lock:
-				if len(self._nack_lines) > 0:
-					self._nack_lines.popleft()
-			self._clear_for_send.set()
-			return
-
 		if RepRapProtocol.MESSAGE_WAIT(message):
 			with self._nack_lock:
 				self._clear_for_send.set()
@@ -450,6 +429,27 @@ class RepRapProtocol(Protocol):
 			# otherwise we did not see "start" from the firmware yet and we just did; we are cleared for sending
 			self._startSeen = True
 			self._clear_for_send.set()
+
+		if self._resend_delta is None and not self.is_streaming():
+			if time.time() > self._lastTemperatureUpdate + 5:
+				self._send_temperature_query(withType=True)
+			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
+				self._send_sd_progress_query(withType=True)
+
+		# ok == go ahead with sending
+		if RepRapProtocol.MESSAGE_OK(message):
+			if self._state == State.CONNECTED and self._startSeen:
+				# if we are currently connected, have seen start and just gotten an "ok" we are now operational
+				self._changeState(State.OPERATIONAL)
+			if self.is_heating_up():
+				self._heatupDone()
+
+			# lower cache fill count since the command went through
+			with self._nack_lock:
+				if len(self._nack_lines) > 0:
+					self._nack_lines.popleft()
+			self._clear_for_send.set()
+			return
 
 	def onTimeoutReceived(self, source):
 		if self._transport != source:
