@@ -628,9 +628,6 @@ class RepRapProtocol(Protocol):
 				self._resend_delta = None
 				self._send(RepRapProtocol.COMMAND_SET_LINE(0))
 
-	def _useChecksum(self):
-		return settings().getBoolean(["feature", "alwaysSendChecksum"])
-
 	##~~ specific command actions
 
 	def _gcode_T(self, command, with_checksum, with_line_number):
