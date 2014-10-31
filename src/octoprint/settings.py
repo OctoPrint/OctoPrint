@@ -200,7 +200,8 @@ default_settings = {
 			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
-			"waitOnLongMoves": False
+			"waitOnLongMoves": False,
+			"maxBufferedGCommands": 5
 		}
 	}
 }
