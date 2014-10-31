@@ -146,6 +146,8 @@ class RepRapProtocol(Protocol):
 		self._currentExtruder = 0
 		self._state = State.OFFLINE
 
+		self._line_lock = threading.RLock()
+
 		self._reset()
 
 	def _reset(self):
@@ -171,7 +173,8 @@ class RepRapProtocol(Protocol):
 		self._force_checksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._nack_lines.clear()
 
-		self._current_line = 1
+		with self._line_lock:
+			self._current_line = 1
 		self._currentExtruder = 0
 
 	def connect(self, opt):
@@ -493,12 +496,13 @@ class RepRapProtocol(Protocol):
 	def _send_next(self):
 		if self._resend_delta is not None:
 			command = self._last_lines[-self._resend_delta]
-			lineNumber = self._current_line - self._resend_delta
-			self._send(command, withLinenumber=lineNumber)
+			with self._line_lock:
+				lineNumber = self._current_line - self._resend_delta
+				self._send(command, withLinenumber=lineNumber)
 
-			self._resend_delta -= 1
-			if self._resend_delta <= 0:
-				self._resend_delta = None
+				self._resend_delta -= 1
+				if self._resend_delta <= 0:
+					self._resend_delta = None
 		else:
 			command = self._current_file.getNext()
 			if command is None:
@@ -609,29 +613,30 @@ class RepRapProtocol(Protocol):
 				line_to_resend = int(message.split()[1])
 
 		if line_to_resend is not None:
-			self._resend_delta = self._current_line - line_to_resend
+			with self._line_lock:
+				self._resend_delta = self._current_line - line_to_resend
 
-			try:
-				while self._send_queue.get(block=False):
-					continue
-			except Queue.Empty:
-				pass
+				try:
+					while not self._send_queue.empty():
+						self._send_queue.get(False)
+				except Queue.Empty:
+					pass
 
-			if self._resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or self._resend_delta <= 0:
-				error = "Printer requested line %d but no sufficient history is available, can't resend" % line_to_resend
-				self._logger.warn(error)
-				if self.is_printing():
-					# abort the print, there's nothing we can do to rescue it now
-					self.onError(error)
-				else:
-					# reset resend delta, we can't do anything about it
+				if self._resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or self._resend_delta <= 0:
+					error = "Printer requested line %d but no sufficient history is available, can't resend" % line_to_resend
+					self._logger.warn(error)
+					if self.is_printing():
+						# abort the print, there's nothing we can do to rescue it now
+						self.onError(error)
+					else:
+						# reset resend delta, we can't do anything about it
+						self._resend_delta = None
+
+					# reset line number local and remote
+					self._current_line = 1
+					self._last_lines.clear()
 					self._resend_delta = None
-
-				# reset line number local and remote
-				self._current_line = 1
-				self._last_lines.clear()
-				self._resend_delta = None
-				self._send(RepRapProtocol.COMMAND_SET_LINE(0))
+					self._send(RepRapProtocol.COMMAND_SET_LINE(0))
 
 	##~~ specific command actions
 
@@ -684,11 +689,12 @@ class RepRapProtocol(Protocol):
 		else:
 			new_line_number = 0
 
-		self._current_line = new_line_number + 1
+		with self._line_lock:
+			self._current_line = new_line_number + 1
 
-		# after a reset of the line number we have no way to determine what line exactly the printer now wants
-		self._last_lines.clear()
-		self._resend_delta = None
+			# after a reset of the line number we have no way to determine what line exactly the printer now wants
+			self._last_lines.clear()
+			self._resend_delta = None
 
 		# send M110 command with new line number
 		return command, with_checksum, new_line_number
@@ -764,15 +770,16 @@ class RepRapProtocol(Protocol):
 				return None
 
 		if with_checksum:
-			if with_line_number is not None:
-				command_to_send = "N%d %s" % (with_line_number, str(command))
-			else:
-				command_to_send = "N%d %s" % (self._current_line, str(command))
+			with self._line_lock:
+				if with_line_number is not None:
+					command_to_send = "N%d %s" % (with_line_number, str(command))
+				else:
+					command_to_send = "N%d %s" % (self._current_line, str(command))
 
-			checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
+				checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
 
-			if with_line_number is None:
-				self._current_line += 1
+				if with_line_number is None:
+					self._current_line += 1
 
 			return "%s*%d" % (command_to_send, checksum)
 		else:
@@ -780,7 +787,8 @@ class RepRapProtocol(Protocol):
 
 	def _rollback_preprocessing(self, command, with_checksum=False, with_line_number=None):
 		if with_checksum and with_line_number is None:
-			self._current_line -= 1
+			with self._line_lock:
+				self._current_line -= 1
 
 
 class NopContext(object):
