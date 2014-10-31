@@ -100,6 +100,7 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
+		"pingPong": False,
 		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,

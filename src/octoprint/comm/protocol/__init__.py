@@ -61,6 +61,15 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		self._transport.connect(opt)
 
 	def disconnect(self, on_error=False):
+		if self.is_printing():
+			payload = None
+			if self._current_file is not None:
+				payload = {
+					"file": self._current_file.getFilename(),
+					"filename": os.path.basename(self._current_file.getFilename()),
+					"origin": self._current_file.getFileLocation()
+				}
+			eventManager().fire(Events.PRINT_FAILED, payload)
 		self._transport.disconnect(on_error)
 
 	def send_manually(self, command, high_priority=False):
@@ -79,18 +88,33 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		self._heatup_start_time = None
 		self._heatup_time_lost = 0.0
 
-		self._changeState(State.PRINTING)
 		self._current_file.start()
+		self._changeState(State.PRINTING)
+		eventManager().fire(Events.PRINT_STARTED, {
+			"file": self._current_file.getFilename(),
+			"filename": os.path.basename(self._current_file.getFilename()),
+			"origin": self._current_file.getFileLocation()
+		})
 
 	def pause_print(self):
+		payload = {
+			"file": self._current_file.getFilename(),
+			"filename": os.path.basename(self._current_file.getFilename()),
+			"origin": self._current_file.getFileLocation()
+		}
+
 		if self._state == State.PRINTING:
 			self._changeState(State.PAUSED)
+			eventManager().fire(Events.PRINT_PAUSED, payload)
+
 		elif self._state == State.PAUSED:
 			self._changeState(State.PRINTING)
+			eventManager().fire(Events.PRINT_RESUMED, payload)
 
 	def cancel_print(self):
 		eventManager().fire(Events.PRINT_CANCELLED, {
 			"file": self._current_file.getFilename(),
+			"filename": os.path.basename(self._current_file.getFilename()),
 			"origin": self._current_file.getFileLocation()
 		})
 		self._changeState(State.OPERATIONAL)
