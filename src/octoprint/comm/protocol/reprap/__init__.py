@@ -11,13 +11,11 @@ __copyright__ = "Copyright (C) 2014 Gina Häußge - Released under terms of the 
 import re
 import threading
 import time
-from octoprint.comm.protocol import ProtocolListener, State, Protocol, PrintingSdFileInformation
+from octoprint.comm.protocol import State, Protocol, PrintingSdFileInformation
 from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, PrintingGcodeFileInformation, \
-	StreamingGcodeFileInformation
-from octoprint.comm.transport import TransportProperties
+	StreamingGcodeFileInformation, TypeAlreadyInQueue
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.comm.transport.serialTransport import SerialTransport
 from octoprint.settings import settings
 
 
@@ -467,6 +465,9 @@ class RepRapProtocol(Protocol):
 		return True
 
 	def _send(self, command, highPriority=False, commandType=None, withChecksum=None, withLinenumber=None):
+		if command is None:
+			return
+
 		if withChecksum is None:
 			withChecksum = self._force_checksum
 
@@ -478,13 +479,16 @@ class RepRapProtocol(Protocol):
 			command = GcodeCommand.from_line(command)
 		preprocessed = self._preprocess_command(command, with_checksum=withChecksum, with_line_number=withLinenumber)
 
-		if withChecksum == False:
-			command = None
+		if preprocessed is None:
+			return
 
-		if commandType is not None:
-			self._send_queue.put((priority, command, preprocessed, commandType))
-		else:
-			self._send_queue.put((priority, command, preprocessed))
+		try:
+			if commandType is not None:
+				self._send_queue.put((priority, command, preprocessed, commandType))
+			else:
+				self._send_queue.put((priority, command, preprocessed))
+		except TypeAlreadyInQueue:
+			self._rollback_preprocessing(command, with_checksum=withChecksum, with_line_number=withLinenumber)
 
 	# Called only from worker thread, not thread safe
 	def _send_next(self):
@@ -607,11 +611,13 @@ class RepRapProtocol(Protocol):
 
 		if line_to_resend is not None:
 			self._resend_delta = self._current_line - line_to_resend
+
 			try:
-				while not self._send_queue.empty():
-					self._send_queue.get(False)
+				while self._send_queue.get(block=False):
+					continue
 			except Queue.Empty:
 				pass
+
 			if self._resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or self._resend_delta <= 0:
 				error = "Printer requested line %d but no sufficient history is available, can't resend" % line_to_resend
 				self._logger.warn(error)
@@ -773,49 +779,14 @@ class RepRapProtocol(Protocol):
 		else:
 			return str(command)
 
+	def _rollback_preprocessing(self, command, with_checksum=False, with_line_number=None):
+		if with_checksum and with_line_number is None:
+			self._current_line -= 1
 
-if __name__ == "__main__":
-	from octoprint.settings import settings
-	settings(True)
 
-	class DummyProtocolListener(ProtocolListener):
-		def __init__(self):
-			self.firstPrint = True
+class NopContext(object):
+	def __enter__(self):
+		pass
 
-		def onStateChange(self, source, oldState, newState):
-			print "New State: %s" % newState
-			if newState == State.OPERATIONAL and self.firstPrint:
-				self.firstPrint = False
-				print "Selecting file and starting print job"
-				protocol.select_file("C:/Users/Gina/AppData/Roaming/OctoPrint/uploads/whistle.gcode", FileDestinations.LOCAL)
-				protocol.start_print()
-
-		def onTemperatureUpdate(self, source, temperatureData):
-			print "### Temperature update: %r" % temperatureData
-
-		def onPrintjobDone(self, source):
-			print "### Printjob done!"
-
-		def onSdFiles(self, source, files):
-			print "### SD Files: %r" % files
-
-		def onProgress(self, source, progress):
-			print "### Progress: %r" % progress
-
-		def onLogTx(self, source, tx):
-			print ">> %s" % tx
-
-		def onLogRx(self, source, rx):
-			print "<< %s" % rx
-
-		def onLogError(self, source, error):
-			print "Error: %s" % error
-
-	protocol = RepRapProtocol(SerialTransport, protocol_listener=DummyProtocolListener())
-	#from octoprint.comm.protocol.repetier import RepetierTextualProtocol
-	#protocol = RepetierTextualProtocol(SerialTransport, protocolListener=DummyProtocolListener())
-	protocol.connect({"port": "VIRTUAL"})
-
-	import time
-	while True:
-		time.sleep(0.1)
+	def __exit__(self, *args):
+		pass

@@ -131,7 +131,7 @@ class CommandQueue(Queue.Queue):
 			if commandType not in self.lookup:
 				self.lookup[commandType] = item
 			else:
-				return
+				raise TypeAlreadyInQueue()
 
 		heappush(self.queue, (priority, next(self.counter), command, preprocessed, commandType))
 
@@ -144,6 +144,9 @@ class CommandQueue(Queue.Queue):
 	def peek(self):
 		priority, count, command, preprocessed, commandType = self.queue[0]
 		return priority, command, preprocessed, commandType
+
+class TypeAlreadyInQueue(Exception):
+	pass
 
 class PrintingGcodeFileInformation(PrintingFileInformation):
 	"""
