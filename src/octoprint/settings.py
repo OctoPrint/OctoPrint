@@ -172,6 +172,7 @@ default_settings = {
 			"includeCurrentToolInTemps": True,
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
+			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False
 		}
 	}

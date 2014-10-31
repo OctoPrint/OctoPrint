@@ -213,6 +213,9 @@ class VirtualPrinter():
 				allTemps.append((i, self.temp[i], self.targetTemp[i]))
 			allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x if includeTarget else "T%d:%.2f" % (x[0], x[1]), allTemps))
 
+			if settings().getBoolean(["devel", "virtualPrinter", "smoothieTemperatureReporting"]):
+				allTempsString = allTempsString.replace("T0:", "T:")
+
 			if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
 				if includeTarget:
 					allTempsString = "B:%.2f /%.2f %s" % (self.bedTemp, self.bedTargetTemp, allTempsString)
