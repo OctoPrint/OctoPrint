@@ -197,6 +197,7 @@ default_settings = {
 			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
+			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
 			"waitOnLongMoves": False
