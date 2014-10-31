@@ -259,7 +259,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.feature_temperatureGraph(response.feature.temperatureGraph);
         self.feature_waitForStart(response.feature.waitForStart);
         self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
-        self.feature_pingPong(response.feature.pingPong);
         self.feature_sdSupport(response.feature.sdSupport);
         self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
         self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
@@ -332,7 +331,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "temperatureGraph": self.feature_temperatureGraph(),
                 "waitForStart": self.feature_waitForStart(),
                 "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
-                "pingPong": self.feature_pingPong(),
                 "sdSupport": self.feature_sdSupport(),
                 "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
                 "swallowOkAfterResend": self.feature_swallowOkAfterResend(),

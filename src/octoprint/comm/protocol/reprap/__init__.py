@@ -130,9 +130,7 @@ class RepRapProtocol(Protocol):
 		self._last_resend_request = None
 
 		self._force_checksum = False
-		self._pingpong = False
-		self._rx_cache_fill = 0
-		self._rx_cache_size = 127
+		self._rx_cache_size = settings().getInt(["communication", "protocolOptions", "buffer"])
 		self._nack_lines = deque([])
 		self._nack_lock = threading.Lock()
 
@@ -172,9 +170,7 @@ class RepRapProtocol(Protocol):
 		self._resend_delta = None
 		self._last_resend_request = None
 
-		self._force_checksum = self._useChecksum()
-		self._pingpong = self._usePingPong()
-		self._rx_cache_fill = 0
+		self._force_checksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._nack_lines.clear()
 
 		self._current_line = 1
@@ -347,7 +343,6 @@ class RepRapProtocol(Protocol):
 		if RepRapProtocol.MESSAGE_RESEND(message):
 			# zero cache fill count
 			with self._nack_lock:
-				self._rx_cache_fill = 0
 				self._nack_lines.clear()
 			self._handle_resend_request(message)
 			return
@@ -369,7 +364,7 @@ class RepRapProtocol(Protocol):
 			# lower cache fill count since the command went through
 			with self._nack_lock:
 				if len(self._nack_lines) > 0:
-					self._rx_cache_fill -= self._nack_lines.popleft()
+					self._nack_lines.popleft()
 			self._clear_for_send.set()
 			return
 
@@ -465,7 +460,6 @@ class RepRapProtocol(Protocol):
 		# allow sending to restart communcation
 		if self._state != State.OFFLINE:
 			self._clear_for_send.set()
-
 
 	##~~ private
 
@@ -637,9 +631,6 @@ class RepRapProtocol(Protocol):
 	def _useChecksum(self):
 		return settings().getBoolean(["feature", "alwaysSendChecksum"])
 
-	def _usePingPong(self):
-		return settings().getBoolean(["feature", "pingPong"])
-
 	##~~ specific command actions
 
 	def _gcode_T(self, command, with_checksum, with_line_number):
@@ -712,10 +703,12 @@ class RepRapProtocol(Protocol):
 			# queue is full, wait a bit before checking again
 			if self._send_queue.qsize() > 20:
 				time.sleep(0.05)
-			# -send_next only if printing (not SD) or streaming
+
+			# send_next only if printing (not SD) or streaming
 			elif ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
 			     or self._state == State.STREAMING):
 				self._send_next()
+
 			# not printing or streaming
 			else:
 				time.sleep(0.1)
@@ -738,14 +731,13 @@ class RepRapProtocol(Protocol):
 			size = len(preprocessed) + 1
 			# deassert _clear_for_send to wait for an "ok" if cache full
 			self._nack_lock.acquire()
-			if self._rx_cache_fill + size > self._rx_cache_size:
+			if sum(self._nack_lines) + size > self._rx_cache_size > 0:
 				self._nack_lock.release()
 				self._clear_for_send.clear()
 				self._clear_for_send.wait()
 				continue
 			# put tx size into the list so we can pop it later when we get "ok"
 			self._nack_lines.append(size)
-			self._rx_cache_fill += size
 			self._nack_lock.release()
 			# send the command
 			self._transport.send(preprocessed)
@@ -754,7 +746,7 @@ class RepRapProtocol(Protocol):
 
 			if command is not None:
 				self._last_lines.append(command)
-			if self._pingpong == True:
+			if self._rx_cache_size <= 0:
 				self._clear_for_send.clear()
 				self._clear_for_send.wait()
 

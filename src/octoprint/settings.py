@@ -25,7 +25,9 @@ def settings(init=False, configfile=None, basedir=None):
 default_settings = {
 	"communication": {
 		"protocol": "reprap",
-		"protocolOptions": {},
+		"protocolOptions": {
+			"buffer": 0
+		},
 		"transport": "serial",
 		"transportOptions": {
 			"port": None,
@@ -100,7 +102,6 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"pingPong": False,
 		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
