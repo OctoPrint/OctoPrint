@@ -809,7 +809,7 @@ def get_versions(default={}, verbose=False):
 
 """
 
-DEFAULT = {"version": "unknown", "full": "unknown"}
+DEFAULT = {"version": "unknown", "full": "unknown", "branch": ""}
 
 def versions_from_file(filename):
     versions = {}
