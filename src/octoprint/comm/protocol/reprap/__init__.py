@@ -12,7 +12,7 @@ import re
 import threading
 import time
 from octoprint.comm.protocol import State, Protocol, PrintingSdFileInformation
-from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, PrintingGcodeFileInformation, \
+from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, CommandQueueEntry, PrintingGcodeFileInformation, \
 	StreamingGcodeFileInformation, TypeAlreadyInQueue
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
@@ -50,6 +50,8 @@ class RepRapProtocol(Protocol):
 															or 'no line number with checksum' in line.lower()
 															or 'no checksum with line number' in line.lower()
 															or 'missing checksum' in line.lower())
+	MESSAGE_ERROR_COMMUNICATION_LINENUMBER = staticmethod(lambda line: 'line number is not line number' in line.lower()
+															or 'expected line' in line.lower())
 	MESSAGE_RESEND = staticmethod(lambda line: line.lower().startswith("resend") or line.lower().startswith("rs"))
 
 	TRANSFORM_ERROR = staticmethod(lambda line: line[6:] if line.startswith("Error:") else line[2:])
@@ -123,14 +125,16 @@ class RepRapProtocol(Protocol):
 
 		self._clear_for_send = threading.Event()
 
-		self._last_lines = deque([], 50)
-		self._resend_delta = None
-		self._last_resend_request = None
-
 		self._force_checksum = False
 		self._rx_cache_size = settings().getInt(["communication", "protocolOptions", "buffer"])
 		self._nack_lines = deque([])
-		self._nack_lock = threading.Lock()
+		self._nack_lock = threading.RLock()
+
+		self._previous_resend = False
+		self._last_comm_error = None
+		self._last_resend_number = None
+		self._current_resend_count = 0
+		self._nacks_before_resend = 0
 
 		self._send_queue_processing = True
 		self._thread = threading.Thread(target=self._handle_send_queue, name="SendQueueHandler")
@@ -145,8 +149,6 @@ class RepRapProtocol(Protocol):
 		self._current_line = 1
 		self._currentExtruder = 0
 		self._state = State.OFFLINE
-
-		self._line_lock = threading.RLock()
 
 		self._reset()
 
@@ -166,16 +168,20 @@ class RepRapProtocol(Protocol):
 		# create a new queue to clear the old one
 		self._send_queue = CommandQueue()
 
-		self._last_lines.clear()
-		self._resend_delta = None
-		self._last_resend_request = None
-
 		self._force_checksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-		self._nack_lines.clear()
 
-		with self._line_lock:
+		with self._nack_lock:
+			self._nack_lines.clear()
 			self._current_line = 1
 		self._currentExtruder = 0
+
+		self._previous_resend = False
+		self._last_comm_error = None
+		self._last_resend_number = None
+		self._current_resend_count = 0
+		self._nacks_before_resend = 0
+
+
 
 	def connect(self, opt):
 		self._reset()
@@ -183,7 +189,7 @@ class RepRapProtocol(Protocol):
 		# connect
 		Protocol.connect(self, opt)
 
-		# enqueue our first temperature query so it get's sent right on establishment of the connection
+		# enqueue our first temperature query so it gets sent right on establishment of the connection
 		self._send_temperature_query(withType=True)
 
 	def disconnect(self, on_error=False):
@@ -342,15 +348,13 @@ class RepRapProtocol(Protocol):
 
 		# resend == roll back time a bit
 		if RepRapProtocol.MESSAGE_RESEND(message):
-			# zero cache fill count
-			with self._nack_lock:
-				self._nack_lines.clear()
+			self._previous_resend = True
 			self._handle_resend_request(message)
 			return
 
 		if RepRapProtocol.MESSAGE_WAIT(message):
-			with self._nack_lock:
-				self._clear_for_send.set()
+			self._clear_for_send.set()
+			# TODO really?
 
 		# SD file list
 		if self._receivingSdFileList and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
@@ -433,7 +437,7 @@ class RepRapProtocol(Protocol):
 			self._startSeen = True
 			self._clear_for_send.set()
 
-		if self._resend_delta is None and not self.is_streaming():
+		if not self.is_streaming():
 			if time.time() > self._lastTemperatureUpdate + 5:
 				self._send_temperature_query(withType=True)
 			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
@@ -447,17 +451,27 @@ class RepRapProtocol(Protocol):
 			if self.is_heating_up():
 				self._heatupDone()
 
-			# lower cache fill count since the command went through
-			with self._nack_lock:
-				if len(self._nack_lines) > 0:
-					self._nack_lines.popleft()
+			if not self._previous_resend:
+				# our most left line from the nack_lines just got acknowledged
+				with self._nack_lock:
+					if len(self._nack_lines) > 0:
+						entry = self._nack_lines.popleft()
+						self._process_command(entry.command, "acknowledged", with_line_number=entry.line_number)
+						if entry.progress is not None:
+							self._reportProgress(**entry.progress)
+
+					self._last_resend_number = None
+					self._current_resend_count = 0
+					self._nacks_before_resend = 0
+			else:
+				self._previous_resend = False
 			self._clear_for_send.set()
 			return
 
 	def onTimeoutReceived(self, source):
 		if self._transport != source:
 			return
-		# allow sending to restart communcation
+		# allow sending to restart communication
 		if self._state != State.OFFLINE:
 			self._clear_for_send.set()
 
@@ -466,54 +480,39 @@ class RepRapProtocol(Protocol):
 	def _evaluate_firmware_specific_messages(self, source, message):
 		return True
 
-	def _send(self, command, highPriority=False, commandType=None, withChecksum=None, withLinenumber=None):
+	def _send(self, command, highPriority=False, commandType=None, with_progress=None):
 		if command is None:
 			return
 
-		if withChecksum is None:
-			withChecksum = self._force_checksum
-
-		priority = 100
-		if highPriority:
-			priority = 1
-
 		if not isinstance(command, GcodeCommand):
 			command = GcodeCommand.from_line(command)
-		preprocessed = self._preprocess_command(command, with_checksum=withChecksum, with_line_number=withLinenumber)
 
-		if preprocessed is None:
+		command, with_line_number = self._process_command(command, "queued")
+		if command is None:
 			return
 
 		try:
-			if commandType is not None:
-				self._send_queue.put((priority, command, preprocessed, commandType))
-			else:
-				self._send_queue.put((priority, command, preprocessed))
+			self._send_queue.put(CommandQueueEntry(
+				CommandQueueEntry.PRIORITY_HIGH if highPriority else CommandQueueEntry.PRIORITY_NORMAL,
+				command,
+				line_number=with_line_number,
+				command_type=commandType,
+				progress=with_progress)
+			)
 		except TypeAlreadyInQueue:
-			self._rollback_preprocessing(command, with_checksum=withChecksum, with_line_number=withLinenumber)
+			pass
 
 	# Called only from worker thread, not thread safe
 	def _send_next(self):
-		if self._resend_delta is not None:
-			command = self._last_lines[-self._resend_delta]
-			with self._line_lock:
-				lineNumber = self._current_line - self._resend_delta
-				self._send(command, withLinenumber=lineNumber)
+		command = self._current_file.getNext()
+		if command is None:
+			if self.is_streaming():
+				self._finishFileTransfer()
+			else:
+				self._finishPrintjob()
+			return
 
-				self._resend_delta -= 1
-				if self._resend_delta <= 0:
-					self._resend_delta = None
-		else:
-			command = self._current_file.getNext()
-			if command is None:
-				if self.is_streaming():
-					self._finishFileTransfer()
-				else:
-					self._finishPrintjob()
-				return
-
-			self._send(command)
-			self._reportProgress()
+		self._send(command, with_progress=dict(completion=self._getPrintCompletion(), filepos=self._getPrintFilepos()))
 
 	def _send_temperature_query(self, withType=False):
 		if withType:
@@ -538,6 +537,7 @@ class RepRapProtocol(Protocol):
 
 			# skip the communication errors as those get corrected via resend requests
 			if RepRapProtocol.MESSAGE_ERROR_COMMUNICATION(error):
+				self._last_comm_error = error
 				pass
 			# handle the error
 			elif not self._state == State.ERROR:
@@ -612,52 +612,81 @@ class RepRapProtocol(Protocol):
 			if "rs" in message:
 				line_to_resend = int(message.split()[1])
 
+		last_comm_error = self._last_comm_error
+		self._last_comm_error = None
+
 		if line_to_resend is not None:
-			with self._line_lock:
-				self._resend_delta = self._current_line - line_to_resend
+			with self._nack_lock:
+				if len(self._nack_lines) > 0:
+					nack_entry = self._nack_lines[0]
 
-				try:
-					while not self._send_queue.empty():
-						self._send_queue.get(False)
-				except Queue.Empty:
-					pass
-
-				if self._resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or self._resend_delta <= 0:
-					error = "Printer requested line %d but no sufficient history is available, can't resend" % line_to_resend
-					self._logger.warn(error)
-					if self.is_printing():
-						# abort the print, there's nothing we can do to rescue it now
-						self.onError(error)
+					if last_comm_error is not None and \
+							RepRapProtocol.MESSAGE_ERROR_COMMUNICATION_LINENUMBER(last_comm_error) \
+							and line_to_resend == self._last_resend_number \
+							and self._current_resend_count < self._nacks_before_resend:
+						# this resend is a complaint about the wrong line_number, we already resent the requested
+						# one and didn't see more resend requests for those yet than we had additional lines in the nack
+						# buffer back then, so this is probably caused by leftovers in the printer's receive buffer
+						# (that got sent after the firmware cleared the receive buffer but before we'd fully processed
+						# the old resend request), we'll therefore just increment our counter and ignore this
+						self._current_resend_count += 1
+						return
 					else:
-						# reset resend delta, we can't do anything about it
-						self._resend_delta = None
+						# this is either a resend request for a new line_number, or a resend request not caused by a
+						# line number mismatch, or we now saw more consecutive requests for that line number than there
+						# were additional lines in the nack buffer when we saw the first one, so we'll have to handle it
+						self._last_resend_number = line_to_resend
+						self._current_resend_count = 0
+						self._nacks_before_resend = len(self._nack_lines) - 1
 
-					# reset line number local and remote
-					self._current_line = 1
-					self._last_lines.clear()
-					self._resend_delta = None
-					self._send(RepRapProtocol.COMMAND_SET_LINE(0))
+					if nack_entry.line_number is not None and nack_entry.line_number == line_to_resend:
+						try:
+							while True:
+								entry = self._nack_lines.popleft()
+								entry.priority = CommandQueueEntry.PRIORITY_RESEND
+								self._send_queue.put(entry)
+						except IndexError:
+							# that's ok, the nack lines are just empty
+							pass
+
+						return
+
+					elif line_to_resend < nack_entry.line_number:
+						# we'll ignore that resend request since that line was already acknowledged in the past
+						return
+
+				# if we've reached this point, we could not resend the requested line
+				error = "Printer requested line %d but no sufficient history is available, can't resend" % line_to_resend
+				self._logger.warn(error)
+				if self.is_printing():
+					# abort the print, there's nothing we can do to rescue it now
+					self.onError(error)
+
+				# reset line number local and remote
+				self._current_line = 1
+				self._nack_lines.clear()
+				self._send(RepRapProtocol.COMMAND_SET_LINE(0))
 
 	##~~ specific command actions
 
-	def _gcode_T(self, command, with_checksum, with_line_number):
+	def _gcode_T_acknowledged(self, command, with_line_number):
 		self._currentExtruder = command.tool
-		return command, with_checksum, with_line_number
+		return command, with_line_number
 
-	def _gcode_G0(self, command, with_checksum, with_line_number):
+	def _gcode_G0_acknowledged(self, command, with_line_number):
 		if command.z is not None:
 			z = command.z
 			self._reportZChange(z)
-		return command, with_checksum, with_line_number
-	_gcode_G1 = _gcode_G0
+		return command, with_line_number
+	_gcode_G1_acknowledged = _gcode_G0_acknowledged
 
-	def _gcode_M0(self, command, with_checksum, with_line_number):
+	def _gcode_M0_queued(self, command, with_line_number):
 		self.pause_print()
 		# Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-		return None, with_checksum, with_line_number
-	_gcode_M1 = _gcode_M0
+		return None, with_line_number
+	_gcode_M1_queued = _gcode_M0_queued
 
-	def _gcode_M104(self, command, with_checksum, with_line_number):
+	def _gcode_M104_acknowledged(self, command, with_line_number):
 		tool = self._currentExtruder
 		if command.t is not None:
 			tool = command.t
@@ -669,10 +698,10 @@ class RepRapProtocol(Protocol):
 				self._current_temperature[tool_key] = (actual, target)
 			else:
 				self._current_temperature[tool_key] = (None, target)
-		return command, with_checksum, with_line_number
-	_gcode_M109 = _gcode_M104
+		return command, with_line_number
+	_gcode_M109_acknowledged = _gcode_M104_acknowledged
 
-	def _gcode_M140(self, command, with_checksum, with_line_number):
+	def _gcode_M140_acknowledged(self, command, with_line_number):
 		if command.s is not None:
 			target = command.s
 			if "bed" in self._current_temperature.keys() and self._current_temperature["bed"] is not None and isinstance(self._current_temperature["bed"], tuple):
@@ -680,29 +709,24 @@ class RepRapProtocol(Protocol):
 				self._current_temperature["bed"] = (actual, target)
 			else:
 				self._current_temperature["bed"] = (None, target)
-		return command, with_checksum, with_line_number
-	_gcode_M190 = _gcode_M140
+		return command, with_line_number
+	_gcode_M190_acknowledged = _gcode_M140_acknowledged
 
-	def _gcode_M110(self, command, with_checksum, with_line_number):
+	def _gcode_M110_sent(self, command, with_line_number):
 		if command.n is not None:
 			new_line_number = command.n
 		else:
 			new_line_number = 0
 
-		with self._line_lock:
+		with self._nack_lock:
 			self._current_line = new_line_number + 1
 
-			# after a reset of the line number we have no way to determine what line exactly the printer now wants
-			self._last_lines.clear()
-			self._resend_delta = None
-
 		# send M110 command with new line number
-		return command, with_checksum, new_line_number
+		return command, new_line_number
 
-	def _gcode_M112(self, command, with_checksum, with_line_number): # It's an emergency what todo? Canceling the print should be the minimum
+	def _gcode_M112_queued(self, command, with_line_number): # It's an emergency what todo? Canceling the print should be the minimum
 		self.cancel_print()
-		return command, with_checksum, with_line_number
-
+		return command, with_line_number
 
 	##~~ handle queue filling in this thread when printing or streaming
 
@@ -730,70 +754,73 @@ class RepRapProtocol(Protocol):
 				# queue is empty, wait a bit before checking again
 				time.sleep(0.1)
 				continue
-			entry = self._send_queue.peek()
-			if len(entry) == 4:
-				priority, command, preprocessed, command_type = entry
-			else:
-				priority, command, preprocessed = entry
 
-			size = len(preprocessed) + 1
 			# deassert _clear_for_send to wait for an "ok" if cache full
-			self._nack_lock.acquire()
-			if sum(self._nack_lines) + size > self._rx_cache_size > 0:
-				self._nack_lock.release()
-				self._clear_for_send.clear()
-				self._clear_for_send.wait()
-				continue
-			# put tx size into the list so we can pop it later when we get "ok"
-			self._nack_lines.append(size)
-			self._nack_lock.release()
-			# send the command
-			self._transport.send(preprocessed)
-			# remove from queue
-			self._send_queue.get()
+			with self._nack_lock:
+				sent = self._send_from_queue()
 
-			if command is not None:
-				self._last_lines.append(command)
-			if self._rx_cache_size <= 0:
+			if not sent or self._rx_cache_size <= 0:
 				self._clear_for_send.clear()
 				self._clear_for_send.wait()
 
+	def _send_from_queue(self):
+		entry = self._send_queue.peek()
+		if entry is None:
+			return False
 
-	def _preprocess_command(self, command, with_checksum=False, with_line_number=None):
+		if entry.prepared is None:
+			prepared, line_number = self._prepare_for_sending(entry.command, with_line_number=entry.line_number)
+			if prepared is None:
+				return False
+
+			entry.prepared = prepared
+			entry.line_number = line_number
+
+		if sum(self._nack_lines) + entry.size > self._rx_cache_size > 0:
+			return False
+
+		# send the command
+		self._transport.send(entry.prepared)
+		# remove from queue
+		self._send_queue.get()
+
+		# put tx size into the list so we can pop it later when we get "ok"
+		self._nack_lines.append(entry)
+
+		return True
+
+
+	def _process_command(self, command, phase, with_line_number=None):
 		if command is None:
+			return None, None, None
+
+		if not phase in ("queued", "sent", "acknowledged"):
 			return None
 
-		gcode_command_handler = "_gcode_%s" % command.command
+		gcode_command_handler = "_gcode_%s_%s" % (command.command, phase)
 		if hasattr(self, gcode_command_handler) and not self.is_streaming():
-			command, with_checksum, with_line_number = getattr(self, gcode_command_handler)(command, with_checksum, with_line_number)
-			if command is None:
-				return None
+			command, with_line_number = getattr(self, gcode_command_handler)(command, with_line_number)
 
-		if with_checksum:
-			with self._line_lock:
-				if with_line_number is not None:
-					command_to_send = "N%d %s" % (with_line_number, str(command))
-				else:
-					command_to_send = "N%d %s" % (self._current_line, str(command))
+		return command, with_line_number
 
-				checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
+	def _prepare_for_sending(self, command, with_line_number=None):
+		command, with_line_number = self._process_command(command, "sent", with_line_number=with_line_number)
+		if command is None:
+			return None, None
 
-				if with_line_number is None:
-					self._current_line += 1
+		if self._force_checksum:
+			if with_line_number is not None:
+				line_number = with_line_number
+			else:
+				line_number = self._current_line
+			command_to_send = "N%d %s" % (line_number, str(command))
 
-			return "%s*%d" % (command_to_send, checksum)
+			checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
+
+			if with_line_number is None:
+				self._current_line += 1
+
+			return "%s*%d" % (command_to_send, checksum), line_number
 		else:
-			return str(command)
+			return str(command), None
 
-	def _rollback_preprocessing(self, command, with_checksum=False, with_line_number=None):
-		if with_checksum and with_line_number is None:
-			with self._line_lock:
-				self._current_line -= 1
-
-
-class NopContext(object):
-	def __enter__(self):
-		pass
-
-	def __exit__(self, *args):
-		pass

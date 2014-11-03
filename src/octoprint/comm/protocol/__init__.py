@@ -221,10 +221,15 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 	def _temperatureUpdated(self, temperatureData):
 		pass
 
-	def _reportProgress(self):
+	def _reportProgress(self, completion=None, filepos=None):
+		if completion is None:
+			completion = self._getPrintCompletion()
+		if filepos is None:
+			filepos = self._getPrintFilepos()
+
 		progress = {
-			"completion": self.__getPrintCompletion(),
-			"filepos": self.__getPrintFilepos(),
+			"completion": completion,
+			"filepos": filepos,
 			"printTime": self.get_print_time(),
 			"printTimeLeft": self.get_print_time_remaining_estimate()
 		}
@@ -439,12 +444,12 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 
 	##~~ helpers
 
-	def __getPrintCompletion(self):
+	def _getPrintCompletion(self):
 		if self._current_file is None:
 			return None
 		return self._current_file.getProgress() * 100
 
-	def __getPrintFilepos(self):
+	def _getPrintFilepos(self):
 		if self._current_file is None:
 			return None
 		return self._current_file.getFilepos()

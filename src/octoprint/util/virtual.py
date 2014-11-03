@@ -55,6 +55,8 @@ class VirtualPrinter():
 		self.currentLine = 0
 		self.lastN = 0
 
+		self._incoming_lock = threading.RLock()
+
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
 
@@ -104,18 +106,20 @@ class VirtualPrinter():
 				linenumber = int(re.search("N([0-9]+)", data).group(1))
 				expected = self.lastN + 1
 				if linenumber != expected:
-					self._clearQueue(self.incoming)
-					self.outgoing.put("Error: expected line %d got %d" % (expected, linenumber))
-					self.outgoing.put("Resend:%d" % expected)
-					self.outgoing.put("ok")
+					with self._incoming_lock:
+						self._clearQueue(self.incoming)
+						self.outgoing.put("Error: expected line %d got %d" % (expected, linenumber))
+						self.outgoing.put("Resend:%d" % expected)
+						self.outgoing.put("ok")
 					continue
 				elif self.currentLine == 100:
-					# simulate a resend at line 100 of the last 5 lines
-					self.lastN = 94
-					self._clearQueue(self.incoming)
-					self.outgoing.put("Error: Line Number is not Last Line Number\n")
-					self.outgoing.put("rs %d\n" % (self.currentLine - 5))
-					self.outgoing.put("ok")
+					# simulate a resend at line 100
+					with self._incoming_lock:
+						self.lastN = 99
+						self._clearQueue(self.incoming)
+						self.outgoing.put("Error: Line Number is not Last Line Number\n")
+						self.outgoing.put("rs 100\n")
+						self.outgoing.put("ok")
 					continue
 				else:
 					self.lastN = linenumber
@@ -529,9 +533,10 @@ class VirtualPrinter():
 			self._performMove(line)
 
 	def write(self, data):
-		if self.incoming is None or self.outgoing is None:
-			return
-		self.incoming.put(data)
+		with self._incoming_lock:
+			if self.incoming is None or self.outgoing is None:
+				return
+			self.incoming.put(data)
 
 	def readline(self):
 		try:

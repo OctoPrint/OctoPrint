@@ -104,6 +104,40 @@ class GcodeCommand(object):
 			return "%s%s%s" % (self.command.upper(), " " + attributeStr if attributeStr else "", " " + self.param if self.param else "")
 
 
+class CommandQueueEntry(object):
+	PRIORITY_RESEND = 1
+	PRIORITY_HIGH = 2
+	PRIORITY_NORMAL = 3
+
+	def __init__(self, priority, command, line_number=None, command_type=None, prepared=None, progress=None):
+		self.priority = priority
+		self.command = command
+		self.line_number = line_number
+		self.command_type = command_type
+		self.progress = progress
+		self._prepared = prepared
+		self._size = 0
+
+	@property
+	def prepared(self):
+		return self._prepared
+
+	@prepared.setter
+	def prepared(self, prepared):
+		self._prepared = prepared
+		self._size = (len(prepared) + 1) if prepared is not None else 0
+
+	@property
+	def size(self):
+		return self._size
+
+	def __radd__(self, other):
+		return other + self._size
+
+	def __repr__(self):
+		return "CommandQueueEntry({command},line_number={line_number},prepared={prepared})".format(command=self.command, line_number=self.line_number, prepared=self.prepared)
+
+
 class CommandQueue(Queue.Queue):
 	'''Variant of Queue that retrieves open entries in priority order (lowest first, followed by addition order).
 
@@ -121,29 +155,32 @@ class CommandQueue(Queue.Queue):
 		return len(self.queue)
 
 	def _put(self, item, heappush=heapq.heappush):
-		if len(item) == 4:
-			priority, command, preprocessed, commandType = item
-		else:
-			priority, command, preprocessed = item
-			commandType = None
+		if not isinstance(item, CommandQueueEntry):
+			raise ValueError("queue can only take CommandQueueEntries, can't accept %r" % item)
 
-		if commandType is not None:
-			if commandType not in self.lookup:
-				self.lookup[commandType] = item
+		command_type = item.command_type
+		if command_type is not None:
+			if command_type not in self.lookup:
+				self.lookup[command_type] = item
 			else:
 				raise TypeAlreadyInQueue()
 
-		heappush(self.queue, (priority, next(self.counter), command, preprocessed, commandType))
+		heappush(self.queue, (item.priority, next(self.counter), item))
 
 	def _get(self, heappop=heapq.heappop):
-		priority, count, command, preprocessed, commandType = heappop(self.queue)
-		if commandType in self.lookup:
-			del self.lookup[commandType]
-		return priority, command, preprocessed, commandType
+		priority, counter, item = heappop(self.queue)
+		if item.command_type in self.lookup:
+			del self.lookup[item.command_type]
+		return item
 
 	def peek(self):
-		priority, count, command, preprocessed, commandType = self.queue[0]
-		return priority, command, preprocessed, commandType
+		if len(self.queue) == 0:
+			return None
+		priority, counter, item = self.queue[0]
+		return item
+
+	def __repr__(self):
+		return repr(self.queue)
 
 class TypeAlreadyInQueue(Exception):
 	pass
