@@ -41,6 +41,7 @@
   * The "Slicing done" notification is now colored green ([#558](https://github.com/foosel/OctoPrint/issues/558)).
 * File management now supports STL files as first class citizens (including UI adjustments to allow management of
   uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
+* Also interpret lines starting with "!!" as errors
 
 ### Bug Fixes
 

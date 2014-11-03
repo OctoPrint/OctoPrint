@@ -986,7 +986,7 @@ class MachineCom(object):
 
 	def _handleErrors(self, line):
 		# No matter the state, if we see an error, goto the error state and store the error for reference.
-		if line.startswith('Error:'):
+		if line.startswith('Error:') or line.startswith('!!'):
 			#Oh YEAH, consistency.
 			# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 			#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
