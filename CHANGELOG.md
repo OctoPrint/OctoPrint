@@ -1,5 +1,12 @@
 # OctoPrint Changelog
 
+## 1.1.2 (Unreleased)
+
+### Bug Fixes
+
+* [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
+  by versioneer
+
 ## 1.1.1 (2014-10-27)
 
 ### Improvements
