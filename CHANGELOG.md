@@ -42,6 +42,7 @@
 * File management now supports STL files as first class citizens (including UI adjustments to allow management of
   uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
 * Also interpret lines starting with "!!" as errors
+* Added deletion of pyc files to the `python setup.py clean` command
 
 ### Bug Fixes
 
@@ -53,7 +54,14 @@
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
     queue
 
-## 1.1.1 (Unreleased)
+## 1.1.2 (Unreleased)
+
+### Bug Fixes
+
+* [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
+  by versioneer
+
+## 1.1.1 (2014-10-27)
 
 ### Improvements
 
