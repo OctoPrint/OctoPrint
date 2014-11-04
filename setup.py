@@ -27,6 +27,26 @@ def package_data_dirs(source, sub_folders):
 	return dirs
 
 
+def _recursively_handle_files(directory, file_matcher, folder_handler=None, file_handler=None):
+	applied_handler = False
+
+	for filename in os.listdir(directory):
+		path = os.path.join(directory, filename)
+
+		if file_handler is not None and file_matcher(filename):
+			file_handler(path)
+			applied_handler = True
+
+		elif os.path.isdir(path):
+			sub_applied_handler = _recursively_handle_files(path, file_matcher, folder_handler=folder_handler, file_handler=file_handler)
+			if sub_applied_handler:
+				applied_handler = True
+
+			if folder_handler is not None:
+				folder_handler(path, sub_applied_handler)
+
+	return applied_handler
+
 class CleanCommand(Command):
 	description = "clean build artifacts"
 	user_options = []
@@ -39,13 +59,36 @@ class CleanCommand(Command):
 		pass
 
 	def run(self):
+		# build folder
 		if os.path.exists('build'):
 			print "Deleting build directory"
 			shutil.rmtree('build')
+
+		# eggs
 		eggs = glob.glob('OctoPrint*.egg-info')
 		for egg in eggs:
 			print "Deleting %s directory" % egg
 			shutil.rmtree(egg)
+
+		# pyc files
+		def delete_folder_if_empty(path, applied_handler):
+			if not applied_handler:
+				return
+			if len(os.listdir(path)) == 0:
+				shutil.rmtree(path)
+				print "Deleted %s since it was empty" % path
+
+		def delete_file(path):
+			os.remove(path)
+			print "Deleted %s" % path
+
+		import fnmatch
+		_recursively_handle_files(
+			os.path.abspath("src"),
+			lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
+			folder_handler=delete_folder_if_empty,
+			file_handler=delete_file
+		)
 
 
 def get_cmdclass():
