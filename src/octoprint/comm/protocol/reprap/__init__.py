@@ -124,8 +124,9 @@ class RepRapProtocol(Protocol):
 		self._send_queue = CommandQueue()
 
 		self._clear_for_send = threading.Event()
+		self._clear_for_send.clear()
 
-		self._force_checksum = False
+		self._force_checksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._rx_cache_size = settings().getInt(["communication", "protocolOptions", "buffer"])
 		self._nack_lines = deque([])
 		self._nack_lock = threading.RLock()
@@ -152,42 +153,48 @@ class RepRapProtocol(Protocol):
 
 		self._reset()
 
-	def _reset(self):
-		self._lastTemperatureUpdate = time.time()
-		self._lastSdProgressUpdate = time.time()
-
-		if settings().get(["feature", "waitForStartOnConnect"]) == True:
-			self._startSeen = False
-			self._clear_for_send.clear()
-		else:
-			self._startSeen = True
-			self._clear_for_send.set()
-
-		self._receivingSdFileList = False
-
-		# create a new queue to clear the old one
-		self._send_queue = CommandQueue()
-
-		self._force_checksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-
+	def _reset(self, from_start=False):
 		with self._nack_lock:
+			self._lastTemperatureUpdate = time.time()
+			self._lastSdProgressUpdate = time.time()
+
+			if settings().getBoolean(["feature", "waitForStartOnConnect"]):
+				self._startSeen = from_start
+			else:
+				self._startSeen = True
+
+			if not self._startSeen:
+				self._clear_for_send.clear()
+			else:
+				self._clear_for_send.set()
+
+			self._receivingSdFileList = False
+
+			# clear the the send queue one
+			try:
+				while True:
+					self._send_queue.get(block=False)
+			except Queue.Empty:
+				pass
+
 			self._nack_lines.clear()
 			self._current_line = 1
-		self._currentExtruder = 0
+			self._currentExtruder = 0
 
-		self._previous_resend = False
-		self._last_comm_error = None
-		self._last_resend_number = None
-		self._current_resend_count = 0
-		self._nacks_before_resend = 0
-
-
+			self._previous_resend = False
+			self._last_comm_error = None
+			self._last_resend_number = None
+			self._current_resend_count = 0
+			self._nacks_before_resend = 0
 
 	def connect(self, opt):
 		self._reset()
 
 		# connect
 		Protocol.connect(self, opt)
+
+		# we'll send an M110 first to reset line numbers to 0
+		self._send(RepRapProtocol.COMMAND_SET_LINE(0), highPriority=True)
 
 		# enqueue our first temperature query so it gets sent right on establishment of the connection
 		self._send_temperature_query(withType=True)
@@ -431,11 +438,8 @@ class RepRapProtocol(Protocol):
 		if RepRapProtocol.MESSAGE_START(message):
 			if self._state != State.CONNECTED:
 				# we received a "start" while running, this means the printer has unexpectedly reset
-				self._reset()
 				self._changeState(State.CONNECTED)
-			# otherwise we did not see "start" from the firmware yet and we just did; we are cleared for sending
-			self._startSeen = True
-			self._clear_for_send.set()
+			self._reset(from_start=True)
 
 		if not self.is_streaming():
 			if time.time() > self._lastTemperatureUpdate + 5:
@@ -506,6 +510,7 @@ class RepRapProtocol(Protocol):
 	def _send_next(self):
 		command = self._current_file.getNext()
 		if command is None:
+			# TODO that reports the print as finished too early, we are not finished until our last command has been acknowledged. Maybe add some dummy entry to the queue?
 			if self.is_streaming():
 				self._finishFileTransfer()
 			else:
@@ -575,32 +580,50 @@ class RepRapProtocol(Protocol):
 		result = {}
 
 		# extruder temperatures
-		if not "T0" in parsedTemps.keys() and "T" in parsedTemps.keys():
-			# only single reporting, "T" is our one and only extruder temperature
+		if not "T0" in parsedTemps.keys() and not "T1" in parsedTemps.keys() and "T" in parsedTemps.keys():
+			# no T1 so only single reporting, "T" is our one and only extruder temperature
 			toolNum, actual, target = parsedTemps["T"]
-			result["tool0"] = {
-			"actual": actual,
-			"target": target
-			}
-		elif "T0" in parsedTemps.keys():
+
+			if target is not None:
+				result["tool0"] = (actual, target)
+			elif "tool0" in result and result["tool0"] is not None and isinstance(result["tool0"], tuple):
+				(oldActual, oldTarget) = result["tool0"]
+				result["tool0"] = (actual, oldTarget)
+			else:
+				result["tool0"] = (actual, None)
+
+		elif not "T0" in parsedTemps.keys() and "T" in parsedTemps.keys():
+			# Smoothieware sends multi extruder temperature data this way: "T:<first extruder> T1:<second extruder> ..." and therefore needs some special treatment...
+			_, actual, target = parsedTemps["T"]
+			del parsedTemps["T"]
+			parsedTemps["T0"] = (0, actual, target)
+
+		if "T0" in parsedTemps.keys():
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
 				if not tool in parsedTemps.keys():
 					continue
 
 				toolNum, actual, target = parsedTemps[tool]
-				result["tool%d" % toolNum] = {
-				"actual": actual,
-				"target": target
-				}
+				key = "tool%d" % toolNum
+				if target is not None:
+					result[key] = (actual, target)
+				elif key in result and result[key] is not None and isinstance(result[key], tuple):
+					(oldActual, oldTarget) = result[key]
+					result[key] = (actual, oldTarget)
+				else:
+					result[key] = (actual, None)
 
 		# bed temperature
 		if "B" in parsedTemps.keys():
 			toolNum, actual, target = parsedTemps["B"]
-			result["bed"] = {
-			"actual": actual,
-			"target": target
-			}
+			if target is not None:
+				result["bed"] = (actual, target)
+			elif "bed" in result and result["bed"] is not None and isinstance(result["bed"], tuple):
+				(oldActual, oldTarget) = result["bed"]
+				result["bed"] = (actual, oldTarget)
+			else:
+				result["bed"] = (actual, None)
 
 		self._updateTemperature(result)
 
@@ -644,7 +667,10 @@ class RepRapProtocol(Protocol):
 							while True:
 								entry = self._nack_lines.popleft()
 								entry.priority = CommandQueueEntry.PRIORITY_RESEND
-								self._send_queue.put(entry)
+								try:
+									self._send_queue.put(entry)
+								except TypeAlreadyInQueue:
+									pass
 						except IndexError:
 							# that's ok, the nack lines are just empty
 							pass
@@ -686,7 +712,7 @@ class RepRapProtocol(Protocol):
 		return None, with_line_number
 	_gcode_M1_queued = _gcode_M0_queued
 
-	def _gcode_M104_acknowledged(self, command, with_line_number):
+	def _gcode_M104_sent(self, command, with_line_number):
 		tool = self._currentExtruder
 		if command.t is not None:
 			tool = command.t
@@ -699,9 +725,9 @@ class RepRapProtocol(Protocol):
 			else:
 				self._current_temperature[tool_key] = (None, target)
 		return command, with_line_number
-	_gcode_M109_acknowledged = _gcode_M104_acknowledged
+	_gcode_M109_sent = _gcode_M104_sent
 
-	def _gcode_M140_acknowledged(self, command, with_line_number):
+	def _gcode_M140_sent(self, command, with_line_number):
 		if command.s is not None:
 			target = command.s
 			if "bed" in self._current_temperature.keys() and self._current_temperature["bed"] is not None and isinstance(self._current_temperature["bed"], tuple):
@@ -710,7 +736,7 @@ class RepRapProtocol(Protocol):
 			else:
 				self._current_temperature["bed"] = (None, target)
 		return command, with_line_number
-	_gcode_M190_acknowledged = _gcode_M140_acknowledged
+	_gcode_M190_sent = _gcode_M140_sent
 
 	def _gcode_M110_sent(self, command, with_line_number):
 		if command.n is not None:
@@ -718,8 +744,7 @@ class RepRapProtocol(Protocol):
 		else:
 			new_line_number = 0
 
-		with self._nack_lock:
-			self._current_line = new_line_number + 1
+		self._current_line = new_line_number + 1
 
 		# send M110 command with new line number
 		return command, new_line_number
@@ -768,6 +793,9 @@ class RepRapProtocol(Protocol):
 		if entry is None:
 			return False
 
+		if not self._startSeen:
+			return False
+
 		if entry.prepared is None:
 			prepared, line_number = self._prepare_for_sending(entry.command, with_line_number=entry.line_number)
 			if prepared is None:
@@ -776,13 +804,23 @@ class RepRapProtocol(Protocol):
 			entry.prepared = prepared
 			entry.line_number = line_number
 
-		if sum(self._nack_lines) + entry.size > self._rx_cache_size > 0:
+		# Do not send if the left over space in the buffer is too small for this line. Exception: the buffer is empty
+		# and the line still doesn't fit
+		current_size = sum(self._nack_lines)
+		new_size = current_size + entry.size
+		if new_size > self._rx_cache_size > 0 and not (current_size == 0):
+			self._logger.debug("### Printer's rx buffer too full: %d/%d vs %d bytes - waiting" % (current_size, self._rx_cache_size, entry.size))
 			return False
 
 		# send the command
-		self._transport.send(entry.prepared)
+		sent = self._transport.send(entry.prepared)
+		if not sent:
+			# if the serial transport could not send our data (e.g. due to a write timeout), we'll try again
+			self._logger.debug("Could not send %s" % entry.prepared)
+			return False
+
 		# remove from queue
-		self._send_queue.get()
+		self._send_queue.get(block=False)
 
 		# put tx size into the list so we can pop it later when we get "ok"
 		self._nack_lines.append(entry)

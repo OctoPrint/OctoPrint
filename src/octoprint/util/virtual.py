@@ -11,6 +11,8 @@ import threading
 import math
 import Queue
 
+from serial import SerialTimeoutException
+
 from octoprint.settings import settings
 
 class VirtualPrinter():
@@ -18,9 +20,9 @@ class VirtualPrinter():
 		self._timeout = timeout
 		self._writeTimeout = writeTimeout
 
-		self.incoming = Queue.Queue()
+		self.incoming = CharCountingQueue(settings().getInt(["devel", "virtualPrinter", "rxBuffer"]), name="RxBuffer")
 		self.outgoing = Queue.Queue()
-		self.buffered = Queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "maxBufferedGCommands"]))
+		self.buffered = Queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
 		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']: # no sd card as default startup scenario
 			self.outgoing.put(item)
@@ -481,17 +483,17 @@ class VirtualPrinter():
 		self.outgoing.put("Done printing file")
 
 	def _waitForHeatup(self, heater):
-		delta = 0.5
+		delta = 1
 		delay = 1
 		if heater.startswith("tool"):
 			toolNum = int(heater[len("tool"):])
 			while self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta:
-				self._simulateTemps()
+				self._simulateTemps(delta=delta)
 				self.outgoing.put("T:%0.2f /%0.2f" % (self.temp[toolNum], self.targetTemp[toolNum]))
 				time.sleep(delay)
 		elif heater == "bed":
 			while self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta:
-				self._simulateTemps()
+				self._simulateTemps(delta=delta)
 				self.outgoing.put("B:%0.2f /%0.2f" % (self.bedTemp, self.bedTargetTemp))
 				time.sleep(delay)
 		self._sendOk()
@@ -501,18 +503,18 @@ class VirtualPrinter():
 		if os.path.exists(f) and os.path.isfile(f):
 			os.remove(f)
 
-	def _simulateTemps(self):
+	def _simulateTemps(self, delta=1):
 		timeDiff = self.lastTempAt - time.time()
 		self.lastTempAt = time.time()
 		for i in range(len(self.temp)):
-			if abs(self.temp[i] - self.targetTemp[i]) > 1:
+			if abs(self.temp[i] - self.targetTemp[i]) > delta:
 				oldVal = self.temp[i]
 				self.temp[i] += math.copysign(timeDiff * 10, self.targetTemp[i] - self.temp[i])
 				if math.copysign(1, self.targetTemp[i] - oldVal) != math.copysign(1, self.targetTemp[i] - self.temp[i]):
 					self.temp[i] = self.targetTemp[i]
 				if self.temp[i] < 0:
 					self.temp[i] = 0
-		if abs(self.bedTemp - self.bedTargetTemp) > 1:
+		if abs(self.bedTemp - self.bedTargetTemp) > delta:
 			oldVal = self.bedTemp
 			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
 			if math.copysign(1, self.bedTargetTemp - oldVal) != math.copysign(1, self.bedTargetTemp - self.bedTemp):
@@ -536,7 +538,10 @@ class VirtualPrinter():
 		with self._incoming_lock:
 			if self.incoming is None or self.outgoing is None:
 				return
-			self.incoming.put(data)
+			try:
+				self.incoming.put(data, timeout=self._writeTimeout)
+			except Queue.Full:
+				raise SerialTimeoutException()
 
 	def readline(self):
 		try:
@@ -562,3 +567,53 @@ class VirtualPrinter():
 		if self.outgoing is not None:
 			self.outgoing.put("wait")
 
+class CharCountingQueue(Queue.Queue):
+
+	def __init__(self, maxsize, name=None):
+		Queue.Queue.__init__(self, maxsize=maxsize)
+		self._size = 0
+		self._name = name
+
+	def put(self, item, block=True, timeout=None):
+		self.not_full.acquire()
+		try:
+			item_size = self._len(item)
+
+			if not block:
+				if self._qsize() + item_size >= self.maxsize:
+					raise Queue.Full
+			elif timeout is None:
+				while self._qsize() + item_size >= self.maxsize:
+					self.not_full.wait()
+			elif timeout < 0:
+				raise ValueError("'timeout' must be a positive number")
+			else:
+				endtime = time.time() + timeout
+				while self._qsize() + item_size >= self.maxsize:
+					remaining = endtime - time.time()
+					if remaining <= 0.0:
+						raise Queue.Full
+					self.not_full.wait(remaining)
+
+			self._put(item)
+			self.unfinished_tasks += 1
+			self.not_empty.notify()
+		finally:
+			self.not_full.release()
+
+	def _len(self, item):
+		return len(item)
+
+	def _qsize(self, len=len):
+		return self._size
+
+	# Put a new item in the queue
+	def _put(self, item):
+		self.queue.append(item)
+		self._size += self._len(item)
+
+	# Get an item from the queue
+	def _get(self):
+		item = self.queue.popleft()
+		self._size -= self._len(item)
+		return item

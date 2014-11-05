@@ -287,6 +287,7 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 		pass
 
 	def _finishPrintjob(self):
+		self._reportProgress(completion=100, filepos=self._current_file.getFilesize())
 		self._changeState(State.OPERATIONAL)
 		if self._protocol_listener is not None:
 			self._protocol_listener.onPrintjobDone(self)

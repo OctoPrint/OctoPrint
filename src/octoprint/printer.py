@@ -244,7 +244,7 @@ class Printer():
 			return
 
 		self._setJobData(filename, filesize, origin)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+		self._stateMonitor.setState({"text": self.getStateString(), "flags": self._getStateFlags()})
 
 		if self._printAfterSelect:
 			self.startPrint()
@@ -255,7 +255,7 @@ class Printer():
 			return
 
 		self._setProgressData(100.0, self._selectedFile["filesize"], self._protocol.get_print_time(), 0)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+		self._stateMonitor.setState({"text": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onFileTransferStarted(self, source, filename, filesize):
 		if not source == self._protocol:
@@ -265,7 +265,7 @@ class Printer():
 
 		self._setJobData(filename, filesize, FileDestinations.SDCARD)
 		self._setProgressData(0.0, 0, 0, None)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+		self._stateMonitor.setState({"text": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onFileTransferDone(self, source):
 		if not source == self._protocol:
@@ -280,13 +280,13 @@ class Printer():
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
 		self._setProgressData(None, None, None, None)
-		self._stateMonitor.setState({"state": self._state, "stateString": self.getStateString(), "flags": self._getStateFlags()})
+		self._stateMonitor.setState({"text": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onSdStateChange(self, source, sdAvailable):
 		if not source == self._protocol:
 			return
 
-		self._stateMonitor.setState({"state": self._state, "stateString": self._state, "flags": self._getStateFlags()})
+		self._stateMonitor.setState({"text": self.getStateString(), "flags": self._getStateFlags()})
 
 	def onSdFiles(self, source, files):
 		if not source == self._protocol:
@@ -477,7 +477,11 @@ class Printer():
 		data = {
 			"time": currentTimeUtc
 		}
-		data.update(temperatureData)
+		for tool in temperatureData.keys():
+			data[tool] = {
+				"actual": temperatureData[tool][0],
+				"target": temperatureData[tool][1]
+			}
 
 		self._temps.append(data)
 

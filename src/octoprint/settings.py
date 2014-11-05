@@ -203,7 +203,9 @@ default_settings = {
 			"extendedSdFileList": False,
 			"throttle": 0.01,
 			"waitOnLongMoves": False,
-			"maxBufferedGCommands": 5
+			"rxBuffer": 64,
+			"txBuffer": 40,
+			"commandBuffer": 4
 		}
 	}
 }

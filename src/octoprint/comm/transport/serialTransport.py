@@ -55,7 +55,7 @@ class SerialTransport(Transport):
 		self._baudrate = opt["baudrate"] if "baudrate" in opt else None
 		self._connectionTimeout = opt["connectionTimeout"] if "connectionTimeout" in opt else 2.0
 		self._communicationTimeout = opt["communicationTimeout"] if "communicationTimeout" in opt else 5.0
-		self._writeTimeout = opt["writeTimeout"] if "writeTimeout" in opt else 10000
+		self._writeTimeout = opt["writeTimeout"] if "writeTimeout" in opt else 500
 
 		if self._connect():
 			self._thread = threading.Thread(target=self._monitor, name="SerialTransportMonitor")
@@ -72,22 +72,16 @@ class SerialTransport(Transport):
 		Transport.disconnect(self, onError)
 
 	def send(self, command):
-		self._transport_logger.info("Send: %s" % command)
-		self.logTx(command)
-
 		commandToSend = command + "\n"
 		try:
 			self._serial.write(commandToSend)
+			self._transport_logger.info("Send: %s" % command)
+			self.logTx(command)
+			return True
 		except serial.SerialTimeoutException:
-			self.logError("Serial timeout while writing to serial port, trying again.")
-
-			try:
-				self._serial.write(commandToSend)
-			except:
-				exceptionString = getExceptionString()
-				self.logError("Unexpected error while writing serial port: %s" % exceptionString)
-				self.onError(exceptionString)
-				self.disconnect(True)
+			self._transport_logger.warn("Timeout while sending: %s" % command)
+			self.logError("Serial timeout while writing to serial port, try again later.")
+			return False
 		except:
 			exceptionString = getExceptionString()
 			self.logError("Unexpected error while writing serial port: %s" % exceptionString)
