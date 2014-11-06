@@ -26,7 +26,7 @@ default_settings = {
 	"communication": {
 		"protocol": "reprap",
 		"protocolOptions": {
-			"buffer": 0,
+			"buffer": 63,
 			"temperature": 5,
 			"sdStatus": 1,
 			"waitForStart": False,
