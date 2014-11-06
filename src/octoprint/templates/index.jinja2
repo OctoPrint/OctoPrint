@@ -100,7 +100,7 @@
                                 </a>
                                 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
                                     <label for="login_user">{{ _('Username') }}</label>
-                                    <input type="text" id="login_user" placeholder="{{ _('Username') }}">
+                                    <input type="text" id="login_user" placeholder="{{ _('Username') }}" autocapitalize="none">
                                     <label for="login_pass">{{ _('Password') }}</label>
                                     <input type="password" id="login_pass" placeholder="{{ _('Password') }}">
                                     <label class="checkbox">
