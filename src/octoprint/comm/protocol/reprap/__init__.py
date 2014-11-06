@@ -13,7 +13,7 @@ import threading
 import time
 from octoprint.comm.protocol import State, Protocol, PrintingSdFileInformation
 from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, CommandQueueEntry, PrintingGcodeFileInformation, \
-	StreamingGcodeFileInformation, TypeAlreadyInQueue
+	StreamingGcodeFileInformation, TypeAlreadyInQueue, SpecialCommandQueueEntry
 from octoprint.comm.transport import SendTimeout
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
@@ -183,11 +183,7 @@ class RepRapProtocol(Protocol):
 			self._receivingSdFileList = False
 
 			# clear the the send queue one
-			try:
-				while True:
-					self._send_queue.get(block=False)
-			except Queue.Empty:
-				pass
+			self._send_queue.clear()
 
 			self._nack_lines.clear()
 			self._current_line = 1
@@ -245,6 +241,8 @@ class RepRapProtocol(Protocol):
 		if isinstance(self._current_file, PrintingSdFileInformation):
 			self._send(RepRapProtocol.COMMAND_SD_PAUSE)
 			self._send(RepRapProtocol.COMMAND_SD_SET_POS(0))
+
+		self._send_queue.clear(matcher=lambda entry: entry is not None and entry.command is not None and hasattr(entry.command, "progress") and entry.command.progress is not None)
 
 		Protocol.cancel_print(self)
 
@@ -477,16 +475,7 @@ class RepRapProtocol(Protocol):
 
 			if not self._previous_resend:
 				# our most left line from the nack_lines just got acknowledged
-				with self._nack_lock:
-					if len(self._nack_lines) > 0:
-						entry = self._nack_lines.popleft()
-						self._process_command(entry.command, "acknowledged", with_line_number=entry.line_number)
-						if entry.progress is not None:
-							self._reportProgress(**entry.progress)
-
-					self._last_resend_number = None
-					self._current_resend_count = 0
-					self._nacks_before_resend = 0
+				self._process_acknowledgement()
 			else:
 				self._previous_resend = False
 			self._clear_for_send.set()
@@ -502,6 +491,45 @@ class RepRapProtocol(Protocol):
 
 	##~~ private
 
+	def _process_acknowledgement(self):
+		with self._nack_lock:
+			if len(self._nack_lines) > 0:
+				entry = self._nack_lines.popleft()
+
+				# process command as acknowledged
+				self._process_command(entry.command, "acknowledged", with_line_number=entry.line_number)
+
+				if entry.command is not None:
+					if entry.command.progress is not None:
+						# if we got a progress, report it
+						self._reportProgress(**entry.command.progress)
+
+					if entry.command.callback is not None:
+						# if we got a callback, call it
+						entry.command.callback(entry.command)
+
+				if len(self._nack_lines) > 0:
+					# let's take a look at the next item in the nack queue, it might be a special entry demanding some action
+					# from us now
+					following_entry = self._nack_lines[0]
+					if isinstance(following_entry, SpecialCommandQueueEntry):
+
+						if following_entry.type == SpecialCommandQueueEntry.TYPE_JOBDONE:
+							# we got a special queue item that marks that we just acknowledged the last command of
+							# an ongoing print job, so let's signal that now
+							if self.is_streaming():
+								self._finishFileTransfer()
+							else:
+								self._finishPrintjob()
+
+						# let's remove the special command, we should have processed it now...
+						self._nack_lines.popleft()
+
+			# since we just got an acknowledgement, no more resends are pending
+			self._last_resend_number = None
+			self._current_resend_count = 0
+			self._nacks_before_resend = 0
+
 	def _evaluate_firmware_specific_messages(self, source, message):
 		return True
 
@@ -509,34 +537,41 @@ class RepRapProtocol(Protocol):
 		if command is None:
 			return
 
-		if not isinstance(command, GcodeCommand):
-			command = GcodeCommand.from_line(command)
+		if isinstance(command, CommandQueueEntry):
+			entry = command
+			if entry.command is not None:
+				entry.command.progress = with_progress
+		else:
+			if not isinstance(command, GcodeCommand):
+				command = GcodeCommand.from_line(command)
+			command.progress = with_progress
 
-		command, with_line_number = self._process_command(command, "queued")
-		if command is None:
-			return
+			command, with_line_number = self._process_command(command, "queued")
+			if command is None:
+				return
 
-		try:
-			self._send_queue.put(CommandQueueEntry(
+			entry = CommandQueueEntry(
 				CommandQueueEntry.PRIORITY_HIGH if high_priority else CommandQueueEntry.PRIORITY_NORMAL,
 				command,
 				line_number=with_line_number,
-				command_type=command_type,
-				progress=with_progress)
+				command_type=command_type
 			)
+
+		try:
+			self._send_queue.put(entry)
 		except TypeAlreadyInQueue:
 			pass
 
 	# Called only from worker thread, not thread safe
 	def _send_next(self):
-		command = self._current_file.getNext()
+		try:
+			command = self._current_file.getNext()
+		except ValueError:
+			# TODO _current_file might already be closed since the print ended asynchronously between our callee and here, causing a ValueError => find some nicer way to handle this
+			return None
+
 		if command is None:
-			# TODO that reports the print as finished too early, we are not finished until our last command has been acknowledged. Maybe add some dummy entry to the queue?
-			if self.is_streaming():
-				self._finishFileTransfer()
-			else:
-				self._finishPrintjob()
-			return
+			command = SpecialCommandQueueEntry(SpecialCommandQueueEntry.TYPE_JOBDONE)
 
 		self._send(command, with_progress=dict(completion=self._getPrintCompletion(), filepos=self._getPrintFilepos()))
 
@@ -765,33 +800,36 @@ class RepRapProtocol(Protocol):
 		if not self._startSeen:
 			return False
 
-		if entry.prepared is None:
-			prepared, line_number = self._prepare_for_sending(entry.command, with_line_number=entry.line_number)
-
-			entry.prepared = prepared
-			entry.line_number = line_number
-
-		if entry.prepared is not None:
-			# only actually send the command if it wasn't filtered out by preprocessing
-
-			current_size = sum(self._nack_lines)
-			new_size = current_size + entry.size
-			if new_size > self._rx_cache_size > 0 and not (current_size == 0):
-				# Do not send if the left over space in the buffer is too small for this line. Exception: the buffer is empty
-				# and the line still doesn't fit
-				return False
-
-			# send the command - we might get a SendTimeout here which is supposed to bubble up since it's caught in the
-			# actual send loop
-			self._transport.send(entry.prepared)
-
-			# add the queue entry into the deque of commands not yet acknowledged
+		if isinstance(entry, SpecialCommandQueueEntry):
 			self._nack_lines.append(entry)
-
-			# decrease the clear_for_send counter
-			self._clear_for_send.clear()
 		else:
-			self._logger.debug("Dropping command which was disabled through preprocessing: %s" % entry.command)
+			if entry.prepared is None:
+				prepared, line_number = self._prepare_for_sending(entry.command, with_line_number=entry.line_number)
+
+				entry.prepared = prepared
+				entry.line_number = line_number
+
+			if entry.prepared is not None:
+				# only actually send the command if it wasn't filtered out by preprocessing
+
+				current_size = sum(self._nack_lines)
+				new_size = current_size + entry.size
+				if new_size > self._rx_cache_size > 0 and not (current_size == 0):
+					# Do not send if the left over space in the buffer is too small for this line. Exception: the buffer is empty
+					# and the line still doesn't fit
+					return False
+
+				# send the command - we might get a SendTimeout here which is supposed to bubble up since it's caught in the
+				# actual send loop
+				self._transport.send(entry.prepared)
+
+				# add the queue entry into the deque of commands not yet acknowledged
+				self._nack_lines.append(entry)
+
+				# decrease the clear_for_send counter
+				self._clear_for_send.clear()
+			else:
+				self._logger.debug("Dropping command which was disabled through preprocessing: %s" % entry.command)
 
 		# remove from send queue
 		self._send_queue.get(block=False)

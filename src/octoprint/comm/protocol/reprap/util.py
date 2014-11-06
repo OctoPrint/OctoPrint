@@ -73,8 +73,11 @@ class GcodeCommand(object):
 		self.original = None
 		self.param = None
 
+		self.progress = None
+		self.callback = None
+
 		for key, value in kwargs.iteritems():
-			if key in GcodeCommand.KNOWN_ATTRIBUTES + ("tool", "original", "param"):
+			if key in GcodeCommand.KNOWN_ATTRIBUTES + ("tool", "original", "param", "progress", "callback"):
 				self.__setattr__(key, value)
 
 	def isGetTemperatureCommand(self):
@@ -85,6 +88,9 @@ class GcodeCommand(object):
 
 	def isSelectToolCommand(self):
 		return self.command.startswith("T")
+
+	def __repr__(self):
+		return "GcodeCommand(\"{str}\",progress={progress})".format(str=str(self), progress=self.progress)
 
 	def __str__(self):
 		if self.original is not None:
@@ -109,12 +115,11 @@ class CommandQueueEntry(object):
 	PRIORITY_HIGH = 2
 	PRIORITY_NORMAL = 3
 
-	def __init__(self, priority, command, line_number=None, command_type=None, prepared=None, progress=None):
+	def __init__(self, priority, command, line_number=None, command_type=None, prepared=None):
 		self.priority = priority
 		self.command = command
 		self.line_number = line_number
 		self.command_type = command_type
-		self.progress = progress
 		self._prepared = prepared
 		self._size = 0
 
@@ -135,7 +140,15 @@ class CommandQueueEntry(object):
 		return other + self._size
 
 	def __repr__(self):
-		return "CommandQueueEntry({command},line_number={line_number},prepared={prepared})".format(command=self.command, line_number=self.line_number, prepared=self.prepared)
+		return "CommandQueueEntry({command},line_number={line_number},prepared={prepared})".format(command=repr(self.command), line_number=self.line_number, prepared=self.prepared)
+
+
+class SpecialCommandQueueEntry(CommandQueueEntry):
+	TYPE_JOBDONE = "JobDone"
+
+	def __init__(self, type):
+		CommandQueueEntry.__init__(self, CommandQueueEntry.PRIORITY_NORMAL, None)
+		self.type = type
 
 
 class CommandQueue(Queue.Queue):
@@ -178,6 +191,18 @@ class CommandQueue(Queue.Queue):
 			return None
 		priority, counter, item = self.queue[0]
 		return item
+
+	def clear(self, matcher=None):
+		if matcher is None:
+			matcher = lambda x: True
+
+		with self.mutex:
+			for entry in self.queue[:]:
+				priority, counter, item = entry
+				if matcher(item):
+					if item.command_type in self.lookup:
+						del self.lookup[item.command_type]
+					self.queue.remove(entry)
 
 	def __repr__(self):
 		return repr(self.queue)
