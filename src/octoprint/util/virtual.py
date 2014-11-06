@@ -16,9 +16,9 @@ from serial import SerialTimeoutException
 from octoprint.settings import settings
 
 class VirtualPrinter():
-	def __init__(self, timeout=5.0, writeTimeout=10.0):
-		self._timeout = timeout
-		self._writeTimeout = writeTimeout
+	def __init__(self, read_timeout=5.0, write_timeout=10.0):
+		self._read_timeout = read_timeout
+		self._write_timeout = write_timeout
 
 		self.incoming = CharCountingQueue(settings().getInt(["devel", "virtualPrinter", "rxBuffer"]), name="RxBuffer")
 		self.outgoing = Queue.Queue()
@@ -67,6 +67,10 @@ class VirtualPrinter():
 
 		bufferThread = threading.Thread(target=self._processBuffer)
 		bufferThread.start()
+
+	def __str__(self):
+		return "VIRTUAL(read_timeout={read_timeout},write_timeout={write_timeout},options={options})"\
+			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
 
 	def _clearQueue(self, queue):
 		try:
@@ -401,10 +405,10 @@ class VirtualPrinter():
 		if duration:
 			if settings().getBoolean(["devel", "virtualPrinter", "waitOnLongMoves"]):
 				slept = 0
-				while duration - slept > self._timeout:
-					time.sleep(self._timeout)
+				while duration - slept > self._read_timeout:
+					time.sleep(self._read_timeout)
 					self.outgoing.put("wait")
-					slept += self._timeout
+					slept += self._read_timeout
 			else:
 				time.sleep(duration)
 
@@ -539,13 +543,13 @@ class VirtualPrinter():
 			if self.incoming is None or self.outgoing is None:
 				return
 			try:
-				self.incoming.put(data, timeout=self._writeTimeout)
+				self.incoming.put(data, timeout=self._write_timeout)
 			except Queue.Full:
 				raise SerialTimeoutException()
 
 	def readline(self):
 		try:
-			line = self.outgoing.get(timeout=self._timeout)
+			line = self.outgoing.get(timeout=self._read_timeout)
 			time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
 			return line
 		except Queue.Empty:

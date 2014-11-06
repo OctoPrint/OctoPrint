@@ -323,13 +323,22 @@ class Printer():
 
 	#~~ printer commands
 
-	def connect(self, port=None, baudrate=None):
+	def connect(self, protocol_option_overrides=None, transport_option_overrides=None):
 		"""
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
 		"""
 		self._protocol.disconnect()
-		self._protocol.connect({"port": port, "baudrate": baudrate})
+
+		protocol_options = settings().get(["communication", "protocolOptions"], merged=True)
+		if protocol_option_overrides is not None and isinstance(protocol_option_overrides, dict):
+			protocol_options = util.dict_merge(protocol_options, protocol_option_overrides)
+
+		transport_options = settings().get(["communication", "transportOptions"], merged=True)
+		if transport_option_overrides is not None and isinstance(transport_option_overrides, dict):
+			transport_options = util.dict_merge(transport_options, transport_option_overrides)
+
+		self._protocol.connect(protocol_options, transport_options)
 
 	def disconnect(self):
 		"""

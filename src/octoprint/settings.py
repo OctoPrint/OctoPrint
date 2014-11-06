@@ -26,24 +26,27 @@ default_settings = {
 	"communication": {
 		"protocol": "reprap",
 		"protocolOptions": {
-			"buffer": 0
+			"buffer": 0,
+			"temperature": 5,
+			"sdStatus": 1,
+			"waitForStart": False,
+			"forceChecksum": True,
+			"sdAlwaysAvailable": False
 		},
 		"transport": "serial",
 		"transportOptions": {
 			"port": None,
 			"baudrate": None,
 			"timeout": {
-				"detection": 0.5,
-				"connection": 2,
-				"communication": 5,
-				"temperature": 5,
-				"sdStatus": 1
+				"read": 5,
+				"write": 0.5
 			},
 			"additionalPorts": []
 		},
 		"autoconnect": False,
 		"log": False
 	},
+	# TODO Remove, not used by the new communication layer but apparently still by the layers above it!
 	"serial": {
 		"port": None,
 		"baudrate": None,
@@ -100,12 +103,12 @@ default_settings = {
 	},
 	"feature": {
 		"temperatureGraph": True,
-		"waitForStartOnConnect": False,
-		"alwaysSendChecksum": True,
-		"sdSupport": True,
-		"sdAlwaysAvailable": False,
-		"swallowOkAfterResend": True,
-		"repetierTargetTemp": False
+		"waitForStartOnConnect": False, # TODO move to protocol options or reprap protocol
+		"alwaysSendChecksum": True, # TODO move to protocol options
+		"sdSupport": True, # TODO remove (can be always on)
+		"sdAlwaysAvailable": False, # TODO move to protocol options
+		"swallowOkAfterResend": True, # TODO remove (must always be done!)
+		"repetierTargetTemp": False # TODO remove (built into repetier protocol implementation)
 	},
 	"folder": {
 		"uploads": None,
@@ -471,7 +474,9 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False, defaults=None):
+	def get(self, path, asdict=False, defaults=None, merged=False):
+		import octoprint.util as util
+
 		if len(path) == 0:
 			return None
 
@@ -503,6 +508,8 @@ class Settings(object):
 		for key in keys:
 			if key in config.keys():
 				value = config[key]
+				if merged and key in defaults:
+					value = util.dict_merge(defaults[key], value)
 			elif key in defaults:
 				value = defaults[key]
 			else:

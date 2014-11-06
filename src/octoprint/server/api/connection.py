@@ -57,7 +57,7 @@ def connectionCommand():
 		if "autoconnect" in data.keys():
 			settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
 		settings().save()
-		printer.connect(port=port, baudrate=baudrate)
+		printer.connect(transport_option_overrides=dict(port=port, baudrate=baudrate))
 	elif command == "disconnect":
 		printer.disconnect()
 

@@ -22,7 +22,8 @@ class RepetierTextualProtocol(RepRapProtocol):
 		RepRapProtocol.__init__(self, transport_factory, protocol_listener)
 		self._sd_available = True
 
-	def _reset(self):
+	def _reset(self, from_start=False):
+		RepRapProtocol._reset(self, from_start=from_start)
 		self._sd_available = True
 
 	def _evaluate_firmware_specific_messages(self, source, message):
@@ -54,7 +55,4 @@ class RepetierTextualProtocol(RepRapProtocol):
 				current_temperatures[key] = (None, target)
 			self._updateTemperature(current_temperatures)
 
-		return True
-
-	def _useChecksum(self):
 		return True

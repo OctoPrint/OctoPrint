@@ -57,8 +57,8 @@ class Protocol(MessageReceiver, StateReceiver, LogReceiver):
 
 	##~~ public
 
-	def connect(self, opt):
-		self._transport.connect(opt)
+	def connect(self, protocol_options, transport_options):
+		self._transport.connect(transport_options)
 
 	def disconnect(self, on_error=False):
 		if self.is_printing():

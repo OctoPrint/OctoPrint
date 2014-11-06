@@ -31,6 +31,7 @@ class SerialTransport(Transport):
 		self._baudrate = None
 		self._connectionTimeout = None
 		self._writeTimeout = None
+		self._readTimeout = None
 
 		self._timeoutCounter = 0
 		self._maxTimeouts = 20
@@ -53,9 +54,9 @@ class SerialTransport(Transport):
 
 		self._port = opt["port"] if "port" in opt else None
 		self._baudrate = opt["baudrate"] if "baudrate" in opt else None
-		self._connectionTimeout = opt["connectionTimeout"] if "connectionTimeout" in opt else 2.0
-		self._communicationTimeout = opt["communicationTimeout"] if "communicationTimeout" in opt else 5.0
-		self._writeTimeout = opt["writeTimeout"] if "writeTimeout" in opt else 500
+
+		self._readTimeout = opt["timeout"]["read"] if "timeout" in opt and "read" in opt["timeout"] else 5.0
+		self._writeTimeout = opt["timeout"]["write"] if "timeout" in opt and "write" in opt["timeout"] else 0.5
 
 		if self._connect():
 			self._thread = threading.Thread(target=self._monitor, name="SerialTransportMonitor")
@@ -117,12 +118,12 @@ class SerialTransport(Transport):
 	def _connect(self):
 		self.changeState(State.OPENING_CONNECTION)
 		if self._port == "VIRTUAL":
-			self._serial = VirtualPrinter(timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
+			self._serial = VirtualPrinter(read_timeout=self._readTimeout, write_timeout=self._writeTimeout)
 			self.changeState(State.CONNECTED)
-			self._transport_logger.debug("Connected to VIRTUAL printer")
+			self._transport_logger.debug("Connected to %s" % self._serial)
 		else:
 			try:
-				self._serial = serial.Serial(self._port, self._baudrate, timeout=self._communicationTimeout, writeTimeout=self._writeTimeout)
+				self._serial = serial.Serial(self._port, self._baudrate, timeout=self._readTimeout, writeTimeout=self._writeTimeout)
 				self.changeState(State.CONNECTED)
 				self._transport_logger.debug("Connected to %s" % self._serial)
 			except:

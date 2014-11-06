@@ -126,8 +126,14 @@ class RepRapProtocol(Protocol):
 		self._clear_for_send = threading.Event()
 		self._clear_for_send.clear()
 
-		self._force_checksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-		self._rx_cache_size = settings().getInt(["communication", "protocolOptions", "buffer"])
+		self._force_checksum = True
+		self._wait_for_start = False
+		self._sd_always_available = False
+		self._rx_cache_size = 0
+
+		self._temperature_interval = 5.0
+		self._sdstatus_interval = 5.0
+
 		self._nack_lines = deque([])
 		self._nack_lock = threading.RLock()
 
@@ -158,7 +164,7 @@ class RepRapProtocol(Protocol):
 			self._lastTemperatureUpdate = time.time()
 			self._lastSdProgressUpdate = time.time()
 
-			if settings().getBoolean(["feature", "waitForStartOnConnect"]):
+			if self._wait_for_start:
 				self._startSeen = from_start
 			else:
 				self._startSeen = True
@@ -187,17 +193,24 @@ class RepRapProtocol(Protocol):
 			self._current_resend_count = 0
 			self._nacks_before_resend = 0
 
-	def connect(self, opt):
+	def connect(self, protocol_options, transport_options):
+		self._wait_for_start = protocol_options["waitForStart"] if "waitForStart" in protocol_options else False
+		self._force_checksum = protocol_options["checksum"] if "checksum" in protocol_options else True
+		self._sd_always_available = protocol_options["sdAlwaysAvailable"] if "sdAlwaysAvailable" in protocol_options else False
+		self._rx_cache_size = protocol_options["buffer"] if "buffer" in protocol_options else 0
+		self._temperature_interval = protocol_options["timeout"]["temperature"] if "timeout" in protocol_options and "temperature" in protocol_options["timeout"] else 5.0
+		self._sdstatus_interval = protocol_options["timeout"]["sdstatus"] if "timeout" in protocol_options and "sdstatus" in protocol_options["timeout"] else 5.0
+
 		self._reset()
 
 		# connect
-		Protocol.connect(self, opt)
+		Protocol.connect(self, protocol_options, transport_options)
 
 		# we'll send an M110 first to reset line numbers to 0
-		self._send(RepRapProtocol.COMMAND_SET_LINE(0), highPriority=True)
+		self._send(RepRapProtocol.COMMAND_SET_LINE(0), high_priority=True)
 
 		# enqueue our first temperature query so it gets sent right on establishment of the connection
-		self._send_temperature_query(withType=True)
+		self._send_temperature_query(with_type=True)
 
 	def disconnect(self, on_error=False):
 		self._clear_for_send.clear()
@@ -208,7 +221,7 @@ class RepRapProtocol(Protocol):
 		if origin == FileDestinations.SDCARD:
 			if not self._sd_available:
 				return
-			self._send(RepRapProtocol.COMMAND_SD_SELECT_FILE(filename), highPriority=True)
+			self._send(RepRapProtocol.COMMAND_SD_SELECT_FILE(filename), high_priority=True)
 		else:
 			self._selectFile(PrintingGcodeFileInformation(filename, self.get_temperature_offsets))
 
@@ -232,13 +245,13 @@ class RepRapProtocol(Protocol):
 	def init_sd(self):
 		Protocol.init_sd(self)
 		self._send(RepRapProtocol.COMMAND_SD_INIT())
-		if settings().getBoolean(["feature", "sdAlwaysAvailable"]) == True:
+		if self._sd_always_available:
 			self._changeSdState(True)
 
 	def release_sd(self):
 		Protocol.release_sd(self)
 		self._send(RepRapProtocol.COMMAND_SD_RELEASE())
-		if settings().getBoolean(["feature", "sdAlwaysAvailable"]) == True:
+		if self._sd_always_available:
 			self._changeSdState(False)
 
 	def refresh_sd_files(self):
@@ -328,9 +341,9 @@ class RepRapProtocol(Protocol):
 			return
 		if isinstance(command, (tuple, list)):
 			for c in command:
-				self._send(c, highPriority=high_priority)
+				self._send(c, high_priority=high_priority)
 		else:
-			self._send(command, highPriority=high_priority)
+			self._send(command, high_priority=high_priority)
 
 	def _fileTransferFinished(self, current_file):
 		if isinstance(current_file, StreamingGcodeFileInformation):
@@ -442,10 +455,10 @@ class RepRapProtocol(Protocol):
 			self._reset(from_start=True)
 
 		if not self.is_streaming():
-			if time.time() > self._lastTemperatureUpdate + 5:
-				self._send_temperature_query(withType=True)
-			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + 5:
-				self._send_sd_progress_query(withType=True)
+			if time.time() > self._lastTemperatureUpdate + self._temperature_interval:
+				self._send_temperature_query(with_type=True)
+			elif self.is_sd_printing() and time.time() > self._lastSdProgressUpdate + self._sdstatus_interval:
+				self._send_sd_progress_query(with_type=True)
 
 		# ok == go ahead with sending
 		if RepRapProtocol.MESSAGE_OK(message):
@@ -484,7 +497,7 @@ class RepRapProtocol(Protocol):
 	def _evaluate_firmware_specific_messages(self, source, message):
 		return True
 
-	def _send(self, command, highPriority=False, commandType=None, with_progress=None):
+	def _send(self, command, high_priority=False, command_type=None, with_progress=None):
 		if command is None:
 			return
 
@@ -497,10 +510,10 @@ class RepRapProtocol(Protocol):
 
 		try:
 			self._send_queue.put(CommandQueueEntry(
-				CommandQueueEntry.PRIORITY_HIGH if highPriority else CommandQueueEntry.PRIORITY_NORMAL,
+				CommandQueueEntry.PRIORITY_HIGH if high_priority else CommandQueueEntry.PRIORITY_NORMAL,
 				command,
 				line_number=with_line_number,
-				command_type=commandType,
+				command_type=command_type,
 				progress=with_progress)
 			)
 		except TypeAlreadyInQueue:
@@ -519,18 +532,12 @@ class RepRapProtocol(Protocol):
 
 		self._send(command, with_progress=dict(completion=self._getPrintCompletion(), filepos=self._getPrintFilepos()))
 
-	def _send_temperature_query(self, withType=False):
-		if withType:
-			self._send(RepRapProtocol.COMMAND_GET_TEMP(), commandType=RepRapProtocol.COMMAND_TYPE_TEMPERATURE)
-		else:
-			self._send(RepRapProtocol.COMMAND_GET_TEMP())
+	def _send_temperature_query(self, with_high_priority=False, with_type=False):
+		self._send(RepRapProtocol.COMMAND_GET_TEMP(), high_priority=with_high_priority, command_type=RepRapProtocol.COMMAND_TYPE_TEMPERATURE if with_type else None)
 		self._lastTemperatureUpdate = time.time()
 
-	def _send_sd_progress_query(self, withType=False):
-		if withType:
-			self._send(RepRapProtocol.COMMAND_SD_STATUS(), commandType=RepRapProtocol.COMMAND_TYPE_SD_PROGRESS)
-		else:
-			self._send(RepRapProtocol.COMMAND_SD_STATUS())
+	def _send_sd_progress_query(self, with_high_priority=False, with_type=False):
+		self._send(RepRapProtocol.COMMAND_SD_STATUS(), high_priority=with_high_priority, command_type=RepRapProtocol.COMMAND_TYPE_SD_PROGRESS if with_type else None)
 		self._lastSdProgressUpdate = time.time()
 
 	def _handle_errors(self, line):

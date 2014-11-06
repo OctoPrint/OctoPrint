@@ -319,7 +319,7 @@ class Server():
 			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
 			connectionOptions = getConnectionOptions()
 			if port in connectionOptions["ports"]:
-				printer.connect(port, baudrate)
+				printer.connect(transport_option_overrides=dict(port=port, baudrate=baudrate))
 
 		# start up watchdogs
 		observer = Observer()
