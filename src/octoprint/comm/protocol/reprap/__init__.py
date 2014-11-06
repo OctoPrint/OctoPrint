@@ -14,9 +14,11 @@ import time
 from octoprint.comm.protocol import State, Protocol, PrintingSdFileInformation
 from octoprint.comm.protocol.reprap.util import GcodeCommand, CommandQueue, CommandQueueEntry, PrintingGcodeFileInformation, \
 	StreamingGcodeFileInformation, TypeAlreadyInQueue
+from octoprint.comm.transport import SendTimeout
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings
+from octoprint.util import CountedEvent
 
 
 class RepRapProtocol(Protocol):
@@ -123,13 +125,14 @@ class RepRapProtocol(Protocol):
 
 		self._send_queue = CommandQueue()
 
-		self._clear_for_send = threading.Event()
-		self._clear_for_send.clear()
+		self._clear_for_send = CountedEvent()
 
 		self._force_checksum = True
 		self._wait_for_start = False
 		self._sd_always_available = False
 		self._rx_cache_size = 0
+
+		self._blocking_command_active = False
 
 		self._temperature_interval = 5.0
 		self._sdstatus_interval = 5.0
@@ -154,7 +157,7 @@ class RepRapProtocol(Protocol):
 		self._fill_thread.start()
 
 		self._current_line = 1
-		self._currentExtruder = 0
+		self._current_extruder = 0
 		self._state = State.OFFLINE
 
 		self._reset()
@@ -164,15 +167,18 @@ class RepRapProtocol(Protocol):
 			self._lastTemperatureUpdate = time.time()
 			self._lastSdProgressUpdate = time.time()
 
+			self._blocking_command_active = False
+
 			if self._wait_for_start:
 				self._startSeen = from_start
 			else:
 				self._startSeen = True
 
 			if not self._startSeen:
-				self._clear_for_send.clear()
+				self._clear_for_send.clear(completely=True)
 			else:
-				self._clear_for_send.set()
+				if self._clear_for_send.blocked():
+					self._clear_for_send.set()
 
 			self._receivingSdFileList = False
 
@@ -185,7 +191,7 @@ class RepRapProtocol(Protocol):
 
 			self._nack_lines.clear()
 			self._current_line = 1
-			self._currentExtruder = 0
+			self._current_extruder = 0
 
 			self._previous_resend = False
 			self._last_comm_error = None
@@ -213,7 +219,7 @@ class RepRapProtocol(Protocol):
 		self._send_temperature_query(with_type=True)
 
 	def disconnect(self, on_error=False):
-		self._clear_for_send.clear()
+		self._clear_for_send.clear(completely=True)
 		# disconnect
 		Protocol.disconnect(self, on_error=on_error)
 
@@ -373,8 +379,9 @@ class RepRapProtocol(Protocol):
 			return
 
 		if RepRapProtocol.MESSAGE_WAIT(message):
-			self._clear_for_send.set()
+			#self._clear_for_send.set()
 			# TODO really?
+			pass
 
 		# SD file list
 		if self._receivingSdFileList and not RepRapProtocol.MESSAGE_SD_END_FILE_LIST(message):
@@ -490,7 +497,8 @@ class RepRapProtocol(Protocol):
 			return
 		# allow sending to restart communication
 		if self._state != State.OFFLINE:
-			self._clear_for_send.set()
+			if self._clear_for_send.blocked():
+				self._clear_for_send.set()
 
 	##~~ private
 
@@ -584,7 +592,8 @@ class RepRapProtocol(Protocol):
 	def _process_temperatures(self, line):
 		maxToolNum, parsedTemps = self._parse_temperatures(line)
 
-		result = {}
+		import copy
+		result = copy.deepcopy(self._current_temperature)
 
 		# extruder temperatures
 		if not "T0" in parsedTemps.keys() and not "T1" in parsedTemps.keys() and "T" in parsedTemps.keys():
@@ -700,66 +709,6 @@ class RepRapProtocol(Protocol):
 				self._nack_lines.clear()
 				self._send(RepRapProtocol.COMMAND_SET_LINE(0))
 
-	##~~ specific command actions
-
-	def _gcode_T_acknowledged(self, command, with_line_number):
-		self._currentExtruder = command.tool
-		return command, with_line_number
-
-	def _gcode_G0_acknowledged(self, command, with_line_number):
-		if command.z is not None:
-			z = command.z
-			self._reportZChange(z)
-		return command, with_line_number
-	_gcode_G1_acknowledged = _gcode_G0_acknowledged
-
-	def _gcode_M0_queued(self, command, with_line_number):
-		self.pause_print()
-		# Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-		return None, with_line_number
-	_gcode_M1_queued = _gcode_M0_queued
-
-	def _gcode_M104_sent(self, command, with_line_number):
-		tool = self._currentExtruder
-		if command.t is not None:
-			tool = command.t
-		if command.s is not None:
-			target = command.s
-			tool_key = "tool%d" % tool
-			if tool_key in self._current_temperature.keys() and self._current_temperature[tool_key] is not None and isinstance(self._current_temperature[tool_key], tuple):
-				actual, old_target = self._current_temperature[tool_key]
-				self._current_temperature[tool_key] = (actual, target)
-			else:
-				self._current_temperature[tool_key] = (None, target)
-		return command, with_line_number
-	_gcode_M109_sent = _gcode_M104_sent
-
-	def _gcode_M140_sent(self, command, with_line_number):
-		if command.s is not None:
-			target = command.s
-			if "bed" in self._current_temperature.keys() and self._current_temperature["bed"] is not None and isinstance(self._current_temperature["bed"], tuple):
-				actual, old_target = self._current_temperature["bed"]
-				self._current_temperature["bed"] = (actual, target)
-			else:
-				self._current_temperature["bed"] = (None, target)
-		return command, with_line_number
-	_gcode_M190_sent = _gcode_M140_sent
-
-	def _gcode_M110_sent(self, command, with_line_number):
-		if command.n is not None:
-			new_line_number = command.n
-		else:
-			new_line_number = 0
-
-		self._current_line = new_line_number + 1
-
-		# send M110 command with new line number
-		return command, new_line_number
-
-	def _gcode_M112_queued(self, command, with_line_number): # It's an emergency what todo? Canceling the print should be the minimum
-		self.cancel_print()
-		return command, with_line_number
-
 	##~~ handle queue filling in this thread when printing or streaming
 
 	def _fill_send_queue(self):
@@ -784,20 +733,33 @@ class RepRapProtocol(Protocol):
 		while self._send_queue_processing:
 			if self._send_queue.qsize() == 0:
 				# queue is empty, wait a bit before checking again
+				if ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
+				    or self._state == State.STREAMING):
+					self._logger.warn("Buffer under run while printing!")
 				time.sleep(0.1)
 				continue
 
-			# deassert _clear_for_send to wait for an "ok" if cache full
-			with self._nack_lock:
-				sent = self._send_from_queue()
+			if self._blocking_command_active:
+				# blocking command is active, no use to send anything to the printer right now
+				time.sleep(0.1)
+				continue
+
+			try:
+				with self._nack_lock:
+					sent = self._send_from_queue()
+			except SendTimeout:
+				# we just got a send timeout, so we'll just try again on the next loop iteration
+				continue
 
 			if not sent or self._rx_cache_size <= 0:
-				self._clear_for_send.clear()
 				self._clear_for_send.wait()
 
 	def _send_from_queue(self):
 		entry = self._send_queue.peek()
 		if entry is None:
+			if ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
+			    or self._state == State.STREAMING):
+				self._logger.warn("Buffer under run while printing!")
 			return False
 
 		if not self._startSeen:
@@ -805,35 +767,38 @@ class RepRapProtocol(Protocol):
 
 		if entry.prepared is None:
 			prepared, line_number = self._prepare_for_sending(entry.command, with_line_number=entry.line_number)
-			if prepared is None:
-				return False
 
 			entry.prepared = prepared
 			entry.line_number = line_number
 
-		# Do not send if the left over space in the buffer is too small for this line. Exception: the buffer is empty
-		# and the line still doesn't fit
-		current_size = sum(self._nack_lines)
-		new_size = current_size + entry.size
-		if new_size > self._rx_cache_size > 0 and not (current_size == 0):
-			self._logger.debug("### Printer's rx buffer too full: %d/%d vs %d bytes - waiting" % (current_size, self._rx_cache_size, entry.size))
-			return False
+		if entry.prepared is not None:
+			# only actually send the command if it wasn't filtered out by preprocessing
 
-		# send the command
-		sent = self._transport.send(entry.prepared)
-		if not sent:
-			# if the serial transport could not send our data (e.g. due to a write timeout), we'll try again
-			self._logger.debug("Could not send %s" % entry.prepared)
-			return False
+			current_size = sum(self._nack_lines)
+			new_size = current_size + entry.size
+			if new_size > self._rx_cache_size > 0 and not (current_size == 0):
+				# Do not send if the left over space in the buffer is too small for this line. Exception: the buffer is empty
+				# and the line still doesn't fit
+				return False
 
-		# remove from queue
+			# send the command - we might get a SendTimeout here which is supposed to bubble up since it's caught in the
+			# actual send loop
+			self._transport.send(entry.prepared)
+
+			# add the queue entry into the deque of commands not yet acknowledged
+			self._nack_lines.append(entry)
+
+			# decrease the clear_for_send counter
+			self._clear_for_send.clear()
+		else:
+			self._logger.debug("Dropping command which was disabled through preprocessing: %s" % entry.command)
+
+		# remove from send queue
 		self._send_queue.get(block=False)
-
-		# put tx size into the list so we can pop it later when we get "ok"
-		self._nack_lines.append(entry)
 
 		return True
 
+	##~~ preprocessing of command in the three phases "queued", "sent" and "acknowledged"
 
 	def _process_command(self, command, phase, with_line_number=None):
 		if command is None:
@@ -868,4 +833,73 @@ class RepRapProtocol(Protocol):
 			return "%s*%d" % (command_to_send, checksum), line_number
 		else:
 			return str(command), None
+
+	##~~ specific command actions
+
+	def _gcode_T_acknowledged(self, command, with_line_number):
+		self._current_extruder = command.tool
+		return command, with_line_number
+
+	def _gcode_G0_acknowledged(self, command, with_line_number):
+		if command.z is not None:
+			z = command.z
+			self._reportZChange(z)
+		return command, with_line_number
+	_gcode_G1_acknowledged = _gcode_G0_acknowledged
+
+	def _gcode_M0_queued(self, command, with_line_number):
+		self.pause_print()
+		# Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+		return None, with_line_number
+	_gcode_M1_queued = _gcode_M0_queued
+
+	def _gcode_M104_sent(self, command, with_line_number):
+		key = "tool%d" % command.t if command.t is not None else self._current_extruder
+		self._handle_temperature_code(command, key)
+		return command, with_line_number
+
+	def _gcode_M109_sent(self, command, with_line_number):
+		self._blocking_command_active = True
+		self._logger.info("Waiting for a blocking command to finish")
+		return self._gcode_M104_sent(command, with_line_number)
+
+	def _gcode_M140_sent(self, command, with_line_number):
+		key = "bed"
+		self._handle_temperature_code(command, key)
+		return command, with_line_number
+
+	def _gcode_M190_sent(self, command, with_line_number):
+		self._blocking_command_active = True
+		self._logger.info("Waiting for a blocking command to finish")
+		return self._gcode_M140_sent(command, with_line_number)
+
+	def _gcode_M109_acknowledged(self, command, with_line_number):
+		self._blocking_command_active = False
+		self._logger.info("Blocking command finished")
+		return command, with_line_number
+	_gcode_M190_acknowledged = _gcode_M109_acknowledged
+
+	def _handle_temperature_code(self, command, key):
+		if command.s is not None:
+			target = command.s
+			if key in self._current_temperature and self._current_temperature[key] is not None and isinstance(self._current_temperature[key], tuple):
+				actual, old_target = self._current_temperature[key]
+				self._current_temperature[key] = (actual, target)
+			else:
+				self._current_temperature[key] = (None, target)
+
+	def _gcode_M110_sent(self, command, with_line_number):
+		if command.n is not None:
+			new_line_number = command.n
+		else:
+			new_line_number = 0
+
+		self._current_line = new_line_number + 1
+
+		# send M110 command with new line number
+		return command, new_line_number
+
+	def _gcode_M112_queued(self, command, with_line_number): # It's an emergency what todo? Canceling the print should be the minimum
+		self.cancel_print()
+		return command, with_line_number
 

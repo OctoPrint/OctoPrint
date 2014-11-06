@@ -7,6 +7,12 @@ import logging
 
 from octoprint.events import eventManager, Events
 
+class TransportError(Exception):
+	pass
+
+class SendTimeout(Exception):
+	pass
+
 class Transport(object):
 
 	def __init__(self, messageReceiver=None, stateReceiver=None, logReceiver=None):

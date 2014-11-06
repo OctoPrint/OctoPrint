@@ -8,6 +8,7 @@ import sys
 import time
 import re
 import tempfile
+import threading
 import logging
 from flask import make_response
 
@@ -279,5 +280,41 @@ def address_for_client(host, port):
 			return address
 		except Exception as e:
 			pass
+
+
+class CountedEvent(object):
+
+	def __init__(self, value=0):
+		self._counter = 0
+		self._mutex = threading.Lock()
+		self._event = threading.Event()
+
+		self._internal_set(value)
+
+	def set(self):
+		with self._mutex:
+			self._internal_set(self._counter + 1)
+
+	def clear(self, completely=False):
+		with self._mutex:
+			if completely:
+				self._internal_set(0)
+			else:
+				self._internal_set(self._counter - 1)
+
+	def wait(self, timeout=None):
+		self._event.wait(timeout)
+
+	def blocked(self):
+		with self._mutex:
+			return self._counter == 0
+
+	def _internal_set(self, value):
+		self._counter = value
+		if self._counter <= 0:
+			self._counter = 0
+			self._event.clear()
+		else:
+			self._event.set()
 
 

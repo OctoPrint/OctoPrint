@@ -13,7 +13,7 @@ try:
 except:
 	pass
 
-from . import Transport, TransportProperties, State
+from . import Transport, TransportProperties, State, SendTimeout, TransportError
 from octoprint.util import getExceptionString
 from octoprint.util.virtual import VirtualPrinter
 from octoprint.settings import settings
@@ -78,16 +78,16 @@ class SerialTransport(Transport):
 			self._serial.write(commandToSend)
 			self._transport_logger.info("Send: %s" % command)
 			self.logTx(command)
-			return True
 		except serial.SerialTimeoutException:
 			self._transport_logger.warn("Timeout while sending: %s" % command)
 			self.logError("Serial timeout while writing to serial port, try again later.")
-			return False
+			raise SendTimeout()
 		except:
 			exceptionString = getExceptionString()
 			self.logError("Unexpected error while writing serial port: %s" % exceptionString)
 			self.onError(exceptionString)
 			self.disconnect(True)
+			raise TransportError()
 
 	def receive(self):
 		return self._readline()
