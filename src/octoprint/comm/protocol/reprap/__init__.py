@@ -153,6 +153,7 @@ class RepRapProtocol(Protocol):
 
 		self._fill_queue_semaphore = threading.Semaphore(20)
 		self._fill_queue_state_signal = threading.Event()
+		self._fill_queue_mutex = threading.Lock()
 		self._fill_queue_processing = True
 		self._fill_thread = threading.Thread(target=self._fill_send_queue, name="FillQueueHandler")
 		self._fill_thread.daemon = True
@@ -201,7 +202,7 @@ class RepRapProtocol(Protocol):
 
 			self._receivingSdFileList = False
 
-			# clear the the send queue one
+			# clear the the send queue
 			self._send_queue.clear()
 
 			self._nack_lines.clear()
@@ -261,9 +262,10 @@ class RepRapProtocol(Protocol):
 			self._send(RepRapProtocol.COMMAND_SD_PAUSE)
 			self._send(RepRapProtocol.COMMAND_SD_SET_POS(0))
 
-		self._send_queue.clear(matcher=lambda entry: entry is not None and entry.command is not None and hasattr(entry.command, "progress") and entry.command.progress is not None)
-
 		Protocol.cancel_print(self)
+
+		with self._fill_queue_mutex:
+			self._send_queue.clear(matcher=lambda entry: entry is not None and entry.command is not None and hasattr(entry.command, "progress") and entry.command.progress is not None)
 
 	def init_sd(self):
 		Protocol.init_sd(self)
@@ -774,14 +776,15 @@ class RepRapProtocol(Protocol):
 
 	def _fill_send_queue(self):
 		while self._fill_queue_processing:
-			self._fill_queue_state_signal.wait(0.1)
+			with self._fill_queue_mutex:
+				self._fill_queue_state_signal.wait(0.1)
 
-			if not ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
-			        or self._state == State.STREAMING):
-				continue
+				if not ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
+				        or self._state == State.STREAMING):
+					continue
 
-			if self._fill_queue_semaphore.acquire(0.5):
-				self._send_next()
+				if self._fill_queue_semaphore.acquire(0.5):
+					self._send_next()
 
 
 	##~~ the actual send queue handling starts here
