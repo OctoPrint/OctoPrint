@@ -125,7 +125,7 @@ class RepRapProtocol(Protocol):
 
 		self._send_queue = CommandQueue()
 
-		self._clear_for_send = CountedEvent()
+		self._clear_for_send = CountedEvent(max=20)
 
 		self._force_checksum = True
 		self._wait_for_start = False
@@ -808,10 +808,9 @@ class RepRapProtocol(Protocol):
 				# we just got a send timeout, so we'll just try again on the next loop iteration
 				continue
 
-			# decrease the clear_for_send counter
-			self._clear_for_send.clear()
-
 			if not sent or self._rx_cache_size <= 0:
+				# decrease the clear_for_send counter
+				self._clear_for_send.clear()
 				self._clear_for_send.wait()
 
 	def _send_from_queue(self):

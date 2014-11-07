@@ -284,8 +284,9 @@ def address_for_client(host, port):
 
 class CountedEvent(object):
 
-	def __init__(self, value=0):
+	def __init__(self, value=0, max=None):
 		self._counter = 0
+		self._max = max
 		self._mutex = threading.Lock()
 		self._event = threading.Event()
 
@@ -315,6 +316,8 @@ class CountedEvent(object):
 			self._counter = 0
 			self._event.clear()
 		else:
+			if self._max is not None and self._counter > self._max:
+				self._counter = self._max
 			self._event.set()
 
 
