@@ -151,6 +151,8 @@ class RepRapProtocol(Protocol):
 		self._thread.daemon = True
 		self._thread.start()
 
+		self._fill_queue_semaphore = threading.Semaphore(20)
+		self._fill_queue_state_signal = threading.Event()
 		self._fill_queue_processing = True
 		self._fill_thread = threading.Thread(target=self._fill_send_queue, name="FillQueueHandler")
 		self._fill_thread.daemon = True
@@ -160,7 +162,24 @@ class RepRapProtocol(Protocol):
 		self._current_extruder = 0
 		self._state = State.OFFLINE
 
+		self._preprocessors = dict()
+		self._setup_preprocessors()
+
 		self._reset()
+
+	def _setup_preprocessors(self):
+		self._preprocessors.clear()
+
+		for attr in dir(self):
+			if attr.startswith("_gcode") and (attr.endswith("_queued") or attr.endswith("_sent") or attr.endswith("_acknowledged")):
+				split_attr = attr.split("_")
+				if not len(split_attr) == 4:
+					continue
+
+				prefix, code, postfix = split_attr[1:]
+				if not postfix in self._preprocessors:
+					self._preprocessors[postfix] = dict()
+				self._preprocessors[postfix][code] = getattr(self, attr)
 
 	def _reset(self, from_start=False):
 		with self._nack_lock:
@@ -489,6 +508,13 @@ class RepRapProtocol(Protocol):
 			if self._clear_for_send.blocked():
 				self._clear_for_send.set()
 
+	def _stateChanged(self, newState):
+		if ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
+			or self._state == State.STREAMING):
+			self._fill_queue_state_signal.set()
+		else:
+			self._fill_queue_state_signal.clear()
+
 	##~~ private
 
 	def _process_acknowledgement(self):
@@ -748,18 +774,14 @@ class RepRapProtocol(Protocol):
 
 	def _fill_send_queue(self):
 		while self._fill_queue_processing:
-			# queue is full, wait a bit before checking again
-			if self._send_queue.qsize() > 20:
-				time.sleep(0.05)
+			self._fill_queue_state_signal.wait(0.1)
 
-			# send_next only if printing (not SD) or streaming
-			elif ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
-			     or self._state == State.STREAMING):
+			if not ((self._state == State.PRINTING and not isinstance(self._current_file, PrintingSdFileInformation))
+			        or self._state == State.STREAMING):
+				continue
+
+			if self._fill_queue_semaphore.acquire(0.5):
 				self._send_next()
-
-			# not printing or streaming
-			else:
-				time.sleep(0.1)
 
 
 	##~~ the actual send queue handling starts here
@@ -785,6 +807,9 @@ class RepRapProtocol(Protocol):
 			except SendTimeout:
 				# we just got a send timeout, so we'll just try again on the next loop iteration
 				continue
+
+			# decrease the clear_for_send counter
+			self._clear_for_send.clear()
 
 			if not sent or self._rx_cache_size <= 0:
 				self._clear_for_send.wait()
@@ -825,14 +850,17 @@ class RepRapProtocol(Protocol):
 
 				# add the queue entry into the deque of commands not yet acknowledged
 				self._nack_lines.append(entry)
-
-				# decrease the clear_for_send counter
-				self._clear_for_send.clear()
 			else:
 				self._logger.debug("Dropping command which was disabled through preprocessing: %s" % entry.command)
 
 		# remove from send queue
-		self._send_queue.get(block=False)
+		self._fill_queue_semaphore.release()
+		try:
+			self._send_queue.get(block=False)
+		except Queue.Empty:
+			# that's ok, we might just have asynchronously cancelled the whole print job
+			# TODO but we only remove the commands from the print job, so this will eat a line!!!
+			pass
 
 		return True
 
@@ -845,9 +873,8 @@ class RepRapProtocol(Protocol):
 		if not phase in ("queued", "sent", "acknowledged"):
 			return None
 
-		gcode_command_handler = "_gcode_%s_%s" % (command.command, phase)
-		if hasattr(self, gcode_command_handler) and not self.is_streaming():
-			command, with_line_number = getattr(self, gcode_command_handler)(command, with_line_number)
+		if phase in self._preprocessors and command.command in self._preprocessors[phase]:
+			command, with_line_number = self._preprocessors[phase][command.command](command, with_line_number)
 
 		return command, with_line_number
 

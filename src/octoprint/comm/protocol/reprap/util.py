@@ -186,11 +186,15 @@ class CommandQueue(Queue.Queue):
 			del self.lookup[item.command_type]
 		return item
 
-	def peek(self):
-		if len(self.queue) == 0:
+	def _item_at(self, index):
+		try:
+			return self.queue[index][2]
+		except IndexError:
 			return None
-		priority, counter, item = self.queue[0]
-		return item
+
+	def peek(self):
+		with self.mutex:
+			return self._item_at(0)
 
 	def clear(self, matcher=None):
 		if matcher is None:
