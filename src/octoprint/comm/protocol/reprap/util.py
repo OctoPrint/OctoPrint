@@ -26,33 +26,35 @@ class GcodeCommand(object):
 	@staticmethod
 	def from_line(line):
 		line = line.strip()
+		command = ""
+		args = {"original": line}
 		match = GcodeCommand.COMMAND_REGEX.match(line)
 		if match is None:
-			return None
-
-		commandType = match.group(1)
-		commandNumber = int(match.group(2))
-		command = "%s%d" % (commandType, commandNumber)
-		args = {"original": line}
-
-		if commandType == "T":
-			args["tool"] = commandNumber
+			args["unknown"] = True
 		else:
-			matchedArgs = GcodeCommand.ARGUMENT_REGEX.findall(line)
-			if len(matchedArgs) == 0:
-				paramMatch = GcodeCommand.PARAM_REGEX.match(line)
-				if paramMatch is not None:
-					args["param"] = paramMatch.group(1)
+			commandType = match.group(1)
+			commandNumber = int(match.group(2))
+			command = "%s%d" % (commandType, commandNumber)
+			
+
+			if commandType == "T":
+				args["tool"] = commandNumber
 			else:
-				for arg in matchedArgs:
-					key = arg[0].lower()
-					if key in GcodeCommand.KNOWN_INT_ATTRIBUTES:
-						value = int(arg[1:])
-					elif key in GcodeCommand.KNOWN_FLOAT_ATTRIBUTES:
-						value = float(arg[1:])
-					else:
-						value = str(arg[1:])
-					args[key] = value
+				matchedArgs = GcodeCommand.ARGUMENT_REGEX.findall(line)
+				if len(matchedArgs) == 0:
+					paramMatch = GcodeCommand.PARAM_REGEX.match(line)
+					if paramMatch is not None:
+						args["param"] = paramMatch.group(1)
+				else:
+					for arg in matchedArgs:
+						key = arg[0].lower()
+						if key in GcodeCommand.KNOWN_INT_ATTRIBUTES:
+							value = int(arg[1:])
+						elif key in GcodeCommand.KNOWN_FLOAT_ATTRIBUTES:
+							value = float(arg[1:])
+						else:
+							value = str(arg[1:])
+						args[key] = value
 
 		return GcodeCommand(command, **args)
 
@@ -76,8 +78,10 @@ class GcodeCommand(object):
 		self.progress = None
 		self.callback = None
 
+		self.unknown = False
+
 		for key, value in kwargs.iteritems():
-			if key in GcodeCommand.KNOWN_ATTRIBUTES + ("tool", "original", "param", "progress", "callback"):
+			if key in GcodeCommand.KNOWN_ATTRIBUTES + ("tool", "original", "param", "progress", "callback", "unknown"):
 				self.__setattr__(key, value)
 
 	def isGetTemperatureCommand(self):
