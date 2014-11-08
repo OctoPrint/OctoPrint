@@ -43,6 +43,7 @@
   uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
 * Also interpret lines starting with "!!" as errors
 * Added deletion of pyc files to the `python setup.py clean` command
+* Settings now show a QRCode for the API Key ([#637])
 
 ### Bug Fixes
 
