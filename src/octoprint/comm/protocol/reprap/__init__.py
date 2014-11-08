@@ -882,7 +882,7 @@ class RepRapProtocol(Protocol):
 
 	def _prepare_for_sending(self, command, with_line_number=None):
 		command, with_line_number = self._process_command(command, "sent", with_line_number=with_line_number)
-		if command is None:
+		if command is None or command.unknown:
 			return None, None
 
 		if self._force_checksum:
