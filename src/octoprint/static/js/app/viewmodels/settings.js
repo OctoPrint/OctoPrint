@@ -379,5 +379,4 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
             }
         });
     };
-
 }
