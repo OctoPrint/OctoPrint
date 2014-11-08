@@ -57,6 +57,8 @@
 * Various fixes of bugs in newly introduced features and improvements:
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
     queue
+* Various fixes without tickets:
+  * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
 
 ## 1.1.2 (Unreleased)
 

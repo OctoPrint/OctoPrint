@@ -354,11 +354,13 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             output.push(gettext("Layer number") + ": " + (layer.number + 1));
             output.push(gettext("Layer height") + " (mm): " + layer.height);
             output.push(gettext("GCODE commands in layer") + ": " + layer.commands);
-            if (layer.filament.length == 1) {
-                output.push(gettext("Filament used by layer") + ": " + layer.filament[0].toFixed(2) + "mm");
-            } else {
-                for (var i = 0; i < layer.filament.length; i++) {
-                    output.push(gettext("Filament used by layer") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+            if (layer.filament != undefined) {
+                if (layer.filament.length == 1) {
+                    output.push(gettext("Filament used by layer") + ": " + layer.filament[0].toFixed(2) + "mm");
+                } else {
+                    for (var i = 0; i < layer.filament.length; i++) {
+                        output.push(gettext("Filament used by layer") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                    }
                 }
             }
             output.push(gettext("Print time for layer") + ": " + formatDuration(layer.printTime));
