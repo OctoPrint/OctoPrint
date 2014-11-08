@@ -290,8 +290,6 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.system_actions(response.system.actions);
 
         self.terminalFilters(response.terminalFilters);
-
-        self.makeCode();
     };
 
     self.saveData = function() {
@@ -380,15 +378,5 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 $("#settings_dialog").modal("hide");
             }
         });
-    };
-
-    self.qrcode = new QRCode("qrcode");
-    
-    self.makeCode = function() {
-        var api_key = $("#settings-apikey").val();
-        
-        self.qrcode.makeCode(api_key);
-        
-        return true;
     };
 }

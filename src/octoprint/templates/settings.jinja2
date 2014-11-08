@@ -440,12 +440,13 @@
                         <div class="control-group">
                             <label class="control-label" for="settings-apiKey">{{ _('API Key') }}</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" data-bind="value: api_key, event: {keyup:  makeCode, blur: makeCode}" id="settings-apikey">
+                                <input type="text" class="input-block-level" data-bind="value: api_key, valueUpdate: 'afterkeydown'" id="settings-apikey">
                             </div>
                         </div>
                         <div class="control-group">
+                            <label class="control-label">{{ _('QR Code') }}</label>
                             <div class="controls">
-                                <div id="qrcode" style="width:250px; height:250px; margin-top:10px;"></div>
+                                <div data-bind="qrcode: {text: api_key, size: 180}"></div>
                             </div>
                         </div>
                     </form>
@@ -592,13 +593,21 @@
                                         <label class="control-label">{{ _('Current API Key') }}</label>
                                         <div class="controls">
                                             <div class="input-append">
-                                                <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.users.editorApikey, attr: {placeholder: '{{ _('N/A') }}'}">
+                                                <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.users.editorApikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
                                                 <a class="btn" title="Generate new Apikey" data-bind="click: function() { $root.users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
                                                 <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { $root.users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
                                             </div>
 
                                         </div>
                                     </div>
+                                    <!-- TODO Figure out issue where text isn't properly bound and hence the QR code is worthless
+                                    <div class="control-group">
+                                        <label class="control-label">{{ _('QR Code') }}</label>
+                                        <div class="controls">
+                                            <div data-bind="qrcode: {text: $root.users.editorApiKey, size: 150}"></div>
+                                        </div>
+                                    </div>
+                                    -->
                                 </fieldset>
                             </form>
                         </div>
