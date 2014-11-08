@@ -19,6 +19,7 @@ from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings
 from octoprint.util import CountedEvent
+import octoprint.plugin
 
 
 class RepRapProtocol(Protocol):
@@ -163,6 +164,8 @@ class RepRapProtocol(Protocol):
 		self._current_extruder = 0
 		self._state = State.OFFLINE
 
+		self._pluginManager = octoprint.plugin.plugin_manager()
+
 		self._preprocessors = dict()
 		self._setup_preprocessors()
 
@@ -222,6 +225,8 @@ class RepRapProtocol(Protocol):
 		self._rx_cache_size = protocol_options["buffer"] if "buffer" in protocol_options else 0
 		self._temperature_interval = protocol_options["timeout"]["temperature"] if "timeout" in protocol_options and "temperature" in protocol_options["timeout"] else 5.0
 		self._sdstatus_interval = protocol_options["timeout"]["sdstatus"] if "timeout" in protocol_options and "sdstatus" in protocol_options["timeout"] else 5.0
+
+		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 
 		self._reset()
 
@@ -570,6 +575,12 @@ class RepRapProtocol(Protocol):
 			if entry.command is not None:
 				entry.command.progress = with_progress
 		else:
+			#handle our hooks, if any
+			for hook in self._gcode_hooks:
+				hook_cmd = self._gcode_hooks[hook](self, command)
+				if hook_cmd and isinstance(hook_cmd, basestring):
+					command = hook_cmd
+
 			if not isinstance(command, GcodeCommand):
 				command = GcodeCommand.from_line(command)
 			command.progress = with_progress
