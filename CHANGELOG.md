@@ -45,6 +45,9 @@
 * Added deletion of pyc files to the `python setup.py clean` command
 * Settings now show a QRCode for the API Key ([#637](https://github.com/foosel/OctoPrint/pull/637))
 * Username in login dialog is not automatically capitalized on mobile devices anymore ([#639](https://github.com/foosel/OctoPrint/pull/639))
+* "Slicing Done" and "Streaming Done" notifications now have a green background ([#558](https://github.com/foosel/OctoPrint/issues/558))
+* Files that are currently in use, be it for slicing, printing or whatever, are now tracked and can not be deleted as
+  long as they are in use
 
 ### Bug Fixes
 
