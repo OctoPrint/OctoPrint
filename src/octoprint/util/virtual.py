@@ -1,5 +1,5 @@
-from __future__ import absolute_import
 # coding=utf-8
+from __future__ import absolute_import
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
