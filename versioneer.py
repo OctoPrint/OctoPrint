@@ -473,7 +473,7 @@ def versions_from_parentdir(parentdir_prefix, root, verbose=False):
             print("guessing rootdir is '%%s', but '%%s' doesn't start with prefix '%%s'" %%
                   (root, dirname, parentdir_prefix))
         return None
-    return {"version": dirname[len(parentdir_prefix):], "full": ""}
+    return {"version": dirname[len(parentdir_prefix):], "full": "", "branch": ""}
 
 tag_prefix = "%(TAG_PREFIX)s"
 parentdir_prefix = "%(PARENTDIR_PREFIX)s"
@@ -508,7 +508,7 @@ def parse_lookup_file(root, lookup_path=None):
                 break
     return lookup
 
-def get_versions(default={"version": "unknown", "full": ""}, lookup_path=None, verbose=False):
+def get_versions(default={"version": "unknown", "full": "", "branch": "unknown"}, lookup_path=None, verbose=False):
     # I am in _version.py, which lives at ROOT/VERSIONFILE_SOURCE. If we have
     # __file__, we can work backwards from there to the root. Some
     # py2exe/bbfreeze/non-CPython implementations don't do __file__, in which
@@ -649,7 +649,8 @@ def versions_from_expanded_variables(variables, tag_prefix, verbose=False):
     if verbose:
         print("no suitable tags, using full revision id")
     return { "version": variables["full"].strip(),
-             "full": variables["full"].strip() }
+             "full": variables["full"].strip(),
+             "branch": ""}
 
 
 def versions_from_lookup(lookup, root, verbose=False):
@@ -741,7 +742,7 @@ def versions_from_parentdir(parentdir_prefix, root, verbose=False):
             print("guessing rootdir is '%s', but '%s' doesn't start with prefix '%s'" %
                   (root, dirname, parentdir_prefix))
         return None
-    return {"version": dirname[len(parentdir_prefix):], "full": ""}
+    return {"version": dirname[len(parentdir_prefix):], "full": "", "branch": ""}
 import os.path
 import sys
 
@@ -801,15 +802,13 @@ SHORT_VERSION_PY = """
 
 version_version = '%(version)s'
 version_full = '%(full)s'
-version_branch = %(branch)r
+version_branch = '%(branch)s'
 def get_versions(default={}, verbose=False):
-    if version_branch:
-        return {'version': version_version, 'full': version_full, 'branch': version_branch}
-    return {'version': version_version, 'full': version_full}
+    return {'version': version_version, 'full': version_full, 'branch': version_branch}
 
 """
 
-DEFAULT = {"version": "unknown", "full": "unknown"}
+DEFAULT = {"version": "unknown", "full": "unknown", "branch": "unknown"}
 
 def versions_from_file(filename):
     versions = {}
@@ -824,6 +823,9 @@ def versions_from_file(filename):
         mo = re.match("version_full = '([^']+)'", line)
         if mo:
             versions["full"] = mo.group(1)
+        mo = re.match("version_branch = '([^']+)'", line)
+        if mo:
+            versions["branch"] = mo.group(1)
     f.close()
     return versions
 
@@ -866,7 +868,7 @@ def parse_lookup_file(root, lookup_path=None):
     return lookup
 
 def get_versions(default=DEFAULT, verbose=False):
-    # returns dict with two keys: 'version' and 'full'
+    # returns dict with three keys: 'version', 'full' and 'branch'
     assert versionfile_source is not None, "please set versioneer.versionfile_source"
     assert tag_prefix is not None, "please set versioneer.tag_prefix"
     assert parentdir_prefix is not None, "please set versioneer.parentdir_prefix"

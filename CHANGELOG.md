@@ -1,12 +1,21 @@
 # OctoPrint Changelog
 
-## 1.1.1 (Unreleased)
+## 1.1.2 (Unreleased)
+
+### Bug Fixes
+
+* [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
+  by versioneer
+
+## 1.1.1 (2014-10-27)
 
 ### Improvements
 
 * The API is now enabled by default and the API key -- if not yet set -- will be automatically generated on first
   server start and written back into ``config.yaml``
 * Event subscriptions are now enabled by default (it was an accident that they weren't)
+* Generate the key used for session hashing individually for each server instance
+* Generate the salt used for hashing user passwords individually for each server instance
 
 ### Bug Fixes
 
