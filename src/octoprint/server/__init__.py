@@ -106,10 +106,7 @@ def index():
 		asset_plugin_urls[name] = implementation.get_assets()
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
-	template_plugin_names = list()
-	for name in template_plugins.items():
-		template_plugin_names.append(name[0])
-
+	template_plugin_names = template_plugins.keys()
 
 	return render_template(
 		"index.jinja2",
