@@ -210,6 +210,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_invertY = self.koInvertAxis('y');
     self.printer_invertZ = self.koInvertAxis('z');
 
+    self.onSettingsShown = function() {
+      self.requestData();
+    };
+     
     self.requestData = function(callback) {
         $.ajax({
             url: API_BASEURL + "settings",
