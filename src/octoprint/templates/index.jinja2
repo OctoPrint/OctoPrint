@@ -646,6 +646,14 @@
         {% include 'settings.jinja2' %}
         {% include 'dialogs.jinja2' %}
 
+        <!-- Plugin template files -->
+        {%  if templatePlugins %}
+            {% for plugin_name in templatePlugins %}
+                {% include plugin_name+".jinja2" ignore missing %}
+            {% endfor %}
+        {% endif %}
+        <!-- End plugin template files -->
+
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/modernizr.custom.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore-min.js') }}"></script>

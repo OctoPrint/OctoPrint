@@ -105,6 +105,9 @@ def index():
 	for name, implementation in asset_plugins.items():
 		asset_plugin_urls[name] = implementation.get_assets()
 
+	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
+	template_plugin_names = template_plugins.keys()
+
 	return render_template(
 		"index.jinja2",
 		webcamStream=settings().get(["webcam", "stream"]),
@@ -123,6 +126,7 @@ def index():
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
 		settingsPlugins=settings_plugin_template_vars,
+		templatePlugins=template_plugin_names,
 		assetPlugins=asset_plugin_urls
 	)
 
