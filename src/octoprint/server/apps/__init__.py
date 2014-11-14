@@ -49,7 +49,7 @@ def verifySessionKey():
 	apps = _get_registered_apps()
 	if not lookup_key in apps or not apps[lookup_key]["enabled"] or not "pubkey" in apps[lookup_key]:
 		octoprint.server.appSessionManager.remove(key)
-		return make_response("Invalid app: {lookup_key}".format(lookup_key=lookup_key), 403)
+		return make_response("Invalid app: {lookup_key}".format(lookup_key=lookup_key), 401)
 
 	pubkey_string = apps[lookup_key]["pubkey"]
 	pubkey_string = "\n".join([pubkey_string[x:x+64] for x in range(0, len(pubkey_string), 64)])
@@ -64,12 +64,12 @@ def verifySessionKey():
 		rsa.verify(message, signature, pubkey)
 	except rsa.VerificationError:
 		octoprint.server.appSessionManager.remove(key)
-		return make_response("Invalid signature", 403)
+		return make_response("Invalid signature", 401)
 
 	# generate new session key and return it
 	result = octoprint.server.appSessionManager.verify(key)
 	if not result:
-		return make_response("Invalid key or already verified", 403)
+		return make_response("Invalid key or already verified", 401)
 
 	verified_key, valid_until = result
 	return jsonify(key=verified_key, validUntil=valid_until)
