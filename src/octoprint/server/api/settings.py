@@ -34,7 +34,7 @@ def getSettings():
 	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
-			"key": s.get(["api", "key"]),
+			"key": s.get(["api", "key"]) if admin_permission.can() else "n/a",
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
 		"appearance": {
