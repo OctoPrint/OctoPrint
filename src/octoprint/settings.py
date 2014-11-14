@@ -439,7 +439,9 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False, defaults=None):
+	def get(self, path, asdict=False, defaults=None, merged=False):
+		import octoprint.util as util
+
 		if len(path) == 0:
 			return None
 
@@ -471,6 +473,8 @@ class Settings(object):
 		for key in keys:
 			if key in config.keys():
 				value = config[key]
+				if merged and key in defaults:
+					value = util.dict_merge(defaults[key], value)
 			elif key in defaults:
 				value = defaults[key]
 			else:
