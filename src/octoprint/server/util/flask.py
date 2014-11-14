@@ -123,15 +123,7 @@ def restricted_access(func, api_enabled=True):
 		# if API is globally enabled, enabled for this request and an api key is provided that is not the current UI API key, try to use that
 		apikey = octoprint.server.util.get_api_key(flask.request)
 		if settings().get(["api", "enabled"]) and api_enabled and apikey is not None and apikey != octoprint.server.UI_API_KEY:
-			if apikey == settings().get(["api", "key"]):
-				# master key was used
-				user = octoprint.users.ApiUser()
-			elif octoprint.server.appSessionManager.validate(apikey):
-				# valid app session key was used
-				user = octoprint.users.ApiUser()
-			else:
-				# user key might have been used
-				user = octoprint.server.userManager.findUser(apikey=apikey)
+			user = octoprint.server.util.get_user_for_apikey(apikey)
 
 			if user is None:
 				return flask.make_response("Invalid API key", 401)
@@ -141,20 +133,6 @@ def restricted_access(func, api_enabled=True):
 
 		# call regular login_required decorator
 		return flask.ext.login.login_required(func)(*args, **kwargs)
-	return decorated_view
-
-
-def api_access(func):
-	@functools.wraps(func)
-	def decorated_view(*args, **kwargs):
-		if not settings().get(["api", "enabled"]):
-			flask.make_response("API disabled", 401)
-		apikey = octoprint.server.util.get_api_key(flask.request)
-		if apikey is None:
-			flask.make_response("No API key provided", 401)
-		if apikey != settings().get(["api", "key"]):
-			flask.make_response("Invalid API key", 403)
-		return func(*args, **kwargs)
 	return decorated_view
 
 

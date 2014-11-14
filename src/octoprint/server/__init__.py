@@ -165,6 +165,9 @@ def on_identity_loaded(sender, identity):
 
 
 def load_user(id):
+	if id == "_api":
+		return users.ApiUser()
+
 	if session and "usersession.id" in session:
 		sessionid = session["usersession.id"]
 	else:

@@ -18,14 +18,13 @@ from . import watchdog
 
 def get_user_for_apikey(apikey):
 	if settings().get(["api", "enabled"]) and apikey is not None:
-		if apikey == settings().get(["api", "key"]):
-			# master key was used
+		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
+			# master key or an app session key was used
 			return ApiUser()
-		else:
+		elif octoprint.server.userManager is not None:
 			# user key might have been used
 			return octoprint.server.userManager.findUser(apikey=apikey)
-	else:
-		return None
+	return None
 
 
 def get_api_key(request):
