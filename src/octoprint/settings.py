@@ -154,7 +154,8 @@ default_settings = {
 	"api": {
 		"enabled": True,
 		"key": None,
-		"allowCrossOrigin": False
+		"allowCrossOrigin": False,
+		"apps": {}
 	},
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },

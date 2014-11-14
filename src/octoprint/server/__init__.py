@@ -34,6 +34,7 @@ userManager = None
 eventManager = None
 loginManager = None
 pluginManager = None
+appSessionManager = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -203,6 +204,7 @@ class Server():
 		global eventManager
 		global loginManager
 		global pluginManager
+		global appSessionManager
 		global debug
 
 		from tornado.ioloop import IOLoop
@@ -227,6 +229,7 @@ class Server():
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(settings().getBaseFolder("uploads"))
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue)
+		appSessionManager = util.flask.AppSessionManager()
 
 		# configure additional template folders for jinja2
 		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
@@ -293,9 +296,11 @@ class Server():
 		app.debug = self._debug
 
 		from octoprint.server.api import api
+		from octoprint.server.apps import apps
 
 		# register API blueprint
 		app.register_blueprint(api, url_prefix="/api")
+		app.register_blueprint(apps, url_prefix="/apps")
 
 		# also register any blueprints defined in BlueprintPlugins
 		octoprint.plugin.call_plugin(octoprint.plugin.types.BlueprintPlugin,

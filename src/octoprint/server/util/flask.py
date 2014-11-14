@@ -10,6 +10,10 @@ import flask
 import flask.ext.login
 import flask.ext.principal
 import functools
+import time
+import uuid
+import threading
+import logging
 
 from octoprint.settings import settings
 import octoprint.server
@@ -122,6 +126,9 @@ def restricted_access(func, api_enabled=True):
 			if apikey == settings().get(["api", "key"]):
 				# master key was used
 				user = octoprint.users.ApiUser()
+			elif octoprint.server.appSessionManager.validate(apikey):
+				# valid app session key was used
+				user = octoprint.users.ApiUser()
 			else:
 				# user key might have been used
 				user = octoprint.server.userManager.findUser(apikey=apikey)
@@ -151,4 +158,70 @@ def api_access(func):
 	return decorated_view
 
 
+class AppSessionManager(object):
+
+	VALIDITY_UNVERIFIED = 1 * 60 # 1 minute
+	VALIDITY_VERIFIED = 2 * 60 * 60 # 2 hours
+
+	def __init__(self):
+		self._sessions = dict()
+		self._oldest = None
+		self._mutex = threading.RLock()
+
+		self._logger = logging.getLogger(__name__)
+
+	def create(self):
+		self._clean_sessions()
+
+		key = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		created = time.time()
+		valid_until = created + self.__class__.VALIDITY_UNVERIFIED
+
+		with self._mutex:
+			self._sessions[key] = (created, False, valid_until)
+		return key, valid_until
+
+	def remove(self, key):
+		with self._mutex:
+			if not key in self._sessions:
+				return
+			del self._sessions[key]
+
+	def verify(self, key):
+		self._clean_sessions()
+
+		if not key in self._sessions:
+			return False
+
+		with self._mutex:
+			created, verified, _ = self._sessions[key]
+			if verified:
+				return False
+
+			valid_until = created + self.__class__.VALIDITY_VERIFIED
+			self._sessions[key] = created, True, created + self.__class__.VALIDITY_VERIFIED
+
+		return key, valid_until
+
+	def validate(self, key):
+		self._clean_sessions()
+		return key in self._sessions and self._sessions[key][1]
+
+	def _clean_sessions(self):
+		if self._oldest is not None and self._oldest > time.time():
+			return
+
+		with self._mutex:
+			self._oldest = None
+			for key, value in self._sessions.items():
+				created, verified, valid_until = value
+				if not verified:
+					valid_until = created + self.__class__.VALIDITY_UNVERIFIED
+
+				if valid_until < time.time():
+					del self._sessions[key]
+				elif self._oldest is None or valid_until < self._oldest:
+					self._oldest = valid_until
+
+			self._logger.debug("App sessions after cleanup: %r" % self._sessions)
 

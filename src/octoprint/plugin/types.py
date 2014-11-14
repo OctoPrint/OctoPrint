@@ -221,3 +221,7 @@ class SlicerPlugin(Plugin):
 		pass
 
 
+class AppPlugin(Plugin):
+	def get_additional_apps(self):
+		return []
+

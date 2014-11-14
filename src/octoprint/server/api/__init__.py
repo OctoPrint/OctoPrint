@@ -17,7 +17,7 @@ import octoprint.util as util
 import octoprint.users
 import octoprint.server
 import octoprint.plugin
-from octoprint.server import admin_permission, NO_CONTENT, UI_API_KEY
+from octoprint.server import admin_permission, NO_CONTENT, UI_API_KEY, appSessionManager
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import get_api_key, get_user_for_apikey
 from octoprint.server.util.flask import restricted_access
@@ -88,6 +88,10 @@ def beforeApiRequests():
 
 	if apikey == s().get(["api", "key"]):
 		# global api key => continue regular request processing
+		return
+
+	if appSessionManager.validate(apikey):
+		# app session key => continue regular request processing
 		return
 
 	user = get_user_for_apikey(apikey)
@@ -181,14 +185,6 @@ def firstRunSetup():
 def apiPrinterState():
 	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
-
-@api.route("/version", methods=["GET"])
-@restricted_access
-def apiVersion():
-	return jsonify({
-		"server": octoprint.server.VERSION,
-		"api": octoprint.server.api.VERSION
-	})
 
 @api.route("/version", methods=["GET"])
 @restricted_access
