@@ -356,3 +356,9 @@ SlicingFailed
      * ``stl``: the STL's filename
      * ``gcode``: the sliced GCODE's filename
      * ``reason``: the reason for the slicing having failed
+
+Settings
+--------
+
+SettingsUpdated
+   The internal settings were updated.

@@ -81,6 +81,9 @@ class Events(object):
 	SLICING_FAILED = "SlicingFailed"
 	SLICING_CANCELLED = "SlicingCancelled"
 
+	# Settings
+	SETTINGS_UPDATED = "SettingsUpdated"
+
 
 def eventManager():
 	global _instance

@@ -9,6 +9,7 @@ import logging
 
 from flask import request, jsonify
 
+from octoprint.events import eventManager, Events
 from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
 
@@ -226,7 +227,8 @@ def setSettings():
 					plugin.on_settings_save(data["plugins"][name])
 
 
-		s.save()
+		if s.save():
+			eventManager().fire(Events.SETTINGS_UPDATED)
 
 	return getSettings()
 

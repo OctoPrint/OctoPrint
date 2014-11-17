@@ -431,12 +431,13 @@ class Settings(object):
 
 	def save(self, force=False):
 		if not self._dirty and not force:
-			return
+			return False
 
 		with open(self._configfile, "wb") as configFile:
 			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self.load()
+		return True
 
 	#~~ getter
 
