@@ -9,6 +9,7 @@ API Documentation
 
    general.rst
    version.rst
+   apps.rst
    fileops.rst
    connection.rst
    printer.rst

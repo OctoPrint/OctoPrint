@@ -18,6 +18,7 @@
   support is enabled -- STL) files to automatically add.
 * OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its 
   core functionality.
+* New type of API key: [App Session Keys](http://docs.octoprint.org/en/devel/api/apps.html) for trusted applications
 
 ### Improvements
 
@@ -48,6 +49,8 @@
 * "Slicing Done" and "Streaming Done" notifications now have a green background ([#558](https://github.com/foosel/OctoPrint/issues/558))
 * Files that are currently in use, be it for slicing, printing or whatever, are now tracked and can not be deleted as
   long as they are in use
+* Settings in UI get refreshed when opening settings dialog
+* New event "SettingsUpdated"
 
 ### Bug Fixes
 
@@ -62,6 +65,7 @@
     queue
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
+  * Do not deliver the API key on settings API unless user has admin rights
 
 ## 1.1.2 (Unreleased)
 
