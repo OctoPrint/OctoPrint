@@ -176,6 +176,13 @@ class BlueprintPlugin(Plugin):
 
 		return None
 
+	def is_blueprint_protected(self):
+		"""
+		Whether the blueprint is supposed to be protected by API key (the default) or not.
+		"""
+
+		return True
+
 
 class SettingsPlugin(Plugin):
 	def on_settings_load(self):

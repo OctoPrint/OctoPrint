@@ -306,9 +306,20 @@ class Server():
 		app.register_blueprint(apps, url_prefix="/apps")
 
 		# also register any blueprints defined in BlueprintPlugins
-		octoprint.plugin.call_plugin(octoprint.plugin.types.BlueprintPlugin,
-		                             "get_blueprint",
-		                             callback=lambda name, _, blueprint: app.register_blueprint(blueprint, url_prefix="/plugin/{name}".format(name=name)))
+		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
+		for name, plugin in blueprint_plugins.items():
+			blueprint = plugin.get_blueprint()
+			if blueprint is None:
+				continue
+
+			if plugin.is_blueprint_protected():
+				from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
+				blueprint.before_request(apiKeyRequestHandler)
+				blueprint.after_request(corsResponseHandler)
+
+			url_prefix = "/plugin/{name}".format(name=name)
+			app.register_blueprint(blueprint, url_prefix=url_prefix)
+			logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 

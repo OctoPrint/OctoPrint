@@ -10,10 +10,86 @@ import octoprint.timelapse
 import octoprint.server
 from octoprint.users import ApiUser
 
+import flask as _flask
+
 from . import flask
 from . import sockjs
 from . import tornado
 from . import watchdog
+
+
+def apiKeyRequestHandler():
+	"""
+	All requests in this blueprint need to be made supplying an API key. This may be the UI_API_KEY, in which case
+	the underlying request processing will directly take place, or it may be the global or a user specific case. In any
+	case it has to be present and must be valid, so anything other than the above three types will result in denying
+	the request.
+	"""
+
+	import octoprint.server
+
+	if _flask.request.method == 'OPTIONS' and settings().getBoolean(["api", "allowCrossOrigin"]):
+		return optionsAllowOrigin(_flask.request)
+
+	apikey = get_api_key(_flask.request)
+	if apikey is None:
+		# no api key => 401
+		return _flask.make_response("No API key provided", 401)
+
+	if apikey == octoprint.server.UI_API_KEY:
+		# ui api key => continue regular request processing
+		return
+
+	if not settings().get(["api", "enabled"]):
+		# api disabled => 401
+		return _flask.make_response("API disabled", 401)
+
+	if apikey == settings().get(["api", "key"]):
+		# global api key => continue regular request processing
+		return
+
+	if octoprint.server.appSessionManager.validate(apikey):
+		# app session key => continue regular request processing
+		return
+
+	user = get_user_for_apikey(apikey)
+	if user is not None:
+		# user specific api key => continue regular request processing
+		return
+
+	# invalid api key => 401
+	return _flask.make_response("Invalid API key", 401)
+
+
+def corsResponseHandler(resp):
+
+	# Allow crossdomain
+	allowCrossOrigin = settings().getBoolean(["api", "allowCrossOrigin"])
+	if _flask.request.method != 'OPTIONS' and 'Origin' in _flask.request.headers and allowCrossOrigin:
+		resp.headers['Access-Control-Allow-Origin'] = _flask.request.headers['Origin']
+
+	return resp
+
+
+def optionsAllowOrigin(request):
+	""" Always reply 200 on OPTIONS request """
+
+	resp = _flask.current_app.make_default_options_response()
+
+	# Allow the origin which made the XHR
+	resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+	# Allow the actual method
+	resp.headers['Access-Control-Allow-Methods'] = request.headers['Access-Control-Request-Method']
+	# Allow for 10 seconds
+	resp.headers['Access-Control-Max-Age'] = "10"
+
+	# 'preflight' request contains the non-standard headers the real request will have (like X-Api-Key)
+	customRequestHeaders = request.headers.get('Access-Control-Request-Headers', None)
+	if customRequestHeaders is not None:
+		# If present => allow them all
+		resp.headers['Access-Control-Allow-Headers'] = customRequestHeaders
+
+	return resp
 
 
 def get_user_for_apikey(apikey):
