@@ -441,6 +441,10 @@ $(function() {
 
             // apply bindings and signal startup
             _.each(additionalViewModels, function(additionalViewModel) {
+                if (additionalViewModel[1] === undefined) {
+                    return;
+                }
+
                 if (additionalViewModel[0].hasOwnProperty("onBeforeBinding")) {
                     additionalViewModel[0].onBeforeBinding();
                 }
