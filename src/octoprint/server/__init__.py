@@ -217,13 +217,14 @@ class Server():
 
 		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
 		self._initSettings(self._configfile, self._basedir)
-		pluginManager = octoprint.plugin.plugin_manager(init=True)
 
 		# then initialize logging
 		self._initLogging(self._debug, self._logConf)
 		logger = logging.getLogger(__name__)
-
 		logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
+
+		# then initialize the plugin manager
+		pluginManager = octoprint.plugin.plugin_manager(init=True)
 
 		eventManager = events.eventManager()
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()

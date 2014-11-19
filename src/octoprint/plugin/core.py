@@ -223,6 +223,9 @@ class PluginManager(object):
 				implementations = plugin.get_implementations(plugin_type)
 				self.plugin_implementations[plugin_type] += ( (name, implementation) for implementation in implementations )
 
+		self.log_registered_plugins()
+
+	def log_registered_plugins(self):
 		if len(self.plugins) <= 0:
 			self.logger.info("No plugins found")
 		else:
