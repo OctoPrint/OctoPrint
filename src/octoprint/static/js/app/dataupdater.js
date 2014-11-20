@@ -126,7 +126,7 @@ function DataUpdater(allViewModels) {
                     if (oldVersion != VERSION) {
                         // version change detected, force reloading UI - use randomized delay to reduce server load in
                         // the case of multiple clients
-                        var delay = Math.floor(Math.random() * 5) + 1;
+                        var delay = 5 + Math.floor(Math.random() * 5) + 1;
                         setTimeout(function() {location.reload(true);}, delay * 1000);
 
                         // TODO notify about that, or show confirmation
