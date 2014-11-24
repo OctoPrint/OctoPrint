@@ -402,6 +402,6 @@ def _sanitize_name(name):
 	sanitized_name = sanitized_name.replace(" ", "_")
 	return sanitized_name.lower()
 
-__plugin_name__ = "cura"
+__plugin_name__ = "CuraEngine"
 __plugin_version__ = "0.1"
 __plugin_implementations__ = [CuraPlugin()]
