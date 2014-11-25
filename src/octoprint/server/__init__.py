@@ -392,7 +392,7 @@ class Server():
 
 	def _createSocketConnection(self, session):
 		global printer, fileManager, analysisQueue, userManager, eventManager
-		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, eventManager, session)
+		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session)
 
 	def _checkForRoot(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:

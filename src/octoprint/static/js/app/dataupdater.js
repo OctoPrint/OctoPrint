@@ -257,6 +257,13 @@ function DataUpdater(allViewModels) {
                     });
                     break;
                 }
+                case "plugin": {
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onDataUpdaterPluginMessage")) {
+                            viewModel.onDataUpdaterPluginMessage(data.plugin, data.data);
+                        }
+                    })
+                }
             }
         }
     };

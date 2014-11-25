@@ -15,7 +15,7 @@ from octoprint.events import Events
 
 
 class PrinterStateConnection(sockjs.tornado.SockJSConnection):
-	def __init__(self, printer, fileManager, analysisQueue, userManager, eventManager, session):
+	def __init__(self, printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session):
 		sockjs.tornado.SockJSConnection.__init__(self, session)
 
 		self._logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		self._analysisQueue = analysisQueue
 		self._userManager = userManager
 		self._eventManager = eventManager
+		self._pluginManager = pluginManager
 
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
@@ -49,6 +50,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		self._printer.registerCallback(self)
 		self._fileManager.register_slicingprogress_callback(self)
 		octoprint.timelapse.registerCallback(self)
+		self._pluginManager.register_client(self)
 
 		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": remoteAddress})
 		for event in octoprint.events.all_events():
@@ -61,6 +63,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		self._printer.unregisterCallback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregisterCallback(self)
+		self._pluginManager.unregister_client(self)
 
 		self._eventManager.fire(Events.CLIENT_CLOSED)
 		for event in octoprint.events.all_events():
@@ -114,6 +117,9 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		self._emit("slicingProgress",
 		           dict(slicer=slicer, source_location=source_location, source_path=source_path, dest_location=dest_location, dest_path=dest_path, progress=progress)
 		)
+
+	def sendPluginMessage(self, plugin, data):
+		self._emit("plugin", dict(plugin=plugin, data=data))
 
 	def addLog(self, data):
 		with self._logBacklogMutex:

@@ -111,6 +111,8 @@ class PluginManager(object):
 		self.plugin_hooks = defaultdict(list)
 		self.plugin_implementations = defaultdict(list)
 
+		self.registered_clients = []
+
 		self.reload_plugins()
 
 	def _find_plugins(self):
@@ -265,6 +267,19 @@ class PluginManager(object):
 			return dict((k, v) for (k, v) in all_helpers.items() if k in helpers)
 		else:
 			return all_helpers
+
+	def register_client(self, client):
+		if client is None:
+			return
+		self.registered_clients.append(client)
+
+	def unregister_client(self, client):
+		self.registered_clients.remove(client)
+
+	def send_plugin_message(self, plugin, data):
+		for client in self.registered_clients:
+			try: client.sendPluginMessage(plugin, data)
+			except: self.logger.exception("Exception while sending plugin data to client")
 
 
 class Plugin(object):
