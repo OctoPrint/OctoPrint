@@ -190,6 +190,7 @@ class Settings(object):
 
 		self._config = None
 		self._dirty = False
+		self._mtime = None
 
 		self._init_settings_dir(basedir)
 
@@ -224,6 +225,7 @@ class Settings(object):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
+				self._mtime = self._last_modified()
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = {}
@@ -357,6 +359,10 @@ class Settings(object):
 			self._dirty = False
 		self.load()
 		return True
+
+	def _last_modified(self):
+		stat = os.stat(self._configfile)
+		return stat.st_mtime
 
 	#~~ getter
 
@@ -514,6 +520,9 @@ class Settings(object):
 	def set(self, path, value, force=False, defaults=None):
 		if len(path) == 0:
 			return
+
+		if self._mtime is not None and self._last_modified() != self._mtime:
+			self.load()
 
 		config = self._config
 		if defaults is None:
