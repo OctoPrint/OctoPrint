@@ -240,7 +240,7 @@ class PluginManager(object):
 
 	def get_hooks(self, hook):
 		if not hook in self.plugin_hooks:
-			return []
+			return dict()
 		return {hook[0]: hook[1] for hook in self.plugin_hooks[hook]}
 
 	def get_implementations(self, *types):
@@ -254,7 +254,7 @@ class PluginManager(object):
 				result = result.intersection(implementations)
 
 		if result is None:
-			return set()
+			return dict()
 		return {impl[0]: impl[1] for impl in result}
 
 	def get_helpers(self, name, *helpers):
