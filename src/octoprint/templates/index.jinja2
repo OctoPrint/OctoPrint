@@ -117,6 +117,19 @@
                             {% endif %}
                         </ul>
                     </div>
+
+                    <div class="pull-right">
+                        <!-- ko foreach: temp.tools -->
+                        <p class="nav navbar-text navbar-right" style="color: #FFF;" data-bind="template: { name: 'navbartemp-template' }"></p>
+                        <!-- /ko -->
+                        <p class="nav navbar-text navbar-right" style="color: #FFF;" data-bind="template: { name: 'navbartemp-template', data: temp.bedTemp }, visible: temp.hasBed"></p>
+
+                        <script type="text/html" id="navbartemp-template">
+                            <span data-bind="text: name"></span>
+                            <span> - </span>
+                            <span data-bind="html: formatTemperature(actual())"></span>
+                        </script>
+                    </div>
                 </div>
             </div>
         </div>

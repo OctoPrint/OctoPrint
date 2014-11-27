@@ -79,7 +79,7 @@ $(function() {
         var slicingViewModel = new SlicingViewModel(loginStateViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicingViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
-        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel, temperatureViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
 
         var viewModelMap = {
