@@ -23,6 +23,7 @@ def printerProfilesList():
 	return jsonify(dict(profiles=all_profiles.values()))
 
 @api.route("/printerProfiles", methods=["POST"])
+@restricted_access
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
 		return None, None, make_response("Expected content-type JSON", 400)
@@ -42,18 +43,10 @@ def printerProfilesAdd():
 	if "name" in base_profile:
 		del base_profile["name"]
 	profile = dict_merge(base_profile, json_data["profile"])
+	if not _validate_profile(profile):
+		return None, None, make_response("Profile is invalid, missing obligatory values", 400)
 
-	if not "id" in profile and not "name" in profile:
-		return None, None, make_response("Profile must contain either id or name")
-	elif not "name" in profile:
-		return None, None, make_response("Profile must contain a name")
-
-	try:
-		saved_profile = printerProfileManager.save(profile, allow_overwrite=False)
-	except Exception as e:
-		return None, None, make_response("Could not save profile: %s" % e.message)
-
-	return jsonify(dict(profile=_convert_profile(saved_profile)))
+	return _overwrite_profile(profile)
 
 @api.route("/printerProfiles/<string:identifier>", methods=["GET"])
 def printerProfilesGet(identifier):
@@ -69,7 +62,7 @@ def printerProfilesDelete(identifier):
 
 @api.route("/printerProfiles/<string:identifier>", methods=["PATCH"])
 @restricted_access
-def printerProfilesUpdate(identifier ):
+def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:
 		return None, None, make_response("Expected content-type JSON", 400)
 
@@ -85,6 +78,9 @@ def printerProfilesUpdate(identifier ):
 	new_profile = dict_merge(profile, new_profile)
 
 	new_profile["id"] = identifier
+	if not _validate_profile(new_profile):
+		return None, None, make_response("Combined profile is invalid, missing obligatory values", 400)
+
 	try:
 		saved_profile = printerProfileManager.save(new_profile, allow_overwrite=True)
 	except Exception as e:
@@ -106,3 +102,29 @@ def _convert_profile(profile, default=None):
 	converted["resource"] = url_for(".printerProfilesGet", identifier=profile["id"], _external=True)
 	converted["default"] = (profile["id"] == default)
 	return converted
+
+def _validate_profile(profile):
+	return "name" in profile \
+	       and "volume" in profile \
+	           and "width" in profile["volume"] \
+	           and "depth" in profile["volume"] \
+	           and "height" in profile["volume"] \
+	           and "formFactor" in profile["volume"] \
+	       and "heatedBed" in profile \
+	       and "extruder" in profile \
+	           and "count" in profile["extruder"] \
+	           and "offsets" in profile["extruder"] \
+	           and len(profile["extruder"]["offsets"]) == profile["extruder"]["count"]
+
+def _overwrite_profile(profile):
+	if not "id" in profile and not "name" in profile:
+		return None, None, make_response("Profile must contain either id or name")
+	elif not "name" in profile:
+		return None, None, make_response("Profile must contain a name")
+
+	try:
+		saved_profile = printerProfileManager.save(profile, allow_overwrite=False)
+	except Exception as e:
+		return None, None, make_response("Could not save profile: %s" % e.message)
+
+	return jsonify(dict(profile=_convert_profile(saved_profile)))

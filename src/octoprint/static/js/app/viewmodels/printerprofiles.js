@@ -1,28 +1,22 @@
 function PrinterProfilesViewModel() {
     var self = this;
 
-    self.selected = ko.observable();
-    self.default = ko.observable();
-    self.available = ko.observableArray();
-    self.currentProfile = ko.computed(function() {
-        var currentProfile = undefined;
-        var defaultProfile = undefined;
-
-        _.each(self.available(), function(profile) {
-            if (profile.id() == self.selected()) {
-                currentProfile = profile;
+    self.profiles = new ItemListHelper(
+        "printerProfiles",
+        {
+            "name": function(a, b) {
+                // sorts ascending
+                if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
+                if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                return 0;
             }
-            if (profile.id() == self.default()) {
-                defaultProfile = profile;
-            }
-        });
-
-        if (currentProfile != undefined) {
-            return currentProfile;
-        } else {
-            return defaultProfile;
-        }
-    });
+        },
+        {},
+        "name",
+        [],
+        [],
+        5
+    );
 
     self.editorName = ko.observable();
     self.editorColor = ko.observable();
@@ -57,9 +51,7 @@ function PrinterProfilesViewModel() {
     };
 
     self.fromResponse = function(data) {
-        self.selectedProfile(data.current);
-        self.defaultProfile(data.default);
-        self.availableProfiles(data.profiles);
+        self.profiles.updateItems(data.profiles);
     };
 
     self.addProfile = function() {
