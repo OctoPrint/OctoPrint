@@ -1,7 +1,8 @@
-function SlicingViewModel(loginStateViewModel) {
+function SlicingViewModel(loginStateViewModel, connectionViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.connection = connectionViewModel;
 
     self.target = undefined;
     self.file = undefined;

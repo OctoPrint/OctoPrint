@@ -27,6 +27,7 @@ babel = Babel(app)
 debug = False
 
 printer = None
+printerProfileManager = None
 fileManager = None
 slicingManager = None
 analysisQueue = None
@@ -42,6 +43,7 @@ user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint.printer import Printer, getConnectionOptions
+from octoprint.printer.profile import PrinterProfileManager
 from octoprint.settings import settings
 import octoprint.users as users
 import octoprint.events as events
@@ -200,6 +202,7 @@ class Server():
 			self._checkForRoot()
 
 		global printer
+		global printerProfileManager
 		global fileManager
 		global slicingManager
 		global analysisQueue
@@ -226,13 +229,14 @@ class Server():
 		# then initialize the plugin manager
 		pluginManager = octoprint.plugin.plugin_manager(init=True)
 
+		printerProfileManager = PrinterProfileManager()
 		eventManager = events.eventManager()
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
-		slicingManager = octoprint.slicing.SlicingManager(settings().getBaseFolder("slicingProfiles"))
+		slicingManager = octoprint.slicing.SlicingManager(settings().getBaseFolder("slicingProfiles"), printerProfileManager)
 		storage_managers = dict()
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(settings().getBaseFolder("uploads"))
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, initial_storage_managers=storage_managers)
-		printer = Printer(fileManager, analysisQueue)
+		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
 
 		# configure additional template folders for jinja2
@@ -341,9 +345,10 @@ class Server():
 		eventManager.fire(events.Events.STARTUP)
 		if settings().getBoolean(["serial", "autoconnect"]):
 			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
+			printer_profile = printerProfileManager.get_default()
 			connectionOptions = getConnectionOptions()
 			if port in connectionOptions["ports"]:
-				printer.connect(port, baudrate)
+				printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
 
 		# start up watchdogs
 		observer = Observer()

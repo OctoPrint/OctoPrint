@@ -94,13 +94,18 @@ default_settings = {
 		"virtualSd": None,
 		"watched": None,
 		"plugins": None,
-		"slicingProfiles": None
+		"slicingProfiles": None,
+		"printerProfiles": None
 	},
 	"temperature": {
 		"profiles": [
 			{"name": "ABS", "extruder" : 210, "bed" : 100 },
 			{"name": "PLA", "extruder" : 180, "bed" : 60 }
 		]
+	},
+	"printerProfiles": {
+		"default": None,
+		"defaultProfile": {}
 	},
 	"printerParameters": {
 		"movementSpeed": {

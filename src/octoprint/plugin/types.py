@@ -221,7 +221,7 @@ class SlicerPlugin(Plugin):
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
 		pass
 
-	def do_slice(self, model_path, machinecode_path=None, profile_path=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
+	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		pass
 
 	def cancel_slicing(self, machinecode_path):

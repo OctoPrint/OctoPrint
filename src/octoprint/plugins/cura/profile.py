@@ -515,8 +515,9 @@ class Profile(object):
 
 		return result
 
-	def __init__(self, profile, overrides=None):
+	def __init__(self, profile, printer_profile, overrides=None):
 		self._profile = self.__class__.merge_profile(profile, overrides=overrides)
+		self._printer_profile = printer_profile
 
 	def profile(self):
 		import copy
@@ -524,23 +525,22 @@ class Profile(object):
 
 	def get(self, key):
 		if key in ("machine_width", "machine_depth", "machine_center_is_zero"):
-			bedDimensions = s.globalGet(["printerParameters", "bedDimensions"])
-			circular = bedDimensions["circular"] if "circular" in bedDimensions else False
-			radius = bedDimensions["radius"] if "radius" in bedDimensions and bedDimensions["radius"] is not None else 0
 			if key == "machine_width":
-				return radius * 2 if circular else bedDimensions["x"]
+				return self._printer_profile["volume"]["width"]
 			elif key == "machine_depth":
-				return radius * 2 if circular else bedDimensions["y"]
+				return self._printer_profile["volume"]["depth"]
+			elif key == "machine_height":
+				return self._printer_profile["volume"]["height"]
 			elif key == "machine_center_is_zero":
-				return circular
+				return self._printer_profile["volume"]["formFactor"] == "circular"
 			else:
 				return None
 
 		elif key == "extruder_amount":
-			return s.globalGetInt(["printerParameters", "numExtruders"])
+			return self._printer_profile["extruder"]["count"]
 
 		elif key.startswith("extruder_offset_"):
-			extruder_offsets = s.globalGet(["printerParameters", "extruderOffsets"])
+			extruder_offsets = self._printer_profile["extruder"]["offsets"]
 			match = Profile.regex_extruder_offset.match(key)
 			if not match:
 				return 0.0
@@ -553,9 +553,13 @@ class Profile(object):
 				return 0.0
 			if number >= len(extruder_offsets):
 				return 0.0
-			if not axis in extruder_offsets[number]:
+
+			if axis == "x":
+				return extruder_offsets[number][0]
+			elif axis == "y":
+				return extruder_offsets[number][1]
+			else:
 				return 0.0
-			return extruder_offsets[number][axis]
 
 		elif key.startswith("filament_diameter"):
 			match = Profile.regex_filament_diameter.match(key)

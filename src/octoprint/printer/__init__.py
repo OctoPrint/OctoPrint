@@ -30,13 +30,14 @@ def getConnectionOptions():
 	}
 
 class Printer():
-	def __init__(self, fileManager, analysisQueue):
+	def __init__(self, fileManager, analysisQueue, printerProfileManager):
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
+		self._printerProfileManager = printerProfileManager
 
 		# state
 		# TODO do we really need to hold the temperature here?
@@ -159,7 +160,7 @@ class Printer():
 
 	#~~ printer commands
 
-	def connect(self, port=None, baudrate=None):
+	def connect(self, port=None, baudrate=None, profile=None):
 		"""
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
@@ -167,6 +168,7 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self)
+		self._printerProfileManager.select(profile)
 
 	def disconnect(self):
 		"""
@@ -175,6 +177,7 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = None
+		self._printerProfileManager.deselect()
 		eventManager().fire(Events.DISCONNECTED)
 
 	def command(self, command):
@@ -652,7 +655,8 @@ class Printer():
 			return "Closed", None, None
 
 		port, baudrate = self._comm.getConnection()
-		return self._comm.getStateString(), port, baudrate
+		printer_profile = self._printerProfileManager.get_current_or_default()
+		return self._comm.getStateString(), port, baudrate, printer_profile
 
 	def isClosedOrError(self):
 		return self._comm is None or self._comm.isClosedOrError()
