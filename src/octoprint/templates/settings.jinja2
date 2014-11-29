@@ -9,6 +9,7 @@
                 <li class="nav-header">{{ _('Printer') }}</li>
                 <li class="active"><a href="#settings_serialConnection" data-toggle="tab">{{ _('Serial Connection') }}</a></li>
                 <li><a href="#settings_printerParameters" data-toggle="tab">{{ _('Printer Parameters') }}</a></li>
+                <li><a href="#settings_printerProfiles" data-toggle="tab">{{ _('Printer Profiles') }}</a></li>
                 <li><a href="#settings_temperature" data-toggle="tab">{{ _('Temperatures') }}</a></li>
                 <li><a href="#settings_terminalFilters" data-toggle="tab">{{ _('Terminal filters') }}</a></li>
                 <li class="nav-header">{{ _('Features') }}</li>
@@ -105,6 +106,31 @@
                             </div>
                         </div>
                     </form>
+                </div>
+                <div class="tab-pane" id="settings_printerProfiles">
+
+                    <h3>{{ _('Printer Profiles') }}</h3>
+
+                    <table class="table table-striped table-hover table-condensed table-hover" id="settings_printerProfiles_profiles">
+                        <thead>
+                        <tr>
+                            <th class="settings_printerProfiles_profiles_name">{{ _('Name') }}</th>
+                            <th class="settings_printerProfiles_profiles_model">{{ _('Model') }}</th>
+                            <th class="settings_printerProfiles_profiles_action">{{ _('Action') }}</th>
+                        </tr>
+                        </thead>
+                        <tbody data-bind="foreach: printerProfiles.profiles.paginatedItems">
+                        <tr data-bind="attr: {title: name}">
+                            <td class="settings_printerProfiles_profiles_name"><span class="icon-star" data-bind="invisible: !isdefault()"></span> <span data-bind="text: name"></span></td>
+                            <td class="settings_printerProfiles_profiles_model" data-bind="model"></td>
+                            <td class="settings_printerProfiles_profiles_action">
+                                <a href="#" class="icon-pencil" title="{{ _('Edit Profile') }}" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Profile') }}" data-bind="click: function() { $root.printerProfiles.removeProfile($data); }"></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+
                 </div>
                 <div class="tab-pane" id="settings_printerParameters">
                     <form class="form-horizontal">

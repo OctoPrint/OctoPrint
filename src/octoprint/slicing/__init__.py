@@ -142,7 +142,7 @@ class SlicingManager(object):
 
 		import threading
 		slicer_worker_thread = threading.Thread(target=slicer_worker,
-		                                        args=(slicer, source_path, dest_path, profile_name, overrides, printer_profile_id, callback, callback_args, callback_kwargs))
+		                                        args=(slicer, source_path, dest_path, profile_name, overrides, printer_profile, callback, callback_args, callback_kwargs))
 		slicer_worker_thread.daemon = True
 		slicer_worker_thread.start()
 		return True, None

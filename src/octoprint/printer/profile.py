@@ -11,7 +11,7 @@ import copy
 import re
 
 from octoprint.settings import settings
-from octoprint.util import dict_merge
+from octoprint.util import dict_merge, dict_clean
 
 class SaveError(Exception):
 	pass
@@ -25,6 +25,7 @@ class PrinterProfileManager(object):
 	default = dict(
 		id = "_default",
 		name = "Default",
+		model = "Generic RepRap Printer",
 		color = "default",
 		volume=dict(
 			width = 200,
@@ -79,7 +80,7 @@ class PrinterProfileManager(object):
 			return False
 		return self._remove_from_path(self._get_profile_path(identifier))
 
-	def save(self, profile, allow_overwrite=False):
+	def save(self, profile, allow_overwrite=False, make_default=False):
 		if "id" in profile:
 			identifier = profile["id"]
 		elif "name" in profile:
@@ -94,7 +95,12 @@ class PrinterProfileManager(object):
 			settings().set(["printerProfiles", "defaultProfile"], default_profile, defaults=dict(printerProfiles=dict(defaultProfile=self.__class__.default)))
 
 		profile["id"] = identifier
+		profile = dict_clean(profile, self.__class__.default)
 		self._save_to_path(self._get_profile_path(identifier), profile, allow_overwrite=allow_overwrite)
+
+		if make_default:
+			settings().set(["printerProfiles", "default"], identifier)
+
 		return self.get(identifier)
 
 	def get_default(self):
@@ -207,3 +213,4 @@ class PrinterProfileManager(object):
 		sanitized_name = ''.join(c for c in name if c in valid_chars)
 		sanitized_name = sanitized_name.replace(" ", "_")
 		return sanitized_name
+

@@ -1,8 +1,8 @@
-function SlicingViewModel(loginStateViewModel, connectionViewModel) {
+function SlicingViewModel(loginStateViewModel, printerProfilesViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
-    self.connection = connectionViewModel;
+    self.printerProfiles = printerProfilesViewModel;
 
     self.target = undefined;
     self.file = undefined;
@@ -18,12 +18,14 @@ function SlicingViewModel(loginStateViewModel, connectionViewModel) {
     self.slicers = ko.observableArray();
     self.profile = ko.observable();
     self.profiles = ko.observableArray();
+    self.printerProfile = ko.observable();
 
     self.show = function(target, file) {
         self.target = target;
         self.file = file;
         self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: self.file}));
         self.gcodeFilename(self.file.substr(0, self.file.lastIndexOf(".")));
+        self.printerProfile(self.printerProfiles.currentProfile());
         $("#slicing_configuration_dialog").modal("show");
     };
 
@@ -121,6 +123,7 @@ function SlicingViewModel(loginStateViewModel, connectionViewModel) {
             command: "slice",
             slicer: self.slicer(),
             profile: self.profile(),
+            printerProfile: self.printerProfile(),
             gcode: gcodeFilename
         };
 

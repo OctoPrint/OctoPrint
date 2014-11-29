@@ -67,16 +67,17 @@ $(function() {
 
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
+        var printerProfilesViewModel = new PrinterProfilesViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
-        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel, printerProfilesViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
         var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
-        var slicingViewModel = new SlicingViewModel(loginStateViewModel, connectionViewModel);
+        var slicingViewModel = new SlicingViewModel(loginStateViewModel, printerProfilesViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicingViewModel);
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
@@ -84,6 +85,7 @@ $(function() {
 
         var viewModelMap = {
             loginStateViewModel: loginStateViewModel,
+            printerProfilesViewModel: printerProfilesViewModel,
             usersViewModel: usersViewModel,
             settingsViewModel: settingsViewModel,
             connectionViewModel: connectionViewModel,

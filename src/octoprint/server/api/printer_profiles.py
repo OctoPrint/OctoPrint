@@ -20,7 +20,7 @@ from octoprint.server import printerProfileManager
 @api.route("/printerProfiles", methods=["GET"])
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
-	return jsonify(dict(profiles=all_profiles.values()))
+	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
 @api.route("/printerProfiles", methods=["POST"])
 @restricted_access
@@ -53,6 +53,7 @@ def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)
 	if profile is None:
 		make_response("Unknown profile: %s" % identifier, 404)
+	return jsonify(_convert_profile(profile))
 
 @api.route("/printerProfiles/<string:identifier>", methods=["DELETE"])
 @restricted_access
@@ -68,7 +69,7 @@ def printerProfilesUpdate(identifier):
 
 	json_data = request.json
 	if not "profile" in json_data:
-		return None, None, make_response("No profile included in request", 400)
+		make_response("No profile included in request", 400)
 
 	profile = printerProfileManager.get(identifier)
 	if profile is None:
@@ -77,14 +78,19 @@ def printerProfilesUpdate(identifier):
 	new_profile = json_data["profile"]
 	new_profile = dict_merge(profile, new_profile)
 
+	make_default = False
+	if "default" in new_profile:
+		make_default = True
+		del new_profile["default"]
+
 	new_profile["id"] = identifier
 	if not _validate_profile(new_profile):
-		return None, None, make_response("Combined profile is invalid, missing obligatory values", 400)
+		make_response("Combined profile is invalid, missing obligatory values", 400)
 
 	try:
-		saved_profile = printerProfileManager.save(new_profile, allow_overwrite=True)
+		saved_profile = printerProfileManager.save(new_profile, allow_overwrite=True, make_default=make_default)
 	except Exception as e:
-		return None, None, make_response("Could not save profile: %s" % e.message)
+		make_response("Could not save profile: %s" % e.message)
 
 	return jsonify(dict(profile=_convert_profile(saved_profile)))
 
@@ -94,13 +100,14 @@ def _convert_profiles(profiles):
 		result[identifier] = _convert_profile(profile)
 	return result
 
-def _convert_profile(profile, default=None):
-	if default is None:
-		default = printerProfileManager.get_default()["id"]
+def _convert_profile(profile):
+	default = printerProfileManager.get_default()["id"]
+	current = printerProfileManager.get_current_or_default()["id"]
 
 	converted = copy.deepcopy(profile)
 	converted["resource"] = url_for(".printerProfilesGet", identifier=profile["id"], _external=True)
 	converted["default"] = (profile["id"] == default)
+	converted["current"] = (profile["id"] == current)
 	return converted
 
 def _validate_profile(profile):

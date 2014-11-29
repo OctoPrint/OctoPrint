@@ -1,8 +1,9 @@
-function SettingsViewModel(loginStateViewModel, usersViewModel) {
+function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.users = usersViewModel;
+    self.printerProfiles = printerProfilesViewModel;
 
     self.api_enabled = ko.observable(undefined);
     self.api_key = ko.observable(undefined);

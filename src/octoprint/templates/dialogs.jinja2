@@ -15,7 +15,13 @@
             <div class="control-group">
                 <label class="control-label">{{ _('Slicing Profile') }}</label>
                 <div class="controls">
-                    <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a profile...') }}', value: profile, valueAllowUnset: true"></select>
+                    <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicing profile...') }}', value: profile, valueAllowUnset: true"></select>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Printer Profile') }}</label>
+                <div class="controls">
+                    <select data-bind="options: printerProfiles.profiles.items, optionsText: 'name', optionsValue: 'id', value: printerProfile, optionsCaption: '{{ _('Select a printer profile...') }}'"></select>
                 </div>
             </div>
             <div class="control-group">

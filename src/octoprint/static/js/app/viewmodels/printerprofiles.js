@@ -17,6 +17,8 @@ function PrinterProfilesViewModel() {
         [],
         5
     );
+    self.defaultProfile = ko.observable();
+    self.currentProfile = ko.observable();
 
     self.editorName = ko.observable();
     self.editorColor = ko.observable();
@@ -51,7 +53,53 @@ function PrinterProfilesViewModel() {
     };
 
     self.fromResponse = function(data) {
-        self.profiles.updateItems(data.profiles);
+        var items = [];
+        var defaultProfile = undefined;
+        var currentProfile = undefined;
+        _.each(data.profiles, function(entry) {
+            if (entry.default) {
+                defaultProfile = entry.id;
+            }
+            if (entry.current) {
+                currentProfile = entry.id;
+            }
+            items.push({
+                id: ko.observable(entry.id),
+                name: ko.observable(entry.name),
+                model: ko.observable(entry.model),
+                volume: {
+                    width: ko.observable(entry.volume.width),
+                    depth: ko.observable(entry.volume.depth),
+                    height: ko.observable(entry.volume.height),
+                    formFactor: ko.observable(entry.volume.formFactor)
+                },
+                heatedBed: ko.observable(entry.heatedBed),
+                axes: {
+                    x: {
+                        speed: ko.observable(entry.axes.x.speed),
+                        inverted: ko.observable(entry.axes.x.inverted)
+                    },
+                    y: {
+                        speed: ko.observable(entry.axes.y.speed),
+                        inverted: ko.observable(entry.axes.y.inverted)
+                    },
+                    z: {
+                        speed: ko.observable(entry.axes.z.speed),
+                        inverted: ko.observable(entry.axes.z.inverted)
+                    },
+                    e: {
+                        speed: ko.observable(entry.axes.e.speed),
+                        inverted: ko.observable(entry.axes.e.inverted)
+                    }
+                },
+                isdefault: ko.observable(entry.default),
+                iscurrent: ko.observable(entry.current),
+                resource: ko.observable(entry.resource)
+            });
+        });
+        self.profiles.updateItems(items);
+        self.defaultProfile(defaultProfile);
+        self.currentProfile(currentProfile);
     };
 
     self.addProfile = function() {
@@ -132,5 +180,9 @@ function PrinterProfilesViewModel() {
         }
 
         return profile;
-    }
+    };
+
+    self.onStartup = function() {
+        self.requestData();
+    };
 }

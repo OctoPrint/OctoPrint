@@ -250,6 +250,23 @@ def dict_merge(a, b):
 	return result
 
 
+def dict_clean(a, b):
+
+	from copy import deepcopy
+	if not isinstance(b, dict):
+		return a
+
+	result = deepcopy(a)
+	for k, v in a.iteritems():
+		if not k in b:
+			del result[k]
+		elif isinstance(v, dict):
+			result[k] = dict_clean(v, b[k])
+		else:
+			result[k] = deepcopy(v)
+	return result
+
+
 class Object(object):
 	pass
 
