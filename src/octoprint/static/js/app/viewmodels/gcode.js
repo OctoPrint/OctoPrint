@@ -95,27 +95,46 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     self.reader_hideEmptyLayers.subscribe(self.synchronizeOptions);
 
     // subscribe to relevant printer settings...
-    self.settings.printer_extruderOffsets.subscribe(function() {
-        if (!self.enabled) return;
-        if (!self.settings.printer_extruderOffsets()) return;
-
-        GCODE.ui.updateOptions({
-            reader: {
-                toolOffsets: self.settings.printer_extruderOffsets()
-            }
-        });
-    });
-    self.settings.printer_bedDimensions.subscribe(function() {
+    self.settings.printerProfiles.currentProfileData.subscribe(function() {
         if (!self.enabled) return;
 
-        var bedDimensions = self.settings.printer_bedDimensions();
-        if (!bedDimensions || (!bedDimensions.hasOwnProperty("x") && !bedDimensions.hasOwnProperty("y") && !bedDimensions.hasOwnProperty("r"))) return;
+        var currentProfileData = self.settings.printerProfiles.currentProfileData();
+        if (!currentProfileData) return;
 
-        GCODE.ui.updateOptions({
-            renderer: {
-                bed: bedDimensions
+        if (currentProfileData.extruder() && currentProfileData.extruder().extruderOffsets()) {
+            GCODE.ui.updateOptions({
+                reader: {
+                    toolOffsets: self.settings.printer_extruderOffsets()
+                }
+            });
+        };
+
+        if (currentProfileData.volume() && currentProfileData.volume().width() && currentProfileData.volume().depth()) {
+            GCODE.ui.updateOptions({
+                renderer: {
+                    bed: bedDimensions
+                }
+            });
+        };
+
+        if (currentProfileData.axes()) {
+            var invertX = false, invertY = false;
+            if (currentProfileData.axes().x()) {
+                invertX = currentProfileData.axes().x().inverted();
             }
-        });
+            if (currentProfileData.axes().y()) {
+                invertY = currentProfileData.axes().y().inverted();
+            }
+
+            GCODE.ui.updateOptions({
+                renderer: {
+                    invertAxes: {
+                        x: invertX,
+                        y: invertY
+                    }
+                }
+            });
+        }
     });
     self.settings.printer_invertAxes.subscribe(function() {
         if (!self.enabled) return;

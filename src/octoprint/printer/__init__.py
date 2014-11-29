@@ -652,7 +652,7 @@ class Printer():
 
 	def getCurrentConnection(self):
 		if self._comm is None:
-			return "Closed", None, None
+			return "Closed", None, None, None
 
 		port, baudrate = self._comm.getConnection()
 		printer_profile = self._printerProfileManager.get_current_or_default()

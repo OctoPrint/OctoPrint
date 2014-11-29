@@ -114,7 +114,8 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify(data),
                 success: function(response) {
-                    self.settings.requestData()
+                    self.settings.requestData();
+                    self.settings.printerProfiles.requestData();
                 }
             });
         } else {
