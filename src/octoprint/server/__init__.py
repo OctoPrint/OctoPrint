@@ -109,9 +109,12 @@ def index():
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 	template_plugin_names = template_plugins.keys()
 
+	settingsWebcamStream = settings().get(["webcam", "stream"])
+	webcamStream = request.headers['Host'].split(":")[0] + settingsWebcamStream if settingsWebcamStream[0] == ":" else settingsWebcamStream
+
 	return render_template(
 		"index.jinja2",
-		webcamStream=settings().get(["webcam", "stream"]),
+		webcamStream=webcamStream,
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["gcodeViewer", "enabled"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
