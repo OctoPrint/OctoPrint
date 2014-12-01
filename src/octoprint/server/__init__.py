@@ -13,6 +13,7 @@ from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded
 from flask.ext.babel import Babel
 from babel import Locale
 from watchdog.observers import Observer
+from urlparse import urlparse
 
 import os
 import logging
@@ -110,7 +111,11 @@ def index():
 	template_plugin_names = template_plugins.keys()
 
 	settingsWebcamStream = settings().get(["webcam", "stream"])
-	webcamStream = request.headers['Host'].split(":")[0] + settingsWebcamStream if settingsWebcamStream[0] == ":" else settingsWebcamStream
+	if(settingsWebcamStream[0] == ":")
+		urlParsed = urlparse(request.url)
+		webcamStream = urlParsed.scheme + '://' + urlParsed.hostname + settingsWebcamStream
+	else
+		webcamStream = settingsWebcamStream
 
 	return render_template(
 		"index.jinja2",
