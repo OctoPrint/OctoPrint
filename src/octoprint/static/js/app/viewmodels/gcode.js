@@ -164,7 +164,11 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         }
 
         if (currentProfileData && currentProfileData.extruder && currentProfileData.extruder.offsets()) {
-            return currentProfileData.extruder.offsets();
+            var offsets = [];
+            _.each(currentProfileData.extruder.offsets(), function(offset) {
+                offsets.push({x: offset[0], y: offset[1]})
+            });
+            return offsets;
         } else {
             return undefined;
         }
