@@ -1,8 +1,23 @@
-function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
+function ConnectionViewModel(loginStateViewModel, settingsViewModel, printerProfilesViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.settings = settingsViewModel;
+    self.printerProfiles = printerProfilesViewModel;
+
+    self.printerProfiles.profiles.items.subscribe(function() {
+        var allProfiles = self.printerProfiles.profiles.items();
+
+        var printerOptions = [];
+        _.each(allProfiles, function(profile) {
+            printerOptions.push({id: profile.id, name: profile.name});
+        });
+        self.printerOptions(printerOptions);
+    });
+
+    self.printerProfiles.currentProfile.subscribe(function() {
+        self.selectedPrinter(self.printerProfiles.currentProfile());
+    });
 
     self.portOptions = ko.observableArray(undefined);
     self.baudrateOptions = ko.observableArray(undefined);
@@ -44,14 +59,12 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
     self.fromResponse = function(response) {
         var ports = response.options.ports;
         var baudrates = response.options.baudrates;
-        var printerProfiles = response.options.printerProfiles;
         var portPreference = response.options.portPreference;
         var baudratePreference = response.options.baudratePreference;
         var printerPreference = response.options.printerProfilePreference;
 
         self.portOptions(ports);
         self.baudrateOptions(baudrates);
-        self.printerOptions(printerProfiles);
 
         if (!self.selectedPort() && ports && ports.indexOf(portPreference) >= 0)
             self.selectedPort(portPreference);

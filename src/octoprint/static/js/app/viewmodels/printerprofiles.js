@@ -201,6 +201,8 @@ function PrinterProfilesViewModel() {
             add = true;
         }
 
+        self.editorNew(add);
+
         self.editorIdentifier(data.id);
         self.editorName(data.name);
         self.editorColor(data.color);

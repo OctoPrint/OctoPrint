@@ -236,7 +236,11 @@ function DataUpdater(allViewModels) {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        new PNotify({title: gettext("Streaming done"), text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload), type: "success"});
+                        new PNotify({
+                            title: gettext("Streaming done"),
+                            text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
+                            type: "success"
+                        });
                         gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
                     break;

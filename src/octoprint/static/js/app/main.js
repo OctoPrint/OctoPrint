@@ -69,11 +69,11 @@ $(function() {
         var loginStateViewModel = new LoginStateViewModel();
         var printerProfilesViewModel = new PrinterProfilesViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesViewModel);
-        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel, printerProfilesViewModel);
         var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
         var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
-        var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel, printerProfilesViewModel);
+        var appearanceViewModel = new AppearanceViewModel(settingsViewModel, printerStateViewModel);
         var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);

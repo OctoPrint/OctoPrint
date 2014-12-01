@@ -101,54 +101,98 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         var currentProfileData = self.settings.printerProfiles.currentProfileData();
         if (!currentProfileData) return;
 
-        if (currentProfileData.extruder() && currentProfileData.extruder().extruderOffsets()) {
+        var toolOffsets = self._retrieveToolOffsets(currentProfileData);
+        if (toolOffsets) {
             GCODE.ui.updateOptions({
                 reader: {
-                    toolOffsets: self.settings.printer_extruderOffsets()
+                    toolOffsets: toolOffsets
                 }
             });
-        };
 
-        if (currentProfileData.volume() && currentProfileData.volume().width() && currentProfileData.volume().depth()) {
+        }
+
+        var bedDimensions = self._retrieveBedDimensions(currentProfileData);
+        if (toolOffsets) {
             GCODE.ui.updateOptions({
                 renderer: {
                     bed: bedDimensions
                 }
             });
-        };
+        }
 
-        if (currentProfileData.axes()) {
-            var invertX = false, invertY = false;
-            if (currentProfileData.axes().x()) {
-                invertX = currentProfileData.axes().x().inverted();
-            }
-            if (currentProfileData.axes().y()) {
-                invertY = currentProfileData.axes().y().inverted();
-            }
-
+        var axesConfiguration = self._retrieveAxesConfiguration(currentProfileData);
+        if (axesConfiguration) {
             GCODE.ui.updateOptions({
                 renderer: {
-                    invertAxes: {
-                        x: invertX,
-                        y: invertY
-                    }
+                    invertAxes: axesConfiguration
                 }
             });
         }
     });
-    self.settings.printer_invertAxes.subscribe(function() {
-        if (!self.enabled) return;
-        if (!self.settings.printer_invertAxes()) return;
 
-        GCODE.ui.updateOptions({
-            renderer: {
-                invertAxes: {
-                    x: self.settings.printer_invertX(),
-                    y: self.settings.printer_invertY()
-                }
+    self._retrieveBedDimensions = function(currentProfileData) {
+        if (currentProfileData == undefined) {
+            currentProfileData = self.settings.printerProfiles.currentProfileData();
+        }
+
+        if (currentProfileData && currentProfileData.volume && currentProfileData.volume.formFactor() && currentProfileData.volume.width() && currentProfileData.volume.depth()) {
+            var x = undefined, y = undefined, r = undefined, circular = false;
+
+            var formFactor = currentProfileData.volume.formFactor();
+            if (formFactor == "circular") {
+                r = currentProfileData.volume.width() / 2;
+                circular = true;
+            } else {
+                x = currentProfileData.volume.width();
+                y = currentProfileData.volume.depth();
             }
-        });
-    });
+
+            return {
+                x: x,
+                y: y,
+                r: r,
+                circular: circular
+            };
+        } else {
+            return undefined;
+        }
+    };
+
+    self._retrieveToolOffsets = function(currentProfileData) {
+        if (currentProfileData == undefined) {
+            currentProfileData = self.settings.printerProfiles.currentProfileData();
+        }
+
+        if (currentProfileData && currentProfileData.extruder && currentProfileData.extruder.offsets()) {
+            return currentProfileData.extruder.offsets();
+        } else {
+            return undefined;
+        }
+
+    };
+
+    self._retrieveAxesConfiguration = function(currentProfileData) {
+        if (currentProfileData == undefined) {
+            currentProfileData = self.settings.printerProfiles.currentProfileData();
+        }
+
+        if (currentProfileData && currentProfileData.axes) {
+            var invertX = false, invertY = false;
+            if (currentProfileData.axes.x) {
+                invertX = currentProfileData.axes.x.inverted();
+            }
+            if (currentProfileData.axes.y) {
+                invertY = currentProfileData.axes.y.inverted();
+            }
+
+            return {
+                x: invertX,
+                y: invertY
+            }
+        } else {
+            return undefined;
+        }
+    };
 
     self.loadedFilename = undefined;
     self.loadedFileDate = undefined;
@@ -175,8 +219,9 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
                 onProgress: self._onProgress,
                 onModelLoaded: self._onModelLoaded,
                 onLayerSelected: self._onLayerSelected,
-                bed: self.settings.printer_bedDimensions(),
-                toolOffsets: self.settings.printer_extruderOffsets()
+                bed: self._retrieveBedDimensions(),
+                toolOffsets: self._retrieveToolOffsets(),
+                invertAxes: self._retrieveAxesConfiguration()
             });
             self.synchronizeOptions();
             self.enabled = true;
