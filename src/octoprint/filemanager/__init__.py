@@ -94,7 +94,7 @@ class NoSuchStorage(Exception):
 
 
 class FileManager(object):
-	def __init__(self, analysis_queue, slicing_manager, initial_storage_managers=None):
+	def __init__(self, analysis_queue, slicing_manager, printer_profile_manager, initial_storage_managers=None):
 		self._logger = logging.getLogger(__name__)
 		self._analysis_queue = analysis_queue
 		self._analysis_queue.register_finish_callback(self._on_analysis_finished)
@@ -104,6 +104,7 @@ class FileManager(object):
 			self._storage_managers.update(initial_storage_managers)
 
 		self._slicing_manager = slicing_manager
+		self._printer_profile_manager = printer_profile_manager
 
 		import threading
 		self._slicing_jobs = dict()
@@ -123,10 +124,11 @@ class FileManager(object):
 
 	def _determine_analysis_backlog(self, storage_type, storage_manager):
 		self._logger.info("Adding backlog items from {storage_type} to analysis queue".format(**locals()))
-		for entry, path in storage_manager.analysis_backlog:
+		for entry, path, printer_profile in storage_manager.analysis_backlog:
 			file_type = get_file_type(path)[-1]
 
-			queue_entry = QueueEntry(entry, file_type, storage_type, path)
+			# we'll use the default printer profile for the backlog since we don't know better
+			queue_entry = QueueEntry(entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
 			self._analysis_queue.enqueue(queue_entry, high_priority=False)
 
 	def add_storage(self, storage_type, storage_manager):
@@ -153,7 +155,7 @@ class FileManager(object):
 	def slice(self, slicer_name, source_location, source_path, dest_location, dest_path, profile=None, printer_profile_id=None, overrides=None, callback=None, callback_args=None):
 		absolute_source_path = self.get_absolute_path(source_location, source_path)
 
-		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, callback, callback_args, _error=None, _cancelled=False):
+		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args, _error=None, _cancelled=False):
 			try:
 				if _error:
 					eventManager().fire(Events.SLICING_FAILED, {"stl": source_path, "gcode": dest_path, "reason": _error})
@@ -179,7 +181,9 @@ class FileManager(object):
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
 					file_obj = Wrapper(stl_name, temp_path, hash)
-					self.add_file(dest_location, dest_path, file_obj, links=links, allow_overwrite=True)
+
+					printer_profile = self._printer_profile_manager.get(printer_profile_id)
+					self.add_file(dest_location, dest_path, file_obj, links=links, allow_overwrite=True, printer_profile=printer_profile)
 
 					end_time = time.time()
 					eventManager().fire(Events.SLICING_DONE, {"stl": source_path, "gcode": dest_path, "time": end_time - start_time})
@@ -222,7 +226,7 @@ class FileManager(object):
 
 			self._slicing_jobs[dest_job_key] = self._slicing_jobs[source_job_key] = (slicer_name, absolute_source_path, temp_path)
 
-		args = (source_location, source_path, temp_path, dest_location, dest_path, start_time, callback, callback_args)
+		args = (source_location, source_path, temp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args)
 		return self._slicing_manager.slice(
 			slicer_name,
 			absolute_source_path,
@@ -266,13 +270,16 @@ class FileManager(object):
 			result[dst] = self._storage_managers[dst].list_files(path=path, filter=filter, recursive=recursive)
 		return result
 
-	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False):
-		file_path = self._storage(destination).add_file(path, file_object, links=links, allow_overwrite=allow_overwrite)
+	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False, printer_profile=None):
+		if printer_profile is None:
+			printer_profile = self._printer_profile_manager.get_current_or_default()
+
+		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 		absolute_path = self._storage(destination).get_absolute_path(file_path)
 
 		file_type = get_file_type(absolute_path)
 		if file_type:
-			queue_entry = QueueEntry(file_path, file_type[-1], destination, absolute_path)
+			queue_entry = QueueEntry(file_path, file_type[-1], destination, absolute_path, printer_profile)
 			self._analysis_queue.enqueue(queue_entry, high_priority=True)
 
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))

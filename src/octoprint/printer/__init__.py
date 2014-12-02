@@ -197,15 +197,17 @@ class Printer():
 			self._comm.sendCommand(command)
 
 	def jog(self, axis, amount):
-		movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
-		self.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), amount, movementSpeed[axis]), "G90"])
+		printer_profile = self._printerProfileManager.get_current_or_default()
+		movement_speed = printer_profile["axes"][axis]["speed"]
+		self.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), amount, movement_speed), "G90"])
 
 	def home(self, axes):
 		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), axes)), "G90"])
 
 	def extrude(self, amount):
-		extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
-		self.commands(["G91", "G1 E%s F%d" % (amount, extrusionSpeed), "G90"])
+		printer_profile = self._printerProfileManager.get_current_or_default()
+		extrusion_speed = printer_profile["axes"]["e"]["speed"]
+		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"])
 
 	def changeTool(self, tool):
 		try:
@@ -216,7 +218,9 @@ class Printer():
 
 	def setTemperature(self, type, value):
 		if type.startswith("tool"):
-			if settings().getInt(["printerParameters", "numExtruders"]) > 1:
+			printer_profile = self._printerProfileManager.get_current_or_default()
+			extruder_count = printer_profile["extruder"]["count"]
+			if extruder_count > 1:
 				try:
 					toolNum = int(type[len("tool"):])
 					self.command("M104 T%d S%f" % (toolNum, value))
@@ -301,9 +305,12 @@ class Printer():
 		self._comm.cancelPrint()
 
 		if disableMotorsAndHeater:
+			printer_profile = self._printerProfileManager.get_current_or_default()
+			extruder_count = printer_profile["extruder"]["count"]
+
 			# disable motors, switch off hotends, bed and fan
 			commands = ["M84"]
-			commands.extend(map(lambda x: "M104 T%d S0" % x, range(settings().getInt(["printerParameters", "numExtruders"]))))
+			commands.extend(map(lambda x: "M104 T%d S0" % x, range(extruder_count)))
 			commands.extend(["M140 S0", "M106 S0"])
 			self.commands(commands)
 

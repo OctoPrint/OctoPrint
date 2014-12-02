@@ -16,6 +16,7 @@ class FileManagerTest(unittest.TestCase):
 	def setUp(self):
 		import octoprint.slicing
 		import octoprint.filemanager.storage
+		import octoprint.printer.profile
 
 		self.addCleanup(self.cleanUp)
 
@@ -29,13 +30,15 @@ class FileManagerTest(unittest.TestCase):
 
 		self.slicing_manager = mock.MagicMock(spec=octoprint.slicing.SlicingManager)
 
+		self.printer_profile_manager = mock.MagicMock(spec=octoprint.printer.profile.PrinterProfileManager)
+
 		self.local_storage = mock.MagicMock(spec=octoprint.filemanager.storage.LocalFileStorage)
 		self.local_storage.analysis_backlog = iter([])
 
 		self.storage_managers = dict()
 		self.storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = self.local_storage
 
-		self.file_manager = octoprint.filemanager.FileManager(self.analysis_queue, self.slicing_manager, initial_storage_managers=self.storage_managers)
+		self.file_manager = octoprint.filemanager.FileManager(self.analysis_queue, self.slicing_manager, self.printer_profile_manager, initial_storage_managers=self.storage_managers)
 
 	def cleanUp(self):
 		self.event_manager_patcher.stop()
@@ -46,10 +49,13 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.add_file.return_value = ("", "test.file")
 		self.local_storage.get_absolute_path.return_value = "prefix/test.file"
 
+		test_profile = dict(id="_default", name="My Default Profile")
+		self.printer_profile_manager.get_current_or_default.return_value = test_profile
+
 		file_path = self.file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL, "test.file", wrapper)
 
 		self.assertEquals(("", "test.file"), file_path)
-		self.local_storage.add_file.assert_called_once_with("test.file", wrapper, allow_overwrite=False, links=None)
+		self.local_storage.add_file.assert_called_once_with("test.file", wrapper, printer_profile=test_profile, allow_overwrite=False, links=None)
 		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
 
 	def test_remove_file(self):
@@ -114,6 +120,11 @@ class FileManagerTest(unittest.TestCase):
 		metadata = dict(hash="aabbccddeeff")
 		self.local_storage.get_metadata.return_value = metadata
 
+		# mock printer profile
+		expected_printer_profile = dict(id="_default", name="My Default Profile")
+		self.printer_profile_manager.get_current_or_default.return_value = expected_printer_profile
+		self.printer_profile_manager.get.return_value = None
+
 		# mock get_absolute_path method on local storage
 		def get_absolute_path(path):
 			if isinstance(path, tuple):
@@ -131,13 +142,13 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.split_path.side_effect = split_path
 
 		# mock add_file method on local storage
-		def add_file(path, file_obj, links=None, allow_overwrite=False):
+		def add_file(path, file_obj, printer_profile=None, links=None, allow_overwrite=False):
 			file_obj.save("prefix/" + path)
 			return "", path
 		self.local_storage.add_file.side_effect = add_file
 
 		# mock slice method on slicing manager
-		def slice(slicer_name, source_path, dest_path, profile, done_cb, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
+		def slice(slicer_name, source_path, dest_path, profile, done_cb, printer_profile_id=None, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 			self.assertEquals("some_slicer", slicer_name)
 			self.assertEquals("prefix/source.file", source_path)
 			self.assertEquals("tmp.file", dest_path)
@@ -163,7 +174,7 @@ class FileManagerTest(unittest.TestCase):
 
 		# assert that model links were added
 		expected_links = [("model", dict(name="source.file"))]
-		self.local_storage.add_file.assert_called_once_with("dest.file", mock.ANY, allow_overwrite=True, links=expected_links)
+		self.local_storage.add_file.assert_called_once_with("dest.file", mock.ANY, printer_profile=expected_printer_profile, allow_overwrite=True, links=expected_links)
 
 		# assert that the generated gcode was manipulated as required
 		expected_open_calls = [mock.call("prefix/dest.file", "w"), mock.call("tmp.file", "r")]
@@ -203,7 +214,7 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.get_absolute_path.side_effect = get_absolute_path
 
 		# mock slice method on slicing manager
-		def slice(slicer_name, source_path, dest_path, profile, done_cb, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
+		def slice(slicer_name, source_path, dest_path, profile, done_cb, printer_profile_id=None, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 			self.assertEquals("some_slicer", slicer_name)
 			self.assertEquals("prefix/source.file", source_path)
 			self.assertEquals("tmp.file", dest_path)

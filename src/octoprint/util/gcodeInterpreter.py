@@ -31,17 +31,17 @@ class gcode(object):
 		self._abort = False
 		self._filamentDiameter = 0
 	
-	def load(self, filename):
+	def load(self, filename, printer_profile):
 		if os.path.isfile(filename):
 			self.filename = filename
 			self._fileSize = os.stat(filename).st_size
 			with open(filename, "r") as f:
-				self._load(f)
+				self._load(f, printer_profile)
 
 	def abort(self):
 		self._abort = True
 
-	def _load(self, gcodeFile):
+	def _load(self, gcodeFile, printer_profile):
 		filePos = 0
 		pos = [0.0, 0.0, 0.0]
 		posOffset = [0.0, 0.0, 0.0]
@@ -53,8 +53,8 @@ class gcode(object):
 		absoluteE = True
 		scale = 1.0
 		posAbs = True
-		feedRateXY = settings().getFloat(["printerParameters", "movementSpeed", "x"])
-		offsets = settings().get(["printerParameters", "extruderOffsets"])
+		feedRateXY = min(printer_profile["axes"]["x"], printer_profile["axes"]["y"])
+		offsets = printer_profile["extruder"]["offsets"]
 
 		for line in gcodeFile:
 			if self._abort:
@@ -198,13 +198,13 @@ class gcode(object):
 				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):
 					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
 				else:
-					posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-					posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+					posOffset[0] -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					posOffset[1] -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					currentExtruder = T
 
-					posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-					posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+					posOffset[0] += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					posOffset[1] += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					if len(currentE) <= currentExtruder:
 						for i in range(len(currentE), currentExtruder + 1):

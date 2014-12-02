@@ -235,7 +235,7 @@ class Server():
 		slicingManager = octoprint.slicing.SlicingManager(settings().getBaseFolder("slicingProfiles"), printerProfileManager)
 		storage_managers = dict()
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(settings().getBaseFolder("uploads"))
-		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, initial_storage_managers=storage_managers)
+		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
 

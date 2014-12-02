@@ -27,9 +27,6 @@ import octoprint.plugin
 def getSettings():
 	s = settings()
 
-	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] \
-		= s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
-
 	connectionOptions = getConnectionOptions()
 
 	data = {
@@ -43,14 +40,6 @@ def getSettings():
 			"color": s.get(["appearance", "color"])
 		},
 		"printer": {
-			"movementSpeedX": movementSpeedX,
-			"movementSpeedY": movementSpeedY,
-			"movementSpeedZ": movementSpeedZ,
-			"movementSpeedE": movementSpeedE,
-			"invertAxes": s.get(["printerParameters", "invertAxes"]),
-			"numExtruders": s.get(["printerParameters", "numExtruders"]),
-			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
-			"bedDimensions": s.get(["printerParameters", "bedDimensions"]),
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
 		},
 		"webcam": {
@@ -140,14 +129,6 @@ def setSettings():
 			if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 
 		if "printer" in data.keys():
-			if "movementSpeedX" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "x"], data["printer"]["movementSpeedX"])
-			if "movementSpeedY" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "y"], data["printer"]["movementSpeedY"])
-			if "movementSpeedZ" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "z"], data["printer"]["movementSpeedZ"])
-			if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
-			if "invertAxes" in data["printer"].keys(): s.set(["printerParameters", "invertAxes"], data["printer"]["invertAxes"])
-			if "numExtruders" in data["printer"].keys(): s.setInt(["printerParameters", "numExtruders"], data["printer"]["numExtruders"])
-			if "extruderOffsets" in data["printer"].keys(): s.set(["printerParameters", "extruderOffsets"], data["printer"]["extruderOffsets"])
-			if "bedDimensions" in data["printer"].keys(): s.set(["printerParameters", "bedDimensions"], data["printer"]["bedDimensions"])
 			if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
 		if "webcam" in data.keys():
