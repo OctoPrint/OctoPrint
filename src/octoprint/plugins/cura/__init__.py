@@ -273,8 +273,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 					export=2
 				)
 				while p.returncode is None:
-					line = p.stderr.readline()
-					if line is None:
+					line = p.stderr.readline(timeout=0.5)
+					if not line:
 						if line_seen:
 							break
 						else:
