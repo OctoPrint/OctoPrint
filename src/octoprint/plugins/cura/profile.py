@@ -46,7 +46,6 @@ defaults = dict(
     layer_height=0.1,
     wall_thickness=0.8,
     solid_layer_thickness=0.6,
-    nozzle_size=0.4,
     print_temperature=[220, 0, 0, 0],
     print_bed_temperature=70,
     platform_adhesion=PlatformAdhesionTypes.NONE,
@@ -757,7 +756,7 @@ class Profile(object):
 
 	def calculate_edge_width_and_line_count(self):
 		wall_thickness = self.get_float("wall_thickness")
-		nozzle_size = self.get_float("nozzle_size")
+		nozzle_size = self._printer_profile["extruder"]["nozzleDiameter"]
 
 		if self.get_boolean("spiralize") or self.get_boolean("follow_surface"):
 			return wall_thickness, 1

@@ -173,6 +173,10 @@ Profile
      - 0..1
      - Object
      - Information about the printer's extruders
+   * - ``extruder.nozzleDiameter``
+     - 0..1
+     - ``float``
+     - The diameter of the printer's nozzle(s) in mm.
    * - ``extruder.count``
      - 0..1
      - ``int``

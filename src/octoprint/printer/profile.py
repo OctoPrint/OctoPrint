@@ -38,7 +38,8 @@ class PrinterProfileManager(object):
 			count = 1,
 			offsets = [
 				(0, 0)
-			]
+			],
+			nozzleDiameter = 0.4
 		),
 		axes=dict(
 			x = dict(speed=6000, inverted=False),
@@ -150,7 +151,7 @@ class PrinterProfileManager(object):
 			if profile is None:
 				continue
 
-			results[identifier] = profile
+			results[identifier] = dict_merge(self._load_default(), profile)
 		return results
 
 	def _load_all_identifiers(self):
@@ -183,7 +184,7 @@ class PrinterProfileManager(object):
 		import yaml
 		with open(path, "wb") as f:
 			try:
-				yaml.safe_dump(profile, f)
+				yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 			except Exception as e:
 				raise SaveError("Cannot save profile %s: %s" % (profile["id"], e.message))
 

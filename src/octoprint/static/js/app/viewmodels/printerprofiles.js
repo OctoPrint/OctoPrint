@@ -24,7 +24,8 @@ function PrinterProfilesViewModel() {
                 count: 1,
                 offsets: [
                     [0,0]
-                ]
+                ],
+                nozzleDiameter: 0.4
             }
         }
     };
@@ -64,6 +65,7 @@ function PrinterProfilesViewModel() {
 
     self.editorHeatedBed = ko.observable();
 
+    self.editorNozzleDiameter = ko.observable();
     self.editorExtruders = ko.observable();
     self.editorExtruderOffsets = ko.observableArray();
 
@@ -215,6 +217,7 @@ function PrinterProfilesViewModel() {
 
         self.editorHeatedBed(data.volume.heatedBed);
 
+        self.editorNozzleDiameter(data.extruder.nozzleDiameter);
         self.editorExtruders(data.extruder.count);
         var offsets = [];
         _.each(data.extruder.offsets, function(offset) {
@@ -275,7 +278,8 @@ function PrinterProfilesViewModel() {
                 count: self.editorExtruders(),
                 offsets: [
                     [0.0, 0.0]
-                ]
+                ],
+                nozzleDiameter: self.editorNozzleDiameter()
             },
             axes: {
                 x: {
@@ -306,6 +310,6 @@ function PrinterProfilesViewModel() {
         return profile;
     };
 
-   self.onSettingsShown = self.requestData;
+    self.onSettingsShown = self.requestData;
     self.onStartup = self.requestData;
 }
