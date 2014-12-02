@@ -265,7 +265,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				with self._slicing_commands_mutex:
 					self._slicing_commands[machinecode_path] = p.commands[0]
 
-				line_seen = False
 				layer_count = None
 				step_factor = dict(
 					inset=0,
@@ -275,12 +274,9 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				while p.returncode is None:
 					line = p.stderr.readline(timeout=0.5)
 					if not line:
-						if line_seen:
-							break
-						else:
-							continue
+						p.commands[0].poll()
+						continue
 
-					line_seen = True
 					self._cura_logger.debug(line.strip())
 
 					if on_progress is not None:
