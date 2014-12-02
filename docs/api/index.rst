@@ -13,6 +13,7 @@ API Documentation
    fileops.rst
    connection.rst
    printer.rst
+   printerprofiles.rst
    job.rst
    logs.rst
    slicing.rst
