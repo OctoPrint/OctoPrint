@@ -117,7 +117,7 @@ class SlicingManager(object):
 			printer_profile = self._printer_profile_manager.get(printer_profile_id)
 
 		if printer_profile is None:
-			printer_profile = self._printer_profile_manager.get_current_or_default()["id"]
+			printer_profile = self._printer_profile_manager.get_current_or_default()
 
 		def slicer_worker(slicer, model_path, machinecode_path, profile_name, overrides, printer_profile, callback, callback_args, callback_kwargs):
 			try:
