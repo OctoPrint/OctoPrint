@@ -282,7 +282,7 @@ def gcodeFileCommand(filename, target):
 	if command == "select":
 		# selects/loads a file
 		printAfterLoading = False
-		if "print" in data.keys() and data["print"]:
+		if "print" in data.keys() and data["print"] in valid_boolean_trues:
 			if not printer.isOperational():
 				return make_response("Printer is not operational, cannot directly start printing", 409)
 			printAfterLoading = True
@@ -346,12 +346,43 @@ def gcodeFileCommand(filename, target):
 		else:
 			position = None
 
+		select_after_slicing = False
+		if "select" in data.keys() and data["select"] in valid_boolean_trues:
+			if not printer.isOperational():
+				return make_response("Printer is not operational, cannot directly select for printing", 409)
+			select_after_slicing = True
+
+		print_after_slicing = False
+		if "print" in data.keys() and data["select"] in valid_boolean_trues:
+			if not printer.isOperational():
+				return make_response("Printer is not operational, cannot directly start printing", 409)
+			select_after_slicing = print_after_slicing = True
+
 		override_keys = [k for k in data if k.startswith("profile.") and data[k] is not None]
 		overrides = dict()
 		for key in override_keys:
 			overrides[key[len("profile."):]] = data[key]
 
-		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name, profile=profile, printer_profile_id=printerProfile, position=position, overrides=overrides)
+		def slicing_done(target, gcode_name, select_after_slicing, print_after_slicing):
+			if select_after_slicing or print_after_slicing:
+				sd = False
+				if target == FileDestinations.SDCARD:
+					filenameToSelect = gcode_name
+					sd = True
+				else:
+					filenameToSelect = fileManager.get_absolute_path(target, gcode_name)
+				printer.selectFile(filenameToSelect, sd, print_after_slicing)
+
+		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name,
+		                               printer_after_slicing=print_after_slicing,
+		                               select_after_slicing=select_after_slicing,
+		                               profile=profile,
+		                               printer_profile_id=printerProfile,
+		                               position=position,
+		                               overrides=overrides,
+		                               callback=slicing_done,
+		                               callback_args=(target, gcode_name, select_after_slicing, print_after_slicing))
+
 		if ok:
 			files = {}
 			location = url_for(".readGcodeFile", target=target, filename=gcode_name, _external=True)

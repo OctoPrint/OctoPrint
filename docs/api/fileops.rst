@@ -318,9 +318,18 @@ Issue a file command
      * ``profile.*``: Override parameters, the ``profile.`` prefix will be stripped and the matching profile key will
        be overridden with the supplied value. Use this if you want to specify things that change often like a different
        temperature, filament diameter or infill percentage. Profile keys are slicer specific.
+     * ``select``: Optional, if set to ``true`` the file be selected for printing right after the slicing has finished. If the
+       printer is not operational or already printing when this parameter is present and set to ``true``, the request will
+       fail with a response of ``409 Conflict``
+     * ``print``: Optional, if set to ``true`` the file be selected and start printing right after the slicing has finished.
+       If the printer is not operational or already printing when this parameter is present and set to ``true``, the request
+       will fail with a response of ``409 Conflict``. Note that if this parameter is set, the parameter ``select`` does not
+       need to be set, it is automatically assumed to be ``true`` too, otherwise no printing would be possible.
 
      If consecutive slicing calls are made targeting the same GCODE filename (that also holds true if the default is used),
-     the slicing job already running in the background will be cancelled before the new one is started.
+     the slicing job already running in the background will be cancelled before the new one is started. Note that this will
+     also mean that if it was supposed to be directly selected and start printing after the slicing finished, this will not
+     take place anymore and whether this will happen with the new sliced file depends entirely on the new request!
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned, unless specified otherwise.
 
@@ -359,7 +368,8 @@ Issue a file command
         "profile": "high_quality",
         "profile.infill": 75,
         "profile.fill_density": 15,
-        "position": {"x": 100, "y": 100}
+        "position": {"x": 100, "y": 100},
+        "print": true
       }
 
    .. sourcecode:: http
@@ -377,18 +387,30 @@ Issue a file command
       }
 
 
-   :param target:        The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
-                         folder) or ``sdcard`` for the printer's SD card (if available)
-   :param filename:      The filename of the file for which to issue the command
-   :json string command: The command to issue for the file, currently only ``select`` is supported
-   :json boolean print:  ``select`` command: Optional, whether to start printing the file directly after selection,
-                         defaults to ``false``.
-   :statuscode 200:      No error
-   :statuscode 202:      No error for a ``slice`` command.
-   :statuscode 400:      If the `command` is unknown or the request is otherwise invalid
-   :statuscode 415:      If a ``slice`` command was issued against something other than an STL file.
-   :statuscode 404:      If `target` is neither ``local`` nor ``sdcard`` or the requested file was not found
-   :statuscode 409:      If a selected file is supposed to start printing directly but the printer is not operational.
+   :param target:               The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
+                                folder) or ``sdcard`` for the printer's SD card (if available)
+   :param filename:             The filename of the file for which to issue the command
+   :json string command:        The command to issue for the file, currently only ``select`` is supported
+   :json boolean print:         ``select`` and ``slice`` command: Optional, whether to start printing the file directly after selection
+                                or slicing, defaults to ``false``.
+   :json string slicer:         ``slice`` command: The slicer to use, defaults to the default slicer.
+   :json string gcode:          ``slice`` command: The name of the gcode file to create, defaults to the targeted stl's file name
+                                with its extension changed to ``.gco`` (e.g. "test.stl" will be sliced to "test.gco" if not specified
+                                otherwise)
+   :json string profile:        ``slice`` command: The slicing profile to use, defaults to the selected slicer's default profile.
+   :json string profile.*:      ``slice`` command: Overrides for the selected slicing profile, e.g. to specify a different temperature
+                                or filament diameter.
+   :json string printerProfile: ``slice`` command: The printer profile to use, defaults to the default printer profile.
+   :json boolean select:        ``slice`` command: Optional, whether to select the file for printing directly after slicing,
+                                defaults to ``false``
+   :statuscode 200:             No error for a ``select`` command.
+   :statuscode 202:             No error for a ``slice`` command.
+   :statuscode 400:             If the ``command`` is unknown or the request is otherwise invalid
+   :statuscode 415:             If a ``slice`` command was issued against something other than an STL file.
+   :statuscode 404:             If `target` is neither ``local`` nor ``sdcard`` or the requested file was not found
+   :statuscode 409:             If a selected file is supposed to start printing directly but the printer is not operational or
+                                if a file to be sliced is supposed to be selected or start printing directly but the printer
+                                is not operational or already printing.
 
 .. _sec-api-fileops-delete:
 

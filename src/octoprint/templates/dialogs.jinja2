@@ -33,6 +33,19 @@
                     </div>
                 </div>
             </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('After slicing...') }}</label>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: selectAfterSlicing"> {{ _('Select for printing') }}
+                    </label>
+                </div>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: printAfterSlicing"> {{ _('Print') }}
+                    </label>
+                </div>
+            </div>
         </form>
     </div>
     <div class="modal-footer">
