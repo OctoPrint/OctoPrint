@@ -353,7 +353,7 @@ def gcodeFileCommand(filename, target):
 			select_after_slicing = True
 
 		print_after_slicing = False
-		if "print" in data.keys() and data["select"] in valid_boolean_trues:
+		if "print" in data.keys() and data["print"] in valid_boolean_trues:
 			if not printer.isOperational():
 				return make_response("Printer is not operational, cannot directly start printing", 409)
 			select_after_slicing = print_after_slicing = True
@@ -374,8 +374,6 @@ def gcodeFileCommand(filename, target):
 				printer.selectFile(filenameToSelect, sd, print_after_slicing)
 
 		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name,
-		                               printer_after_slicing=print_after_slicing,
-		                               select_after_slicing=select_after_slicing,
 		                               profile=profile,
 		                               printer_profile_id=printerProfile,
 		                               position=position,

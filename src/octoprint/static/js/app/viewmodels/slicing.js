@@ -20,12 +20,20 @@ function SlicingViewModel(loginStateViewModel, printerProfilesViewModel) {
     self.profiles = ko.observableArray();
     self.printerProfile = ko.observable();
 
+    self.afterSlicingOptions = [
+        {"value": "none", "text": gettext("Do nothing")},
+        {"value": "select", "text": gettext("Select for printing")},
+        {"value": "print", "text": gettext("Start printing")}
+    ];
+    self.afterSlicing = ko.observable("none");
+
     self.show = function(target, file) {
         self.target = target;
         self.file = file;
         self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: self.file}));
         self.gcodeFilename(self.file.substr(0, self.file.lastIndexOf(".")));
         self.printerProfile(self.printerProfiles.currentProfile());
+        self.afterSlicing("none");
         $("#slicing_configuration_dialog").modal("show");
     };
 
@@ -126,6 +134,12 @@ function SlicingViewModel(loginStateViewModel, printerProfilesViewModel) {
             printerProfile: self.printerProfile(),
             gcode: gcodeFilename
         };
+
+        if (self.afterSlicing() == "print") {
+            data["print"] = true;
+        } else if (self.afterSlicing() == "select") {
+            data["select"] = true;
+        }
 
         $.ajax({
             url: API_BASEURL + "files/" + self.target + "/" + self.file,
