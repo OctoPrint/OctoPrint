@@ -229,12 +229,19 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 		self._save_profile(path, new_profile, allow_overwrite=allow_overwrite)
 
-	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
+	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, position=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		if not profile_path:
 			profile_path = s.get(["default_profile"])
 		if not machinecode_path:
 			path, _ = os.path.splitext(model_path)
 			machinecode_path = path + ".gco"
+
+		if position and isinstance(position, dict) and "x" in position and "y" in position:
+			posX = position["x"]
+			posY = position["y"]
+		else:
+			posX = None
+			posY = None
 
 		if on_progress:
 			if not on_progress_args:
@@ -244,7 +251,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 		self._cura_logger.info("### Slicing %s to %s using profile stored at %s" % (model_path, machinecode_path, profile_path))
 
-		engine_settings = self._convert_to_engine(profile_path, printer_profile)
+		engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
 
 		executable = s.get(["cura_engine"])
 		if not executable:
@@ -381,8 +388,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		with open(path, "wb") as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
-	def _convert_to_engine(self, profile_path, printer_profile):
-		profile = Profile(self._load_profile(profile_path), printer_profile)
+	def _convert_to_engine(self, profile_path, printer_profile, posX, posY):
+		profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
 		return profile.convert_to_engine()
 
 def _sanitize_name(name):

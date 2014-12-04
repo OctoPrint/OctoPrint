@@ -340,12 +340,18 @@ def gcodeFileCommand(filename, target):
 		else:
 			printerProfile = None
 
+		if "position" in data.keys() and data["position"] and isinstance(data["position"], dict) and "x" in data["position"] and "y" in data["position"]:
+			position = data["position"]
+			del data["position"]
+		else:
+			position = None
+
 		override_keys = [k for k in data if k.startswith("profile.") and data[k] is not None]
 		overrides = dict()
 		for key in override_keys:
 			overrides[key[len("profile."):]] = data[key]
 
-		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name, profile=profile, printer_profile_id=printerProfile, overrides=overrides)
+		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name, profile=profile, printer_profile_id=printerProfile, position=position, overrides=overrides)
 		if ok:
 			files = {}
 			location = url_for(".readGcodeFile", target=target, filename=gcode_name, _external=True)

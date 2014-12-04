@@ -514,9 +514,11 @@ class Profile(object):
 
 		return result
 
-	def __init__(self, profile, printer_profile, overrides=None):
+	def __init__(self, profile, printer_profile, posX, posY, overrides=None):
 		self._profile = self.__class__.merge_profile(profile, overrides=overrides)
 		self._printer_profile = printer_profile
+		self._posX = posX
+		self._posY = posY
 
 	def profile(self):
 		import copy
@@ -796,6 +798,24 @@ class Profile(object):
 			return 2
 		return 1
 
+	def get_pos_x(self):
+		if self._posX:
+			try:
+				return int(float(self._posX) * 1000)
+			except ValueError:
+				pass
+
+		return int(self.get_float("machine_width") / 2.0 * 1000) if not self.get_boolean("machine_center_is_zero") else 0.0
+
+	def get_pos_y(self):
+		if self._posY:
+			try:
+				return int(float(self._posY) * 1000)
+			except ValueError:
+				pass
+
+		return int(self.get_float("machine_depth") / 2.0 * 1000) if not self.get_boolean("machine_center_is_zero") else 0.0
+
 	def convert_to_engine(self):
 
 		edge_width, line_count = self.calculate_edge_width_and_line_count()
@@ -844,8 +864,8 @@ class Profile(object):
 			"coolHeadLift": 1 if self.get_boolean("cool_head_lift") else 0,
 
 			# model positioning
-			"posx": int(self.get_float("machine_width") / 2.0 * 1000) if not self.get_boolean("machine_center_is_zero") else 0.0,
-			"posy": int(self.get_float("machine_depth") / 2.0 * 1000) if not self.get_boolean("machine_center_is_zero") else 0.0,
+			"posx": self.get_pos_x(),
+			"posy": self.get_pos_y(),
 
 			# gcodes
 			"startCode": self.get_gcode("start_gcode"),

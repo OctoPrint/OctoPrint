@@ -311,6 +311,9 @@ Issue a file command
      * ``slicer``: The slicing engine to use, defaults to ``cura`` if not set, which is also the only supported slicer right now.
      * ``gcode``: Name of the GCODE file to generated, in the same location as the STL file. Defaults to the STL file name
        with extension ``.gco`` if not set.
+     * ``position``: Position of the object-to-slice's center on the print bed. A dictionary containing both ``x`` and ``y``
+       coordinate in mm is expected
+     * ``printerProfile``: Name of the printer profile to use, if not set the default printer profile will be used.
      * ``profile``: Name of the slicing profile to use, if not set the default slicing profile of the slicer will be used.
      * ``profile.*``: Override parameters, the ``profile.`` prefix will be stripped and the matching profile key will
        be overridden with the supplied value. Use this if you want to specify things that change often like a different
@@ -352,9 +355,11 @@ Issue a file command
         "command": "slice",
         "slicer": "cura",
         "gcode": "some_model.first_try.gcode",
+        "printerProfile": "my_custom_reprap",
         "profile": "high_quality",
         "profile.infill": 75,
-        "profile.fill_density": 15
+        "profile.fill_density": 15,
+        "position": {"x": 100, "y": 100}
       }
 
    .. sourcecode:: http
