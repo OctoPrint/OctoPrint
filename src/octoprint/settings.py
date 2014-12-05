@@ -108,26 +108,8 @@ default_settings = {
 		"defaultProfile": {}
 	},
 	"printerParameters": {
-		"movementSpeed": {
-			"x": 6000,
-			"y": 6000,
-			"z": 200,
-			"e": 300
-		},
 		"pauseTriggers": [],
-		"invertAxes": [],
-		"numExtruders": 1,
-		"extruderOffsets": [
-			{"x": 0.0, "y": 0.0}
-		],
-		"bedDimensions": {
-			"x": 200.0, "y": 200.0, "r": 100, "circular": False
-		},
 		"defaultExtrusionLength": 5
-	},
-	"appearance": {
-		"name": "",
-		"color": "default"
 	},
 	"controls": [],
 	"system": {
@@ -240,10 +222,79 @@ class Settings(object):
 
 	def _migrateConfig(self):
 		dirty = False
-		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config):
+		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config, self._migrate_printer_parameters):
 			dirty = migrate() or dirty
 		if dirty:
 			self.save(force=True)
+
+	def _migrate_printer_parameters(self):
+		default_profile = self._config["printerProfiles"]["defaultProfile"] if "printerProfiles" in self._config and "defaultProfile" in self._config["printerProfiles"] else dict()
+		dirty = False
+
+		if "printerParameters" in self._config:
+			printer_parameters = self._config["printerParameters"]
+
+			if "movementSpeed" in printer_parameters or "invertAxes" in printer_parameters:
+				default_profile["axes"] = dict(x=dict(), y=dict(), z=dict(), e=dict())
+				if "movementSpeed" in printer_parameters:
+					for axis in ("x", "y", "z", "e"):
+						if axis in printer_parameters["movementSpeed"]:
+							default_profile["axes"][axis]["speed"] = printer_parameters["movementSpeed"][axis]
+					del self._config["printerParameters"]["movementSpeed"]
+				if "invertedAxes" in printer_parameters:
+					for axis in ("x", "y", "z", "e"):
+						if axis in printer_parameters["invertedAxes"]:
+							default_profile["axes"][axis]["inverted"] = True
+					del self._config["printerParameters"]["invertedAxes"]
+
+			if "numExtruders" in printer_parameters or "extruderOffsets" in printer_parameters:
+				if not "extruder" in default_profile:
+					default_profile["extruder"] = dict()
+
+				if "numExtruders" in printer_parameters:
+					default_profile["extruder"]["count"] = printer_parameters["numExtruders"]
+					del self._config["printerParameters"]["numExtruders"]
+				if "extruderOffsets" in printer_parameters:
+					extruder_offsets = []
+					for offset in printer_parameters["extruderOffsets"]:
+						if "x" in offset and "y" in offset:
+							extruder_offsets.append((offset["x"], offset["y"]))
+					default_profile["extruder"]["offsets"] = extruder_offsets
+					del self._config["printerParameters"]["extruderOffsets"]
+
+			if "bedDimensions" in printer_parameters:
+				bed_dimensions = printer_parameters["bedDimensions"]
+				if not "volume" in default_profile:
+					default_profile["volume"] = dict()
+
+				if "circular" in bed_dimensions and "r" in bed_dimensions and bed_dimensions["circular"]:
+					default_profile["volume"]["formFactor"] = "circular"
+					default_profile["volume"]["width"] = 2 * bed_dimensions["r"]
+					default_profile["volume"]["depth"] = default_profile["volume"]["width"]
+				elif "x" in bed_dimensions or "y" in bed_dimensions:
+					default_profile["volume"]["formFactor"] = "rectangular"
+					if "x" in bed_dimensions:
+						default_profile["volume"]["width"] = bed_dimensions["x"]
+					if "y" in bed_dimensions:
+						default_profile["volume"]["depth"] = bed_dimensions["y"]
+				del self._config["printerParameters"]["bedDimensions"]
+
+			dirty = True
+
+		if "appearance" in self._config:
+			if "name" in self._config["appearance"]:
+				default_profile["name"] = self._config["appearance"]["name"]
+			if "color" in self._config["appearance"]:
+				default_profile["color"] = self._config["appearance"]["color"]
+
+			del self._config["appearance"]
+			dirty = True
+
+		if dirty:
+			if not "printerProfiles" in self._config:
+				self._config["printerProfiles"] = dict()
+			self._config["printerProfiles"]["defaultProfile"] = default_profile
+		return dirty
 
 	def _migrate_reverse_proxy_config(self):
 		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
