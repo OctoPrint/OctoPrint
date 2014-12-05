@@ -90,17 +90,18 @@ class PrinterProfileManager(object):
 			raise ValueError("profile must contain either id or name")
 
 		identifier = self._sanitize(identifier)
+		profile["id"] = identifier
+		profile = dict_clean(profile, self.__class__.default)
 
 		if identifier == "_default":
 			default_profile = dict_merge(self._load_default(), profile)
 			settings().set(["printerProfiles", "defaultProfile"], default_profile, defaults=dict(printerProfiles=dict(defaultProfile=self.__class__.default)))
+			settings().save()
+		else:
+			self._save_to_path(self._get_profile_path(identifier), profile, allow_overwrite=allow_overwrite)
 
-		profile["id"] = identifier
-		profile = dict_clean(profile, self.__class__.default)
-		self._save_to_path(self._get_profile_path(identifier), profile, allow_overwrite=allow_overwrite)
-
-		if make_default:
-			settings().set(["printerProfiles", "default"], identifier)
+			if make_default:
+				settings().set(["printerProfiles", "default"], identifier)
 
 		return self.get(identifier)
 
