@@ -17,12 +17,12 @@ from octoprint.util import dict_merge
 from octoprint.server import printerProfileManager
 
 
-@api.route("/printerProfiles", methods=["GET"])
+@api.route("/printerprofiles", methods=["GET"])
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
-@api.route("/printerProfiles", methods=["POST"])
+@api.route("/printerprofiles", methods=["POST"])
 @restricted_access
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
@@ -48,20 +48,20 @@ def printerProfilesAdd():
 
 	return _overwrite_profile(profile)
 
-@api.route("/printerProfiles/<string:identifier>", methods=["GET"])
+@api.route("/printerprofiles/<string:identifier>", methods=["GET"])
 def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)
 	if profile is None:
 		make_response("Unknown profile: %s" % identifier, 404)
 	return jsonify(_convert_profile(profile))
 
-@api.route("/printerProfiles/<string:identifier>", methods=["DELETE"])
+@api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
 @restricted_access
 def printerProfilesDelete(identifier):
 	printerProfileManager.remove(identifier)
 	return NO_CONTENT
 
-@api.route("/printerProfiles/<string:identifier>", methods=["PATCH"])
+@api.route("/printerprofiles/<string:identifier>", methods=["PATCH"])
 @restricted_access
 def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:

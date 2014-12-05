@@ -120,7 +120,7 @@ function PrinterProfilesViewModel() {
 
     self.requestData = function() {
         $.ajax({
-            url: API_BASEURL + "printerProfiles",
+            url: API_BASEURL + "printerprofiles",
             type: "GET",
             dataType: "json",
             success: self.fromResponse
@@ -153,7 +153,7 @@ function PrinterProfilesViewModel() {
     self.addProfile = function(callback) {
         var profile = self._editorData();
         $.ajax({
-            url: API_BASEURL + "printerProfiles",
+            url: API_BASEURL + "printerprofiles",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -182,7 +182,7 @@ function PrinterProfilesViewModel() {
         }
 
         $.ajax({
-            url: API_BASEURL + "printerProfiles/" + profile.id,
+            url: API_BASEURL + "printerprofiles/" + profile.id,
             type: "PATCH",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
