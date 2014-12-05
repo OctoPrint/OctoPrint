@@ -271,7 +271,7 @@ function PrinterProfilesViewModel() {
                 width: self.editorVolumeWidth(),
                 depth: self.editorVolumeDepth(),
                 height: self.editorVolumeHeight(),
-                type: self.editorVolumeFormFactor()
+                formFactor: self.editorVolumeFormFactor()
             },
             heatedBed: self.editorHeatedBed(),
             extruder: {

@@ -111,17 +111,47 @@ def _convert_profile(profile):
 	return converted
 
 def _validate_profile(profile):
-	return "name" in profile \
-	       and "volume" in profile \
-	           and "width" in profile["volume"] \
-	           and "depth" in profile["volume"] \
-	           and "height" in profile["volume"] \
-	           and "formFactor" in profile["volume"] \
-	       and "heatedBed" in profile \
-	       and "extruder" in profile \
-	           and "count" in profile["extruder"] \
-	           and "offsets" in profile["extruder"] \
-	           and len(profile["extruder"]["offsets"]) == profile["extruder"]["count"]
+	if not "name" in profile \
+			and "volume" in profile \
+			and "width" in profile["volume"] \
+			and "depth" in profile["volume"] \
+			and "height" in profile["volume"] \
+			and "formFactor" in profile["volume"] \
+			and "heatedBed" in profile \
+			and "extruder" in profile \
+			and "count" in profile["extruder"] \
+			and "offsets" in profile["extruder"] \
+			and len(profile["extruder"]["offsets"]) == profile["extruder"]["count"]:
+		return False
+
+	for dimension in ("width", "depth", "height"):
+		try:
+			profile["volume"][dimension] = float(profile["volume"][dimension])
+		except:
+			return False
+
+	if not profile["volume"]["formFactor"] in ("rectangular", "circular"):
+		return False
+
+	try:
+		profile["heatedBed"] = bool(profile["heatedBed"])
+	except:
+		return False
+
+	try:
+		profile["extruder"]["count"] = int(profile["extruder"]["count"])
+	except:
+		return False
+
+	converted_offsets = []
+	for offset in profile["extruder"]["offsets"]:
+		try:
+			converted_offsets.append((float(offset[0]), float(offset[0])))
+		except:
+			return False
+	profile["extruder"]["offsets"] = converted_offsets
+
+	return True
 
 def _overwrite_profile(profile):
 	if not "id" in profile and not "name" in profile:
