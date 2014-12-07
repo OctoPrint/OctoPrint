@@ -111,10 +111,10 @@ def index():
 	template_plugin_names = template_plugins.keys()
 
 	settingsWebcamStream = settings().get(["webcam", "stream"])
-	if(settingsWebcamStream[0] == ":")
+	if settingsWebcamStream and settingsWebcamStream[0] == ":":
 		urlParsed = urlparse(request.url)
 		webcamStream = urlParsed.scheme + '://' + urlParsed.hostname + settingsWebcamStream
-	else
+	else:
 		webcamStream = settingsWebcamStream
 
 	return render_template(
