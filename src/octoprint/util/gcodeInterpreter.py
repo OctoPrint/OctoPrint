@@ -73,7 +73,14 @@ class gcode(object):
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
 				if comment.startswith("filament_diameter"):
-					self._filamentDiameter = float(comment.split("=", 1)[1].strip())
+					filamentValue = comment.split("=", 1)[1].strip()
+					try:
+						self._filamentDiameter = float(filamentValue)
+					except ValueError:
+						try:
+							self._filamentDiameter = float(filamentValue.split(",")[0].strip())
+						except ValueError:
+							self._filamentDiameter = 0.0
 				elif comment.startswith("CURA_PROFILE_STRING"):
 					curaOptions = self._parseCuraProfileString(comment)
 					if "filament_diameter" in curaOptions:
