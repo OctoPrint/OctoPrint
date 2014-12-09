@@ -6,6 +6,7 @@
 
 * [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
   by versioneer
+* [IRC] Don't hiccup on slic3r filament_diameter comments generated for multi extruder setups
 
 ## 1.1.1 (2014-10-27)
 
