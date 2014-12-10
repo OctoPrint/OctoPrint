@@ -949,8 +949,8 @@ class MachineCom(object):
 				else:
 					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000, parity=serial.PARITY_ODD)
 				self._serial.close()
-                                self._serial.parity = serial.PARITY_NONE
-                                self._serial.open()
+				self._serial.parity = serial.PARITY_NONE
+				self._serial.open()
 			except:
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 				self._errorValue = "Failed to open serial port, permissions correct?"
