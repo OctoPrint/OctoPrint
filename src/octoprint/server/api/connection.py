@@ -32,7 +32,7 @@ def connectionState():
 @restricted_access
 def connectionCommand():
 	valid_commands = {
-		"connect": ["autoconnect"],
+		"connect": [],
 		"disconnect": []
 	}
 
