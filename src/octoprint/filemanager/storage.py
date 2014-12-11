@@ -809,9 +809,12 @@ class LocalFileStorage(StorageInterface):
 				with open(metadata_path) as f:
 					try:
 						import yaml
-						return yaml.safe_load(f)
+						metadata = yaml.safe_load(f)
 					except:
 						self._logger.exception("Error while reading .metadata.yaml from {path}".format(**locals()))
+					else:
+						self._metadata_cache[path] = metadata
+						return metadata
 		return dict()
 
 	def _save_metadata(self, path, metadata):
