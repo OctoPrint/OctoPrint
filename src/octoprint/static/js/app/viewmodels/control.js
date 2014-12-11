@@ -114,7 +114,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
             distance = $('#jog_distance button.active').data('distance');
-        if (self.settings.getPrinterInvertAxis(axis)) {
+        if (self.settings.printerProfiles.currentProfileData() && self.settings.printerProfiles.currentProfileData()["axes"] && self.settings.printerProfiles.currentProfileData()["axes"][axis] && self.settings.printerProfiles.currentProfileData()["axes"][axis]["inverted"]()) {
             multiplier *= -1;
         }
 
