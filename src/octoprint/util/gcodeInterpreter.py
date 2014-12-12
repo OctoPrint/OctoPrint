@@ -43,6 +43,7 @@ class gcode(object):
 
 	def _load(self, gcodeFile, printer_profile):
 		filePos = 0
+		readBytes = 0
 		pos = [0.0, 0.0, 0.0]
 		posOffset = [0.0, 0.0, 0.0]
 		currentE = [0.0]
@@ -53,20 +54,25 @@ class gcode(object):
 		absoluteE = True
 		scale = 1.0
 		posAbs = True
-		feedRateXY = min(printer_profile["axes"]["x"], printer_profile["axes"]["y"])
+		feedRateXY = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
 		offsets = printer_profile["extruder"]["offsets"]
 
 		for line in gcodeFile:
 			if self._abort:
 				raise AnalysisAborted()
 			filePos += 1
+			readBytes += len(line)
+
+			if isinstance(gcodeFile, (file)):
+				percentage = float(readBytes) / float(self._fileSize)
+			elif isinstance(gcodeFile, (list)):
+				percentage = float(filePos) / float(len(gcodeFile))
+			else:
+				percentage = None
 
 			try:
-				if self.progressCallback is not None and (filePos % 1000 == 0):
-					if isinstance(gcodeFile, (file)):
-						self.progressCallback(float(gcodeFile.tell()) / float(self._fileSize))
-					elif isinstance(gcodeFile, (list)):
-						self.progressCallback(float(filePos) / float(len(gcodeFile)))
+				if self.progressCallback is not None and (filePos % 1000 == 0) and percentage is not None:
+					self.progressCallback(percentage)
 			except:
 				pass
 

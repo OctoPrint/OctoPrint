@@ -62,9 +62,15 @@ function PrinterStateViewModel(loginStateViewModel) {
         return formatDuration(self.printTime());
     });
     self.printTimeLeftString = ko.computed(function() {
-        if (!self.printTimeLeft())
-            return "-";
-        return formatDuration(self.printTimeLeft());
+        if (self.printTimeLeft() == undefined) {
+            if (!self.printTime() || !(self.isPrinting() || self.isPaused())) {
+                return "-";
+            } else {
+                return gettext("Calculating...");
+            }
+        } else {
+            return formatFuzzyEstimation(self.printTimeLeft());
+        }
     });
     self.progressString = ko.computed(function() {
         if (!self.progress())

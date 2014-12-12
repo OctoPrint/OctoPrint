@@ -158,10 +158,21 @@ default_settings = {
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
+			"movementSpeed": {
+				"x": 6000,
+				"y": 6000,
+				"z": 200,
+				"e": 300
+			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
 			"smoothieTemperatureReporting": False,
-			"extendedSdFileList": False
+			"extendedSdFileList": False,
+			"throttle": 0.01,
+			"waitOnLongMoves": False,
+			"rxBuffer": 64,
+			"txBuffer": 40,
+			"commandBuffer": 4
 		}
 	}
 }

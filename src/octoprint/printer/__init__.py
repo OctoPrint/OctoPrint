@@ -3,7 +3,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import time
-import datetime
 import threading
 import copy
 import os
@@ -34,6 +33,7 @@ class Printer():
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
+		self._estimationLogger = logging.getLogger("ESTIMATIONS")
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
@@ -73,6 +73,7 @@ class Printer():
 		self._streamingFinishedCallback = None
 
 		self._selectedFile = None
+		self._timeEstimationData = None
 
 		# comm
 		self._comm = None
@@ -283,6 +284,7 @@ class Printer():
 		if self._selectedFile is None:
 			return
 
+		self._timeEstimationData = TimeEstimationHelper()
 		self._setCurrentZ(None)
 		self._comm.startPrint()
 
@@ -347,16 +349,32 @@ class Printer():
 		self._messages.append(message)
 		self._stateMonitor.addMessage(message)
 
+	def _estimateTotalPrintTime(self, progress, printTime):
+		if not progress or not printTime:
+			return None
+
+		else:
+			newEstimate = printTime / progress
+
+			if self._timeEstimationData.is_stable():
+				return newEstimate
+
+			self._timeEstimationData.update(newEstimate)
+
+			return None
+
 	def _setProgressData(self, progress, filepos, printTime, printTimeLeft):
+		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, printTime)
+
 		self._progress = progress
 		self._printTime = printTime
-		self._printTimeLeft = printTimeLeft
+		self._printTimeLeft = estimatedTotalPrintTime - printTime if (estimatedTotalPrintTime is not None and printTime is not None) else None
 
 		self._stateMonitor.setProgress({
 			"completion": self._progress * 100 if self._progress is not None else None,
 			"filepos": filepos,
 			"printTime": int(self._printTime) if self._printTime is not None else None,
-			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
+			"printTimeLeft": int(self._printTimeLeft) if self._printTimeLeft is not None else None
 		})
 
 	def _addTemperatureData(self, temp, bedTemp):
@@ -388,7 +406,7 @@ class Printer():
 			self._selectedFile = {
 				"filename": filename,
 				"filesize": filesize,
-				"sd": sd
+				"sd": sd,
 			}
 		else:
 			self._selectedFile = None
@@ -777,4 +795,50 @@ class StateMonitor(object):
 			"progress": self._progress,
 			"offsets": self._offsets
 		}
+
+
+class TimeEstimationHelper(object):
+
+	STABLE_THRESHOLD = 0.1
+	STABLE_COUNTDOWN = 100
+
+	def __init__(self):
+		self._sum_total = 0
+		self._sum_distance = 0
+		self._count = 0
+		self._stable_counter = None
+
+	def is_stable(self):
+		return self._stable_counter is not None and self._stable_counter >= self.__class__.STABLE_COUNTDOWN
+
+	def update(self, newEstimate):
+			old_average_total = self.average_total
+
+			self._sum_total += newEstimate
+			self._count += 1
+
+			if old_average_total:
+				self._sum_distance += abs(self.average_total - old_average_total)
+
+			if -1.0 * self.__class__.STABLE_THRESHOLD < self.average_distance < self.__class__.STABLE_THRESHOLD:
+				if self._stable_counter is None:
+					self._stable_counter = 0
+				else:
+					self._stable_counter += 1
+			else:
+				self._stable_counter = None
+
+	@property
+	def average_total(self):
+		if not self._count:
+			return None
+		else:
+			return self._sum_total / self._count
+
+	@property
+	def average_distance(self):
+		if not self._count or self._count < 2:
+			return None
+		else:
+			return self._sum_distance / (self._count - 1)
 

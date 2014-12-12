@@ -51,6 +51,8 @@
   long as they are in use
 * Settings in UI get refreshed when opening settings dialog
 * New event "SettingsUpdated"
+* Print time estimation is now not displayed until it becomes somewhat stable. Display in web interface now also happens
+  in a fuzzy way instead of the format hh:mm:ss, to not suggest a high accuracy anymore where the can't be one
 
 ### Bug Fixes
 
