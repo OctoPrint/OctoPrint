@@ -16,6 +16,8 @@ from octoprint.events import eventManager, Events
 
 from octoprint.filemanager.destinations import FileDestinations
 
+from octoprint.plugin import plugin_manager, ProgressPlugin
+
 def getConnectionOptions():
 	"""
 	 Retrieves the available ports, baudrates, prefered port and baudrate for connecting to the printer.
@@ -80,7 +82,10 @@ class Printer():
 
 		# callbacks
 		self._callbacks = []
+
+		# progress plugins
 		self._lastProgressReport = None
+		self._progressPlugins = plugin_manager().get_implementations(ProgressPlugin)
 
 		self._stateMonitor = StateMonitor(
 			ratelimit=0.5,
@@ -158,6 +163,26 @@ class Printer():
 			self._setJobData(self._selectedFile["filename"],
 							 self._selectedFile["filesize"],
 							 self._selectedFile["sd"])
+
+	#~~ progress plugin reporting
+
+	def _reportPrintProgressToPlugins(self, progress):
+		if not progress or not self._selectedFile or not "sd" in self._selectedFile or not "filename" in self._selectedFile:
+			return
+
+		storage = "sdcard" if self._selectedFile["sd"] else "local"
+		filename = self._selectedFile["filename"]
+
+		def call_plugins(storage, filename, progress):
+			for name, plugin in self._progressPlugins.items():
+				try:
+					plugin.on_print_progress(storage, filename, progress)
+				except:
+					self._logger.exception("Exception while sending print progress to plugin %s" % name)
+
+		thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
+		thread.daemon = False
+		thread.start()
 
 	#~~ printer commands
 
@@ -285,6 +310,7 @@ class Printer():
 			return
 
 		self._timeEstimationData = TimeEstimationHelper()
+		self._lastProgressReport = None
 		self._setCurrentZ(None)
 		self._comm.startPrint()
 
@@ -376,6 +402,13 @@ class Printer():
 			"printTime": int(self._printTime) if self._printTime is not None else None,
 			"printTimeLeft": int(self._printTimeLeft) if self._printTimeLeft is not None else None
 		})
+
+		if progress:
+			progress_int = int(progress * 100)
+			if self._lastProgressReport != progress_int:
+				self._lastProgressReport = progress_int
+				self._reportPrintProgressToPlugins(progress_int)
+
 
 	def _addTemperatureData(self, temp, bedTemp):
 		currentTimeUtc = int(time.time())

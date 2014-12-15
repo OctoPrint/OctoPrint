@@ -9,6 +9,7 @@ import logging
 import os
 
 from octoprint.events import eventManager, Events
+from octoprint.plugin import plugin_manager, ProgressPlugin
 
 from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
@@ -112,6 +113,8 @@ class FileManager(object):
 
 		self._slicing_progress_callbacks = []
 		self._last_slicing_progress = None
+
+		self._progress_plugins = plugin_manager().get_implementations(ProgressPlugin)
 
 		for storage_type, storage_manager in self._storage_managers.items():
 			self._determine_analysis_backlog(storage_type, storage_manager)
@@ -246,14 +249,25 @@ class FileManager(object):
 			return
 
 		progress_int = int(_progress * 100)
-		if self._last_slicing_progress == progress_int:
-			return
-		else:
+		if self._last_slicing_progress != progress_int:
 			self._last_slicing_progress = progress_int
+			for callback in self._slicing_progress_callbacks:
+				try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
+				except: self._logger.exception("Exception while pushing slicing progress")
 
-		for callback in self._slicing_progress_callbacks:
-			try: callback.sendSlicingProgress(slicer, source_location, source_path, dest_location, dest_path, progress_int)
-			except: self._logger.exception("Exception while pushing slicing progress")
+			if progress_int:
+				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
+					for name, plugin in self._progress_plugins.items():
+						try:
+							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
+						except:
+							self._logger.exception("Exception while sending slicing progress to plugin %s" % name)
+
+				import threading
+				thread = threading.Thread(target=call_plugins, args=(slicer, source_location, source_path, dest_location, dest_path, progress_int))
+				thread.daemon = False
+				thread.start()
+
 
 	def get_busy_files(self):
 		return self._slicing_jobs.keys()
