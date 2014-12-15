@@ -150,8 +150,6 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			result = dict()
 			if self._gcode.totalMoveTimeMinute:
 				result["estimatedPrintTime"] = self._gcode.totalMoveTimeMinute * 60
-			if self._gcode.timeDistribution:
-				result["printTimeDistribution"] = self._gcode.timeDistribution
 			if self._gcode.extrusionAmount:
 				result["filament"] = dict()
 				for i in range(len(self._gcode.extrusionAmount)):
