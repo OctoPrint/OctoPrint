@@ -143,8 +143,10 @@ class MachineCom(object):
 		self._bedTempOffset = 0
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
-		self._heatupWaitStartTime = 0
+		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0
+		self._pauseWaitStartTime = None
+		self._pauseWaitTimeLost = 0.0
 		self._currentExtruder = 0
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
@@ -314,20 +316,17 @@ class MachineCom(object):
 		if self._currentFile is None or self._currentFile.getStartTime() is None:
 			return None
 		else:
-			return time.time() - self._currentFile.getStartTime()
+			return time.time() - self._currentFile.getStartTime() - self._pauseWaitTimeLost
 
-	def getPrintTimeRemainingEstimate(self):
+	def getCleanedPrintTime(self):
 		printTime = self.getPrintTime()
 		if printTime is None:
 			return None
 
-		printTime /= 60
-		progress = self._currentFile.getProgress()
-		if progress:
-			printTimeTotal = printTime / progress
-			return printTimeTotal - printTime
-		else:
-			return None
+		cleanedPrintTime = printTime - self._heatupWaitTimeLost
+		if cleanedPrintTime < 0:
+			cleanedPrintTime = 0.0
+		return cleanedPrintTime
 
 	def getTemp(self):
 		return self._temp
@@ -387,6 +386,11 @@ class MachineCom(object):
 
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
+
+		self._heatupWaitStartTime = 0
+		self._heatupWaitTimeLost = 0.0
+		self._pauseWaitStartTime = 0
+		self._pauseWaitTimeLost = 0.0
 
 		try:
 			self._currentFile.start()
@@ -470,6 +474,10 @@ class MachineCom(object):
 			return
 
 		if not pause and self.isPaused():
+			if self._pauseWaitStartTime:
+				self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
+				self._pauseWaitStartTime = None
+
 			self._changeState(self.STATE_PRINTING)
 			if self.isSdFileSelected():
 				self.sendCommand("M24")
@@ -482,6 +490,9 @@ class MachineCom(object):
 				"origin": self._currentFile.getFileLocation()
 			})
 		elif pause and self.isPrinting():
+			if not self._pauseWaitStartTime:
+				self._pauseWaitStartTime = time.time()
+
 			self._changeState(self.STATE_PAUSED)
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
@@ -688,12 +699,9 @@ class MachineCom(object):
 					self._callback.mcTempUpdate(self._temp, self._bedTemp)
 
 					#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
-					if not 'ok' in line:
-						heatingUp = True
-						if self._heatupWaitStartTime != 0:
-							t = time.time()
-							self._heatupWaitTimeLost = t - self._heatupWaitStartTime
-							self._heatupWaitStartTime = t
+					if 'ok' in line and self._heatupWaitStartTime:
+						self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
+						self._heatupWaitStartTime = None
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = self._regex_repetierTempExtr.match(line)
 					matchBed = self._regex_repetierTempBed.match(line)
@@ -1242,10 +1250,6 @@ class MachineCom(object):
 		self.cancelPrint()
 		return cmd
 
-	def _gcode_M112(self, cmd): # It's an emergency what todo? Canceling the print should be the minimum
-		self.cancelPrint()
-		return cmd
-
 
 ### MachineCom callback ################################################################################################
 
@@ -1386,9 +1390,9 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		Opens the file for reading and determines the file size. Start time won't be recorded until 100 lines in
 		"""
+		PrintingFileInformation.start(self)
 		self._filehandle = open(self._filename, "r")
 		self._lineCount = None
-		self._startTime = None
 
 	def getNext(self):
 		"""
@@ -1414,9 +1418,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 				processedLine = self._processLine(line)
 			self._lineCount += 1
 			self._filepos = self._filehandle.tell()
-
-			if self._lineCount >= 100 and self._startTime is None:
-				self._startTime = time.time()
 
 			return processedLine
 		except Exception as (e):

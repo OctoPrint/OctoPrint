@@ -377,24 +377,31 @@ class Printer():
 
 	def _estimateTotalPrintTime(self, progress, printTime):
 		if not progress or not printTime:
+			#self._estimationLogger.info("{progress};{printTime};;;".format(**locals()))
 			return None
 
 		else:
 			newEstimate = printTime / progress
 
 			if self._timeEstimationData.is_stable():
+				#self._estimationLogger.info("{progress};{printTime};{newEstimate};;".format(**locals()))
 				return newEstimate
 
 			self._timeEstimationData.update(newEstimate)
 
+			#averageTotal = self._timeEstimationData.average_total
+			#averageDistance = self._timeEstimationData.average_distance
+			#
+			#self._estimationLogger.info("{progress};{printTime};{newEstimate};{averageTotal};{averageDistance}".format(**locals()))
+
 			return None
 
-	def _setProgressData(self, progress, filepos, printTime, printTimeLeft):
-		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, printTime)
+	def _setProgressData(self, progress, filepos, printTime, cleanedPrintTime):
+		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, cleanedPrintTime)
 
 		self._progress = progress
 		self._printTime = printTime
-		self._printTimeLeft = estimatedTotalPrintTime - printTime if (estimatedTotalPrintTime is not None and printTime is not None) else None
+		self._printTimeLeft = estimatedTotalPrintTime - cleanedPrintTime if (estimatedTotalPrintTime is not None and cleanedPrintTime is not None) else None
 
 		self._stateMonitor.setProgress({
 			"completion": self._progress * 100 if self._progress is not None else None,
@@ -558,7 +565,7 @@ class Printer():
 		 Triggers storage of new values for printTime, printTimeLeft and the current progress.
 		"""
 
-		self._setProgressData(self._comm.getPrintProgress(), self._comm.getPrintFilepos(), self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
+		self._setProgressData(self._comm.getPrintProgress(), self._comm.getPrintFilepos(), self._comm.getPrintTime(), self._comm.getCleanedPrintTime())
 
 	def mcZChange(self, newZ):
 		"""
@@ -833,11 +840,13 @@ class StateMonitor(object):
 class TimeEstimationHelper(object):
 
 	STABLE_THRESHOLD = 0.1
-	STABLE_COUNTDOWN = 100
+	STABLE_COUNTDOWN = 250
+	STABLE_ROLLING_WINDOW = 250
 
 	def __init__(self):
+		import collections
+		self._distances = collections.deque([], self.__class__.STABLE_ROLLING_WINDOW)
 		self._sum_total = 0
-		self._sum_distance = 0
 		self._count = 0
 		self._stable_counter = None
 
@@ -851,7 +860,7 @@ class TimeEstimationHelper(object):
 			self._count += 1
 
 			if old_average_total:
-				self._sum_distance += abs(self.average_total - old_average_total)
+				self._distances.append(abs(self.average_total - old_average_total))
 
 			if -1.0 * self.__class__.STABLE_THRESHOLD < self.average_distance < self.__class__.STABLE_THRESHOLD:
 				if self._stable_counter is None:
@@ -870,8 +879,8 @@ class TimeEstimationHelper(object):
 
 	@property
 	def average_distance(self):
-		if not self._count or self._count < 2:
+		if not self._count or self._count < self.__class__.STABLE_ROLLING_WINDOW + 1:
 			return None
 		else:
-			return self._sum_distance / (self._count - 1)
+			return sum(self._distances) / len(self._distances)
 
