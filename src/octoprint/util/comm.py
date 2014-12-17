@@ -1270,6 +1270,7 @@ class MachineCom(object):
 			# dwell time is specified in seconds
 			_timeout = int(cmd[s_idx+1:])
 		self._timeout = getNewTimeout("communication") + _timeout
+		return cmd
 
 ### MachineCom callback ################################################################################################
 
