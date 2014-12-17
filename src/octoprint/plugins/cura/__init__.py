@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 import os
 import flask
+import math
 
 import octoprint.plugin
 import octoprint.util
@@ -278,6 +279,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 					skin=1,
 					export=2
 				)
+				analysis = None
 				while p.returncode is None:
 					line = p.stderr.readline(timeout=0.5)
 					if not line:
@@ -331,6 +333,39 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 										continue
 									on_progress_kwargs["_progress"] = (step_factor[step] * layer_count + current_layer) / (layer_count * 3)
 									on_progress(*on_progress_args, **on_progress_kwargs)
+
+						elif line.startswith("Print time:"):
+							try:
+								print_time = int(line[len("Print time:"):].strip())
+								if analysis is None:
+									analysis = dict()
+								analysis["estimatedPrintTime"] = print_time
+							except:
+								pass
+
+						elif line.startswith("Filament:") or line.startswith("Filament2:"):
+							if line.startswith("Filament:"):
+								filament_str = line[len("Filament:"):].strip()
+								tool_key = "tool0"
+							else:
+								filament_str = line[len("Filament2:"):].strip()
+								tool_key = "tool1"
+
+							try:
+								filament = int(filament_str)
+								if analysis is None:
+									analysis = dict()
+								if not "filament" in analysis:
+									analysis["filament"] = dict()
+								if not tool_key in analysis["filament"]:
+									analysis["filament"][tool_key] = dict()
+								analysis["filament"][tool_key]["length"] = filament
+								if "filamentDiameter" in engine_settings:
+									radius_in_cm = float(int(engine_settings["filamentDiameter"]) / 10000.0) / 2.0
+									filament_in_cm = filament / 10.0
+									analysis["filament"][tool_key]["volume"] = filament_in_cm * math.pi * radius_in_cm * radius_in_cm
+							except:
+								pass
 			finally:
 				p.close()
 
@@ -341,7 +376,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 			self._cura_logger.info("### Finished, returncode %d" % p.returncode)
 			if p.returncode == 0:
-				return True, None
+				return True, dict(analysis=analysis)
 			else:
 				self._logger.warn("Could not slice via Cura, got return code %r" % p.returncode)
 				return False, "Got returncode %r" % p.returncode

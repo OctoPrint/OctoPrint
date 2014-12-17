@@ -501,6 +501,7 @@ class LocalFileStorage(StorageInterface):
 			metadata[name]["history"] = []
 
 		metadata[name]["history"].append(data)
+		self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
 		self._save_metadata(path, metadata)
 
 	def _update_history(self, name, path, index, data):
@@ -510,7 +511,8 @@ class LocalFileStorage(StorageInterface):
 			return
 
 		try:
-			metadata[name]["history"][index] = data
+			metadata[name]["history"][index].update(data)
+			self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
 			self._save_metadata(path, metadata)
 		except IndexError:
 			pass
@@ -523,9 +525,54 @@ class LocalFileStorage(StorageInterface):
 
 		try:
 			del metadata[name]["history"][index]
+			self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
 			self._save_metadata(path, metadata)
 		except IndexError:
 			pass
+
+	def _calculate_stats_from_history(self, name, path, metadata=None, save=True):
+		if metadata is None:
+			metadata = self._get_metadata(path)
+
+		if not name in metadata or not "history" in metadata[name]:
+			return
+
+		# collect data from history
+		former_print_times = dict()
+		last_print = dict()
+
+
+		for history_entry in metadata[name]["history"]:
+			if not "printTime" in history_entry or not "success" in history_entry or not history_entry["success"] or not "printerProfile" in history_entry:
+				continue
+
+			printer_profile = history_entry["printerProfile"]
+			print_time = history_entry["printTime"]
+
+			if not printer_profile in former_print_times:
+				former_print_times[printer_profile] = []
+			former_print_times[printer_profile].append(print_time)
+
+			if not printer_profile in last_print or last_print[printer_profile] is None or ("timestamp" in history_entry and history_entry["timestamp"] > last_print[printer_profile]["timestamp"]):
+				last_print[printer_profile] = history_entry
+
+		# calculate stats
+		statistics = dict(averagePrintTime=dict(), lastPrintTime=dict())
+
+		for printer_profile in former_print_times:
+			if not former_print_times[printer_profile]:
+				continue
+			statistics["averagePrintTime"][printer_profile] = sum(former_print_times[printer_profile]) / float(len(former_print_times[printer_profile]))
+
+		for printer_profile in last_print:
+			if not last_print[printer_profile]:
+				continue
+			statistics["lastPrintTime"][printer_profile] = last_print[printer_profile]["printTime"]
+
+		metadata[name]["statistics"] = statistics
+
+		if save:
+			self._save_metadata(path, metadata)
 
 	def _get_links(self, name, path, searched_rel):
 		metadata = self._get_metadata(path)

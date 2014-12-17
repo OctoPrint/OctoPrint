@@ -87,8 +87,13 @@ class gcode(object):
 							self._filamentDiameter = float(filamentValue.split(",")[0].strip())
 						except ValueError:
 							self._filamentDiameter = 0.0
-				elif comment.startswith("CURA_PROFILE_STRING"):
-					curaOptions = self._parseCuraProfileString(comment)
+				elif comment.startswith("CURA_PROFILE_STRING") or comment.startswith("CURA_OCTO_PROFILE_STRING"):
+					if comment.startswith("CURA_PROFILE_STRING"):
+						prefix = "CURA_PROFILE_STRING:"
+					else:
+						prefix = "CURA_OCTO_PROFILE_STRING:"
+
+					curaOptions = self._parseCuraProfileString(comment, prefix)
 					if "filament_diameter" in curaOptions:
 						try:
 							self._filamentDiameter = float(curaOptions["filament_diameter"])
@@ -239,8 +244,8 @@ class gcode(object):
 			self.extrusionVolume[i] = (self.extrusionAmount[i] * (math.pi * radius * radius)) / 1000
 		self.totalMoveTimeMinute = totalMoveTimeMinute
 
-	def _parseCuraProfileString(self, comment):
-		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
+	def _parseCuraProfileString(self, comment, prefix):
+		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
 
 
 def getCodeInt(line, code):

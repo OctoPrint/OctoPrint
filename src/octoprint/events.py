@@ -42,6 +42,7 @@ class Events(object):
 	UPDATED_FILES = "UpdatedFiles"
 	METADATA_ANALYSIS_STARTED = "MetadataAnalysisStarted"
 	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
+	METADATA_STATISTICS_UPDATED = "MetadataStatisticsUpdated"
 
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"

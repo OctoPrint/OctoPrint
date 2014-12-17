@@ -36,6 +36,7 @@ class Printer():
 
 		self._logger = logging.getLogger(__name__)
 		self._estimationLogger = logging.getLogger("ESTIMATIONS")
+		self._printTimeLogger = logging.getLogger("PRINT_TIME")
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
@@ -114,7 +115,8 @@ class Printer():
 			currentZ=None
 		)
 
-		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self.onMetadataAnalysisFinished);
+		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self.onMetadataAnalysisFinished)
+		eventManager().subscribe(Events.METADATA_STATISTICS_UPDATED, self.onMetadataStatisticsUpdated)
 
 	#~~ callback handling
 
@@ -163,6 +165,11 @@ class Printer():
 			self._setJobData(self._selectedFile["filename"],
 							 self._selectedFile["filesize"],
 							 self._selectedFile["sd"])
+
+	def onMetadataStatisticsUpdated(self, event, data):
+		self._setJobData(self._selectedFile["filename"],
+		                 self._selectedFile["filesize"],
+		                 self._selectedFile["sd"])
 
 	#~~ progress plugin reporting
 
@@ -348,7 +355,7 @@ class Printer():
 
 		# mark print as failure
 		if self._selectedFile is not None:
-			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False)
+			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
 			payload = {
 				"file": self._selectedFile["filename"],
 				"origin": FileDestinations.LOCAL
@@ -398,10 +405,26 @@ class Printer():
 
 	def _setProgressData(self, progress, filepos, printTime, cleanedPrintTime):
 		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, cleanedPrintTime)
+		statisticalTotalPrintTime = None
+		totalPrintTime = estimatedTotalPrintTime
+
+		if self._selectedFile and "estimatedPrintTime" in self._selectedFile and self._selectedFile["estimatedPrintTime"]:
+			statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
+			if progress and cleanedPrintTime:
+				if estimatedTotalPrintTime is None:
+					totalPrintTime = statisticalTotalPrintTime
+				else:
+					if progress < 0.5:
+						sub_progress = progress * 2
+					else:
+						sub_progress = 1.0
+					totalPrintTime = (1 - sub_progress) * statisticalTotalPrintTime + sub_progress * estimatedTotalPrintTime
+
+		#self._printTimeLogger.info("{progress};{cleanedPrintTime};{estimatedTotalPrintTime};{statisticalTotalPrintTime};{totalPrintTime}".format(**locals()))
 
 		self._progress = progress
 		self._printTime = printTime
-		self._printTimeLeft = estimatedTotalPrintTime - cleanedPrintTime if (estimatedTotalPrintTime is not None and cleanedPrintTime is not None) else None
+		self._printTimeLeft = totalPrintTime - cleanedPrintTime if (totalPrintTime is not None and cleanedPrintTime is not None) else None
 
 		self._stateMonitor.setProgress({
 			"completion": self._progress * 100 if self._progress is not None else None,
@@ -447,6 +470,7 @@ class Printer():
 				"filename": filename,
 				"filesize": filesize,
 				"sd": sd,
+				"estimatedPrintTime": None
 			}
 		else:
 			self._selectedFile = None
@@ -458,12 +482,15 @@ class Printer():
 					"date": None
 				},
 				"estimatedPrintTime": None,
+				"averagePrintTime": None,
+				"lastPrintTime": None,
 				"filament": None,
 			})
 			return
 
 		estimatedPrintTime = None
 		lastPrintTime = None
+		averagePrintTime = None
 		date = None
 		filament = None
 		if filename:
@@ -482,8 +509,18 @@ class Printer():
 						estimatedPrintTime = fileData["analysis"]["estimatedPrintTime"]
 					if "filament" in fileData["analysis"].keys():
 						filament = fileData["analysis"]["filament"]
-				if "prints" in fileData and fileData["prints"] and "last" in fileData["prints"] and fileData["prints"]["last"] and "lastPrintTime" in fileData["prints"]["last"]:
-					lastPrintTime = fileData["prints"]["last"]["lastPrintTime"]
+				if "statistics" in fileData:
+					printer_profile = self._printerProfileManager.get_current_or_default()["id"]
+					if "averagePrintTime" in fileData["statistics"] and printer_profile in fileData["statistics"]["averagePrintTime"]:
+						averagePrintTime = fileData["statistics"]["averagePrintTime"][printer_profile]
+					if "lastPrintTime" in fileData["statistics"] and printer_profile in fileData["statistics"]["lastPrintTime"]:
+						lastPrintTime = fileData["statistics"]["lastPrintTime"][printer_profile]
+
+				if averagePrintTime is not None:
+					self._selectedFile["estimatedPrintTime"] = averagePrintTime
+				elif estimatedPrintTime is not None:
+					# TODO apply factor which first needs to be tracked!
+					self._selectedFile["estimatedPrintTime"] = estimatedPrintTime
 
 		self._stateMonitor.setJobData({
 			"file": {
@@ -493,6 +530,7 @@ class Printer():
 				"date": date
 			},
 			"estimatedPrintTime": estimatedPrintTime,
+			"averagePrintTime": averagePrintTime,
 			"lastPrintTime": lastPrintTime,
 			"filament": filament,
 		})
@@ -543,9 +581,9 @@ class Printer():
 		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if self._selectedFile is not None:
 				if state == self._comm.STATE_OPERATIONAL:
-					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True)
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
 				elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
-					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False)
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing

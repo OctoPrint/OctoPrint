@@ -159,7 +159,7 @@ class FileManager(object):
 	          position=None, profile=None, printer_profile_id=None, overrides=None, callback=None, callback_args=None):
 		absolute_source_path = self.get_absolute_path(source_location, source_path)
 
-		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args, _error=None, _cancelled=False):
+		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args, _error=None, _cancelled=False, _analysis=None):
 			try:
 				if _error:
 					eventManager().fire(Events.SLICING_FAILED, {"stl": source_path, "gcode": dest_path, "reason": _error})
@@ -187,7 +187,7 @@ class FileManager(object):
 					file_obj = Wrapper(stl_name, temp_path, hash)
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)
-					self.add_file(dest_location, dest_path, file_obj, links=links, allow_overwrite=True, printer_profile=printer_profile)
+					self.add_file(dest_location, dest_path, file_obj, links=links, allow_overwrite=True, printer_profile=printer_profile, analysis=_analysis)
 
 					end_time = time.time()
 					eventManager().fire(Events.SLICING_DONE, {"stl": source_path, "gcode": dest_path, "time": end_time - start_time})
@@ -286,17 +286,20 @@ class FileManager(object):
 			result[dst] = self._storage_managers[dst].list_files(path=path, filter=filter, recursive=recursive)
 		return result
 
-	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False, printer_profile=None):
+	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False, printer_profile=None, analysis=None):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 		absolute_path = self._storage(destination).get_absolute_path(file_path)
 
-		file_type = get_file_type(absolute_path)
-		if file_type:
-			queue_entry = QueueEntry(file_path, file_type[-1], destination, absolute_path, printer_profile)
-			self._analysis_queue.enqueue(queue_entry, high_priority=True)
+		if analysis is None:
+			file_type = get_file_type(absolute_path)
+			if file_type:
+				queue_entry = QueueEntry(file_path, file_type[-1], destination, absolute_path, printer_profile)
+				self._analysis_queue.enqueue(queue_entry, high_priority=True)
+		else:
+			self._add_analysis_result(destination, path, analysis)
 
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 		return file_path
@@ -323,9 +326,13 @@ class FileManager(object):
 	def remove_link(self, destination, path, rel, data):
 		self._storage(destination).remove_link(path, rel, data)
 
-	def log_print(self, destination, path, timestamp, print_time, success):
+	def log_print(self, destination, path, timestamp, print_time, success, printer_profile):
 		try:
-			self._storage(destination).add_history(path, dict(timestamp=timestamp, printTime=print_time, success=success))
+			if success:
+				self._storage(destination).add_history(path, dict(timestamp=timestamp, printTime=print_time, success=success, printerProfile=printer_profile))
+			else:
+				self._storage(destination).add_history(path, dict(timestamp=timestamp, success=success, printerProfile=printer_profile))
+			eventManager().fire(Events.METADATA_STATISTICS_UPDATED, dict(storage=destination, path=path))
 		except NoSuchStorage:
 			# if there's no storage configured where to log the print, we'll just not log it
 			pass
@@ -362,10 +369,13 @@ class FileManager(object):
 			raise NoSuchStorage("No storage configured for destination {destination}".format(**locals()))
 		return self._storage_managers[destination]
 
-	def _on_analysis_finished(self, entry, result):
-		if not entry.location in self._storage_managers:
+	def _add_analysis_result(self, destination, path, result):
+		if not destination in self._storage_managers:
 			return
 
-		storage_manager = self._storage_managers[entry.location]
-		storage_manager.set_additional_metadata(entry.path, "analysis", result)
+		storage_manager = self._storage_managers[destination]
+		storage_manager.set_additional_metadata(path, "analysis", result)
+
+	def _on_analysis_finished(self, entry, result):
+		self._add_analysis_result(entry.location, entry.path, result)
 

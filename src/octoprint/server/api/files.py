@@ -99,10 +99,11 @@ def _getFileList(origin, filter=None):
 						failure=failure,
 						last=dict(
 							success=last["success"],
-							date=last["timestamp"],
-							printTime=last["printTime"]
+							date=last["timestamp"]
 						)
 					)
+					if "printTime" in last:
+						prints["last"]["printTime"] = last["printTime"]
 					file["prints"] = prints
 
 			file.update({
