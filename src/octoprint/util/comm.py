@@ -77,6 +77,8 @@ gcodeToEvent = {
 	"M226": Events.WAITING,
 	"M0": Events.WAITING,
 	"M1": Events.WAITING,
+	# dwell command
+	"G4": Events.DWELL,
 
 	# part cooler
 	"M245": Events.COOLING,
@@ -648,7 +650,7 @@ class MachineCom(object):
 			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
-		timeout = getNewTimeout("communication")
+		self.timeout = getNewTimeout("communication")
 		tempRequestTimeout = getNewTimeout("temperature")
 		sdStatusRequestTimeout = getNewTimeout("sdStatus")
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
@@ -662,7 +664,7 @@ class MachineCom(object):
 				if line is None:
 					break
 				if line.strip() is not "":
-					timeout = getNewTimeout("communication")
+					self.timeout = getNewTimeout("communication")
 
 				##~~ Error handling
 				line = self._handleErrors(line)
@@ -831,7 +833,7 @@ class MachineCom(object):
 
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
-					if line == '' or time.time() > timeout:
+					if line == '' or time.time() > self.timeout:
 						if len(self._baudrateDetectList) < 1:
 							self.close()
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
@@ -851,7 +853,7 @@ class MachineCom(object):
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
 								self._baudrateDetectTestOk = 0
-								timeout = getNewTimeout("communication")
+								self.timeout = getNewTimeout("communication")
 								self._serial.write('\n')
 								self._sendCommand("M105")
 								self._testingBaudrate = True
@@ -887,7 +889,7 @@ class MachineCom(object):
 						else:
 							self.initSdCard()
 						eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
-					elif time.time() > timeout:
+					elif time.time() > self.timeout:
 						self.close()
 
 				### Operational
@@ -909,7 +911,7 @@ class MachineCom(object):
 
 				### Printing
 				elif self._state == self.STATE_PRINTING:
-					if line == "" and time.time() > timeout:
+					if line == "" and time.time() > self.timeout:
 						self._log("Communication timeout during printing, forcing a line")
 						line = 'ok'
 
@@ -1246,10 +1248,24 @@ class MachineCom(object):
 		self._resendDelta = None
 
 		return None
+
 	def _gcode_M112(self, cmd): # It's an emergency what todo? Canceling the print should be the minimum
 		self.cancelPrint()
 		return cmd
 
+	def _gcode_G4(self, cmd):
+		# we are intending to dwell for a period of time, increase the timeout to match
+		cmd = cmd.upper()
+		p_idx = cmd.find('P')
+		s_idx = cmd.find('S')
+		_timeout = 0
+		if p_idx != -1:
+			# dwell time is specified in milliseconds
+			_timeout = int(cmd[p_idx+1:]) / 1000.0
+		elif s_idx != -1:
+			# dwell time is specified in seconds
+			_timeout = int(cmd[s_idx+1:])
+		self.timeout = getNewTimeout("communication") + _timeout
 
 ### MachineCom callback ################################################################################################
 

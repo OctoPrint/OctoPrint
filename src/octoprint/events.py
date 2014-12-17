@@ -62,6 +62,7 @@ class Events(object):
 	HOME = "Home"
 	Z_CHANGE = "ZChange"
 	WAITING = "Waiting"
+	DWELL = "Dwelling"
 	COOLING = "Cooling"
 	ALERT = "Alert"
 	CONVEYOR = "Conveyor"
