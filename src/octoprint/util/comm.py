@@ -151,6 +151,8 @@ class MachineCom(object):
 		self._pauseWaitTimeLost = 0.0
 		self._currentExtruder = 0
 
+		self._timeout = None
+
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._currentLine = 1
 		self._resendDelta = None
@@ -650,9 +652,11 @@ class MachineCom(object):
 			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
-		self.timeout = getNewTimeout("communication")
+		self._timeout = getNewTimeout("communication")
+
 		tempRequestTimeout = getNewTimeout("temperature")
 		sdStatusRequestTimeout = getNewTimeout("sdStatus")
+
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		heatingUp = False
 		swallowOk = False
@@ -664,7 +668,7 @@ class MachineCom(object):
 				if line is None:
 					break
 				if line.strip() is not "":
-					self.timeout = getNewTimeout("communication")
+					self._timeout = getNewTimeout("communication")
 
 				##~~ Error handling
 				line = self._handleErrors(line)
@@ -833,7 +837,7 @@ class MachineCom(object):
 
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
-					if line == '' or time.time() > self.timeout:
+					if line == '' or time.time() > self._timeout:
 						if len(self._baudrateDetectList) < 1:
 							self.close()
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
@@ -853,7 +857,7 @@ class MachineCom(object):
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
 								self._baudrateDetectTestOk = 0
-								self.timeout = getNewTimeout("communication")
+								self._timeout = getNewTimeout("communication")
 								self._serial.write('\n')
 								self._sendCommand("M105")
 								self._testingBaudrate = True
@@ -889,7 +893,7 @@ class MachineCom(object):
 						else:
 							self.initSdCard()
 						eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
-					elif time.time() > self.timeout:
+					elif time.time() > self._timeout:
 						self.close()
 
 				### Operational
@@ -911,7 +915,7 @@ class MachineCom(object):
 
 				### Printing
 				elif self._state == self.STATE_PRINTING:
-					if line == "" and time.time() > self.timeout:
+					if line == "" and time.time() > self._timeout:
 						self._log("Communication timeout during printing, forcing a line")
 						line = 'ok'
 
@@ -1265,7 +1269,7 @@ class MachineCom(object):
 		elif s_idx != -1:
 			# dwell time is specified in seconds
 			_timeout = int(cmd[s_idx+1:])
-		self.timeout = getNewTimeout("communication") + _timeout
+		self._timeout = getNewTimeout("communication") + _timeout
 
 ### MachineCom callback ################################################################################################
 
