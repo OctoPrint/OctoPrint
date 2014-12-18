@@ -35,8 +35,8 @@ class Printer():
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
-		self._estimationLogger = logging.getLogger("ESTIMATIONS")
-		self._printTimeLogger = logging.getLogger("PRINT_TIME")
+		#self._estimationLogger = logging.getLogger("ESTIMATIONS")
+		#self._printTimeLogger = logging.getLogger("PRINT_TIME")
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
@@ -420,7 +420,7 @@ class Printer():
 						sub_progress = 1.0
 					totalPrintTime = (1 - sub_progress) * statisticalTotalPrintTime + sub_progress * estimatedTotalPrintTime
 
-		self._printTimeLogger.info("{progress};{cleanedPrintTime};{estimatedTotalPrintTime};{statisticalTotalPrintTime};{totalPrintTime}".format(**locals()))
+		#self._printTimeLogger.info("{progress};{cleanedPrintTime};{estimatedTotalPrintTime};{statisticalTotalPrintTime};{totalPrintTime}".format(**locals()))
 
 		self._progress = progress
 		self._printTime = printTime
