@@ -34,6 +34,9 @@ class EstimationTestCase(unittest.TestCase):
 		self.assertEquals(self.estimation_helper.average_total, expected)
 
 	@data(
+		((1.0, 2.0), None),                    # not enough values, have 1, need 3
+		((1.0, 2.0, 3.0), None),               # not enough values, have 2, need 3
+		((1.0, 2.0, 3.0, 4.0), 0.5),           # average totals: 1.0, 1.5, 2.0, 2.5 => (3 * 0.5 / 3 = 0.5
 		((1.0, 2.0, 3.0, 4.0, 5.0), 0.5),      # average totals: 1.0, 1.5, 2.0, 2.5, 3.0 => (0.5 + 0.5 + 0.5) / 3 = 0.5
 		((1.0, 2.0, 0.0, 1.0, 2.0), 0.7 / 3)   # average totals: 1.0, 1.5, 1.0, 1.0, 1.2 => (0.5 + 0.0 + 0.2) / 3 = 0.7 / 3
 	)
@@ -43,6 +46,18 @@ class EstimationTestCase(unittest.TestCase):
 			self.estimation_helper.update(estimate)
 
 		self.assertEquals(self.estimation_helper.average_distance, expected)
+
+	@data(
+		((1.0, 1.0), None),
+		((1.0, 1.0, 1.0), 1.0),
+		((1.0, 2.0, 3.0, 4.0, 5.0), 4.0),
+	)
+	@unpack
+	def test_average_total_rolling(self, estimates, expected):
+		for estimate in estimates:
+			self.estimation_helper.update(estimate)
+
+		self.assertEquals(self.estimation_helper.average_total_rolling, expected)
 
 	@data(
 		((1.0, 1.0, 1.0, 1.0), False),         # average totals: 1.0, 1.0, 1.0, 1.0 => 3.0 / 3 = 1.0
