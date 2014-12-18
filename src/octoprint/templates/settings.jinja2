@@ -18,6 +18,7 @@
                 <li><a href="#settings_api" data-toggle="tab">{{ _('API') }}</a></li>
                 <li class="nav-header">OctoPrint</li>
                 <li><a href="#settings_folder" data-toggle="tab">{{ _('Folders') }}</a></li>
+                <li><a href="#settings_appearance" data-toggle="tab">{{ _('Appearance') }}</a></li>
                 <li><a href="#settings_logs" data-toggle="tab">{{ _('Logs') }}</a></li>
                 {% if settingsPlugins %}
                     <li class="nav-header">Plugins</li>
@@ -473,6 +474,23 @@
                         <div class="row-fluid">
                             <div class="offset10 span2">
                                 <a title="Add Filter" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="icon-plus"></i></a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="tab-pane" id="settings_appearance">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="settings-appearanceName">{{ _('Title') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level" data-bind="value: appearance_name" id="settings-appearanceName">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="settings-appearanceColor">{{ _('Color') }}</label>
+                            <div class="controls">
+                                <select id="settings-appearanceColor" data-bind="value: appearance_color, options: appearance_available_colors, optionsText: 'name', optionsValue: 'key'">
+                                </select>
                             </div>
                         </div>
                     </form>

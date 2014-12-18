@@ -111,6 +111,10 @@ default_settings = {
 		"pauseTriggers": [],
 		"defaultExtrusionLength": 5
 	},
+	"appearance": {
+		"name": "",
+		"color": "default"
+	},
 	"controls": [],
 	"system": {
 		"actions": []
@@ -290,15 +294,6 @@ class Settings(object):
 						default_profile["volume"]["depth"] = bed_dimensions["y"]
 				del self._config["printerParameters"]["bedDimensions"]
 
-			dirty = True
-
-		if "appearance" in self._config:
-			if "name" in self._config["appearance"]:
-				default_profile["name"] = self._config["appearance"]["name"]
-			if "color" in self._config["appearance"]:
-				default_profile["color"] = self._config["appearance"]["color"]
-
-			del self._config["appearance"]
 			dirty = True
 
 		if dirty:

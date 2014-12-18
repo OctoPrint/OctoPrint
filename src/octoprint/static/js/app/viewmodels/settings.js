@@ -9,6 +9,43 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
     self.api_key = ko.observable(undefined);
     self.api_allowCrossOrigin = ko.observable(undefined);
 
+    self.appearance_name = ko.observable(undefined);
+    self.appearance_color = ko.observable(undefined);
+
+    self.appearance_available_colors = ko.observable([
+        {key: "default", name: gettext("default")},
+        {key: "red", name: gettext("red")},
+        {key: "orange", name: gettext("orange")},
+        {key: "yellow", name: gettext("yellow")},
+        {key: "green", name: gettext("green")},
+        {key: "blue", name: gettext("blue")},
+        {key: "violet", name: gettext("violet")},
+        {key: "black", name: gettext("black")}
+    ]);
+
+    self.appearance_colorName = function(color) {
+        switch (color) {
+            case "red":
+                return gettext("red");
+            case "orange":
+                return gettext("orange");
+            case "yellow":
+                return gettext("yellow");
+            case "green":
+                return gettext("green");
+            case "blue":
+                return gettext("blue");
+            case "violet":
+                return gettext("violet");
+            case "black":
+                return gettext("black");
+            case "default":
+                return gettext("default");
+            default:
+                return color;
+        }
+    };
+
     self.printer_defaultExtrusionLength = ko.observable(undefined);
 
     self.webcam_streamUrl = ko.observable(undefined);
@@ -101,6 +138,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
         self.api_key(response.api.key);
         self.api_allowCrossOrigin(response.api.allowCrossOrigin);
 
+        self.appearance_name(response.appearance.name);
+        self.appearance_color(response.appearance.color);
+
         self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
 
         self.webcam_streamUrl(response.webcam.streamUrl);
@@ -157,6 +197,10 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
                 "enabled": self.api_enabled(),
                 "key": self.api_key(),
                 "allowCrossOrigin": self.api_allowCrossOrigin()
+            },
+            "appearance" : {
+                "name": self.appearance_name(),
+                "color": self.appearance_color()
             },
             "printer": {
                 "defaultExtrusionLength": self.printer_defaultExtrusionLength()

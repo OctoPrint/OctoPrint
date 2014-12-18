@@ -35,6 +35,10 @@ def getSettings():
 			"key": s.get(["api", "key"]) if admin_permission.can() else "n/a",
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
+		"appearance": {
+			"name": s.get(["appearance", "name"]),
+			"color": s.get(["appearance", "color"])
+		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
 		},
@@ -119,6 +123,10 @@ def setSettings():
 			if "enabled" in data["api"].keys(): s.setBoolean(["api", "enabled"], data["api"]["enabled"])
 			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
 			if "allowCrossOrigin" in data["api"].keys(): s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
+
+		if "appearance" in data.keys():
+			if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
+			if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 
 		if "printer" in data.keys():
 			if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
