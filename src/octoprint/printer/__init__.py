@@ -658,6 +658,9 @@ class Printer():
 	def mcReceivedRegisteredMessage(self, command, output):
 		self._sendFeedbackCommandOutput(command, output)
 
+	def mcForceDisconnect(self):
+		self.disconnect()
+
 	#~~ sd file handling
 
 	def getSdFiles(self):

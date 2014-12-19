@@ -227,6 +227,8 @@ class VirtualPrinter():
 				self._relative = True
 			elif "G92" in data:
 				self._setPosition(data)
+			elif data.startswith("!!DEBUG:"):
+				self._debugTrigger(data[len("!!DEBUG:"):].strip())
 
 			elif data.startswith("G0") or data.startswith("G1") or data.startswith("G2") or data.startswith("G3") \
 					or data.startswith("G28") or data.startswith("G29") or data.startswith("G30") \
@@ -236,6 +238,14 @@ class VirtualPrinter():
 
 			if len(data.strip()) > 0:
 				self._sendOk()
+
+	def _debugTrigger(self, data):
+		if data == "action_pause":
+			self.outgoing.put("// action:pause")
+		elif data == "action_resume":
+			self.outgoing.put("// action:resume")
+		elif data == "action_disconnect":
+			self.outgoing.put("// action:disconnect")
 
 	def _listSd(self):
 		self.outgoing.put("Begin file list")
