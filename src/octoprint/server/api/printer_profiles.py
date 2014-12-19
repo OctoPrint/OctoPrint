@@ -146,7 +146,7 @@ def _validate_profile(profile):
 	converted_offsets = []
 	for offset in profile["extruder"]["offsets"]:
 		try:
-			converted_offsets.append((float(offset[0]), float(offset[0])))
+			converted_offsets.append((float(offset[0]), float(offset[1])))
 		except:
 			return False
 	profile["extruder"]["offsets"] = converted_offsets
