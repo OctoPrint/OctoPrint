@@ -215,7 +215,7 @@ function PrinterProfilesViewModel() {
         self.editorVolumeHeight(data.volume.height);
         self.editorVolumeFormFactor(data.volume.formFactor);
 
-        self.editorHeatedBed(data.volume.heatedBed);
+        self.editorHeatedBed(data.heatedBed);
 
         self.editorNozzleDiameter(data.extruder.nozzleDiameter);
         self.editorExtruders(data.extruder.count);
