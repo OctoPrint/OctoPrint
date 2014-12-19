@@ -194,7 +194,8 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		end_of_header = None
 		if delimiter_loc != -1:
 			# found the delimiter in the currently available data
-			data, self._buffer = data[0:delimiter_loc], data[delimiter_loc:]
+			delimiter_data_end = 0 if delimiter_loc == 0 else delimiter_loc - 2
+			data, self._buffer = data[0:delimiter_data_end], data[delimiter_loc:]
 			end_of_header = self._buffer.find("\r\n\r\n")
 		else:
 			# make sure any boundary (with single or double ==) contained at the end of chunk does not get
@@ -339,7 +340,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				if "content_type" in part and part["content_type"] is not None:
 					self._new_body += b"Content-Type: %s\r\n" % part["content_type"]
 				self._new_body += b"\r\n"
-				self._new_body += value
+				self._new_body += value + b"\r\n"
 		self._new_body += b"--%s--\r\n" % self._multipart_boundary
 
 	def _handle_method(self, *args, **kwargs):
