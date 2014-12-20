@@ -9,8 +9,11 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 import pylru
+import tempfile
 
 import octoprint.filemanager
+
+from octoprint.util import safeRename
 
 
 class StorageInterface(object):
@@ -867,12 +870,16 @@ class LocalFileStorage(StorageInterface):
 	def _save_metadata(self, path, metadata):
 		metadata_path = os.path.join(path, ".metadata.yaml")
 
+		fh, metadata_temporary_path = tempfile.mkstemp()
+		os.close(fh)
+
 		with self._metadata_lock:
-			with open(metadata_path, "w") as f:
-				try:
+			try:
+				with open(metadata_temporary_path, "w") as f:
 					import yaml
 					yaml.safe_dump(metadata, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
-				except:
-					self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
-				else:
-					self._metadata_cache[path] = metadata
+				safeRename(metadata_temporary_path, metadata_path, throw_error=True)
+			except:
+				self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
+			else:
+				self._metadata_cache[path] = metadata

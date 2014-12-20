@@ -147,7 +147,7 @@ def findCollisionfreeName(input, extension, existingFilenames):
 	raise ValueError("Can't create a collision free filename")
 
 
-def safeRename(old, new):
+def safeRename(old, new, throw_error=False):
 	"""
 	Safely renames a file.
 
@@ -172,12 +172,14 @@ def safeRename(old, new):
 				os.rename(new, backup)
 			os.rename(old, new)
 			os.remove(backup)
-		except OSError:
+		except OSError as e:
 			# if anything went wrong, try to rename the backup file to its original name
 			logger.error("Could not perform safe rename, trying to revert")
 			if os.path.exists(backup):
-				os.remove(new)
-			os.rename(backup, new)
+				silentRemove(new)
+				os.rename(backup, new)
+			if throw_error:
+				raise e
 	else:
 		# on anything else than windows it's ooooh so much easier...
 		os.rename(old, new)
