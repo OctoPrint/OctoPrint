@@ -299,7 +299,7 @@ class Timelapse(object):
 
 		# finalize command with output file
 		self._logger.debug("Rendering movie to %s" % output)
-		command.append(output)
+		command.append("\"" + output + "\"")
 		eventManager().fire(Events.MOVIE_RENDERING, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
 
 		command_str = " ".join(command)
