@@ -188,7 +188,10 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def is_slicer_configured(self):
 		cura_engine = s.get(["cura_engine"])
-		return cura_engine is not None and os.path.exists(cura_engine)
+		if cura_engine is not None and os.path.exists(cura_engine):
+			return True
+		else:
+			self._logger.info("Path to CuraEngine has not been configured yet or does not exist (currently set to %r), Cura will not be selectable for slicing" % cura_engine)
 
 	def get_slicer_properties(self):
 		return dict(
