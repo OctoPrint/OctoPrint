@@ -19,6 +19,12 @@
 * OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its 
   core functionality.
 * New type of API key: [App Session Keys](http://docs.octoprint.org/en/devel/api/apps.html) for trusted applications
+* Printer Profiles: Printer properties like print volume, extruder offsets etc are now managed via Printer Profiles. A
+  connection to a printer will always have a printer profile associated.
+* OctoPrint now supports `action:...` commands received via debug messages (`// action:...`) from the printer. Currently supported are
+  - `action:pause`: Pauses the current job in OctoPrint
+  - `action:resume`: Resumes the current job in OctoPrint
+  - `action:disconnect`: Disconnects OctoPrint from the printer
 
 ### Improvements
 
@@ -33,13 +39,17 @@
   ([#532](https://github.com/foosel/OctoPrint/issues/532) and [#590](https://github.com/foosel/OctoPrint/pull/590))
 * Slicing has been greatly improved:
   * It now allows for a definition of slicing profiles to use for slicing plus overrides which can be defined per slicing 
-    job (defining overrides is not yet part of the UI but it's on the roadmap). 
+    job (defining overrides is not yet part of the UI but it's on the roadmap).
+  * A new slicing dialog has been added which allows (re-)slicing uploaded STL files (which are now displayed in the file list
+    as well). This dialog also allows specifying which action to take after slicing has been completed (none, selecting the
+    sliced GCODE for printing or starting to print it directly)
   * Slicers themselves are integrated into the system via ``SlicingPlugins``. 
   * The [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the 
     [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See 
     [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to 
     accommodate the new integration.
   * The "Slicing done" notification is now colored green ([#558](https://github.com/foosel/OctoPrint/issues/558)).
+  * The slicing API allows positioning the model to slice on the print bed (Note: this is not yet available in the UI).
 * File management now supports STL files as first class citizens (including UI adjustments to allow management of
   uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
 * Also interpret lines starting with "!!" as errors
@@ -51,8 +61,15 @@
   long as they are in use
 * Settings in UI get refreshed when opening settings dialog
 * New event "SettingsUpdated"
-* Print time estimation is now not displayed until it becomes somewhat stable. Display in web interface now also happens
-  in a fuzzy way instead of the format hh:mm:ss, to not suggest a high accuracy anymore where the can't be one
+* "Print time left" is now not displayed until it becomes somewhat stable. Display in web interface now also happens
+  in a fuzzy way instead of the format hh:mm:ss, to not suggest a high accuracy anymore where the can't be one. Additionally
+  OctoPrint will use data from prior prints to enhance the initial print time estimation.
+* Added handler for uncaught exceptions to make sure those get logged, should make the logs even more useful for analysing
+  bug reports
+* The server now tracks the modification date of the configuration file and reloads it prior to saving the config if
+  it has been changed during runtime by external editing, hence no config settings added manually while the server
+  was running should be overwritten anymore.
+* Automatically hard-reload the UI if upon reconnecting to the server a new version is detected.
 
 ### Bug Fixes
 
@@ -62,12 +79,20 @@
   setups under Smoothieware
 * [#556](https://github.com/foosel/OctoPrint/issues/556) - Allow login of the same user from multiple browsers without
   side effects
+* [#680](https://github.com/foosel/OctoPrint/issues/680) - Don't accidentally include a newline from the MIME headers
+  in the parsed multipart data from file uploads
 * Various fixes of bugs in newly introduced features and improvements:
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
     queue
+  * [#664](https://github.com/foosel/OctoPrint/issues/664) - Fixed jog controls again
+  * [#677](https://github.com/foosel/OctoPrint/issues/677) - Fixed extruder offsets not being properly editable in
+    printer profiles
+  * [#683](https://github.com/foosel/OctoPrint/issues/683) - Fixed heated bed option not being properly displayed in
+    printer profiles
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
+  * Don't hiccup on slic3r filament_diameter comments in GCODE generated for multi extruder setups
 
 ## 1.1.2 (Unreleased)
 
