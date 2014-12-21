@@ -96,6 +96,10 @@ ClientOpened
 ClientClosed
    A client has disconnected from the webserver
 
+   Payload:
+
+     * ``remoteAddress``: the remote address (IP) of the client that disconnected
+
 Printer communication
 ---------------------
 

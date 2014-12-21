@@ -70,6 +70,8 @@
   it has been changed during runtime by external editing, hence no config settings added manually while the server
   was running should be overwritten anymore.
 * Automatically hard-reload the UI if upon reconnecting to the server a new version is detected.
+* Better handling of errors on the websocket - no more logging of the full stack trace to the log, only a warning
+  message for now.
 
 ### Bug Fixes
 
