@@ -247,7 +247,8 @@ class Timelapse(object):
 		except:
 			self._logger.exception("Could not capture image %s from %s, decreasing image counter again" % (filename, self._snapshotUrl))
 			with self._captureMutex:
-				self._imageNumber -= 1
+				if self._imageNumber is not None and self._imageNumber > 0:
+					self._imageNumber -= 1
 		eventManager().fire(Events.CAPTURE_DONE, {"file": filename})
 
 	def _createMovie(self, success=True):
