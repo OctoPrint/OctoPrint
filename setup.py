@@ -96,6 +96,26 @@ class CleanCommand(Command):
 			file_handler=delete_file
 		)
 
+		# pyc files
+		def delete_folder_if_empty(path, applied_handler):
+			if not applied_handler:
+				return
+			if len(os.listdir(path)) == 0:
+				shutil.rmtree(path)
+				print "Deleted %s since it was empty" % path
+
+		def delete_file(path):
+			os.remove(path)
+			print "Deleted %s" % path
+
+		import fnmatch
+		_recursively_handle_files(
+			os.path.abspath("src"),
+			lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
+			folder_handler=delete_folder_if_empty,
+			file_handler=delete_file
+		)
+
 
 class NewTranslation(Command):
 	description = "create a new translation"
