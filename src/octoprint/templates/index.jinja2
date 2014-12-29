@@ -37,7 +37,7 @@
             var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold }};
             var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
 
-            var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + "/sockjs";
+            var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
             var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
         </script>
     </head>
