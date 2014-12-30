@@ -331,7 +331,7 @@ Retrieve the current SD state
       GET /api/printer/sd HTTP/1.1
       Host: example.com
 
-   **Example Response**
+   **ponse**
 
    .. sourcecode:: http
 
@@ -344,6 +344,33 @@ Retrieve the current SD state
 
    :statuscode 200: No error
    :statuscode 404: If SD support has been disabled in OctoPrint's config.
+
+.. _sec-api-printer-arbcommand:
+
+Send an arbitrary command to the printer
+=============================
+
+.. http:post:: /api/printer/command
+
+   Sends any command to the printer via serial inerface. Should be used with some care as some commands can stop a running print job. 
+
+   If successful returns a :http:statuscode:`204` and an empty body.
+
+   **Example Request**
+
+   .. sourcecode:: http
+      POST /api/printer/command HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "M27"
+      }
+
+   
+   :json string command: The command to issue.
+   :statuscode 204:      No error
 
 .. _sec-api-printer-datamodel:
 
