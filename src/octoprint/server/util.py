@@ -376,7 +376,7 @@ class ReverseProxied(object):
 
 		host = environ.get('HTTP_X_FORWARDED_HOST', '')
 		if not host:
-			host = settings().get(["server", "host"])
+			host = settings().get(["server", "forwardedHost"])
 
 		if host:
 			environ['HTTP_HOST'] = host

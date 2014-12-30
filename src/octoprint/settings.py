@@ -43,7 +43,8 @@ default_settings = {
 		"firstRun": True,
 	    "secretKey": None,
 		"baseUrl": "",
-		"scheme": ""
+		"scheme": "",
+		"forwardedHost": ""
 	},
 	"webcam": {
 		"stream": None,

@@ -11,9 +11,11 @@
 
 * [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
   by versioneer
-* [IRC] Don't hiccup on slic3r filament_diameter comments generated for multi extruder setups
-* [ML] Fixed relative URL to sockjs endpoint, wasn't yet using the proper base url
-* [unreported] Generated URLs now take X-Forwarded-Host header sent by proxies into account for included host and port
+* [IRC] - Don't hiccup on slic3r filament_diameter comments generated for multi extruder setups
+* [ML] - Fixed relative URL to sockjs endpoint, wasn't yet using the proper base url
+* [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header
+  sent by proxies into account for included host and port, also fixed [#698](https://github.com/foosel/OctoPrint/issues/698)
+  introduced by this
 * Small fixes for timelapse creation:
   - [#344](https://github.com/foosel/OctoPrint/issues/344) - Made timelapses capable of coping with missing captures in between by decrementing the image counter again if there
     was an error fetching the latest image from the snapshot URL (backport of [1a7a468](https://github.com/foosel/OctoPrint/commit/1a7a468eb65fdf2a13b4c7a7723280e822c9c34b)
