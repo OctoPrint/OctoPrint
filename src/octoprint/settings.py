@@ -45,8 +45,10 @@ default_settings = {
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",
 			"schemeHeader": "X-Scheme",
+			"hostHeader": "X-Forwarded-Host",
 			"prefixFallback": "",
-			"schemeFallback": ""
+			"schemeFallback": "",
+			"hostFallback": ""
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
