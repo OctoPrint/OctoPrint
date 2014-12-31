@@ -300,7 +300,6 @@ def printerSdState():
 @api.route("/printer/command", methods=["POST"])
 @restricted_access
 def printerCommand():
-	# TODO: document me
 	if not printer.isOperational():
 		return make_response("Printer is not operational", 409)
 
@@ -309,15 +308,17 @@ def printerCommand():
 
 	data = request.json
 
-	parameters = {}
-	if "parameters" in data.keys():
-		parameters = data["parameters"]
+	parameters = dict()
+	if "parameters" in data.keys(): parameters = data["parameters"]
 
-	commands = []
-	if "command" in data.keys():
+	if "command" in data and "commands" in data:
+		return make_response("'command' and 'commands' are mutually exclusive", 400)
+	elif "command" in data:
 		commands = [data["command"]]
-	elif "commands" in data.keys():
+	elif "commands" in data and isinstance(data["commands"], (list, tuple)):
 		commands = data["commands"]
+	else:
+		return make_response("Need either single 'command' or list of 'commands'", 400)
 
 	commandsToSend = []
 	for command in commands:
