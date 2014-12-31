@@ -147,20 +147,25 @@ class ReverseProxied(object):
 	:param app: the WSGI application
 	:param header_script_name: the HTTP header in the wsgi environment from which to determine the prefix
 	:param header_scheme: the HTTP header in the wsgi environment from which to determine the scheme
+	:param header_host: the HTTP header in the wsgi environment from which to determine the host for which to generate external URLs
 	:param base_url: the prefix to use as fallback if headers are not set
+	:param scheme: the scheme to use as fallback if headers are not set
+	:param host: the host to use as fallback if headers are not set
 	"""
 
-	def __init__(self, app, header_prefix="x-script-name", header_scheme="x-scheme", base_url="", scheme=""):
+	def __init__(self, app, header_prefix="x-script-name", header_scheme="x-scheme", header_host="x-forwarded-host", base_url="", scheme="", host=""):
 		self.app = app
 
-		# headers for prefix & scheme, converted to conform to WSGI format
+		# headers for prefix & scheme & host, converted to conform to WSGI format
 		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
 		self._header_prefix = to_wsgi_format(header_prefix)
 		self._header_scheme = to_wsgi_format(header_scheme)
+		self._header_host = to_wsgi_format(header_host)
 
-		# fallback prefix & scheme from config
+		# fallback prefix & scheme & host from config
 		self._fallback_prefix = base_url
 		self._fallback_scheme = scheme
+		self._fallback_host = host
 
 	def __call__(self, environ, start_response):
 		# determine prefix
@@ -183,6 +188,15 @@ class ReverseProxied(object):
 		# rewrite wsgi.url_scheme based on scheme
 		if scheme:
 			environ["wsgi.url_scheme"] = scheme
+
+		# determine host
+		host = environ.get(self._header_host, "")
+		if not host:
+			host = self._fallback_host
+
+		# rewrite host header based on host
+		if host:
+			environ["HTTP_HOST"] = host
 
 		# call wrapped app with rewritten environment
 		return self.app(environ, start_response)

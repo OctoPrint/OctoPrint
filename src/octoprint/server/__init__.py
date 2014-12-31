@@ -280,8 +280,10 @@ class Server():
 			app.wsgi_app,
 			settings().get(["server", "reverseProxy", "prefixHeader"]),
 			settings().get(["server", "reverseProxy", "schemeHeader"]),
+			settings().get(["server", "reverseProxy", "hostHeader"]),
 			settings().get(["server", "reverseProxy", "prefixFallback"]),
-			settings().get(["server", "reverseProxy", "prefixScheme"])
+			settings().get(["server", "reverseProxy", "schemeFallback"]),
+			settings().get(["server", "reverseProxy", "hostFallback"])
 		)
 
 		secret_key = settings().get(["server", "secretKey"])
