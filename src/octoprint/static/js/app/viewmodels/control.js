@@ -263,4 +263,67 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.onStartup = function() {
         self.requestData();
     };
+
+    self.keycontrolText = ko.observable("Nothing");
+
+    self.doKeyControl = function(data, event) {
+        switch(event.which) {
+            case 37: // left arrow key
+                event.preventDefault();
+                self.keycontrolText("Left (X-)");
+                self.sendJogCommand('x',-1);
+                return;
+            case 38: // up arrow key
+                event.preventDefault();
+                self.keycontrolText("Up (Y+)");
+                self.sendJogCommand('y',1);
+                return;
+            case 39: // right arrow key
+                event.preventDefault();
+                self.keycontrolText("Right (X+)");
+                self.sendJogCommand('x',1);
+                return;
+            case 40: // down arrow key
+                event.preventDefault();
+                self.keycontrolText("Down (Y-)");
+                self.sendJogCommand('y',-1);
+                return;
+            case 49: // number 1: Distance 0.1
+                event.preventDefault();
+                self.keycontrolText("Distance 0.1");
+                distbtn1.click();
+                return;
+            case 50: // number 2: Distance 1
+                event.preventDefault();
+                self.keycontrolText("Distance 1");
+                distbtn2.click();
+                return;
+            case 51: // number 3: Distance 10
+                event.preventDefault();
+                self.keycontrolText("Distance 10");
+                distbtn3.click();
+                return;
+            case 52: // number 4: Distance 100
+                event.preventDefault();
+                self.keycontrolText("Distance 100");
+                distbtn4.click();
+                return;
+            case 87: // w key: z lift up
+                event.preventDefault();
+                self.keycontrolText("Z Lift up (Z+)");
+                self.sendJogCommand('z',1);
+                return;
+            case 83: // s key: z lift down
+                event.preventDefault();
+                self.keycontrolText("Z Lift down (Z-)");
+                self.sendJogCommand('z',-1);
+                return;
+            default:
+                event.preventDefault();
+                self.keycontrolText("no known shortcut");
+                return false;
+        }
+
+    };
+
 }

@@ -387,15 +387,42 @@
                                         <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
                                     </div>
                                 </div>
+
                                 <!-- Jog distance -->
                                 <div class="distance">
                                     <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
-                                        <button type="button" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
-                                        <button type="button" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
-                                        <button type="button" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
-                                        <button type="button" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
+                                        <button type="button" id="distbtn1" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
+                                        <button type="button" id="distbtn2" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
+                                        <button type="button" id="distbtn3" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
+                                        <button type="button" id="distbtn4" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
                                     </div>
                                 </div>
+
+                                <!-- Shortcut Control -->
+                                <div class="keycontrol">
+                                    <h1>{{ _('Key-Control') }}</h1>
+                                    <div class="keycontroltext">
+                                        <small>
+                                            {{ _('Arrow keys') }}:<br>
+                                            W, S:<br>
+                                            1-4:
+                                        </small>
+                                    </div>
+                                    <div class="keycontroltext">
+                                        <small>
+                                            <strong>X+,X-, Y+,Y-</strong><br>
+                                            <strong>{{ _('lift up/down (Z+,Z-)') }}</strong><br>
+                                            <strong>{{ _('Distance') }}&nbsp;(0.1, 1..)</strong>                                            
+                                        </small>
+                                    </div>
+                                    <div class="keycontrolinput">
+                                        <input type="text" data-bind="value: $root.keycontrolText, valueUpdate: 'keyup', enable: isOperational() && !isPrinting() && loginState.isUser(), event: { keydown: doKeyControl }"></input>
+                                    </div>
+                                    <div class="keycontrol">
+                                        <em>{{ _('Click into Textfield and press key<br>for control') }}</em>
+                                    </div>
+                                </div>  
+
                             </div>
                             <!-- Extrusion control panel -->
                             <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
