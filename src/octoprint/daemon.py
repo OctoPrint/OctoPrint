@@ -53,13 +53,14 @@ class Daemon:
 		os.dup2(se.fileno(), sys.stderr.fileno())
 	
 		# write pidfile
-		signal.signal(signal.SIGTERM,self.delpid)
-
 		pid = str(os.getpid())
 		with open(self.pidfile,'w+') as f:
 			f.write(pid + '\n')
-	
-	def delpid(self, _signo, _stack_frame):
+
+		# register listener for SIGTERM
+		signal.signal(signal.SIGTERM, self.term)
+
+	def term(self, _signo, _stack_frame):
 		os.remove(self.pidfile)
 		sys.exit(0)
 
