@@ -6,6 +6,7 @@
 
 * Added deletion of `*.pyc` files to `python setup.py clean` command, should help tremendously when switching branches (backported
   from [9e014eb](https://github.com/foosel/OctoPrint/commit/9e014eba1feffde11ed0601d9c911b8cac9f3fb0))
+* Increased default communication and connection timeouts
 
 ### Bug Fixes
 
