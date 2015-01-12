@@ -30,8 +30,8 @@ default_settings = {
 		"log": False,
 		"timeout": {
 			"detection": 0.5,
-			"connection": 2,
-			"communication": 5,
+			"connection": 10,
+			"communication": 30,
 			"temperature": 5,
 			"sdStatus": 1
 		},
