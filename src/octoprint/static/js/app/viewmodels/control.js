@@ -26,6 +26,15 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.feedbackControlLookup = {};
 
+    self.keycontrolActive = ko.observable(false);
+    self.keycontrolHelpActive = ko.observable(false);
+    self.keycontrolPossible = ko.computed(function() {
+        return self.isOperational() && !self.isPrinting() && self.loginState.isUser() && !$.browser.mobile;
+    });
+    self.showKeycontrols = ko.computed(function() {
+        return self.keycontrolActive() && self.keycontrolPossible();
+    });
+
     self.settings.printerProfiles.currentProfileData.subscribe(function() {
         self._updateExtruderCount();
         self.settings.printerProfiles.currentProfileData().extruder.count.subscribe(self._updateExtruderCount);
@@ -236,9 +245,6 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             callback();
         }
 
-        if (data === undefined)
-            return;
-
     };
 
     self.displayMode = function(customControl) {
@@ -264,66 +270,109 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         self.requestData();
     };
 
-    self.keycontrolText = ko.observable("Nothing");
+    self.onFocus = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+        self.keycontrolActive(true);
+    };
 
-    self.doKeyControl = function(data, event) {
+    self.onMouseOver = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+        $("#webcam_container").focus();
+        self.keycontrolActive(true);
+    };
+
+    self.onMouseOut = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+        $("#webcam_container").blur();
+        self.keycontrolActive(false);
+    };
+
+    self.toggleKeycontrolHelp = function() {
+        self.keycontrolHelpActive(!self.keycontrolHelpActive());
+    };
+
+    self.onKeyDown = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+
+        var button = undefined;
+        var visualizeClick = true;
+
         switch(event.which) {
             case 37: // left arrow key
-                event.preventDefault();
-                self.keycontrolText("Left (X-)");
-                self.sendJogCommand('x',-1);
-                return;
+                // X-
+                button = $("#control-xdec");
+                break;
             case 38: // up arrow key
-                event.preventDefault();
-                self.keycontrolText("Up (Y+)");
-                self.sendJogCommand('y',1);
-                return;
+                // Y+
+                button = $("#control-yinc");
+                break;
             case 39: // right arrow key
-                event.preventDefault();
-                self.keycontrolText("Right (X+)");
-                self.sendJogCommand('x',1);
-                return;
+                // X+
+                button = $("#control-xinc");
+                break;
             case 40: // down arrow key
-                event.preventDefault();
-                self.keycontrolText("Down (Y-)");
-                self.sendJogCommand('y',-1);
-                return;
-            case 49: // number 1: Distance 0.1
-                event.preventDefault();
-                self.keycontrolText("Distance 0.1");
-                distbtn1.click();
-                return;
-            case 50: // number 2: Distance 1
-                event.preventDefault();
-                self.keycontrolText("Distance 1");
-                distbtn2.click();
-                return;
-            case 51: // number 3: Distance 10
-                event.preventDefault();
-                self.keycontrolText("Distance 10");
-                distbtn3.click();
-                return;
-            case 52: // number 4: Distance 100
-                event.preventDefault();
-                self.keycontrolText("Distance 100");
-                distbtn4.click();
-                return;
-            case 87: // w key: z lift up
-                event.preventDefault();
-                self.keycontrolText("Z Lift up (Z+)");
-                self.sendJogCommand('z',1);
-                return;
-            case 83: // s key: z lift down
-                event.preventDefault();
-                self.keycontrolText("Z Lift down (Z-)");
-                self.sendJogCommand('z',-1);
-                return;
+                // Y-
+                button = $("#control-ydec");
+                break;
+            case 49: // number 1
+            case 97: // numpad 1
+                // Distance 0.1
+                button = $("#control-distance01");
+                visualizeClick = false;
+                break;
+            case 50: // number 2
+            case 98: // numpad 2
+                // Distance 1
+                button = $("#control-distance1");
+                visualizeClick = false;
+                break;
+            case 51: // number 3
+            case 99: // numpad 3
+                // Distance 10
+                button = $("#control-distance10");
+                visualizeClick = false;
+                break;
+            case 52: // number 4
+            case 100: // numpad 4
+                // Distance 100
+                button = $("#control-distance100");
+                visualizeClick = false;
+                break;
+            case 33: // page up key
+            case 87: // w key
+                // z lift up
+                button = $("#control-zinc");
+                break;
+            case 34: // page down key
+            case 83: // s key
+                // z lift down
+                button = $("#control-zdec");
+                break;
+            case 36: // home key
+                // xy home
+                button = $("#control-xyhome");
+                break;
+            case 35: // end key
+                // z home
+                button = $("#control-zhome");
+                break;
             default:
                 event.preventDefault();
-                self.keycontrolText("no known shortcut");
                 return false;
         }
 
+        if (button === undefined) {
+            return false;
+        } else {
+            event.preventDefault();
+            if (visualizeClick) {
+                button.addClass("active");
+                setTimeout(function() {
+                    button.removeClass("active");
+                }, 150);
+            }
+            button.click();
+        }
     };
 
 }

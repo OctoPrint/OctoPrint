@@ -353,8 +353,26 @@
                         </div>
                         <div class="tab-pane" id="control">
                             {% if webcamStream %}
-                            <div id="webcam_container">
+                            <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
                                 <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+                                <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
+                                    <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i data-bind="css: { 'icon-chevron-down': !keycontrolHelpActive(), 'icon-chevron-up': keycontrolHelpActive() }"></i></a></div>
+                                    <div data-bind="visible: keycontrolHelpActive">
+                                        <div class="keycontrol_overlay_column">
+                                            <kbd>&rarr;</kbd> / <kbd>&larr;</kbd>: {{ _("X Axis") }} +/-<br>
+                                            <kbd>&uarr;</kbd> / <kbd>&darr;</kbd>: {{ _("Y Axis") }} +/-<br>
+                                            <kbd>W</kbd>, <kbd>{{ _("Page&uarr;") }}</kbd> / <kbd>S</kbd>, <kbd>{{ _("Page&darr;") }}</kbd>: {{ _("Z Axis") }} +/-
+                                        </div>
+                                        <div class="keycontrol_overlay_column">
+                                            <kbd>Home</kbd>: {{ _("Home X/Y") }}<br>
+                                            <kbd>End</kbd>: {{ _("Home Z") }}<br>
+                                            <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>: {{ _("Stepsize") }} 0.1, 1, 10, 100mm
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div data-bind="visible: keycontrolPossible">
+                                <small>{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
                             </div>
                             {% endif %}
 
@@ -363,65 +381,40 @@
                                 <div class="jog-panel">
                                     <h1>X/Y</h1>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
+                                        <button class="btn box" id="control-yinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="icon-home"></i></button>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
+                                        <button class="btn box pull-left" id="control-xdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
+                                        <button class="btn box pull-left" id="control-xyhome" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="icon-home"></i></button>
+                                        <button class="btn box pull-left" id="control-xinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
+                                        <button class="btn box" id="control-ydec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
                                     </div>
                                 </div>
                                 <!-- Z jogging control panel -->
                                 <div class="jog-panel">
                                     <h1>Z</h1>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
+                                        <button class="btn box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['z']) }"><i class="icon-home"></i></button>
+                                        <button class="btn box" id="control-zhome" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['z']) }"><i class="icon-home"></i></button>
                                     </div>
                                     <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
+                                        <button class="btn box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
                                     </div>
                                 </div>
 
                                 <!-- Jog distance -->
                                 <div class="distance">
                                     <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
-                                        <button type="button" id="distbtn1" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
-                                        <button type="button" id="distbtn2" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
-                                        <button type="button" id="distbtn3" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
-                                        <button type="button" id="distbtn4" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
+                                        <button type="button" id="control-distance01" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
+                                        <button type="button" id="control-distance1" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
+                                        <button type="button" id="control-distance10" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
+                                        <button type="button" id="control-distance100" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
                                     </div>
                                 </div>
-
-                                <!-- Shortcut Control -->
-                                <div class="keycontrol">
-                                    <h1>{{ _('Key-Control') }}</h1>
-                                    <div class="keycontroltext">
-                                        <small>
-                                            {{ _('Arrow keys') }}:<br>
-                                            W, S:<br>
-                                            1-4:
-                                        </small>
-                                    </div>
-                                    <div class="keycontroltext">
-                                        <small>
-                                            <strong>X+,X-, Y+,Y-</strong><br>
-                                            <strong>{{ _('lift up/down (Z+,Z-)') }}</strong><br>
-                                            <strong>{{ _('Distance') }}&nbsp;(0.1, 1..)</strong>                                            
-                                        </small>
-                                    </div>
-                                    <div class="keycontrolinput">
-                                        <input type="text" data-bind="value: $root.keycontrolText, valueUpdate: 'keyup', enable: isOperational() && !isPrinting() && loginState.isUser(), event: { keydown: doKeyControl }"></input>
-                                    </div>
-                                    <div class="keycontrol">
-                                        <em>{{ _('Click into Textfield and press key<br>for control') }}</em>
-                                    </div>
-                                </div>  
 
                             </div>
                             <!-- Extrusion control panel -->

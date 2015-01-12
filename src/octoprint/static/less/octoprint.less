@@ -410,6 +410,10 @@ ul.dropdown-menu li a {
 
 #webcam_container {
   width: 100%;
+  position: relative;
+  outline: none;
+
+  //min-height: 440px;
 
   .flipH {
     -webkit-transform: scaleX(-1);
@@ -424,6 +428,40 @@ ul.dropdown-menu li a {
   .flipH.flipV {
     -webkit-transform: scaleX(-1) scaleY(-1);
     -moz-transform: scaleX(-1) scaleY(-1);
+  }
+
+  .keycontrol_overlay {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    font-size: 85%;
+    color: white;
+    padding: 0;
+
+    kbd {
+      border: 1px solid #eeeeee;
+      border-radius: 3px;
+      margin-left: 2px;
+      margin-right: 2px;
+      font-size: 90%;
+      padding: 2px;
+      min-width: 1em;
+    }
+
+    .keycontrol_overlay_heading {
+      position: relative;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+    .keycontrol_overlay_column {
+      position: relative;
+      width: 45%;
+      padding: 10px;
+      float: left;
+    }
   }
 }
 
@@ -493,12 +531,14 @@ ul.dropdown-menu li a {
     text-align: left;
   }
 
-  .jog-panel > div {
-    text-align: center;
-  }
+  .jog-panel {
+    >div {
+      text-align: center;
+    }
 
-  .jog-panel > div.distance {
-    text-align: left;
+    >div.distance {
+      text-align: left;
+    }
   }
 
   .box {
