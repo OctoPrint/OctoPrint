@@ -383,7 +383,7 @@ class Printer():
 		self._stateMonitor.addMessage(message)
 
 	def _estimateTotalPrintTime(self, progress, printTime):
-		if not progress or not printTime:
+		if not progress or not printTime or not self._timeEstimationData:
 			#self._estimationLogger.info("{progress};{printTime};;;;".format(**locals()))
 			return None
 
@@ -679,6 +679,7 @@ class Printer():
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
 		remoteName = util.getDosFilename(filename, existingSdFiles)
+		self._timeEstimationData = TimeEstimationHelper()
 		self._comm.startFileTransfer(absolutePath, filename, remoteName)
 
 		return remoteName
