@@ -143,6 +143,8 @@
 
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
 * [#604](https://github.com/foosel/OctoPrint/issues/604) - Properly initialize settings basedir on server startup
+* [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
+  (backport of [619fe9a](https://github.com/foosel/OctoPrint/commit/619fe9a0e78826bd1524b235a910156439bcb6d7)).
 * [IRC] Also allow downloading .g files via Tornado
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.1.0...1.1.1))
