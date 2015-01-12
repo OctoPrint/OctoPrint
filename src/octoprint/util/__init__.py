@@ -269,6 +269,20 @@ def dict_clean(a, b):
 	return result
 
 
+def dict_contains_keys(a, b):
+	if not isinstance(a, dict) or not isinstance(b, dict):
+		return False
+
+	for k, v in a.iteritems():
+		if not k in b:
+			return False
+		elif isinstance(v, dict):
+			if not dict_contains_keys(v, b[k]):
+				return False
+
+	return True
+
+
 class Object(object):
 	pass
 

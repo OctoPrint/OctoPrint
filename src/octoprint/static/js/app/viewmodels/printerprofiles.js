@@ -268,30 +268,30 @@ function PrinterProfilesViewModel() {
             color: self.editorColor(),
             model: self.editorModel(),
             volume: {
-                width: self.editorVolumeWidth(),
-                depth: self.editorVolumeDepth(),
-                height: self.editorVolumeHeight(),
+                width: parseFloat(self.editorVolumeWidth()),
+                depth: parseFloat(self.editorVolumeDepth()),
+                height: parseFloat(self.editorVolumeHeight()),
                 formFactor: self.editorVolumeFormFactor()
             },
             heatedBed: self.editorHeatedBed(),
             extruder: {
-                count: self.editorExtruders(),
+                count: parseInt(self.editorExtruders()),
                 offsets: [
                     [0.0, 0.0]
                 ],
-                nozzleDiameter: self.editorNozzleDiameter()
+                nozzleDiameter: parseFloat(self.editorNozzleDiameter())
             },
             axes: {
                 x: {
-                    speed: self.editorAxisXSpeed(),
+                    speed: parseInt(self.editorAxisXSpeed()),
                     inverted: self.editorAxisXInverted()
                 },
                 y: {
-                    speed: self.editorAxisYSpeed(),
+                    speed: parseInt(self.editorAxisYSpeed()),
                     inverted: self.editorAxisYInverted()
                 },
                 z: {
-                    speed: self.editorAxisZSpeed(),
+                    speed: parseInt(self.editorAxisZSpeed()),
                     inverted: self.editorAxisZInverted()
                 }
             }
