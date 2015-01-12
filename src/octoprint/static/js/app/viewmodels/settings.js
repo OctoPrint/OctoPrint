@@ -64,6 +64,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
     self.feature_sdAlwaysAvailable = ko.observable(undefined);
     self.feature_swallowOkAfterResend = ko.observable(undefined);
     self.feature_repetierTargetTemp = ko.observable(undefined);
+    self.feature_keyboardControl = ko.observable(undefined);
 
     self.serial_port = ko.observable();
     self.serial_baudrate = ko.observable();
@@ -159,6 +160,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
         self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
         self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
         self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
+        self.feature_keyboardControl(response.feature.keyboardControl);
 
         self.serial_port(response.serial.port);
         self.serial_baudrate(response.serial.baudrate);
@@ -222,7 +224,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
                 "sdSupport": self.feature_sdSupport(),
                 "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
                 "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
-                "repetierTargetTemp": self.feature_repetierTargetTemp()
+                "repetierTargetTemp": self.feature_repetierTargetTemp(),
+                "keyboardControl": self.feature_keyboardControl()
             },
             "serial": {
                 "port": self.serial_port(),

@@ -86,7 +86,8 @@ default_settings = {
 		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
-		"repetierTargetTemp": False
+		"repetierTargetTemp": False,
+		"keyboardControl": True
 	},
 	"folder": {
 		"uploads": None,

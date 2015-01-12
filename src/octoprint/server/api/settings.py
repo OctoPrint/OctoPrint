@@ -59,7 +59,8 @@ def getSettings():
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
-			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"])
+			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
+			"keyboardControl": s.getBoolean(["feature", "keyboardControl"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -149,6 +150,7 @@ def setSettings():
 			if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 			if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 			if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
+			if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 
 		if "serial" in data.keys():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
