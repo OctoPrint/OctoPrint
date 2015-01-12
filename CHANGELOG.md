@@ -25,6 +25,13 @@
   - `action:pause`: Pauses the current job in OctoPrint
   - `action:resume`: Resumes the current job in OctoPrint
   - `action:disconnect`: Disconnects OctoPrint from the printer
+* Mousing over the webcam image in the control tab enables key control mode, allowing you to quickly move the axis of your
+  printer with your computer's keyboard ([#610](https://github.com/foosel/OctoPrint/pull/610)):
+  - arrow keys: X and Y axes
+  - W, S / PageUp, PageDown: Y axes
+  - Home: Home X and Y axes
+  - End: Home Z axes
+  - 1, 2, 3, 4: change step size used (0.1, 1, 10, 100mm)
 
 ### Improvements
 
