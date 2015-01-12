@@ -116,6 +116,8 @@
 
 * [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
   by versioneer
+* [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
+  (backport of [619fe9a](https://github.com/foosel/OctoPrint/commit/619fe9a0e78826bd1524b235a910156439bcb6d7)).
 * [IRC] - Don't hiccup on slic3r filament_diameter comments generated for multi extruder setups
 * [ML] - Fixed relative URL to sockjs endpoint, wasn't yet using the proper base url
 * [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header
@@ -143,8 +145,6 @@
 
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
 * [#604](https://github.com/foosel/OctoPrint/issues/604) - Properly initialize settings basedir on server startup
-* [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
-  (backport of [619fe9a](https://github.com/foosel/OctoPrint/commit/619fe9a0e78826bd1524b235a910156439bcb6d7)).
 * [IRC] Also allow downloading .g files via Tornado
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.1.0...1.1.1))
