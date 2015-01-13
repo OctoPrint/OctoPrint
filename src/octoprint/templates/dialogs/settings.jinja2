@@ -31,17 +31,17 @@
             </ul>
 
             <div class="tab-content span8">
-                {% include 'settings/serialconnection.jinja2' %}
-                {% include 'settings/printerprofiles.jinja2' %}
-                {% include 'settings/temperatures.jinja2' %}
-                {% include 'settings/terminalfilters.jinja2' %}
-                {% include 'settings/features.jinja2' %}
-                {% include 'settings/webcam.jinja2' %}
-                {% include 'settings/accesscontrol.jinja2' %}
-                {% include 'settings/api.jinja2' %}
-                {% include 'settings/folders.jinja2' %}
-                {% include 'settings/appearance.jinja2' %}
-                {% include 'settings/logs.jinja2' %}
+                {% include 'dialogs/settings/serialconnection.jinja2' %}
+                {% include 'dialogs/settings/printerprofiles.jinja2' %}
+                {% include 'dialogs/settings/temperatures.jinja2' %}
+                {% include 'dialogs/settings/terminalfilters.jinja2' %}
+                {% include 'dialogs/settings/features.jinja2' %}
+                {% include 'dialogs/settings/webcam.jinja2' %}
+                {% include 'dialogs/settings/accesscontrol.jinja2' %}
+                {% include 'dialogs/settings/api.jinja2' %}
+                {% include 'dialogs/settings/folders.jinja2' %}
+                {% include 'dialogs/settings/appearance.jinja2' %}
+                {% include 'dialogs/settings/logs.jinja2' %}
 
                 {% for plugin_name, vars in settingsPlugins.items() %}
                     <div class="tab-pane" id="settings_plugin_{{ plugin_name }}" data-bind="allowBindings: false">

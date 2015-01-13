@@ -73,7 +73,16 @@
     <body>
         <div id="navbar" class="navbar navbar-static-top">
             <div class="navbar-inner" data-bind="css: appearance.color">
-                {% include 'navbar.jinja2' %}
+                <div class="container">
+                    <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
+                    <div class="nav-collapse">
+                        <ul class="nav pull-right">
+                            {% include 'navbar/settings.jinja2' %}
+                            {% include 'navbar/systemmenu.jinja2' %}
+                            {% include 'navbar/login.jinja2' %}
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="container octoprint-container">
@@ -115,8 +124,17 @@
             </div>
         </div>
 
-        {% include 'settings.jinja2' %}
-        {% include 'dialogs.jinja2' %}
+        <!-- Dialogs -->
+        {% include 'dialogs/confirmation.jinja2' %}
+        {% include 'dialogs/firstrun.jinja2' %}
+        {% include 'dialogs/settings.jinja2' %}
+        {% include 'dialogs/slicing.jinja2' %}
+        <!-- End of dialogs -->
+
+        <!-- Overlays -->
+        {% include 'overlays/dragndrop.jinja2' %}
+        {% include 'overlays/offline.jinja2' %}
+        <!-- End of overlays -->
 
         <!-- Plugin template files -->
         {%  if templatePlugins %}
