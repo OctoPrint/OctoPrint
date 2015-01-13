@@ -10,7 +10,7 @@ from sockjs.tornado import SockJSRouter
 from flask import Flask, render_template, send_from_directory, g, request, make_response, session
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
-from flask.ext.babel import Babel
+from flask.ext.babel import Babel, gettext, ngettext
 from babel import Locale
 from watchdog.observers import Observer
 
@@ -98,21 +98,79 @@ def get_locale():
 
 @app.route("/")
 def index():
-	settings_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlugin)
-	settings_plugin_template_vars = dict()
-	for name, implementation in settings_plugins.items():
-		settings_plugin_template_vars[name] = implementation.get_template_vars()
+
+	#~~ extract data from asset plugins
 
 	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
 	asset_plugin_urls = dict()
 	for name, implementation in asset_plugins.items():
 		asset_plugin_urls[name] = implementation.get_assets()
 
-	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
-	template_plugin_names = template_plugins.keys()
+	#~~ extract data from template plugins
 
-	return render_template(
-		"index.jinja2",
+	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
+
+	plugin_vars = dict()
+	plugin_includes = dict()
+	for name, implementation in template_plugins.items():
+		vars = implementation.get_template_vars()
+
+		plugin_data = dict()
+
+		if "_settings" in vars and "name" in vars["_settings"]:
+			plugin_data["_settings"] = dict(vars["_settings"])
+			plugin_data["_settings"]["_div"] = "settings_plugin_" + name
+			plugin_data["_settings"]["_template"] = name + "_settings.jinja2"
+			del vars["_settings"]
+
+		if "_tab" in vars and "name" in vars["_tab"]:
+			plugin_data["_tab"] = dict(vars["_tab"])
+			plugin_data["_tab"]["_div"] = "tab_plugin_" + name
+			plugin_data["_tab"]["_template"] = name + "_tab.jinja2"
+			del vars["_tab"]
+
+		if "_sidebar" in vars and "name" in vars["_sidebar"]:
+			plugin_data["_sidebar"] = vars["_sidebar"]
+			plugin_data["_sidebar"]["_div"] = "sidebar_plugin_" + name
+			plugin_data["_sidebar"]["_template"] = name + "_sidebar.jinja2"
+			del vars["_sidebar"]
+
+		if len(plugin_data):
+			plugin_includes[name] = plugin_data
+
+		for var_name, var_value in vars.items():
+			plugin_vars["plugin_" + name + "_" + var_name] = var_value
+
+	#~~ settings dialog
+
+	settings_entries = [
+		(gettext("Printer"), None),
+		(gettext("Serial Connection"), dict(_template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection", _active=True)),
+		(gettext("Printer Profiles"), dict(_template="dialogs/settings/printerprofiles.jinja2", _div="settings_printerProfiles")),
+		(gettext("Temperatures"), dict(_template="dialogs/settings/temperatures.jinja2", _div="settings_temperature")),
+		(gettext("Terminal Filters"), dict(_template="dialogs/settings/terminalfilters.jinja2", _div="settings_terminalFilters")),
+		(gettext("Features"), None),
+		(gettext("Features"), dict(_template="dialogs/settings/features.jinja2", _div="settings_features")),
+		(gettext("Webcam"), dict(_template="dialogs/settings/webcam.jinja2", _div="settings_webcam")),
+		(gettext("Access Control"), dict(_template="dialogs/settings/accesscontrol.jinja2", _div="settings_users")),
+		(gettext("API"), dict(_template="dialogs/settings/api.jinja2", _div="settings_api")),
+		(gettext("OctoPrint"), None),
+		(gettext("Folders"), dict(_template="dialogs/settings/folders.jinja2", _div="settings_folders")),
+		(gettext("Appearance"), dict(_template="dialogs/settings/appearance.jinja2", _div="settings_appearance")),
+		(gettext("Logs"), dict(_template="dialogs/settings/logs.jinja2", _div="settings_logs", data_bind="allowBindings: false"))
+	]
+	if len(plugin_includes):
+		plugin_tuples = []
+		for name, data in plugin_includes.items():
+			if "_settings" in data:
+				plugin_tuples.append((data["_settings"]["name"], data["_settings"]))
+		if len(plugin_tuples):
+			settings_entries.append((gettext("Plugins"), None))
+			settings_entries.extend(sorted(plugin_tuples, key=lambda x: x[0]))
+
+	#~~ prepare full set of template vars for rendering
+
+	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["gcodeViewer", "enabled"]),
@@ -128,9 +186,16 @@ def index():
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
-		settingsPlugins=settings_plugin_template_vars,
-		templatePlugins=template_plugin_names,
-		assetPlugins=asset_plugin_urls
+		settingsEntries=settings_entries,
+		assetPlugins=asset_plugin_urls,
+	)
+	render_kwargs.update(plugin_vars)
+
+	#~~ render!
+
+	return render_template(
+		"index.jinja2",
+		**render_kwargs
 	)
 
 

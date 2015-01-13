@@ -91,6 +91,12 @@
                     {% include 'sidebar/connection.jinja2' %}
                     {% include 'sidebar/state.jinja2' %}
                     {% include 'sidebar/files.jinja2' %}
+
+                    {% if templatePlugins %}
+                        {% for plugin_name, vars in templatePlugins.items() %}
+                            {% include plugin_name+"_sidebar.jinja2" ignore missing %}
+                        {% endfor %}
+                    {% endif %}
                 </div>
 
                 <div class="span8 tabbable">
@@ -100,6 +106,14 @@
                         {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">{{ _('GCode Viewer') }}</a></li>{% endif %}
                         <li><a href="#term" data-toggle="tab">{{ _('Terminal') }}</a></li>
                         {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">{{ _('Timelapse') }}</a></li>{% endif %}
+
+                        {%  if templatePlugins %}
+                            {% for plugin_name, vars in templatePlugins.items() %}
+                                {% if "_tab_entry" in vars %}
+                                    <li><a href="#tab_plugin_{{ plugin_name }}" data-toggle="tab">{{ vars._tab_entry }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
                     </ul>
 
                     <div class="tab-content">
@@ -108,6 +122,17 @@
                         {% include 'tabs/gcodeviewer.jinja2' %}
                         {% include 'tabs/terminal.jinja2' %}
                         {% include 'tabs/timelapse.jinja2' %}
+
+                        {%  if templatePlugins %}
+                            {% for plugin_name, vars in templatePlugins.items() %}
+                                {% if "_tab_entry" in vars %}
+                                    <div class="tab-pane" id="tab_plugin_{{ plugin_name }}" data-bind="allowBindings: {% if "_tab_allow_bindings" in vars and vars["_tab_allow_bindings"] %}true{% else %}false{% endif %}">
+                                        {% include plugin_name + "_tab.jinja2" ignore missing %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
                     </div>
                 </div>
             </div>
@@ -139,7 +164,7 @@
         <!-- Plugin template files -->
         {%  if templatePlugins %}
             {% for plugin_name in templatePlugins %}
-                {% include plugin_name+".jinja2" ignore missing %}
+                {% include plugin_name + ".jinja2" ignore missing %}
             {% endfor %}
         {% endif %}
         <!-- End plugin template files -->

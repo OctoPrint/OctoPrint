@@ -367,6 +367,7 @@ $(function() {
                 return { controlsDescendantBindings: !valueAccessor() };
             }
         };
+        ko.virtualElements.allowedBindings.allowBindings = true;
 
         ko.bindingHandlers.slimScrolledForeach = {
             init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
@@ -452,7 +453,12 @@ $(function() {
                 }
 
                 // model instance, target container
-                ko.applyBindings(additionalViewModel[0], additionalViewModel[1]);
+                try {
+                    ko.applyBindings(additionalViewModel[0], additionalViewModel[1]);
+                } catch (exc) {
+                    console.log("Could not apply bindings for additional view model " + additionalViewModel[0] + ": " + exc.message);
+                }
+
 
                 if (additionalViewModel[0].hasOwnProperty("onAfterBinding")) {
                     additionalViewModel[0].onAfterBinding();

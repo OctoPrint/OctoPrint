@@ -177,7 +177,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def get_template_vars(self):
 		return dict(
-			_settings_menu_entry="Cura"
+			_settings=dict(name="Cura", custom_bindings=True)
 		)
 
 	def get_template_folder(self):
