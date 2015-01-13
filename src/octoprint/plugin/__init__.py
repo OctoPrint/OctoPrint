@@ -30,7 +30,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				                BlueprintPlugin,
 				                EventHandlerPlugin,
 				                SlicerPlugin,
-				                AppPlugin]
+				                AppPlugin,
+				                ProgressPlugin]
 			if plugin_entry_points is None:
 				plugin_entry_points = "octoprint.plugin"
 			if plugin_disabled_list is None:

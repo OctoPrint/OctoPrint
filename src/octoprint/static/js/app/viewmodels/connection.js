@@ -62,6 +62,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel, printerProf
         var portPreference = response.options.portPreference;
         var baudratePreference = response.options.baudratePreference;
         var printerPreference = response.options.printerProfilePreference;
+        var printerProfiles = response.options.printerProfiles;
 
         self.portOptions(ports);
         self.baudrateOptions(baudrates);

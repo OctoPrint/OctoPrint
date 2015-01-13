@@ -342,6 +342,21 @@ function formatDuration(seconds) {
     return _.sprintf(gettext(/* L10N: duration format */ "%(hour)02d:%(minute)02d:%(second)02d"), {hour: h, minute: m, second: s});
 }
 
+function formatFuzzyEstimation(seconds, base) {
+    if (!seconds) return "-";
+    if (seconds < 0) return "-";
+
+    var m;
+    if (base != undefined) {
+        m = moment(base);
+    } else {
+        m = moment();
+    }
+
+    m.add(seconds, "s");
+    return m.fromNow(true);
+}
+
 function formatDate(unixTimestamp) {
     if (!unixTimestamp) return "-";
     return moment.unix(unixTimestamp).format(gettext(/* L10N: Date format */ "YYYY-MM-DD HH:mm"));

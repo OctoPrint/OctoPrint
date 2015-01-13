@@ -89,9 +89,9 @@ def _getFileList(origin, filter=None):
 				failure = 0
 				last = None
 				for entry in history:
-					success += 1 if entry["success"] else 0
-					failure += 1 if not entry["success"] else 0
-					if not last or entry["timestamp"] > last["timestamp"]:
+					success += 1 if "success" in entry and entry["success"] else 0
+					failure += 1 if "success" in entry and not entry["success"] else 0
+					if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
 						last = entry
 				if last:
 					prints = dict(
@@ -99,10 +99,11 @@ def _getFileList(origin, filter=None):
 						failure=failure,
 						last=dict(
 							success=last["success"],
-							date=last["timestamp"],
-							printTime=last["printTime"]
+							date=last["timestamp"]
 						)
 					)
+					if "printTime" in last:
+						prints["last"]["printTime"] = last["printTime"]
 					file["prints"] = prints
 
 			file.update({

@@ -216,6 +216,8 @@ class Server():
 		from tornado.ioloop import IOLoop
 		from tornado.web import Application
 
+		import sys
+
 		debug = self._debug
 
 		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
@@ -224,6 +226,9 @@ class Server():
 		# then initialize logging
 		self._initLogging(self._debug, self._logConf)
 		logger = logging.getLogger(__name__)
+		def exception_logger(exc_type, exc_value, exc_tb):
+			logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
+		sys.excepthook = exception_logger
 		logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
 
 		# then initialize the plugin manager
@@ -275,8 +280,10 @@ class Server():
 			app.wsgi_app,
 			settings().get(["server", "reverseProxy", "prefixHeader"]),
 			settings().get(["server", "reverseProxy", "schemeHeader"]),
+			settings().get(["server", "reverseProxy", "hostHeader"]),
 			settings().get(["server", "reverseProxy", "prefixFallback"]),
-			settings().get(["server", "reverseProxy", "prefixScheme"])
+			settings().get(["server", "reverseProxy", "schemeFallback"]),
+			settings().get(["server", "reverseProxy", "hostFallback"])
 		)
 
 		secret_key = settings().get(["server", "secretKey"])

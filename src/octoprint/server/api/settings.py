@@ -35,6 +35,10 @@ def getSettings():
 			"key": s.get(["api", "key"]) if admin_permission.can() else "n/a",
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
+		"appearance": {
+			"name": s.get(["appearance", "name"]),
+			"color": s.get(["appearance", "color"])
+		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
 		},
@@ -55,7 +59,8 @@ def getSettings():
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
-			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"])
+			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
+			"keyboardControl": s.getBoolean(["feature", "keyboardControl"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -120,6 +125,10 @@ def setSettings():
 			if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
 			if "allowCrossOrigin" in data["api"].keys(): s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
+		if "appearance" in data.keys():
+			if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
+			if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
+
 		if "printer" in data.keys():
 			if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
@@ -141,6 +150,7 @@ def setSettings():
 			if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 			if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 			if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
+			if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 
 		if "serial" in data.keys():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])

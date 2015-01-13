@@ -42,6 +42,7 @@ class Events(object):
 	UPDATED_FILES = "UpdatedFiles"
 	METADATA_ANALYSIS_STARTED = "MetadataAnalysisStarted"
 	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
+	METADATA_STATISTICS_UPDATED = "MetadataStatisticsUpdated"
 
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
@@ -62,6 +63,7 @@ class Events(object):
 	HOME = "Home"
 	Z_CHANGE = "ZChange"
 	WAITING = "Waiting"
+	DWELL = "Dwelling"
 	COOLING = "Cooling"
 	ALERT = "Alert"
 	CONVEYOR = "Conveyor"
@@ -306,7 +308,7 @@ class CommandTrigger(GenericEventListener):
 	def _executeGcodeCommand(self, command):
 		commands = [command]
 		if isinstance(command, (list, tuple, set)):
-			self.logger.debug("Executing GCode commands: %r" % command)
+			self._logger.debug("Executing GCode commands: %r" % command)
 			commands = list(command)
 		else:
 			self._logger.debug("Executing GCode command: %s" % command)

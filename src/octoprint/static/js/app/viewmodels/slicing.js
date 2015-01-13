@@ -28,6 +28,7 @@ function SlicingViewModel(loginStateViewModel, printerProfilesViewModel) {
     self.afterSlicing = ko.observable("none");
 
     self.show = function(target, file) {
+        self.requestData();
         self.target = target;
         self.file = file;
         self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: self.file}));
@@ -48,13 +49,18 @@ function SlicingViewModel(loginStateViewModel, printerProfilesViewModel) {
             && self.profile() != undefined;
     });
 
-    self.requestData = function() {
+    self.requestData = function(callback) {
         $.ajax({
             url: API_BASEURL + "slicing",
             type: "GET",
             dataType: "json",
-            success: self.fromResponse
-        })
+            success: function(data) {
+                self.fromResponse(data);
+                if (callback !== undefined) {
+                    callback();
+                }
+            }
+        });
     };
 
     self.fromResponse = function(data) {

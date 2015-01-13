@@ -3,7 +3,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
 import time
-import datetime
 import threading
 import copy
 import os
@@ -16,6 +15,8 @@ from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 
 from octoprint.filemanager.destinations import FileDestinations
+
+from octoprint.plugin import plugin_manager, ProgressPlugin
 
 def getConnectionOptions():
 	"""
@@ -34,6 +35,8 @@ class Printer():
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
+		#self._estimationLogger = logging.getLogger("ESTIMATIONS")
+		#self._printTimeLogger = logging.getLogger("PRINT_TIME")
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
@@ -73,13 +76,17 @@ class Printer():
 		self._streamingFinishedCallback = None
 
 		self._selectedFile = None
+		self._timeEstimationData = None
 
 		# comm
 		self._comm = None
 
 		# callbacks
 		self._callbacks = []
+
+		# progress plugins
 		self._lastProgressReport = None
+		self._progressPlugins = plugin_manager().get_implementations(ProgressPlugin)
 
 		self._stateMonitor = StateMonitor(
 			ratelimit=0.5,
@@ -108,7 +115,8 @@ class Printer():
 			currentZ=None
 		)
 
-		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self.onMetadataAnalysisFinished);
+		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self.onMetadataAnalysisFinished)
+		eventManager().subscribe(Events.METADATA_STATISTICS_UPDATED, self.onMetadataStatisticsUpdated)
 
 	#~~ callback handling
 
@@ -157,6 +165,31 @@ class Printer():
 			self._setJobData(self._selectedFile["filename"],
 							 self._selectedFile["filesize"],
 							 self._selectedFile["sd"])
+
+	def onMetadataStatisticsUpdated(self, event, data):
+		self._setJobData(self._selectedFile["filename"],
+		                 self._selectedFile["filesize"],
+		                 self._selectedFile["sd"])
+
+	#~~ progress plugin reporting
+
+	def _reportPrintProgressToPlugins(self, progress):
+		if not progress or not self._selectedFile or not "sd" in self._selectedFile or not "filename" in self._selectedFile:
+			return
+
+		storage = "sdcard" if self._selectedFile["sd"] else "local"
+		filename = self._selectedFile["filename"]
+
+		def call_plugins(storage, filename, progress):
+			for name, plugin in self._progressPlugins.items():
+				try:
+					plugin.on_print_progress(storage, filename, progress)
+				except:
+					self._logger.exception("Exception while sending print progress to plugin %s" % name)
+
+		thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
+		thread.daemon = False
+		thread.start()
 
 	#~~ printer commands
 
@@ -283,6 +316,8 @@ class Printer():
 		if self._selectedFile is None:
 			return
 
+		self._timeEstimationData = TimeEstimationHelper()
+		self._lastProgressReport = None
 		self._setCurrentZ(None)
 		self._comm.startPrint()
 
@@ -320,7 +355,7 @@ class Printer():
 
 		# mark print as failure
 		if self._selectedFile is not None:
-			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False)
+			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
 			payload = {
 				"file": self._selectedFile["filename"],
 				"origin": FileDestinations.LOCAL
@@ -347,17 +382,63 @@ class Printer():
 		self._messages.append(message)
 		self._stateMonitor.addMessage(message)
 
-	def _setProgressData(self, progress, filepos, printTime, printTimeLeft):
+	def _estimateTotalPrintTime(self, progress, printTime):
+		if not progress or not printTime or not self._timeEstimationData:
+			#self._estimationLogger.info("{progress};{printTime};;;;".format(**locals()))
+			return None
+
+		else:
+			newEstimate = printTime / progress
+			self._timeEstimationData.update(newEstimate)
+
+			result = None
+			if self._timeEstimationData.is_stable():
+				result = self._timeEstimationData.average_total_rolling
+
+			#averageTotal = self._timeEstimationData.average_total
+			#averageTotalRolling = self._timeEstimationData.average_total_rolling
+			#averageDistance = self._timeEstimationData.average_distance
+
+			#self._estimationLogger.info("{progress};{printTime};{newEstimate};{averageTotal};{averageTotalRolling};{averageDistance}".format(**locals()))
+
+			return result
+
+	def _setProgressData(self, progress, filepos, printTime, cleanedPrintTime):
+		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, cleanedPrintTime)
+		statisticalTotalPrintTime = None
+		totalPrintTime = estimatedTotalPrintTime
+
+		if self._selectedFile and "estimatedPrintTime" in self._selectedFile and self._selectedFile["estimatedPrintTime"]:
+			statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
+			if progress and cleanedPrintTime:
+				if estimatedTotalPrintTime is None:
+					totalPrintTime = statisticalTotalPrintTime
+				else:
+					if progress < 0.5:
+						sub_progress = progress * 2
+					else:
+						sub_progress = 1.0
+					totalPrintTime = (1 - sub_progress) * statisticalTotalPrintTime + sub_progress * estimatedTotalPrintTime
+
+		#self._printTimeLogger.info("{progress};{cleanedPrintTime};{estimatedTotalPrintTime};{statisticalTotalPrintTime};{totalPrintTime}".format(**locals()))
+
 		self._progress = progress
 		self._printTime = printTime
-		self._printTimeLeft = printTimeLeft
+		self._printTimeLeft = totalPrintTime - cleanedPrintTime if (totalPrintTime is not None and cleanedPrintTime is not None) else None
 
 		self._stateMonitor.setProgress({
 			"completion": self._progress * 100 if self._progress is not None else None,
 			"filepos": filepos,
 			"printTime": int(self._printTime) if self._printTime is not None else None,
-			"printTimeLeft": int(self._printTimeLeft * 60) if self._printTimeLeft is not None else None
+			"printTimeLeft": int(self._printTimeLeft) if self._printTimeLeft is not None else None
 		})
+
+		if progress:
+			progress_int = int(progress * 100)
+			if self._lastProgressReport != progress_int:
+				self._lastProgressReport = progress_int
+				self._reportPrintProgressToPlugins(progress_int)
+
 
 	def _addTemperatureData(self, temp, bedTemp):
 		currentTimeUtc = int(time.time())
@@ -388,7 +469,8 @@ class Printer():
 			self._selectedFile = {
 				"filename": filename,
 				"filesize": filesize,
-				"sd": sd
+				"sd": sd,
+				"estimatedPrintTime": None
 			}
 		else:
 			self._selectedFile = None
@@ -400,12 +482,15 @@ class Printer():
 					"date": None
 				},
 				"estimatedPrintTime": None,
+				"averagePrintTime": None,
+				"lastPrintTime": None,
 				"filament": None,
 			})
 			return
 
 		estimatedPrintTime = None
 		lastPrintTime = None
+		averagePrintTime = None
 		date = None
 		filament = None
 		if filename:
@@ -424,8 +509,18 @@ class Printer():
 						estimatedPrintTime = fileData["analysis"]["estimatedPrintTime"]
 					if "filament" in fileData["analysis"].keys():
 						filament = fileData["analysis"]["filament"]
-				if "prints" in fileData and fileData["prints"] and "last" in fileData["prints"] and fileData["prints"]["last"] and "lastPrintTime" in fileData["prints"]["last"]:
-					lastPrintTime = fileData["prints"]["last"]["lastPrintTime"]
+				if "statistics" in fileData:
+					printer_profile = self._printerProfileManager.get_current_or_default()["id"]
+					if "averagePrintTime" in fileData["statistics"] and printer_profile in fileData["statistics"]["averagePrintTime"]:
+						averagePrintTime = fileData["statistics"]["averagePrintTime"][printer_profile]
+					if "lastPrintTime" in fileData["statistics"] and printer_profile in fileData["statistics"]["lastPrintTime"]:
+						lastPrintTime = fileData["statistics"]["lastPrintTime"][printer_profile]
+
+				if averagePrintTime is not None:
+					self._selectedFile["estimatedPrintTime"] = averagePrintTime
+				elif estimatedPrintTime is not None:
+					# TODO apply factor which first needs to be tracked!
+					self._selectedFile["estimatedPrintTime"] = estimatedPrintTime
 
 		self._stateMonitor.setJobData({
 			"file": {
@@ -435,6 +530,7 @@ class Printer():
 				"date": date
 			},
 			"estimatedPrintTime": estimatedPrintTime,
+			"averagePrintTime": averagePrintTime,
 			"lastPrintTime": lastPrintTime,
 			"filament": filament,
 		})
@@ -485,9 +581,9 @@ class Printer():
 		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
 			if self._selectedFile is not None:
 				if state == self._comm.STATE_OPERATIONAL:
-					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True)
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
 				elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
-					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False)
+					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
@@ -507,7 +603,7 @@ class Printer():
 		 Triggers storage of new values for printTime, printTimeLeft and the current progress.
 		"""
 
-		self._setProgressData(self._comm.getPrintProgress(), self._comm.getPrintFilepos(), self._comm.getPrintTime(), self._comm.getPrintTimeRemainingEstimate())
+		self._setProgressData(self._comm.getPrintProgress(), self._comm.getPrintFilepos(), self._comm.getPrintTime(), self._comm.getCleanedPrintTime())
 
 	def mcZChange(self, newZ):
 		"""
@@ -562,6 +658,9 @@ class Printer():
 	def mcReceivedRegisteredMessage(self, command, output):
 		self._sendFeedbackCommandOutput(command, output)
 
+	def mcForceDisconnect(self):
+		self.disconnect()
+
 	#~~ sd file handling
 
 	def getSdFiles(self):
@@ -580,6 +679,7 @@ class Printer():
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
 		remoteName = util.getDosFilename(filename, existingSdFiles)
+		self._timeEstimationData = TimeEstimationHelper()
 		self._comm.startFileTransfer(absolutePath, filename, remoteName)
 
 		return remoteName
@@ -777,4 +877,61 @@ class StateMonitor(object):
 			"progress": self._progress,
 			"offsets": self._offsets
 		}
+
+
+class TimeEstimationHelper(object):
+
+	STABLE_THRESHOLD = 0.1
+	STABLE_COUNTDOWN = 250
+	STABLE_ROLLING_WINDOW = 250
+
+	def __init__(self):
+		import collections
+		self._distances = collections.deque([], self.__class__.STABLE_ROLLING_WINDOW)
+		self._totals = collections.deque([], self.__class__.STABLE_ROLLING_WINDOW)
+		self._sum_total = 0
+		self._count = 0
+		self._stable_counter = None
+
+	def is_stable(self):
+		return self._stable_counter is not None and self._stable_counter >= self.__class__.STABLE_COUNTDOWN
+
+	def update(self, newEstimate):
+			old_average_total = self.average_total
+
+			self._sum_total += newEstimate
+			self._totals.append(newEstimate)
+			self._count += 1
+
+			if old_average_total:
+				self._distances.append(abs(self.average_total - old_average_total))
+
+			if -1.0 * self.__class__.STABLE_THRESHOLD < self.average_distance < self.__class__.STABLE_THRESHOLD:
+				if self._stable_counter is None:
+					self._stable_counter = 0
+				else:
+					self._stable_counter += 1
+			else:
+				self._stable_counter = None
+
+	@property
+	def average_total(self):
+		if not self._count:
+			return None
+		else:
+			return self._sum_total / self._count
+
+	@property
+	def average_total_rolling(self):
+		if not self._count or self._count < self.__class__.STABLE_ROLLING_WINDOW:
+			return None
+		else:
+			return sum(self._totals) / len(self._totals)
+
+	@property
+	def average_distance(self):
+		if not self._count or self._count < self.__class__.STABLE_ROLLING_WINDOW + 1:
+			return None
+		else:
+			return sum(self._distances) / len(self._distances)
 

@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 import os
 import flask
+import math
 
 import octoprint.plugin
 import octoprint.util
@@ -114,9 +115,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		# setup job tracking across threads
 		import threading
 		self._slicing_commands = dict()
-		self._slicing_commands_mutex = threading.Lock()
 		self._cancelled_jobs = []
-		self._cancelled_jobs_mutex = threading.Lock()
+		self._job_mutex = threading.Lock()
 
 	##~~ StartupPlugin API
 
@@ -188,7 +188,10 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def is_slicer_configured(self):
 		cura_engine = s.get(["cura_engine"])
-		return cura_engine is not None and os.path.exists(cura_engine)
+		if cura_engine is not None and os.path.exists(cura_engine):
+			return True
+		else:
+			self._logger.info("Path to CuraEngine has not been configured yet or does not exist (currently set to %r), Cura will not be selectable for slicing" % cura_engine)
 
 	def get_slicer_properties(self):
 		return dict(
@@ -230,54 +233,56 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		self._save_profile(path, new_profile, allow_overwrite=allow_overwrite)
 
 	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, position=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
-		if not profile_path:
-			profile_path = s.get(["default_profile"])
-		if not machinecode_path:
-			path, _ = os.path.splitext(model_path)
-			machinecode_path = path + ".gco"
-
-		if position and isinstance(position, dict) and "x" in position and "y" in position:
-			posX = position["x"]
-			posY = position["y"]
-		else:
-			posX = None
-			posY = None
-
-		if on_progress:
-			if not on_progress_args:
-				on_progress_args = ()
-			if not on_progress_kwargs:
-				on_progress_kwargs = dict()
-
-		self._cura_logger.info("### Slicing %s to %s using profile stored at %s" % (model_path, machinecode_path, profile_path))
-
-		engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
-
-		executable = s.get(["cura_engine"])
-		if not executable:
-			return False, "Path to CuraEngine is not configured "
-
-		working_dir, _ = os.path.split(executable)
-		args = ['"%s"' % executable, '-v', '-p']
-		for k, v in engine_settings.items():
-			args += ["-s", '"%s=%s"' % (k, str(v))]
-		args += ['-o', '"%s"' % machinecode_path, '"%s"' % model_path]
-
-		import sarge
-		command = " ".join(args)
-		self._logger.info("Running %r in %s" % (command, working_dir))
 		try:
-			p = sarge.run(command, cwd=working_dir, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
-			try:
-				with self._slicing_commands_mutex:
-					self._slicing_commands[machinecode_path] = p.commands[0]
+			with self._job_mutex:
+				if not profile_path:
+					profile_path = s.get(["default_profile"])
+				if not machinecode_path:
+					path, _ = os.path.splitext(model_path)
+					machinecode_path = path + ".gco"
 
+				if position and isinstance(position, dict) and "x" in position and "y" in position:
+					posX = position["x"]
+					posY = position["y"]
+				else:
+					posX = None
+					posY = None
+
+				if on_progress:
+					if not on_progress_args:
+						on_progress_args = ()
+					if not on_progress_kwargs:
+						on_progress_kwargs = dict()
+
+				self._cura_logger.info("### Slicing %s to %s using profile stored at %s" % (model_path, machinecode_path, profile_path))
+
+				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
+
+				executable = s.get(["cura_engine"])
+				if not executable:
+					return False, "Path to CuraEngine is not configured "
+
+				working_dir, _ = os.path.split(executable)
+				args = ['"%s"' % executable, '-v', '-p']
+				for k, v in engine_settings.items():
+					args += ["-s", '"%s=%s"' % (k, str(v))]
+				args += ['-o', '"%s"' % machinecode_path, '"%s"' % model_path]
+
+				import sarge
+				command = " ".join(args)
+				self._logger.info("Running %r in %s" % (command, working_dir))
+
+				p = sarge.run(command, cwd=working_dir, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
+				self._slicing_commands[machinecode_path] = p.commands[0]
+
+			try:
 				layer_count = None
 				step_factor = dict(
 					inset=0,
 					skin=1,
 					export=2
 				)
+				analysis = None
 				while p.returncode is None:
 					line = p.stderr.readline(timeout=0.5)
 					if not line:
@@ -331,17 +336,50 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 										continue
 									on_progress_kwargs["_progress"] = (step_factor[step] * layer_count + current_layer) / (layer_count * 3)
 									on_progress(*on_progress_args, **on_progress_kwargs)
+
+						elif line.startswith("Print time:"):
+							try:
+								print_time = int(line[len("Print time:"):].strip())
+								if analysis is None:
+									analysis = dict()
+								analysis["estimatedPrintTime"] = print_time
+							except:
+								pass
+
+						elif line.startswith("Filament:") or line.startswith("Filament2:"):
+							if line.startswith("Filament:"):
+								filament_str = line[len("Filament:"):].strip()
+								tool_key = "tool0"
+							else:
+								filament_str = line[len("Filament2:"):].strip()
+								tool_key = "tool1"
+
+							try:
+								filament = int(filament_str)
+								if analysis is None:
+									analysis = dict()
+								if not "filament" in analysis:
+									analysis["filament"] = dict()
+								if not tool_key in analysis["filament"]:
+									analysis["filament"][tool_key] = dict()
+								analysis["filament"][tool_key]["length"] = filament
+								if "filamentDiameter" in engine_settings:
+									radius_in_cm = float(int(engine_settings["filamentDiameter"]) / 10000.0) / 2.0
+									filament_in_cm = filament / 10.0
+									analysis["filament"][tool_key]["volume"] = filament_in_cm * math.pi * radius_in_cm * radius_in_cm
+							except:
+								pass
 			finally:
 				p.close()
 
-			with self._cancelled_jobs_mutex:
+			with self._job_mutex:
 				if machinecode_path in self._cancelled_jobs:
 					self._cura_logger.info("### Cancelled")
 					raise octoprint.slicing.SlicingCancelled()
 
 			self._cura_logger.info("### Finished, returncode %d" % p.returncode)
 			if p.returncode == 0:
-				return True, None
+				return True, dict(analysis=analysis)
 			else:
 				self._logger.warn("Could not slice via Cura, got return code %r" % p.returncode)
 				return False, "Got returncode %r" % p.returncode
@@ -353,21 +391,21 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			return False, "Unknown error, please consult the log file"
 
 		finally:
-			with self._cancelled_jobs_mutex:
+			with self._job_mutex:
 				if machinecode_path in self._cancelled_jobs:
 					self._cancelled_jobs.remove(machinecode_path)
-			with self._slicing_commands_mutex:
 				if machinecode_path in self._slicing_commands:
 					del self._slicing_commands[machinecode_path]
 
 			self._cura_logger.info("-" * 40)
 
 	def cancel_slicing(self, machinecode_path):
-		with self._slicing_commands_mutex:
+		with self._job_mutex:
 			if machinecode_path in self._slicing_commands:
-				with self._cancelled_jobs_mutex:
-					self._cancelled_jobs.append(machinecode_path)
-				self._slicing_commands[machinecode_path].terminate()
+				self._cancelled_jobs.append(machinecode_path)
+				command = self._slicing_commands[machinecode_path]
+				if command is not None:
+					command.terminate()
 				self._logger.info("Cancelled slicing of %s" % machinecode_path)
 
 	def _load_profile(self, path):

@@ -34,6 +34,8 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		self._eventManager = eventManager
 		self._pluginManager = pluginManager
 
+		self._remoteAddress = None
+
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
 		if forwardedFor is not None:
@@ -41,8 +43,8 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		return info.ip
 
 	def on_open(self, info):
-		remoteAddress = self._getRemoteAddress(info)
-		self._logger.info("New connection from client: %s" % remoteAddress)
+		self._remoteAddress = self._getRemoteAddress(info)
+		self._logger.info("New connection from client: %s" % self._remoteAddress)
 
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
 		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY, "version": octoprint.server.VERSION, "display_version": octoprint.server.DISPLAY_VERSION})
@@ -52,20 +54,20 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		octoprint.timelapse.registerCallback(self)
 		self._pluginManager.register_client(self)
 
-		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": remoteAddress})
+		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
 			self._eventManager.subscribe(event, self._onEvent)
 
 		octoprint.timelapse.notifyCallbacks(octoprint.timelapse.current)
 
 	def on_close(self):
-		self._logger.info("Client connection closed")
+		self._logger.info("Client connection closed: %s" % self._remoteAddress)
 		self._printer.unregisterCallback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregisterCallback(self)
 		self._pluginManager.unregister_client(self)
 
-		self._eventManager.fire(Events.CLIENT_CLOSED)
+		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
 			self._eventManager.unsubscribe(event, self._onEvent)
 
@@ -137,4 +139,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		self.sendEvent(event, payload)
 
 	def _emit(self, type, payload):
-		self.send({type: payload})
+		try:
+			self.send({type: payload})
+		except Exception as e:
+			self._logger.warn("Could not send message to client %s: %s" % (self._remoteAddress, e.message))

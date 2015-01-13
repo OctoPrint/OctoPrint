@@ -45,8 +45,10 @@ default_settings = {
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",
 			"schemeHeader": "X-Scheme",
+			"hostHeader": "X-Forwarded-Host",
 			"prefixFallback": "",
-			"schemeFallback": ""
+			"schemeFallback": "",
+			"hostFallback": ""
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
@@ -84,7 +86,8 @@ default_settings = {
 		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
-		"repetierTargetTemp": False
+		"repetierTargetTemp": False,
+		"keyboardControl": True
 	},
 	"folder": {
 		"uploads": None,
@@ -110,6 +113,10 @@ default_settings = {
 	"printerParameters": {
 		"pauseTriggers": [],
 		"defaultExtrusionLength": 5
+	},
+	"appearance": {
+		"name": "",
+		"color": "default"
 	},
 	"controls": [],
 	"system": {
@@ -158,10 +165,21 @@ default_settings = {
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
+			"movementSpeed": {
+				"x": 6000,
+				"y": 6000,
+				"z": 200,
+				"e": 300
+			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
 			"smoothieTemperatureReporting": False,
-			"extendedSdFileList": False
+			"extendedSdFileList": False,
+			"throttle": 0.01,
+			"waitOnLongMoves": False,
+			"rxBuffer": 64,
+			"txBuffer": 40,
+			"commandBuffer": 4
 		}
 	}
 }
@@ -279,15 +297,6 @@ class Settings(object):
 						default_profile["volume"]["depth"] = bed_dimensions["y"]
 				del self._config["printerParameters"]["bedDimensions"]
 
-			dirty = True
-
-		if "appearance" in self._config:
-			if "name" in self._config["appearance"]:
-				default_profile["name"] = self._config["appearance"]["name"]
-			if "color" in self._config["appearance"]:
-				default_profile["color"] = self._config["appearance"]["color"]
-
-			del self._config["appearance"]
 			dirty = True
 
 		if dirty:
