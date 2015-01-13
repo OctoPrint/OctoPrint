@@ -1,0 +1,108 @@
+<div class="accordion-group" id="files_accordion">
+    <div class="accordion-heading">
+        <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> {{ _('Files') }}</a>
+
+        <div class="settings-trigger accordion-heading-button btn-group">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                <span class="icon-wrench"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
+                <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
+                <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
+                <li class="divider"></li>
+                <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show GCode files') }}</a></li>
+                <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show STL files') }}</a></li>
+                {% if enableSdSupport %}
+                    <li class="divider"></li>
+                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
+                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
+                {% endif %}
+                <li class="divider"></li>
+                <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
+            </ul>
+        </div>
+
+        {% if enableSdSupport %}
+            <div class="sd-trigger accordion-heading-button btn-group">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                    <span class="icon-sd-black-14"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> {{ _('Initialize SD card') }}</a></li>
+                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> {{ _('Refresh SD files') }}</a></li>
+                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> {{ _('Release SD card') }}</a></li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+    <div class="accordion-body collapse in overflow_visible" id="files">
+        <div class="accordion-inner">
+            <form class="form-search">
+                <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
+            </form>
+            <div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
+                <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+
+                <script type="text/html" id="files_template_machinecode">
+                    <div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
+                    <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
+                    <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+                    <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
+                    <div class="btn-group action-buttons">
+                        <div class="btn btn-mini toggleAdditionalData" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }"><i class="icon-chevron-down"></i></div>
+                        <a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="{{ _('Download') }}"></i></a>
+                        <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
+                        <div class="btn btn-mini" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-folder-open" title="{{ _('Load') }}"></i></div>
+                        <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-print" title="{{ _('Load and Print') }}"></i></div>
+                    </div>
+                </script>
+
+                <script type="text/html" id="files_template_model">
+                    <div class="title muted" data-bind="text: name"></div>
+                    <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
+                    <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+                    <div class="btn-group action-buttons">
+                        <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
+                        <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSlicing($data)) { $root.sliceFile($data); } else { return; } }, css: {disabled: !$root.enableSlicing($data)}"><i class="icon-magic" title="{{ _('Slice') }}"></i></div>
+                    </div>
+                </script>
+
+                <script type="text/html" id="files_template_folder">
+                    <div class="title" data-bind="text: name"></div>
+                </script>
+            </div>
+            <div class="muted text-right">
+                <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span></small>
+            </div>
+            <div style="display: none;" data-bind="visible: loginState.isUser">
+                <div class="row-fluid upload-buttons">
+                    {% if enableSdSupport %}
+                        <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                            <i class="icon-upload-alt icon-white"></i>
+                                            <span>{{ _('Upload') }}</span>
+                                            <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                        </span>
+                        <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
+                                            <i class="icon-upload-alt icon-white"></i>
+                                            <span>{{ _('Upload to SD') }}</span>
+                                            <input id="gcode_upload_sd" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
+                                        </span>
+                    {% else %}
+                        <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                            <i class="icon-upload-alt icon-white"></i>
+                                            <span>{{ _('Upload') }}</span>
+                                            <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                        </span>
+                    {% endif %}
+                </div>
+                <div id="gcode_upload_progress" class="progress" style="width: 100%;">
+                    <div class="bar" style="width: 0%"></div>
+                </div>
+                <div>
+                    <small>{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
