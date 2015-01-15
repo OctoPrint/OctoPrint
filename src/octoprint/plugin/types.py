@@ -63,20 +63,13 @@ class AssetPlugin(Plugin):
 
 	def get_asset_folder(self):
 		"""
-		Defines the folder where the plugin stores its static assets as defined in ``get_assets``. Usually an
-		implementation such as
-
-		.. code-block:: python
-
-		   def get_asset_folder(self):
-		       import os
-		       return os.path.join(os.path.dirname(os.path.realpath(__file__)), "static")
-
-		should be sufficient here. This way, assets can be put into a sub folder ``static`` in the plugin directory.
+		Defines the folder where the plugin stores its static assets as defined in ``get_assets``. Override this if
+		your plugin stores its assets at some other place than the ``static`` sub folder in the plugin base directory.
 
 		:return: the absolute path to the folder where the plugin stores its static assets
 		"""
-		return None
+		import os
+		return os.path.join(self._basefolder, "static")
 
 	def get_assets(self):
 		"""
@@ -108,15 +101,168 @@ class AssetPlugin(Plugin):
 
 		:return: a dictionary describing the static assets to publish for the plugin
 		"""
-		return []
+		return dict()
 
 
 class TemplatePlugin(Plugin):
+	"""
+	Using the ``TemplatePlugin`` mixin plugins may inject their own components into the OctoPrint web interface.
+
+	Currently OctoPrint supports the following types of injections:
+
+	Navbar
+	   The right part of the navigation bar located at the top of the UI can be enriched with additional links. Note that
+	   with the current implementation, plugins will always be located *to the left* of the existing links.
+	Sidebar
+	   The left side bar containing Connection, State and Files sections can be enriched with additional sections. Note
+	   that with the current implementations, plugins will always be located *beneath* the existing sections.
+	Tabs
+	   The available tabs of the main part of the interface may be extended with additional tabs originating from within
+	   plugins. Note that with the current implementation, plugins will always be located *to the right* of the existing
+	   tabs.
+	Settings
+	   Plugins may inject a dialog into the existing settings view. Note that with the current implementations, plugins
+	   will always be listed beneath the "Plugins" header in the settings link list, ordered alphabetically after
+	   their displayed name.
+
+	.. figure:: ../images/template-plugin-types-main.png
+	   :align: center
+	   :alt: Template injection types in the main part of the interface
+
+	   Template injection types in the main part of the interface
+
+	.. figure:: ../images/template-plugin-types-settings.png
+	   :align: center
+	   :alt: Template injection types in the settings
+
+	   Template injection types in the settings
+
+	Which components a plugin supplies is controlled by a number of special template variables returned by the overridden
+	``get_template_vars`` method. The following special keys are supported:
+
+	_settings
+	   Configures the settings component to inject. The value must be a dictionary, supported values are the following:
+
+	   name
+	      The name under which to include the settings pane, will be visible in the navigation tree on the left of the
+	      settings dialog
+	   custom_bindings
+	      A boolean value indicating whether the default settings view model should be bound to the settings pane (``false``, default)
+	      or if a custom binding will be used by the plugin (``true``)
+	   data_bind
+	      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
+	      the container based on internal state if necessary. Note that if you include this and set ``custom_bindings``
+	      to ``True``, you need to also supply ``allowBindings: true`` as part of your custom data binding, otherwise
+	      it won't work.
+
+	   The included settings dialog template file must be called ``<plugin name>_settings.jinja2`` (e.g. ``myplugin_settings.jinja2``).
+	   The template will be already included in the necessary wrapper divs, you just need to supply the pure content.
+	_tab
+	   Configures the tab component to inject. The value must be a dictionary, supported values are the following:
+
+	   name
+	      The name under which to include the tab, will be visible in the list of tabs on the top of the main view
+	   data_bind
+	      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
+	      the container based on internal state if necessary. Note that if you include this and set ``custom_bindings``
+	      to ``True``, you need to also supply ``allowBindings: true`` as part of your custom data binding, otherwise
+	      it won't work.
+
+	   The template included into the tab pane section must be called ``<plugin name>_tab.jinja2`` (e.g. ``myplugin_tab.jinja2``).
+	   The template will be already included in the necessary wrapper divs, you just need to supply the pure content.
+	_sidebar
+	   Configures the sidebar component to inject. The value must be a dictionary, supported values are the following:
+
+	   name
+	      The name of the sidebar entry
+	   icon
+	      Icon to use for the sidebar header, should be the name of a Font Awesome icon without the leading ``icon-`` part
+	   header_addon
+	      Additional template to include in the head section of the sidebar item. For an example of this, see the additional
+	      options included in the "Files" section
+	   data_bind
+	      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
+	      the container based on internal state if necessary. Note that if you include this and set ``custom_bindings``
+	      to ``True``, you need to also supply ``allowBindings: true`` as part of your custom data binding, otherwise
+	      it won't work.
+
+	   The template included into the sidebar section must be called ``<plugin name>_sidebar.jinja2`` (e.g. ``myplugin_sidebar.jinja2``).
+	   The template will be already included in the necessary wrapper divs, you just need to supply the pure content.
+	_navbar
+	   Configures the navbar component to inject. The value must be an empty dictionary.
+
+	   The template included into the sidebar section must be called ``<plugin name>_navbar.jinja2``
+
+	The following is an example for a simple plugin which injects all four types of templates into the interfaces:
+
+	``helloworld/__init__.py``
+
+	.. code-block:: python
+
+	   import octoprint.plugin
+
+	   class HelloWorldPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.AssetPlugin):
+	       def get_template_vars(self):
+	           return dict(
+	               _settings=dict(name="Hello World"),
+	               _tab=dict(name="Hello World", custom_bindings=True, data_bind="allowBindings: true, visible: self.loginState.isUser()"),
+	               _sidebar=dict(name="Hello World", icon="gear"),
+	               _navbar=dict()
+	           )
+
+	       def get_assets(self):
+	           return dict(
+	               js=["js/helloworld.js"]
+	           )
+
+	   __plugin_name__ = "Hello World"
+	   __plugin_version__ = "1.0"
+	   __plugin_implementations__ = [HelloWorldPlugin()]
+
+	``helloworld/templates/helloworld_settings.jinja2``
+
+	.. code-block:: html+jinja
+
+	   <h1>Hello World!</h1>
+
+	   This is a custom settings pane.
+
+	``helloworld/templates/helloworld_tab.jinja2``
+
+	.. code-block:: html+jinja
+
+	   <h1>Hello World!</h1>
+
+	   This is a custom tab.
+
+	``helloworld/templates/helloworld_sidebar.jinja2``
+
+	.. code-block:: html+jinja
+
+	   Hello World! This is a custom side bar.
+
+	``helloworld/templates/helloworld_navbar.jinja2``
+
+	.. code-block:: html+jinja
+
+	   <li>
+	     <a class="pull-right" href="http://www.example.com"><i class="icon-gear"></i> {{ _('Hello World!') }}</a>
+	   </li>
+
+	"""
+
 	def get_template_vars(self):
 		return dict()
 
 	def get_template_folder(self):
-		return None
+		"""
+		Defines the folder where the plugin stores its templates. Override this if your plugin stores its templates at
+		some other place than the ``templates`` sub folder in the plugin base directory.
+
+		:return: the absolute path to the folder where the plugin stores its jinja2 templates
+		"""
+		import os
+		return os.path.join(self._basefolder, "templates")
 
 
 class SimpleApiPlugin(Plugin):

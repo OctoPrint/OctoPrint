@@ -418,9 +418,9 @@ $(function() {
         settingsViewModel.requestData(function() {
             ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
 
-            ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
-            ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
-            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
+            ko.applyBindings(connectionViewModel, document.getElementById("connection_wrapper"));
+            ko.applyBindings(printerStateViewModel, document.getElementById("state_wrapper"));
+            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_wrapper"));
             ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
             ko.applyBindings(controlViewModel, document.getElementById("control"));
             ko.applyBindings(terminalViewModel, document.getElementById("term"));
@@ -444,24 +444,31 @@ $(function() {
 
             // apply bindings and signal startup
             _.each(additionalViewModels, function(additionalViewModel) {
-                if (additionalViewModel[1] === undefined) {
+                var viewModel = additionalViewModel[0];
+                var targets = additionalViewModel[1];
+
+                if (targets === undefined) {
                     return;
                 }
 
-                if (additionalViewModel[0].hasOwnProperty("onBeforeBinding")) {
-                    additionalViewModel[0].onBeforeBinding();
+                if (!Array.isArray(targets)) {
+                    targets = [targets];
                 }
 
-                // model instance, target container
-                try {
-                    ko.applyBindings(additionalViewModel[0], additionalViewModel[1]);
-                } catch (exc) {
-                    console.log("Could not apply bindings for additional view model " + additionalViewModel[0] + ": " + exc.message);
+                if (viewModel.hasOwnProperty("onBeforeBinding")) {
+                    viewModel.onBeforeBinding();
                 }
 
+                _.each(targets, function(target) {
+                    try {
+                        ko.applyBindings(viewModel, target);
+                    } catch (exc) {
+                        console.log("Could not apply bindings for additional view model " + viewModel + ": " + exc.message);
+                    }
+                });
 
-                if (additionalViewModel[0].hasOwnProperty("onAfterBinding")) {
-                    additionalViewModel[0].onAfterBinding();
+                if (viewModel.hasOwnProperty("onAfterBinding")) {
+                    viewModel.onAfterBinding();
                 }
             });
         });
@@ -517,14 +524,14 @@ $(function() {
             }
         });
 
-        $(".accordion-toggle[href='#files']").click(function() {
+        $(".accordion-toggle[data-target='#files']").click(function() {
             var files = $("#files");
             if (files.hasClass("in")) {
                 files.removeClass("overflow_visible");
             } else {
                 setTimeout(function() {
                     files.addClass("overflow_visible");
-                }, 1000);
+                }, 100);
             }
         });
 

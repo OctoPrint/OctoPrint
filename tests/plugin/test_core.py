@@ -21,16 +21,16 @@ class PluginTestCase(unittest.TestCase):
 	def test_plugin_loading(self):
 		self.assertEquals(4, len(self.plugin_manager.plugins))
 		self.assertEquals(1, len(self.plugin_manager.plugin_hooks))
-		self.assertEquals(2, len(self.plugin_manager.plugin_implementations))
+		self.assertEquals(2, len(self.plugin_manager.plugin_implementations_by_type))
 
 		self.assertTrue("octoprint.core.startup" in self.plugin_manager.plugin_hooks)
 		self.assertEquals(1, len(self.plugin_manager.plugin_hooks["octoprint.core.startup"]))
 
-		self.assertTrue(octoprint.plugin.StartupPlugin in self.plugin_manager.plugin_implementations)
-		self.assertEquals(2, len(self.plugin_manager.plugin_implementations[octoprint.plugin.StartupPlugin]))
+		self.assertTrue(octoprint.plugin.StartupPlugin in self.plugin_manager.plugin_implementations_by_type)
+		self.assertEquals(2, len(self.plugin_manager.plugin_implementations_by_type[octoprint.plugin.StartupPlugin]))
 
-		self.assertTrue(octoprint.plugin.SettingsPlugin in self.plugin_manager.plugin_implementations)
-		self.assertEquals(2, len(self.plugin_manager.plugin_implementations[octoprint.plugin.SettingsPlugin]))
+		self.assertTrue(octoprint.plugin.SettingsPlugin in self.plugin_manager.plugin_implementations_by_type)
+		self.assertEquals(2, len(self.plugin_manager.plugin_implementations_by_type[octoprint.plugin.SettingsPlugin]))
 
 	def test_get_plugin(self):
 		plugin = self.plugin_manager.get_plugin("hook_plugin")

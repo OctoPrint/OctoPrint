@@ -1,0 +1,72 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/modernizr.custom.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore-min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore.string.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.mapping-latest.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/babel.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/avltree.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modalmanager.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modal.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-slider.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.core.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.widget.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.mouse.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.flot.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.iframe-transport.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.fileupload.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.slimscroll.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.qrcode.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/sockjs-0.3.4.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment-with-locales.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/pusher.color.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/detectmobilebrowser.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/md5.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/pnotify.min.js') }}"></script>
+
+<!-- Include OctoPrint files -->
+<!-- TODO: merge/minimize in the future -->
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/appearance.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/connection.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/control.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/firstrun.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/gcode.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/files.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/loginstate.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/navigation.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/printerstate.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/printerprofiles.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/settings.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/slicing.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/temperature.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
+
+<!-- Plugin files -->
+{% for name, assets in assetPlugins.items() %}
+    {% if "js" in assets %}
+        {% for asset in assets["js"] %}
+            <script type="text/javascript" src="{{ url_for('plugin_assets', name=name, filename=asset) }}"></script>
+        {% endfor %}
+    {% endif %}
+{% endfor %}
+<!-- /Plugin files -->
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/app/main.js') }}"></script>
+<!-- /Include OctoPrint files -->
+
+<!-- Include i18n language files -->
+{% if g.locale != 'en' %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/i18n/%s.js' % g.locale) }}"></script>
+{% endif %}
+<!-- /Include i18n language files -->
+
+<script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>

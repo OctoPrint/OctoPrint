@@ -111,41 +111,78 @@ def index():
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 
 	plugin_vars = dict()
-	plugin_includes = dict()
+	plugin_includes_navbar = []
+	plugin_includes_sidebar = []
+	plugin_includes_tabs = []
+	plugin_includes_settings = []
+	plugin_names = template_plugins.keys()
 	for name, implementation in template_plugins.items():
 		vars = implementation.get_template_vars()
+		if not isinstance(vars, dict):
+			continue
 
-		plugin_data = dict()
+		if "_navbar" in vars and isinstance(vars["_navbar"], dict):
+			data = dict(vars["_navbar"])
+			data["_div"] = "navbar_plugin_" + name
+			data["_template"] = name + "_navbar.jinja2"
+			plugin_includes_navbar.append(data)
+			del vars["_navbar"]
 
-		if "_settings" in vars and "name" in vars["_settings"]:
-			plugin_data["_settings"] = dict(vars["_settings"])
-			plugin_data["_settings"]["_div"] = "settings_plugin_" + name
-			plugin_data["_settings"]["_template"] = name + "_settings.jinja2"
-			del vars["_settings"]
-
-		if "_tab" in vars and "name" in vars["_tab"]:
-			plugin_data["_tab"] = dict(vars["_tab"])
-			plugin_data["_tab"]["_div"] = "tab_plugin_" + name
-			plugin_data["_tab"]["_template"] = name + "_tab.jinja2"
-			del vars["_tab"]
-
-		if "_sidebar" in vars and "name" in vars["_sidebar"]:
-			plugin_data["_sidebar"] = vars["_sidebar"]
-			plugin_data["_sidebar"]["_div"] = "sidebar_plugin_" + name
-			plugin_data["_sidebar"]["_template"] = name + "_sidebar.jinja2"
+		if "_sidebar" in vars and isinstance(vars["_sidebar"], dict) and "name" in vars["_sidebar"]:
+			data = dict(vars["_sidebar"])
+			data["_div"] = "sidebar_plugin_" + name
+			data["_template"] = name + "_sidebar.jinja2"
+			plugin_includes_sidebar.append((data["name"], data))
 			del vars["_sidebar"]
 
-		if len(plugin_data):
-			plugin_includes[name] = plugin_data
+		if "_tab" in vars and isinstance(vars["_tab"], dict) and "name" in vars["_tab"]:
+			data = dict(vars["_tab"])
+			data["_div"] = "tab_plugin_" + name
+			data["_template"] = name + "_tab.jinja2"
+			plugin_includes_tabs.append((data["name"], data))
+			del vars["_tab"]
+
+		if "_settings" in vars and isinstance(vars["_settings"], dict) and "name" in vars["_settings"]:
+			data = dict(vars["_settings"])
+			data["_div"] = "settings_plugin_" + name
+			data["_template"] = name + "_settings.jinja2"
+			plugin_includes_settings.append((data["name"], data))
+			del vars["_settings"]
 
 		for var_name, var_value in vars.items():
 			plugin_vars["plugin_" + name + "_" + var_name] = var_value
+
+	#~~ navbar
+
+	navbar_entries = plugin_includes_navbar + [
+		dict(_template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin"),
+		dict(_template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin"),
+		dict(_template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"])
+	]
+
+	#~~ sidebar
+
+	sidebar_entries = [
+		(gettext("Connection"), dict(_template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isAdmin")),
+		(gettext("State"), dict(_template="sidebar/state.jinja2", _div="state", icon="info-sign")),
+		(gettext("Files"), dict(_template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], header_addon="sidebar/files_header.jinja2"))
+	] + plugin_includes_sidebar
+
+	#~~ tabs
+
+	tab_entries = [
+		(gettext("Temperature"), dict(_template="tabs/temperature.jinja2", _div="temp")),
+		(gettext("Control"), dict(_template="tabs/control.jinja2", _div="control")),
+		(gettext("GCode Viewer"), dict(_template="tabs/gcodeviewer.jinja2", _div="gcode")),
+		(gettext("Terminal"), dict(_template="tabs/terminal.jinja2", _div="term")),
+		(gettext("Timelapse"), dict(_template="tabs/timelapse.jinja2", _div="timelapse"))
+	] + plugin_includes_tabs
 
 	#~~ settings dialog
 
 	settings_entries = [
 		(gettext("Printer"), None),
-		(gettext("Serial Connection"), dict(_template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection", _active=True)),
+		(gettext("Serial Connection"), dict(_template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection")),
 		(gettext("Printer Profiles"), dict(_template="dialogs/settings/printerprofiles.jinja2", _div="settings_printerProfiles")),
 		(gettext("Temperatures"), dict(_template="dialogs/settings/temperatures.jinja2", _div="settings_temperature")),
 		(gettext("Terminal Filters"), dict(_template="dialogs/settings/terminalfilters.jinja2", _div="settings_terminalFilters")),
@@ -159,14 +196,9 @@ def index():
 		(gettext("Appearance"), dict(_template="dialogs/settings/appearance.jinja2", _div="settings_appearance")),
 		(gettext("Logs"), dict(_template="dialogs/settings/logs.jinja2", _div="settings_logs", data_bind="allowBindings: false"))
 	]
-	if len(plugin_includes):
-		plugin_tuples = []
-		for name, data in plugin_includes.items():
-			if "_settings" in data:
-				plugin_tuples.append((data["_settings"]["name"], data["_settings"]))
-		if len(plugin_tuples):
-			settings_entries.append((gettext("Plugins"), None))
-			settings_entries.extend(sorted(plugin_tuples, key=lambda x: x[0]))
+	if len(plugin_includes_settings):
+		settings_entries.append((gettext("Plugins"), None))
+		settings_entries.extend(sorted(plugin_includes_settings, key=lambda x: x[0]))
 
 	#~~ prepare full set of template vars for rendering
 
@@ -186,7 +218,11 @@ def index():
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
+		navbarEntries=navbar_entries,
+		sidebarEntries=sidebar_entries,
+		tabEntries=tab_entries,
 		settingsEntries=settings_entries,
+		pluginNames=plugin_names,
 		assetPlugins=asset_plugin_urls,
 	)
 	render_kwargs.update(plugin_vars)
@@ -308,6 +344,16 @@ class Server():
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
+
+		pluginManager.initialize_implementations(dict(
+		    printer_profile_manager=printerProfileManager,
+		    event_manager=eventManager,
+		    analysis_queue=analysisQueue,
+		    slicing_manager=slicingManager,
+		    storage_managers=storage_managers,
+		    file_manager=fileManager,
+		    app_session_manager=appSessionManager
+		))
 
 		# configure additional template folders for jinja2
 		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
