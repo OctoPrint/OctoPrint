@@ -352,7 +352,8 @@ class Server():
 		    slicing_manager=slicingManager,
 		    storage_managers=storage_managers,
 		    file_manager=fileManager,
-		    app_session_manager=appSessionManager
+		    app_session_manager=appSessionManager,
+		    plugin_manager=pluginManager
 		))
 
 		# configure additional template folders for jinja2
