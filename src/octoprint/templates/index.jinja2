@@ -22,7 +22,7 @@
                                 {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <li id="{{ data._div }}"
                                     data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% else %}allowBindings: true{% endif %}"
-                                    {% if "additional_classes" in data %}class="{{ data.additional_classes|join(' ') }}"{% endif %}
+                                    {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}
                                     {% if "style" in data %}style="{{ data.style }}"{% endif %}
                                         >
                                     {% include data._template ignore missing %}
