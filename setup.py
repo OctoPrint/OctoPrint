@@ -283,7 +283,7 @@ def params():
 
 	packages = find_packages(where="src")
 	package_dir = {"octoprint": "src/octoprint"}
-	package_data = {"octoprint": package_data_dirs('src/octoprint', ['static', 'templates', 'plugins'])}
+	package_data = {"octoprint": package_data_dirs('src/octoprint', ['static', 'templates', 'plugins', 'translations'])}
 
 	include_package_data = True
 	zip_safe = False
