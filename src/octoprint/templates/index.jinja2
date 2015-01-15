@@ -123,11 +123,9 @@
         <!-- End of overlays -->
 
         <!-- Generic plugin template files -->
-        {%  if templatePlugins %}
-            {% for plugin_name in pluginNames %}
-                {% include plugin_name + ".jinja2" ignore missing %}
-            {% endfor %}
-        {% endif %}
+        {% for plugin_name in pluginNames %}
+            {% include plugin_name + ".jinja2" ignore missing %}
+        {% endfor %}
         <!-- End of generic plugin template files -->
 
         {% include 'javascripts.jinja2' %}
