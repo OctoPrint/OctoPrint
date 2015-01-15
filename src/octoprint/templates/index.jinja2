@@ -23,7 +23,7 @@
                                 <li id="{{ data._div }}"
                                     data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% else %}allowBindings: true{% endif %}"
                                     {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}
-                                    {% if "style" in data %}style="{{ data.style }}"{% endif %}
+                                    {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}
                                         >
                                     {% include data._template ignore missing %}
                                 </li>
@@ -74,7 +74,7 @@
                             <li id="{{ data._div }}_link"
                                 class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
                                 data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" in data and data["custom_bindings"] %}allowBindings: true{% endif %}"
-                                {% if "link_style" in data %} style="{{ data.link_style }}" {% elif "style" in data %} style="{{ data.style }}" {% endif %}
+                                {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                     >
                                     <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
                             </li>
@@ -88,7 +88,7 @@
                             <div id="{{ data._div }}"
                                  class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
                                  data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" in data and data["custom_bindings"] %}allowBindings: true{% endif %}"
-                                 {% if "content_style" in data %} style="{{ data.content_style }}" {% elif "style" in data %} style="{{ data.style }}" {% endif %}
+                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                     >
                                         {% include data._template ignore missing %}
                             </div>
