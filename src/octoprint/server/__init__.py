@@ -13,6 +13,7 @@ from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded
 from flask.ext.babel import Babel
 from babel import Locale
 from watchdog.observers import Observer
+from urlparse import urlparse
 
 import os
 import logging
@@ -111,9 +112,16 @@ def index():
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 	template_plugin_names = template_plugins.keys()
 
+	settingsWebcamStream = settings().get(["webcam", "stream"])
+	if settingsWebcamStream and settingsWebcamStream[0] == ":":
+		urlParsed = urlparse(request.url)
+		webcamStream = urlParsed.scheme + '://' + urlParsed.hostname + settingsWebcamStream
+	else:
+		webcamStream = settingsWebcamStream
+
 	return render_template(
 		"index.jinja2",
-		webcamStream=settings().get(["webcam", "stream"]),
+		webcamStream=webcamStream,
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["gcodeViewer", "enabled"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
