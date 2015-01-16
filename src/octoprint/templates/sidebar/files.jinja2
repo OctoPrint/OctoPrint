@@ -36,7 +36,7 @@
     <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span></small>
 </div>
 <div style="display: none;" data-bind="visible: loginState.isUser">
-    <div class="row-fluid upload-buttons">
+    <div class="row upload-buttons">
         {% if enableSdSupport %}
             <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
