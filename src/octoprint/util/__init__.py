@@ -9,6 +9,7 @@ import time
 import re
 import tempfile
 import logging
+import shutil
 from flask import make_response
 
 from octoprint.settings import settings, default_settings
@@ -182,7 +183,8 @@ def safeRename(old, new, throw_error=False):
 				raise e
 	else:
 		# on anything else than windows it's ooooh so much easier...
-		os.rename(old, new)
+		# because of shutil's high level, maybe win32-specific code isn't needed anymore
+		shutil.move(old, new)
 
 
 def silentRemove(file):
