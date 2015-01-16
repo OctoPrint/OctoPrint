@@ -183,7 +183,6 @@ def safeRename(old, new, throw_error=False):
 				raise e
 	else:
 		# on anything else than windows it's ooooh so much easier...
-		# because of shutil's high level, maybe win32-specific code isn't needed anymore
 		shutil.move(old, new)
 
 
