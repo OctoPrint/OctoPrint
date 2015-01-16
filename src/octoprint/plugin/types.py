@@ -199,9 +199,7 @@ class TemplatePlugin(Plugin):
 		      or if a custom binding will be used by the plugin (``true``, default).
 		   data_bind
 		      Additional knockout data bindings to apply to the navbar entry, can be used to add further behaviour to
-		      the container based on internal state if necessary. Note that if you include this and set ``custom_bindings``
-		      to ``True``, you need to also supply ``allowBindings: true`` as part of your custom data binding, otherwise
-		      it won't work.
+		      the container based on internal state if necessary.
 		   classes
 		      Additional classes to apply to the navbar entry, as a list of individual classes
 		      (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct format by the template engine.
@@ -231,9 +229,7 @@ class TemplatePlugin(Plugin):
 		      or if a custom binding will be used by the plugin (``true``, default).
 		   data_bind
 		      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
-		      the container based on internal state if necessary. Note that if you include this and set ``custom_bindings``
-		      to ``True``, you need to also supply ``allowBindings: true`` as part of your custom data binding, otherwise
-		      it won't work.
+		      the container based on internal state if necessary.
 		   classes
 		      Additional classes to apply to both the wrapper around the sidebar box as well as the content pane itself, as a
 		      list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
@@ -267,9 +263,7 @@ class TemplatePlugin(Plugin):
 		      in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
 		   data_bind
 		      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
-		      the container based on internal state if necessary. Note that if you include this and set ``custom_bindings``
-		      to ``True``, you need to also supply ``allowBindings: true`` as part of your custom data binding, otherwise
-		      it won't work.
+		      the container based on internal state if necessary.
 		   classes
 		      Additional classes to apply to both the wrapper around the sidebar box as well as the content pane itself, as a
 		      list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
@@ -303,9 +297,7 @@ class TemplatePlugin(Plugin):
 		      in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
 		   data_bind
 		      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
-		      the container based on internal state if necessary. Note that if you include this and set ``custom_bindings``
-		      to ``True``, you need to also supply ``allowBindings: true`` as part of your custom data binding, otherwise
-		      it won't work.
+		      the container based on internal state if necessary.
 		   classes
 		      Additional classes to apply to both the wrapper around the navigation link as well as the content pane itself, as a
 		      list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct

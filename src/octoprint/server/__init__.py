@@ -300,6 +300,11 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		data["template"] = rule["template"](name)
 	if not "name" in data:
 		data["name"] = implementation._plugin_name
+	if not "custom_bindings" in data or data["custom_bindings"]:
+		data_bind = "allowBindings: true"
+		if "data_bind" in data:
+			data_bind = data_bind + ", " + data["data_bind"]
+		data["data_bind"] = data_bind
 
 	return data
 
