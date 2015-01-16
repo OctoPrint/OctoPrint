@@ -169,13 +169,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 					self._cura_logger.setLevel(logging.CRITICAL)
 			s.setBoolean(["debug_logging"], new_debug_logging)
 
-	##~~ TemplatePlugin API
-
-	def get_template_vars(self):
-		return dict(
-			_settings=dict(name="Cura", custom_bindings=True)
-		)
-
 	##~~ SlicerPlugin API
 
 	def is_slicer_configured(self):

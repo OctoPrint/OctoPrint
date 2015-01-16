@@ -242,6 +242,8 @@ class PluginManager(object):
 				kwargs = dict(additional_injects)
 				kwargs.update(dict(
 					identifier=name,
+					plugin_name=plugin.name,
+					plugin_version=plugin.version,
 					basefolder=os.path.realpath(plugin.location),
 					logger=logging.getLogger("octoprint.plugins." + name),
 				))

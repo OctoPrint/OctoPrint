@@ -19,15 +19,15 @@
                         <!-- Navbar -->
                         <ul class="nav pull-right">
                             {% for data in navbarEntries %}
-                                {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <li id="{{ data._div }}"
-                                    data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% else %}allowBindings: true{% endif %}"
+                                    data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" not in data or data["custom_bindings"] %}allowBindings: true{% endif %}"
                                     {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}
                                     {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}
                                         >
-                                    {% include data._template ignore missing %}
+                                    {% include data.template ignore missing %}
                                 </li>
-                                {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                             {% endfor %}
                         </ul>
                     </div>
@@ -39,10 +39,10 @@
                 <!-- Sidebar -->
                 <div class="accordion span4">
                     {% for entry, data in sidebarEntries %}
-                        {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                         <div id="{{ data._div }}_wrapper"
                              class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
-                             data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" in data and data["custom_bindings"] %}allowBindings: true{% endif %}"
+                             data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" not in data or data["custom_bindings"] %}allowBindings: true{% endif %}"
                              {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                 >
                             <div class="accordion-heading">
@@ -58,11 +58,11 @@
                                  {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
                                     >
                                 <div class="accordion-inner">
-                                    {% include data._template ignore missing %}
+                                    {% include data.template ignore missing %}
                                 </div>
                             </div>
                         </div>
-                        {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                     {% endfor %}
                 </div>
 
@@ -70,29 +70,29 @@
                 <div class="span8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
                         {% for entry, data in tabEntries %}
-                            {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                             <li id="{{ data._div }}_link"
                                 class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
-                                data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" in data and data["custom_bindings"] %}allowBindings: true{% endif %}"
+                                data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" not in data or data["custom_bindings"] %}allowBindings: true{% endif %}"
                                 {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                     >
                                     <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
                             </li>
-                            {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                         {% endfor %}
                     </ul>
 
                     <div class="tab-content">
                         {% for entry, data in tabEntries %}
-                            {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                             <div id="{{ data._div }}"
                                  class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
-                                 data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" in data and data["custom_bindings"] %}allowBindings: true{% endif %}"
+                                 data-bind="{% if "data_bind" in data %}{{ data.data_bind }}{% elif "custom_bindings" not in data or data["custom_bindings"] %}allowBindings: true{% endif %}"
                                  {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                     >
-                                        {% include data._template ignore missing %}
+                                        {% include data.template ignore missing %}
                             </div>
-                            {% if "custom_bindings" in data and data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                         {% endfor %}
                     </div>
                 </div>
@@ -123,8 +123,8 @@
         <!-- End of overlays -->
 
         <!-- Generic plugin template files -->
-        {% for plugin_name in pluginNames %}
-            {% include plugin_name + ".jinja2" ignore missing %}
+        {% for data in genericEntries %}
+            {% include data.template ignore missing %}
         {% endfor %}
         <!-- End of generic plugin template files -->
 
