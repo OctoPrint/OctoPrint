@@ -100,6 +100,7 @@
   * [#683](https://github.com/foosel/OctoPrint/issues/683) - Fixed heated bed option not being properly displayed in
     printer profiles
   * [#714](https://github.com/foosel/OctoPrint/issues/714) - Fixed type validation of printer profiles
+  * Heating up the heated bed (if present) was not properly configured in CuraEngine plugin
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights

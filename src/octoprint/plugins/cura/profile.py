@@ -562,6 +562,9 @@ class Profile(object):
 			else:
 				return 0.0
 
+		elif key == "has_heated_bed":
+			return self._printer_profile["heatedBed"]
+
 		elif key.startswith("filament_diameter"):
 			match = Profile.regex_filament_diameter.match(key)
 			if not match:
@@ -723,13 +726,13 @@ class Profile(object):
 				prefix += "M92 E{e_steps}\n" % (e_steps)
 			temp = self.get_float("print_temperature")
 
-			bedTemp = 0
+			bed_temp = 0
 			if self.get_boolean("has_heated_bed"):
-				bedTemp = self.get_float("print_bed_temperature")
-			include_bed_temps = bedTemp > 0 and not "{print_bed_temperature}" in Profile.regex_strip_comments.sub("", contents)
+				bed_temp = self.get_float("print_bed_temperature")
+			include_bed_temp = bed_temp > 0 and not "{print_bed_temperature}" in Profile.regex_strip_comments.sub("", contents)
 
-			if include_bed_temps:
-				prefix += "M140 S{print_bed_temperature}\n"
+			if include_bed_temp:
+				prefix += "M140 S{bed_temp}\n".format(bed_temp=bed_temp)
 
 			if temp > 0 and not "{print_temperature}" in Profile.regex_strip_comments.sub("", contents):
 				if extruder_count > 0:
@@ -740,16 +743,19 @@ class Profile(object):
 							if print_temp > 0:
 								t = print_temp
 						return template.format(extruder=extruder, temp=t)
-					for n in xrange(1, extruder_count):
-						prefix += temp_line(temp, n, "M104 T{extruder} S{temp}\n")
+
+					prefix_preheat = ""
+					prefix_waitheat = ""
 					for n in xrange(0, extruder_count):
-						prefix += temp_line(temp, n, "M109 T{extruder} S{temp}\n")
-					prefix += "T0\n"
+						if n > 0:
+							prefix_preheat += temp_line(temp, n, "M104 T{extruder} S{temp}\n")
+						prefix_waitheat += temp_line(temp, n, "M109 T{extruder} S{temp}\n")
+					prefix += prefix_preheat + prefix_waitheat + "T0\n"
 				else:
 					prefix += "M109 S{temp}\n".format(temp=temp)
 
-			if include_bed_temps:
-				prefix += "M190 S{print_bed_temperature}\n".format(bedTemp=bedTemp)
+			if include_bed_temp:
+				prefix += "M190 S{bed_temp}\n".format(bed_temp=bed_temp)
 
 		else:
 			contents = self.get_gcode_template(key)
