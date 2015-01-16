@@ -13,6 +13,8 @@ Developing Plugins
 
    This section is still a heavy WIP, so take it with a bit of caution ;)
 
+.. _sec-plugins-developing-structure:
+
 OctoPrint Plugin Structure
 ==========================
 
@@ -37,7 +39,7 @@ a couple of properties describing the module:
   Method called upon initializing of the plugin by the plugin subsystem, can be used to instantiate
   plugin implementations, connecting them to hooks etc.
 
-A very simple example plugin which only hooks into OctoPrint's startup sequence and prints out "Hello World" to stdout would
+A very simple example plugin which only hooks into OctoPrint's startup sequence and logs "Oh hello!" would
 be the following snippet:
 
 .. code-block:: python
@@ -49,15 +51,17 @@ be the following snippet:
 
    __plugin_name__ = "Example Plugin"
    __plugin_version__ = "0.1"
-   __plugin_description__ = "Prints \"Hello World!\" to stdout upon OctoPrint's startup"
+   __plugin_description__ = "Logs \"Oh hello!\" upon OctoPrint's startup"
 
    def __plugin_init__():
        global __plugin_implementations__
-       __plugin_implementations__ = [HelloWorldPlugin()]
+       __plugin_implementations__ = [ExamplePlugin()]
 
-   class HelloWorldPlugin(octoprint.plugin.StartupPlugin):
+   class ExamplePlugin(octoprint.plugin.StartupPlugin):
        def on_startup(self, host, port):
-           print("Hello World!")
+           self._logger.info("Oh hello!")
+
+.. _sec-plugins-developing-distribution:
 
 Distributing your plugin
 ========================
@@ -72,43 +76,8 @@ You can distribute a plugin with OctoPrint via two ways:
     your plugin's ``setup.py``, this way it will be found automatically by OctoPrint upon initialization of the
     plugin subsystem [#f1]_.
 
-    In this case you'll have a directory structure like the following:
-
-    .. code-block:: none
-
-       `-+ helloworld
-       | `-+ static
-       | | `-+ css
-       | |   `-- helloworld.css
-       | | `-+ js
-       | |   `-- helloworld.js
-       | | `-+ less
-       | |   `-- helloworld.less
-       | `-+ templates
-       | | `-- helloworld_settings_dialog.js
-       | `-- __init__.py
-       `-- setup.py
-
-    The plugin itself will be distributed as a Python package, which your ``setup.py`` will refer to via the entry point
-    like this:
-
-    .. code-block:: python
-
-       import setuptools
-
-       def params():
-           name = "OctoPrint-HelloWorld"
-           version = "0.1"
-           packages = ["helloworld"]
-           install_requires = open("requirements.txt").read().split("\n")
-
-           entry_points = {
-               "octoprint.plugin" = ["helloworld = octoprint_helloworld"]
-           }
-
-           return locals()
-
-       setuptools.setup(**params())
+    For an example of how the directory structure and related files would look like in this case, please take a
+    look at the `helloworld example from OctoPrint's example plugins <https://github.com/OctoPrint/Plugin-Examples/tree/master/helloworld>`_.
 
     This variant is highly recommended for pretty much any plugin besides the most basic ones since it also allows
     requirements management and pretty much any thing else that Python's setuptools provide to the developer.
@@ -118,7 +87,6 @@ You can distribute a plugin with OctoPrint via two ways:
 .. [#f1] The automatic registration will only work within the same Python installation (this also includes virtual
          environments), so make sure to instruct your users to use the exact same Python installation for installing
          the plugin that they also used for installing & running OctoPrint.
-
 
 .. _sec-plugins-developing-mixins:
 

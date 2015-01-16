@@ -37,6 +37,9 @@ class PluginInfo(object):
 
 		self._version = version
 
+		if self.name is None:
+			raise ValueError("Plugin {key} doesn't have a name".format(key=key))
+
 	def __str__(self):
 		return "{name} ({version})".format(name=self.name, version=self.version if self.version else "unknown")
 
@@ -109,7 +112,8 @@ class PluginManager(object):
 
 		self.plugins = dict()
 		self.plugin_hooks = defaultdict(list)
-		self.plugin_implementations = defaultdict(list)
+		self.plugin_implementations = defaultdict(set)
+		self.plugin_implementations_by_type = defaultdict(list)
 
 		self.registered_clients = []
 
@@ -223,9 +227,32 @@ class PluginManager(object):
 			# evaluate registered implementations
 			for plugin_type in self.plugin_types:
 				implementations = plugin.get_implementations(plugin_type)
-				self.plugin_implementations[plugin_type] += ( (name, implementation) for implementation in implementations )
+				self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
+			self.plugin_implementations[name].update(plugin.get_implementations())
 
 		self.log_registered_plugins()
+
+	def initialize_implementations(self, additional_injects=None):
+		if additional_injects is None:
+			additional_injects = dict()
+
+		for name, implementations in self.plugin_implementations.items():
+			plugin = self.plugins[name]
+			for implementation in implementations:
+				kwargs = dict(additional_injects)
+				kwargs.update(dict(
+					identifier=name,
+					plugin_name=plugin.name,
+					plugin_version=plugin.version,
+					basefolder=os.path.realpath(plugin.location),
+					logger=logging.getLogger("octoprint.plugins." + name),
+				))
+				try:
+					implementation.pre_initialize(**kwargs)
+				except:
+					self.logger.exception("Exception while initializing plugin")
+
+		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
 
 	def log_registered_plugins(self):
 		if len(self.plugins) <= 0:
@@ -247,7 +274,7 @@ class PluginManager(object):
 		result = None
 
 		for t in types:
-			implementations = self.plugin_implementations[t]
+			implementations = self.plugin_implementations_by_type[t]
 			if result is None:
 				result = set(implementations)
 			else:
@@ -283,4 +310,10 @@ class PluginManager(object):
 
 
 class Plugin(object):
-	pass
+	def pre_initialize(self, **kwargs):
+		for arg, value in kwargs.items():
+			setattr(self, "_" + arg, value)
+		self.initialize()
+
+	def initialize(self):
+		pass

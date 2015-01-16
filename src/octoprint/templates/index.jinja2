@@ -7,68 +7,8 @@
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
-        <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/bootstrap-slider.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/pnotify.min.css') }}" rel="stylesheet" media="screen">
-
-        {% if stylesheet == "less" %}
-            <link href="{{ url_for('static', filename='less/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
-
-            <!-- Plugin files -->
-            {% for name, assets in assetPlugins.items() %}
-                {% if "less" in assets %}
-                    {% for asset in assets["less"] %}
-                        <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet/less" type="text/css" media="screen">
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-            <!-- /Plugin files -->
-
-            <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
-        {% else %}
-            <link href="{{ url_for('static', filename='css/octoprint.css') }}" rel="stylesheet" type="text/css" media="screen">
-            <!-- Plugin files -->
-            {% for name, assets in assetPlugins.items() %}
-                {% if "css" in assets %}
-                    {% for asset in assets["css"] %}
-                        <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet" type="text/css" media="screen">
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-            <!-- /Plugin files -->
-        {% endif %}
-
-        <script lang="javascript">
-            var BASEURL = "{{ url_for('index') }}";
-            var API_BASEURL = BASEURL + "api/";
-            var PLUGIN_BASEURL = BASEURL + "plugin/";
-            var GCODE_WORKER = "{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}";
-
-            var CONFIG_GCODEFILESPERPAGE = 5000;
-            var CONFIG_TIMELAPSEFILESPERPAGE = 10;
-            var CONFIG_LOGFILESPERPAGE = 10;
-            var CONFIG_USERSPERPAGE = 10;
-            var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
-            var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
-            var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
-            var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
-            var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
-            var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold }};
-            var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
-
-            var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
-            var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
-
-            var UI_API_KEY = "{{ uiApiKey }}";
-            var VERSION = "{{ version }}";
-            var DISPLAY_VERSION = "{{ display_version }}";
-            var LOCALE = "{{ g.locale }}";
-
-            var ADDITIONAL_VIEWMODELS = [];
-        </script>
+        {% include 'stylesheets.jinja2' %}
+        {% include 'initscript.jinja2' %}
     </head>
     <body>
         <div id="navbar" class="navbar navbar-static-top">
@@ -76,10 +16,19 @@
                 <div class="container">
                     <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
                     <div class="nav-collapse">
+                        <!-- Navbar -->
                         <ul class="nav pull-right">
-                            {% include 'navbar/settings.jinja2' %}
-                            {% include 'navbar/systemmenu.jinja2' %}
-                            {% include 'navbar/login.jinja2' %}
+                            {% for data in navbarEntries %}
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                                <li id="{{ data._div }}"
+                                    {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                    {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}
+                                    {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}
+                                        >
+                                    {% include data.template ignore missing %}
+                                </li>
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                            {% endfor %}
                         </ul>
                     </div>
                 </div>
@@ -87,27 +36,64 @@
         </div>
         <div class="container octoprint-container">
             <div class="row">
+                <!-- Sidebar -->
                 <div class="accordion span4">
-                    {% include 'sidebar/connection.jinja2' %}
-                    {% include 'sidebar/state.jinja2' %}
-                    {% include 'sidebar/files.jinja2' %}
+                    {% for entry, data in sidebarEntries %}
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                        <div id="{{ data._div }}_wrapper"
+                             class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                             {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                             {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                >
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
+                                    {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry }}
+                                </a>
+                                {% if "header_addon" in data %}
+                                    {% include data.header_addon ignore missing %}
+                                {% endif %}
+                            </div>
+                            <div id="{{ data._div }}"
+                                 class="accordion-body collapse in {% if "classes_content" in data %}{{ data.classes_content|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
+                                    >
+                                <div class="accordion-inner">
+                                    {% include data.template ignore missing %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                    {% endfor %}
                 </div>
 
+                <!-- Tabs -->
                 <div class="span8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
-                        <li class="active"><a href="#temp" data-toggle="tab">{{ _('Temperature') }}</a></li>
-                        <li><a href="#control" data-toggle="tab">{{ _('Control') }}</a></li>
-                        {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">{{ _('GCode Viewer') }}</a></li>{% endif %}
-                        <li><a href="#term" data-toggle="tab">{{ _('Terminal') }}</a></li>
-                        {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">{{ _('Timelapse') }}</a></li>{% endif %}
+                        {% for entry, data in tabEntries %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                            <li id="{{ data._div }}_link"
+                                class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                    >
+                                    <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
+                            </li>
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                        {% endfor %}
                     </ul>
 
                     <div class="tab-content">
-                        {% include 'tabs/temperature.jinja2' %}
-                        {% include 'tabs/control.jinja2' %}
-                        {% include 'tabs/gcodeviewer.jinja2' %}
-                        {% include 'tabs/terminal.jinja2' %}
-                        {% include 'tabs/timelapse.jinja2' %}
+                        {% for entry, data in tabEntries %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                            <div id="{{ data._div }}"
+                                 class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
+                                 {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                    >
+                                        {% include data.template ignore missing %}
+                            </div>
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -136,85 +122,12 @@
         {% include 'overlays/offline.jinja2' %}
         <!-- End of overlays -->
 
-        <!-- Plugin template files -->
-        {%  if templatePlugins %}
-            {% for plugin_name in templatePlugins %}
-                {% include plugin_name+".jinja2" ignore missing %}
-            {% endfor %}
-        {% endif %}
-        <!-- End plugin template files -->
-
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/modernizr.custom.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore-min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore.string.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.mapping-latest.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/babel.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/avltree.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modalmanager.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modal.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-slider.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.core.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.widget.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.mouse.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.flot.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.iframe-transport.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.fileupload.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.slimscroll.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.qrcode.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/sockjs-0.3.4.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment-with-locales.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pusher.color.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/detectmobilebrowser.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/md5.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pnotify.min.js') }}"></script>
-
-        <!-- Include OctoPrint files -->
-        <!-- TODO: merge/minimize in the future -->
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/appearance.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/connection.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/control.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/firstrun.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/gcode.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/files.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/loginstate.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/navigation.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/printerstate.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/printerprofiles.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/settings.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/slicing.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/temperature.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
-
-        <!-- Plugin files -->
-        {% for name, assets in assetPlugins.items() %}
-            {% if "js" in assets %}
-                {% for asset in assets["js"] %}
-                    <script type="text/javascript" src="{{ url_for('plugin_assets', name=name, filename=asset) }}"></script>
-                {% endfor %}
-            {% endif %}
+        <!-- Generic plugin template files -->
+        {% for data in genericEntries %}
+            {% include data.template ignore missing %}
         {% endfor %}
-        <!-- /Plugin files -->
+        <!-- End of generic plugin template files -->
 
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>
-
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/main.js') }}"></script>
-        <!-- /Include OctoPrint files -->
-
-        <!-- Include i18n language files -->
-        {% if g.locale != 'en' %}
-            <script type="text/javascript" src="{{ url_for('static', filename='js/i18n/%s.js' % g.locale) }}"></script>
-        {% endif %}
-        <!-- /Include i18n language files -->
-
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
+        {% include 'javascripts.jinja2' %}
     </body>
 </html>

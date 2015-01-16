@@ -138,10 +138,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	##~~ AssetPlugin API
 
-	def get_asset_folder(self):
-		import os
-		return os.path.join(os.path.dirname(os.path.realpath(__file__)), "static")
-
 	def get_assets(self):
 		return {
 			"js": ["js/cura.js"],
@@ -172,17 +168,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				else:
 					self._cura_logger.setLevel(logging.CRITICAL)
 			s.setBoolean(["debug_logging"], new_debug_logging)
-
-	##~~ TemplatePlugin API
-
-	def get_template_vars(self):
-		return dict(
-			_settings_menu_entry="Cura"
-		)
-
-	def get_template_folder(self):
-		import os
-		return os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
 
 	##~~ SlicerPlugin API
 

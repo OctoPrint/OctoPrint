@@ -1,8 +1,8 @@
 .. _sec-api:
 
-#################
-API Documentation
-#################
+###
+API
+###
 
 .. toctree::
    :maxdepth: 2

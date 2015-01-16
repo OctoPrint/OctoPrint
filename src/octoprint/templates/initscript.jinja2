@@ -1,0 +1,28 @@
+<script lang="javascript">
+    var BASEURL = "{{ url_for('index') }}";
+    var API_BASEURL = BASEURL + "api/";
+    var PLUGIN_BASEURL = BASEURL + "plugin/";
+    var GCODE_WORKER = "{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}";
+
+    var CONFIG_GCODEFILESPERPAGE = 5000;
+    var CONFIG_TIMELAPSEFILESPERPAGE = 10;
+    var CONFIG_LOGFILESPERPAGE = 10;
+    var CONFIG_USERSPERPAGE = 10;
+    var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
+    var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
+    var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
+    var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
+    var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
+    var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold }};
+    var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
+
+    var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
+    var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+
+    var UI_API_KEY = "{{ uiApiKey }}";
+    var VERSION = "{{ version }}";
+    var DISPLAY_VERSION = "{{ display_version }}";
+    var LOCALE = "{{ g.locale }}";
+
+    var ADDITIONAL_VIEWMODELS = [];
+</script>

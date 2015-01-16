@@ -10,9 +10,10 @@ from sockjs.tornado import SockJSRouter
 from flask import Flask, render_template, send_from_directory, g, request, make_response, session
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
-from flask.ext.babel import Babel
+from flask.ext.babel import Babel, gettext, ngettext
 from babel import Locale
 from watchdog.observers import Observer
+from collections import defaultdict
 
 import os
 import logging
@@ -98,21 +99,107 @@ def get_locale():
 
 @app.route("/")
 def index():
-	settings_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlugin)
-	settings_plugin_template_vars = dict()
-	for name, implementation in settings_plugins.items():
-		settings_plugin_template_vars[name] = implementation.get_template_vars()
+
+
+
+	#~~ extract data from asset plugins
 
 	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
 	asset_plugin_urls = dict()
 	for name, implementation in asset_plugins.items():
 		asset_plugin_urls[name] = implementation.get_assets()
 
-	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
-	template_plugin_names = template_plugins.keys()
+	#~~ extract data from template plugins
 
-	return render_template(
-		"index.jinja2",
+	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
+
+	# rules for transforming template configs to template entries
+	rules = dict(
+		navbar=dict(div=lambda x: "navbar_plugin_" + x, template=lambda x: x + "_navbar.jinja2", to_entry=lambda data: data),
+		sidebar=dict(div=lambda x: "sidebar_plugin_" + x, template=lambda x: x + "_sidebar.jinja2", to_entry=lambda data: (data["name"], data)),
+		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
+		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
+		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
+	)
+
+	plugin_vars = dict()
+	plugin_includes_navbar = []
+	plugin_includes_sidebar = []
+	plugin_includes_tabs = []
+	plugin_includes_settings = []
+	plugin_includes_generic = []
+	plugin_names = template_plugins.keys()
+	for name, implementation in template_plugins.items():
+		vars = implementation.get_template_vars()
+		if not isinstance(vars, dict):
+			vars = dict()
+
+		for var_name, var_value in vars.items():
+			plugin_vars["plugin_" + name + "_" + var_name] = var_value
+
+		configs = implementation.get_template_configs()
+		if not isinstance(configs, (list, tuple)):
+			configs = []
+
+		includes = _process_template_configs(name, implementation, configs, rules)
+
+		plugin_includes_navbar += includes["navbar"]
+		plugin_includes_sidebar += includes["sidebar"]
+		plugin_includes_tabs += includes["tab"]
+		plugin_includes_settings += includes["settings"]
+		plugin_includes_generic += includes["generic"]
+
+	#~~ navbar
+
+	navbar_entries = plugin_includes_navbar + [
+		dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
+		dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
+		dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False)
+	]
+
+	#~~ sidebar
+
+	sidebar_entries = [
+		(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isAdmin")),
+		(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign")),
+		(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], header_addon="sidebar/files_header.jinja2"))
+	] + plugin_includes_sidebar
+
+	#~~ tabs
+
+	tab_entries = [
+		(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
+		(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
+		(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
+		(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
+		(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
+	] + plugin_includes_tabs
+
+	#~~ settings dialog
+
+	settings_entries = [
+		(gettext("Printer"), None),
+		(gettext("Serial Connection"), dict(template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection", custom_bindings=False)),
+		(gettext("Printer Profiles"), dict(template="dialogs/settings/printerprofiles.jinja2", _div="settings_printerProfiles", custom_bindings=False)),
+		(gettext("Temperatures"), dict(template="dialogs/settings/temperatures.jinja2", _div="settings_temperature", custom_bindings=False)),
+		(gettext("Terminal Filters"), dict(template="dialogs/settings/terminalfilters.jinja2", _div="settings_terminalFilters", custom_bindings=False)),
+		(gettext("Features"), None),
+		(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
+		(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
+		(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
+		(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
+		(gettext("OctoPrint"), None),
+		(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
+		(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
+		(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs"))
+	]
+	if len(plugin_includes_settings):
+		settings_entries.append((gettext("Plugins"), None))
+		settings_entries.extend(sorted(plugin_includes_settings, key=lambda x: x[0]))
+
+	#~~ prepare full set of template vars for rendering
+
+	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
 		enableGCodeVisualizer=settings().get(["gcodeViewer", "enabled"]),
@@ -128,11 +215,98 @@ def index():
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
-		settingsPlugins=settings_plugin_template_vars,
-		templatePlugins=template_plugin_names,
-		assetPlugins=asset_plugin_urls
+		navbarEntries=navbar_entries,
+		sidebarEntries=sidebar_entries,
+		tabEntries=tab_entries,
+		settingsEntries=settings_entries,
+		genericEntries=plugin_includes_generic,
+		pluginNames=plugin_names,
+		assetPlugins=asset_plugin_urls,
+	)
+	render_kwargs.update(plugin_vars)
+
+	#~~ render!
+
+	return render_template(
+		"index.jinja2",
+		**render_kwargs
 	)
 
+
+def _process_template_configs(name, implementation, configs, rules):
+	from jinja2.exceptions import TemplateNotFound
+
+	counters = dict(
+		navbar=1,
+		sidebar=1,
+		tab=1,
+		settings=1
+	)
+	includes = defaultdict(list)
+
+	for config in configs:
+		if not isinstance(config, dict):
+			continue
+		if not "type" in config:
+			continue
+
+		template_type = config["type"]
+		del config["type"]
+
+		if not template_type in rules:
+			continue
+		rule = rules[template_type]
+
+		data = _process_template_config(name, implementation, rule, config=config, counter=counters[template_type])
+		if data is None:
+			continue
+
+		includes[template_type].append(rule["to_entry"](data))
+		counters[template_type] += 1
+
+	for template_type in rules:
+		if len(includes[template_type]) == 0:
+			# if no template of that type was added by the config, we'll try to use the default template name
+			rule = rules[template_type]
+			data = _process_template_config(name, implementation, rule)
+			if data is not None:
+				try:
+					app.jinja_env.get_or_select_template(data["template"])
+				except TemplateNotFound:
+					pass
+				else:
+					includes[template_type].append(rule["to_entry"](data))
+
+	return includes
+
+def _process_template_config(name, implementation, rule, config=None, counter=1):
+	if "mandatory" in rule:
+		for mandatory in rule["mandatory"]:
+			if not mandatory in config:
+				return None
+
+	if config is None:
+		config = dict()
+	data = dict(config)
+
+	if "div" in rule:
+		data["_div"] = rule["div"](name)
+		if "suffix" in data:
+			data["_div"] += "_" + data["suffix"]
+			del data["suffix"]
+		elif counter > 1:
+			data["_div"] += "_%d" % counter
+	if not "template" in data:
+		data["template"] = rule["template"](name)
+	if not "name" in data:
+		data["name"] = implementation._plugin_name
+	if not "custom_bindings" in data or data["custom_bindings"]:
+		data_bind = "allowBindings: true"
+		if "data_bind" in data:
+			data_bind = data_bind + ", " + data["data_bind"]
+		data["data_bind"] = data_bind
+
+	return data
 
 @app.route("/robots.txt")
 def robotsTxt():
@@ -243,6 +417,17 @@ class Server():
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
+
+		pluginManager.initialize_implementations(dict(
+		    printer_profile_manager=printerProfileManager,
+		    event_manager=eventManager,
+		    analysis_queue=analysisQueue,
+		    slicing_manager=slicingManager,
+		    storage_managers=storage_managers,
+		    file_manager=fileManager,
+		    app_session_manager=appSessionManager,
+		    plugin_manager=pluginManager
+		))
 
 		# configure additional template folders for jinja2
 		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
