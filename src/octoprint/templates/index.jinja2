@@ -37,7 +37,7 @@
         <div class="container octoprint-container">
             <div class="row">
                 <!-- Sidebar -->
-                <div class="accordion span4">
+                <div class="accordion col-md-4">
                     {% for entry, data in sidebarEntries %}
                         {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                         <div id="{{ data._div }}_wrapper"
@@ -67,7 +67,7 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="span8 tabbable">
+                <div class="col-md-8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
                         {% for entry, data in tabEntries %}
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
