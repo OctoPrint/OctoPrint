@@ -1,8 +1,8 @@
 .. _sec-events:
 
-####################
-Events Documentation
-####################
+######
+Events
+######
 
 .. contents::
 

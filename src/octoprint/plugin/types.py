@@ -186,149 +186,179 @@ class TemplatePlugin(Plugin):
 		Further keys to be included in the dictionary depend on the type:
 
 		``navbar`` type
+		   .. figure:: ../images/template-plugin-type-navbar.png
+		      :align: center
+		      :alt: Structure of navbar plugins
+
 		   Configures a navbar component to inject. The following keys are supported:
 
-		   template
-		      Name of the template to inject, defaults to ``<pluginname>_navbar.jinja2``.
-		   suffix
-		      Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
-		      the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
-		      type.
-		   custom_bindings
-		      A boolean value indicating whether the default view model should be bound to the navbar entry (``false``)
-		      or if a custom binding will be used by the plugin (``true``, default).
-		   data_bind
-		      Additional knockout data bindings to apply to the navbar entry, can be used to add further behaviour to
-		      the container based on internal state if necessary.
-		   classes
-		      Additional classes to apply to the navbar entry, as a list of individual classes
-		      (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct format by the template engine.
-		   styles
-		      Additional CSS styles to apply to the navbar entry, as a list of individual declarations
-		      (e.g. ``styles=["color: red", "display: block"]``) which will be joined into the correct format by the template
-		      engine.
+		   .. list-table::
+		      :widths: 5 95
+
+		      * - template
+		        - Name of the template to inject, defaults to ``<pluginname>_navbar.jinja2``.
+		      * - suffix
+		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
+		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
+		          type.
+		      * - custom_bindings
+		        - A boolean value indicating whether the default view model should be bound to the navbar entry (``false``)
+		          or if a custom binding will be used by the plugin (``true``, default).
+		      * - data_bind
+		        - Additional knockout data bindings to apply to the navbar entry, can be used to add further behaviour to
+		          the container based on internal state if necessary.
+		      * - classes
+		        - Additional classes to apply to the navbar entry, as a list of individual classes
+		          (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct format by the template engine.
+		      * - styles
+		        - Additional CSS styles to apply to the navbar entry, as a list of individual declarations
+		          (e.g. ``styles=["color: red", "display: block"]``) which will be joined into the correct format by the template
+		          engine.
 
 		``sidebar`` type
+		   .. figure:: ../images/template-plugin-type-sidebar.png
+		      :align: center
+		      :alt: Structure of sidebar plugins
+
 		   Configures a sidebar component to inject. The following keys are supported:
 
-		   name
-		      The name of the sidebar entry, if not set the name of the plugin will be used.
-		   icon
-		      Icon to use for the sidebar header, should be the name of a Font Awesome icon without the leading ``icon-`` part.
-		   template
-		      Name of the template to inject, defaults to ``<pluginname>_sidebar.jinja2``.
-		   template_header
-		      Additional template to include in the head section of the sidebar item. For an example of this, see the additional
-		      options included in the "Files" section.
-		   suffix
-		      Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
-		      the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
-		      type.
-		   custom_bindings
-		      A boolean value indicating whether the default view model should be bound to the sidebar container (``false``)
-		      or if a custom binding will be used by the plugin (``true``, default).
-		   data_bind
-		      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
-		      the container based on internal state if necessary.
-		   classes
-		      Additional classes to apply to both the wrapper around the sidebar box as well as the content pane itself, as a
-		      list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
-		      format by the template engine.
-		   classes_wrapper
-		      Like ``classes`` but only applied to the whole wrapper around the sidebar box.
-		   classes_content
-		      Like ``classes`` but only applied to the content pane itself.
-		   styles
-		      Additional CSS styles to apply to both the wrapper around the sidebar box as well as the content pane itself,
-		      as a list of individual declarations (e.g. ``styles=["color: red", "display: block"]``) which will be joined
-		      into the correct format by the template engine.
-		   styles_wrapper
-		      Like ``styles`` but only applied to the whole wrapper around the sidebar box.
-		   styles_content
-		      Like ``styles`` but only applied to the content pane itself
+		   .. list-table::
+		      :widths: 5 95
+
+		      * - name
+		        - The name of the sidebar entry, if not set the name of the plugin will be used.
+		      * - icon
+		        - Icon to use for the sidebar header, should be the name of a Font Awesome icon without the leading ``icon-`` part.
+		      * - template
+		        - Name of the template to inject, defaults to ``<pluginname>_sidebar.jinja2``.
+		      * - template_header
+		        - Additional template to include in the head section of the sidebar item. For an example of this, see the additional
+		          options included in the "Files" section.
+		      * - suffix
+		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
+		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
+		          type.
+		      * - custom_bindings
+		        - A boolean value indicating whether the default view model should be bound to the sidebar container (``false``)
+		          or if a custom binding will be used by the plugin (``true``, default).
+		      * - data_bind
+		        - Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
+		          the container based on internal state if necessary.
+		      * - classes
+		        - Additional classes to apply to both the wrapper around the sidebar box as well as the content pane itself, as a
+		          list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
+		          format by the template engine.
+		      * - classes_wrapper
+		        - Like ``classes`` but only applied to the whole wrapper around the sidebar box.
+		      * - classes_content
+		        - Like ``classes`` but only applied to the content pane itself.
+		      * - styles
+		        - Additional CSS styles to apply to both the wrapper around the sidebar box as well as the content pane itself,
+		          as a list of individual declarations (e.g. ``styles=["color: red", "display: block"]``) which will be joined
+		          into the correct format by the template engine.
+		      * - styles_wrapper
+		        - Like ``styles`` but only applied to the whole wrapper around the sidebar box.
+		      * - styles_content
+		        - Like ``styles`` but only applied to the content pane itself
 
 		``tab`` type
+		   .. figure:: ../images/template-plugin-type-tab.png
+		      :align: center
+		      :alt: Structure of tab plugins
+
 		   Configures a tab component to inject. The value must be a dictionary, supported values are the following:
 
-		   name
-		      The name under which to include the tab, if not set the name of the plugin will be used.
-		   template
-		      Name of the template to inject, defaults to ``<pluginname>_tab.jinja2``.
-		   suffix
-		      Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
-		      the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
-		      type.
-		   custom_bindings
-		      A boolean value indicating whether the default view model should be bound to the tab pane and link
-		      in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
-		   data_bind
-		      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
-		      the container based on internal state if necessary.
-		   classes
-		      Additional classes to apply to both the wrapper around the sidebar box as well as the content pane itself, as a
-		      list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
-		      format by the template engine.
-		   classes_link
-		      Like ``classes`` but only applied to the link in the navigation.
-		   classes_content
-		      Like ``classes`` but only applied to the content pane itself.
-		   styles
-		      Additional CSS styles to apply to both the wrapper around the sidebar box as well as the content pane itself,
-		      as a list of individual declarations (e.g. ``styles=["color: red", "display: block"]``) which will be joined
-		      into the correct format by the template engine.
-		   styles_link
-		      Like ``styles`` but only applied to the link in the navigation.
-		   styles_content
-		      Like ``styles`` but only applied to the content pane itself
+		   .. list-table::
+		      :widths: 5 95
+
+		      * - name
+		        - The name under which to include the tab, if not set the name of the plugin will be used.
+		      * - template
+		        - Name of the template to inject, defaults to ``<pluginname>_tab.jinja2``.
+		      * - suffix
+		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
+		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
+		          type.
+		      * - custom_bindings
+		        - A boolean value indicating whether the default view model should be bound to the tab pane and link
+		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
+		      * - data_bind
+		        - Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
+		          the container based on internal state if necessary.
+		      * - classes
+		        - Additional classes to apply to both the wrapper around the sidebar box as well as the content pane itself, as a
+		          list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
+		          format by the template engine.
+		      * - classes_link
+		        - Like ``classes`` but only applied to the link in the navigation.
+		      * - classes_content
+		        - Like ``classes`` but only applied to the content pane itself.
+		      * - styles
+		        - Additional CSS styles to apply to both the wrapper around the sidebar box as well as the content pane itself,
+		          as a list of individual declarations (e.g. ``styles=["color: red", "display: block"]``) which will be joined
+		          into the correct format by the template engine.
+		      * - styles_link
+		        - Like ``styles`` but only applied to the link in the navigation.
+		      * - styles_content
+		        - Like ``styles`` but only applied to the content pane itself.
 
 		``settings`` type
+		   .. figure:: ../images/template-plugin-type-settings.png
+		      :align: center
+		      :alt: Structure of settings plugins
+
 		   Configures a settings component to inject. The value must be a dictionary, supported values are the following:
 
-		   name
-		      The name under which to include the settings pane, if not set the name of the plugin will be used.
-		   template
-		      Name of the template to inject, defaults to ``<pluginname>_settings.jinja2``.
-		   suffix
-		      Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
-		      the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
-		      type.
-		   custom_bindings
-		      A boolean value indicating whether the default settings view model should be bound to the settings pane and link
-		      in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
-		   data_bind
-		      Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
-		      the container based on internal state if necessary.
-		   classes
-		      Additional classes to apply to both the wrapper around the navigation link as well as the content pane itself, as a
-		      list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
-		      format by the template engine.
-		   classes_link
-		      Like ``classes`` but only applied to the link in the navigation.
-		   classes_content
-		      Like ``classes`` but only applied to the content pane itself.
-		   styles
-		      Additional CSS styles to apply to both the wrapper around the navigation link as well as the content pane itself,
-		      as a list of individual declarations (e.g. ``styles=["color: red", "display: block"]``) which will be joined
-		      into the correct format by the template engine.
-		   styles_link
-		      Like ``styles`` but only applied to the link in the navigation.
-		   styles_content
-		      Like ``styles`` but only applied to the content pane itself
+		   .. list-table::
+		      :widths: 5 95
+
+		      * - name
+		        - The name under which to include the settings pane, if not set the name of the plugin will be used.
+		      * - template
+		        - Name of the template to inject, defaults to ``<pluginname>_settings.jinja2``.
+		      * - suffix
+		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
+		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
+		          type.
+		      * - custom_bindings
+		        - A boolean value indicating whether the default settings view model should be bound to the settings pane and link
+		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
+		      * - data_bind
+		        - Additional knockout data bindings to apply to the template container, can be used to add further behaviour to
+		          the container based on internal state if necessary.
+		      * - classes
+		        - Additional classes to apply to both the wrapper around the navigation link as well as the content pane itself, as a
+		          list of individual classes (e.g. ``classes=["myclass", "myotherclass"]``) which will be joined into the correct
+		          format by the template engine.
+		      * - classes_link
+		        - Like ``classes`` but only applied to the link in the navigation.
+		      * - classes_content
+		        - Like ``classes`` but only applied to the content pane itself.
+		      * - styles
+		        - Additional CSS styles to apply to both the wrapper around the navigation link as well as the content pane itself,
+		          as a list of individual declarations (e.g. ``styles=["color: red", "display: block"]``) which will be joined
+		          into the correct format by the template engine.
+		      * - styles_link
+		        - Like ``styles`` but only applied to the link in the navigation.
+		      * - styles_content
+		        - Like ``styles`` but only applied to the content pane itself
 
 		``generic`` type
 		   Configures a generic template to inject. The following keys are supported:
 
-		   template
-		      Name of the template to inject, defaults to ``<pluginname>_settings.jinja2``.
+		   .. list-table::
+		      :widths: 5 95
+
+		      * - template
+		        - Name of the template to inject, defaults to ``<pluginname>_settings.jinja2``.
 
 		.. note::
 
 		   As already outlined above, each template type has a default template name (i.e. the default navbar template
 		   of a plugin is called ``<pluginname>_navbar.jinja2``), which may be overridden using the template configuration.
-		   If a plugin needs to include two navbar templates, it needs to provide two entries here, at least one with ``template``
-		   overridden. If only one entry for a given template type is present with an overridden ``template`` parameter,
-		   OctoPrint will assume that the default template does not exist and hence only include the defined template,
-		   skipping the default one.
+		   If a plugin needs to include more than one template of a given type, it needs to provide an entry for each of
+		   those, since the implicit default template will only be included automatically if no other templates of that
+		   type are defined.
 
 		:return: a list containing the configuration options for the plugin's injected templates
 		"""
