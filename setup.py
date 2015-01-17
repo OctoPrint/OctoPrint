@@ -9,6 +9,7 @@ versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = ''
 
 from setuptools import setup, find_packages, Command
+from distutils.command.clean import clean as Clean
 import os
 import shutil
 import glob
@@ -26,21 +27,10 @@ def package_data_dirs(source, sub_folders):
 	return dirs
 
 
-class CleanCommand(Command):
-	description = "clean build artifacts"
-	user_options = []
-	boolean_options = []
-
-	def initialize_options(self):
-		pass
-
-	def finalize_options(self):
-		pass
+class CleanCommand(Clean):
 
 	def run(self):
-		if os.path.exists('build'):
-			print "Deleting build directory"
-			shutil.rmtree('build')
+                Clean.run(self)
 		eggs = glob.glob('OctoPrint*.egg-info')
 		for egg in eggs:
 			print "Deleting %s directory" % egg
