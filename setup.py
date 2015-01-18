@@ -194,7 +194,7 @@ class RefreshTranslation(Command):
 		self.babel_extract_messages.copyright_holder = "The OctoPrint Project"
 		self.babel_extract_messages.finalize_options()
 
-		self.babel_update_messages.input_file = I18N_MAPPING_FILE
+		self.babel_update_messages.input_file = I18N_POT_FILE
 		self.babel_update_messages.output_dir = I18N_OUTPUT_DIR_PY
 		self.babel_update_messages.locale = self.locale
 
