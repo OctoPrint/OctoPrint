@@ -513,6 +513,7 @@ GCODE.renderer = (function(){
                 bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
             }
             zoomFactor = Math.min((canvas.width - 10) / bedWidth, (canvas.height - 10) / bedHeight);
+            ctx.translate((canvas.width - bedWidth * zoomFactor) / 2, (canvas.height + bedHeight * zoomFactor) / 2);
 
             offsetModelX = 0;
             offsetModelY = 0;
