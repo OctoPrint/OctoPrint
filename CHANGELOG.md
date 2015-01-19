@@ -103,6 +103,7 @@
     printer profiles
   * [#714](https://github.com/foosel/OctoPrint/issues/714) - Fixed type validation of printer profiles
   * Heating up the heated bed (if present) was not properly configured in CuraEngine plugin
+  * [#724](https://github.com/foosel/OctoPrint/issues/724) - Fixed timelapse deletion for timelapses with non-ascii characters in their name
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
