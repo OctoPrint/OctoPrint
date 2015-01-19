@@ -755,6 +755,61 @@ Retrieve the current SD state
    :statuscode 200: No error
    :statuscode 404: If SD support has been disabled in OctoPrint's config.
 
+.. _sec-api-printer-arbcommand:
+
+Send an arbitrary command to the printer
+========================================
+
+.. http:post:: /api/printer/command
+
+   Sends any command to the printer via the serial interface. Should be used with some care as some commands can interfere with
+   or even stop a running print job.
+
+   Expects a :ref:`Arbitrary Command Request <sec-api-printer-datamodel-arbcommand>` as the request's body.
+
+   If successful returns a :http:statuscode:`204` and an empty body.
+
+   **Example for sending a single command**
+
+   .. sourcecode:: http
+
+      POST /api/printer/command HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "M106"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example for sending multiple commands**
+
+   .. sourcecode:: http
+
+      POST /api/printer/command HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "commands": [
+          "M18",
+          "M106 S0"
+        ]
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+   
+   :json string command:  Single command to send to the printer, mutually exclusive with ``commands``.
+   :json string commands: List of commands to send to the printer, mutually exclusive with ``command``.
+   :statuscode 204:       No error
+
 .. _sec-api-printer-datamodel:
 
 Datamodel
@@ -831,3 +886,24 @@ SD State
      - Boolean
      - Whether the SD card has been initialized (``true``) or not (``false``).
 
+.. _sec-api-printer-datamodel-arbcommand:
+
+Arbitrary Command Request
+-------------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``command``
+     - 0..1
+     - String
+     - Single command to send to the printer, mutually exclusive with ``commands``.
+   * - ``commands``
+     - 0..*
+     - Array of String
+     - Multiple commands to send to the printer (in the given order), mutually exclusive with ``command``.

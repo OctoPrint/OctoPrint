@@ -56,9 +56,10 @@ def downloadTimelapse(filename):
 @restricted_access
 def deleteTimelapse(filename):
 	if util.isAllowedFile(filename, {"mpg"}):
-		secure = os.path.join(settings().getBaseFolder("timelapse"), secure_filename(filename))
-		if os.path.exists(secure):
-			os.remove(secure)
+		timelapse_folder = settings().getBaseFolder("timelapse")
+		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
+		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):
+			os.remove(full_path)
 	return getTimelapseData()
 
 

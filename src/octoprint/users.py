@@ -411,4 +411,4 @@ def dummy_identity_loader():
 
 class ApiUser(User):
 	def __init__(self):
-		User.__init__(self, "api", "", True, UserManager.valid_roles)
+		User.__init__(self, "_api", "", True, UserManager.valid_roles)

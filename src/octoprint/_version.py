@@ -214,7 +214,7 @@ def versions_from_parentdir(parentdir_prefix, root, verbose=False):
             print("guessing rootdir is '%s', but '%s' doesn't start with prefix '%s'" %
                   (root, dirname, parentdir_prefix))
         return None
-    return {"version": dirname[len(parentdir_prefix):], "full": ""}
+    return {"version": dirname[len(parentdir_prefix):], "full": "", "branch": ""}
 
 tag_prefix = ""
 parentdir_prefix = ""
@@ -249,7 +249,7 @@ def parse_lookup_file(root, lookup_path=None):
                 break
     return lookup
 
-def get_versions(default={"version": "unknown", "full": ""}, lookup_path=None, verbose=False):
+def get_versions(default={"version": "unknown", "full": "", "branch": "unknown"}, lookup_path=None, verbose=False):
     # I am in _version.py, which lives at ROOT/VERSIONFILE_SOURCE. If we have
     # __file__, we can work backwards from there to the root. Some
     # py2exe/bbfreeze/non-CPython implementations don't do __file__, in which

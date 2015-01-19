@@ -1,4 +1,6 @@
 recursive-include src/octoprint/static *
 recursive-include src/octoprint/templates *
+recursive-include src/octoprint/plugins *
+recursive-include src/octoprint/translations *
 include versioneer.py
 include src/octoprint/_version.py

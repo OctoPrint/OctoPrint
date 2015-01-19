@@ -18,6 +18,20 @@
   support is enabled -- STL) files to automatically add.
 * OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its 
   core functionality.
+* New type of API key: [App Session Keys](http://docs.octoprint.org/en/devel/api/apps.html) for trusted applications
+* Printer Profiles: Printer properties like print volume, extruder offsets etc are now managed via Printer Profiles. A
+  connection to a printer will always have a printer profile associated.
+* OctoPrint now supports `action:...` commands received via debug messages (`// action:...`) from the printer. Currently supported are
+  - `action:pause`: Pauses the current job in OctoPrint
+  - `action:resume`: Resumes the current job in OctoPrint
+  - `action:disconnect`: Disconnects OctoPrint from the printer
+* Mousing over the webcam image in the control tab enables key control mode, allowing you to quickly move the axis of your
+  printer with your computer's keyboard ([#610](https://github.com/foosel/OctoPrint/pull/610)):
+  - arrow keys: X and Y axes
+  - W, S / PageUp, PageDown: Y axes
+  - Home: Home X and Y axes
+  - End: Home Z axes
+  - 1, 2, 3, 4: change step size used (0.1, 1, 10, 100mm)
 
 ### Improvements
 
@@ -32,25 +46,111 @@
   ([#532](https://github.com/foosel/OctoPrint/issues/532) and [#590](https://github.com/foosel/OctoPrint/pull/590))
 * Slicing has been greatly improved:
   * It now allows for a definition of slicing profiles to use for slicing plus overrides which can be defined per slicing 
-    job (defining overrides is not yet part of the UI but it's on the roadmap). 
+    job (defining overrides is not yet part of the UI but it's on the roadmap).
+  * A new slicing dialog has been added which allows (re-)slicing uploaded STL files (which are now displayed in the file list
+    as well). This dialog also allows specifying which action to take after slicing has been completed (none, selecting the
+    sliced GCODE for printing or starting to print it directly)
   * Slicers themselves are integrated into the system via ``SlicingPlugins``. 
   * The [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the 
     [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See 
     [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to 
     accommodate the new integration.
   * The "Slicing done" notification is now colored green ([#558](https://github.com/foosel/OctoPrint/issues/558)).
+  * The slicing API allows positioning the model to slice on the print bed (Note: this is not yet available in the UI).
 * File management now supports STL files as first class citizens (including UI adjustments to allow management of
   uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
+* Also interpret lines starting with "!!" as errors
+* Added deletion of pyc files to the `python setup.py clean` command
+* Settings now show a QRCode for the API Key ([#637](https://github.com/foosel/OctoPrint/pull/637))
+* Username in UI is no longer enclosed in scare quotes ([#595](https://github.com/foosel/OctoPrint/pull/595))
+* Username in login dialog is not automatically capitalized on mobile devices anymore ([#639](https://github.com/foosel/OctoPrint/pull/639))
+* "Slicing Done" and "Streaming Done" notifications now have a green background ([#558](https://github.com/foosel/OctoPrint/issues/558))
+* Files that are currently in use, be it for slicing, printing or whatever, are now tracked and can not be deleted as
+  long as they are in use
+* Settings in UI get refreshed when opening settings dialog
+* New event "SettingsUpdated"
+* "Print time left" is now not displayed until it becomes somewhat stable. Display in web interface now also happens
+  in a fuzzy way instead of the format hh:mm:ss, to not suggest a high accuracy anymore where the can't be one. Additionally
+  OctoPrint will use data from prior prints to enhance the initial print time estimation.
+* Added handler for uncaught exceptions to make sure those get logged, should make the logs even more useful for analysing
+  bug reports
+* The server now tracks the modification date of the configuration file and reloads it prior to saving the config if
+  it has been changed during runtime by external editing, hence no config settings added manually while the server
+  was running should be overwritten anymore.
+* Automatically hard-reload the UI if upon reconnecting to the server a new version is detected.
+* Better handling of errors on the websocket - no more logging of the full stack trace to the log, only a warning
+  message for now.
+* Daemonized OctoPrint now cleans up its pidfile when receiving a TERM signal ([#711](https://github.com/foosel/OctoPrint/issues/711))
+* Added serial types for OpenBSD ([#551](https://github.com/foosel/OctoPrint/pull/551))
 
 ### Bug Fixes
 
 * [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
   as 0
+* [#633](https://github.com/foosel/OctoPrint/issues/633) - Correctly interpret temperature lines from multi extruder 
+  setups under Smoothieware
+* [#556](https://github.com/foosel/OctoPrint/issues/556) - Allow login of the same user from multiple browsers without
+  side effects
+* [#680](https://github.com/foosel/OctoPrint/issues/680) - Don't accidentally include a newline from the MIME headers
+  in the parsed multipart data from file uploads
+* [#709](https://github.com/foosel/OctoPrint/issues/709) - Properly initialize time estimation for SD card transfers too
+* [#715](https://github.com/foosel/OctoPrint/issues/715) - Fixed an error where Event Triggers of type command caused
+  and exception to be raised due to a misnamed attribute in the code
+* [#717](https://github.com/foosel/OctoPrint/issues/717) - Use ``shutil.move`` instead of ``os.rename`` to avoid cross
+  device renaming issues
 * Various fixes of bugs in newly introduced features and improvements:
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
     queue
+  * [#664](https://github.com/foosel/OctoPrint/issues/664) - Fixed jog controls again
+  * [#677](https://github.com/foosel/OctoPrint/issues/677) - Fixed extruder offsets not being properly editable in
+    printer profiles
+  * [#683](https://github.com/foosel/OctoPrint/issues/683) - Fixed heated bed option not being properly displayed in
+    printer profiles
+  * [#685](https://github.com/foosel/OctoPrint/issues/685) - Quoted file name for Timelapse creation to not make
+    command hiccup on ``~`` in file name
+  * [#709](https://github.com/foosel/OctoPrint/issues/709) - Fixed file sending to SD card
+  * [#714](https://github.com/foosel/OctoPrint/issues/714) - Fixed type validation of printer profiles
+  * Heating up the heated bed (if present) was not properly configured in CuraEngine plugin
+  * [#720](https://github.com/foosel/OctoPrint/issues/720) - Fixed translation files not being properly copied over
+    during install
+  * [#724](https://github.com/foosel/OctoPrint/issues/724) - Fixed timelapse deletion for timelapses with non-ascii
+    characters in their name
+  * [#726](https://github.com/foosel/OctoPrint/issues/726) - Fixed ``babel_refresh`` command
+* Various fixes without tickets:
+  * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
+  * Do not deliver the API key on settings API unless user has admin rights
+  * Don't hiccup on slic3r filament_diameter comments in GCODE generated for multi extruder setups
 
-## 1.1.1 (Unreleased)
+([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
+
+## 1.1.2 (Unreleased)
+
+### Improvements
+
+* Added deletion of `*.pyc` files to `python setup.py clean` command, should help tremendously when switching branches (backported
+  from [9e014eb](https://github.com/foosel/OctoPrint/commit/9e014eba1feffde11ed0601d9c911b8cac9f3fb0))
+* Increased default communication and connection timeouts
+
+### Bug Fixes
+
+* [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
+  by versioneer
+* [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
+  (backport of [619fe9a](https://github.com/foosel/OctoPrint/commit/619fe9a0e78826bd1524b235a910156439bcb6d7)).
+* [IRC] - Don't hiccup on slic3r filament_diameter comments generated for multi extruder setups
+* [ML] - Fixed relative URL to sockjs endpoint, wasn't yet using the proper base url
+* [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header
+  sent by proxies into account for included host and port, also fixed [#698](https://github.com/foosel/OctoPrint/issues/698)
+  introduced by this
+* Small fixes for timelapse creation:
+  - [#344](https://github.com/foosel/OctoPrint/issues/344) - Made timelapses capable of coping with missing captures in between by decrementing the image counter again if there
+    was an error fetching the latest image from the snapshot URL (backport of [1a7a468](https://github.com/foosel/OctoPrint/commit/1a7a468eb65fdf2a13b4c7a7723280e822c9c34b)
+    and [bf9d5ef](https://github.com/foosel/OctoPrint/commit/bf9d5efe43a1e57aacd8512125082ddca06b4efc))
+  - [#693](https://github.com/foosel/OctoPrint/issues/693) -  Try not to capture an image if image counter is still unset
+  - [unreported] Synchronize image counter decrementing as well as incrementing to prevent rare race conditions when generating the
+    image file names
+
+## 1.1.1 (2014-10-27)
 
 ### Improvements
 
@@ -65,6 +165,8 @@
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
 * [#604](https://github.com/foosel/OctoPrint/issues/604) - Properly initialize settings basedir on server startup
 * [IRC] Also allow downloading .g files via Tornado
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.1.0...1.1.1))
 
 ## 1.1.0 (2014-09-03)
 

@@ -1,5 +1,5 @@
-from __future__ import absolute_import
 # coding=utf-8
+from __future__ import absolute_import
 __author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under terms of the AGPLv3 License"
@@ -31,18 +31,19 @@ class gcode(object):
 		self._abort = False
 		self._filamentDiameter = 0
 	
-	def load(self, filename):
+	def load(self, filename, printer_profile):
 		if os.path.isfile(filename):
 			self.filename = filename
 			self._fileSize = os.stat(filename).st_size
 			with open(filename, "r") as f:
-				self._load(f)
+				self._load(f, printer_profile)
 
 	def abort(self):
 		self._abort = True
 
-	def _load(self, gcodeFile):
+	def _load(self, gcodeFile, printer_profile):
 		filePos = 0
+		readBytes = 0
 		pos = [0.0, 0.0, 0.0]
 		posOffset = [0.0, 0.0, 0.0]
 		currentE = [0.0]
@@ -53,29 +54,46 @@ class gcode(object):
 		absoluteE = True
 		scale = 1.0
 		posAbs = True
-		feedRateXY = settings().getFloat(["printerParameters", "movementSpeed", "x"])
-		offsets = settings().get(["printerParameters", "extruderOffsets"])
+		feedRateXY = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
+		offsets = printer_profile["extruder"]["offsets"]
 
 		for line in gcodeFile:
 			if self._abort:
 				raise AnalysisAborted()
 			filePos += 1
+			readBytes += len(line)
+
+			if isinstance(gcodeFile, (file)):
+				percentage = float(readBytes) / float(self._fileSize)
+			elif isinstance(gcodeFile, (list)):
+				percentage = float(filePos) / float(len(gcodeFile))
+			else:
+				percentage = None
 
 			try:
-				if self.progressCallback is not None and (filePos % 1000 == 0):
-					if isinstance(gcodeFile, (file)):
-						self.progressCallback(float(gcodeFile.tell()) / float(self._fileSize))
-					elif isinstance(gcodeFile, (list)):
-						self.progressCallback(float(filePos) / float(len(gcodeFile)))
+				if self.progressCallback is not None and (filePos % 1000 == 0) and percentage is not None:
+					self.progressCallback(percentage)
 			except:
 				pass
 
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
 				if comment.startswith("filament_diameter"):
-					self._filamentDiameter = float(comment.split("=", 1)[1].strip())
-				elif comment.startswith("CURA_PROFILE_STRING"):
-					curaOptions = self._parseCuraProfileString(comment)
+					filamentValue = comment.split("=", 1)[1].strip()
+					try:
+						self._filamentDiameter = float(filamentValue)
+					except ValueError:
+						try:
+							self._filamentDiameter = float(filamentValue.split(",")[0].strip())
+						except ValueError:
+							self._filamentDiameter = 0.0
+				elif comment.startswith("CURA_PROFILE_STRING") or comment.startswith("CURA_OCTO_PROFILE_STRING"):
+					if comment.startswith("CURA_PROFILE_STRING"):
+						prefix = "CURA_PROFILE_STRING:"
+					else:
+						prefix = "CURA_OCTO_PROFILE_STRING:"
+
+					curaOptions = self._parseCuraProfileString(comment, prefix)
 					if "filament_diameter" in curaOptions:
 						try:
 							self._filamentDiameter = float(curaOptions["filament_diameter"])
@@ -198,13 +216,13 @@ class gcode(object):
 				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):
 					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
 				else:
-					posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-					posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+					posOffset[0] -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					posOffset[1] -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					currentExtruder = T
 
-					posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-					posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+					posOffset[0] += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					posOffset[1] += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					if len(currentE) <= currentExtruder:
 						for i in range(len(currentE), currentExtruder + 1):
@@ -226,8 +244,8 @@ class gcode(object):
 			self.extrusionVolume[i] = (self.extrusionAmount[i] * (math.pi * radius * radius)) / 1000
 		self.totalMoveTimeMinute = totalMoveTimeMinute
 
-	def _parseCuraProfileString(self, comment):
-		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len("CURA_PROFILE_STRING:"):])).split("\b"))}
+	def _parseCuraProfileString(self, comment, prefix):
+		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
 
 
 def getCodeInt(line, code):

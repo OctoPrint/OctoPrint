@@ -9,8 +9,11 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 import pylru
+import tempfile
 
 import octoprint.filemanager
+
+from octoprint.util import safeRename
 
 
 class StorageInterface(object):
@@ -33,7 +36,7 @@ class StorageInterface(object):
 	def remove_folder(self, path, recursive=True):
 		raise NotImplementedError()
 
-	def add_file(self, path, file_object, links=None, allow_overwrite=False):
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		raise NotImplementedError()
 
 	def remove_file(self, path):
@@ -111,10 +114,16 @@ class LocalFileStorage(StorageInterface):
 			absolute_path = os.path.join(path, entry)
 			if os.path.isfile(absolute_path):
 				if not entry in metadata or not isinstance(metadata[entry], dict) or not "analysis" in metadata[entry]:
-					yield entry, absolute_path
+					printer_profile_rels = self.get_link(absolute_path, "printerprofile")
+					if printer_profile_rels:
+						printer_profile_id = printer_profile_rels[0]["id"]
+					else:
+						printer_profile_id = None
+
+					yield entry, absolute_path, printer_profile_id
 			elif os.path.isdir(absolute_path):
 				for sub_entry in self._analysis_backlog_generator(absolute_path):
-					yield self.join_path(entry, sub_entry), os.path.join(absolute_path, sub_entry)
+					yield self.join_path(entry, sub_entry[0]), sub_entry[1], sub_entry[2]
 
 	def file_exists(self, path):
 		path, name = self.sanitize(path)
@@ -221,13 +230,14 @@ class LocalFileStorage(StorageInterface):
 		import shutil
 		shutil.rmtree(folder_path)
 
-	def add_file(self, path, file_object, links=None, allow_overwrite=False):
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		"""
 		Adds the file ``file_object`` as ``path``
 
 		:param path: the file's new path, will be sanitized
 		:param file_object: a file object that provides a ``save`` method which will be called with the destination path
 		                    where the object should then store its contents
+		:param printer_profile: the printer profile associated with this file (if any)
 		:param links: any links to add with the file
 		:param allow_overwrite: if set to True no error will be raised if the file already exists and the existing file
 		                        and its metadata will just be silently overwritten
@@ -266,8 +276,13 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 
 		# process any links that were also provided for adding to the file
-		if links:
-			self._add_links(name, path, links)
+		if not links:
+			links = []
+
+		if printer_profile is not None:
+			links.append(("printerprofile", dict(id=printer_profile["id"], name=printer_profile["name"])))
+
+		self._add_links(name, path, links)
 
 		return self.rel_path((path, name))
 
@@ -321,6 +336,11 @@ class LocalFileStorage(StorageInterface):
 			return metadata[name]
 		else:
 			return None
+
+	def get_link(self, path, rel):
+		path, name = self.sanitize(path)
+		return self._get_links(name, path, rel)
+
 
 	def add_link(self, path, rel, data):
 		"""
@@ -484,6 +504,7 @@ class LocalFileStorage(StorageInterface):
 			metadata[name]["history"] = []
 
 		metadata[name]["history"].append(data)
+		self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
 		self._save_metadata(path, metadata)
 
 	def _update_history(self, name, path, index, data):
@@ -493,7 +514,8 @@ class LocalFileStorage(StorageInterface):
 			return
 
 		try:
-			metadata[name]["history"][index] = data
+			metadata[name]["history"][index].update(data)
+			self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
 			self._save_metadata(path, metadata)
 		except IndexError:
 			pass
@@ -506,9 +528,70 @@ class LocalFileStorage(StorageInterface):
 
 		try:
 			del metadata[name]["history"][index]
+			self._calculate_stats_from_history(name, path, metadata=metadata, save=False)
 			self._save_metadata(path, metadata)
 		except IndexError:
 			pass
+
+	def _calculate_stats_from_history(self, name, path, metadata=None, save=True):
+		if metadata is None:
+			metadata = self._get_metadata(path)
+
+		if not name in metadata or not "history" in metadata[name]:
+			return
+
+		# collect data from history
+		former_print_times = dict()
+		last_print = dict()
+
+
+		for history_entry in metadata[name]["history"]:
+			if not "printTime" in history_entry or not "success" in history_entry or not history_entry["success"] or not "printerProfile" in history_entry:
+				continue
+
+			printer_profile = history_entry["printerProfile"]
+			print_time = history_entry["printTime"]
+
+			if not printer_profile in former_print_times:
+				former_print_times[printer_profile] = []
+			former_print_times[printer_profile].append(print_time)
+
+			if not printer_profile in last_print or last_print[printer_profile] is None or ("timestamp" in history_entry and history_entry["timestamp"] > last_print[printer_profile]["timestamp"]):
+				last_print[printer_profile] = history_entry
+
+		# calculate stats
+		statistics = dict(averagePrintTime=dict(), lastPrintTime=dict())
+
+		for printer_profile in former_print_times:
+			if not former_print_times[printer_profile]:
+				continue
+			statistics["averagePrintTime"][printer_profile] = sum(former_print_times[printer_profile]) / float(len(former_print_times[printer_profile]))
+
+		for printer_profile in last_print:
+			if not last_print[printer_profile]:
+				continue
+			statistics["lastPrintTime"][printer_profile] = last_print[printer_profile]["printTime"]
+
+		metadata[name]["statistics"] = statistics
+
+		if save:
+			self._save_metadata(path, metadata)
+
+	def _get_links(self, name, path, searched_rel):
+		metadata = self._get_metadata(path)
+		result = []
+
+		if not name in metadata:
+			return result
+
+		if not "links" in metadata[name]:
+			return result
+
+		for data in metadata[name]["links"]:
+			if not "rel" in data or not data["rel"] == searched_rel:
+				continue
+			result.append(data)
+		return result
 
 	def _add_links(self, name, path, links):
 		file_type = octoprint.filemanager.get_file_type(name)
@@ -776,20 +859,27 @@ class LocalFileStorage(StorageInterface):
 				with open(metadata_path) as f:
 					try:
 						import yaml
-						return yaml.safe_load(f)
+						metadata = yaml.safe_load(f)
 					except:
 						self._logger.exception("Error while reading .metadata.yaml from {path}".format(**locals()))
+					else:
+						self._metadata_cache[path] = metadata
+						return metadata
 		return dict()
 
 	def _save_metadata(self, path, metadata):
 		metadata_path = os.path.join(path, ".metadata.yaml")
 
+		fh, metadata_temporary_path = tempfile.mkstemp()
+		os.close(fh)
+
 		with self._metadata_lock:
-			with open(metadata_path, "w") as f:
-				try:
+			try:
+				with open(metadata_temporary_path, "w") as f:
 					import yaml
 					yaml.safe_dump(metadata, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
-				except:
-					self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
-				else:
-					self._metadata_cache[path] = metadata
+				safeRename(metadata_temporary_path, metadata_path, throw_error=True)
+			except:
+				self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
+			else:
+				self._metadata_cache[path] = metadata

@@ -9,6 +9,7 @@ import logging
 
 from flask import request, jsonify
 
+from octoprint.events import eventManager, Events
 from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
 
@@ -26,15 +27,12 @@ import octoprint.plugin
 def getSettings():
 	s = settings()
 
-	[movementSpeedX, movementSpeedY, movementSpeedZ, movementSpeedE] \
-		= s.get(["printerParameters", "movementSpeed", ["x", "y", "z", "e"]])
-
 	connectionOptions = getConnectionOptions()
 
 	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
-			"key": s.get(["api", "key"]),
+			"key": s.get(["api", "key"]) if admin_permission.can() else "n/a",
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
 		"appearance": {
@@ -42,14 +40,6 @@ def getSettings():
 			"color": s.get(["appearance", "color"])
 		},
 		"printer": {
-			"movementSpeedX": movementSpeedX,
-			"movementSpeedY": movementSpeedY,
-			"movementSpeedZ": movementSpeedZ,
-			"movementSpeedE": movementSpeedE,
-			"invertAxes": s.get(["printerParameters", "invertAxes"]),
-			"numExtruders": s.get(["printerParameters", "numExtruders"]),
-			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
-			"bedDimensions": s.get(["printerParameters", "bedDimensions"]),
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
 		},
 		"webcam": {
@@ -69,7 +59,8 @@ def getSettings():
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
-			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"])
+			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
+			"keyboardControl": s.getBoolean(["feature", "keyboardControl"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -135,14 +126,6 @@ def setSettings():
 			if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 
 		if "printer" in data.keys():
-			if "movementSpeedX" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "x"], data["printer"]["movementSpeedX"])
-			if "movementSpeedY" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "y"], data["printer"]["movementSpeedY"])
-			if "movementSpeedZ" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "z"], data["printer"]["movementSpeedZ"])
-			if "movementSpeedE" in data["printer"].keys(): s.setInt(["printerParameters", "movementSpeed", "e"], data["printer"]["movementSpeedE"])
-			if "invertAxes" in data["printer"].keys(): s.set(["printerParameters", "invertAxes"], data["printer"]["invertAxes"])
-			if "numExtruders" in data["printer"].keys(): s.setInt(["printerParameters", "numExtruders"], data["printer"]["numExtruders"])
-			if "extruderOffsets" in data["printer"].keys(): s.set(["printerParameters", "extruderOffsets"], data["printer"]["extruderOffsets"])
-			if "bedDimensions" in data["printer"].keys(): s.set(["printerParameters", "bedDimensions"], data["printer"]["bedDimensions"])
 			if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
 		if "webcam" in data.keys():
@@ -163,6 +146,7 @@ def setSettings():
 			if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 			if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 			if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
+			if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 
 		if "serial" in data.keys():
 			if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
@@ -211,7 +195,8 @@ def setSettings():
 					plugin.on_settings_save(data["plugins"][name])
 
 
-		s.save()
+		if s.save():
+			eventManager().fire(Events.SETTINGS_UPDATED)
 
 	return getSettings()
 

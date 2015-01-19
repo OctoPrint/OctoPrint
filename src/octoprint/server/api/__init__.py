@@ -17,9 +17,9 @@ import octoprint.util as util
 import octoprint.users
 import octoprint.server
 import octoprint.plugin
-from octoprint.server import admin_permission, NO_CONTENT, UI_API_KEY
+from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import get_api_key, get_user_for_apikey
+from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access
 
 
@@ -36,78 +36,13 @@ from . import timelapse as api_timelapse
 from . import users as api_users
 from . import log as api_logs
 from . import slicing as api_slicing
+from . import printer_profiles as api_printer_profiles
 
 
 VERSION = "0.1"
 
-
-def optionsAllowOrigin(request):
-	""" Always reply 200 on OPTIONS request """
-
-	resp = current_app.make_default_options_response()
-
-	# Allow the origin which made the XHR
-	resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
-	# Allow the actual method
-	resp.headers['Access-Control-Allow-Methods'] = request.headers['Access-Control-Request-Method']
-	# Allow for 10 seconds
-	resp.headers['Access-Control-Max-Age'] = "10"
-
-	# 'preflight' request contains the non-standard headers the real request will have (like X-Api-Key)
-	customRequestHeaders = request.headers.get('Access-Control-Request-Headers', None)
-	if customRequestHeaders is not None:
-		# If present => allow them all
-		resp.headers['Access-Control-Allow-Headers'] = customRequestHeaders
-
-	return resp
-
-@api.before_request
-def beforeApiRequests():
-	"""
-	All requests in this blueprint need to be made supplying an API key. This may be the UI_API_KEY, in which case
-	the underlying request processing will directly take place, or it may be the global or a user specific case. In any
-	case it has to be present and must be valid, so anything other than the above three types will result in denying
-	the request.
-	"""
-
-	if request.method == 'OPTIONS' and s().getBoolean(["api", "allowCrossOrigin"]):
-		return optionsAllowOrigin(request)
-
-	apikey = get_api_key(request)
-	if apikey is None:
-		# no api key => 401
-		return make_response("No API key provided", 401)
-
-	if apikey == UI_API_KEY:
-		# ui api key => continue regular request processing
-		return
-
-	if not s().get(["api", "enabled"]):
-		# api disabled => 401
-		return make_response("API disabled", 401)
-
-	if apikey == s().get(["api", "key"]):
-		# global api key => continue regular request processing
-		return
-
-	user = get_user_for_apikey(apikey)
-	if user is not None:
-		# user specific api key => continue regular request processing
-		return
-
-	# invalid api key => 401
-	return make_response("Invalid API key", 401)
-
-@api.after_request
-def afterApiRequests(resp):
-
-	# Allow crossdomain
-	allowCrossOrigin = s().getBoolean(["api", "allowCrossOrigin"])
-	if request.method != 'OPTIONS' and 'Origin' in request.headers and allowCrossOrigin:
-		resp.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
-
-	return resp
-
+api.before_request(apiKeyRequestHandler)
+api.after_request(corsResponseHandler)
 
 #~~ data from plugins
 
@@ -181,14 +116,6 @@ def firstRunSetup():
 def apiPrinterState():
 	return make_response(("/api/state has been deprecated, use /api/printer instead", 405, []))
 
-
-@api.route("/version", methods=["GET"])
-@restricted_access
-def apiVersion():
-	return jsonify({
-		"server": octoprint.server.VERSION,
-		"api": octoprint.server.api.VERSION
-	})
 
 @api.route("/version", methods=["GET"])
 @restricted_access

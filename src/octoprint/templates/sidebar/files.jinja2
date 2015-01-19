@@ -1,0 +1,65 @@
+<form class="form-search">
+    <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
+</form>
+<div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
+    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+
+    <script type="text/html" id="files_template_machinecode">
+        <div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
+        <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
+        <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+        <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
+        <div class="btn-group action-buttons">
+            <div class="btn btn-mini toggleAdditionalData" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }"><i class="icon-chevron-down"></i></div>
+            <a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="{{ _('Download') }}"></i></a>
+            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
+            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-folder-open" title="{{ _('Load') }}"></i></div>
+            <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-print" title="{{ _('Load and Print') }}"></i></div>
+        </div>
+    </script>
+
+    <script type="text/html" id="files_template_model">
+        <div class="title muted" data-bind="text: name"></div>
+        <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
+        <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+        <div class="btn-group action-buttons">
+            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
+            <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSlicing($data)) { $root.sliceFile($data); } else { return; } }, css: {disabled: !$root.enableSlicing($data)}"><i class="icon-magic" title="{{ _('Slice') }}"></i></div>
+        </div>
+    </script>
+
+    <script type="text/html" id="files_template_folder">
+        <div class="title" data-bind="text: name"></div>
+    </script>
+</div>
+<div class="muted text-right">
+    <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span></small>
+</div>
+<div style="display: none;" data-bind="visible: loginState.isUser">
+    <div class="row-fluid upload-buttons">
+        {% if enableSdSupport %}
+            <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                <i class="icon-upload-alt icon-white"></i>
+                                <span>{{ _('Upload') }}</span>
+                                <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                            </span>
+            <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
+                                <i class="icon-upload-alt icon-white"></i>
+                                <span>{{ _('Upload to SD') }}</span>
+                                <input id="gcode_upload_sd" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
+                            </span>
+        {% else %}
+            <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+                                <i class="icon-upload-alt icon-white"></i>
+                                <span>{{ _('Upload') }}</span>
+                                <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                            </span>
+        {% endif %}
+    </div>
+    <div id="gcode_upload_progress" class="progress" style="width: 100%;">
+        <div class="bar" style="width: 0%"></div>
+    </div>
+    <div>
+        <small>{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
+    </div>
+</div>

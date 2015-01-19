@@ -105,6 +105,7 @@ function DataUpdater(allViewModels) {
                         headers: {"X-Api-Key": UI_API_KEY}
                     });
 
+                    var oldVersion = VERSION;
                     VERSION = data["version"];
                     DISPLAY_VERSION = data["display_version"];
                     $("span.version").text(DISPLAY_VERSION);
@@ -120,6 +121,15 @@ function DataUpdater(allViewModels) {
                         if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                             $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
                         }
+                    }
+
+                    if (oldVersion != VERSION) {
+                        // version change detected, force reloading UI - use randomized delay to reduce server load in
+                        // the case of multiple clients
+                        var delay = 5 + Math.floor(Math.random() * 5) + 1;
+                        setTimeout(function() {location.reload(true);}, delay * 1000);
+
+                        // TODO notify about that, or show confirmation
                     }
 
                     break;
@@ -175,7 +185,7 @@ function DataUpdater(allViewModels) {
                         new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
                         timelapseViewModel.requestData();
                     } else if (type == "MovieFailed") {
-                        html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failedwith return code %(returncode)s"), payload) + "</p>";
+                        html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
                         html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
                         new PNotify({title: gettext("Rendering failed"), text: html, type: "error", hide: false});
                     } else if (type == "SlicingStarted") {
@@ -226,7 +236,11 @@ function DataUpdater(allViewModels) {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        new PNotify({title: gettext("Streaming done"), text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload), type: "success"});
+                        new PNotify({
+                            title: gettext("Streaming done"),
+                            text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
+                            type: "success"
+                        });
                         gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
                     break;
@@ -246,6 +260,13 @@ function DataUpdater(allViewModels) {
                         }
                     });
                     break;
+                }
+                case "plugin": {
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onDataUpdaterPluginMessage")) {
+                            viewModel.onDataUpdaterPluginMessage(data.plugin, data.data);
+                        }
+                    })
                 }
             }
         }

@@ -26,10 +26,23 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.feedbackControlLookup = {};
 
-    self.settings.printer_numExtruders.subscribe(function(oldVal, newVal) {
+    self.keycontrolActive = ko.observable(false);
+    self.keycontrolHelpActive = ko.observable(false);
+    self.keycontrolPossible = ko.computed(function() {
+        return self.isOperational() && !self.isPrinting() && self.loginState.isUser() && !$.browser.mobile;
+    });
+    self.showKeycontrols = ko.computed(function() {
+        return self.keycontrolActive() && self.keycontrolPossible();
+    });
+
+    self.settings.printerProfiles.currentProfileData.subscribe(function() {
+        self._updateExtruderCount();
+        self.settings.printerProfiles.currentProfileData().extruder.count.subscribe(self._updateExtruderCount);
+    });
+    self._updateExtruderCount = function() {
         var tools = [];
 
-        var numExtruders = self.settings.printer_numExtruders();
+        var numExtruders = self.settings.printerProfiles.currentProfileData().extruder.count();
         if (numExtruders > 1) {
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
@@ -45,7 +58,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
 
         self.tools(tools);
-    });
+    };
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
@@ -110,7 +123,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.sendJogCommand = function(axis, multiplier, distance) {
         if (typeof distance === "undefined")
             distance = $('#jog_distance button.active').data('distance');
-        if (self.settings.getPrinterInvertAxis(axis)) {
+        if (self.settings.printerProfiles.currentProfileData() && self.settings.printerProfiles.currentProfileData()["axes"] && self.settings.printerProfiles.currentProfileData()["axes"][axis] && self.settings.printerProfiles.currentProfileData()["axes"][axis]["inverted"]()) {
             multiplier *= -1;
         }
 
@@ -232,9 +245,6 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             callback();
         }
 
-        if (data === undefined)
-            return;
-
     };
 
     self.displayMode = function(customControl) {
@@ -259,4 +269,110 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.onStartup = function() {
         self.requestData();
     };
+
+    self.onFocus = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+        self.keycontrolActive(true);
+    };
+
+    self.onMouseOver = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+        $("#webcam_container").focus();
+        self.keycontrolActive(true);
+    };
+
+    self.onMouseOut = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+        $("#webcam_container").blur();
+        self.keycontrolActive(false);
+    };
+
+    self.toggleKeycontrolHelp = function() {
+        self.keycontrolHelpActive(!self.keycontrolHelpActive());
+    };
+
+    self.onKeyDown = function(data, event) {
+        if (!self.settings.feature_keyboardControl()) return;
+
+        var button = undefined;
+        var visualizeClick = true;
+
+        switch(event.which) {
+            case 37: // left arrow key
+                // X-
+                button = $("#control-xdec");
+                break;
+            case 38: // up arrow key
+                // Y+
+                button = $("#control-yinc");
+                break;
+            case 39: // right arrow key
+                // X+
+                button = $("#control-xinc");
+                break;
+            case 40: // down arrow key
+                // Y-
+                button = $("#control-ydec");
+                break;
+            case 49: // number 1
+            case 97: // numpad 1
+                // Distance 0.1
+                button = $("#control-distance01");
+                visualizeClick = false;
+                break;
+            case 50: // number 2
+            case 98: // numpad 2
+                // Distance 1
+                button = $("#control-distance1");
+                visualizeClick = false;
+                break;
+            case 51: // number 3
+            case 99: // numpad 3
+                // Distance 10
+                button = $("#control-distance10");
+                visualizeClick = false;
+                break;
+            case 52: // number 4
+            case 100: // numpad 4
+                // Distance 100
+                button = $("#control-distance100");
+                visualizeClick = false;
+                break;
+            case 33: // page up key
+            case 87: // w key
+                // z lift up
+                button = $("#control-zinc");
+                break;
+            case 34: // page down key
+            case 83: // s key
+                // z lift down
+                button = $("#control-zdec");
+                break;
+            case 36: // home key
+                // xy home
+                button = $("#control-xyhome");
+                break;
+            case 35: // end key
+                // z home
+                button = $("#control-zhome");
+                break;
+            default:
+                event.preventDefault();
+                return false;
+        }
+
+        if (button === undefined) {
+            return false;
+        } else {
+            event.preventDefault();
+            if (visualizeClick) {
+                button.addClass("active");
+                setTimeout(function() {
+                    button.removeClass("active");
+                }, 150);
+            }
+            button.click();
+        }
+    };
+
 }

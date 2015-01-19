@@ -30,8 +30,8 @@ default_settings = {
 		"log": False,
 		"timeout": {
 			"detection": 0.5,
-			"connection": 2,
-			"communication": 5,
+			"connection": 10,
+			"communication": 30,
 			"temperature": 5,
 			"sdStatus": 1
 		},
@@ -45,8 +45,10 @@ default_settings = {
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",
 			"schemeHeader": "X-Scheme",
+			"hostHeader": "X-Forwarded-Host",
 			"prefixFallback": "",
-			"schemeFallback": ""
+			"schemeFallback": "",
+			"hostFallback": ""
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
@@ -84,7 +86,8 @@ default_settings = {
 		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
-		"repetierTargetTemp": False
+		"repetierTargetTemp": False,
+		"keyboardControl": True
 	},
 	"folder": {
 		"uploads": None,
@@ -94,7 +97,8 @@ default_settings = {
 		"virtualSd": None,
 		"watched": None,
 		"plugins": None,
-		"slicingProfiles": None
+		"slicingProfiles": None,
+		"printerProfiles": None
 	},
 	"temperature": {
 		"profiles": [
@@ -102,22 +106,12 @@ default_settings = {
 			{"name": "PLA", "extruder" : 180, "bed" : 60 }
 		]
 	},
+	"printerProfiles": {
+		"default": None,
+		"defaultProfile": {}
+	},
 	"printerParameters": {
-		"movementSpeed": {
-			"x": 6000,
-			"y": 6000,
-			"z": 200,
-			"e": 300
-		},
 		"pauseTriggers": [],
-		"invertAxes": [],
-		"numExtruders": 1,
-		"extruderOffsets": [
-			{"x": 0.0, "y": 0.0}
-		],
-		"bedDimensions": {
-			"x": 200.0, "y": 200.0, "r": 100, "circular": False
-		},
 		"defaultExtrusionLength": 5
 	},
 	"appearance": {
@@ -154,7 +148,8 @@ default_settings = {
 	"api": {
 		"enabled": True,
 		"key": None,
-		"allowCrossOrigin": False
+		"allowCrossOrigin": False,
+		"apps": {}
 	},
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
@@ -179,9 +174,21 @@ default_settings = {
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
+			"movementSpeed": {
+				"x": 6000,
+				"y": 6000,
+				"z": 200,
+				"e": 300
+			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
-			"extendedSdFileList": False
+			"smoothieTemperatureReporting": False,
+			"extendedSdFileList": False,
+			"throttle": 0.01,
+			"waitOnLongMoves": False,
+			"rxBuffer": 64,
+			"txBuffer": 40,
+			"commandBuffer": 4
 		}
 	}
 }
@@ -197,6 +204,7 @@ class Settings(object):
 
 		self._config = None
 		self._dirty = False
+		self._mtime = None
 
 		self._init_settings_dir(basedir)
 
@@ -231,6 +239,7 @@ class Settings(object):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
+				self._mtime = self._last_modified()
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = {}
@@ -239,92 +248,71 @@ class Settings(object):
 			self._migrateConfig()
 
 	def _migrateConfig(self):
-		if not self._config:
-			return
-
-		if "events" in self._config.keys() and ("gcodeCommandTrigger" in self._config["events"] or "systemCommandTrigger" in self._config["events"]):
-			self._logger.info("Migrating config (event subscriptions)...")
-
-			# migrate event hooks to new format
-			placeholderRe = re.compile("%\((.*?)\)s")
-
-			eventNameReplacements = {
-				"ClientOpen": "ClientOpened",
-				"TransferStart": "TransferStarted"
-			}
-			payloadDataReplacements = {
-				"Upload": {"data": "{file}", "filename": "{file}"},
-				"Connected": {"data": "{port} at {baudrate} baud"},
-				"FileSelected": {"data": "{file}", "filename": "{file}"},
-				"TransferStarted": {"data": "{remote}", "filename": "{remote}"},
-				"TransferDone": {"data": "{remote}", "filename": "{remote}"},
-				"ZChange": {"data": "{new}"},
-				"CaptureStart": {"data": "{file}"},
-				"CaptureDone": {"data": "{file}"},
-				"MovieDone": {"data": "{movie}", "filename": "{gcode}"},
-				"Error": {"data": "{error}"},
-				"PrintStarted": {"data": "{file}", "filename": "{file}"},
-				"PrintDone": {"data": "{file}", "filename": "{file}"},
-			}
-
-			def migrateEventHook(event, command):
-				# migrate placeholders
-				command = placeholderRe.sub("{__\\1}", command)
-
-				# migrate event names
-				if event in eventNameReplacements:
-					event = eventNameReplacements["event"]
-
-				# migrate payloads to more specific placeholders
-				if event in payloadDataReplacements:
-					for key in payloadDataReplacements[event]:
-						command = command.replace("{__%s}" % key, payloadDataReplacements[event][key])
-
-				# return processed tuple
-				return event, command
-
-			disableSystemCommands = False
-			if "systemCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["systemCommandTrigger"]:
-				disableSystemCommands = not self._config["events"]["systemCommandTrigger"]["enabled"]
-
-			disableGcodeCommands = False
-			if "gcodeCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["gcodeCommandTrigger"]:
-				disableGcodeCommands = not self._config["events"]["gcodeCommandTrigger"]["enabled"]
-
-			disableAllCommands = disableSystemCommands and disableGcodeCommands
-			newEvents = {
-				"enabled": not disableAllCommands,
-				"subscriptions": []
-			}
-
-			if "systemCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["systemCommandTrigger"]:
-				for trigger in self._config["events"]["systemCommandTrigger"]["subscriptions"]:
-					if not ("event" in trigger and "command" in trigger):
-						continue
-
-					newTrigger = {"type": "system"}
-					if disableSystemCommands and not disableAllCommands:
-						newTrigger["enabled"] = False
-
-					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
-					newEvents["subscriptions"].append(newTrigger)
-
-			if "gcodeCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["gcodeCommandTrigger"]:
-				for trigger in self._config["events"]["gcodeCommandTrigger"]["subscriptions"]:
-					if not ("event" in trigger and "command" in trigger):
-						continue
-
-					newTrigger = {"type": "gcode"}
-					if disableGcodeCommands and not disableAllCommands:
-						newTrigger["enabled"] = False
-
-					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
-					newTrigger["command"] = newTrigger["command"].split(",")
-					newEvents["subscriptions"].append(newTrigger)
-
-			self._config["events"] = newEvents
+		dirty = False
+		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config, self._migrate_printer_parameters):
+			dirty = migrate() or dirty
+		if dirty:
 			self.save(force=True)
-			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
+
+	def _migrate_printer_parameters(self):
+		default_profile = self._config["printerProfiles"]["defaultProfile"] if "printerProfiles" in self._config and "defaultProfile" in self._config["printerProfiles"] else dict()
+		dirty = False
+
+		if "printerParameters" in self._config:
+			printer_parameters = self._config["printerParameters"]
+
+			if "movementSpeed" in printer_parameters or "invertAxes" in printer_parameters:
+				default_profile["axes"] = dict(x=dict(), y=dict(), z=dict(), e=dict())
+				if "movementSpeed" in printer_parameters:
+					for axis in ("x", "y", "z", "e"):
+						if axis in printer_parameters["movementSpeed"]:
+							default_profile["axes"][axis]["speed"] = printer_parameters["movementSpeed"][axis]
+					del self._config["printerParameters"]["movementSpeed"]
+				if "invertedAxes" in printer_parameters:
+					for axis in ("x", "y", "z", "e"):
+						if axis in printer_parameters["invertedAxes"]:
+							default_profile["axes"][axis]["inverted"] = True
+					del self._config["printerParameters"]["invertedAxes"]
+
+			if "numExtruders" in printer_parameters or "extruderOffsets" in printer_parameters:
+				if not "extruder" in default_profile:
+					default_profile["extruder"] = dict()
+
+				if "numExtruders" in printer_parameters:
+					default_profile["extruder"]["count"] = printer_parameters["numExtruders"]
+					del self._config["printerParameters"]["numExtruders"]
+				if "extruderOffsets" in printer_parameters:
+					extruder_offsets = []
+					for offset in printer_parameters["extruderOffsets"]:
+						if "x" in offset and "y" in offset:
+							extruder_offsets.append((offset["x"], offset["y"]))
+					default_profile["extruder"]["offsets"] = extruder_offsets
+					del self._config["printerParameters"]["extruderOffsets"]
+
+			if "bedDimensions" in printer_parameters:
+				bed_dimensions = printer_parameters["bedDimensions"]
+				if not "volume" in default_profile:
+					default_profile["volume"] = dict()
+
+				if "circular" in bed_dimensions and "r" in bed_dimensions and bed_dimensions["circular"]:
+					default_profile["volume"]["formFactor"] = "circular"
+					default_profile["volume"]["width"] = 2 * bed_dimensions["r"]
+					default_profile["volume"]["depth"] = default_profile["volume"]["width"]
+				elif "x" in bed_dimensions or "y" in bed_dimensions:
+					default_profile["volume"]["formFactor"] = "rectangular"
+					if "x" in bed_dimensions:
+						default_profile["volume"]["width"] = bed_dimensions["x"]
+					if "y" in bed_dimensions:
+						default_profile["volume"]["depth"] = bed_dimensions["y"]
+				del self._config["printerParameters"]["bedDimensions"]
+
+			dirty = True
+
+		if dirty:
+			if not "printerProfiles" in self._config:
+				self._config["printerProfiles"] = dict()
+			self._config["printerProfiles"]["defaultProfile"] = default_profile
+		return dirty
 
 	def _migrate_reverse_proxy_config(self):
 		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
@@ -438,16 +426,23 @@ class Settings(object):
 
 	def save(self, force=False):
 		if not self._dirty and not force:
-			return
+			return False
 
 		with open(self._configfile, "wb") as configFile:
 			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self.load()
+		return True
+
+	def _last_modified(self):
+		stat = os.stat(self._configfile)
+		return stat.st_mtime
 
 	#~~ getter
 
-	def get(self, path, asdict=False, defaults=None):
+	def get(self, path, asdict=False, defaults=None, merged=False):
+		import octoprint.util as util
+
 		if len(path) == 0:
 			return None
 
@@ -479,6 +474,8 @@ class Settings(object):
 		for key in keys:
 			if key in config.keys():
 				value = config[key]
+				if merged and key in defaults:
+					value = util.dict_merge(defaults[key], value)
 			elif key in defaults:
 				value = defaults[key]
 			else:
@@ -597,6 +594,9 @@ class Settings(object):
 	def set(self, path, value, force=False, defaults=None):
 		if len(path) == 0:
 			return
+
+		if self._mtime is not None and self._last_modified() != self._mtime:
+			self.load()
 
 		config = self._config
 		if defaults is None:

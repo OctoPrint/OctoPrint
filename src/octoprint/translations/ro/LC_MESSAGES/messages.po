@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2014-08-28 15:52+0200\n"
-"PO-Revision-Date: 2014-08-31 16:21+0000\n"
-"Last-Translator: 3Dmaker4U <3dmaker4u@gmail.com>\n"
+"POT-Creation-Date: 2014-12-18 14:45+0100\n"
+"PO-Revision-Date: 2014-12-18 14:04+0000\n"
+"Last-Translator: Gina Häußge <gina@foosel.net>\n"
 "Language-Team: Romanian (http://www.transifex.com/projects/p/octoprint/language/ro/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,7 +19,14 @@ msgstr ""
 "Language: ro\n"
 "Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));\n"
 
-#: src/octoprint/static/js/app/dataupdater.js:43
+#: src/octoprint/static/js/app/dataupdater.js:52
+#: src/octoprint/static/js/app/dataupdater.js:85
+#: src/octoprint/static/js/app/helpers.js:434
+#: src/octoprint/templates/dialogs.jinja2:55
+msgid "Server is offline"
+msgstr "Serverul este deconectat"
+
+#: src/octoprint/static/js/app/dataupdater.js:53
 msgid ""
 "The server appears to be offline, at least I'm not getting any response from"
 " it. I'll try to reconnect automatically <strong>over the next couple of "
@@ -27,88 +34,94 @@ msgid ""
 "using the button below."
 msgstr "Se pare că serverul nu este connectat sau, cel puțin, mie nu-mi răspunde. Voi încerca să mă reconectez automat <strong>în următoarele două minute</strong>, dar poți încerca oricând să te reconectezi manual utilizând butonul de mai jos."
 
-#: src/octoprint/static/js/app/dataupdater.js:58
+#: src/octoprint/static/js/app/dataupdater.js:86
 msgid ""
 "The server appears to be offline, at least I'm not getting any response from"
 " it. I <strong>could not reconnect automatically</strong>, but you may try a"
 " manual reconnect using the button below."
 msgstr "Se pare că serverul nu este conectat sau, cel puțin, mie nu-mi răspunde. Eu <strong>nu pot să mă reconectez automat</strong>, dar poți încerca să te reconectezi manual utilizând butonul de mai jos."
 
-#: src/octoprint/static/js/app/dataupdater.js:126
+#: src/octoprint/static/js/app/dataupdater.js:158
+#: src/octoprint/static/js/app/dataupdater.js:199
+#, python-format
+msgid "Slicing ... (%(percentage)d%%)"
+msgstr ""
+
+#: src/octoprint/static/js/app/dataupdater.js:187
 msgid "Rendering timelapse"
 msgstr "Redare înregistrare rapidă"
 
-#: src/octoprint/static/js/app/dataupdater.js:126
+#: src/octoprint/static/js/app/dataupdater.js:187
 #, python-format
 msgid "Now rendering timelapse %(movie_basename)s"
 msgstr "Acum se redă înregistrarea rapidă %(movie_basename)s"
 
-#: src/octoprint/static/js/app/dataupdater.js:128
+#: src/octoprint/static/js/app/dataupdater.js:189
 msgid "Timelapse ready"
 msgstr "Înregistrarea rapidă este gata"
 
-#: src/octoprint/static/js/app/dataupdater.js:128
+#: src/octoprint/static/js/app/dataupdater.js:189
 #, python-format
 msgid "New timelapse %(movie_basename)s is done rendering."
 msgstr "Redarea noii înregistrări rapide %(movie_basename)s s-a terminat."
 
-#: src/octoprint/static/js/app/dataupdater.js:131
+#: src/octoprint/static/js/app/dataupdater.js:192
 #, python-format
 msgid ""
-"Rendering of timelapse %(movie_basename)s failedwith return code "
+"Rendering of timelapse %(movie_basename)s failed with return code "
 "%(returncode)s"
-msgstr "Redarea înregistrării rapide %(movie_basename)s a eșuat, codul de eroare fiind %(returncode)s"
+msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:133
+#: src/octoprint/static/js/app/dataupdater.js:194
 msgid "Rendering failed"
 msgstr "Redarea a eșuat"
 
-#: src/octoprint/static/js/app/dataupdater.js:137
+#: src/octoprint/static/js/app/dataupdater.js:201
 msgid "Slicing ..."
 msgstr "Se feliază..."
 
-#: src/octoprint/static/js/app/dataupdater.js:142
+#: src/octoprint/static/js/app/dataupdater.js:207
 msgid "Slicing done"
 msgstr "Feliere terminată"
 
-#: src/octoprint/static/js/app/dataupdater.js:142
+#: src/octoprint/static/js/app/dataupdater.js:207
 #, python-format
 msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
 msgstr "S-a feliat %(stl)s ca %(gcode)s în %(time).2f secunde"
 
-#: src/octoprint/static/js/app/dataupdater.js:149
+#: src/octoprint/static/js/app/dataupdater.js:228
 #, python-format
 msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
 msgstr "Nu s-a putut felia %(stl)s în %(gcode)s: %(reason)s"
 
-#: src/octoprint/static/js/app/dataupdater.js:150
+#: src/octoprint/static/js/app/dataupdater.js:229
 msgid "Slicing failed"
 msgstr "Felierea a eșuat"
 
-#: src/octoprint/static/js/app/dataupdater.js:154
+#: src/octoprint/static/js/app/dataupdater.js:238
 msgid "Streaming ..."
 msgstr "Se transmite..."
 
-#: src/octoprint/static/js/app/dataupdater.js:159
+#: src/octoprint/static/js/app/dataupdater.js:244
 msgid "Streaming done"
 msgstr "Transmiterea s-a terminat"
 
-#: src/octoprint/static/js/app/dataupdater.js:159
+#: src/octoprint/static/js/app/dataupdater.js:245
 #, python-format
 msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
 msgstr "Transmiterea %(local)s către %(remote)s pe SD, a durat %(time).2f secunde"
 
-#: src/octoprint/static/js/app/helpers.js:337
+#: src/octoprint/static/js/app/helpers.js:355
 #, python-format
 msgid "%(hour)02d:%(minute)02d:%(second)02d"
 msgstr "%(hour)02d:%(minute)02d:%(second)02d"
 
-#: src/octoprint/static/js/app/helpers.js:342
+#: src/octoprint/static/js/app/helpers.js:375
 msgid "YYYY-MM-DD HH:mm"
 msgstr "DD.MM.YYYY HH.mm"
 
-#: src/octoprint/static/js/app/helpers.js:360
-#: src/octoprint/static/js/app/helpers.js:365
+#: src/octoprint/static/js/app/helpers.js:393
+#: src/octoprint/static/js/app/helpers.js:398
 msgid "off"
 msgstr "oprit"
 
@@ -160,18 +173,18 @@ msgstr "Închis"
 msgid "Transfering file to SD"
 msgstr "Se transferă fișierul pe SD"
 
-#: src/octoprint/static/js/app/main.js:132
+#: src/octoprint/static/js/app/main.js:184
 msgid ""
 "Could not upload the file. Make sure that it is a GCODE file and has the "
 "extension \".gcode\" or \".gco\" or that it is an STL file with the "
 "extension \".stl\" and slicing support is enabled and configured."
 msgstr "Nu pot încărca fișierul. Asigură-te că este un fișier GCODE și că are extensia \".gcode\" sau \".gco\" sau că este un fișier STL cu extensia \".stl\" și că felierea este activată și configurată."
 
-#: src/octoprint/static/js/app/main.js:148
+#: src/octoprint/static/js/app/main.js:200
 msgid "Uploading ..."
 msgstr "Se încarcă..."
 
-#: src/octoprint/static/js/app/main.js:151
+#: src/octoprint/static/js/app/main.js:203
 msgid "Saving ..."
 msgstr "Se salvează..."
 
@@ -182,43 +195,43 @@ msgstr "Se salvează..."
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:24
-#: src/octoprint/templates/index.jinja2:117
+#: src/octoprint/static/js/app/viewmodels/connection.js:41
+#: src/octoprint/templates/index.jinja2:144
 msgid "Connect"
 msgstr "Connectare"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:26
+#: src/octoprint/static/js/app/viewmodels/connection.js:43
 msgid "Disconnect"
 msgstr "Deconectare"
 
-#: src/octoprint/static/js/app/viewmodels/control.js:38
-#: src/octoprint/static/js/app/viewmodels/files.js:286
-#: src/octoprint/static/js/app/viewmodels/gcode.js:332
-#: src/octoprint/static/js/app/viewmodels/gcode.js:363
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:137
+#: src/octoprint/static/js/app/viewmodels/control.js:42
+#: src/octoprint/static/js/app/viewmodels/files.js:298
+#: src/octoprint/static/js/app/viewmodels/gcode.js:400
+#: src/octoprint/static/js/app/viewmodels/gcode.js:432
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:166
 #: src/octoprint/static/js/app/viewmodels/temperature.js:56
 msgid "Tool"
 msgstr "Unealtă"
 
-#: src/octoprint/static/js/app/viewmodels/control.js:45
+#: src/octoprint/static/js/app/viewmodels/control.js:49
 #: src/octoprint/static/js/app/viewmodels/temperature.js:68
 msgid "Hotend"
 msgstr "Hotend"
 
-#: src/octoprint/static/js/app/viewmodels/files.js:281
-#: src/octoprint/static/js/app/viewmodels/files.js:286
+#: src/octoprint/static/js/app/viewmodels/files.js:293
+#: src/octoprint/static/js/app/viewmodels/files.js:298
 msgid "Filament"
 msgstr "Filament"
 
-#: src/octoprint/static/js/app/viewmodels/files.js:290
+#: src/octoprint/static/js/app/viewmodels/files.js:302
 msgid "Estimated Print Time"
 msgstr "Timp de imprimare estimat"
 
-#: src/octoprint/static/js/app/viewmodels/files.js:293
+#: src/octoprint/static/js/app/viewmodels/files.js:305
 msgid "Last Printed"
 msgstr "Ultima dată imprimat"
 
-#: src/octoprint/static/js/app/viewmodels/files.js:295
+#: src/octoprint/static/js/app/viewmodels/files.js:307
 msgid "Last Print Time"
 msgstr "Ultima imprimare a durat"
 
@@ -241,61 +254,65 @@ msgstr "Se analizează..."
 msgid "Analyzed"
 msgstr "Analizat"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:327
+#: src/octoprint/static/js/app/viewmodels/gcode.js:395
 msgid "Model size"
 msgstr "Mărimea modelului"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:329
-#: src/octoprint/static/js/app/viewmodels/gcode.js:332
+#: src/octoprint/static/js/app/viewmodels/gcode.js:397
+#: src/octoprint/static/js/app/viewmodels/gcode.js:400
 msgid "Total filament used"
 msgstr "Filament utilizat în total"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:329
-#: src/octoprint/static/js/app/viewmodels/gcode.js:332
-#: src/octoprint/static/js/app/viewmodels/gcode.js:336
+#: src/octoprint/static/js/app/viewmodels/gcode.js:397
+#: src/octoprint/static/js/app/viewmodels/gcode.js:400
+#: src/octoprint/static/js/app/viewmodels/gcode.js:404
 msgid "mm"
 msgstr "mm"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:335
+#: src/octoprint/static/js/app/viewmodels/gcode.js:403
 msgid "Estimated print time"
 msgstr "Timp de imprimare estimat"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:336
+#: src/octoprint/static/js/app/viewmodels/gcode.js:404
 msgid "Estimated layer height"
 msgstr "Înălțimea stratului estimată"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:337
+#: src/octoprint/static/js/app/viewmodels/gcode.js:405
 msgid "Layer count"
 msgstr "Număr de straturi"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:337
+#: src/octoprint/static/js/app/viewmodels/gcode.js:405
+msgid "printed"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:405
 msgid "visited"
 msgstr "vizitat"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:356
+#: src/octoprint/static/js/app/viewmodels/gcode.js:424
 msgid "Layer number"
 msgstr "Numărul stratului"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:357
+#: src/octoprint/static/js/app/viewmodels/gcode.js:425
 msgid "Layer height"
 msgstr "Înălțimea stratului"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:358
+#: src/octoprint/static/js/app/viewmodels/gcode.js:426
 msgid "GCODE commands in layer"
 msgstr "comenzi GCODE în strat"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:360
-#: src/octoprint/static/js/app/viewmodels/gcode.js:363
+#: src/octoprint/static/js/app/viewmodels/gcode.js:429
+#: src/octoprint/static/js/app/viewmodels/gcode.js:432
 msgid "Filament used by layer"
 msgstr "Filament utilizat în strat"
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:366
+#: src/octoprint/static/js/app/viewmodels/gcode.js:436
 msgid "Print time for layer"
 msgstr "Timp de imprimare pentru strat"
 
 #: src/octoprint/static/js/app/viewmodels/loginstate.js:15
-#: src/octoprint/templates/index.jinja2:74
-#: src/octoprint/templates/index.jinja2:85
+#: src/octoprint/templates/index.jinja2:99
+#: src/octoprint/templates/index.jinja2:110
 msgid "Login"
 msgstr "Conectare"
 
@@ -338,149 +355,244 @@ msgstr "Comanda \"%(command)s\" nu a putut fi executată."
 msgid "Error"
 msgstr "Eroare"
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:66
-msgid "Continue"
-msgstr "Continuare"
-
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:68
-#: src/octoprint/templates/index.jinja2:144
-msgid "Pause"
-msgstr "Pauză"
-
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:79
-#: src/octoprint/templates/index.jinja2:524
-msgid "On Z Change"
-msgstr "La schimbarea Z"
-
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
-#: src/octoprint/templates/index.jinja2:525
-msgid "Timed"
-msgstr "Temporizat"
-
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:81
-#: src/octoprint/templates/index.jinja2:531
-#: src/octoprint/templates/index.jinja2:538
-msgid "sec"
-msgstr "sec"
-
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:166
-msgid "This will restart the print job from the beginning."
-msgstr "Se va relua imprimarea de la început."
-
-#: src/octoprint/static/js/app/viewmodels/settings.js:15
-#: src/octoprint/static/js/app/viewmodels/settings.js:41
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:84
+#: src/octoprint/static/js/app/viewmodels/settings.js:16
+#: src/octoprint/static/js/app/viewmodels/settings.js:43
 msgid "default"
 msgstr "implicit"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:16
-#: src/octoprint/static/js/app/viewmodels/settings.js:27
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:85
+#: src/octoprint/static/js/app/viewmodels/settings.js:17
+#: src/octoprint/static/js/app/viewmodels/settings.js:29
 msgid "red"
 msgstr "roșu"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:17
-#: src/octoprint/static/js/app/viewmodels/settings.js:29
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:86
+#: src/octoprint/static/js/app/viewmodels/settings.js:18
+#: src/octoprint/static/js/app/viewmodels/settings.js:31
 msgid "orange"
 msgstr "portocaliu"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:18
-#: src/octoprint/static/js/app/viewmodels/settings.js:31
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:87
+#: src/octoprint/static/js/app/viewmodels/settings.js:19
+#: src/octoprint/static/js/app/viewmodels/settings.js:33
 msgid "yellow"
 msgstr "galben"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:19
-#: src/octoprint/static/js/app/viewmodels/settings.js:33
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:88
+#: src/octoprint/static/js/app/viewmodels/settings.js:20
+#: src/octoprint/static/js/app/viewmodels/settings.js:35
 msgid "green"
 msgstr "verde"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:20
-#: src/octoprint/static/js/app/viewmodels/settings.js:35
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:89
+#: src/octoprint/static/js/app/viewmodels/settings.js:21
+#: src/octoprint/static/js/app/viewmodels/settings.js:37
 msgid "blue"
 msgstr "albastru"
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:21
-#: src/octoprint/static/js/app/viewmodels/settings.js:37
-msgid "violet"
-msgstr "violet"
-
-#: src/octoprint/static/js/app/viewmodels/settings.js:22
-#: src/octoprint/static/js/app/viewmodels/settings.js:39
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:90
+#: src/octoprint/static/js/app/viewmodels/settings.js:23
+#: src/octoprint/static/js/app/viewmodels/settings.js:41
 msgid "black"
 msgstr "negru"
 
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:245
+msgid "Add Printer Profile"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:245
+#, python-format
+msgid "Edit Printer Profile \"%(name)s\""
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:33
+msgid "Restarts the print job from the beginning"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:34
+msgid "Starts the print job"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:35
+msgid "Resumes the print job"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:36
+msgid "Pauses the print job"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:69
+msgid "Calculating..."
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:82
+msgid "Continue"
+msgstr "Continuare"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:84
+#: src/octoprint/templates/index.jinja2:171
+msgid "Pause"
+msgstr "Pauză"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:95
+#: src/octoprint/templates/index.jinja2:570
+msgid "On Z Change"
+msgstr "La schimbarea Z"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:97
+#: src/octoprint/templates/index.jinja2:571
+msgid "Timed"
+msgstr "Temporizat"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:97
+#: src/octoprint/templates/index.jinja2:577
+#: src/octoprint/templates/index.jinja2:584
+msgid "sec"
+msgstr "sec"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:205
+msgid "This will restart the print job from the beginning."
+msgstr "Se va relua imprimarea de la început."
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:22
+#: src/octoprint/static/js/app/viewmodels/settings.js:39
+msgid "violet"
+msgstr "violet"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:24
+msgid "Do nothing"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:25
+msgid "Select for printing"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:26
+msgid "Start printing"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:33
+#, python-format
+msgid "Slicing %(filename)s"
+msgstr ""
+
 #: src/octoprint/static/js/app/viewmodels/temperature.js:22
 #: src/octoprint/static/js/app/viewmodels/temperature.js:74
-#: src/octoprint/templates/settings.jinja2:347
+#: src/octoprint/templates/settings.jinja2:428
 msgid "Bed"
 msgstr "Masă"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:110
+#: src/octoprint/static/js/app/viewmodels/temperature.js:113
 msgid "just now"
 msgstr "chiar acum"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:112
+#: src/octoprint/static/js/app/viewmodels/temperature.js:115
 msgid "min"
 msgstr "min"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:252
-#: src/octoprint/templates/index.jinja2:262
+#: src/octoprint/static/js/app/viewmodels/temperature.js:255
+#: src/octoprint/templates/index.jinja2:308
 msgid "Actual"
 msgstr "Efectiv"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:257
-#: src/octoprint/templates/index.jinja2:263
+#: src/octoprint/static/js/app/viewmodels/temperature.js:260
+#: src/octoprint/templates/index.jinja2:309
 msgid "Target"
 msgstr "Țintă"
 
-#: src/octoprint/templates/dialogs.jinja2:6
-msgid "Server is offline"
-msgstr "Serverul este deconectat"
+#: src/octoprint/templates/dialogs.jinja2:7
+msgid ""
+"Please configure which slicer and which slicing profile to use and name the "
+"GCode file to slice to below, or click \"Cancel\" if you do not wish to "
+"slice the file now."
+msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:9
-msgid "Attempt to reconnect"
-msgstr "Încercare de reconectare"
+#: src/octoprint/templates/dialogs.jinja2:10
+msgid "Slicer"
+msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:20
-msgid "Upload locally"
-msgstr "Încărcare locală"
+#: src/octoprint/templates/dialogs.jinja2:12
+msgid "Select a slicer..."
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:16
+msgid "Slicing Profile"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:18
+msgid "Select a slicing profile..."
+msgstr ""
 
 #: src/octoprint/templates/dialogs.jinja2:22
-#: src/octoprint/templates/index.jinja2:218
-msgid "Upload to SD"
-msgstr "Încărcare pe SD"
+#: src/octoprint/templates/index.jinja2:136
+msgid "Printer Profile"
+msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:22
-msgid "SD not initialized"
-msgstr "SD nu este inițializat"
+#: src/octoprint/templates/dialogs.jinja2:24
+msgid "Select a printer profile..."
+msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:25
-#: src/octoprint/templates/index.jinja2:213
-#: src/octoprint/templates/index.jinja2:224
-msgid "Upload"
-msgstr "Încărcare"
+#: src/octoprint/templates/dialogs.jinja2:28
+msgid "GCode Filename"
+msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:34
-msgid "Are you sure?"
-msgstr "Ești sigur?"
+#: src/octoprint/templates/dialogs.jinja2:37
+msgid "After slicing..."
+msgstr ""
 
-#: src/octoprint/templates/dialogs.jinja2:38
-msgid "Are you sure you want to proceed?"
-msgstr "Ești sigur că vrei să mergi mai departe?"
-
-#: src/octoprint/templates/dialogs.jinja2:41
-#: src/octoprint/templates/index.jinja2:145
-#: src/octoprint/templates/settings.jinja2:676
+#: src/octoprint/templates/dialogs.jinja2:45
+#: src/octoprint/templates/dialogs.jinja2:90
+#: src/octoprint/templates/index.jinja2:172
+#: src/octoprint/templates/settings.jinja2:755
 msgid "Cancel"
 msgstr "Abandonare"
 
-#: src/octoprint/templates/dialogs.jinja2:42
+#: src/octoprint/templates/dialogs.jinja2:46
+#: src/octoprint/templates/index.jinja2:243
+msgid "Slice"
+msgstr ""
+
+#: src/octoprint/templates/dialogs.jinja2:58
+msgid "Attempt to reconnect"
+msgstr "Încercare de reconectare"
+
+#: src/octoprint/templates/dialogs.jinja2:69
+msgid "Upload locally"
+msgstr "Încărcare locală"
+
+#: src/octoprint/templates/dialogs.jinja2:71
+#: src/octoprint/templates/index.jinja2:264
+msgid "Upload to SD"
+msgstr "Încărcare pe SD"
+
+#: src/octoprint/templates/dialogs.jinja2:71
+msgid "SD not initialized"
+msgstr "SD nu este inițializat"
+
+#: src/octoprint/templates/dialogs.jinja2:74
+#: src/octoprint/templates/index.jinja2:259
+#: src/octoprint/templates/index.jinja2:270
+msgid "Upload"
+msgstr "Încărcare"
+
+#: src/octoprint/templates/dialogs.jinja2:83
+msgid "Are you sure?"
+msgstr "Ești sigur?"
+
+#: src/octoprint/templates/dialogs.jinja2:87
+msgid "Are you sure you want to proceed?"
+msgstr "Ești sigur că vrei să mergi mai departe?"
+
+#: src/octoprint/templates/dialogs.jinja2:91
 msgid "Proceed"
 msgstr "Continuare"
 
-#: src/octoprint/templates/dialogs.jinja2:48
+#: src/octoprint/templates/dialogs.jinja2:97
 msgid "Configure Access Control"
 msgstr "Configurare control acces"
 
-#: src/octoprint/templates/dialogs.jinja2:51
+#: src/octoprint/templates/dialogs.jinja2:100
 msgid ""
 "<p>\n"
 "            <strong>Please read the following, it is very important for your printer's health!</strong>\n"
@@ -498,31 +610,31 @@ msgid ""
 "        </p>"
 msgstr "<p>\n<strong>Te rog să citești în continuare, este foarte important pentru siguranța imprimantei tale!</strong>\n</p>\n<p>\nOctoPrint este livrat acum cu controlul accesului activat implicit, ceea ce înseamnă că nu vei putea face nimic cu\nimprimanta, dacă nu te vei conecta mai întâi ca un utilizator declarat. Asta este pentru <strong>a împiedica persoanele străine - având poate\nintenții răuvoitoare - să acceseze imprimanta ta</strong> din Internet sau prin alte rețele nesigure\nși să o utilizeze într-un mod care să o poată deteriora sau și mai rău (de exemplu să declanșeze un incendiu).\n</p>\n<p>\nSe pare că nu ai configurat încă modul de control al accesului. Te rog <strong>stabilește un nume de utilizator și o parolă</strong> pentru \ncontul inițial de administrator, care va avea acces deplin la configurațiile imprimantei și OctoPrint, apoi apasă \n\"Menține controlul accesului activat\":\n</p>"
 
-#: src/octoprint/templates/dialogs.jinja2:67
-#: src/octoprint/templates/index.jinja2:78
-#: src/octoprint/templates/index.jinja2:79
-#: src/octoprint/templates/settings.jinja2:510
+#: src/octoprint/templates/dialogs.jinja2:116
+#: src/octoprint/templates/index.jinja2:103
+#: src/octoprint/templates/index.jinja2:104
+#: src/octoprint/templates/settings.jinja2:575
 msgid "Username"
 msgstr "Numele utilizatorului"
 
-#: src/octoprint/templates/dialogs.jinja2:73
-#: src/octoprint/templates/index.jinja2:80
-#: src/octoprint/templates/index.jinja2:81
-#: src/octoprint/templates/settings.jinja2:516
+#: src/octoprint/templates/dialogs.jinja2:122
+#: src/octoprint/templates/index.jinja2:105
+#: src/octoprint/templates/index.jinja2:106
+#: src/octoprint/templates/settings.jinja2:581
 msgid "Password"
 msgstr "Parolă"
 
-#: src/octoprint/templates/dialogs.jinja2:79
+#: src/octoprint/templates/dialogs.jinja2:128
 msgid "Confirm Password"
 msgstr "Confirmare parolă"
 
-#: src/octoprint/templates/dialogs.jinja2:82
-#: src/octoprint/templates/settings.jinja2:525
-#: src/octoprint/templates/settings.jinja2:596
+#: src/octoprint/templates/dialogs.jinja2:131
+#: src/octoprint/templates/settings.jinja2:590
+#: src/octoprint/templates/settings.jinja2:661
 msgid "Passwords do not match"
 msgstr "Parolele nu se potrivesc"
 
-#: src/octoprint/templates/dialogs.jinja2:86
+#: src/octoprint/templates/dialogs.jinja2:135
 msgid ""
 "<p>\n"
 "            <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy network and you don't\n"
@@ -534,357 +646,379 @@ msgid ""
 "        </p>"
 msgstr "<p>\n<strong>Notă:</strong> În cazul în care aplicația ta OctoPrint este accesibilă doar dintr-o rețea sigură și nu\nai nevoie de controlul accesului pentru alte mootive, poți să dezactivezi controlul accesului. Îți recomand asta\nnumai dacă ești absolut sigur că se vor putea conecta doar oameni pe care îi cunoști și în care ai încredere.\n</p>\n<p>\n<strong>NU subestima riscul pe care-l prezintă accesul nesecurizat din Internet la imprimanta ta!</strong>\n</p>"
 
-#: src/octoprint/templates/dialogs.jinja2:96
+#: src/octoprint/templates/dialogs.jinja2:145
 msgid "Disable Access Control"
 msgstr "Dezactivează controlul accesului"
 
-#: src/octoprint/templates/dialogs.jinja2:97
+#: src/octoprint/templates/dialogs.jinja2:146
 msgid "Keep Access Control Enabled"
 msgstr "Menține controlul accesului activat"
 
-#: src/octoprint/templates/index.jinja2:57
+#: src/octoprint/templates/index.jinja2:82
 msgid "Settings"
 msgstr "Configurații"
 
-#: src/octoprint/templates/index.jinja2:63
+#: src/octoprint/templates/index.jinja2:88
 msgid "System"
 msgstr "Sistem"
 
-#: src/octoprint/templates/index.jinja2:83
+#: src/octoprint/templates/index.jinja2:108
 msgid "Remember me"
 msgstr "Ține-mă minte"
 
-#: src/octoprint/templates/index.jinja2:88
+#: src/octoprint/templates/index.jinja2:113
 msgid "Change Password"
 msgstr "Schimbă parola"
 
-#: src/octoprint/templates/index.jinja2:89
+#: src/octoprint/templates/index.jinja2:114
 msgid "Logout"
 msgstr "Deconectare"
 
-#: src/octoprint/templates/index.jinja2:103
+#: src/octoprint/templates/index.jinja2:128
 msgid "Connection"
 msgstr "Conexiune"
 
-#: src/octoprint/templates/index.jinja2:107
-#: src/octoprint/templates/settings.jinja2:30
+#: src/octoprint/templates/index.jinja2:132
+#: src/octoprint/templates/settings.jinja2:37
 msgid "Serial Port"
 msgstr "Port serial"
 
-#: src/octoprint/templates/index.jinja2:109
-#: src/octoprint/templates/settings.jinja2:36
+#: src/octoprint/templates/index.jinja2:134
+#: src/octoprint/templates/settings.jinja2:43
 msgid "Baudrate"
 msgstr "Viteză de transfer"
 
-#: src/octoprint/templates/index.jinja2:112
+#: src/octoprint/templates/index.jinja2:139
 msgid "Save connection settings"
 msgstr "Salvare configurație conexiune"
 
-#: src/octoprint/templates/index.jinja2:115
+#: src/octoprint/templates/index.jinja2:142
 msgid "Auto-connect on server startup"
 msgstr "Conectare automată la pornirea serverului"
 
-#: src/octoprint/templates/index.jinja2:123
+#: src/octoprint/templates/index.jinja2:150
 msgid "State"
 msgstr "Stare"
 
-#: src/octoprint/templates/index.jinja2:127
+#: src/octoprint/templates/index.jinja2:154
 msgid "Machine State"
 msgstr "Starea mașinii"
 
-#: src/octoprint/templates/index.jinja2:128
+#: src/octoprint/templates/index.jinja2:155
 msgid "File"
 msgstr "Fișier"
 
-#: src/octoprint/templates/index.jinja2:129
-#: src/octoprint/templates/index.jinja2:247
+#: src/octoprint/templates/index.jinja2:156
+#: src/octoprint/templates/index.jinja2:293
 msgid "Timelapse"
 msgstr "Înregistrare rapidă"
 
-#: src/octoprint/templates/index.jinja2:133
+#: src/octoprint/templates/index.jinja2:160
 msgid "Approx. Total Print Time"
 msgstr "Timp de imprimare total estimat"
 
-#: src/octoprint/templates/index.jinja2:134
+#: src/octoprint/templates/index.jinja2:161
 msgid "Print Time"
 msgstr "Timp de imprimare"
 
-#: src/octoprint/templates/index.jinja2:135
+#: src/octoprint/templates/index.jinja2:162
 msgid "Print Time Left"
 msgstr "Timp de imprimare rămas"
 
-#: src/octoprint/templates/index.jinja2:136
+#: src/octoprint/templates/index.jinja2:163
 msgid "Printed"
 msgstr "Imprimat"
 
-#: src/octoprint/templates/index.jinja2:143
+#: src/octoprint/templates/index.jinja2:170
 msgid "Restart"
 msgstr "Reluare"
 
-#: src/octoprint/templates/index.jinja2:143
+#: src/octoprint/templates/index.jinja2:170
 msgid "Print"
 msgstr "Imprimare"
 
-#: src/octoprint/templates/index.jinja2:152
+#: src/octoprint/templates/index.jinja2:171
+msgid "Resume"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:172
+msgid "Cancels the print job"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:179
 msgid "Files"
 msgstr "Fișiere"
 
-#: src/octoprint/templates/index.jinja2:159
+#: src/octoprint/templates/index.jinja2:186
 msgid "Sort by name"
 msgstr "Sortare după nume"
 
-#: src/octoprint/templates/index.jinja2:159
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/index.jinja2:186
+#: src/octoprint/templates/index.jinja2:602
+#: src/octoprint/templates/settings.jinja2:709
 msgid "ascending"
 msgstr "crescător"
 
-#: src/octoprint/templates/index.jinja2:160
+#: src/octoprint/templates/index.jinja2:187
 msgid "Sort by upload date"
 msgstr "Sortare după data încărcării"
 
-#: src/octoprint/templates/index.jinja2:160
-#: src/octoprint/templates/index.jinja2:161
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/index.jinja2:187
+#: src/octoprint/templates/index.jinja2:188
+#: src/octoprint/templates/index.jinja2:602
+#: src/octoprint/templates/settings.jinja2:709
 msgid "descending"
 msgstr "descrescător"
 
-#: src/octoprint/templates/index.jinja2:161
+#: src/octoprint/templates/index.jinja2:188
 msgid "Sort by file size"
 msgstr "Sortare după mărimea fișierului"
 
-#: src/octoprint/templates/index.jinja2:164
+#: src/octoprint/templates/index.jinja2:190
+msgid "Only show GCode files"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:191
+msgid "Only show STL files"
+msgstr ""
+
+#: src/octoprint/templates/index.jinja2:194
 msgid "Only show files stored locally"
 msgstr "Arată doar fișierele stocate local"
 
-#: src/octoprint/templates/index.jinja2:165
+#: src/octoprint/templates/index.jinja2:195
 msgid "Only show files stored on SD"
 msgstr "Arată doar fișierele stocate pe SD"
 
-#: src/octoprint/templates/index.jinja2:168
+#: src/octoprint/templates/index.jinja2:198
 msgid "Hide successfully printed files"
 msgstr "Ascunde fișierele imprimate cu succes"
 
-#: src/octoprint/templates/index.jinja2:178
+#: src/octoprint/templates/index.jinja2:208
 msgid "Initialize SD card"
 msgstr "Inițializare card SD"
 
-#: src/octoprint/templates/index.jinja2:179
+#: src/octoprint/templates/index.jinja2:209
 msgid "Refresh SD files"
 msgstr "Reîmprospătează fișierele SD"
 
-#: src/octoprint/templates/index.jinja2:180
+#: src/octoprint/templates/index.jinja2:210
 msgid "Release SD card"
 msgstr "Eliberează cardul SD"
 
-#: src/octoprint/templates/index.jinja2:188
+#: src/octoprint/templates/index.jinja2:218
 msgid "Search..."
 msgstr "Se caută..."
 
-#: src/octoprint/templates/index.jinja2:193
+#: src/octoprint/templates/index.jinja2:225
+#: src/octoprint/templates/index.jinja2:239
 msgid "Uploaded"
 msgstr "Încărcat"
 
-#: src/octoprint/templates/index.jinja2:194
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/index.jinja2:562
-#: src/octoprint/templates/settings.jinja2:630
-#: src/octoprint/templates/settings.jinja2:637
+#: src/octoprint/templates/index.jinja2:226
+#: src/octoprint/templates/index.jinja2:240
+#: src/octoprint/templates/index.jinja2:602
+#: src/octoprint/templates/index.jinja2:608
+#: src/octoprint/templates/settings.jinja2:709
+#: src/octoprint/templates/settings.jinja2:716
 msgid "Size"
 msgstr "Mărime"
 
-#: src/octoprint/templates/index.jinja2:198
+#: src/octoprint/templates/index.jinja2:230
 msgid "Download"
 msgstr "Descărcare"
 
-#: src/octoprint/templates/index.jinja2:199
+#: src/octoprint/templates/index.jinja2:231
+#: src/octoprint/templates/index.jinja2:242
 msgid "Remove"
 msgstr "Ștergere"
 
-#: src/octoprint/templates/index.jinja2:200
+#: src/octoprint/templates/index.jinja2:232
 msgid "Load"
 msgstr "Încărcare"
 
-#: src/octoprint/templates/index.jinja2:201
+#: src/octoprint/templates/index.jinja2:233
 msgid "Load and Print"
 msgstr "Încărcare și imprimare"
 
-#: src/octoprint/templates/index.jinja2:206
+#: src/octoprint/templates/index.jinja2:252
 msgid "Free"
 msgstr "Liber"
 
-#: src/octoprint/templates/index.jinja2:233
+#: src/octoprint/templates/index.jinja2:279
 msgid "Hint: You can also drag and drop files on this page to upload them."
 msgstr "Indiciu: Poți trage și lăsa fișierele pe această pagină pentru a le încărca."
 
-#: src/octoprint/templates/index.jinja2:243
+#: src/octoprint/templates/index.jinja2:289
 msgid "Temperature"
 msgstr "Temperatură"
 
-#: src/octoprint/templates/index.jinja2:244
+#: src/octoprint/templates/index.jinja2:290
 msgid "Control"
 msgstr "Control"
 
-#: src/octoprint/templates/index.jinja2:245
+#: src/octoprint/templates/index.jinja2:291
 msgid "GCode Viewer"
 msgstr "Vizualizare GCode"
 
-#: src/octoprint/templates/index.jinja2:246
+#: src/octoprint/templates/index.jinja2:292
 msgid "Terminal"
 msgstr "Terminal"
 
-#: src/octoprint/templates/index.jinja2:264
+#: src/octoprint/templates/index.jinja2:310
 msgid "Offset"
 msgstr "Decalaj"
 
-#: src/octoprint/templates/index.jinja2:280
-#: src/octoprint/templates/index.jinja2:302
+#: src/octoprint/templates/index.jinja2:326
+#: src/octoprint/templates/index.jinja2:348
 msgid "Set"
 msgstr "Configurare"
 
-#: src/octoprint/templates/index.jinja2:292
-#: src/octoprint/templates/index.jinja2:523
+#: src/octoprint/templates/index.jinja2:338
+#: src/octoprint/templates/index.jinja2:569
 msgid "Off"
 msgstr "Oprit"
 
-#: src/octoprint/templates/index.jinja2:360
+#: src/octoprint/templates/index.jinja2:406
 msgid "Select Tool..."
 msgstr "Selectare unealtă..."
 
-#: src/octoprint/templates/index.jinja2:371
+#: src/octoprint/templates/index.jinja2:417
 msgid "Extrude"
 msgstr "Extrudare"
 
-#: src/octoprint/templates/index.jinja2:372
+#: src/octoprint/templates/index.jinja2:418
 msgid "Retract"
 msgstr "Retragere"
 
-#: src/octoprint/templates/index.jinja2:377
+#: src/octoprint/templates/index.jinja2:423
 msgid "General"
 msgstr "General"
 
-#: src/octoprint/templates/index.jinja2:379
+#: src/octoprint/templates/index.jinja2:425
 msgid "Motors off"
 msgstr "Oprire motoare"
 
-#: src/octoprint/templates/index.jinja2:380
+#: src/octoprint/templates/index.jinja2:426
 msgid "Fans on"
 msgstr "Pornire ventilatoare"
 
-#: src/octoprint/templates/index.jinja2:381
+#: src/octoprint/templates/index.jinja2:427
 msgid "Fans off"
 msgstr "Oprire ventilatoare"
 
-#: src/octoprint/templates/index.jinja2:445
+#: src/octoprint/templates/index.jinja2:491
 msgid "Sync with job progress"
 msgstr "Sincronizare cu stadiul lucrării"
 
-#: src/octoprint/templates/index.jinja2:450
+#: src/octoprint/templates/index.jinja2:496
 msgid "Center viewport on model"
 msgstr "Centrare ecran pe model"
 
-#: src/octoprint/templates/index.jinja2:453
+#: src/octoprint/templates/index.jinja2:499
 msgid "Zoom in on model"
 msgstr "Mărire model"
 
-#: src/octoprint/templates/index.jinja2:459
+#: src/octoprint/templates/index.jinja2:505
 msgid "Show moves"
 msgstr "Vizualizare mișcări"
 
-#: src/octoprint/templates/index.jinja2:462
+#: src/octoprint/templates/index.jinja2:508
 msgid "Show retracts"
 msgstr "Vizualizare retgrageri"
 
-#: src/octoprint/templates/index.jinja2:468
+#: src/octoprint/templates/index.jinja2:514
 msgid "Also show previous layer"
 msgstr "Vizualizare strat anterior"
 
-#: src/octoprint/templates/index.jinja2:471
+#: src/octoprint/templates/index.jinja2:517
 msgid "Also show next layer"
 msgstr "Vizualizare strat următor"
 
-#: src/octoprint/templates/index.jinja2:476
+#: src/octoprint/templates/index.jinja2:522
 msgid "Reload"
 msgstr "Reîncărcare"
 
-#: src/octoprint/templates/index.jinja2:503
+#: src/octoprint/templates/index.jinja2:549
 msgid "Autoscroll"
 msgstr "Defilare automată"
 
-#: src/octoprint/templates/index.jinja2:513
+#: src/octoprint/templates/index.jinja2:559
 msgid "Send"
 msgstr "Trimitere"
 
-#: src/octoprint/templates/index.jinja2:519
+#: src/octoprint/templates/index.jinja2:565
 msgid "Timelapse Configuration"
 msgstr "Configurare înregistrare rapidă"
 
-#: src/octoprint/templates/index.jinja2:521
+#: src/octoprint/templates/index.jinja2:567
 msgid "Timelapse Mode"
 msgstr "Mod înregistrare rapidă"
 
-#: src/octoprint/templates/index.jinja2:528
+#: src/octoprint/templates/index.jinja2:574
 msgid "Timelapse post roll (in rendered seconds)"
 msgstr "Întârziere oprire înregistrare automată (în secunde vizualizate)"
 
-#: src/octoprint/templates/index.jinja2:535
+#: src/octoprint/templates/index.jinja2:581
 msgid "Interval"
 msgstr "Interval"
 
-#: src/octoprint/templates/index.jinja2:544
+#: src/octoprint/templates/index.jinja2:590
 msgid "Save as default"
 msgstr "Salvare ca valori implicite"
 
-#: src/octoprint/templates/index.jinja2:549
+#: src/octoprint/templates/index.jinja2:595
 msgid "Save config"
 msgstr "Salvare configurație"
 
-#: src/octoprint/templates/index.jinja2:553
+#: src/octoprint/templates/index.jinja2:599
 msgid "Finished Timelapses"
 msgstr "Înregistrări rapide finalizate"
 
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/index.jinja2:602
+#: src/octoprint/templates/settings.jinja2:709
 msgid "Sort by"
 msgstr "Sortare după"
 
-#: src/octoprint/templates/index.jinja2:556
-#: src/octoprint/templates/index.jinja2:561
-#: src/octoprint/templates/settings.jinja2:377
-#: src/octoprint/templates/settings.jinja2:469
-#: src/octoprint/templates/settings.jinja2:630
-#: src/octoprint/templates/settings.jinja2:636
+#: src/octoprint/templates/index.jinja2:602
+#: src/octoprint/templates/index.jinja2:607
+#: src/octoprint/templates/settings.jinja2:114
+#: src/octoprint/templates/settings.jinja2:140
+#: src/octoprint/templates/settings.jinja2:458
+#: src/octoprint/templates/settings.jinja2:534
+#: src/octoprint/templates/settings.jinja2:709
+#: src/octoprint/templates/settings.jinja2:715
 msgid "Name"
 msgstr "Nume"
 
-#: src/octoprint/templates/index.jinja2:556
+#: src/octoprint/templates/index.jinja2:602
 msgid "Creation date"
 msgstr "Dată creare"
 
-#: src/octoprint/templates/index.jinja2:563
-#: src/octoprint/templates/settings.jinja2:472
-#: src/octoprint/templates/settings.jinja2:639
+#: src/octoprint/templates/index.jinja2:609
+#: src/octoprint/templates/settings.jinja2:116
+#: src/octoprint/templates/settings.jinja2:537
+#: src/octoprint/templates/settings.jinja2:718
 msgid "Action"
 msgstr "Acțiune"
 
-#: src/octoprint/templates/index.jinja2:592
+#: src/octoprint/templates/index.jinja2:638
 msgid "Version"
 msgstr "Versiune"
 
-#: src/octoprint/templates/index.jinja2:595
+#: src/octoprint/templates/index.jinja2:641
 msgid "Homepage"
 msgstr "Pagina de gardă"
 
-#: src/octoprint/templates/index.jinja2:596
+#: src/octoprint/templates/index.jinja2:642
 msgid "Sourcecode"
 msgstr "Cod sursă"
 
-#: src/octoprint/templates/index.jinja2:597
+#: src/octoprint/templates/index.jinja2:643
 msgid "Documentation"
 msgstr "Documentație"
 
-#: src/octoprint/templates/index.jinja2:598
+#: src/octoprint/templates/index.jinja2:644
 msgid "Bugs and Requests"
 msgstr "Probleme și solicitări"
 
@@ -901,8 +1035,9 @@ msgid "Serial Connection"
 msgstr "Conexiune serială"
 
 #: src/octoprint/templates/settings.jinja2:11
-msgid "Printer Parameters"
-msgstr "Parametrii imprimantei"
+#: src/octoprint/templates/settings.jinja2:110
+msgid "Printer Profiles"
+msgstr ""
 
 #: src/octoprint/templates/settings.jinja2:12
 msgid "Temperatures"
@@ -922,321 +1057,347 @@ msgid "Webcam"
 msgstr "Webcam"
 
 #: src/octoprint/templates/settings.jinja2:17
-msgid "Cura"
-msgstr "Cura"
-
-#: src/octoprint/templates/settings.jinja2:18
 msgid "Access Control"
 msgstr "Control acces"
 
-#: src/octoprint/templates/settings.jinja2:19
+#: src/octoprint/templates/settings.jinja2:18
 msgid "API"
 msgstr "API"
 
-#: src/octoprint/templates/settings.jinja2:21
+#: src/octoprint/templates/settings.jinja2:20
 msgid "Folders"
 msgstr "Directoare"
 
-#: src/octoprint/templates/settings.jinja2:22
+#: src/octoprint/templates/settings.jinja2:21
 msgid "Appearance"
 msgstr "Aspect"
 
-#: src/octoprint/templates/settings.jinja2:23
-#: src/octoprint/templates/settings.jinja2:626
+#: src/octoprint/templates/settings.jinja2:22
+#: src/octoprint/templates/settings.jinja2:705
 msgid "Logs"
 msgstr "Înregistrări activitate"
 
-#: src/octoprint/templates/settings.jinja2:44
+#: src/octoprint/templates/settings.jinja2:51
 msgid "Auto-connect to printer on server start"
 msgstr "Conectare automată a imprimantei la pornirea serverului"
 
-#: src/octoprint/templates/settings.jinja2:49
+#: src/octoprint/templates/settings.jinja2:56
 msgid "Communication timeout"
 msgstr "Expirare temporizare comunicație"
 
-#: src/octoprint/templates/settings.jinja2:58
+#: src/octoprint/templates/settings.jinja2:65
 msgid "Temperature timeout"
 msgstr "Expirare temporizare temperatură"
 
-#: src/octoprint/templates/settings.jinja2:67
+#: src/octoprint/templates/settings.jinja2:74
 msgid "SD status timeout"
 msgstr "Expirare temporizare stare SD"
 
-#: src/octoprint/templates/settings.jinja2:76
+#: src/octoprint/templates/settings.jinja2:83
 msgid "Connection timeout"
 msgstr "Expirare temporizare conexiune"
 
-#: src/octoprint/templates/settings.jinja2:85
+#: src/octoprint/templates/settings.jinja2:92
 msgid "Autodetection timeout"
 msgstr "Expirare temporizare autodetectare"
 
-#: src/octoprint/templates/settings.jinja2:96
+#: src/octoprint/templates/settings.jinja2:103
 msgid "Log communication to serial.log (might negatively impact performance)"
 msgstr "Înregistrare comunicație în serial.log (poate afecta negativ performanța)"
 
-#: src/octoprint/templates/settings.jinja2:96
+#: src/octoprint/templates/settings.jinja2:103
 msgid "Warning"
 msgstr "Avertizare"
 
-#: src/octoprint/templates/settings.jinja2:105
-msgid "Axis"
-msgstr "Axă"
+#: src/octoprint/templates/settings.jinja2:115
+#: src/octoprint/templates/settings.jinja2:152
+msgid "Model"
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:107
-#: src/octoprint/templates/settings.jinja2:176
-msgid "X"
-msgstr "X"
+#: src/octoprint/templates/settings.jinja2:124
+msgid "Set as default profile"
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:113
-#: src/octoprint/templates/settings.jinja2:123
-#: src/octoprint/templates/settings.jinja2:133
-msgid "Invert control"
-msgstr "Inversare comandă"
+#: src/octoprint/templates/settings.jinja2:124
+msgid "Edit Profile"
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:117
-#: src/octoprint/templates/settings.jinja2:181
-msgid "Y"
-msgstr "Y"
+#: src/octoprint/templates/settings.jinja2:124
+msgid "Delete Profile"
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:127
-msgid "Z"
-msgstr "Z"
+#: src/octoprint/templates/settings.jinja2:130
+msgid "Add Profile..."
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:137
-msgid "E"
-msgstr "E"
+#: src/octoprint/templates/settings.jinja2:146
+msgid "Identifier"
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:145
-msgid "Default extrusion length"
-msgstr "Lungime implicită a extuziunii"
+#: src/octoprint/templates/settings.jinja2:158
+#: src/octoprint/templates/settings.jinja2:490
+msgid "Color"
+msgstr "Culoare"
 
-#: src/octoprint/templates/settings.jinja2:151
-msgid "Number of Extruders"
-msgstr "Număr de extrudere"
+#: src/octoprint/templates/settings.jinja2:165
+msgid "Form Factor"
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:157
-msgid "Extruder Offsets"
-msgstr "Decalaje extruder"
+#: src/octoprint/templates/settings.jinja2:167
+msgid "Rectangular"
+msgstr ""
 
-#: src/octoprint/templates/settings.jinja2:174
-msgid "Bed Size"
-msgstr "Mărime masă"
-
-#: src/octoprint/templates/settings.jinja2:188
-msgid "Radius"
-msgstr "Rază"
-
-#: src/octoprint/templates/settings.jinja2:196
+#: src/octoprint/templates/settings.jinja2:170
 msgid "Circular"
 msgstr "Circular"
 
-#: src/octoprint/templates/settings.jinja2:205
+#: src/octoprint/templates/settings.jinja2:174
+msgid "Volume"
+msgstr ""
+
+#: src/octoprint/templates/settings.jinja2:176
+#: src/octoprint/templates/settings.jinja2:206
+msgid "X"
+msgstr "X"
+
+#: src/octoprint/templates/settings.jinja2:183
+#: src/octoprint/templates/settings.jinja2:216
+msgid "Y"
+msgstr "Y"
+
+#: src/octoprint/templates/settings.jinja2:190
+#: src/octoprint/templates/settings.jinja2:226
+msgid "Z"
+msgstr "Z"
+
+#: src/octoprint/templates/settings.jinja2:198
+msgid "Heated Bed"
+msgstr ""
+
+#: src/octoprint/templates/settings.jinja2:204
+msgid "Axis"
+msgstr "Axă"
+
+#: src/octoprint/templates/settings.jinja2:212
+#: src/octoprint/templates/settings.jinja2:222
+#: src/octoprint/templates/settings.jinja2:232
+msgid "Invert control"
+msgstr "Inversare comandă"
+
+#: src/octoprint/templates/settings.jinja2:236
+msgid "E"
+msgstr "E"
+
+#: src/octoprint/templates/settings.jinja2:244
+msgid "Nozzle Diameter"
+msgstr ""
+
+#: src/octoprint/templates/settings.jinja2:253
+msgid "Number of Extruders"
+msgstr "Număr de extrudere"
+
+#: src/octoprint/templates/settings.jinja2:259
+msgid "Extruder Offsets"
+msgstr "Decalaje extruder"
+
+#: src/octoprint/templates/settings.jinja2:278
+#: src/octoprint/templates/settings.jinja2:610
+#: src/octoprint/templates/settings.jinja2:639
+#: src/octoprint/templates/settings.jinja2:689
+msgid "Abort"
+msgstr "Abandonare"
+
+#: src/octoprint/templates/settings.jinja2:279
+#: src/octoprint/templates/settings.jinja2:611
+#: src/octoprint/templates/settings.jinja2:640
+#: src/octoprint/templates/settings.jinja2:690
+msgid "Confirm"
+msgstr "Confirmare"
+
+#: src/octoprint/templates/settings.jinja2:286
 msgid "Stream URL"
 msgstr "URL flux video"
 
-#: src/octoprint/templates/settings.jinja2:211
+#: src/octoprint/templates/settings.jinja2:292
 msgid "Snapshot URL"
 msgstr "URL imagine capturată"
 
-#: src/octoprint/templates/settings.jinja2:217
+#: src/octoprint/templates/settings.jinja2:298
 msgid "Path to FFMPEG"
 msgstr "Cale către FFMPEG"
 
-#: src/octoprint/templates/settings.jinja2:223
+#: src/octoprint/templates/settings.jinja2:304
 msgid "Timelapse bitrate"
 msgstr "Viteză înregistrare rapidă"
 
-#: src/octoprint/templates/settings.jinja2:231
+#: src/octoprint/templates/settings.jinja2:312
 msgid "Enable OctoPrint watermark in timelapse movies"
 msgstr "Activează marcajul OctoPrint în înregistrările rapide"
 
-#: src/octoprint/templates/settings.jinja2:238
+#: src/octoprint/templates/settings.jinja2:319
 msgid "Flip webcam horizontally"
 msgstr "Rotește camera pe orizontală"
 
-#: src/octoprint/templates/settings.jinja2:243
+#: src/octoprint/templates/settings.jinja2:324
 msgid "Flip webcam vertically"
 msgstr "Rotește camera pe verticală"
 
-#: src/octoprint/templates/settings.jinja2:254
+#: src/octoprint/templates/settings.jinja2:335
 msgid "Enable Temperature Graph"
 msgstr "Activează graficul temperaturii"
 
-#: src/octoprint/templates/settings.jinja2:261
+#: src/octoprint/templates/settings.jinja2:342
 msgid "Enable GCode Visualizer"
 msgstr "Activează vizualizarea GCode"
 
-#: src/octoprint/templates/settings.jinja2:268
+#: src/octoprint/templates/settings.jinja2:349
 msgid "Enable SD support"
 msgstr "Activează suportul pentru SD"
 
-#: src/octoprint/templates/settings.jinja2:275
+#: src/octoprint/templates/settings.jinja2:356
 msgid "Always assume SD card is present"
 msgstr "Consideră întotdeauna cardul SD prezent"
 
-#: src/octoprint/templates/settings.jinja2:275
-#: src/octoprint/templates/settings.jinja2:289
-#: src/octoprint/templates/settings.jinja2:296
+#: src/octoprint/templates/settings.jinja2:356
+#: src/octoprint/templates/settings.jinja2:370
+#: src/octoprint/templates/settings.jinja2:377
 msgid "Repetier"
 msgstr "Repetier"
 
-#: src/octoprint/templates/settings.jinja2:282
+#: src/octoprint/templates/settings.jinja2:363
 msgid "Wait for <code>start</code> on connect"
 msgstr "Așteaptă <code>start</code> la conectare"
 
-#: src/octoprint/templates/settings.jinja2:289
+#: src/octoprint/templates/settings.jinja2:370
 msgid "Send a checksum with <strong>every</strong> command"
 msgstr "Transmite suma de control cu <strong>fiecare</strong> comandă"
 
-#: src/octoprint/templates/settings.jinja2:296
+#: src/octoprint/templates/settings.jinja2:377
 #, python-format
 msgid ""
 "Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature"
 " format"
 msgstr "Susține formatul <code>TargetExtr%%n</code>/<code>TargetBed</code> pentru temperatura țintă"
 
-#: src/octoprint/templates/settings.jinja2:303
+#: src/octoprint/templates/settings.jinja2:384
 msgid "Swallow the first \"ok\" after a resend response"
 msgstr "Ascunde primul \"ok\" după un răspuns retransmis"
 
-#: src/octoprint/templates/settings.jinja2:312
+#: src/octoprint/templates/settings.jinja2:393
 msgid "Upload Folder"
 msgstr "Încarcă director"
 
-#: src/octoprint/templates/settings.jinja2:318
+#: src/octoprint/templates/settings.jinja2:399
 msgid "Timelapse Folder"
 msgstr "Director pentru înregistrarea rapidă"
 
-#: src/octoprint/templates/settings.jinja2:324
+#: src/octoprint/templates/settings.jinja2:405
 msgid "Timelapse Temp Folder"
 msgstr "Director temporar pentru înregistrarea rapidă"
 
-#: src/octoprint/templates/settings.jinja2:330
+#: src/octoprint/templates/settings.jinja2:411
 msgid "Logs Folder"
 msgstr "Director pentru înregistrarea activității"
 
-#: src/octoprint/templates/settings.jinja2:336
+#: src/octoprint/templates/settings.jinja2:417
 msgid "Watched Folder"
 msgstr "Director pentru înregistrări rapide vizionate"
 
-#: src/octoprint/templates/settings.jinja2:346
+#: src/octoprint/templates/settings.jinja2:427
 msgid "Extruder"
 msgstr "Extruder"
 
-#: src/octoprint/templates/settings.jinja2:378
+#: src/octoprint/templates/settings.jinja2:459
 msgid "RegExp"
 msgstr "RegExp"
 
-#: src/octoprint/templates/settings.jinja2:403
+#: src/octoprint/templates/settings.jinja2:484
 msgid "Title"
 msgstr "Titlu"
 
-#: src/octoprint/templates/settings.jinja2:409
-msgid "Color"
-msgstr "Culoare"
-
-#: src/octoprint/templates/settings.jinja2:420
-msgid "Enable slicing via Cura"
-msgstr "Activează feliere prin Cura"
-
-#: src/octoprint/templates/settings.jinja2:426
-msgid "Path to Cura"
-msgstr "Cale către Cura"
-
-#: src/octoprint/templates/settings.jinja2:432
-msgid "Path to Cura config"
-msgstr "Cale către configurația Cura"
-
-#: src/octoprint/templates/settings.jinja2:444
+#: src/octoprint/templates/settings.jinja2:503
 msgid "Enable"
 msgstr "Activare"
 
-#: src/octoprint/templates/settings.jinja2:451
+#: src/octoprint/templates/settings.jinja2:510
 #, python-format
 msgid "Allow <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
 msgstr "Permite <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
 
-#: src/octoprint/templates/settings.jinja2:456
-#: src/octoprint/templates/settings.jinja2:477
+#: src/octoprint/templates/settings.jinja2:515
+#: src/octoprint/templates/settings.jinja2:542
 msgid "API Key"
 msgstr "Cheie API"
 
-#: src/octoprint/templates/settings.jinja2:470
-#: src/octoprint/templates/settings.jinja2:531
-#: src/octoprint/templates/settings.jinja2:560
+#: src/octoprint/templates/settings.jinja2:521
+#: src/octoprint/templates/settings.jinja2:679
+msgid "QR Code"
+msgstr ""
+
+#: src/octoprint/templates/settings.jinja2:535
+#: src/octoprint/templates/settings.jinja2:596
+#: src/octoprint/templates/settings.jinja2:625
 msgid "Active"
 msgstr "Activ"
 
-#: src/octoprint/templates/settings.jinja2:471
-#: src/octoprint/templates/settings.jinja2:538
-#: src/octoprint/templates/settings.jinja2:567
+#: src/octoprint/templates/settings.jinja2:536
+#: src/octoprint/templates/settings.jinja2:603
+#: src/octoprint/templates/settings.jinja2:632
 msgid "Admin"
 msgstr "Admin"
 
-#: src/octoprint/templates/settings.jinja2:481
+#: src/octoprint/templates/settings.jinja2:546
 msgid "Update User"
 msgstr "Actualizare utilizator"
 
-#: src/octoprint/templates/settings.jinja2:481
+#: src/octoprint/templates/settings.jinja2:546
 msgid "Change password"
 msgstr "Modificare parolă"
 
-#: src/octoprint/templates/settings.jinja2:481
+#: src/octoprint/templates/settings.jinja2:546
 msgid "Delete user"
 msgstr "Ștergere utilizator"
 
-#: src/octoprint/templates/settings.jinja2:498
-#: src/octoprint/templates/settings.jinja2:505
+#: src/octoprint/templates/settings.jinja2:563
+#: src/octoprint/templates/settings.jinja2:570
 msgid "Add user"
 msgstr "Adăugare utilizator"
 
-#: src/octoprint/templates/settings.jinja2:522
-#: src/octoprint/templates/settings.jinja2:593
+#: src/octoprint/templates/settings.jinja2:587
+#: src/octoprint/templates/settings.jinja2:658
 msgid "Repeat Password"
 msgstr "Repetare parolă"
 
-#: src/octoprint/templates/settings.jinja2:545
-#: src/octoprint/templates/settings.jinja2:574
-#: src/octoprint/templates/settings.jinja2:616
-msgid "Abort"
-msgstr "Abandonare"
-
-#: src/octoprint/templates/settings.jinja2:546
-#: src/octoprint/templates/settings.jinja2:575
-#: src/octoprint/templates/settings.jinja2:617
-msgid "Confirm"
-msgstr "Confirmare"
-
-#: src/octoprint/templates/settings.jinja2:553
+#: src/octoprint/templates/settings.jinja2:618
 #, python-format
 msgid "Edit user \"%(user)s\""
 msgstr "Editare utilizator \"%(user)s\""
 
-#: src/octoprint/templates/settings.jinja2:582
+#: src/octoprint/templates/settings.jinja2:647
 #, python-format
 msgid "Change password for user \"%(user)s\""
 msgstr "Modificare parolă pentru utilizatorul \"%(user)s\""
 
-#: src/octoprint/templates/settings.jinja2:587
+#: src/octoprint/templates/settings.jinja2:652
 msgid "New Password"
 msgstr "Parolă nouă"
 
-#: src/octoprint/templates/settings.jinja2:602
+#: src/octoprint/templates/settings.jinja2:667
 msgid "Current API Key"
 msgstr "Cheie API curentă"
 
-#: src/octoprint/templates/settings.jinja2:605
+#: src/octoprint/templates/settings.jinja2:670
 msgid "N/A"
 msgstr "N/A"
 
-#: src/octoprint/templates/settings.jinja2:630
+#: src/octoprint/templates/settings.jinja2:709
 msgid "Modification date"
 msgstr "Data modificării"
 
-#: src/octoprint/templates/settings.jinja2:638
+#: src/octoprint/templates/settings.jinja2:717
 msgid "Date"
 msgstr "Dată"
 
-#: src/octoprint/templates/settings.jinja2:677
+#: src/octoprint/templates/settings.jinja2:756
 msgid "Save"
 msgstr "Salvare"

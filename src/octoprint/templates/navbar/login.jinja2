@@ -1,0 +1,20 @@
+{% if enableAccessControl %}
+<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+    <i class="icon-user"></i> <span data-bind="text: loginState.userMenuText">{{ _('Login') }}</span>
+    <b class="caret"></b>
+</a>
+<div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
+    <label for="login_user">{{ _('Username') }}</label>
+    <input type="text" id="login_user" placeholder="{{ _('Username') }}" autocapitalize="none">
+    <label for="login_pass">{{ _('Password') }}</label>
+    <input type="password" id="login_pass" placeholder="{{ _('Password') }}">
+    <label class="checkbox">
+        <input type="checkbox" id="login_remember"> {{ _('Remember me') }}
+    </label>
+    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">{{ _('Login') }}</button>
+</div>
+<ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
+    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">{{ _('Change Password') }}</a></li>
+    <li><a href="#" id="logout_button" data-bind="click: loginState.logout">{{ _('Logout') }}</a></li>
+</ul>
+{% endif %}

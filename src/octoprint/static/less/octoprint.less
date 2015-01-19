@@ -305,6 +305,32 @@ table {
       }
     }
 
+    // Printer profiles
+    &.settings_printerProfiles_profiles_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    &.settings_printerProfiles_profiles_model {
+      text-align: left;
+      width: 250px;
+    }
+
+    &.settings_printerProfiles_profiles_action {
+      text-align: center;
+      width: 80px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
+    }
+
   }
 }
 
@@ -338,7 +364,7 @@ ul.dropdown-menu li a {
 
 /** Connection settings */
 
-#connection_ports, #connection_baudrates {
+#connection_ports, #connection_baudrates, #connection_printers {
   width: 100%;
 }
 
@@ -384,6 +410,10 @@ ul.dropdown-menu li a {
 
 #webcam_container {
   width: 100%;
+  position: relative;
+  outline: none;
+
+  //min-height: 440px;
 
   .flipH {
     -webkit-transform: scaleX(-1);
@@ -398,6 +428,40 @@ ul.dropdown-menu li a {
   .flipH.flipV {
     -webkit-transform: scaleX(-1) scaleY(-1);
     -moz-transform: scaleX(-1) scaleY(-1);
+  }
+
+  .keycontrol_overlay {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    font-size: 85%;
+    color: white;
+    padding: 0;
+
+    kbd {
+      border: 1px solid #eeeeee;
+      border-radius: 3px;
+      margin-left: 2px;
+      margin-right: 2px;
+      font-size: 90%;
+      padding: 2px;
+      min-width: 1em;
+    }
+
+    .keycontrol_overlay_heading {
+      position: relative;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+    .keycontrol_overlay_column {
+      position: relative;
+      width: 45%;
+      padding: 10px;
+      float: left;
+    }
   }
 }
 
@@ -467,12 +531,14 @@ ul.dropdown-menu li a {
     text-align: left;
   }
 
-  .jog-panel > div {
-    text-align: center;
-  }
+  .jog-panel {
+    >div {
+      text-align: center;
+    }
 
-  .jog-panel > div.distance {
-    text-align: left;
+    >div.distance {
+      text-align: left;
+    }
   }
 
   .box {
@@ -603,6 +669,10 @@ ul.dropdown-menu li a {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+}
+
+.hidden {
+  display: none;
 }
 
 textarea.block {

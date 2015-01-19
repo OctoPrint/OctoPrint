@@ -1,0 +1,77 @@
+{% if enableGCodeVisualizer %}
+<div data-bind="visible: !waitForApproval()">
+    <input id="gcode_slider_layers" type="text">
+    <canvas id="gcode_canvas" width="568" height="568"></canvas>
+    <input id="gcode_slider_commands" type="text" style="width: 554px">
+
+    <div class="progress" >
+        <div class="bar" style="width: 0%;" data-bind="text: ui_progress_text, style: { width: ui_progress_percentage() + '%' }"></div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span7">
+            <h1>Model info</h1>
+            <p data-bind="html: ui_modelInfo"></p>
+
+            <h1>Layer info</h1>
+            <p data-bind="html: ui_layerInfo"></p>
+        </div>
+        <div class="span5">
+            <h1>Renderer options</h1>
+
+            <p>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_syncProgress">{{ _('Sync with job progress') }}
+                </label>
+            </p>
+            <p>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_centerViewport">{{ _('Center viewport on model') }}
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_zoomOnModel">{{ _('Zoom in on model') }}
+                </label>
+            </p>
+
+            <p>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_showMoves">{{ _('Show moves') }}
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_showRetracts">{{ _('Show retracts') }}
+                </label>
+            </p>
+
+            <p>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_showPrevious">{{ _('Also show previous layer') }}
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_showNext">{{ _('Also show next layer') }}
+                </label>
+            </p>
+
+            <p>
+                <button class="btn btn-block" data-bind="click: reload, enable: enableReload">{{ _('Reload') }}</button>
+            </p>
+        </div>
+    </div>
+</div>
+<div data-bind="visible: waitForApproval">
+    <h1>Warning</h1>
+
+    <p>
+        You've selected <strong data-bind="text: selectedFile.name"></strong> for printing which has a size of
+        <strong data-bind="text: formatSize(selectedFile.size())"></strong>. Depending on your machine this
+        might be too large for rendering and cause your browser to become unresponsive or crash.
+    </p>
+
+    <p>
+        Are you sure you want to visualize this file nevertheless?
+    </p>
+
+    <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
+        Yes, please visualize <span data-bind="text: selectedFile.name"></span> regardless of its size
+    </button>
+</div>
+{% endif %}

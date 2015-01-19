@@ -17,7 +17,7 @@ from octoprint.events import Events, eventManager
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
 
-class QueueEntry(collections.namedtuple("QueueEntry", "path, type, location, absolute_path")):
+class QueueEntry(collections.namedtuple("QueueEntry", "path, type, location, absolute_path, printer_profile")):
 	def __str__(self):
 		return "{location}:{path}".format(location=self.location, path=self.path)
 
@@ -145,7 +145,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 	def _do_analysis(self):
 		try:
 			self._gcode = gcodeInterpreter.gcode()
-			self._gcode.load(self._current.absolute_path)
+			self._gcode.load(self._current.absolute_path, self._current.printer_profile)
 
 			result = dict()
 			if self._gcode.totalMoveTimeMinute:

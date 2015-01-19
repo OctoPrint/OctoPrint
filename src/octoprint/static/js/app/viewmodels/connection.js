@@ -1,13 +1,30 @@
-function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
+function ConnectionViewModel(loginStateViewModel, settingsViewModel, printerProfilesViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
     self.settings = settingsViewModel;
+    self.printerProfiles = printerProfilesViewModel;
+
+    self.printerProfiles.profiles.items.subscribe(function() {
+        var allProfiles = self.printerProfiles.profiles.items();
+
+        var printerOptions = [];
+        _.each(allProfiles, function(profile) {
+            printerOptions.push({id: profile.id, name: profile.name});
+        });
+        self.printerOptions(printerOptions);
+    });
+
+    self.printerProfiles.currentProfile.subscribe(function() {
+        self.selectedPrinter(self.printerProfiles.currentProfile());
+    });
 
     self.portOptions = ko.observableArray(undefined);
     self.baudrateOptions = ko.observableArray(undefined);
+    self.printerOptions = ko.observableArray(undefined);
     self.selectedPort = ko.observable(undefined);
     self.selectedBaudrate = ko.observable(undefined);
+    self.selectedPrinter = ko.observable(undefined);
     self.saveSettings = ko.observable(undefined);
     self.autoconnect = ko.observable(undefined);
 
@@ -24,7 +41,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
             return gettext("Connect");
         else
             return gettext("Disconnect");
-    })
+    });
 
     self.previousIsOperational = undefined;
 
@@ -37,13 +54,15 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 self.fromResponse(response);
             }
         })
-    }
+    };
 
     self.fromResponse = function(response) {
         var ports = response.options.ports;
         var baudrates = response.options.baudrates;
         var portPreference = response.options.portPreference;
         var baudratePreference = response.options.baudratePreference;
+        var printerPreference = response.options.printerProfilePreference;
+        var printerProfiles = response.options.printerProfiles;
 
         self.portOptions(ports);
         self.baudrateOptions(baudrates);
@@ -52,17 +71,19 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
             self.selectedPort(portPreference);
         if (!self.selectedBaudrate() && baudrates && baudrates.indexOf(baudratePreference) >= 0)
             self.selectedBaudrate(baudratePreference);
+        if (!self.selectedPrinter() && printerProfiles && printerProfiles.indexOf(printerPreference) >= 0)
+            self.selectedPrinter(printerPreference);
 
         self.saveSettings(false);
-    }
+    };
 
     self.fromHistoryData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self.fromCurrentData = function(data) {
         self._processStateData(data.state);
-    }
+    };
 
     self._processStateData = function(data) {
         self.previousIsOperational = self.isOperational();
@@ -85,7 +106,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 connectionTab.collapse("show");
             }
         }
-    }
+    };
 
     self.connect = function() {
         if (self.isErrorOrClosed()) {
@@ -93,6 +114,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 "command": "connect",
                 "port": self.selectedPort(),
                 "baudrate": self.selectedBaudrate(),
+                "printerProfile": self.selectedPrinter(),
                 "autoconnect": self.settings.serial_autoconnect()
             };
 
@@ -106,7 +128,8 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify(data),
                 success: function(response) {
-                    self.settings.requestData()
+                    self.settings.requestData();
+                    self.settings.printerProfiles.requestData();
                 }
             });
         } else {
@@ -119,7 +142,7 @@ function ConnectionViewModel(loginStateViewModel, settingsViewModel) {
                 data: JSON.stringify({"command": "disconnect"})
             })
         }
-    }
+    };
 
     self.onStartup = function() {
         self.requestData();

@@ -1,0 +1,49 @@
+<div id="settings_dialog" class="modal hide fade container" tabindex="-1" role="dialog" aria-labelledby="settings_dialog_label" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h3 id="settings_dialog_label">{{ _('OctoPrint Settings') }}</h3>
+    </div>
+    <div class="modal-body">
+        <div class="tabbable">
+            <ul class="nav nav-list span4" id="settingsTabs">
+                {% set active_set = false %}
+                {% for entry, data in settingsEntries %}
+                    {% if data is none %}
+                        <li class="nav-header">{{ entry }}</li>
+                    {% else %}
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                        <li id="{{ data._div }}_link"
+                            {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                            class="{% if not active_set %}active{% set active_set = true %}{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                            {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                >
+                            <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
+                        </li>
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                    {% endif %}
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content span8">
+                {% set active_set = false %}
+                {% for entry, data in settingsEntries %}
+                    {% if data is not none %}
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                        <div id="{{ data._div }}"
+                             {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                             class="tab-pane {% if not active_set %}active{% set active_set = true %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
+                             {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                >
+                            {% include data.template ignore missing %}
+                        </div>
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
+        <button class="btn btn-primary" data-bind="click: saveData">{{ _('Save') }}</button>
+    </div>
+</div>

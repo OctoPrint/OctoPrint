@@ -37,6 +37,9 @@ class PluginInfo(object):
 
 		self._version = version
 
+		if self.name is None:
+			raise ValueError("Plugin {key} doesn't have a name".format(key=key))
+
 	def __str__(self):
 		return "{name} ({version})".format(name=self.name, version=self.version if self.version else "unknown")
 
@@ -109,7 +112,10 @@ class PluginManager(object):
 
 		self.plugins = dict()
 		self.plugin_hooks = defaultdict(list)
-		self.plugin_implementations = defaultdict(list)
+		self.plugin_implementations = defaultdict(set)
+		self.plugin_implementations_by_type = defaultdict(list)
+
+		self.registered_clients = []
 
 		self.reload_plugins()
 
@@ -221,8 +227,34 @@ class PluginManager(object):
 			# evaluate registered implementations
 			for plugin_type in self.plugin_types:
 				implementations = plugin.get_implementations(plugin_type)
-				self.plugin_implementations[plugin_type] += ( (name, implementation) for implementation in implementations )
+				self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
+			self.plugin_implementations[name].update(plugin.get_implementations())
 
+		self.log_registered_plugins()
+
+	def initialize_implementations(self, additional_injects=None):
+		if additional_injects is None:
+			additional_injects = dict()
+
+		for name, implementations in self.plugin_implementations.items():
+			plugin = self.plugins[name]
+			for implementation in implementations:
+				kwargs = dict(additional_injects)
+				kwargs.update(dict(
+					identifier=name,
+					plugin_name=plugin.name,
+					plugin_version=plugin.version,
+					basefolder=os.path.realpath(plugin.location),
+					logger=logging.getLogger("octoprint.plugins." + name),
+				))
+				try:
+					implementation.pre_initialize(**kwargs)
+				except:
+					self.logger.exception("Exception while initializing plugin")
+
+		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
+
+	def log_registered_plugins(self):
 		if len(self.plugins) <= 0:
 			self.logger.info("No plugins found")
 		else:
@@ -235,21 +267,21 @@ class PluginManager(object):
 
 	def get_hooks(self, hook):
 		if not hook in self.plugin_hooks:
-			return []
+			return dict()
 		return {hook[0]: hook[1] for hook in self.plugin_hooks[hook]}
 
 	def get_implementations(self, *types):
 		result = None
 
 		for t in types:
-			implementations = self.plugin_implementations[t]
+			implementations = self.plugin_implementations_by_type[t]
 			if result is None:
 				result = set(implementations)
 			else:
 				result = result.intersection(implementations)
 
 		if result is None:
-			return set()
+			return dict()
 		return {impl[0]: impl[1] for impl in result}
 
 	def get_helpers(self, name, *helpers):
@@ -263,6 +295,25 @@ class PluginManager(object):
 		else:
 			return all_helpers
 
+	def register_client(self, client):
+		if client is None:
+			return
+		self.registered_clients.append(client)
+
+	def unregister_client(self, client):
+		self.registered_clients.remove(client)
+
+	def send_plugin_message(self, plugin, data):
+		for client in self.registered_clients:
+			try: client.sendPluginMessage(plugin, data)
+			except: self.logger.exception("Exception while sending plugin data to client")
+
 
 class Plugin(object):
-	pass
+	def pre_initialize(self, **kwargs):
+		for arg, value in kwargs.items():
+			setattr(self, "_" + arg, value)
+		self.initialize()
+
+	def initialize(self):
+		pass

@@ -40,7 +40,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         var tools = self.tools();
 
         // tools
-        var numExtruders = self.settingsViewModel.printer_numExtruders();
+        var numExtruders = self.settingsViewModel.printerProfiles.currentProfileData().extruder.count();
         if (numExtruders && numExtruders > 1) {
             // multiple extruders
             for (var extruder = 0; extruder < numExtruders; extruder++) {
@@ -73,7 +73,10 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         self.heaterOptions(heaterOptions);
         self.tools(tools);
     };
-    self.settingsViewModel.printer_numExtruders.subscribe(self._numExtrudersUpdated);
+    self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
+        self._numExtrudersUpdated();
+        self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._numExtrudersUpdated);
+    });
 
     self.temperatures = [];
     self.plotOptions = {

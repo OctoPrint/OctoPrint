@@ -1,4 +1,4 @@
-function AppearanceViewModel(settingsViewModel) {
+function AppearanceViewModel(settingsViewModel, printerStateViewModel) {
     var self = this;
 
     self.name = settingsViewModel.appearance_name;
