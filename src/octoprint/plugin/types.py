@@ -350,7 +350,7 @@ class TemplatePlugin(Plugin):
 		      :widths: 5 95
 
 		      * - template
-		        - Name of the template to inject, defaults to ``<pluginname>_settings.jinja2``.
+		        - Name of the template to inject, defaults to ``<pluginname>.jinja2``.
 
 		.. note::
 
