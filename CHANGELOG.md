@@ -7,6 +7,7 @@
 * Added deletion of `*.pyc` files to `python setup.py clean` command, should help tremendously when switching branches (backported
   from [9e014eb](https://github.com/foosel/OctoPrint/commit/9e014eba1feffde11ed0601d9c911b8cac9f3fb0))
 * Increased default communication and connection timeouts
+* [#706](https://github.com/foosel/OctoPrint/issues/706) - Do not truncate error reported from printer
 
 ### Bug Fixes
 
@@ -14,6 +15,7 @@
   by versioneer
 * [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
   (backport of [619fe9a](https://github.com/foosel/OctoPrint/commit/619fe9a0e78826bd1524b235a910156439bcb6d7)).
+* [#719](https://github.com/foosel/OctoPrint/issues/719) - Properly center print bed in GCODE viewer
 * [IRC] - Don't hiccup on slic3r ``filament_diameter`` comments generated for multi extruder setups
 * [ML] - Fixed relative URL to SockJS endpoint, wasn't yet using the proper base url
 * [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header
