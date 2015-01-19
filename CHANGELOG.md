@@ -62,6 +62,7 @@
 * Also interpret lines starting with "!!" as errors
 * Added deletion of pyc files to the `python setup.py clean` command
 * Settings now show a QRCode for the API Key ([#637](https://github.com/foosel/OctoPrint/pull/637))
+* Username in UI is no longer enclosed in scare quotes ([#595](https://github.com/foosel/OctoPrint/pull/595))
 * Username in login dialog is not automatically capitalized on mobile devices anymore ([#639](https://github.com/foosel/OctoPrint/pull/639))
 * "Slicing Done" and "Streaming Done" notifications now have a green background ([#558](https://github.com/foosel/OctoPrint/issues/558))
 * Files that are currently in use, be it for slicing, printing or whatever, are now tracked and can not be deleted as
@@ -79,6 +80,8 @@
 * Automatically hard-reload the UI if upon reconnecting to the server a new version is detected.
 * Better handling of errors on the websocket - no more logging of the full stack trace to the log, only a warning
   message for now.
+* Daemonized OctoPrint now cleans up its pidfile when receiving a TERM signal ([#711](https://github.com/foosel/OctoPrint/issues/711))
+* Added serial types for OpenBSD ([#551](https://github.com/foosel/OctoPrint/pull/551))
 
 ### Bug Fixes
 
@@ -91,6 +94,8 @@
 * [#680](https://github.com/foosel/OctoPrint/issues/680) - Don't accidentally include a newline from the MIME headers
   in the parsed multipart data from file uploads
 * [#709](https://github.com/foosel/OctoPrint/issues/709) - Properly initialize time estimation for SD card transfers too
+* [#715](https://github.com/foosel/OctoPrint/issues/715) - Fixed an error where Event Triggers of type command caused
+  and exception to be raised due to a misnamed attribute in the code
 * [#717](https://github.com/foosel/OctoPrint/issues/717) - Use ``shutil.move`` instead of ``os.rename`` to avoid cross
   device renaming issues
 * Various fixes of bugs in newly introduced features and improvements:
@@ -101,13 +106,22 @@
     printer profiles
   * [#683](https://github.com/foosel/OctoPrint/issues/683) - Fixed heated bed option not being properly displayed in
     printer profiles
+  * [#685](https://github.com/foosel/OctoPrint/issues/685) - Quoted file name for Timelapse creation to not make
+    command hiccup on ``~`` in file name
+  * [#709](https://github.com/foosel/OctoPrint/issues/709) - Fixed file sending to SD card
   * [#714](https://github.com/foosel/OctoPrint/issues/714) - Fixed type validation of printer profiles
   * Heating up the heated bed (if present) was not properly configured in CuraEngine plugin
-  * [#724](https://github.com/foosel/OctoPrint/issues/724) - Fixed timelapse deletion for timelapses with non-ascii characters in their name
+  * [#720](https://github.com/foosel/OctoPrint/issues/720) - Fixed translation files not being properly copied over
+    during install
+  * [#724](https://github.com/foosel/OctoPrint/issues/724) - Fixed timelapse deletion for timelapses with non-ascii
+    characters in their name
+  * [#726](https://github.com/foosel/OctoPrint/issues/726) - Fixed ``babel_refresh`` command
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
   * Don't hiccup on slic3r filament_diameter comments in GCODE generated for multi extruder setups
+
+([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
 ## 1.1.2 (Unreleased)
 
