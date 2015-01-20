@@ -43,10 +43,18 @@ def printerProfilesAdd():
 		del base_profile["id"]
 	if "name" in base_profile:
 		del base_profile["name"]
+	if "default" in base_profile:
+		del base_profile["default"]
 
-	profile = dict_merge(base_profile, json_data["profile"])
+	new_profile = json_data["profile"]
+	make_default = False
+	if "default" in new_profile:
+		make_default = True
+		del new_profile["default"]
+
+	profile = dict_merge(base_profile, new_profile)
 	try:
-		saved_profile = printerProfileManager.save(profile, allow_overwrite=False)
+		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
