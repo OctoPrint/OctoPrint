@@ -18,6 +18,19 @@
     </tbody>
 </table>
 
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: printerProfiles.profiles.currentPage() === 0}"><a href="#" data-bind="click: printerProfiles.profiles.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: printerProfiles.profiles.pages">
+        <li data-bind="css: { active: $data.number === $root.printerProfiles.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.printerProfiles.profiles.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: printerProfiles.profiles.currentPage() === printerProfiles.profiles.lastPage()}"><a href="#" data-bind="click: printerProfiles.profiles.nextPage">»</a></li>
+    </ul>
+</div>
+
+
 <button class="btn pull-right" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog(); }">{{ _('Add Profile...') }}</button>
 
 <div id="settings_printerProfiles_editDialog" class="modal hide fade">

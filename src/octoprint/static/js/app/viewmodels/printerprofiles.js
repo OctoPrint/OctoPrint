@@ -44,7 +44,7 @@ function PrinterProfilesViewModel() {
         "name",
         [],
         [],
-        5
+        10
     );
     self.defaultProfile = ko.observable();
     self.currentProfile = ko.observable();
