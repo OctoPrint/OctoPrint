@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, make_response, url_for
+from flask.exceptions import JSONBadRequest
 
 from octoprint.server import slicingManager
 from octoprint.server.util.flask import restricted_access
@@ -58,7 +59,10 @@ def slicingAddSlicerProfile(slicer, name):
 	if not "application/json" in request.headers["Content-Type"]:
 		return None, None, make_response("Expected content-type JSON", 400)
 
-	json_data = request.json
+	try:
+		json_data = request.json
+	except JSONBadRequest:
+		return make_response("Malformed JSON body in request", 400)
 
 	data = dict()
 	display_name = None
@@ -90,7 +94,10 @@ def slicingPatchSlicerProfile(slicer, name):
 	if not profile:
 		return make_response("Profile not found", 404)
 
-	json_data = request.json
+	try:
+		json_data = request.json
+	except JSONBadRequest:
+		return make_response("Malformed JSON body in request", 400)
 
 	data = dict()
 	display_name = None
