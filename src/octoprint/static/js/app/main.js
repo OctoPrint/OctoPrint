@@ -415,6 +415,28 @@ $(function() {
             }
         };
 
+        //~~ startup commands
+
+        _.each(allViewModels, function(viewModel) {
+            if (viewModel.hasOwnProperty("onStartup")) {
+                viewModel.onStartup();
+            }
+        });
+
+        loginStateViewModel.subscribe(function(change, data) {
+            if ("login" == change) {
+                $("#gcode_upload").fileupload("enable");
+
+                if (data.admin) {
+                    usersViewModel.requestData();
+                }
+            } else {
+                $("#gcode_upload").fileupload("disable");
+            }
+        });
+
+        //~~ view model binding
+
         settingsViewModel.requestData(function() {
             ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
 
@@ -471,26 +493,6 @@ $(function() {
                     viewModel.onAfterBinding();
                 }
             });
-        });
-
-        //~~ startup commands
-
-        _.each(allViewModels, function(viewModel) {
-            if (viewModel.hasOwnProperty("onStartup")) {
-                viewModel.onStartup();
-            }
-        });
-
-        loginStateViewModel.subscribe(function(change, data) {
-            if ("login" == change) {
-                $("#gcode_upload").fileupload("enable");
-
-                if (data.admin) {
-                    usersViewModel.requestData();
-                }
-            } else {
-                $("#gcode_upload").fileupload("disable");
-            }
         });
 
         //~~ UI stuff
