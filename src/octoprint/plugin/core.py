@@ -34,16 +34,18 @@ class PluginInfo(object):
 
 	attr_init = '__plugin_init__'
 
-	def __init__(self, key, location, instance, version=None):
+	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None):
 		self.key = key
 		self.location = location
 		self.instance = instance
 		self.origin = None
+		self.bundled = False
 
+		self._name = name
 		self._version = version
-
-		if self.name is None:
-			raise ValueError("Plugin {key} doesn't have a name".format(key=key))
+		self._description = description
+		self._author = author
+		self._url = url
 
 	def __str__(self):
 		return "{name} ({version})".format(name=self.name, version=self.version if self.version else "unknown")
@@ -66,23 +68,23 @@ class PluginInfo(object):
 
 	@property
 	def name(self):
-		return self._get_instance_attribute(self.__class__.attr_name, default=None)
+		return self._get_instance_attribute(self.__class__.attr_name, default=self._name)
 
 	@property
 	def description(self):
-		return self._get_instance_attribute(self.__class__.attr_description, default=None)
+		return self._get_instance_attribute(self.__class__.attr_description, default=self._description)
 
 	@property
 	def version(self):
-		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=None)
+		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=self._version)
 
 	@property
 	def author(self):
-		return self._get_instance_attribute(self.__class__.attr_author, default=None)
+		return self._get_instance_attribute(self.__class__.attr_author, default=self._author)
 
 	@property
 	def url(self):
-		return self._get_instance_attribute(self.__class__.attr_url, default=None)
+		return self._get_instance_attribute(self.__class__.attr_url, default=self._url)
 
 	@property
 	def hooks(self):
@@ -173,6 +175,7 @@ class PluginManager(object):
 
 	def _add_plugins_from_entry_points(self, groups, plugins):
 		import pkg_resources
+		import pkginfo
 
 		if not isinstance(groups, (list, tuple)):
 			groups = [groups]
@@ -191,14 +194,27 @@ class PluginManager(object):
 					# plugin is already defined, ignore it
 					continue
 
-				plugin = self._load_plugin_from_module(key, module_name=module_name, version=version)
+				kwargs = dict(module_name=module_name, version=version)
+				try:
+					module_pkginfo = pkginfo.Installed(module_name)
+				except:
+					self.logger.exception("Something went wrong while retrieving package info data for module %s" % module_name)
+				else:
+					kwargs.update(dict(
+						name=module_pkginfo.name,
+						summary=module_pkginfo.summary,
+						author=module_pkginfo.author,
+						url=module_pkginfo.home_page
+					))
+
+				plugin = self._load_plugin_from_module(key, **kwargs)
 				if plugin:
 					plugin.origin = ("entry_point", group)
 					plugins[key] = plugin
 
 		return plugins
 
-	def _load_plugin_from_module(self, key, folder=None, module_name=None, version=None):
+	def _load_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None):
 		# TODO error handling
 		if folder:
 			module = imp.find_module(key, [folder])
@@ -207,7 +223,7 @@ class PluginManager(object):
 		else:
 			return None
 
-		plugin = self._load_plugin(key, *module, version=version)
+		plugin = self._load_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url)
 		if plugin:
 			if plugin.check():
 				return plugin
@@ -216,10 +232,10 @@ class PluginManager(object):
 				return None
             
 
-	def _load_plugin(self, key, f, filename, description, version=None):
+	def _load_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None):
 		try:
 			instance = imp.load_module(key, f, filename, description)
-			return PluginInfo(key, filename, instance, version=version)
+			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url)
 		except:
 			self.logger.exception("Error loading plugin {key}, disabling it".format(key=key))
 			return None

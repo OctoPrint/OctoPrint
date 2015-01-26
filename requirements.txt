@@ -13,3 +13,4 @@ sarge
 netifaces
 pylru
 rsa
+pkginfo
