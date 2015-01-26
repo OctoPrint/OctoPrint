@@ -20,6 +20,10 @@ class PluginInfo(object):
 
 	attr_version = '__plugin_version__'
 
+	attr_author = '__plugin_author__'
+
+	attr_url = '__plugin_url__'
+
 	attr_hooks = '__plugin_hooks__'
 
 	attr_implementations = '__plugin_implementations__'
@@ -34,6 +38,7 @@ class PluginInfo(object):
 		self.key = key
 		self.location = location
 		self.instance = instance
+		self.origin = None
 
 		self._version = version
 
@@ -70,6 +75,14 @@ class PluginInfo(object):
 	@property
 	def version(self):
 		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=None)
+
+	@property
+	def author(self):
+		return self._get_instance_attribute(self.__class__.attr_author, default=None)
+
+	@property
+	def url(self):
+		return self._get_instance_attribute(self.__class__.attr_url, default=None)
 
 	@property
 	def hooks(self):
@@ -153,6 +166,7 @@ class PluginManager(object):
 
 				plugin = self._load_plugin_from_module(key, folder=folder)
 				if plugin:
+					plugin.origin = ("folder", folder)
 					plugins[key] = plugin
 
 		return plugins
@@ -179,6 +193,7 @@ class PluginManager(object):
 
 				plugin = self._load_plugin_from_module(key, module_name=module_name, version=version)
 				if plugin:
+					plugin.origin = ("entry_point", group)
 					plugins[key] = plugin
 
 		return plugins

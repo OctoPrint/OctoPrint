@@ -27,6 +27,10 @@ a couple of properties describing the module:
   Version of your plugin
 ``__plugin_description__``
   Description of your plugin
+``__plugin_author__``
+  Author of your plugin
+``__plugin_url__``
+  URL of the webpage of your plugin, e.g. the Github repository
 ``__plugin_implementations__``
   Instances of one or more of the various :ref:`plugin mixins <sec-plugins-developing-mixins>`
 ``__plugin_hooks__``
