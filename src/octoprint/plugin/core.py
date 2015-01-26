@@ -24,6 +24,8 @@ class PluginInfo(object):
 
 	attr_url = '__plugin_url__'
 
+	attr_license = '__plugin_license__'
+
 	attr_hooks = '__plugin_hooks__'
 
 	attr_implementations = '__plugin_implementations__'
@@ -34,11 +36,12 @@ class PluginInfo(object):
 
 	attr_init = '__plugin_init__'
 
-	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None):
+	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None):
 		self.key = key
 		self.location = location
 		self.instance = instance
 		self.origin = None
+		self.enabled = True
 		self.bundled = False
 
 		self._name = name
@@ -46,6 +49,7 @@ class PluginInfo(object):
 		self._description = description
 		self._author = author
 		self._url = url
+		self._license = license
 
 	def __str__(self):
 		return "{name} ({version})".format(name=self.name, version=self.version if self.version else "unknown")
@@ -85,6 +89,10 @@ class PluginInfo(object):
 	@property
 	def url(self):
 		return self._get_instance_attribute(self.__class__.attr_url, default=self._url)
+
+	@property
+	def license(self):
+		return self._get_instance_attribute(self.__class__.attr_license, default=self._license)
 
 	@property
 	def hooks(self):
@@ -130,20 +138,30 @@ class PluginManager(object):
 		self.plugin_implementations = defaultdict(set)
 		self.plugin_implementations_by_type = defaultdict(list)
 
+		self.disabled_plugins = dict()
+
 		self.registered_clients = []
 
 		self.reload_plugins()
 
 	def _find_plugins(self):
 		plugins = dict()
+		disabled_plugins = dict()
 		if self.plugin_folders:
-			self._add_plugins_from_folders(self.plugin_folders, plugins)
+			self._add_plugins_from_folders(self.plugin_folders, plugins, disabled_plugins)
 		if self.plugin_entry_points:
-			self._add_plugins_from_entry_points(self.plugin_entry_points, plugins)
-		return plugins
+			self._add_plugins_from_entry_points(self.plugin_entry_points, plugins, disabled_plugins)
+		return plugins, disabled_plugins
 
-	def _add_plugins_from_folders(self, folders, plugins):
+	def _add_plugins_from_folders(self, folders, plugins, disabled_plugins):
 		for folder in folders:
+			readonly = False
+			if isinstance(folder, (list, tuple)):
+				if len(folder) == 2:
+					folder, readonly = folder
+				else:
+					continue
+
 			if not os.path.exists(folder):
 				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
 				continue
@@ -158,10 +176,6 @@ class PluginManager(object):
 				else:
 					continue
 
-				if self._is_plugin_disabled(key):
-					# plugin is disabled, ignore it
-					continue
-
 				if key in plugins:
 					# plugin is already defined, ignore it
 					continue
@@ -169,11 +183,18 @@ class PluginManager(object):
 				plugin = self._load_plugin_from_module(key, folder=folder)
 				if plugin:
 					plugin.origin = ("folder", folder)
-					plugins[key] = plugin
+					if readonly:
+						plugin.bundled = True
 
-		return plugins
+					if self._is_plugin_disabled(key):
+						plugin.enabled = False
+						disabled_plugins[key] = plugin
+					else:
+						plugins[key] = plugin
 
-	def _add_plugins_from_entry_points(self, groups, plugins):
+		return plugins, disabled_plugins
+
+	def _add_plugins_from_entry_points(self, groups, plugins, disabled_plugins):
 		import pkg_resources
 		import pkginfo
 
@@ -185,10 +206,6 @@ class PluginManager(object):
 				key = entry_point.name
 				module_name = entry_point.module_name
 				version = entry_point.dist.version
-
-				if self._is_plugin_disabled(key):
-					# plugin is disabled, ignore it
-					continue
 
 				if key in plugins:
 					# plugin is already defined, ignore it
@@ -204,38 +221,48 @@ class PluginManager(object):
 						name=module_pkginfo.name,
 						summary=module_pkginfo.summary,
 						author=module_pkginfo.author,
-						url=module_pkginfo.home_page
+						url=module_pkginfo.home_page,
+						license=module_pkginfo.license
 					))
 
 				plugin = self._load_plugin_from_module(key, **kwargs)
 				if plugin:
 					plugin.origin = ("entry_point", group)
-					plugins[key] = plugin
 
-		return plugins
+					if self._is_plugin_disabled(key):
+						plugin.enabled = False
+						disabled_plugins[key] = plugin
+					else:
+						plugins[key] = plugin
 
-	def _load_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None):
+		return plugins, disabled_plugins
+
+	def _load_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None):
 		# TODO error handling
-		if folder:
-			module = imp.find_module(key, [folder])
-		elif module_name:
-			module = imp.find_module(module_name)
-		else:
+		try:
+			if folder:
+				module = imp.find_module(key, [folder])
+			elif module_name:
+				module = imp.find_module(module_name)
+			else:
+				return None
+		except:
+			self.logger.warn("Could not locate plugin {key}")
 			return None
 
-		plugin = self._load_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url)
+		plugin = self._load_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
 		if plugin:
 			if plugin.check():
 				return plugin
 			else:
-				self.logger.warn("Plugin \"{plugin}\" did not pass check, disabling it".format(plugin=str(plugin)))
+				self.logger.warn("Plugin \"{plugin}\" did not pass check".format(plugin=str(plugin)))
 				return None
-            
 
-	def _load_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None):
+
+	def _load_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None):
 		try:
 			instance = imp.load_module(key, f, filename, description)
-			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url)
+			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
 		except:
 			self.logger.exception("Error loading plugin {key}, disabling it".format(key=key))
 			return None
@@ -245,7 +272,7 @@ class PluginManager(object):
 
 	def reload_plugins(self):
 		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(self.plugin_folders)))
-		self.plugins = self._find_plugins()
+		self.plugins, self.disabled_plugins = self._find_plugins()
 
 		for name, plugin in self.plugins.items():
 			# initialize the plugin
@@ -290,6 +317,9 @@ class PluginManager(object):
 			self.logger.info("No plugins found")
 		else:
 			self.logger.info("Found {count} plugin(s): {plugins}".format(count=len(self.plugins), plugins=", ".join(map(lambda x: str(x), self.plugins.values()))))
+
+		if len(self.disabled_plugins) > 0:
+			self.logger.info("{count} plugin(s) currently disabled: {plugins}".format(count=len(self.disabled_plugins), plugins=", ".join(map(lambda x: str(x), self.disabled_plugins.values()))))
 
 	def get_plugin(self, name):
 		if not name in self.plugins:
