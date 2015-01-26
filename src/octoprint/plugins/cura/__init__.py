@@ -430,4 +430,8 @@ def _sanitize_name(name):
 
 __plugin_name__ = "CuraEngine"
 __plugin_version__ = "0.1"
+__plugin_author__ = "Gina Häußge"
+__plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura"
+__plugin_description__ = "Adds support for slicing via CuraEngine from within OctoPrint"
+__plugin_license__ = "AGPLv3"
 __plugin_implementations__ = [CuraPlugin()]
