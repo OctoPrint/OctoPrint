@@ -227,7 +227,7 @@ class PluginManager(object):
 
 				plugin = self._load_plugin_from_module(key, **kwargs)
 				if plugin:
-					plugin.origin = ("entry_point", group)
+					plugin.origin = ("entry_point", group, module_name)
 
 					if self._is_plugin_disabled(key):
 						plugin.enabled = False
