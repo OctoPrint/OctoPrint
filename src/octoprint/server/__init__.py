@@ -419,14 +419,15 @@ class Server():
 		appSessionManager = util.flask.AppSessionManager()
 
 		pluginManager.initialize_implementations(dict(
+		    plugin_manager=pluginManager,
 		    printer_profile_manager=printerProfileManager,
 		    event_manager=eventManager,
 		    analysis_queue=analysisQueue,
 		    slicing_manager=slicingManager,
 		    storage_managers=storage_managers,
 		    file_manager=fileManager,
+		    printer=printer,
 		    app_session_manager=appSessionManager,
-		    plugin_manager=pluginManager
 		))
 
 		# configure additional template folders for jinja2
