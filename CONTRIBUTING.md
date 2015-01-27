@@ -3,7 +3,8 @@ Issues, Tickets, however you may call them
 
 Read the following short instructions **fully** and **follow them** if you want your ticket to be taken care of and not closed again directly! They are linked on top of every new issue form, so don't say nobody warned you afterwards.
 
-- Always create **one ticket for one purpose**. So don't mix two or more feature requests, support requests, bugs etc into one ticket. If you do, your ticket will be treated as if only describing the first purpose, the others will be ignored!
+- **Read the [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)**
+- Always create **one ticket for one purpose**. So don't mix two or more feature requests, support requests, bugs etc into one ticket. If you do, your ticket will be closed!
 - If you want to report a bug, **READ AND FOLLOW [How to file a bug report](https://github.com/foosel/OctoPrint/wiki/How-to-file-a-bug-report)!** Tickets will be automatically checked if they comply with the requirements outlined in that wiki node! Other then what's written in there (**and really EVERYTHING that is written in there!**) you don't have to do anything special with your ticket. Listen to what GitIssueBot might have to say to you!
 - If you want to post a **request** of any kind (feature request, documentation request, ...), **add [Request] to your issue's title!**
 - If you need **support** with a problem of your installation (e.g. if you have problems getting the webcam to work) or have a general **question**, the issue tracker is not the right place. Consult the [Mailinglist](https://groups.google.com/group/octoprint) or the [Google+ Community](https://plus.google.com/communities/102771308349328485741) instead!
@@ -45,3 +46,4 @@ History
 -------
 
   * 2015-01-23: More guidelines for creating pull requests, support/questions redirected to Mailinglist/G+ community
+  * 2015-01-27: Added another explicit link to the FAQ
