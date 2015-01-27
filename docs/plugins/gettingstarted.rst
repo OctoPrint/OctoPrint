@@ -34,6 +34,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
 "Hello World!" to the log upon server startup. Modify our ``helloworld.py`` like this:
 
 .. code-block:: python
+   :emphasize-lines: 4-8,13
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -142,7 +143,7 @@ of information now defined twice:
    plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
 
 The nice thing about our plugin now being a proper python package is that OctoPrint can and will access the metadata defined
-within ``setup.py``! So, we don't really need to define all this data twice. Remove it:
+within ``setup.py``! So, we don't really need to define all this data twice. Remove both ``plugin_name`` and ``plugin_version``:
 
 .. code-block:: python
 
@@ -165,6 +166,7 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
 "OctoPrint-HelloWorld". That's a bit ugly, so we'll override that bit via ``__plugin_name__`` again:
 
 .. code-block:: python
+   :emphasize-lines: 10
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -205,6 +207,7 @@ We can do this using the :class:`TemplatePlugin` mixin. For now, let's start wit
 navigation bar right at the top. For this we'll first add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
 
 .. code-block:: python
+   :emphasize-lines: 6
 
    # coding=utf-8
    from __future__ import absolute_import
