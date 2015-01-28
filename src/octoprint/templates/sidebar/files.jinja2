@@ -36,20 +36,20 @@
     <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span></small>
 </div>
 <div style="display: none;" data-bind="visible: loginState.isUser">
-    <div class="row-fluid upload-buttons">
+    <div class="row upload-buttons">
         {% if enableSdSupport %}
-            <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+            <span class="btn btn-primary fileinput-button col-md-6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
                                 <span>{{ _('Upload') }}</span>
                                 <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                             </span>
-            <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
+            <span class="btn btn-primary fileinput-button col-md-6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
                                 <span>{{ _('Upload to SD') }}</span>
                                 <input id="gcode_upload_sd" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
                             </span>
         {% else %}
-            <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+            <span class="btn btn-primary fileinput-button col-md-12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
                                 <span>{{ _('Upload') }}</span>
                                 <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
