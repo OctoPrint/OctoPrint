@@ -89,6 +89,13 @@ LANGUAGES = get_available_locale_identifiers(LOCALES)
 def before_request():
 	g.locale = get_locale()
 
+@app.after_request
+def after_request(response):
+	# send no-cache headers with all POST responses
+	if request.method == "POST":
+		response.cache_control.no_cache = True
+	return response
+
 
 @babel.localeselector
 def get_locale():
