@@ -105,9 +105,8 @@ def get_locale():
 
 
 @app.route("/")
+@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values)
 def index():
-
-
 
 	#~~ extract data from asset plugins
 

@@ -19,6 +19,48 @@ from octoprint.settings import settings
 import octoprint.server
 import octoprint.users
 
+from werkzeug.contrib.cache import SimpleCache
+
+
+#~~ cache decorator for cacheable views
+
+_cache = SimpleCache()
+
+def cached(timeout=5 * 60, key="view/%s", unless=None, refreshif=None):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			logger = logging.getLogger(__name__)
+
+			# bypass the cache if "unless" condition is true
+			if callable(unless) and unless():
+				logger.debug("Cache bypassed, calling wrapped function")
+				return f(*args, **kwargs)
+
+			cache_key = key % flask.request.path
+
+			# only take the value from the cache if we are not required to refresh it from the wrapped function
+			if not callable(refreshif) or not refreshif():
+				rv = _cache.get(cache_key)
+				if rv is not None:
+					logger.debug("Serving entry from cache")
+					return rv
+
+			# get value from wrapped function
+			logger.debug("No cache entry or refreshing cache, calling wrapped function")
+			rv = f(*args, **kwargs)
+
+			# store it in the cache
+			_cache.set(cache_key, rv, timeout=timeout)
+
+			return rv
+
+		return decorated_function
+
+	return decorator
+
+def cache_check_headers():
+	return "no-cache" in flask.request.cache_control or "no-cache" in flask.request.pragma
 
 #~~ access validators for use with tornado
 
