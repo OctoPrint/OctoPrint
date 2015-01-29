@@ -115,6 +115,64 @@ def index():
 	for name, implementation in asset_plugins.items():
 		asset_plugin_urls[name] = implementation.get_assets()
 
+	templates = dict(
+		navbar=dict(order=[], entries=dict()),
+		sidebar=dict(order=[], entries=dict()),
+		tab=dict(order=[], entries=dict()),
+		settings=dict(order=[], entries=dict()),
+		generic=dict(order=[], entries=dict())
+	)
+
+	#~~ navbar
+
+	templates["navbar"]["entries"] = dict(
+		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
+		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
+		login=dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False)
+	)
+
+	#~~ sidebar
+
+	templates["sidebar"]["entries"]= dict(
+		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isAdmin")),
+		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign")),
+		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], header_addon="sidebar/files_header.jinja2"))
+	)
+
+	#~~ tabs
+
+	templates["tab"]["entries"] = dict(
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
+		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
+		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
+		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
+		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
+	)
+
+	#~~ settings dialog
+
+	templates["settings"]["entries"] = dict(
+		section_printer=(gettext("Printer"), None),
+
+		serial=(gettext("Serial Connection"), dict(template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection", custom_bindings=False)),
+		printerprofiles=(gettext("Printer Profiles"), dict(template="dialogs/settings/printerprofiles.jinja2", _div="settings_printerProfiles", custom_bindings=False)),
+		temperatures=(gettext("Temperatures"), dict(template="dialogs/settings/temperatures.jinja2", _div="settings_temperature", custom_bindings=False)),
+		terminalfilters=(gettext("Terminal Filters"), dict(template="dialogs/settings/terminalfilters.jinja2", _div="settings_terminalFilters", custom_bindings=False)),
+
+		section_features=(gettext("Features"), None),
+
+		features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
+		webcam=(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
+		accesscontrol=(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
+		api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
+
+		section_octoprint=(gettext("OctoPrint"), None),
+
+		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
+		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
+		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
+	)
+
 	#~~ extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
@@ -129,11 +187,6 @@ def index():
 	)
 
 	plugin_vars = dict()
-	plugin_includes_navbar = []
-	plugin_includes_sidebar = []
-	plugin_includes_tabs = []
-	plugin_includes_settings = []
-	plugin_includes_generic = []
 	plugin_names = template_plugins.keys()
 	for name, implementation in template_plugins.items():
 		vars = implementation.get_template_vars()
@@ -149,59 +202,51 @@ def index():
 
 		includes = _process_template_configs(name, implementation, configs, rules)
 
-		plugin_includes_navbar += includes["navbar"]
-		plugin_includes_sidebar += includes["sidebar"]
-		plugin_includes_tabs += includes["tab"]
-		plugin_includes_settings += includes["settings"]
-		plugin_includes_generic += includes["generic"]
+		for t in ("navbar", "sidebar", "tab", "settings", "generic"):
+			for include in includes[t]:
+				if t == "navbar" or t == "generic":
+					data = include
+				else:
+					data = include[1]
 
-	#~~ navbar
+				key = "plugin_" + name + data["suffix"] if "suffix" in data else ""
+				if "replaces" in data:
+					key = data["replaces"]
+				templates[t]["entries"][key] = include
 
-	navbar_entries = plugin_includes_navbar + [
-		dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
-		dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
-		dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False)
+	#~~ order internal templates and plugins
+
+	templates["navbar"]["order"] = ["settings", "systemmenu", "login"]
+	templates["sidebar"]["order"] = ["connection", "state", "files"]
+	templates["tab"]["order"] = ["temperature", "control", "gcodeviewer", "terminal", "timelapse"]
+	templates["settings"]["order"] = [
+		"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters",
+		"section_features", "features", "webcam", "accesscontrol", "api",
+		"section_octoprint", "folders", "appearance", "logs"
 	]
 
-	#~~ sidebar
+	# make sure that
+	# 1) we only have keys in our ordered list that we have entries for and
+	# 2) we have all entries located somewhere within the order
 
-	sidebar_entries = [
-		(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isAdmin")),
-		(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign")),
-		(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], header_addon="sidebar/files_header.jinja2"))
-	] + plugin_includes_sidebar
+	for t in ("navbar", "sidebar", "tab", "settings", "generic"):
+		templates[t]["order"] = [x for x in templates[t]["order"] if x in templates[t]["entries"]]
+		all_ordered = set(templates[t]["order"])
 
-	#~~ tabs
+		missing_in_order = set(templates[t]["entries"].keys()).difference(all_ordered)
+		if len(missing_in_order) == 0:
+			continue
 
-	tab_entries = [
-		(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
-		(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
-		(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
-		(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
-		(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
-	] + plugin_includes_tabs
-
-	#~~ settings dialog
-
-	settings_entries = [
-		(gettext("Printer"), None),
-		(gettext("Serial Connection"), dict(template="dialogs/settings/serialconnection.jinja2", _div="settings_serialConnection", custom_bindings=False)),
-		(gettext("Printer Profiles"), dict(template="dialogs/settings/printerprofiles.jinja2", _div="settings_printerProfiles", custom_bindings=False)),
-		(gettext("Temperatures"), dict(template="dialogs/settings/temperatures.jinja2", _div="settings_temperature", custom_bindings=False)),
-		(gettext("Terminal Filters"), dict(template="dialogs/settings/terminalfilters.jinja2", _div="settings_terminalFilters", custom_bindings=False)),
-		(gettext("Features"), None),
-		(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
-		(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
-		(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
-		(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
-		(gettext("OctoPrint"), None),
-		(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
-		(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
-		(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs"))
-	]
-	if len(plugin_includes_settings):
-		settings_entries.append((gettext("Plugins"), None))
-		settings_entries.extend(sorted(plugin_includes_settings, key=lambda x: x[0]))
+		sorted_missing = list(missing_in_order)
+		if not t == "navbar" and not t == "generic":
+			sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+		if t == "navbar":
+			templates[t]["order"] = sorted_missing + templates[t]["order"]
+		elif t == "sidebar" or t == "tab" or t == "generic":
+			templates[t]["order"] += sorted_missing
+		elif t == "settings":
+			templates[t]["entries"]["section_plugins"] = (gettext("Plugins"), None)
+			templates[t]["order"] += ["section_plugins"] + sorted_missing
 
 	#~~ prepare full set of template vars for rendering
 
@@ -221,11 +266,7 @@ def index():
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
-		navbarEntries=navbar_entries,
-		sidebarEntries=sidebar_entries,
-		tabEntries=tab_entries,
-		settingsEntries=settings_entries,
-		genericEntries=plugin_includes_generic,
+		templates=templates,
 		pluginNames=plugin_names,
 		assetPlugins=asset_plugin_urls,
 	)
@@ -299,9 +340,11 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		data["_div"] = rule["div"](name)
 		if "suffix" in data:
 			data["_div"] += "_" + data["suffix"]
-			del data["suffix"]
 		elif counter > 1:
 			data["_div"] += "_%d" % counter
+			data["suffix"] = "_%d" % counter
+		else:
+			data["suffix"] = ""
 	if not "template" in data:
 		data["template"] = rule["template"](name)
 	if not "name" in data:
