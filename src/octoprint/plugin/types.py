@@ -466,7 +466,8 @@ class BlueprintPlugin(Plugin):
 		"""
 
 		import flask
-		blueprint = flask.Blueprint("plugin." + self._identifier, self._identifier)
+		kwargs = self.get_blueprint_kwargs()
+		blueprint = flask.Blueprint("plugin." + self._identifier, self._identifier, **kwargs)
 		for member in [member for member in dir(self) if not member.startswith("_")]:
 			f = getattr(self, member)
 			if hasattr(f, "_blueprint_rules") and member in f._blueprint_rules:
@@ -474,6 +475,20 @@ class BlueprintPlugin(Plugin):
 					rule, options = blueprint_rule
 					blueprint.add_url_rule(rule, options.pop("endpoint", f.__name__), view_func=f, **options)
 		return blueprint
+
+	def get_blueprint_kwargs(self):
+		"""
+		Override this if you want your blueprint constructed with additional options such as ``static_folder``,
+		``template_folder``, etc.
+
+		Defaults to the blueprint's ``static_folder`` and ``template_folder`` to be set to the plugin's basefolder
+		plus ``/static`` or respectively ``/templates``.
+		"""
+		import os
+		return dict(
+			static_folder=os.path.join(self._basefolder, "static"),
+			template_folder=os.path.join(self._basefolder, "templates")
+		)
 
 	def is_blueprint_protected(self):
 		"""
