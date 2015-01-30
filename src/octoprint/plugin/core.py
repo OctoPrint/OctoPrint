@@ -308,30 +308,37 @@ class PluginManager(object):
 		for name, implementations in self.plugin_implementations.items():
 			plugin = self.plugins[name]
 			for implementation in implementations:
-				kwargs = dict(additional_injects)
-
-				for factory in additional_inject_factories:
-					try:
-						return_value = factory(name, implementation)
-					except:
-						self.logger.exception("Exception while executing injection factory %r" % factory)
-					else:
-						if return_value is not None:
-							if isinstance(return_value, dict):
-								kwargs.update(return_value)
-
-				kwargs.update(dict(
-					identifier=name,
-					plugin_name=plugin.name,
-					plugin_version=plugin.version,
-					basefolder=os.path.realpath(plugin.location),
-					logger=logging.getLogger(self.logging_prefix + name),
-				))
-
 				try:
-					implementation.pre_initialize(**kwargs)
+					kwargs = dict(additional_injects)
+
+					kwargs.update(dict(
+						identifier=name,
+						plugin_name=plugin.name,
+						plugin_version=plugin.version,
+						basefolder=os.path.realpath(plugin.location),
+						logger=logging.getLogger(self.logging_prefix + name),
+					))
+
+					# inject the additional_injects
+					for arg, value in kwargs.items():
+						setattr(implementation, "_" + arg, value)
+
+					# inject any injects produced in the additional_inject_factories
+					for factory in additional_inject_factories:
+						try:
+							return_value = factory(name, implementation)
+						except:
+							self.logger.exception("Exception while executing injection factory %r" % factory)
+						else:
+							if return_value is not None:
+								if isinstance(return_value, dict):
+									for arg, value in return_value.items():
+										setattr(implementation, "_" + arg, value)
+
+					implementation.initialize()
 				except:
 					self.logger.exception("Exception while initializing plugin")
+					# TODO disable plugin!
 
 		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
 
@@ -394,10 +401,5 @@ class PluginManager(object):
 
 
 class Plugin(object):
-	def pre_initialize(self, **kwargs):
-		for arg, value in kwargs.items():
-			setattr(self, "_" + arg, value)
-		self.initialize()
-
 	def initialize(self):
 		pass
