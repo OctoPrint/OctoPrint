@@ -282,18 +282,21 @@ class PluginManager(object):
 		self.plugins, self.disabled_plugins = self._find_plugins()
 
 		for name, plugin in self.plugins.items():
-			# initialize the plugin
-			plugin.init()
+			try:
+				# initialize the plugin
+				plugin.init()
 
-			# evaluate registered hooks
-			for hook, callback in plugin.hooks.items():
-				self.plugin_hooks[hook].append((name, callback))
+				# evaluate registered hooks
+				for hook, callback in plugin.hooks.items():
+					self.plugin_hooks[hook].append((name, callback))
 
-			# evaluate registered implementations
-			for plugin_type in self.plugin_types:
-				implementations = plugin.get_implementations(plugin_type)
-				self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
-			self.plugin_implementations[name].update(plugin.get_implementations())
+				# evaluate registered implementations
+				for plugin_type in self.plugin_types:
+					implementations = plugin.get_implementations(plugin_type)
+					self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
+				self.plugin_implementations[name].update(plugin.get_implementations())
+			except:
+				self.logger.exception("There was an error loading plugin %s" % name)
 
 		self.log_registered_plugins()
 
