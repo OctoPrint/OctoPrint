@@ -72,7 +72,7 @@ class PluginInfo(object):
 
 	@property
 	def name(self):
-		return self._get_instance_attribute(self.__class__.attr_name, default=(self._name, self.key))
+		return self._get_instance_attribute(self.__class__.attr_name, defaults=(self._name, self.key))
 
 	@property
 	def description(self):
@@ -114,15 +114,13 @@ class PluginInfo(object):
 	def init(self):
 		return self._get_instance_attribute(self.__class__.attr_init, default=lambda: True)
 
-	def _get_instance_attribute(self, attr, default=None):
+	def _get_instance_attribute(self, attr, default=None, defaults=None):
 		if not hasattr(self.instance, attr):
-			if isinstance(default, (tuple, list)):
-				for value in default:
+			if defaults is not None:
+				for value in defaults:
 					if value is not None:
 						return value
-				return None
-			else:
-				return default
+			return default
 		return getattr(self.instance, attr)
 
 
