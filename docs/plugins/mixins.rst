@@ -3,6 +3,7 @@
 Available plugin mixins
 =======================
 
-.. automodule:: octoprint.plugin.types
-   :members:
+.. automodule:: octoprint.plugin
+   :members: AppPlugin, AssetPlugin, BlueprintPlugin, EventHandlerPlugin, ProgressPlugin, SettingsPlugin, ShutdownPlugin, SimpleApiPlugin, SlicerPlugin, StartupPlugin, TemplatePlugin
    :undoc-members:
+

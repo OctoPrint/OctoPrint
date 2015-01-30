@@ -27,6 +27,8 @@ OctoPrint found that plugin in the folder and took a look into it. The name and 
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
 ``__plugin_description__`` and stored it in an internal data structure, but we'll just ignore this for now.
 
+.. _sec-plugins-gettingstarted-sayinghello:
+
 Saying hello: How to make the plugin actually do something
 ----------------------------------------------------------
 
@@ -55,11 +57,11 @@ and restart OctoPrint. You now get this output in the log::
    2015-01-27 11:17:10,792 - octoprint.plugins.helloworld - INFO - Hello World!
 
 Neat, isn't it? We added a custom class that subclasses one of OctoPrint's :ref:`plugin mixins <sec-plugins-mixins>`
-with :class:`StartupPlugin` and another control property, ``__plugin_implementations__``, that instantiates
-our plugin class and tells OctoPrint about it. Taking a look at the documentation of :class:`StartupPlugin` we see that
-this mixin offers two methods that get called by OctoPrint during startup of the server, ``on_startup`` and
-``on_after_startup``. We decided to add our logging output by overriding ``on_after_startup``, but we could also have
-used ``on_startup`` instead, in which case our logging statement would be executed before the server was done starting
+with :class:`~octoprint.plugin.StartupPlugin` and another control property, ``__plugin_implementations__``, that instantiates
+our plugin class and tells OctoPrint about it. Taking a look at the documentation of :class:`~octoprint.plugin.StartupPlugin` we see that
+this mixin offers two methods that get called by OctoPrint during startup of the server, :func:`~octoprint.plugin.StartupPlugin.on_startup` and
+:func:`~octoprint.plugin.StartupPlugin.on_after_startup`. We decided to add our logging output by overriding :func:`~octoprint.plugin.StartupPlugin.on_after_startup`, but we could also have
+used :func:`~octoprint.plugin.StartupPlugin.on_startup` instead, in which case our logging statement would be executed before the server was done starting
 up and ready to serve requests.
 
 You'll also note that we are using ``self._logger`` for logging. Where did that one come from? OctoPrint's plugin system
@@ -67,6 +69,8 @@ injects :ref:`a couple of useful objects <sec-plugins-infrastructure-injections>
 one of those being a fully instantiated `python logger <https://docs.python.org/2/library/logging.html>`_ ready to be
 used by your plugin. As you can see in the log output above, that logger uses the namespace ``octoprint.plugins.helloworld``
 for our little plugin here, or more generally ``octoprint.plugins.<plugin identifier>``.
+
+.. _sec-plugins-gettingstarted-growingup:
 
 Growing up: How to make it distributable
 ----------------------------------------
@@ -86,9 +90,11 @@ install directly via Python's standard package manager ``pip`` or alternatively 
 So let's begin. First checkout the `Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_ and rename
 the ``octoprint_skeleton`` folder to something better suited to our "Hello World" plugin::
 
-   git clone https://github.com/OctoPrint/OctoPrint-PluginSkeleton.git OctoPrint-HelloWorld
-   cd OctoPrint-HelloWorld
-   mv octoprint_skeleton octoprint_helloworld
+   $ git clone https://github.com/OctoPrint/OctoPrint-PluginSkeleton.git OctoPrint-HelloWorld
+   Cloning into 'OctoPrint-HelloWorld'...
+   [...]
+   $ cd OctoPrint-HelloWorld
+   $ mv octoprint_skeleton octoprint_helloworld
 
 Then edit the configuration in the ``setup.py`` file to mirror our own "Hello World" plugin. The configuration should
 look something like this:
@@ -143,7 +149,8 @@ of information now defined twice:
    plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
 
 The nice thing about our plugin now being a proper python package is that OctoPrint can and will access the metadata defined
-within ``setup.py``! So, we don't really need to define all this data twice. Remove both ``plugin_name`` and ``plugin_version``:
+within ``setup.py``! So, we don't really need to define all this data twice. Remove ``__plugin_name__``, ``__plugin_version__``
+and ``__plugin_description__``:
 
 .. code-block:: python
 
@@ -163,7 +170,7 @@ and restart OctoPrint::
    2015-01-27 13:46:33,786 - octoprint.plugin.core - INFO - Found 3 plugin(s): OctoPrint-HelloWorld (1.0), CuraEngine (0.1), Discovery (0.1)
 
 Our "Hello World" Plugin still gets detected fine, but it's now listed under the same name it's installed under,
-"OctoPrint-HelloWorld". That's a bit ugly, so we'll override that bit via ``__plugin_name__`` again:
+"OctoPrint-HelloWorld". That's a bit redundant and squashed, so we'll override that bit via ``__plugin_name__`` again:
 
 .. code-block:: python
    :emphasize-lines: 10
@@ -196,25 +203,29 @@ already publish your plugin on Github and it would be directly installable by ot
 
 But let's add some more features instead.
 
-Frontend or get out: How to add functionality to OctoPrint's web interface
---------------------------------------------------------------------------
+.. _sec-plugins-gettingstarted-templates:
+
+Frontend fun: How to add functionality to OctoPrint's web interface
+-------------------------------------------------------------------
 
 Outputting a log line upon server startup is all nice and well, but we want to greet not only the administrator of
 our OctoPrint instance but actually everyone that opens OctoPrint in their browser. Therefore, we need to modify
 OctoPrint's web interface itself.
 
 We can do this using the :class:`TemplatePlugin` mixin. For now, let's start with a little "Hello World!" in OctoPrint's
-navigation bar right at the top. For this we'll first add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
+navigation bar right at the top that links to the Wikipedia node about "Hello World" programs. For this we'll first
+add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
 
 .. code-block:: python
-   :emphasize-lines: 6
+   :emphasize-lines: 7
 
    # coding=utf-8
    from __future__ import absolute_import
 
    import octoprint.plugin
 
-   class HelloWorldPlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.TemplatePlugin):
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin,
+                          octoprint.plugin.TemplatePlugin):
        def on_after_startup(self):
            self._logger.info("Hello World!")
 
@@ -230,13 +241,13 @@ Next, we'll create a sub folder ``templates`` underneath our ``octoprint_hellowo
 
 Our plugin's directory structure should now look like this::
 
-   |-+ octoprint_helloworld
-   | |-+ templates
-   | | `- helloworld_navbar.jinja2
-   | `- __init__.py
-   |- README.md
-   |- requirements.txt
-   `- setup.py
+   octoprint_helloworld/
+       templates/
+           helloworld_navbar.jinja2
+       __init__.py
+   README.md
+   requirements.txt
+   setup.py
 
 Restart OctoPrint and open the web interface in your browser (make sure to clear your browser's cache!).
 
@@ -246,3 +257,205 @@ Restart OctoPrint and open the web interface in your browser (make sure to clear
    :alt: Our "Hello World" navigation bar element in action
 
 Now look at that!
+
+.. _sec-plugins-gettingstarted-settings:
+
+Settings Galore: How to make parts of your plugin user adjustable
+-----------------------------------------------------------------
+
+Remember that Wikipedia link we added to our little link in the navigation bar? It links to the english Wikipedia. But
+what if we want to allow our users to adjust that according to their wishes, e.g. to link to the german language node
+about "Hello World" programs instead?
+
+To allow your users to customized the behaviour of your plugin you'll need to implement the :class:`~octoprint.plugin.SettingsPlugin`
+mixin and override it's :func:`~octoprint.plugin.SettingsPlugin.get_settings_defaults` method. We'll save the URL to
+inject into the link under the key ``url`` in our plugin's settings and set it to the old value by default. We'll therefore
+return just a single key in our default settings dictionary. To be able to quickly see if we've done that right we'll
+extend our little startup message to also log the current setting to the console. We can access that via ``self._settings``,
+which is a little settings manager OctoPrint conveniently injects into our Plugin when we include the :class:`~octoprint.plugin.SettingsPlugin`
+mixin.
+
+Let's take a look at how all that would look in our plugin's ``__init__.py``:
+
+.. code-block:: python
+   :emphasize-lines: 8, 10, 12-13
+
+   # coding=utf-8
+   from __future__ import absolute_import
+
+   import octoprint.plugin
+
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin,
+                          octoprint.plugin.TemplatePlugin,
+                          octoprint.plugin.SettingsPlugin):
+       def on_after_startup(self):
+           self._logger.info("Hello World! (more: %s)" % self._settings.get(["url"]))
+
+       def get_settings_defaults(self):
+           return dict(url="https://en.wikipedia.org/wiki/Hello_world")
+
+   __plugin_name__ = "Hello World"
+   __plugin_implementations__ = [HelloWorldPlugin()]
+
+Restart OctoPrint. You should see something like this::
+
+   2015-01-30 11:41:06,058 - octoprint.plugins.helloworld - INFO - Hello World! (more: https://en.wikipedia.org/wiki/Hello_world)
+
+So far so good. But how do we now get that value into our template? We have two options, the
+static one using so called template variables and a dynamic one which retrieves that data from the backend and binds it
+into the template using `Knockout data bindings <http://knockoutjs.com/documentation/introduction.html>`_. First let's
+take a look at the static version using template variables. We already have the :class:`~octoprint.plugin.TemplatePlugin`
+mixin included in our plugin, we just need to override its method :func:`~octoprint.plugin.TemplatePlugin.get_template_vars`
+to add our URL as a template variable.
+
+Adjust your plugin's ``__init__.py`` like this:
+
+.. code-block:: python
+   :emphasize-lines: 15-16
+
+   # coding=utf-8
+   from __future__ import absolute_import
+
+   import octoprint.plugin
+
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin,
+                          octoprint.plugin.TemplatePlugin,
+                          octoprint.plugin.SettingsPlugin):
+       def on_after_startup(self):
+           self._logger.info("Hello World! (more: %s)" % self._settings.get(["url"]))
+
+       def get_settings_defaults(self):
+           return dict(url="https://en.wikipedia.org/wiki/Hello_world")
+
+       def get_template_vars(self):
+           return dict(url=self._settings.get(["url"]))
+
+   __plugin_name__ = "Hello World"
+   __plugin_implementations__ = [HelloWorldPlugin()]
+
+Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
+
+.. code-block:: html
+
+   <a href="{{ plugin_helloworld_url|escape }}">Hello World!</a>
+
+OctoPrint injects the template variables that your plugin defines prefixed with ``plugin_<plugin identifier>_`` into
+the template renderer, so your ``url`` got turned into ``plugin_helloworld_url`` which you can now use as a simple
+`Jinja2 Variable <http://jinja.pocoo.org/docs/dev/templates/#variables>`_ in your plugin's template.
+
+Restart OctoPrint and shift-reload the page in your browser (to make sure you really get a fresh copy). The link should
+still work and point to the URL we defined as default.
+
+Let's change the URL! Open up your OctoPrint instance's ``config.yaml`` file and add the following to it (if a ``plugins``
+section doesn't yet exist in the file, create it):
+
+.. code-block:: yaml
+   :emphasize-lines: 3-4
+
+   # [...]
+   plugins:
+     helloworld:
+       url: https://de.wikipedia.org/wiki/Hallo-Welt-Programm
+   # [...]
+
+Restart OctoPrint. Not only should the URL displayed in the log file have changed, but also the link should now (after
+a proper shift-reload) point to the german Wikipedia node about "Hello World" programs::
+
+   2015-01-30 11:47:18,634 - octoprint.plugins.helloworld - INFO - Hello World! (more: https://de.wikipedia.org/wiki/Hallo-Welt-Programm)
+
+Nice! But not very user friendly. We don't have any way yet to edit the URL from within OctoPrint and have to restart
+the server and reload the page every time we want a value change to take effect. Let's try adding a little settings dialog
+for our plugin in which we can edit the URL and take any changes take immediate effect.
+
+First of all, we'll create the settings dialog. You might already have guessed that we'll need another template for that.
+So in your plugin's ``templates`` folder create a new file ``helloworld_settings.jinja2`` and put the following content
+into it:
+
+.. code-block:: html
+
+   <form class="form-horizontal">
+       <div class="control-group">
+           <label class="control-label">{{ _('URL') }}</label>
+           <div class="controls">
+               <input type="text" class="input-block-level" data-bind="value: settings.plugins.helloworld.url">
+           </div>
+       </div>
+   </form>
+
+Note how we access our plugin's property via ``settings.plugins.helloworld.url``. The ``settings`` observable is made
+available in the ``SettingsViewModel`` and holds the exact data structure returned from the server for all of
+OctoPrint's settings. Accessing plugin settings hence works by following the path under which they are stored in
+OctoPrint's internal settings data model (made public via the ``config.yaml``), ``plugins.<plugin identifier>.<configuration key>``.
+We'll bind our own settings dialog to the existing ``SettingsViewModel``, so this will be the way we'll access our
+property.
+
+Now adjust your ``templates/helloworld_navbar.jinja2`` file to use a ``data-bind`` attribute to set the value from the
+settings view model into the ``href`` attribute of the link tag:
+
+.. code-block:: html
+
+   <a href="#" data-bind="attr: {href: settings.settings.plugins.helloworld.url}">Hello World!</a>
+
+You might have noticed the quite ugly way to access our plugin's ``url`` property here: ``settings.settings.plugins.helloworld.url``.
+The reason for this is that we'll make our plugin use the existing ``NavigationViewModel`` which holds the
+``SettingsViewModel`` as a property called ``settings``. So to get to the ``settings`` property of the ``SettingsViewModel``
+from the ``NavigationViewModel``, we'll need to first "switch" to the ``SettingsViewModel`` using its property name. Hence
+the ugly access string.
+
+If you were now to restart OctoPrint and reload the web interface, you'll get the settings dialog placed just fine
+in OctoPrint's settings, and the link would also still show up in the navigation bar, but both the input field of the
+settings dialog as well as the link's ``href`` attribute would not show our link. The reason for this is that OctoPrint
+by default assumes that you'll want to bind your own view models to your templates and hence "unbinds" the included
+templates from the templates that are in place at the injected location already. In order to tell OctoPrint to please
+don't do this here (since we *do* want to use both ``NavigationViewModel`` and ``SettingsViewModel``), we'll need to
+override the default template configuration using the :class:`~octoprint.plugin.TemplatePlugin`s
+:func:`~octoprint.plugin.TemplatePlugin.get_template_configs` method. We'll tell OctoPrint to use no custom bindings
+for both our ``navbar`` and our ``settings`` plugin. We'll also remove the override of :func:`octoprint.plugin.TemplatePlugin.get_template_vars`
+again since we don't use that anymore:
+
+.. code-block:: python
+   :emphasize-lines: 15-19
+
+   # coding=utf-8
+   from __future__ import absolute_import
+
+   import octoprint.plugin
+
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin,
+                          octoprint.plugin.TemplatePlugin,
+                          octoprint.plugin.SettingsPlugin):
+   def on_after_startup(self):
+       self._logger.info("Hello World! (more: %s)" % self._settings.get(["url"]))
+
+   def get_settings_defaults(self):
+       return dict(url="https://en.wikipedia.org/wiki/Hello_world")
+
+   def get_template_configs(self):
+       return [
+           dict(type="navbar", custom_bindings=False),
+           dict(type="settings", custom_bindings=False)
+       ]
+
+   __plugin_name__ = "Hello World"
+   __plugin_implementations__ = [HelloWorldPlugin()]
+
+Restart OctoPrint and shift-reload your browser. Your link in the navigation bar should still point to the URL we
+defined in ``config.yaml`` earlier. Open the "Settings" and click on the new "Hello World" entry that shows up under
+"Plugins".
+
+.. _fig-plugins-gettingstarted-helloworld_settings:
+.. figure:: ../images/plugins_gettingstarted_helloworld_settings.png
+   :align: center
+   :alt: Our "Hello World" navigation bar element in action
+
+Nice! Edit the value, then click "Save". Your link in the navigation bar should now have been updated as well.
+
+.. note::
+
+   The way we've done our data binding and how OctoPrint currently works, your link's target will update immediately
+   when you update the value in the settings dialog. Even if you click Cancel instead of Save, the change will still
+   be reflected in the UI but will be overwritten again by the stored data upon a reload. This is caused by OctoPrint
+   not storing a copy of the settings data while it is being edited, which might be changed in the future to
+   prevent this unexpected behaviour from occurring.
+
+Congratulations, you've just made your Plugin configurable :)

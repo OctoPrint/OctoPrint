@@ -55,10 +55,12 @@ class SlicingManager(object):
 
 		self._slicers = dict()
 		self._slicer_names = dict()
-		self._load_slicers()
 
 		self._progress_callbacks = []
 		self._last_progress_report = None
+
+	def initialize(self):
+		self._load_slicers()
 
 	def register_progress_callback(self, callback):
 		self._progress_callbacks.append(callback)

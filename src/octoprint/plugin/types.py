@@ -21,10 +21,10 @@ class StartupPlugin(Plugin):
 		will listen on. Note that the ``host`` may be ``0.0.0.0`` if it will listen on all interfaces, so you can't just
 		blindly use this for constructing publicly reachable URLs. Also note that when this method is called, the server
 		is not actually up yet and none of your plugin's APIs or blueprints will be reachable yet. If you need to be
-		externally reachable, use ``on_after_startup`` instead or additionally.
+		externally reachable, use :func:`on_after_startup` instead or additionally.
 
-		:param host: the host the server will listen on, may be ``0.0.0.0``
-		:param port: the port the server will listen on
+		:param string host: the host the server will listen on, may be ``0.0.0.0``
+		:param int port:    the port the server will listen on
 		"""
 
 		pass
@@ -40,7 +40,7 @@ class StartupPlugin(Plugin):
 class ShutdownPlugin(Plugin):
 	"""
 	The ``ShutdownPlugin`` allows hooking into the shutdown of OctoPrint. It's usually used in conjunction with the
-	``StartupPlugin`` mixin, to cleanly shut down additional services again that where started by the ``StartupPlugin``
+	:class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`
 	part of the plugin.
 	"""
 
@@ -57,16 +57,16 @@ class AssetPlugin(Plugin):
 	be automatically embedded into the pages delivered by the server to be used within the client sided part of
 	the plugin.
 
-	A typical usage of the ``AssetPlugin`` functionality is to embed a custom view model to be used on the settings page
-	of a ``SettingsPlugin``.
+	A typical usage of the ``AssetPlugin`` functionality is to embed a custom view model to be used by templates injected
+	through :class:`TemplatePlugin`s.
 	"""
 
 	def get_asset_folder(self):
 		"""
-		Defines the folder where the plugin stores its static assets as defined in ``get_assets``. Override this if
+		Defines the folder where the plugin stores its static assets as defined in :func:`get_assets`. Override this if
 		your plugin stores its assets at some other place than the ``static`` sub folder in the plugin base directory.
 
-		:return: the absolute path to the folder where the plugin stores its static assets
+		:return string: the absolute path to the folder where the plugin stores its static assets
 		"""
 		import os
 		return os.path.join(self._basefolder, "static")
@@ -84,7 +84,7 @@ class AssetPlugin(Plugin):
 		   LESS files with additional styles, will be embedded into delivered pages when running in LESS mode.
 
 		The expected format to be returned is a dictionary mapping one or more of these keys to a list of files of that
-		type, the files being represented as relative paths from the asset folder as defined via ``get_asset_folder``.
+		type, the files being represented as relative paths from the asset folder as defined via :func:`get_asset_folder`.
 		Example:
 
 		.. code-block:: python
@@ -96,10 +96,10 @@ class AssetPlugin(Plugin):
 		           less=['less/my_styles.less']
 		        )
 
-		The assets will be made available by OctoPrint under the URL ``/plugin_assets/<plugin name>/<path>``, with
-		``plugin_name`` being the plugin's name and ``path`` being the path as defined in the asset dictionary.
+		The assets will be made available by OctoPrint under the URL ``/plugin_assets/<plugin identifier>/<path>``, with
+		``plugin identifier`` being the plugin's identifier and ``path`` being the path as defined in the asset dictionary.
 
-		:return: a dictionary describing the static assets to publish for the plugin
+		:return dict: a dictionary describing the static assets to publish for the plugin
 		"""
 		return dict()
 
@@ -115,22 +115,22 @@ class TemplatePlugin(Plugin):
 	   with the current implementation, plugins will always be located *to the left* of the existing links.
 
 	   The included template must be called ``<pluginname>_navbar.jinja2`` (e.g. ``myplugin_navbar.jinja2``) unless
-	   overridden by the configuration supplied through ``get_template_config``.
+	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
 	   wrapper structure will have all additional classes and styles applied as specified via the configuration supplied
-	   through ``get_template_config``.
+	   through :func:`get_template_configs`.
 
 	Sidebar
 	   The left side bar containing Connection, State and Files sections can be enriched with additional sections. Note
 	   that with the current implementations, plugins will always be located *beneath* the existing sections.
 
 	   The included template must be called ``<pluginname>_sidebar.jinja2`` (e.g. ``myplugin_sidebar.jinja2``) unless
-	   overridden by the configuration supplied through ``get_template_config``.
+	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
 	   wrapper divs for both the whole box as well as the content pane will have all additional classes and styles applied
-	   as specified via the configuration supplied through ``get_template_config``.
+	   as specified via the configuration supplied through :func:`get_template_configs`.
 
 	Tabs
 	   The available tabs of the main part of the interface may be extended with additional tabs originating from within
@@ -138,11 +138,11 @@ class TemplatePlugin(Plugin):
 	   tabs.
 
 	   The included template must be called ``<pluginname>_tab.jinja2`` (e.g. ``myplugin_tab.jinja2``) unless
-	   overridden by the configuration supplied through ``get_template_config``.
+	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
 	   wrapper div and the link in the navigation will have the additional classes and styles applied as specified via the
-	   configuration supplied through ``get_template_config``.
+	   configuration supplied through :func:`get_template_configs`.
 
 	Settings
 	   Plugins may inject a dialog into the existing settings view. Note that with the current implementations, plugins
@@ -150,11 +150,11 @@ class TemplatePlugin(Plugin):
 	   their displayed name.
 
 	   The included template must be called ``<pluginname>_settings.jinja2`` (e.g. ``myplugin_settings.jinja2``) unless
-	   overridden by the configuration supplied through ``get_template_config``.
+	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
 	   wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
-	   supplied configuration supplied through ``get_template_config``.
+	   supplied configuration supplied through :func:`get_template_configs`.
 
 	Generic
 	   Plugins may also inject arbitrary templates into the page of the web interface itself, e.g. in order to
@@ -360,15 +360,16 @@ class TemplatePlugin(Plugin):
 		   those, since the implicit default template will only be included automatically if no other templates of that
 		   type are defined.
 
-		:return: a list containing the configuration options for the plugin's injected templates
+		:return list: a list containing the configuration options for the plugin's injected templates
 		"""
 		return []
 
 	def get_template_vars(self):
 		"""
-		Defines additional template variables to include into the template renderer.
+		Defines additional template variables to include into the template renderer. Variable names will be prefixed
+		with ``plugin_<plugin identifier>_``.
 
-		:return: a dictionary containing any additional template variables to include in the renderer
+		:return dict: a dictionary containing any additional template variables to include in the renderer
 		"""
 		return dict()
 
@@ -377,7 +378,7 @@ class TemplatePlugin(Plugin):
 		Defines the folder where the plugin stores its templates. Override this if your plugin stores its templates at
 		some other place than the ``templates`` sub folder in the plugin base directory.
 
-		:return: the absolute path to the folder where the plugin stores its jinja2 templates
+		:return string: the absolute path to the folder where the plugin stores its jinja2 templates
 		"""
 		import os
 		return os.path.join(self._basefolder, "templates")
@@ -397,63 +398,194 @@ class SimpleApiPlugin(Plugin):
 class BlueprintPlugin(Plugin):
 	"""
 	The ``BlueprintPlugin`` mixin allows plugins to define their own full fledged endpoints for whatever purpose,
-	be it a more sophisticated API than what is possible via the ``SimpleApiPlugin`` or a custom web frontend.
+	be it a more sophisticated API than what is possible via the :class:`SimpleApiPlugin` or a custom web frontend.
 
 	The mechanism at work here is `Flask's <http://flask.pocoo.org/>`_ own `Blueprint mechanism <http://flask.pocoo.org/docs/0.10/blueprints/>`_.
 
-	Your plugin should define a blueprint like this:
+	The mixin automatically creates a blueprint for you that will be registered under ``/plugin/<plugin identifier>/``.
+	All you need to do is decorate all of your view functions with the :func:`route` decorator,
+	which behaves exactly the same like Flask's regular ``route`` decorators. Example:
+
+	.. code-block:: python
+	   :linenos:
+
+	   import octoprint.plugin
+	   import flask
+
+	   class MyBlueprintPlugin(octoprint.plugin.BlueprintPlugin):
+	       @octoprint.plugin.BlueprintPlugin.route("/echo", methods=["GET"])
+	       def myEcho(self):
+	           if not "text" in flask.request.values:
+	               return flask.make_response("Expected a text to echo back.", 400)
+	           return flask.request.values["text"]
+
+	   __plugin_implementations__ = [MyPlugin()]
+
+	Your blueprint will be published by OctoPrint under the base URL ``/plugin/<plugin identifier>/``, so the above
+	example of a plugin with the identifier "myblueprintplugin" would be reachable under
+	``/plugin/myblueprintplugin/echo``.
+
+	Just like with regular blueprints you'll be able to create URLs via ``url_for``, just use the prefix
+	``plugin.<plugin identifier>``, e.g.:
 
 	.. code-block:: python
 
-	   template_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
-	   blueprint = flask.Blueprint("plugin.myplugin", __name__, template_folder=template_folder)
+	   flask.url_for("plugin.myblueprintplugin.echo") # will return "/plugin/myblueprintplugin/echo"
 
-	Use your blueprint just like any other Flask blueprint for defining your own endpoints, e.g.
-
-	.. code-block:: python
-
-	   @blueprint.route("/echo", methods=["GET"])
-	   def myEcho():
-	       if not "text" in flask.request.values:
-	           return flask.make_response("Expected a text to echo back.", 400)
-	       return flask.request.values["text"]
-
-	Your blueprint will be published by OctoPrint under the URL ``/plugin/<pluginname>/``, so the above example
-	would be reachable under ``/plugin/myplugin/echo`` (given that you named your plugin "myplugin"). You'll be able
-	to create URLs via ``url_for`` under the prefix that you've chosen when constructing your blueprint, ``plugin.myplugin``
-	in the above example:
-
-	.. code-block:: python
-
-	   flask.url_for("plugin.myplugin.echo") # will return "/plugin/myplugin/echo"
-
-	OctoPrint Blueprint plugins should always follow the naming scheme ``plugin.<plugin name>`` here
-	to avoid conflicts.
 	"""
+
+	@staticmethod
+	def route(rule, **options):
+		"""
+		A decorator to mark view methods in your BlueprintPlugin subclass. Works just the same as Flask's
+		own ``route`` decorator available on blueprints.
+
+		See `the documentation for flask.Blueprint.route <http://flask.pocoo.org/docs/0.10/api/#flask.Blueprint.route>`_
+		and `the documentation for flask.Flask.route <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.route>`_ for more
+		information.
+		"""
+
+		from collections import defaultdict
+		def decorator(f):
+			# We attach the decorator parameters directly to the function object, because that's the only place
+			# we can access right now.
+			# This neat little trick was adapter from the Flask-Classy project: https://pythonhosted.org/Flask-Classy/
+			if not hasattr(f, "_blueprint_rules") or f._blueprint_rules is None:
+				f._blueprint_rules = defaultdict(list)
+			f._blueprint_rules[f.__name__].append((rule, options))
+			return f
+		return decorator
 
 	def get_blueprint(self):
 		"""
-		Retrieves the blueprint as defined by your plugin.
+		Creates and returns the blueprint for your plugin. Override this if you want to define and handle your blueprint yourself.
+
+		This method will only be called once during server initialization.
 
 		:return: the blueprint ready to be registered with Flask
 		"""
 
-		return None
+		import flask
+		blueprint = flask.Blueprint("plugin." + self._identifier, self._identifier)
+		for member in [member for member in dir(self) if not member.startswith("_")]:
+			f = getattr(self, member)
+			if hasattr(f, "_blueprint_rules") and member in f._blueprint_rules:
+				for blueprint_rule in f._blueprint_rules[member]:
+					rule, options = blueprint_rule
+					blueprint.add_url_rule(rule, options.pop("endpoint", f.__name__), view_func=f, **options)
+		return blueprint
 
 	def is_blueprint_protected(self):
 		"""
-		Whether the blueprint is supposed to be protected by API key (the default) or not.
+		Whether a valid API key is needed to access the blueprint (the default) or not.
 		"""
 
 		return True
 
 
 class SettingsPlugin(Plugin):
+	"""
+	Including the ``SettingsPlugin`` mixin allows plugins to store and retrieve their own settings within OctoPrint's
+	configuration.
+
+	Plugins including the mixing will get injected an additional property ``self._settings`` which is an instance of
+	:class:`PluginSettingsManager` already properly initialized for use by the plugin. In order for the manager to
+	know about the available settings structure and default values upon initialization, implementing plugins will need
+	to provide a dictionary with the plugin's default settings through overriding the method :func:`get_settings_defaults`.
+	The defined structure will then be available to access through the settings manager available as ``self._settings``.
+
+	If your plugin needs to react to the change of specific configuration values on the fly, e.g. to adjust the log level
+	of a logger when the user changes a corresponding flag via the settings dialog, you can override the
+	:func:`on_settings_save` method and wrap the call to the implementation from the parent class with retrieval of the
+	old and the new value and react accordingly.
+
+	Example:
+
+	.. code-block:: python
+
+	   import octoprint.plugin
+
+	   class MySettingsPlugin(octoprint.plugin.SettingsPlugin, octoprint.plugin.StartupPlugin):
+	       def get_settings_defaults(self):
+	           return dict(
+	               some_setting="foo",
+	               some_value=23,
+	               sub=dict(
+	                   some_flag=True
+	               )
+	           )
+
+	       def on_settings_save(self, data):
+	           old_flag = self._settings.getBoolean(["sub", "some_flag"])
+
+	           super(MySettingsPlugin, self).on_settings_save(data)
+
+	           new_flag = self._settings.getBoolean(["sub", "some_flag"])
+	           if old_flag != new_flag:
+	               self._logger.info("sub.some_flag changed from {old_flag} to {new_flag}".format(**locals()))
+
+	       def on_after_startup(self):
+	           some_setting = self._settings.get(["some_setting"])
+	           some_value = self._settings.getInt(["some_value"])
+	           some_flag = self._settings.getBoolean(["sub", "some_flag"])
+	           self._logger.info("some_setting = {some_setting}, some_value = {some_value}, sub.some_flag = {some_flag}".format(**locals())
+
+	   __plugin_implementations__ = [MySettingsPlugin()]
+
+	Of course, you are always free to completely override both :func:`on_settings_load` and :func:`on_settings_save` if the
+	default implementations do not fit your requirements.
+	"""
+
 	def on_settings_load(self):
-		return None
+		"""
+		Loads the settings for the plugin, called by the Settings API view in order to retrieve all settings from
+		all plugins. Override this if you want to inject additional settings properties that are not stored within
+		OctoPrint's configuration.
+
+		.. note::
+
+		   The default implementation will return your plugin's settings as is, so just in the structure and in the types
+		   that are currently stored in OctoPrint's configuration.
+
+		   If you need more granular control here, e.g. over the used data types, you'll need to override this method
+		   and iterate yourself over all your settings, using the proper retriever methods on the settings manager
+		   to retrieve the data in the correct format.
+
+		:return: the current settings of the plugin, as a dictionary
+		"""
+		return self._settings.get([], asdict=True, merged=True)
 
 	def on_settings_save(self, data):
-		pass
+		"""
+		Saves the settings for the plugin, called by the Settings API view in order to persist all settings
+		from all plugins. Override this if you need to directly react to settings changes or want to extract
+		additional settings properties that are not stored within OctoPrint's configuration.
+
+		.. note::
+
+		   The default implementation will persist your plugin's settings as is, so just in the structure and in the
+		   types that were received by the Settings API view.
+
+		   If you need more granular control here, e.g. over the used data types, you'll need to override this method
+		   and iterate yourself over all your settings, retrieving them (if set) from the supplied received ``data``
+		   and using the proper setter methods on the settings manager to persist the data in the correct format.
+
+		:param dict data: the settings dictionary to be saved for the plugin
+		"""
+		import octoprint.util
+
+		current = self._settings.get([], asdict=True, merged=True)
+		data = octoprint.util.dict_merge(current, data)
+		self._settings.set([], data)
+
+	def get_settings_defaults(self):
+		"""
+		Retrieves the plugin's default settings with which the plugin's settings manager will be initialized.
+
+		Override this in your plugin's implementation and return a dictionary defining your settings data structure
+		with included default values.
+		"""
+		return dict()
 
 
 class EventHandlerPlugin(Plugin):
@@ -502,9 +634,9 @@ class ProgressPlugin(Plugin):
 		"""
 		Called by OctoPrint on minimally 1% increments during a running print job.
 
-		:param location string: Location of the file
-		:param path string:     Path of the file
-		:param progress int:    Current progress as a value between 0 and 100
+		:param string location: Location of the file
+		:param string path:     Path of the file
+		:param int progress:    Current progress as a value between 0 and 100
 		"""
 		pass
 
@@ -512,12 +644,12 @@ class ProgressPlugin(Plugin):
 		"""
 		Called by OctoPrint on minimally 1% increments during a running slicing job.
 
-		:param slicer string:               Key of the slicer reporting the progress
-		:param source_location string:      Location of the source file
-		:param source_path string:          Path of the source file
-		:param destination_location string: Location the destination file
-		:param destination_path string:     Path of the destination file
-		:param progress int:                Current progress as a value between 0 and 100
+		:param string slicer:               Key of the slicer reporting the progress
+		:param string source_location:      Location of the source file
+		:param string source_path:          Path of the source file
+		:param string destination_location: Location the destination file
+		:param string destination_path:     Path of the destination file
+		:param int progress:                Current progress as a value between 0 and 100
 		"""
 		pass
 

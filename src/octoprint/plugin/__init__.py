@@ -41,7 +41,7 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 					if "enabled" in all_plugin_settings[key] and not all_plugin_settings[key]:
 						plugin_disabled_list.append(key)
 
-			_instance = PluginManager(plugin_folders, plugin_types, plugin_entry_points, plugin_disabled_list=plugin_disabled_list)
+			_instance = PluginManager(plugin_folders, plugin_types, plugin_entry_points, logging_prefix="octoprint.plugins.", plugin_disabled_list=plugin_disabled_list)
 		else:
 			raise ValueError("Plugin Manager not initialized yet")
 	return _instance

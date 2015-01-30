@@ -50,6 +50,8 @@ Injected Properties
 ``self._logger``
   A `python logger instance <https://docs.python.org/2/library/logging.html>`_ logging to the log target
   ``octoprint.plugin.<plugin identifier>``.
+``self._settings``
+  The plugin's personalized settings manager, injected only into plugins that include the :class:`SettingsPlugin` mixin.
 ``self._plugin_manager``
   OctoPrint's plugin manager.
 ``self._printer_profile_manager``

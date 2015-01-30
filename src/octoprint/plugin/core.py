@@ -72,7 +72,7 @@ class PluginInfo(object):
 
 	@property
 	def name(self):
-		return self._get_instance_attribute(self.__class__.attr_name, default=self._name)
+		return self._get_instance_attribute(self.__class__.attr_name, default=(self._name, self.key))
 
 	@property
 	def description(self):
@@ -116,15 +116,23 @@ class PluginInfo(object):
 
 	def _get_instance_attribute(self, attr, default=None):
 		if not hasattr(self.instance, attr):
-			return default
+			if isinstance(default, (tuple, list)):
+				for value in default:
+					if value is not None:
+						return value
+				return None
+			else:
+				return default
 		return getattr(self.instance, attr)
 
 
 class PluginManager(object):
 
-	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, plugin_disabled_list=None):
+	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None):
 		self.logger = logging.getLogger(__name__)
 
+		if logging_prefix is None:
+			logging_prefix = ""
 		if plugin_disabled_list is None:
 			plugin_disabled_list = []
 
@@ -132,6 +140,7 @@ class PluginManager(object):
 		self.plugin_types = plugin_types
 		self.plugin_entry_points = plugin_entry_points
 		self.plugin_disabled_list = plugin_disabled_list
+		self.logging_prefix = logging_prefix
 
 		self.plugins = dict()
 		self.plugin_hooks = defaultdict(list)
@@ -290,21 +299,35 @@ class PluginManager(object):
 
 		self.log_registered_plugins()
 
-	def initialize_implementations(self, additional_injects=None):
+	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
 		if additional_injects is None:
 			additional_injects = dict()
+		if additional_inject_factories is None:
+			additional_inject_factories = []
 
 		for name, implementations in self.plugin_implementations.items():
 			plugin = self.plugins[name]
 			for implementation in implementations:
 				kwargs = dict(additional_injects)
+
+				for factory in additional_inject_factories:
+					try:
+						return_value = factory(name, implementation)
+					except:
+						self.logger.exception("Exception while executing injection factory %r" % factory)
+					else:
+						if return_value is not None:
+							if isinstance(return_value, dict):
+								kwargs.update(return_value)
+
 				kwargs.update(dict(
 					identifier=name,
 					plugin_name=plugin.name,
 					plugin_version=plugin.version,
 					basefolder=os.path.realpath(plugin.location),
-					logger=logging.getLogger("octoprint.plugins." + name),
+					logger=logging.getLogger(self.logging_prefix + name),
 				))
+
 				try:
 					implementation.pre_initialize(**kwargs)
 				except:
