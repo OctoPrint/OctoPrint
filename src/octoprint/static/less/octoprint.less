@@ -46,6 +46,25 @@ body {
   }
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
+.actioncol {
+  text-align: center;
+  .nowrap;
+
+  a {
+    text-decoration: none;
+    color: #000;
+
+    &.disabled {
+      color: #ccc;
+      cursor: default;
+    }
+  }
+}
+
 .navbar-inner-color (@base) {
   @top: lighten(@base, 25%);
   @bottom: darken(@base, 15%);
@@ -203,23 +222,13 @@ table {
     // gcode files
     &.gcode_files_name {
       text-overflow: ellipsis;
-      white-space: nowrap;
       text-align: left;
+      .nowrap;
     }
 
     &.gcode_files_action {
-      text-align: center;
       width: 90px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
     // timelapse files
@@ -234,18 +243,8 @@ table {
     }
 
     &.timelapse_files_action {
-      text-align: center;
       width: 45px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
     // user settings
@@ -260,18 +259,8 @@ table {
     }
 
     &.settings_users_actions {
-      text-align: center;
       width: 60px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
     // log files
@@ -291,18 +280,8 @@ table {
     }
 
     &.settings_logs_action {
-      text-align: center;
       width: 70px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
     // Printer profiles
@@ -317,18 +296,8 @@ table {
     }
 
     &.settings_printerProfiles_profiles_action {
-      text-align: center;
       width: 80px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
   }
