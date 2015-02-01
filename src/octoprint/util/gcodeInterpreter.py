@@ -249,13 +249,16 @@ def getCodeInt(line, code):
 
 
 def getCodeFloat(line, code):
+	import math
 	n = line.find(code) + 1
 	if n < 1:
 		return None
 	m = line.find(' ', n)
 	try:
 		if m < 0:
-			return float(line[n:])
-		return float(line[n:m])
+			val = float(line[n:])
+		else:
+			val = float(line[n:m])
+		return val if not (math.isnan(val) or math.isinf(val)) else None
 	except:
 		return None
