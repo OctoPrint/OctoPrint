@@ -82,6 +82,8 @@ def configureTimelapse(config=None, persist=False):
 		current = None
 	elif "zchange" == type:
 		current = ZTimelapse(postRoll=postRoll)
+	elif "onbeep" == type:
+		current = BeepTimelapse(postRoll=postRoll)
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"]:
