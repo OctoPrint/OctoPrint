@@ -74,6 +74,8 @@ function PrinterStateViewModel(loginStateViewModel) {
         var type = timelapse["type"];
         if (type == "zchange") {
             return "On Z Change";
+        } else if (type == "onbeep") {
+            return "On Beep (M300)";
         } else if (type == "timed") {
             return "Timed (" + timelapse["options"]["interval"] + "s)";
         } else {

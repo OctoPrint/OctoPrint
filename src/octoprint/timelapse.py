@@ -38,7 +38,7 @@ def getFinishedTimelapses():
 		})
 	return files
 
-validTimelapseTypes = ["off", "timed", "zchange"]
+validTimelapseTypes = ["off", "timed", "zchange", "onbeep"]
 
 updateCallbacks = []
 
@@ -355,6 +355,41 @@ class ZTimelapse(Timelapse):
 			self._onPostRollDone()
 
 	def _onZChange(self, event, payload):
+		self.captureImage()
+
+
+class BeepTimelapse(Timelapse):
+	def __init__(self, postRoll=0):
+		Timelapse.__init__(self, postRoll=postRoll)
+		self._logger.debug("BeepTimelapse initialized")
+
+	def eventSubscriptions(self):
+		return [
+			("Alert", self._onBeep)
+		]
+
+	def configData(self):
+		return {
+			"type": "onbeep"
+		}
+
+	def processPostRoll(self):
+		Timelapse.processPostRoll(self)
+
+		filename = os.path.join(self._captureDir, "tmp_%05d.jpg" % self._imageNumber)
+		self._imageNumber += 1
+		with self._captureMutex:
+			self._captureWorker(filename)
+
+		for i in range(self._postRoll * self._fps):
+			newFile = os.path.join(self._captureDir, "tmp_%05d.jpg" % (self._imageNumber))
+			self._imageNumber += 1
+			shutil.copyfile(filename, newFile)
+
+		if self._onPostRollDone is not None:
+			self._onPostRollDone()
+
+	def _onBeep(self, event, payload):
 		self.captureImage()
 
 
