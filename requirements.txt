@@ -9,7 +9,7 @@ Flask-Babel==0.9
 pyserial
 netaddr
 watchdog
-sarge
+sarge>=0.1.4
 netifaces
 pylru
 rsa
