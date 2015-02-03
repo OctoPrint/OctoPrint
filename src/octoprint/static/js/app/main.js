@@ -83,6 +83,7 @@ $(function() {
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
 
+        // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {
             loginStateViewModel: loginStateViewModel,
             printerProfilesViewModel: printerProfilesViewModel,
@@ -102,28 +103,87 @@ $(function() {
             slicingViewModel: slicingViewModel
         };
 
-        var allViewModels = _.values(viewModelMap);
-
-        var additionalViewModels = [];
-        _.each(ADDITIONAL_VIEWMODELS, function(viewModel) {
+        // helper to create a view model instance with injected constructor parameters from the view model map
+        var _createViewModelInstance = function(viewModel, viewModelMap){
             var viewModelClass = viewModel[0];
             var viewModelParameters = viewModel[1];
-            var viewModelBindTarget = viewModel[2];
 
-            var constructorParameters = [];
-            _.each(viewModelParameters, function(parameter) {
-                if (_.has(viewModelMap, parameter)) {
-                    constructorParameters.push(viewModelMap[parameter]);
-                } else {
-                    constructorParameters.push(undefined);
-                }
+            // now we'll try to resolve all of the view model's constructor parameters via our view model map
+            var constructorParameters = _.map(viewModelParameters, function(parameter){
+                return viewModelMap[parameter]
             });
 
-            var viewModelInstance = new viewModelClass(constructorParameters);
-            additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
-            allViewModels.push(viewModelInstance);
-        });
+            if (_.some(constructorParameters, function(parameter) { return parameter === undefined; })) {
+                var _extractName = function(entry) { return entry[0]; };
+                var _onlyUnresolved = function(entry) { return entry[1] === undefined; };
+                var missingParameters = _.map(_.filter(_.zip(viewModelParameters, constructorParameters), _onlyUnresolved), _extractName);
+                console.log("postponing", viewModel[0].name, "due to missing parameters:", missingParameters.join(", "));
+                return;
+            }
 
+            // if we came this far then we could resolve all constructor parameters, so let's construct that view model
+            return new viewModelClass(constructorParameters);
+        };
+
+        // helper for translating the name of a view model class into an identifier for the view model map
+        var _getViewModelId = function(viewModel){
+            var name = viewModel[0].name;
+            return name.substr(0, 1).toLowerCase() + name.substr(1); // FooBarViewModel => fooBarViewModel
+        };
+
+        // instantiation loop, will make multiple passes over the list of unprocessed view models until all
+        // view models have been successfully instantiated with all of their dependencies or no changes can be made
+        // any more which means not all view models can be instantiated due to missing dependencies
+        var unprocessedViewModels = ADDITIONAL_VIEWMODELS.slice();
+        var additionalViewModels = [];
+        var pass = 1;
+        while (unprocessedViewModels.length > 0) {
+            console.log("View model dependency resolution, pass #" + pass++);
+            var startLength = unprocessedViewModels.length;
+            var postponed = [];
+
+            // now try to instantiate every one of our as of yet unprocessed view model descriptors
+            while (unprocessedViewModels.length > 0){
+                var viewModel = unprocessedViewModels.shift();
+                var viewModelId = _getViewModelId(viewModel);
+
+                // make sure that we don't have to view models going by the same name
+                if (_.has(viewModelMap, viewModelId)) {
+                    console.error("Duplicate class name while instantiating viewModel ", viewModelId);
+                    continue;
+                }
+
+                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap);
+
+                // our view model couldn't yet be instantiated, so postpone it for a bit
+                if (viewModelInstance === undefined) {
+                    postponed.push(viewModel);
+                    continue;
+                }
+
+                // we could resolve the depdendencies and the view model is not defined yet => add it, it's now fully processed
+                var viewModelBindTarget = viewModel[2];
+                additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
+                viewModelMap[viewModelId] = viewModelInstance;
+            }
+
+            // anything that's now in the postponed list has to be readded to the unprocessedViewModels
+            unprocessedViewModels = unprocessedViewModels.concat(postponed);
+
+            // if we still have the same amount of items in our list of unprocessed view models it means that we
+            // couldn't instantiate any more view models over a whole iteration, which in turn mean we can't resolve the
+            // dependencies of remaining ones, so log that as an error and then quit the loop
+            if (unprocessedViewModels.length == startLength) {
+                console.error("Could not instantiate the following view models due to unresolvable dependencies:");
+                _.each(unprocessedViewModels, function(entry) {
+                    console.error(entry[0].name, "(missing:", _.filter(entry[1], function(id) { return !_.has(viewModelMap, id); }).join(", "), ")");
+                });
+                break;
+            }
+        }
+        console.log("View model dependency resolution done");
+
+        var allViewModels = _.values(viewModelMap);
         var dataUpdater = new DataUpdater(allViewModels);
 
         //~~ Temperature
