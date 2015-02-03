@@ -229,7 +229,7 @@ class PrinterProfileManager(object):
 		profile = self._ensure_valid_profile(dict_merge(copy.deepcopy(self.__class__.default), default_overrides))
 		if not profile:
 			self._logger.warn("Invalid default profile after applying overrides")
-			raise InvalidProfileError()
+			return copy.deepcopy(self.__class__.default)
 		return profile
 
 	def _get_profile_path(self, identifier):
