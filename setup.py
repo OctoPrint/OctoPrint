@@ -289,6 +289,10 @@ def params():
 	zip_safe = False
 	install_requires = open("requirements.txt").read().split("\n")
 
+	import sys
+	if sys.platform in ("linux2", "darwin"):
+		install_requires += ["monotime"]
+
 	entry_points = {
 		"console_scripts": [
 			"octoprint = octoprint:main"
