@@ -294,7 +294,10 @@ class PluginManager(object):
 				for plugin_type in self.plugin_types:
 					implementations = plugin.get_implementations(plugin_type)
 					self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
-				self.plugin_implementations[name].update(plugin.get_implementations())
+
+				plugin_implementations = plugin.get_implementations()
+				if len(plugin_implementations):
+					self.plugin_implementations[name].update(plugin_implementations)
 			except:
 				self.logger.exception("There was an error loading plugin %s" % name)
 
