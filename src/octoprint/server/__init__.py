@@ -287,7 +287,8 @@ def _process_template_configs(name, implementation, configs, rules):
 		navbar=1,
 		sidebar=1,
 		tab=1,
-		settings=1
+		settings=1,
+		generic=1
 	)
 	includes = defaultdict(list)
 
