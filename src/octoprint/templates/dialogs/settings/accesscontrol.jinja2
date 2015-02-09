@@ -1,4 +1,3 @@
-{% if enableAccessControl %}
 <table class="table table-condensed table-hover" id="system_users">
     <thead>
     <tr>
@@ -161,4 +160,3 @@
         <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmChangePassword(); }, enable: !$root.users.editorPasswordMismatch()">{{ _('Confirm') }}</button>
     </div>
 </div>
-{% endif %}

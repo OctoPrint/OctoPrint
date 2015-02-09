@@ -108,6 +108,13 @@ def get_locale():
 @util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values)
 def index():
 
+	#~~ a bunch of settings
+
+	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
+	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
+	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+	enable_accesscontrol = userManager is not None
+
 	#~~ extract data from asset plugins
 
 	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
@@ -126,10 +133,12 @@ def index():
 	#~~ navbar
 
 	templates["navbar"]["entries"] = dict(
-		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
-		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
-		login=dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False)
+		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin", custom_bindings=False)
 	)
+	if enable_accesscontrol:
+		templates["navbar"]["entries"]["login"] = dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False)
+	if enable_systemmenu:
+		templates["navbar"]["entries"]["systemmenu"] = dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
 
 	#~~ sidebar
 
@@ -144,10 +153,12 @@ def index():
 	templates["tab"]["entries"] = dict(
 		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
-		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
-		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
 	)
+	if enable_gcodeviewer:
+		templates["tab"]["entries"]["gcodeviewer"] = (gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode"))
+	if enable_timelapse:
+		templates["tab"]["entries"]["timelapse"] = (gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
 
 	#~~ settings dialog
 
@@ -163,7 +174,6 @@ def index():
 
 		features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
 		webcam=(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
-		accesscontrol=(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
 		api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
 
 		section_octoprint=(gettext("OctoPrint"), None),
@@ -172,6 +182,8 @@ def index():
 		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
 		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
 	)
+	if enable_accesscontrol:
+		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False))
 
 	#~~ extract data from template plugins
 
@@ -252,10 +264,7 @@ def index():
 
 	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
-		enableTimelapse=(settings().get(["webcam", "snapshot"]) is not None and settings().get(["webcam", "ffmpeg"]) is not None),
-		enableGCodeVisualizer=settings().get(["gcodeViewer", "enabled"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
-		enableSystemMenu=settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0,
 		enableAccessControl=userManager is not None,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized()),
