@@ -337,5 +337,9 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
     self.onMetadataAnalysisFinished = function(payload) {
         self.requestData();
     };
+
+    self.onMetadataStatisticsUpdated = function(payload) {
+        self.requestData();
+    };
 }
 

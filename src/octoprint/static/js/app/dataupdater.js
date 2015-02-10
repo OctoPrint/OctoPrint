@@ -168,11 +168,17 @@ function DataUpdater(allViewModels) {
                     console.log("Got event " + type + " with payload: " + JSON.stringify(payload));
 
                     if (type == "UpdatedFiles") {
-                        _.each(self.allViewModels, function(viewModel) {
+                        _.each(self.allViewModels, function (viewModel) {
                             if (viewModel.hasOwnProperty("onUpdatedFiles")) {
                                 viewModel.onUpdatedFiles(payload);
                             }
                         });
+                    } else if (type == "MetadataStatisticsUpdated") {
+                        _.each(self.allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onMetadataStatisticsUpdated")) {
+                                viewModel.onMetadataStatisticsUpdated(payload);
+                            }
+                        })
                     } else if (type == "MetadataAnalysisFinished") {
                         _.each(self.allViewModels, function(viewModel) {
                             if (viewModel.hasOwnProperty("onMetadataAnalysisFinished")) {

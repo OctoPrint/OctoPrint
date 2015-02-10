@@ -120,6 +120,7 @@
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
   * Don't hiccup on slic3r filament_diameter comments in GCODE generated for multi extruder setups
+  * Color code successful or failed print results directly in file list, not just after a reload
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
