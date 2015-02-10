@@ -4,11 +4,13 @@ Getting Started
 ===============
 
 Over the course of this little tutorial we'll build a full fledged, installable OctoPrint plugin that displays "Hello World!"
-at various places throughout OctoPrint.
+at some locations throughout OctoPrint and also offers some other basic functionality to give you an idea of what
+you can achieve with OctoPrint's plugin system.
 
 We'll start at the most basic form a plugin can take - just a couple of simple lines of Python code:
 
 .. code-block:: python
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -37,6 +39,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
 
 .. code-block:: python
    :emphasize-lines: 4-8,13
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -100,6 +103,7 @@ Then edit the configuration in the ``setup.py`` file to mirror our own "Hello Wo
 look something like this:
 
 .. code-block:: python
+   :linenos:
 
    plugin_identifier = "helloworld"
    plugin_name = "OctoPrint-HelloWorld"
@@ -137,6 +141,7 @@ Something is still a bit ugly though. Take a look into ``__init__.py`` and ``set
 of information now defined twice:
 
 .. code-block:: python
+   :linenos:
 
    # __init__.py:
    __plugin_name__ = "Hello World"
@@ -153,6 +158,7 @@ within ``setup.py``! So, we don't really need to define all this data twice. Rem
 and ``__plugin_description__``:
 
 .. code-block:: python
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -174,6 +180,7 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
 
 .. code-block:: python
    :emphasize-lines: 10
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -218,6 +225,7 @@ add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
 
 .. code-block:: python
    :emphasize-lines: 7
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -236,6 +244,7 @@ Next, we'll create a sub folder ``templates`` underneath our ``octoprint_hellowo
 ``helloworld_navbar.jinja2`` like so:
 
 .. code-block:: html
+   :linenos:
 
    <a href="https://en.wikipedia.org/wiki/Hello_world">Hello World!</a>
 
@@ -279,6 +288,7 @@ Let's take a look at how all that would look in our plugin's ``__init__.py``:
 
 .. code-block:: python
    :emphasize-lines: 8, 10, 12-13
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -312,6 +322,7 @@ Adjust your plugin's ``__init__.py`` like this:
 
 .. code-block:: python
    :emphasize-lines: 15-16
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -336,6 +347,7 @@ Adjust your plugin's ``__init__.py`` like this:
 Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
 
 .. code-block:: html
+   :linenos:
 
    <a href="{{ plugin_helloworld_url|escape }}">Hello World!</a>
 
@@ -372,6 +384,7 @@ So in your plugin's ``templates`` folder create a new file ``helloworld_settings
 into it:
 
 .. code-block:: html
+   :linenos:
 
    <form class="form-horizontal">
        <div class="control-group">
@@ -393,6 +406,7 @@ Now adjust your ``templates/helloworld_navbar.jinja2`` file to use a ``data-bind
 settings view model into the ``href`` attribute of the link tag:
 
 .. code-block:: html
+   :linenos:
 
    <a href="#" data-bind="attr: {href: settings.settings.plugins.helloworld.url}">Hello World!</a>
 
@@ -415,6 +429,7 @@ again since we don't use that anymore:
 
 .. code-block:: python
    :emphasize-lines: 15-19
+   :linenos:
 
    # coding=utf-8
    from __future__ import absolute_import
@@ -459,3 +474,433 @@ Nice! Edit the value, then click "Save". Your link in the navigation bar should 
    prevent this unexpected behaviour from occurring.
 
 Congratulations, you've just made your Plugin configurable :)
+
+More frontend fun: Adding custom javascript to your frontend components
+-----------------------------------------------------------------------
+
+In the previous section we set that ``custom_bindings`` parameter to ``False`` since we wanted OctoPrint to bind the
+``SettingsViewModel`` to our settings dialog and the ``NavigationViewModel`` to our entry in the nav bar.
+
+But what if we want to define our own, with more functionality that is already available? Let's take a look. We'll now
+add an additional UI component to our OctoPrint interface, a custom tab. It will act as a little internal web browser,
+showing the website behind the URL from the settings in an IFrame but also allowing the user to load a different URL
+without having to change the settings.
+
+First let us create the Jinja2 template for our tab. In your plugin's ``templates`` folder create a new file
+``helloworld_tab.jinja2`` like so:
+
+.. code-block:: html
+   :linenos:
+
+   <div class="input-append">
+       <input type="text" class="input-xxlarge" data-bind="value: newUrl">
+       <button class="btn btn-primary" data-bind="click: goToUrl">{{ _('Go') }}</button>
+   </div>
+
+
+   <iframe data-bind="attr: {src: currentUrl}" style="width: 100%; height: 600px; border: 1px solid #808080"></iframe>
+
+Then we create a new folder in your plugin's root called ``static`` and within that folder another folder by the name of
+``js``. Finally, within that folder create a file ``helloworld.js``. Our plugin's folder structure should now
+look like this::
+
+   octoprint_helloworld/
+       static/
+           js/
+               helloworld.js
+       templates/
+           helloworld_navbar.jinja2
+           helloworld_settings.jinja2
+           helloworld_tab.jinja2
+       __init__.py
+   README.md
+   requirements.txt
+   setup.py
+
+We need to tell OctoPrint about this new static asset so that it will properly inject it into the page. For this we
+just need to subclass :class:`~octoprint.plugin.AssetPlugin` and override its method :func:`~octoprint.plugin.AssetPlugin.get_assets`
+like so:
+
+.. code-block:: python
+   :emphasize-lines: 9,22-25
+   :linenos:
+
+   # coding=utf-8
+   from __future__ import absolute_import
+
+   import octoprint.plugin
+
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin,
+                          octoprint.plugin.TemplatePlugin,
+                          octoprint.plugin.SettingsPlugin,
+                          octoprint.plugin.AssetPlugin):
+    def on_after_startup(self):
+        self._logger.info("Hello World! (more: %s)" % self._settings.get(["url"]))
+
+    def get_settings_defaults(self):
+        return dict(url="https://en.wikipedia.org/wiki/Hello_world")
+
+    def get_template_configs(self):
+        return [
+            dict(type="navbar", custom_bindings=False),
+            dict(type="settings", custom_bindings=False)
+        ]
+
+    def get_assets(self):
+        return dict(
+            js=["js/helloworld.js"]
+        )
+
+   __plugin_name__ = "Hello World"
+   __plugin_implementations__ = [HelloWorldPlugin()]
+
+Note how we did not add another entry to the return value of :func:`~octoprint.plugin.TemplatePlugin.get_template_configs`.
+Remember how we only added those since we wanted OctoPrint to use existing bindings on our navigation bar and settings
+menu entries? We don't want this this time, and we named our tab template such that OctoPrint will pick it up automatically
+so we don't have to do anything here.
+
+Then we'll create our custom `Knockout <http://knockoutjs.com/documentation/introduction.html>`_ view model in ``helloworld.js``
+like so:
+
+.. code-block:: javascript
+   :linenos:
+
+   $(function() {
+       function HelloWorldViewModel(parameters) {
+           var self = this;
+
+           self.settings = parameters[0];
+
+           // this will hold the URL currently displayed by the iframe
+           self.currentUrl = ko.observable();
+
+           // this will hold the URL entered in the text field
+           self.newUrl = ko.observable();
+
+           // this will be called when the user clicks the "Go" button and set the iframe's URL to
+           // the entered URL
+           self.goToUrl = function() {
+               self.currentUrl(self.newUrl());
+           };
+
+           // This will get called before the HelloWorldViewModel gets bound to the DOM, but after its
+           // dependencies have already been initialized. It is especially guaranteed that this method
+           // gets called _after_ the settings have been retrieved from the OctoPrint backend and thus
+           // the SettingsViewModel been properly populated.
+           self.onBeforeBinding = function() {
+               self.newUrl(self.settings.settings.plugins.helloworld.url());
+               self.goToUrl();
+           }
+       }
+
+       // This is how our plugin registers itself with the application, by adding some configuration
+       // information to the global variable ADDITIONAL_VIEWMODELS
+       ADDITIONAL_VIEWMODELS.push([
+           // This is the constructor to call for instantiating the plugin
+           HelloWorldViewModel,
+
+           // This is a list of dependencies to inject into the plugin, the order which you request
+           // here is the order in which the dependencies will be injected into your view model upon
+           // instantiation via the parameters argument
+           ["settingsViewModel"],
+
+           // Finally, this is the list of all elements we want this view model to be bound to.
+           [document.getElementById("tab_plugin_helloworld")]
+       ]);
+   });
+
+Take a close look at lines 29 to 40. This is how our plugin tells OctoPrint about our new view model, how to
+instantiate it, which dependencies to inject and to which elements in the final page to bind. Since we want to access
+the URL from the settings of our plugin, we'll have OctoPrint inject the ``SettingsViewModel`` into our own view model,
+which is registered within OctoPrint under the name ``settingsViewModel``. We'll only bind to our custom tab
+for now, which OctoPrint will make available in a container with the id ``tab_plugin_helloworld`` (unless otherwise
+configured).
+
+Our view model defines two observables: ``newUrl``, which we bound to the input field in our template, and ``currentUrl``
+which we bound to the ``src`` attribute of the "browser iframe" in our template. There's also a function ``goToUrl``
+which we bound to the click event of the "Go" button in our template.
+
+Restart OctoPrint and shift-reload the browser. You should see a shiny new "Hello World" tab right at the end of the
+tab bar. Click on it!
+
+.. _fig-plugins-gettingstarted-helloworld_tab:
+.. figure:: ../images/plugins_gettingstarted_helloworld_tab.png
+   :align: center
+   :alt: Our "Hello World" tab in action
+
+The desktop version of that article looks a bit squished in there, so let's enter ``https://de.m.wikipedia.org/wiki/Hallo-Welt-Programm``
+into the input field and click the "Go" button. The page inside the iframe should be replaced with the mobile version
+of the same article.
+
+Style matters: Injecting custom CSS into the page
+-------------------------------------------------
+
+So it appears that this stuff is working great already. Only one thing is a bit ugly, let's take another look at
+our ``helloworld_tab.jinja2``:
+
+.. code-block:: html
+   :linenos:
+   :emphasize-lines: 6
+
+   <div class="input-append">
+       <input type="text" class="input-xxlarge" data-bind="value: newUrl">
+       <button class="btn btn-primary" data-bind="click: goToUrl">{{ _('Go') }}</button>
+   </div>
+
+   <iframe data-bind="attr: {src: currentUrl}" style="width: 100%; height: 600px; border: 1px solid #808080"></iframe>
+
+We hardcoded some ``style`` on our ``iframe`` in line 6, to make it look a bit better. It would be nicer if that was actually
+located inside a stylesheet instead of directly inside our HTML template. Of course that's no problem, we'll just
+add a CSS file to our plugin's provided static assets.
+
+First we'll create a new folder within our plugin's ``static`` folder called ``css`` and within that folders a file
+``helloworld.css``. Our plugin's file structure should now look like this::
+
+   octoprint_helloworld/
+       static/
+           css/
+               helloworld.css
+           js/
+               helloworld.js
+       templates/
+           helloworld_navbar.jinja2
+           helloworld_settings.jinja2
+           helloworld_tab.jinja2
+       __init__.py
+   README.md
+   requirements.txt
+   setup.py
+
+
+Put something like the following into ``helloworld.css``:
+
+.. code-block:: css
+   :linenos:
+
+   #tab_plugin_helloworld {
+     iframe {
+       width: 100%;
+       height: 600px;
+       border: 1px solid #808080;
+     }
+   }
+
+Don't forget to remove the ``style`` attribute from the ``iframe`` tag in ``helloworld_tab.jinja2``:
+
+.. code-block:: html
+   :linenos:
+   :emphasize-lines: 6
+
+   <div class="input-append">
+       <input type="text" class="input-xxlarge" data-bind="value: newUrl">
+       <button class="btn btn-primary" data-bind="click: goToUrl">{{ _('Go') }}</button>
+   </div>
+
+   <iframe data-bind="attr: {src: currentUrl}"></iframe>
+
+Then adjust our plugin's ``__init__.py`` so that the :func:`~octoprint.plugin.AssetPlugin.get_assets` method returns
+a reference to our CSS file:
+
+.. code-block:: python
+   :emphasize-lines: 26
+   :linenos:
+
+   # coding=utf-8
+   from __future__ import absolute_import
+
+   import octoprint.plugin
+
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin,
+                          octoprint.plugin.TemplatePlugin,
+                          octoprint.plugin.SettingsPlugin,
+                          octoprint.plugin.AssetPlugin):
+
+    def on_after_startup(self):
+        self._logger.info("Hello World! (more: %s)" % self._settings.get(["url"]))
+
+    def get_settings_defaults(self):
+        return dict(url="https://en.wikipedia.org/wiki/Hello_world")
+
+    def get_template_configs(self):
+        return [
+            dict(type="navbar", custom_bindings=False),
+            dict(type="settings", custom_bindings=False)
+        ]
+
+    def get_assets(self):
+        return dict(
+            js=["js/helloworld.js"],
+            css=["css/helloworld.css"]
+        )
+
+   __plugin_name__ = "Hello World"
+   __plugin_implementations__ = [HelloWorldPlugin()]
+
+Restart OctoPrint, shift-reload your browser and take a look. Everything should still look like before, but now
+OctoPrint linked to our stylesheet and the style information for the ``iframe`` is taken from that instead of
+hardcoded in our template. Way better!
+
+Now, if you had something more complicated than just the couple of line of CSS we used here, you might want to use
+something like LESS for generating your CSS from. If you use `LESS <http://lesscss.org/>`_, which is what OctoPrint
+uses for that purpose, you can even put OctoPrint into a mode where it directly uses your LESS files instead of the
+generated CSS files (and compiles them on the fly in your browser using `lessjs <http://lesscss.org/#client-side-usage>`_),
+which makes development so much easier. Let's try that, so you know how it works for future bigger projects.
+
+Add another folder to our ``static`` folder called ``less`` and within that create a file ``helloworld.less``. Put
+into that the same content as into our CSS file. Compile that LESS file to CSS [#f1]_, overwriting our old ``helloworld.css``
+in the process. The folder structure of our plugin should now look like this::
+
+   octoprint_helloworld/
+       static/
+           css/
+               helloworld.css
+           js/
+               helloworld.js
+           less/
+               helloworld.less
+       templates/
+           helloworld_navbar.jinja2
+           helloworld_settings.jinja2
+           helloworld_tab.jinja2
+       __init__.py
+   README.md
+   requirements.txt
+   setup.py
+
+
+Then adjust our returned assets to include our LESS file as well:
+
+.. code-block:: python
+   :emphasize-lines: 27
+   :linenos:
+
+   # coding=utf-8
+   from __future__ import absolute_import
+
+   import octoprint.plugin
+
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin,
+                         octoprint.plugin.TemplatePlugin,
+                         octoprint.plugin.SettingsPlugin,
+                         octoprint.plugin.AssetPlugin):
+
+   def on_after_startup(self):
+       self._logger.info("Hello World! (more: %s)" % self._settings.get(["url"]))
+
+   def get_settings_defaults(self):
+       return dict(url="https://en.wikipedia.org/wiki/Hello_world")
+
+   def get_template_configs(self):
+       return [
+           dict(type="navbar", custom_bindings=False),
+           dict(type="settings", custom_bindings=False)
+       ]
+
+   def get_assets(self):
+       return dict(
+           js=["js/helloworld.js"],
+           css=["css/helloworld.css"],
+           less=["less/helloworld.less"]
+       )
+
+   __plugin_name__ = "Hello World"
+   __plugin_implementations__ = [HelloWorldPlugin()]
+
+
+and enable LESS mode by adjusting one of OctoPrint's ``devel`` flags via the ``config.yaml`` file:
+
+.. code-block:: yaml
+   :emphasize-lines: 2-3
+
+   # [...]
+   devel:
+     stylesheet: less
+   # [...]
+
+Restart OctoPrint and shift-reload. Your "Hello World" tab should still look like before. Take a look at the site's
+source code. In the ``head`` section of the page you'll see that instead of your ``helloworld.css`` OctoPrint now
+embedded the ``helloworld.less`` file instead:
+
+.. code-block:: html
+   :linenos:
+   :emphasize-lines: 7
+
+   <head>
+       <!-- [...] -->
+       <link href="/static/less/octoprint.less" rel="stylesheet/less" type="text/css" media="screen">
+
+       <!-- Plugin files -->
+           <!-- [...] -->
+           <link href="/plugin_assets/helloworld/less/helloworld.less" rel="stylesheet/less" type="text/css" media="screen">
+           <!-- [...] -->
+       <!-- /Plugin files -->
+
+       <script src="/static/js/lib/less.min.js" type="text/javascript"></script>
+       <!-- [...] -->
+   </head>
+
+Switch your config back to CSS mode by either removing the ``stylesheet`` setting we just added to ``config.yaml`` or
+setting it to ``css``, e.g.
+
+.. code-block:: yaml
+   :emphasize-lines: 3
+
+   # [...]
+   devel:
+     stylesheet: css
+   # [...]
+
+Restart and shift-reload and take another look at the ``head``:
+
+.. code-block:: html
+   :linenos:
+   :emphasize-lines: 7
+
+   <head>
+       <!-- [...] -->
+       <link href="/static/css/octoprint.css" rel="stylesheet" type="text/css" media="screen">
+
+       <!-- Plugin files -->
+           <!-- [...] -->
+           <link href="/plugin_assets/helloworld/css/helloworld.css" rel="stylesheet" type="text/css" media="screen">
+           <!-- [...] -->
+       <!-- /Plugin files -->
+       <!-- [...] -->
+   </head>
+
+Now the CSS file is linked and no trace of the LESS links is left in the source. This should help to speed up your development
+tremendously when you have to work with complex stylesheets, just don't forgot to check the generated CSS file in with
+the rest of your plugin or people will miss it when trying to run your plugin!
+
+.. note::
+
+   If your plugin only provides CSS files, OctoPrint will detect this when switched to LESS mode and include your
+   CSS files instead of any non-existing LESS files. So you don't really *have* to use LESS if you don't want, but
+   as soon as you need it just switch over.
+
+   The same thing works the other way around too btw. If your plugin only provides LESS files, OctoPrint will link to
+   those and add lessjs to the page as well. Please keep in mind though that also providing CSS files is the cleaner
+   way.
+
+Where do we go from here?
+-------------------------
+
+You've now seen how easy it is to add functionality to OctoPrint with this little tutorial. You can find the full
+source code of the little Hello World plugin we built together here :ref:`on Github <https://github.com/OctoPrint/Plugin-Examples/tree/master/helloworld>`.
+
+But I want to invite you to dive deeper into OctoPrint's plugin system. To get an idea of all the other various plugin types
+you haven't seen yet, :ref:`take a look at the available plugin mixins <sec-plugins-mixins>`.
+
+For some insight on how to create plugins that react to various events within OctoPrint,
+`the Growl Plugin <https://github.com/OctoPrint/OctoPrint-Growl>`_ might be a good example to learn from. For how to
+add support for a slicer, OctoPrint's own bundled `CuraEngine plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura>`_
+might give some hints. For extending OctoPrint's interface, the `NavbarTemp plugin <https://github.com/imrahil/OctoPrint-NavbarTemp>`_
+might show what's possible with a few lines of code already. Finally, just take a look at the
+`list of available plugins <https://github.com/foosel/OctoPrint/wiki#plugins>`_ on the OctoPrint wiki if you are
+looking for examples.
+
+.. rubric:: Footnotes
+
+.. [#f1] Refer to the `LESS documentation <http://lesscss.org/#using-less>`_ on how to do that. If you are developing
+         your plugin under Windows you might also want to give `WinLESS <http://winless.org/>`_ a look which will run
+         in the background and keep your CSS files up to date with your various project's LESS files automatically.
