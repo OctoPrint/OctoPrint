@@ -609,7 +609,7 @@ like so:
        ]);
    });
 
-Take a close look at lines 29 to 40. This is how our plugin tells OctoPrint about our new view model, how to
+Take a close look at lines 31 to 42. This is how our plugin tells OctoPrint about our new view model, how to
 instantiate it, which dependencies to inject and to which elements in the final page to bind. Since we want to access
 the URL from the settings of our plugin, we'll have OctoPrint inject the ``SettingsViewModel`` into our own view model,
 which is registered within OctoPrint under the name ``settingsViewModel``. We'll only bind to our custom tab
