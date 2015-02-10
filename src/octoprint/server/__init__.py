@@ -122,6 +122,8 @@ def index():
 	for name, implementation in asset_plugins.items():
 		asset_plugin_urls[name] = implementation.get_assets()
 
+	##~~ extract data from template plugins
+
 	templates = dict(
 		navbar=dict(order=[], entries=dict()),
 		sidebar=dict(order=[], entries=dict()),
@@ -511,6 +513,7 @@ class Server():
 		])
 		app.jinja_loader = jinja_loader
 		del jinja2
+		app.jinja_env.add_extension("jinja2.ext.do")
 
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
