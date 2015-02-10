@@ -886,7 +886,7 @@ Where do we go from here?
 -------------------------
 
 You've now seen how easy it is to add functionality to OctoPrint with this little tutorial. You can find the full
-source code of the little Hello World plugin we built together here :ref:`on Github <https://github.com/OctoPrint/Plugin-Examples/tree/master/helloworld>`.
+source code of the little Hello World plugin we built together here `on Github <https://github.com/OctoPrint/Plugin-Examples/tree/master/helloworld>`_.
 
 But I want to invite you to dive deeper into OctoPrint's plugin system. To get an idea of all the other various plugin types
 you haven't seen yet, :ref:`take a look at the available plugin mixins <sec-plugins-mixins>`.
