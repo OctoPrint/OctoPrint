@@ -42,7 +42,7 @@ Source package
 
 The generic setup instructions boil down to 
 
-1. Installing [Python 2.7]() including [pip]()
+1. Installing [Python 2.7](https://www.python.org/) including [pip](https://pip.pypa.io/en/latest/installing.html)
 2. Obtaining the source through either of:
    1. cloning the [source repository](https://github.com/foosel/OctoPrint.git): ``git clone https://github.com/foosel/OctoPrint.git``
    2. downloading an archive of the current source from Github and unpacking it: [archive of the current stable version](https://github.com/foosel/OctoPrint/archive/master.zip)
