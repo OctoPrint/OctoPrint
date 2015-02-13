@@ -45,9 +45,9 @@ The generic setup instructions boil down to
 1. Installing [Python 2.7](https://www.python.org/) including [pip](https://pip.pypa.io/en/latest/installing.html)
 2. Obtaining the source through either of:
    1. cloning the [source repository](https://github.com/foosel/OctoPrint.git): ``git clone https://github.com/foosel/OctoPrint.git``
-   2. downloading an archive of the current source from Github and unpacking it: [archive of the current stable version](https://github.com/foosel/OctoPrint/archive/master.zip)
-3. In the source code folder: ``python setup.py install``
-4. Starting OctoPrint through: ``octoprint``
+   2. downloading an [archive of the current stable version](https://github.com/foosel/OctoPrint/archive/master.zip) from Github and unpacking it
+3. In the source code folder from the command line: ``python setup.py install``
+4. Start OctoPrint through ``octoprint`` from the command line
 
 More specific setup instructions for the most common runtime environments can be found below.
 
