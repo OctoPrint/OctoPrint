@@ -743,7 +743,7 @@ class EventHandlerPlugin(Plugin):
 		"""
 		Called by OctoPrint upon processing of a fired event on the platform.
 
-		:param string event: the type of event that got fired, see :ref:`the list of events <sec-events-available_events>`_
+		:param string event: the type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
 		                     for possible values
 		:param dict payload: the payload as provided with the event
 		"""
