@@ -122,6 +122,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		                                                     modelUrl=self._settings.get(["model", "url"]),
 		                                                     serialNumber=self._settings.get(["model", "serial"]),
 		                                                     uuid=self.get_uuid(),
+		                                                     apiKey=self.get_api_key(),
 		                                                     presentationUrl=flask.url_for("index", _external=True)))
 		response.headers['Content-Type'] = 'application/xml'
 		return response
@@ -674,6 +675,9 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			self._settings.set(["upnpUuid"], upnpUuid)
 			self._settings.save()
 		return upnpUuid
+
+	def get_api_key(self):
+		return self._settings.get(["apiKey"])
 
 	def get_instance_name(self):
 		name = self._settings.globalGet(["appearance", "name"])
