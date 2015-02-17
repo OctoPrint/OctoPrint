@@ -498,36 +498,32 @@ $(function() {
         //~~ view model binding
 
         settingsViewModel.requestData(function() {
-            ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+            var viewModelsToInit = additionalViewModels.concat([
+                [settingsViewModel, document.getElementById("settings_dialog")],
+                [connectionViewModel, document.getElementById("connection_wrapper")],
+                [printerStateViewModel, document.getElementById("state_wrapper")],
+                [gcodeFilesViewModel, document.getElementById("files_wrapper")],
+                [temperatureViewModel, document.getElementById("temp")],
+                [controlViewModel, document.getElementById("control")],
+                [gcodeViewModel, document.getElementById("gcode")],
+                [terminalViewModel, document.getElementById("term")],
+                [navigationViewModel, document.getElementById("navbar")],
+                [appearanceViewModel, document.getElementsByTagName("head")[0]],
+                [printerStateViewModel, document.getElementById("drop_overlay")],
+                [logViewModel, document.getElementById("logs")],
+                [timelapseViewModel, document.getElementById("timelapse")],
+                [slicingViewModel, document.getElementById("slicing_configuration_dialog")]
+            ]);
 
-            ko.applyBindings(connectionViewModel, document.getElementById("connection_wrapper"));
-            ko.applyBindings(printerStateViewModel, document.getElementById("state_wrapper"));
-            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_wrapper"));
-            ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-            ko.applyBindings(controlViewModel, document.getElementById("control"));
-            ko.applyBindings(terminalViewModel, document.getElementById("term"));
-            var gcode = document.getElementById("gcode");
-            if (gcode) {
-                gcodeViewModel.initialize();
-                ko.applyBindings(gcodeViewModel, gcode);
-            }
-            //ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-            ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
-            ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
-            ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
-            ko.applyBindings(logViewModel, document.getElementById("logs"));
+            // apply bindings
+            var rerenderControls = false;
+            _.each(viewModelsToInit, function(viewModelData) {
+                if (!Array.isArray(viewModelData) || viewModelData.length != 2) {
+                    return;
+                }
 
-            var timelapseElement = document.getElementById("timelapse");
-            if (timelapseElement) {
-                ko.applyBindings(timelapseViewModel, timelapseElement);
-            }
-
-            ko.applyBindings(slicingViewModel, document.getElementById("slicing_configuration_dialog"));
-
-            // apply bindings and signal startup
-            _.each(additionalViewModels, function(additionalViewModel) {
-                var viewModel = additionalViewModel[0];
-                var targets = additionalViewModel[1];
+                var viewModel = viewModelData[0];
+                var targets = viewModelData[1];
 
                 if (targets === undefined) {
                     return;
@@ -542,17 +538,30 @@ $(function() {
                 }
 
                 _.each(targets, function(target) {
-                    try {
-                        ko.applyBindings(viewModel, target);
-                    } catch (exc) {
-                        console.log("Could not apply bindings for additional view model " + viewModel + ": " + exc.message);
+                    if (target) {
+                        try {
+                            ko.applyBindings(viewModel, target);
+                        } catch (exc) {
+                            console.log("Could not apply bindings for additional view model " + viewModel + ": " + exc.message);
+                        }
+                    } else {
+                        console.log("Could not apply binding for view model " + viewModel + ", target does not exist");
                     }
                 });
 
                 if (viewModel.hasOwnProperty("onAfterBinding")) {
                     viewModel.onAfterBinding();
                 }
+
+                if (viewModel.hasOwnProperty("getAdditionalControls")) {
+                    controlViewModel.additionalControls = controlViewModel.additionalControls.concat(viewModel.getAdditionalControls());
+                    rerenderControls = true
+                }
             });
+
+            if (rerenderControls) {
+                controlViewModel.rerenderControls();
+            }
         });
 
         //~~ UI stuff

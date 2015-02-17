@@ -26,6 +26,9 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.feedbackControlLookup = {};
 
+    self.controlsFromServer = [];
+    self.additionalControls = [];
+
     self.keycontrolActive = ko.observable(false);
     self.keycontrolHelpActive = ko.observable(false);
     self.keycontrolPossible = ko.computed(function() {
@@ -84,6 +87,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
     };
 
+    self.rerenderControls = function() {
+        var allControls = self.controlsFromServer.concat(self.additionalControls);
+        self.controls(self._processControls(allControls))
+    };
+
     self.requestData = function() {
         $.ajax({
             url: API_BASEURL + "printer/command/custom",
@@ -96,7 +104,8 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self._fromResponse = function(response) {
-        self.controls(self._processControls(response.controls));
+        self.controlsFromServer = response.controls;
+        self.rerenderControls();
     };
 
     self._processControls = function(controls) {
@@ -117,7 +126,47 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         } else if (control.type == "section") {
             control.children = self._processControls(control.children);
         }
+
+        var js;
+        if (control.hasOwnProperty("javascript")) {
+            js = control.javascript;
+
+            // if js is a function everything's fine already, but if it's a string we need to eval that first
+            if (!_.isFunction(js)) {
+                control.javascript = function(data) {
+                    eval(js);
+                };
+            }
+        }
+
+        if (control.hasOwnProperty("enabled")) {
+            js = control.enabled;
+
+            // if js is a function everything's fine already, but if it's a string we need to eval that first
+            if (!_.isFunction(js)) {
+                control.enabled = function(data) {
+                    return eval(js);
+                }
+            }
+        }
+
         return control;
+    };
+
+    self.isCustomEnabled = function(data) {
+        if (data.hasOwnProperty("enabled")) {
+            return data.enabled(data);
+        } else {
+            return self.isOperational() && self.loginState.isUser();
+        }
+    };
+
+    self.clickCustom = function(data) {
+        if (data.hasOwnProperty("javascript")) {
+            data.javascript(data);
+        } else {
+            self.sendCustomCommand(data);
+        }
     };
 
     self.sendJogCommand = function(axis, multiplier, distance) {
@@ -185,17 +234,17 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.sendSelectToolCommand = function(data) {
         if (!data || !data.key()) return;
 
-        var data = {
+        var payload = {
             command: "select",
             tool: data.key()
-        }
+        };
 
         $.ajax({
             url: API_BASEURL + "printer/tool",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data)
+            data: JSON.stringify(payload)
         });
     };
 
@@ -211,7 +260,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify(data)
             })
-        }
+        };
         var data = undefined;
         if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
             // single command
