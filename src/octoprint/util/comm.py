@@ -340,6 +340,9 @@ class MachineCom(object):
 	def getConnection(self):
 		return self._port, self._baudrate
 
+	def getTransport(self):
+		return self._serial
+
 	##~~ external interface
 
 	def close(self, isError = False):

@@ -213,6 +213,21 @@ class Printer():
 		self._printerProfileManager.deselect()
 		eventManager().fire(Events.DISCONNECTED)
 
+	def getTransport(self):
+		"""
+		Returns the communication layer's transport object, if a connection is currently established.
+
+		Note that this doesn't have to necessarily be a :class:`serial.Serial` instance, it might also be something
+		different, so take care to do instance checks before attempting to access any properties or methods.
+
+		:return: the communication layer's transport object
+		"""
+
+		if self._comm is None:
+			return None
+
+		return self._comm.getTransport()
+
 	def command(self, command):
 		"""
 		 Sends a single gcode command to the printer.
