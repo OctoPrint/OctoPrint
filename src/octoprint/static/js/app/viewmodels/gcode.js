@@ -244,31 +244,37 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     };
 
     self._configureLayerSlider = function() {
-        self.layerSlider = $("#gcode_slider_layers").slider({
-            id: "gcode_layer_slider",
-            reversed: true,
-            selection: "after",
-            orientation: "vertical",
-            min: 0,
-            max: 1,
-            step: 1,
-            value: 0,
-            enabled: false,
-            formatter: function(value) { return "Layer #" + (value + 1); }
-        }).on("slide", self.changeLayer);
+        var layerSliderElement = $("#gcode_slider_layers");
+        if (layerSliderElement) {
+            self.layerSlider = layerSliderElement.slider({
+                id: "gcode_layer_slider",
+                reversed: true,
+                selection: "after",
+                orientation: "vertical",
+                min: 0,
+                max: 1,
+                step: 1,
+                value: 0,
+                enabled: false,
+                formatter: function(value) { return "Layer #" + (value + 1); }
+            }).on("slide", self.changeLayer);
+        }
     };
 
     self._configureLayerCommandSlider = function() {
-        self.layerCommandSlider = $("#gcode_slider_commands").slider({
-            id: "gcode_command_slider",
-            orientation: "horizontal",
-            min: 0,
-            max: 1,
-            step: 1,
-            value: [0, 1],
-            enabled: false,
-            tooltip: "hide"
-        }).on("slide", self.changeCommandRange);
+        var commandSliderElement = $("#gcode_slider_commands");
+        if (commandSliderElement) {
+            self.layerCommandSlider = commandSliderElement.slider({
+                id: "gcode_command_slider",
+                orientation: "horizontal",
+                min: 0,
+                max: 1,
+                step: 1,
+                value: [0, 1],
+                enabled: false,
+                tooltip: "hide"
+            }).on("slide", self.changeCommandRange);
+        }
     };
 
     self.loadFile = function(filename, date){
@@ -469,6 +475,10 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
     self.onDataUpdaterReconnect = function() {
         self.reset();
+    };
+
+    self.onBeforeBinding = function() {
+        self.initialize();
     }
 
 }
