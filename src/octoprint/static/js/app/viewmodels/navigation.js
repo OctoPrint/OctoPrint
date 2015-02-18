@@ -3,6 +3,7 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
 
     self.loginState = loginStateViewModel;
     self.appearance = appearanceViewModel;
+    self.settings = settingsViewModel;
     self.systemActions = settingsViewModel.system_actions;
     self.users = usersViewModel;
 

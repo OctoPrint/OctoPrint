@@ -210,7 +210,7 @@ def uploadGcodeFile(target):
 		filename = added_file
 		done = True
 	else:
-		filename = fileProcessingFinished(added_file, fileManager.get_absolute_path(FileDestinations.LOCAL, added_file), target)
+		filename = fileProcessingFinished(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), target)
 		done = True
 
 	sdFilename = None
@@ -293,7 +293,7 @@ def gcodeFileCommand(filename, target):
 			filenameToSelect = filename
 			sd = True
 		else:
-			filenameToSelect = fileManager.get_absolute_path(target, filename)
+			filenameToSelect = fileManager.path_on_disk(target, filename)
 		printer.selectFile(filenameToSelect, sd, printAfterLoading)
 
 	elif command == "slice":
@@ -371,7 +371,7 @@ def gcodeFileCommand(filename, target):
 					filenameToSelect = gcode_name
 					sd = True
 				else:
-					filenameToSelect = fileManager.get_absolute_path(target, gcode_name)
+					filenameToSelect = fileManager.path_on_disk(target, gcode_name)
 				printer.selectFile(filenameToSelect, sd, print_after_slicing)
 
 		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name,

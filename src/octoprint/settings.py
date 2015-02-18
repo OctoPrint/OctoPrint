@@ -131,11 +131,6 @@ default_settings = {
 		"localNetworks": ["127.0.0.0/8"],
 		"autologinAs": None
 	},
-	"cura": {
-		"enabled": False,
-		"path": "/default/path/to/cura",
-		"config": "/default/path/to/your/cura/config.ini"
-	},
 	"slicing": {
 		"enabled": True,
 		"defaultSlicer": "cura",

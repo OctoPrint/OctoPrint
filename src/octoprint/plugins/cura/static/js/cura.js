@@ -100,7 +100,7 @@ $(function() {
                 self.profileDescription(undefined);
                 self.profileAllowOverwrite(true);
 
-                $("#settings-plugin-cura-import").modal("hide");
+                $("#settings_plugin_cura_import").modal("hide");
                 self.requestData();
                 self.slicingViewModel.requestData();
             }

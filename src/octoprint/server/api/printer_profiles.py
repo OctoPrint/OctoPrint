@@ -9,6 +9,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 
 from flask import jsonify, make_response, request, url_for
+from flask.exceptions import JSONBadRequest
 
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
@@ -27,11 +28,15 @@ def printerProfilesList():
 @restricted_access
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
-		return None, None, make_response("Expected content-type JSON", 400)
+		return make_response("Expected content-type JSON", 400)
 
-	json_data = request.json
+	try:
+		json_data = request.json
+	except JSONBadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
 	if not "profile" in json_data:
-		return None, None, make_response("No profile included in request", 400)
+		return make_response("No profile included in request", 400)
 
 	base_profile = printerProfileManager.get_default()
 	if "basedOn" in json_data and isinstance(json_data["basedOn"], basestring):
@@ -43,10 +48,18 @@ def printerProfilesAdd():
 		del base_profile["id"]
 	if "name" in base_profile:
 		del base_profile["name"]
+	if "default" in base_profile:
+		del base_profile["default"]
 
-	profile = dict_merge(base_profile, json_data["profile"])
+	new_profile = json_data["profile"]
+	make_default = False
+	if "default" in new_profile:
+		make_default = True
+		del new_profile["default"]
+
+	profile = dict_merge(base_profile, new_profile)
 	try:
-		saved_profile = printerProfileManager.save(profile, allow_overwrite=False)
+		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
@@ -74,11 +87,15 @@ def printerProfilesDelete(identifier):
 @restricted_access
 def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:
-		return None, None, make_response("Expected content-type JSON", 400)
+		return make_response("Expected content-type JSON", 400)
 
-	json_data = request.json
+	try:
+		json_data = request.json
+	except JSONBadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
 	if not "profile" in json_data:
-		make_response("No profile included in request", 400)
+		return make_response("No profile included in request", 400)
 
 	profile = printerProfileManager.get(identifier)
 	if profile is None:

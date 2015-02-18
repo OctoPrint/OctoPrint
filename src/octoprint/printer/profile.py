@@ -32,6 +32,101 @@ class BedTypes(object):
 		return [getattr(cls, name) for name in cls.__dict__ if not name.startswith("__")]
 
 class PrinterProfileManager(object):
+	"""
+	Manager for printer profiles. Offers methods to select the globally used printer profile and to list, add, remove,
+	load and save printer profiles.
+
+	A printer profile is a ``dict`` of the following structure:
+
+	.. list-table::
+	   :widths: 15 5 10 30
+	   :header-rows: 1
+
+	   * - Name
+	     - Type
+	     - Description
+	   * - ``id``
+	     - ``string``
+	     - Internal id of the printer profile
+	   * - ``name``
+	     - ``string``
+	     - Human readable name of the printer profile
+	   * - ``model``
+	     - ``string``
+	     - Printer model
+	   * - ``color``
+	     - ``string``
+	     - Color to associate with the printer profile
+	   * - ``volume``
+	     - ``dict``
+	     - Information about the print volume
+	   * - ``volume.width``
+	     - ``float``
+	     - Width of the print volume (X axis)
+	   * - ``volume.depth``
+	     - ``float``
+	     - Depth of the print volume (Y axis)
+	   * - ``volume.height``
+	     - ``float``
+	     - Height of the print volume (Z axis)
+	   * - ``volume.formFactor``
+	     - ``string``
+	     - Form factor of the print bed, either ``rectangular`` or ``circular``
+	   * - ``heatedBed``
+	     - ``bool``
+	     - Whether the printer has a heated bed (``True``) or not (``False``)
+	   * - ``extruder``
+	     - ``dict``
+	     - Information about the printer's extruders
+	   * - ``extruder.count``
+	     - ``int``
+	     - How many extruders the printer has (default 1)
+	   * - ``extruder.offsets``
+	     - ``list`` of ``tuple``s
+	     - Extruder offsets relative to first extruder, list of (x, y) tuples, first is always (0,0)
+	   * - ``extruder.nozzleDiameter``
+	     - ``float``
+	     - Diameter of the printer nozzle
+	   * - ``axes``
+	     - ``dict``
+	     - Information about the printer axes
+	   * - ``axes.x``
+	     - ``dict``
+	     - Information about the printer's X axis
+	   * - ``axes.x.speed``
+	     - ``float``
+	     - Speed of the X axis in mm/s
+	   * - ``axes.x.inverted``
+	     - ``bool``
+	     - Whether a positive value change moves the nozzle away from the print bed's origin (False, default) or towards it (True)
+	   * - ``axes.y``
+	     - ``dict``
+	     - Information about the printer's Y axis
+	   * - ``axes.y.speed``
+	     - ``float``
+	     - Speed of the Y axis in mm/s
+	   * - ``axes.y.inverted``
+	     - ``bool``
+	     - Whether a positive value change moves the nozzle away from the print bed's origin (False, default) or towards it (True)
+	   * - ``axes.z``
+	     - ``dict``
+	     - Information about the printer's Z axis
+	   * - ``axes.z.speed``
+	     - ``float``
+	     - Speed of the Z axis in mm/s
+	   * - ``axes.z.inverted``
+	     - ``bool``
+	     - Whether a positive value change moves the nozzle away from the print bed (False, default) or towards it (True)
+	   * - ``axes.e``
+	     - ``dict``
+	     - Information about the printer's E axis
+	   * - ``axes.e.speed``
+	     - ``float``
+	     - Speed of the E axis in mm/s
+	   * - ``axes.e.inverted``
+	     - ``bool``
+	     - Whether a positive value change extrudes (False, default) or retracts (True) filament
+	"""
 
 	default = dict(
 		id = "_default",
@@ -229,7 +324,7 @@ class PrinterProfileManager(object):
 		profile = self._ensure_valid_profile(dict_merge(copy.deepcopy(self.__class__.default), default_overrides))
 		if not profile:
 			self._logger.warn("Invalid default profile after applying overrides")
-			raise InvalidProfileError()
+			return copy.deepcopy(self.__class__.default)
 		return profile
 
 	def _get_profile_path(self, identifier):

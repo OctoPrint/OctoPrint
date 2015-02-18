@@ -56,7 +56,7 @@ Example
 Placeholders
 ============
 
-You can use the following generic placeholders in your events:
+You can use the following generic placeholders in your event hooks:
 
   * ``{__currentZ}``: the current Z position of the head if known, -1 if not available
   * ``{__filename}``: filename of the currently selected file, "NO FILE" if not available

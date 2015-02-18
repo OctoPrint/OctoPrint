@@ -262,18 +262,13 @@ class MachineCom(object):
 		if self._state == self.STATE_CLOSED:
 			return "Closed"
 		if self._state == self.STATE_ERROR:
-			return "Error: %s" % (self.getShortErrorString())
+			return "Error: %s" % (self.getErrorString())
 		if self._state == self.STATE_CLOSED_WITH_ERROR:
-			return "Error: %s" % (self.getShortErrorString())
+			return "Error: %s" % (self.getErrorString())
 		if self._state == self.STATE_TRANSFERING_FILE:
 			return "Transfering file to SD"
 		return "?%d?" % (self._state)
 	
-	def getShortErrorString(self):
-		if len(self._errorValue) < 20:
-			return self._errorValue
-		return self._errorValue[:20] + "..."
-
 	def getErrorString(self):
 		return self._errorValue
 	
@@ -344,6 +339,9 @@ class MachineCom(object):
 
 	def getConnection(self):
 		return self._port, self._baudrate
+
+	def getTransport(self):
+		return self._serial
 
 	##~~ external interface
 
@@ -1042,9 +1040,12 @@ class MachineCom(object):
 			try:
 				self._log("Connecting to: %s" % self._port)
 				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), 115200, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000, parity=serial.PARITY_ODD)
 				else:
-					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000)
+					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000, parity=serial.PARITY_ODD)
+				self._serial.close()
+				self._serial.parity = serial.PARITY_NONE
+				self._serial.open()
 			except:
 				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
 				self._errorValue = "Failed to open serial port, permissions correct?"

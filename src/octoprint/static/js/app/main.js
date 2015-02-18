@@ -83,6 +83,7 @@ $(function() {
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
 
+        // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {
             loginStateViewModel: loginStateViewModel,
             printerProfilesViewModel: printerProfilesViewModel,
@@ -102,28 +103,87 @@ $(function() {
             slicingViewModel: slicingViewModel
         };
 
-        var allViewModels = _.values(viewModelMap);
-
-        var additionalViewModels = [];
-        _.each(ADDITIONAL_VIEWMODELS, function(viewModel) {
+        // helper to create a view model instance with injected constructor parameters from the view model map
+        var _createViewModelInstance = function(viewModel, viewModelMap){
             var viewModelClass = viewModel[0];
             var viewModelParameters = viewModel[1];
-            var viewModelBindTarget = viewModel[2];
 
-            var constructorParameters = [];
-            _.each(viewModelParameters, function(parameter) {
-                if (_.has(viewModelMap, parameter)) {
-                    constructorParameters.push(viewModelMap[parameter]);
-                } else {
-                    constructorParameters.push(undefined);
-                }
+            // now we'll try to resolve all of the view model's constructor parameters via our view model map
+            var constructorParameters = _.map(viewModelParameters, function(parameter){
+                return viewModelMap[parameter]
             });
 
-            var viewModelInstance = new viewModelClass(constructorParameters);
-            additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
-            allViewModels.push(viewModelInstance);
-        });
+            if (_.some(constructorParameters, function(parameter) { return parameter === undefined; })) {
+                var _extractName = function(entry) { return entry[0]; };
+                var _onlyUnresolved = function(entry) { return entry[1] === undefined; };
+                var missingParameters = _.map(_.filter(_.zip(viewModelParameters, constructorParameters), _onlyUnresolved), _extractName);
+                console.log("postponing", viewModel[0].name, "due to missing parameters:", missingParameters.join(", "));
+                return;
+            }
 
+            // if we came this far then we could resolve all constructor parameters, so let's construct that view model
+            return new viewModelClass(constructorParameters);
+        };
+
+        // helper for translating the name of a view model class into an identifier for the view model map
+        var _getViewModelId = function(viewModel){
+            var name = viewModel[0].name;
+            return name.substr(0, 1).toLowerCase() + name.substr(1); // FooBarViewModel => fooBarViewModel
+        };
+
+        // instantiation loop, will make multiple passes over the list of unprocessed view models until all
+        // view models have been successfully instantiated with all of their dependencies or no changes can be made
+        // any more which means not all view models can be instantiated due to missing dependencies
+        var unprocessedViewModels = ADDITIONAL_VIEWMODELS.slice();
+        var additionalViewModels = [];
+        var pass = 1;
+        while (unprocessedViewModels.length > 0) {
+            console.log("View model dependency resolution, pass #" + pass++);
+            var startLength = unprocessedViewModels.length;
+            var postponed = [];
+
+            // now try to instantiate every one of our as of yet unprocessed view model descriptors
+            while (unprocessedViewModels.length > 0){
+                var viewModel = unprocessedViewModels.shift();
+                var viewModelId = _getViewModelId(viewModel);
+
+                // make sure that we don't have to view models going by the same name
+                if (_.has(viewModelMap, viewModelId)) {
+                    console.error("Duplicate class name while instantiating viewModel ", viewModelId);
+                    continue;
+                }
+
+                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap);
+
+                // our view model couldn't yet be instantiated, so postpone it for a bit
+                if (viewModelInstance === undefined) {
+                    postponed.push(viewModel);
+                    continue;
+                }
+
+                // we could resolve the depdendencies and the view model is not defined yet => add it, it's now fully processed
+                var viewModelBindTarget = viewModel[2];
+                additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
+                viewModelMap[viewModelId] = viewModelInstance;
+            }
+
+            // anything that's now in the postponed list has to be readded to the unprocessedViewModels
+            unprocessedViewModels = unprocessedViewModels.concat(postponed);
+
+            // if we still have the same amount of items in our list of unprocessed view models it means that we
+            // couldn't instantiate any more view models over a whole iteration, which in turn mean we can't resolve the
+            // dependencies of remaining ones, so log that as an error and then quit the loop
+            if (unprocessedViewModels.length == startLength) {
+                console.error("Could not instantiate the following view models due to unresolvable dependencies:");
+                _.each(unprocessedViewModels, function(entry) {
+                    console.error(entry[0].name, "(missing:", _.filter(entry[1], function(id) { return !_.has(viewModelMap, id); }).join(", "), ")");
+                });
+                break;
+            }
+        }
+        console.log("View model dependency resolution done");
+
+        var allViewModels = _.values(viewModelMap);
         var dataUpdater = new DataUpdater(allViewModels);
 
         //~~ Temperature
@@ -415,64 +475,6 @@ $(function() {
             }
         };
 
-        settingsViewModel.requestData(function() {
-            ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-
-            ko.applyBindings(connectionViewModel, document.getElementById("connection_wrapper"));
-            ko.applyBindings(printerStateViewModel, document.getElementById("state_wrapper"));
-            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_wrapper"));
-            ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-            ko.applyBindings(controlViewModel, document.getElementById("control"));
-            ko.applyBindings(terminalViewModel, document.getElementById("term"));
-            var gcode = document.getElementById("gcode");
-            if (gcode) {
-                gcodeViewModel.initialize();
-                ko.applyBindings(gcodeViewModel, gcode);
-            }
-            //ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-            ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
-            ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
-            ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
-            ko.applyBindings(logViewModel, document.getElementById("logs"));
-
-            var timelapseElement = document.getElementById("timelapse");
-            if (timelapseElement) {
-                ko.applyBindings(timelapseViewModel, timelapseElement);
-            }
-
-            ko.applyBindings(slicingViewModel, document.getElementById("slicing_configuration_dialog"));
-
-            // apply bindings and signal startup
-            _.each(additionalViewModels, function(additionalViewModel) {
-                var viewModel = additionalViewModel[0];
-                var targets = additionalViewModel[1];
-
-                if (targets === undefined) {
-                    return;
-                }
-
-                if (!Array.isArray(targets)) {
-                    targets = [targets];
-                }
-
-                if (viewModel.hasOwnProperty("onBeforeBinding")) {
-                    viewModel.onBeforeBinding();
-                }
-
-                _.each(targets, function(target) {
-                    try {
-                        ko.applyBindings(viewModel, target);
-                    } catch (exc) {
-                        console.log("Could not apply bindings for additional view model " + viewModel + ": " + exc.message);
-                    }
-                });
-
-                if (viewModel.hasOwnProperty("onAfterBinding")) {
-                    viewModel.onAfterBinding();
-                }
-            });
-        });
-
         //~~ startup commands
 
         _.each(allViewModels, function(viewModel) {
@@ -490,6 +492,75 @@ $(function() {
                 }
             } else {
                 $("#gcode_upload").fileupload("disable");
+            }
+        });
+
+        //~~ view model binding
+
+        settingsViewModel.requestData(function() {
+            var viewModelsToInit = additionalViewModels.concat([
+                [settingsViewModel, document.getElementById("settings_dialog")],
+                [connectionViewModel, document.getElementById("connection_wrapper")],
+                [printerStateViewModel, document.getElementById("state_wrapper")],
+                [gcodeFilesViewModel, document.getElementById("files_wrapper")],
+                [temperatureViewModel, document.getElementById("temp")],
+                [controlViewModel, document.getElementById("control")],
+                [gcodeViewModel, document.getElementById("gcode")],
+                [terminalViewModel, document.getElementById("term")],
+                [navigationViewModel, document.getElementById("navbar")],
+                [appearanceViewModel, document.getElementsByTagName("head")[0]],
+                [printerStateViewModel, document.getElementById("drop_overlay")],
+                [logViewModel, document.getElementById("logs")],
+                [timelapseViewModel, document.getElementById("timelapse")],
+                [slicingViewModel, document.getElementById("slicing_configuration_dialog")]
+            ]);
+
+            // apply bindings
+            var rerenderControls = false;
+            _.each(viewModelsToInit, function(viewModelData) {
+                if (!Array.isArray(viewModelData) || viewModelData.length != 2) {
+                    return;
+                }
+
+                var viewModel = viewModelData[0];
+                var targets = viewModelData[1];
+
+                if (targets === undefined) {
+                    return;
+                }
+
+                if (!Array.isArray(targets)) {
+                    targets = [targets];
+                }
+
+                if (viewModel.hasOwnProperty("onBeforeBinding")) {
+                    viewModel.onBeforeBinding();
+                }
+
+                _.each(targets, function(target) {
+                    if (target) {
+                        try {
+                            ko.applyBindings(viewModel, target);
+                        } catch (exc) {
+                            console.log("Could not apply bindings for additional view model " + viewModel + ": " + exc.message);
+                        }
+                    } else {
+                        console.log("Could not apply binding for view model " + viewModel + ", target does not exist");
+                    }
+                });
+
+                if (viewModel.hasOwnProperty("onAfterBinding")) {
+                    viewModel.onAfterBinding();
+                }
+
+                if (viewModel.hasOwnProperty("getAdditionalControls")) {
+                    controlViewModel.additionalControls = controlViewModel.additionalControls.concat(viewModel.getAdditionalControls());
+                    rerenderControls = true
+                }
+            });
+
+            if (rerenderControls) {
+                controlViewModel.rerenderControls();
             }
         });
 

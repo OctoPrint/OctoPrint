@@ -105,12 +105,12 @@
 </script>
 <script type="text/html" id="customControls_commandTemplate">
     <form class="form-inline">
-        <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
+        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
     </form>
 </script>
 <script type="text/html" id="customControls_feedbackCommandTemplate">
     <form class="form-inline">
-        <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button> <span data-bind="text: output"></span>
+        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button> <span data-bind="text: output"></span>
     </form>
 </script>
 <script type="text/html" id="customControls_feedbackTemplate">
@@ -124,7 +124,7 @@
         <label data-bind="text: name"></label>
         <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
         <!-- /ko -->
-        <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
+        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
     </form>
 </script>
 <script type="text/html" id="customControls_emptyTemplate"><div></div></script>

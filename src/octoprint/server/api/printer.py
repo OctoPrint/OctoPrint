@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, make_response, Response
+from flask.exceptions import JSONBadRequest
 import re
 
 from octoprint.settings import settings, valid_boolean_trues
@@ -306,7 +307,10 @@ def printerCommand():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content type JSON", 400)
 
-	data = request.json
+	try:
+		data = request.json
+	except JSONBadRequest:
+		return make_response("Malformed JSON body in request", 400)
 
 	parameters = dict()
 	if "parameters" in data.keys(): parameters = data["parameters"]

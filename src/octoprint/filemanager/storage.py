@@ -15,73 +15,289 @@ import octoprint.filemanager
 
 from octoprint.util import safeRename
 
-
 class StorageInterface(object):
+	"""
+	Interface of storage adapters for OctoPrint.
+	"""
+
 
 	@property
 	def analysis_backlog(self):
+		"""
+		Get an iterator over all items stored in the storage that need to be analysed by the :class:`~octoprint.filemanager.AnalysisQueue`.
+
+		The yielded elements are expected as storage specific absolute paths to the respective files. Don't forget
+		to recurse into folders if your storage adapter supports those.
+
+		:return: an iterator yielding all un-analysed files in the storage
+		"""
 		# empty generator pattern, yield is intentionally unreachable
 		return
 		yield
 
 	def file_exists(self, path):
+		"""
+		Returns whether the file indicated by ``path`` exists or not.
+		:param string path: the path to check for existence
+		:return: ``True`` if the file exists, ``False`` otherwise
+		"""
 		raise NotImplementedError()
 
 	def list_files(self, path=None, filter=None, recursive=True):
+		"""
+		List all files in storage starting at ``path``. If ``recursive`` is set to True (the default), also dives into
+		subfolders.
+
+		An optional filter function can be supplied which will be called with a file name and file data and which has
+		to return True if the file is to be included in the result or False if not.
+
+		The data structure of the returned result will be a dictionary mapping from file names to entry data. File nodes
+		will contain their metadata here, folder nodes will contain their contained files and folders. Example::
+
+		   {
+		     "some_folder": {
+		       "type": "folder",
+		       "children": {
+		         "some_sub_folder": {
+		           "type": "folder",
+		           "children": { ... }
+		         },
+		         "some_file.gcode": {
+		           "type": "machinecode",
+		           "hash": "<sha1 hash>",
+		           "links": [ ... ],
+		           ...
+		         },
+		         ...
+		       }
+		     "test.gcode": {
+		       "type": "machinecode",
+		       "hash": "<sha1 hash>",
+		       "links": [...],
+		       ...
+		     },
+		     "test.stl": {
+		       "type": "model",
+		       "hash": "<sha1 hash>",
+		       "links": [...],
+		       ...
+		     },
+		     ...
+		   }
+
+		:param string path:     base path from which to recursively list all files, optional, if not supplied listing will start
+		                        from root of base folder
+		:param function filter: a filter that matches the files that are to be returned, may be left out in which case no
+		                        filtering will take place
+		:param bool recursive:  will also step into sub folders for building the complete list if set to True
+		:return: a dictionary mapping entry names to entry data that represents the whole file list
+		"""
 		raise NotImplementedError()
 
 	def add_folder(self, path, ignore_existing=True):
+		"""
+		Adds a folder as ``path``. The ``path`` will be sanitized.
+
+		:param string path:          the path of the new folder
+		:param bool ignore_existing: if set to True, no error will be raised if the folder to be added already exists
+		:return: the sanitized name of the new folder to be used for future references to the folder
+		"""
 		raise NotImplementedError()
 
 	def remove_folder(self, path, recursive=True):
+		"""
+		Removes the folder at ``path``.
+
+		:param string path:    the path of the folder to remove
+		:param bool recursive: if set to True, contained folders and files will also be removed, otherwise and error will
+		                       be raised if the folder is not empty (apart from ``.metadata.yaml``) when it's to be removed
+		"""
 		raise NotImplementedError()
 
 	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
+		"""
+		Adds the file ``file_object`` as ``path``
+
+		:param string path:            the file's new path, will be sanitized
+		:param object file_object:     a file object that provides a ``save`` method which will be called with the destination path
+		                               where the object should then store its contents
+		:param object printer_profile: the printer profile associated with this file (if any)
+		:param list links:             any links to add with the file
+		:param bool allow_overwrite:   if set to True no error will be raised if the file already exists and the existing file
+		                               and its metadata will just be silently overwritten
+		:return: the sanitized name of the file to be used for future references to it
+		"""
 		raise NotImplementedError()
 
 	def remove_file(self, path):
+		"""
+		Removes the file at ``path``. Will also take care of deleting the corresponding entries
+		in the metadata and deleting all links pointing to the file.
+
+		:param string path: path of the file to remove
+		"""
 		raise NotImplementedError()
 
 	def get_metadata(self, path):
+		"""
+		Retrieves the metadata for the file ``path``.
+
+		:param path: virtual path to the file for which to retrieve the metadata
+		:return: the metadata associated with the file
+		"""
 		raise NotImplementedError()
 
 	def add_link(self, path, rel, data):
+		"""
+		Adds a link of relation ``rel`` to file ``path`` with the given ``data``.
+
+		The following relation types are currently supported:
+
+		  * ``model``: adds a link to a model from which the file was created/sliced, expected additional data is the ``name``
+		    and optionally the ``hash`` of the file to link to. If the link can be resolved against another file on the
+		    current ``path``, not only will it be added to the links of ``name`` but a reverse link of type ``machinecode``
+		    refering to ``name`` and its hash will also be added to the linked ``model`` file
+		  * ``machinecode``: adds a link to a file containing machine code created from the current file (model), expected
+		    additional data is the ``name`` and optionally the ``hash`` of the file to link to. If the link can be resolved
+		    against another file on the current ``path``, not only will it be added to the links of ``name`` but a reverse
+		    link of type ``model`` refering to ``name`` and its hash will also be added to the linked ``model`` file.
+		  * ``web``: adds a location on the web associated with this file (e.g. a website where to download a model),
+		    expected additional data is a ``href`` attribute holding the website's URL and optionally a ``retrieved``
+		    attribute describing when the content was retrieved
+
+		Note that adding ``model`` links to files identifying as models or ``machinecode`` links to files identifying
+		as machine code will be refused.
+
+		:param path: path of the file for which to add a link
+		:param rel: type of relation of the link to add (currently ``model``, ``machinecode`` and ``web`` are supported)
+		:param data: additional data of the link to add
+		"""
 		raise NotImplementedError()
 
 	def remove_link(self, path, rel, data):
+		"""
+		Removes the link consisting of ``rel`` and ``data`` from file ``name`` on ``path``.
+
+		:param path: path of the file from which to remove the link
+		:param rel: type of relation of the link to remove (currently ``model``, ``machinecode`` and ``web`` are supported)
+		:param data: additional data of the link to remove, must match existing link
+		"""
 		raise NotImplementedError()
 
 	def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
+		"""
+		Adds additional metadata to the metadata of ``path``. Metadata in ``data`` will be saved under ``key``.
+
+		If ``overwrite`` is set and ``key`` already exists in ``name``'s metadata, the current value will be overwritten.
+
+		If ``merge`` is set and ``key`` already exists and both ``data`` and the existing data under ``key`` are dictionaries,
+		the two dictionaries will be merged recursively.
+
+		:param path: the virtual path to the file for which to add additional metadata
+		:param key: key of metadata to add
+		:param data: metadata to add
+		:param overwrite: if True and ``key`` already exists, it will be overwritten
+		:param merge: if True and ``key`` already exists and both ``data`` and the existing data are dictionaries, they
+		              will be merged
+		"""
 		raise NotImplementedError()
 
 	def remove_additional_metadata(self, path, key):
+		"""
+		Removes additional metadata under ``key`` for ``name`` on ``path``
+
+		:param path: the virtual path to the file for which to remove the metadata under ``key``
+		:param key: the key to remove
+		"""
 		raise NotImplementedError()
 
 	def sanitize(self, path):
+		"""
+		Sanitizes the given ``path``, stripping it of all invalid characters. The ``path`` may consist of both
+		folder and file name, the underlying implementation must separate those if necessary and sanitize individually.
+
+		:param string path: the path to sanitize
+		:return: a 2-tuple containing the sanitized path and file name
+		"""
 		raise NotImplementedError()
 
 	def sanitize_path(self, path):
+		"""
+		Sanitizes the given folder-only ``path``, stripping it of all invalid characters.
+		:param string path: the path to sanitize
+		:return: the sanitized path
+		"""
 		raise NotImplementedError()
 
 	def sanitize_name(self, name):
+		"""
+		Sanitizes the given file ``name``, stripping it of all invalid characters.
+		:param string name: the file name to sanitize
+		:return: the sanitized name
+		"""
 		raise NotImplementedError()
 
 	def split_path(self, path):
+		"""
+		Split ``path`` into base directory and file name.
+		:param path: the path to split
+		:return: a tuple (base directory, file name)
+		"""
 		raise NotImplementedError()
 
 	def join_path(self, *path):
+		"""
+		Join path elements together
+		:param path: path elements to join
+		:return: joined representation of the path to be usable as fully qualified path for further operations
+		"""
 		raise NotImplementedError()
 
-	def rel_path(self, path):
+	def path_on_disk(self, path):
+		"""
+		Retrieves the path on disk for ``path``.
+
+		Note: if the storage is not on disk and there exists no path on disk to refer to it, this method should
+		raise an :class:`io.UnsupportedOperation`
+
+		Opposite of :func:`path_in_storage`.
+
+		:param string path: the virtual path for which to retrieve the path on disk
+		:return: the path on disk to ``path``
+		"""
 		raise NotImplementedError()
 
-	def get_absolute_path(self, path):
+	def path_in_storage(self, path):
+		"""
+		Retrieves the equivalent in the storage adapter for ``path``.
+
+		Opposite of :func:`path_on_disk`.
+
+		:param string path: the path for which to retrieve the storage path
+		:return: the path in storage to ``path``
+		"""
 		raise NotImplementedError()
+
 
 
 class LocalFileStorage(StorageInterface):
+	"""
+	The ``LocalFileStorage`` is a storage implementation which holds all files, folders and metadata on disk.
+
+	Metadata is managed inside ``.metadata.yaml`` files in the respective folders, indexed by the sanitized filenames
+	stored within the folder. Metadata access is managed through an LRU cache to minimize access overhead.
+
+	This storage type implements :func:`path_on_disk`.
+	"""
 
 	def __init__(self, basefolder, create=False):
+		"""
+		Initializes a ``LocalFileStorage`` instance under the given ``basefolder``, creating the necessary folder
+		if necessary and ``create`` is set to ``True``.
+
+		:param string basefolder: the path to the folder under which to create the storage
+		:param bool create:       ``True`` if the folder should be created if it doesn't exist yet, ``False`` otherwise
+		"""
 		self._logger = logging.getLogger(__name__)
 
 		self.basefolder = os.path.realpath(os.path.abspath(basefolder))
@@ -131,55 +347,6 @@ class LocalFileStorage(StorageInterface):
 		return os.path.exists(file_path) and os.path.isfile(file_path)
 
 	def list_files(self, path=None, filter=None, recursive=True):
-		"""
-		List all files in storage starting at ``path``. If ``recursive`` is set to True (the default), also dives into
-		subfolders.
-
-		An optional filter function can be supplied which will be called with a file name and file data and which has
-		to return True if the file is to be included in the result or False if not.
-
-		The data structure of the returned result will be a dictionary mapping from file names to entry data. File nodes
-		will contain their metadata here, folder nodes will contain their contained files and folders. Example::
-
-		   {
-		     "some_folder": {
-		       "type": "folder",
-		       "children": {
-		         "some_sub_folder": {
-		           "type": "folder",
-		           "children": { ... }
-		         },
-		         "some_file.gcode": {
-		           "type": "machinecode",
-		           "hash": "<sha1 hash>",
-		           "links": [ ... ],
-		           ...
-		         },
-		         ...
-		       }
-		     "test.gcode": {
-		       "type": "machinecode",
-		       "hash": "<sha1 hash>",
-		       "links": [...],
-		       ...
-		     },
-		     "test.stl": {
-		       "type": "model",
-		       "hash": "<sha1 hash>",
-		       "links": [...],
-		       ...
-		     },
-		     ...
-		   }
-
-		:param path: base path from which to recursively list all files, optional, if not supplied listing will start
-		             from root of base folder
-		:param filter: a filter that matches the files that are to be returned, may be left out in which case no
-		               filtering will take place
-		:param recursive: will also step into sub folders for building the complete list if set to True
-		:return: a dictionary mapping entry names to entry data that represents the whole file list
-		"""
-
 		if path:
 			path = self.sanitize_path(path)
 		else:
@@ -187,14 +354,6 @@ class LocalFileStorage(StorageInterface):
 		return self._list_folder(path, filter=filter, recursive=recursive)
 
 	def add_folder(self, path, ignore_existing=True):
-		"""
-		Adds a folder as ``path``. The ``path`` will be sanitized.
-
-		:param path: the path of the new folder
-		:param ignore_existing: if set to True, no error will be raised if the folder to be added already exists
-		:return: the sanitized name of the new folder to be used for future references to the folder
-		"""
-
 		path, name = self.sanitize(path)
 
 		folder_path = os.path.join(path, name)
@@ -204,17 +363,9 @@ class LocalFileStorage(StorageInterface):
 		else:
 			os.mkdir(folder_path)
 
-		return self.rel_path((path, name))
+		return self.path_in_storage((path, name))
 
 	def remove_folder(self, path, recursive=True):
-		"""
-		Removes the folder at ``path``.
-
-		:param path: the path of the folder to remove
-		:param recursive: if set to True, contained folders and files will also be removed, otherwise and error will
-		                  be raised if the folder is not empty (apart from ``.metadata.yaml``) when it's to be removed
-		"""
-
 		path, name = self.sanitize(path)
 
 		folder_path = os.path.join(path, name)
@@ -231,19 +382,6 @@ class LocalFileStorage(StorageInterface):
 		shutil.rmtree(folder_path)
 
 	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
-		"""
-		Adds the file ``file_object`` as ``path``
-
-		:param path: the file's new path, will be sanitized
-		:param file_object: a file object that provides a ``save`` method which will be called with the destination path
-		                    where the object should then store its contents
-		:param printer_profile: the printer profile associated with this file (if any)
-		:param links: any links to add with the file
-		:param allow_overwrite: if set to True no error will be raised if the file already exists and the existing file
-		                        and its metadata will just be silently overwritten
-		:return: the sanitized name of the file to be used for future references to it
-		"""
-
 		path, name = self.sanitize(path)
 		if not octoprint.filemanager.valid_file_type(name):
 			raise RuntimeError("{name} is an unrecognized file type".format(**locals()))
@@ -284,16 +422,9 @@ class LocalFileStorage(StorageInterface):
 
 		self._add_links(name, path, links)
 
-		return self.rel_path((path, name))
+		return self.path_in_storage((path, name))
 
 	def remove_file(self, path):
-		"""
-		Removes the file at ``path``. Will also take care of deleting the corresponding entries
-		in the metadata and deleting all links pointing to the file.
-
-		:param path: path of the file to remove
-		"""
-
 		path, name = self.sanitize(path)
 
 		metadata = self._get_metadata(path)
@@ -322,13 +453,6 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 
 	def get_metadata(self, path):
-		"""
-		Retrieves the metadata for the file ``path``.
-
-		:param path: virtual path to the file for which to retrieve the metadata
-		:return: the metadata associated with the file
-		"""
-
 		path, name = self.sanitize(path)
 
 		metadata = self._get_metadata(path)
@@ -343,43 +467,10 @@ class LocalFileStorage(StorageInterface):
 
 
 	def add_link(self, path, rel, data):
-		"""
-		Adds a link of relation ``rel`` to file ``path`` with the given ``data``.
-
-		The following relation types are currently supported:
-
-		  * ``model``: adds a link to a model from which the file was created/sliced, expected additional data is the ``name``
-		    and optionally the ``hash`` of the file to link to. If the link can be resolved against another file on the
-		    current ``path``, not only will it be added to the links of ``name`` but a reverse link of type ``machinecode``
-		    refering to ``name`` and its hash will also be added to the linked ``model`` file
-		  * ``machinecode``: adds a link to a file containing machine code created from the current file (model), expected
-		    additional data is the ``name`` and optionally the ``hash`` of the file to link to. If the link can be resolved
-		    against another file on the current ``path``, not only will it be added to the links of ``name`` but a reverse
-		    link of type ``model`` refering to ``name`` and its hash will also be added to the linked ``model`` file.
-		  * ``web``: adds a location on the web associated with this file (e.g. a website where to download a model),
-		    expected additional data is a ``href`` attribute holding the website's URL and optionally a ``retrieved``
-		    attribute describing when the content was retrieved
-
-		Note that adding ``model`` links to files identifying as models or ``machinecode`` links to files identifying
-		as machine code will be refused.
-
-		:param path: path of the file for which to add a link
-		:param rel: type of relation of the link to add (currently ``model``, ``machinecode`` and ``web`` are supported)
-		:param data: additional data of the link to add
-		"""
-
 		path, name = self.sanitize(path)
 		self._add_links(name, path, [(rel, data)])
 
 	def remove_link(self, path, rel, data):
-		"""
-		Removes the link consisting of ``rel`` and ``data`` from file ``name`` on ``path``.
-
-		:param path: path of the file from which to remove the link
-		:param rel: type of relation of the link to remove (currently ``model``, ``machinecode`` and ``web`` are supported)
-		:param data: additional data of the link to remove, must match existing link
-		"""
-
 		path, name = self.sanitize(path)
 		self._remove_links(name, path, [(rel, data)])
 
@@ -396,22 +487,6 @@ class LocalFileStorage(StorageInterface):
 		self._update_history(name, path, index)
 
 	def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
-		"""
-		Adds additional metadata to the metadata of ``path``. Metadata in ``data`` will be saved under ``key``.
-
-		If ``overwrite`` is set and ``key`` already exists in ``name``'s metadata, the current value will be overwritten.
-
-		If ``merge`` is set and ``key`` already exists and both ``data`` and the existing data under ``key`` are dictionaries,
-		the two dictionaries will be merged recursively.
-
-		:param path: the virtual path to the file for which to add additional metadata
-		:param key: key of metadata to add
-		:param data: metadata to add
-		:param overwrite: if True and ``key`` already exists, it will be overwritten
-		:param merge: if True and ``key`` already exists and both ``data`` and the existing data are dictionaries, they
-		              will be merged
-		"""
-
 		path, name = self.sanitize(path)
 		metadata = self._get_metadata(path)
 		metadata_dirty = False
@@ -437,13 +512,6 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 
 	def remove_additional_metadata(self, path, key):
-		"""
-		Removes additional metadata under ``key`` for ``name`` on ``path``
-
-		:param path: the virtual path to the file for which to remove the metadata under ``key``
-		:param key: the key to remove
-		"""
-
 		path, name = self.sanitize(path)
 		metadata = self._get_metadata(path)
 
@@ -457,13 +525,6 @@ class LocalFileStorage(StorageInterface):
 		self._save_metadata(path, metadata)
 
 	def split_path(self, path):
-		"""
-		Split ``path`` into base directory and file name.
-
-		:param path: the path to split
-		:return: a tuple (base directory, file name)
-		"""
-
 		split = path.split("/")
 		if len(split) == 1:
 			return "", split[0]
@@ -471,21 +532,143 @@ class LocalFileStorage(StorageInterface):
 			return self.join_path(*split[:-1]), split[-1]
 
 	def join_path(self, *path):
-		"""
-		Join path elements together
-		:param path: path elements to join
-		:return: joined representation of the path to be usable as fully qualified path for further operations
-		"""
-
 		return "/".join(path)
 
-	def get_absolute_path(self, path):
+	def sanitize(self, path):
 		"""
-		Retrieves the absolute path on disk for ``path``
+		Returns a ``(path, name)`` tuple derived from the provided ``path``.
 
-		:param path: the virtual path for which to retrieve the absolute path on disk
-		:return: the absolute path on disk to ``path``
+		``path`` may be:
+		  * a storage path
+		  * an absolute file system path
+		  * a tuple or list containing all individual path elements
+		  * a string representation of the path
+		  * with or without a file name
+
+		Note that for a ``path`` without a trailing slash the last part will be considered a file name and
+		hence be returned at second position. If you only need to convert a folder path, be sure to
+		include a trailing slash for a string ``path`` or an empty last element for a list ``path``.
+
+		Examples::
+
+		    >>> storage = LocalFileStorage("/some/base/folder")
+		    >>> storage.sanitize("some/folder/and/some file.gco")
+		    ("/some/base/folder/some/folder/and", "some_file.gco")
+		    >>> storage.sanitize(("some", "folder", "and", "some file.gco"))
+		    ("/some/base/folder/some/folder/and", "some_file.gco")
+		    >>> storage.sanitize("some file.gco")
+		    ("/some/base/folder", "some_file.gco")
+		    >>> storage.sanitize(("some file.gco",))
+		    ("/some/base/folder", "some_file.gco")
+		    >>> storage.sanitize("")
+		    ("/some/base/folder", "")
+		    >>> storage.sanitize("some/folder/with/trailing/slash/")
+		    ("/some/base/folder/some/folder/with/trailing/slash", "")
+		    >>> storage.sanitize("some", "folder", "")
+		    ("/some/base/folder/some/folder", "")
 		"""
+		name = None
+		if isinstance(path, (str, unicode, basestring)):
+			if path.startswith(self.basefolder):
+				path = path[len(self.basefolder):]
+			path = path.replace(os.path.sep, "/")
+			path = path.split("/")
+		if isinstance(path, (list, tuple)):
+			if len(path) == 1:
+				name = path[0]
+				path = "/"
+			else:
+				name = path[-1]
+				path = "/" + self.join_path(*path[:-1])
+		if not path:
+			path = "/"
+
+		name = self.sanitize_name(name)
+		path = self.sanitize_path(path)
+		return path, name
+
+	def sanitize_name(self, name):
+		"""
+		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\``. Otherwise strips any characters from the
+		given ``name`` that are not any of the ASCII characters, digits, ``-``, ``_``, ``.``, ``(``, ``)`` or space and
+		replaces and spaces with ``_``.
+
+		Examples::
+
+		    >>> storage = LocalFileStorage("/some/base/folder")
+		    >>> storage.sanitize_name("some_file.gco")
+		    "some_file.gco"
+		    >>> storage.sanitize_name("some_file with (parentheses) and ümläuts and digits 123.gco")
+		    "some_file_with_(parentheses)_and_mluts_and_digits_123.gco"
+		    >>> storage.sanitize_name("pengüino pequeño.stl")
+		    "pengino_pequeo.stl"
+		    >>> storage.sanitize_name("some/folder/still/left.gco")
+		    Traceback (most recent call last):
+		      File "<stdin>", line 1, in <module>
+		    ValueError: name must not contain / or \
+		    >>> storage.sanitize_name("also\\no\\backslashes.gco")
+		    Traceback (most recent call last):
+		      File "<stdin>", line 1, in <module>
+		    ValueError: name must not contain / or \
+		"""
+		if name is None:
+			return None
+
+		if "/" in name or "\\" in name:
+			raise ValueError("name must not contain / or \\")
+
+		import string
+		valid_chars = "-_.() {ascii}{digits}".format(ascii=string.ascii_letters, digits=string.digits)
+		sanitized_name = ''.join(c for c in name if c in valid_chars)
+		sanitized_name = sanitized_name.replace(" ", "_")
+		return sanitized_name
+
+	def sanitize_path(self, path):
+		"""
+		Ensures that the on disk representation of ``path`` is located under the configured basefolder. Resolves all
+		relative path elements (e.g. ``..``) and sanitizes folder names using :func:`sanitize_name`. Final path is the
+		absolute path including leading ``basefolder`` path.
+
+		Examples::
+
+		    >>> storage = LocalFileStorage("/some/base/folder")
+		    >>> storage.sanitize_path("folder/with/subfolder")
+		    "/some/base/folder/folder/with/subfolder"
+		    >>> storage.sanitize_path("folder/with/subfolder/../other/folder")
+		    "/some/base/folder/folder/with/other/folder"
+		    >>> storage.sanitize_path("/folder/with/leading/slash")
+		    "/some/base/folder/folder/with/leading/slash"
+		    >>> storage.sanitize_path(".folder/with/leading/dot")
+		    "/some/base/folder/folder/with/leading/dot
+		    >>> storage.sanitize_path("../../folder/out/of/the/basefolder")
+		    Traceback (most recent call last):
+		      File "<stdin>", line 1, in <module>
+		    ValueError: path not contained in base folder: /some/folder/out/of/the/basefolder
+		"""
+		if path[0] == "/" or path[0] == ".":
+			path = path[1:]
+		path_elements = path.split("/")
+		joined_path = self.basefolder
+		for path_element in path_elements:
+			joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
+		path = os.path.realpath(joined_path)
+		if not path.startswith(self.basefolder):
+			raise ValueError("path not contained in base folder: {path}".format(**locals()))
+		return path
+
+	def path_in_storage(self, path):
+		if isinstance(path, (tuple, list)):
+			path = self.join_path(*path)
+		if isinstance(path, (str, unicode, basestring)):
+			if path.startswith(self.basefolder):
+				path = path[len(self.basefolder):]
+			path = path.replace(os.path.sep, "/")
+		if path.startswith("/"):
+			path = path[1:]
+
+		return path
+
+	def path_on_disk(self, path):
 		path, name = self.sanitize(path)
 		return os.path.join(path, name)
 
@@ -790,64 +973,6 @@ class LocalFileStorage(StorageInterface):
 				buffer = f.read(blocksize)
 
 		return hash.hexdigest()
-
-	def sanitize(self, path):
-		name = None
-		if isinstance(path, (str, unicode, basestring)):
-			if path.startswith(self.basefolder):
-				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, "/")
-			path = path.split("/")
-		if isinstance(path, (list, tuple)):
-			if len(path) == 1:
-				name = path[0]
-				path = "/"
-			else:
-				name = path[-1]
-				path = "/" + self.join_path(*path[:-1])
-		if not path:
-			path = "/"
-
-		name = self.sanitize_name(name)
-		path = self.sanitize_path(path)
-		return path, name
-
-	def sanitize_name(self, name):
-		if name is None:
-			return None
-
-		if "/" in name or "\\" in name:
-			raise ValueError("name must not contain / or \\")
-
-		import string
-		valid_chars = "-_.() {ascii}{digits}".format(ascii=string.ascii_letters, digits=string.digits)
-		sanitized_name = ''.join(c for c in name if c in valid_chars)
-		sanitized_name = sanitized_name.replace(" ", "_")
-		return sanitized_name
-
-	def sanitize_path(self, path):
-		if path[0] == "/" or path[0] == ".":
-			path = path[1:]
-		path_elements = path.split("/")
-		joined_path = self.basefolder
-		for path_element in path_elements:
-			joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
-		path = os.path.realpath(joined_path)
-		if not path.startswith(self.basefolder):
-			raise ValueError("path not contained in base folder: {path}".format(**locals()))
-		return path
-
-	def rel_path(self, path):
-		if isinstance(path, (tuple, list)):
-			path = self.join_path(*path)
-		if isinstance(path, (str, unicode, basestring)):
-			if path.startswith(self.basefolder):
-				path = path[len(self.basefolder):]
-			path = path.replace(os.path.sep, "/")
-		if path.startswith("/"):
-			path = path[1:]
-
-		return path
 
 	def _get_metadata(self, path):
 		if path in self._metadata_cache:

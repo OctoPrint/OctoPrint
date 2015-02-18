@@ -1,3 +1,5 @@
+.. automodule:: octoprint.plugin.types
+
 .. _sec-plugins:
 
 #######
@@ -15,4 +17,8 @@ additional slicers. More plugin types are planned for the future.
    :maxdepth: 3
 
    using.rst
-   developing.rst
+   gettingstarted.rst
+   infrastructure.rst
+   distributing.rst
+   mixins.rst
+   hooks.rst

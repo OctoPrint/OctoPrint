@@ -67,7 +67,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
             }
         },
         "name",
-        ["machinecode"],
+        [],
         [["sd", "local"], ["machinecode", "model"]],
         0
     );
@@ -335,6 +335,10 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
     };
 
     self.onMetadataAnalysisFinished = function(payload) {
+        self.requestData();
+    };
+
+    self.onMetadataStatisticsUpdated = function(payload) {
         self.requestData();
     };
 }

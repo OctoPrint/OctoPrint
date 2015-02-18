@@ -18,7 +18,8 @@
                     <div class="nav-collapse">
                         <!-- Navbar -->
                         <ul class="nav pull-right">
-                            {% for data in navbarEntries %}
+                            {% for key in templates.navbar.order %}
+                                {% set data = templates.navbar.entries[key] %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <li id="{{ data._div }}"
                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
@@ -38,7 +39,8 @@
             <div class="row">
                 <!-- Sidebar -->
                 <div class="accordion span4">
-                    {% for entry, data in sidebarEntries %}
+                    {% for key in templates.sidebar.order %}
+                        {% set entry, data = templates.sidebar.entries[key] %}
                         {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                         <div id="{{ data._div }}_wrapper"
                              class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
@@ -69,7 +71,8 @@
                 <!-- Tabs -->
                 <div class="span8 tabbable">
                     <ul class="nav nav-tabs" id="tabs">
-                        {% for entry, data in tabEntries %}
+                        {% for key in templates.tab.order %}
+                            {% set entry, data = templates.tab.entries[key] %}
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                             <li id="{{ data._div }}_link"
                                 class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
@@ -83,7 +86,8 @@
                     </ul>
 
                     <div class="tab-content">
-                        {% for entry, data in tabEntries %}
+                        {% for key in templates.tab.order %}
+                            {% set entry, data = templates.tab.entries[key] %}
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                             <div id="{{ data._div }}"
                                  class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
@@ -123,7 +127,8 @@
         <!-- End of overlays -->
 
         <!-- Generic plugin template files -->
-        {% for data in genericEntries %}
+        {% for key in templates.generic.order %}
+            {% set data = templates.generic.entries[key] %}
             {% include data.template ignore missing %}
         {% endfor %}
         <!-- End of generic plugin template files -->

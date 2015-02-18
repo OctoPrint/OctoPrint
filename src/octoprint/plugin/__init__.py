@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
+import logging
 
 from octoprint.settings import settings
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
@@ -41,7 +42,7 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 					if "enabled" in all_plugin_settings[key] and not all_plugin_settings[key]:
 						plugin_disabled_list.append(key)
 
-			_instance = PluginManager(plugin_folders, plugin_types, plugin_entry_points, plugin_disabled_list=plugin_disabled_list)
+			_instance = PluginManager(plugin_folders, plugin_types, plugin_entry_points, logging_prefix="octoprint.plugins.", plugin_disabled_list=plugin_disabled_list)
 		else:
 			raise ValueError("Plugin Manager not initialized yet")
 	return _instance
@@ -51,7 +52,7 @@ def plugin_settings(plugin_key, defaults=None):
 	return PluginSettings(settings(), plugin_key, defaults=defaults)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None):
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None):
 	if not isinstance(types, (list, tuple)):
 		types = [types]
 	if args is None:
@@ -62,9 +63,14 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None):
 	plugins = plugin_manager().get_implementations(*types)
 	for name, plugin in plugins.items():
 		if hasattr(plugin, method):
-			result = getattr(plugin, method)(*args, **kwargs)
-			if callback:
-				callback(name, plugin, result)
+			try:
+				result = getattr(plugin, method)(*args, **kwargs)
+				if callback:
+					callback(name, plugin, result)
+			except Exception as e:
+				logging.getLogger(__name__).exception("Error while calling plugin %s" % name)
+				if error_callback:
+					error_callback(name, plugin, e)
 
 
 class PluginSettings(object):
