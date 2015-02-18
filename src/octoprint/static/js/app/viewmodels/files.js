@@ -67,7 +67,7 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
             }
         },
         "name",
-        ["machinecode"],
+        [],
         [["sd", "local"], ["machinecode", "model"]],
         0
     );
