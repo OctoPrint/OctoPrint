@@ -798,10 +798,6 @@ class MachineCom(object):
 					self._processTemperatures(line)
 					self._callback.mcTempUpdate(self._temp, self._bedTemp)
 
-					#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
-					if 'ok' in line and self._heatupWaitStartTime:
-						self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
-						self._heatupWaitStartTime = None
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = self._regex_repetierTempExtr.match(line)
 					matchBed = self._regex_repetierTempBed.match(line)
@@ -829,6 +825,11 @@ class MachineCom(object):
 							self._callback.mcTempUpdate(self._temp, self._bedTemp)
 						except ValueError:
 							pass
+
+				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
+				if 'ok' in line and self._heatupWaitStartTime:
+					self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
+					self._heatupWaitStartTime = None
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1006,11 +1007,11 @@ class MachineCom(object):
 
 					if self._heatupWaitStartTime is None:
 						if time.time() > tempRequestTimeout:
-							self._sendCommand("M105")
+							self._sendCommand("M105", sendChecksum=True)
 							tempRequestTimeout = getNewTimeout("temperature")
 
 						if self.isSdPrinting() and time.time() > sdStatusRequestTimeout:
-								self._sendCommand("M27")
+								self._sendCommand("M27", sendChecksum=True)
 								sdStatusRequestTimeout = getNewTimeout("sdStatus")
 
 					if "ok" in line:
