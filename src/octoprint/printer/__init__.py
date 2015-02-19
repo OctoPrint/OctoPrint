@@ -200,8 +200,8 @@ class Printer():
 		"""
 		if self._comm is not None:
 			self._comm.close()
-		self._comm = comm.MachineCom(port, baudrate, callbackObject=self)
 		self._printerProfileManager.select(profile)
+		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 
 	def disconnect(self):
 		"""

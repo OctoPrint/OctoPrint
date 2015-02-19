@@ -89,6 +89,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
     self.scripts_gcode_afterPrintCancelled = ko.observable(undefined);
     self.scripts_gcode_afterPrintPaused = ko.observable(undefined);
     self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
+    self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
 
     self.temperature_profiles = ko.observableArray(undefined);
 
@@ -187,6 +188,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
         self.scripts_gcode_afterPrintCancelled(response.scripts.gcode.afterPrintCancelled);
         self.scripts_gcode_afterPrintPaused(response.scripts.gcode.afterPrintPaused);
         self.scripts_gcode_beforePrintResumed(response.scripts.gcode.beforePrintResumed);
+        self.scripts_gcode_afterPrinterConnected(response.scripts.gcode.afterPrinterConnected);
 
         self.temperature_profiles(response.temperature.profiles);
 
@@ -262,7 +264,8 @@ function SettingsViewModel(loginStateViewModel, usersViewModel, printerProfilesV
                     "afterPrintDone": self.scripts_gcode_afterPrintDone(),
                     "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
                     "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
-                    "beforePrintResumed": self.scripts_gcode_beforePrintResumed()
+                    "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
+                    "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected()
                 }
             }
         });

@@ -153,11 +153,18 @@ default_settings = {
 	"plugins": {},
 	"scripts": {
 		"gcode": {
+			"afterPrinterConnected": None,
 			"beforePrintStarted": None,
 			"afterPrintDone": None,
-			"afterPrintCancelled": None,
+			"afterPrintCancelled": "{disable_steppers}\n{disable_hotends}\n{disable_bed}\n{disable_fan}",
 			"afterPrintPaused": None,
-			"beforePrintResumed": None
+			"beforePrintResumed": None,
+			"templates": {
+				"disable_steppers": "M84",
+				"disable_hotends": "M104 T{tool:d} S0",
+				"disable_bed": "M140 S0",
+				"disable_fan": "M106 S0"
+			}
 		}
 	},
 	"devel": {

@@ -117,7 +117,7 @@ class MachineCom(object):
 	STATE_CLOSED_WITH_ERROR = 10
 	STATE_TRANSFERING_FILE = 11
 	
-	def __init__(self, port = None, baudrate = None, callbackObject = None):
+	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
 
@@ -135,6 +135,7 @@ class MachineCom(object):
 		self._port = port
 		self._baudrate = baudrate
 		self._callback = callbackObject
+		self._printerProfileManager = printerProfileManager
 		self._state = self.STATE_NONE
 		self._serial = None
 		self._baudrateDetectList = baudrateList()
@@ -162,6 +163,7 @@ class MachineCom(object):
 		self._pluginManager = octoprint.plugin.plugin_manager()
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
+		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
 
 		# SD status data
 		self._sdAvailable = False
@@ -383,21 +385,53 @@ class MachineCom(object):
 		elif self.isOperational():
 			self._sendCommand(cmd)
 
-	def sendGcodeScript(self, scriptName):
-		gcodeScripts = settings().get(["scripts", "gcode"])
+	def sendGcodeScript(self, scriptName, replacements=None):
+		gcodeScripts = settings().get(["scripts", "gcode"], merged=True)
 
-		if scriptName in gcodeScripts and gcodeScripts[scriptName] is not None:
+		if scriptName in gcodeScripts and gcodeScripts[scriptName]:
 			script = gcodeScripts[scriptName]
 		else:
-			if scriptName == "afterPrintCancelled":
-				commands = ["M84"]
-				commands.extend(map(lambda x: "M104 T%d S0" % x, range(settings().getInt(["printerParameters", "numExtruders"]))))
-				commands.extend(["M140 S0", "M106 S0"])
-				script = "\n".join(commands)
-			else:
-				return
+			return
 
+		if replacements is None:
+			replacements = dict()
+		replacements.update(dict(
+			disable_steppers=gcodeScripts["templates"]["disable_steppers"],
+			disable_hotends="\n".join(map(lambda x: gcodeScripts["templates"]["disable_hotends"].format(tool=x), range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]))),
+			disable_bed=gcodeScripts["templates"]["disable_bed"],
+			disable_fan=gcodeScripts["templates"]["disable_fan"]
+		))
+		script = script.format(**replacements)
 		scriptLines = map(str.strip, script.split("\n"))
+
+		for hook in self._gcodescript_hooks:
+			try:
+				retval = self._gcodescript_hooks[hook](self, "gcode", scriptName)
+			except:
+				self._logger.exception("Error while processing gcodescript hook %s" % hook)
+			else:
+				if retval is None:
+					continue
+				if not isinstance(retval, (list, tuple)) or not len(retval) == 2:
+					continue
+
+				def to_list(data):
+					if isinstance(data, str):
+						data = map(str.strip, data.split("\n"))
+					elif isinstance(data, unicode):
+						data = map(unicode.strip, data.split("\n"))
+
+					if isinstance(data, (list, tuple)):
+						return list(data)
+					else:
+						return None
+
+				prefix, suffix = map(to_list, retval)
+				if prefix:
+					scriptLines = list(prefix) + scriptLines
+				if suffix:
+					scriptLines += list(suffix)
+
 		for line in scriptLines:
 			self.sendCommand(line)
 
@@ -418,13 +452,16 @@ class MachineCom(object):
 
 			wasPaused = self.isPaused()
 			self._changeState(self.STATE_PRINTING)
-			eventManager().fire(Events.PRINT_STARTED, {
+
+			self.sendCommand("M110 N0")
+
+			payload = {
 				"file": self._currentFile.getFilename(),
 				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
-			})
-
-			self.sendGcodeScript("beforePrintStarted")
+			}
+			eventManager().fire(Events.PRINT_STARTED, payload)
+			self.sendGcodeScript("beforePrintStarted", replacements=dict(event=payload))
 
 			if self.isSdFileSelected():
 				if wasPaused:
@@ -435,6 +472,9 @@ class MachineCom(object):
 				line = self._getNext()
 				if line is not None:
 					self.sendCommand(line)
+
+			# now make sure we actually do something, up until now we only filled up the queue
+			self._sendFromQueue(sendChecksum=True)
 		except:
 			self._logger.exception("Error while trying to start printing")
 			self._errorValue = getExceptionString()
@@ -488,17 +528,27 @@ class MachineCom(object):
 			self.sendCommand("M25")    # pause print
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 
-		self.sendGcodeScript("afterPrintCancelled")
-
-		eventManager().fire(Events.PRINT_CANCELLED, {
+		payload = {
 			"file": self._currentFile.getFilename(),
 			"filename": os.path.basename(self._currentFile.getFilename()),
 			"origin": self._currentFile.getFileLocation()
-		})
+		}
+
+		self.sendGcodeScript("afterPrintCancelled", replacements=dict(event=payload))
+		eventManager().fire(Events.PRINT_CANCELLED, payload)
 
 	def setPause(self, pause):
 		if self.isStreaming():
 			return
+
+		if not self._currentFile:
+			return
+
+		payload = {
+			"file": self._currentFile.getFilename(),
+			"filename": os.path.basename(self._currentFile.getFilename()),
+			"origin": self._currentFile.getFileLocation()
+		}
 
 		if not pause and self.isPaused():
 			if self._pauseWaitStartTime:
@@ -506,7 +556,9 @@ class MachineCom(object):
 				self._pauseWaitStartTime = None
 
 			self._changeState(self.STATE_PRINTING)
-			self.sendGcodeScript("beforePrintResumed")
+
+			self.sendGcodeScript("beforePrintResumed", replacements=dict(event=payload))
+
 			if self.isSdFileSelected():
 				self.sendCommand("M24")
 			else:
@@ -514,11 +566,10 @@ class MachineCom(object):
 				if line is not None:
 					self.sendCommand(line)
 
-			eventManager().fire(Events.PRINT_RESUMED, {
-				"file": self._currentFile.getFilename(),
-				"filename": os.path.basename(self._currentFile.getFilename()),
-				"origin": self._currentFile.getFileLocation()
-			})
+			# now make sure we actually do something, up until now we only filled up the queue
+			self._sendFromQueue(sendChecksum=True)
+
+			eventManager().fire(Events.PRINT_RESUMED, payload)
 		elif pause and self.isPrinting():
 			if not self._pauseWaitStartTime:
 				self._pauseWaitStartTime = time.time()
@@ -526,13 +577,9 @@ class MachineCom(object):
 			self._changeState(self.STATE_PAUSED)
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
-			self.sendGcodeScript("afterPrintPaused")
+			self.sendGcodeScript("afterPrintPaused", replacements=dict(event=payload))
 
-			eventManager().fire(Events.PRINT_PAUSED, {
-				"file": self._currentFile.getFilename(),
-				"filename": os.path.basename(self._currentFile.getFilename()),
-				"origin": self._currentFile.getFileLocation()
-			})
+			eventManager().fire(Events.PRINT_PAUSED, payload)
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -685,7 +732,6 @@ class MachineCom(object):
 		sdStatusRequestTimeout = getNewTimeout("sdStatus")
 
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
-		heatingUp = False
 		swallowOk = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
 
@@ -823,7 +869,6 @@ class MachineCom(object):
 						})
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
-					self._printSection = "CUSTOM"
 					self._changeState(self.STATE_PRINTING)
 					line = "ok"
 				elif 'Done printing file' in line:
@@ -880,9 +925,6 @@ class MachineCom(object):
 					elif "toggle" in pauseTriggers.keys() and pauseTriggers["toggle"].search(line) is not None:
 						self.setPause(not self.isPaused())
 
-				if "ok" in line and heatingUp:
-					heatingUp = False
-
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
 					if line == '' or time.time() > self._timeout:
@@ -919,12 +961,7 @@ class MachineCom(object):
 						else:
 							self._sendCommand("M999")
 							self._serial.timeout = settings().getFloat(["serial", "timeout", "connection"])
-							self._changeState(self.STATE_OPERATIONAL)
-							if self._sdAvailable:
-								self.refreshSdFiles()
-							else:
-								self.initSdCard()
-							eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
+							self._onConnected()
 					else:
 						self._testingBaudrate = False
 
@@ -935,12 +972,7 @@ class MachineCom(object):
 					elif "start" in line:
 						startSeen = True
 					elif "ok" in line and startSeen:
-						self._changeState(self.STATE_OPERATIONAL)
-						if self._sdAvailable:
-							self.refreshSdFiles()
-						else:
-							self.initSdCard()
-						eventManager().fire(Events.CONNECTED, {"port": self._port, "baudrate": self._baudrate})
+						self._onConnected()
 					elif time.time() > self._timeout:
 						self.close()
 
@@ -954,8 +986,8 @@ class MachineCom(object):
 					elif line == "" or "wait" in line:
 						if self._resendDelta is not None:
 							self._resendNextCommand()
-						elif not self._commandQueue.empty():
-							self._sendCommand(self._commandQueue.get())
+						elif self._sendFromQueue(sendChecksum=False):
+							pass
 						else:
 							self._sendCommand("M105")
 						tempRequestTimeout = getNewTimeout("temperature")
@@ -972,33 +1004,29 @@ class MachineCom(object):
 						self._log("Communication timeout during printing, forcing a line")
 						line = 'ok'
 
-					if self.isSdPrinting():
-						if time.time() > tempRequestTimeout and not heatingUp:
+					if self._heatupWaitStartTime is None:
+						if time.time() > tempRequestTimeout:
 							self._sendCommand("M105")
 							tempRequestTimeout = getNewTimeout("temperature")
 
-						if time.time() > sdStatusRequestTimeout and not heatingUp:
-							self._sendCommand("M27")
-							sdStatusRequestTimeout = getNewTimeout("sdStatus")
-					else:
-						# Even when printing request the temperature every 5 seconds.
-						if time.time() > tempRequestTimeout and not self.isStreaming():
-							self._commandQueue.put("M105")
-							tempRequestTimeout = getNewTimeout("temperature")
+						if self.isSdPrinting() and time.time() > sdStatusRequestTimeout:
+								self._sendCommand("M27")
+								sdStatusRequestTimeout = getNewTimeout("sdStatus")
 
-						if "ok" in line and swallowOk:
+					if "ok" in line:
+						if swallowOk:
 							swallowOk = False
-						elif "ok" in line:
+						else:
 							if self._resendDelta is not None:
 								self._resendNextCommand()
-							elif not self._commandQueue.empty() and not self.isStreaming():
-								self._sendCommand(self._commandQueue.get(), True)
+							elif self._sendFromQueue(sendChecksum=True):
+								pass
 							else:
 								self._sendNext()
-						elif line.lower().startswith("resend") or line.lower().startswith("rs"):
-							if settings().get(["feature", "swallowOkAfterResend"]):
-								swallowOk = True
-							self._handleResendRequest(line)
+					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
+						if settings().get(["feature", "swallowOkAfterResend"]):
+							swallowOk = True
+						self._handleResendRequest(line)
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
 
@@ -1008,6 +1036,23 @@ class MachineCom(object):
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
+
+	def _onConnected(self):
+		self._changeState(self.STATE_OPERATIONAL)
+		if self._sdAvailable:
+			self.refreshSdFiles()
+		else:
+			self.initSdCard()
+		payload = dict(port=self._port, baudrate=self._baudrate)
+		eventManager().fire(Events.CONNECTED, payload)
+		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
+
+	def _sendFromQueue(self, sendChecksum=False):
+		if not self._commandQueue.empty() and not self.isStreaming():
+			self._sendCommand(self._commandQueue.get(), sendChecksum)
+			return True
+		else:
+			return False
 
 	def _openSerial(self):
 		if self._port == 'AUTO':
@@ -1123,7 +1168,7 @@ class MachineCom(object):
 				self._changeState(self.STATE_OPERATIONAL)
 				eventManager().fire(Events.PRINT_DONE, payload)
 
-			self.sendGcodeScript("afterPrintDone")
+				self.sendGcodeScript("afterPrintDone", replacements=dict(event=payload))
 		return line
 
 	def _sendNext(self):
@@ -1457,7 +1502,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		self._filehandle = None
 
 		self._filesetMenuModehandle = None
-		self._lineCount = None
 		self._firstLine = None
 		self._currentTool = 0
 
@@ -1477,7 +1521,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		PrintingFileInformation.start(self)
 		self._filehandle = open(self._filename, "r")
-		self._lineCount = None
 
 	def getNext(self):
 		"""
@@ -1485,10 +1528,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		"""
 		if self._filehandle is None:
 			raise ValueError("File %s is not open for reading" % self._filename)
-
-		if self._lineCount is None:
-			self._lineCount = 0
-			return "M110 N0"
 
 		try:
 			processedLine = None
@@ -1501,7 +1540,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					self._filehandle.close()
 					self._filehandle = None
 				processedLine = self._processLine(line)
-			self._lineCount += 1
 			self._filepos = self._filehandle.tell()
 
 			return processedLine

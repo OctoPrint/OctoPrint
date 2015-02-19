@@ -19,7 +19,7 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
 
 import octoprint.plugin
-
+import octoprint.util
 
 #~~ settings
 
@@ -91,7 +91,7 @@ def getSettings():
 			"events": s.get(["system", "events"])
 		},
 		"terminalFilters": s.get(["terminalFilters"]),
-		"scripts": s.get(["scripts"])
+		"scripts": s.get(["scripts"], merged=True)
 	}
 
 	def process_plugin_result(name, plugin, result):
@@ -193,7 +193,9 @@ def setSettings():
 		if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
 		if "scripts" in data:
-			if "gcode" in data["scripts"]: s.set(["scripts", "gcode"], data["scripts"]["gcode"])
+			if "gcode" in data["scripts"]:
+				gcode_scripts = data["scripts"]["gcode"]
+				s.set(["scripts", "gcode"], octoprint.util.dict_merge(s.get(["scripts", "gcode"], merged=True), gcode_scripts))
 
 	if "plugins" in data:
 		for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():
