@@ -982,19 +982,20 @@ class MachineCom(object):
 
 				### Operational
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
-					# if we still have commands to process, process them
-					if "ok" in line and not self._commandQueue.empty():
-						self._sendCommand(self._commandQueue.get())
-
 					#Request the temperature on comm timeout (every 5 seconds) when we are not printing.
-					elif line == "" or "wait" in line:
-						if self._resendDelta is not None:
-							self._resendNextCommand()
-						elif self._sendFromQueue(sendChecksum=False):
-							pass
-						else:
-							self._sendCommand("M105")
+					if line == "":
+						self.sendCommand("M105")
 						tempRequestTimeout = getNewTimeout("temperature")
+
+					# if we still have commands to process, process them
+					elif "ok" in line:
+						if swallowOk:
+							swallowOk = False
+						else:
+							if self._resendDelta is not None:
+								self._resendNextCommand()
+							elif self._sendFromQueue():
+								pass
 
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
@@ -1008,25 +1009,26 @@ class MachineCom(object):
 						self._log("Communication timeout during printing, forcing a line")
 						line = 'ok'
 
-					if self._heatupWaitStartTime is None:
-						if time.time() > tempRequestTimeout:
-							self._sendCommand("M105", sendChecksum=True)
-							tempRequestTimeout = getNewTimeout("temperature")
-
-						if self.isSdPrinting() and time.time() > sdStatusRequestTimeout:
-								self._sendCommand("M27", sendChecksum=True)
-								sdStatusRequestTimeout = getNewTimeout("sdStatus")
-
 					if "ok" in line:
 						if swallowOk:
 							swallowOk = False
 						else:
 							if self._resendDelta is not None:
 								self._resendNextCommand()
-							elif self._sendFromQueue(sendChecksum=True):
-								pass
 							else:
-								self._sendNext()
+								if self._heatupWaitStartTime is None:
+									if time.time() > tempRequestTimeout:
+										self.sendCommand("M105")
+										tempRequestTimeout = getNewTimeout("temperature")
+
+									if self.isSdPrinting() and time.time() > sdStatusRequestTimeout:
+										self.sendCommand("M27")
+										sdStatusRequestTimeout = getNewTimeout("sdStatus")
+
+								if self._sendFromQueue(sendChecksum=True):
+									pass
+								else:
+									self._sendNext()
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						if settings().get(["feature", "swallowOkAfterResend"]):
 							swallowOk = True
