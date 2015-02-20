@@ -121,7 +121,6 @@ class VirtualPrinter():
 				elif self.currentLine == 100:
 					# simulate a resend at line 100
 					with self._incoming_lock:
-						self.lastN = 99
 						self._clearQueue(self.incoming)
 						self.outgoing.put("Error: Line Number is not Last Line Number\n")
 						self.outgoing.put("rs 100\n")

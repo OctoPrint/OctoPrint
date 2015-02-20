@@ -158,6 +158,9 @@ class MachineCom(object):
 		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
+		self._lastCommError = None
+		self._lastResendNumber = None
+		self._currentResendCount = 0
 
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
@@ -1109,6 +1112,7 @@ class MachineCom(object):
 			#	So we can have an extra newline in the most common case. Awesome work people.
 			if self._regex_minMaxError.match(line):
 				line = line.rstrip() + self._readline()
+
 			#Skip the communication errors, as those get corrected.
 			if 'checksum mismatch' in line \
 				or 'Wrong checksum' in line \
@@ -1117,6 +1121,7 @@ class MachineCom(object):
 				or 'No Line Number with checksum' in line \
 				or 'No Checksum with line number' in line \
 				or 'Missing checksum' in line:
+				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
 			elif not self.isError():
 				self._errorValue = line[6:]
@@ -1188,8 +1193,24 @@ class MachineCom(object):
 				lineToResend = int(line.split()[1])
 
 		if lineToResend is not None:
-			self._resendDelta = self._currentLine - lineToResend
-			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta <= 0:
+			lastCommError = self._lastCommError
+			self._lastCommError = None
+
+			resendDelta = self._currentLine - lineToResend
+
+			if lastCommError is not None \
+					and ("line number is not line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
+					and lineToResend == self._lastResendNumber \
+					and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
+				self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
+				self._currentResendCount += 1
+				return
+
+			self._resendDelta = resendDelta
+			self._lastResendNumber = lineToResend
+			self._currentResendCount = 0
+
+			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
 				self._logger.warn(self._errorValue)
 				if self.isPrinting():
@@ -1203,9 +1224,12 @@ class MachineCom(object):
 				self._resendNextCommand()
 
 	def _resendNextCommand(self):
+		lastCommError = self._lastCommError
+		self._lastCommError = None
+
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
-			self._logger.debug("Resending line %d, delta is %d, history log is %s items strong" % (self._currentLine - self._resendDelta, self._resendDelta, len(self._lastLines)))
+			self._logger.debug("Resending line %r, delta is %r, last resend number is %r, current resend count is %r, lastCommError is %r" % (self._currentLine - self._resendDelta, self._resendDelta, self._lastResendNumber, self._currentResendCount, lastCommError))
 			cmd = self._lastLines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 
@@ -1214,6 +1238,8 @@ class MachineCom(object):
 			self._resendDelta -= 1
 			if self._resendDelta <= 0:
 				self._resendDelta = None
+				self._lastResendNumber = None
+				self._currentResendCount = 0
 
 	def _sendCommand(self, cmd, sendChecksum=False):
 		# Make sure we are only handling one sending job at a time
