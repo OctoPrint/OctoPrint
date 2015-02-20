@@ -542,10 +542,10 @@ $(function() {
                         try {
                             ko.applyBindings(viewModel, target);
                         } catch (exc) {
-                            console.log("Could not apply bindings for additional view model " + viewModel + ": " + exc.message);
+                            console.log("Could not apply bindings for additional view model " + viewModel.constructor.name + ": " + exc.message);
                         }
                     } else {
-                        console.log("Could not apply binding for view model " + viewModel + ", target does not exist");
+                        console.log("Could not apply binding for view model " + viewModel.constructor.name + ", target does not exist");
                     }
                 });
 
