@@ -310,8 +310,12 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
         };
         GCODE.gCodeReader.loadFile(par);
 
-        self.layerSlider.slider("disable");
-        self.layerCommandSlider.slider("disable");
+        if (self.layerSlider != undefined) {
+            self.layerSlider.slider("disable");
+        }
+        if (self.layerCommandSlider != undefined) {
+            self.layerCommandSlider.slider("disable");
+        }
     };
 
     self.reload = function() {
@@ -352,8 +356,12 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
                     GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
                     GCODE.ui.updateLayerInfo(cmdIndex.layer);
 
-                    self.layerSlider.slider("setValue", cmdIndex.layer);
-                    self.layerCommandSlider.slider("setValue", [0, cmdIndex.cmd]);
+                    if (self.layerSlider != undefined) {
+                        self.layerSlider.slider("setValue", cmdIndex.layer);
+                    }
+                    if (self.layerCommandSlider != undefined) {
+                        self.layerCommandSlider.slider("setValue", [0, cmdIndex.cmd]);
+                    }
                 }
             }
             self.errorCount = 0
@@ -390,9 +398,11 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     self._onModelLoaded = function(model) {
         if (!model) {
             self.ui_modelInfo("");
-            self.layerSlider.slider("disable");
-            self.layerSlider.slider("setMax", 1);
-            self.layerSlider.slider("setValue", 0);
+            if (self.layerSlider != undefined) {
+                self.layerSlider.slider("disable");
+                self.layerSlider.slider("setMax", 1);
+                self.layerSlider.slider("setValue", 0);
+            }
             self.currentLayer = 0;
         } else {
             var output = [];
@@ -402,18 +412,22 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
             self.ui_modelInfo(output.join("<br>"));
 
-            self.layerSlider.slider("enable");
-            self.layerSlider.slider("setMax", model.layersPrinted - 1);
-            self.layerSlider.slider("setValue", 0);
+            if (self.layerSlider != undefined) {
+                self.layerSlider.slider("enable");
+                self.layerSlider.slider("setMax", model.layersPrinted - 1);
+                self.layerSlider.slider("setValue", 0);
+            }
         }
     };
 
     self._onLayerSelected = function(layer) {
         if (!layer) {
             self.ui_layerInfo("");
-            self.layerCommandSlider.slider("disable");
-            self.layerCommandSlider.slider("setMax", 1);
-            self.layerCommandSlider.slider("setValue", [0, 1]);
+            if (self.layerCommandSlider != undefined) {
+                self.layerCommandSlider.slider("disable");
+                self.layerCommandSlider.slider("setMax", 1);
+                self.layerCommandSlider.slider("setValue", [0, 1]);
+            }
             self.currentCommand = [0, 1];
         } else {
             var output = [];
@@ -433,9 +447,11 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
             self.ui_layerInfo(output.join("<br>"));
 
-            self.layerCommandSlider.slider("enable");
-            self.layerCommandSlider.slider("setMax", layer.commands - 1);
-            self.layerCommandSlider.slider("setValue", [0, layer.commands - 1]);
+            if (self.layerCommandSlider != undefined) {
+                self.layerCommandSlider.slider("enable");
+                self.layerCommandSlider.slider("setMax", layer.commands - 1);
+                self.layerCommandSlider.slider("setValue", [0, layer.commands - 1]);
+            }
         }
     };
 
