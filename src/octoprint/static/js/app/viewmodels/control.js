@@ -122,6 +122,9 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         if (control.type == "parametric_command" || control.type == "parametric_commands") {
             for (var i = 0; i < control.input.length; i++) {
                 control.input[i].value = control.input[i].default;
+                if (!control.input[i].hasOwnProperty("slider")) {
+                    control.input[i].slider = false;
+                }
             }
         } else if (control.type == "feedback_command" || control.type == "feedback") {
             control.output = ko.observable("");

@@ -108,10 +108,10 @@
 <script type="text/html" id="customControls_sectionTemplate">
     <h1 data-bind="text: name"></h1>
 
-    <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+    <div class="custom_section" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
 </script>
 <script type="text/html" id="customControls_rowTemplate">
-    <div class="row-fluid">
+    <div class="row-fluid custom_row">
         <!-- ko foreach: children -->
         <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
         <!-- /ko -->
@@ -120,32 +120,37 @@
 <script type="text/html" id="customControls_sectionRowTemplate">
     <h1 data-bind="text: name"></h1>
 
-    <div class="row-fluid">
+    <div class="row-fluid custom_row custom_section">
         <!-- ko foreach: children -->
         <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
         <!-- /ko -->
     </div>
 </script>
 <script type="text/html" id="customControls_commandTemplate">
-    <form class="form-inline">
+    <form class="form-inline custom_command">
         <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
     </form>
 </script>
 <script type="text/html" id="customControls_feedbackCommandTemplate">
-    <form class="form-inline">
+    <form class="form-inline custom_feedback_command">
         <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button> <span data-bind="text: output"></span>
     </form>
 </script>
 <script type="text/html" id="customControls_feedbackTemplate">
-    <div>
+    <div class="custom_feedback">
         <strong data-bind="text: name"></strong>: <span data-bind="text: output"></span>
     </div>
 </script>
 <script type="text/html" id="customControls_parametricCommandTemplate">
-    <form class="form-inline">
+    <form class="form-inline custom_parametric_command">
         <!-- ko foreach: input -->
-        <label data-bind="text: name"></label>
-        <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
+            <label data-bind="text: name"></label>
+            <!-- ko if: slider -->
+                <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}">
+            <!-- /ko -->
+            <!-- ko ifnot: slider -->
+                <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
+            <!-- /ko -->
         <!-- /ko -->
         <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
     </form>
