@@ -121,7 +121,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self._processControl = function(control) {
         if (control.type == "parametric_command" || control.type == "parametric_commands") {
             for (var i = 0; i < control.input.length; i++) {
-                control.input[i].value = control.input[i].default;
+                control.input[i].value = ko.observable(control.input[i].default);
                 if (!control.input[i].hasOwnProperty("slider")) {
                     control.input[i].slider = false;
                 }
@@ -284,7 +284,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             // parametric command(s)
             data["parameters"] = {};
             for (var i = 0; i < command.input.length; i++) {
-                data["parameters"][command.input[i].parameter] = command.input[i].value;
+                data["parameters"][command.input[i].parameter] = command.input[i].value();
             }
         }
 
