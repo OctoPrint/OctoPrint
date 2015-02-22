@@ -103,6 +103,22 @@
 
     <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
 </script>
+<script type="text/html" id="customControls_rowTemplate">
+    <div class="row-fluid">
+        <!-- ko foreach: children -->
+        <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+        <!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customControls_sectionRowTemplate">
+    <h1 data-bind="text: name"></h1>
+
+    <div class="row-fluid">
+        <!-- ko foreach: children -->
+        <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+        <!-- /ko -->
+    </div>
+</script>
 <script type="text/html" id="customControls_commandTemplate">
     <form class="form-inline">
         <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>

@@ -123,7 +123,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         } else if (control.type == "feedback_command" || control.type == "feedback") {
             control.output = ko.observable("");
             self.feedbackControlLookup[control.name] = control.output;
-        } else if (control.type == "section") {
+        } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
             control.children = self._processControls(control.children);
         }
 
@@ -300,6 +300,10 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         switch (customControl.type) {
             case "section":
                 return "customControls_sectionTemplate";
+            case "row":
+                return "customControls_rowTemplate";
+            case "section_row":
+                return "customControls_sectionRowTemplate";
             case "command":
             case "commands":
                 return "customControls_commandTemplate";
@@ -313,6 +317,18 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             default:
                 return "customControls_emptyTemplate";
         }
+    };
+
+    self.rowCss = function(customControl) {
+        var span = "span2";
+        var offset = "";
+        if (customControl.hasOwnProperty("width")) {
+            span = "span" + customControl.width;
+        }
+        if (customControl.hasOwnProperty("offset")) {
+            offset = "offset" + customControl.offset;
+        }
+        return span + " " + offset;
     };
 
     self.onStartup = function() {
