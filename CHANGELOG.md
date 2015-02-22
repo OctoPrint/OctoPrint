@@ -32,6 +32,7 @@
   - Home: Home X and Y axes
   - End: Home Z axes
   - 1, 2, 3, 4: change step size used (0.1, 1, 10, 100mm)
+* Controls for adjusting feed and flow rate factor added to Controls ([#362](https://github.com/foosel/OctoPrint/issues/362))
 
 ### Improvements
 

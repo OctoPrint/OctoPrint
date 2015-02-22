@@ -61,7 +61,8 @@ def printerToolCommand():
 		"select": ["tool"],
 		"target": ["targets"],
 		"offset": ["offsets"],
-		"extrude": ["amount"]
+		"extrude": ["amount"],
+		"flowrate": ["factor"]
 	}
 	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
 	if response is not None:
@@ -124,6 +125,15 @@ def printerToolCommand():
 		if not isinstance(amount, (int, long, float)):
 			return make_response("Not a number for extrusion amount: %r" % amount, 400)
 		printer.extrude(amount)
+
+	elif command == "flowrate":
+		factor = data["factor"]
+		if not isinstance(factor, (int, long, float)):
+			return make_response("Not a number for flow rate: %r" % factor, 400)
+		try:
+			printer.flowRate(factor)
+		except ValueError as e:
+			return make_response("Invalid value for flow rate: %s" % e.message, 400)
 
 	return NO_CONTENT
 
@@ -219,7 +229,8 @@ def printerPrintheadCommand():
 
 	valid_commands = {
 		"jog": [],
-		"home": ["axes"]
+		"home": ["axes"],
+		"feedrate": ["factor"]
 	}
 	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
 	if response is not None:
@@ -252,6 +263,15 @@ def printerPrintheadCommand():
 
 		# execute the home command
 		printer.home(validated_values)
+
+	elif command == "feedrate":
+		factor = data["factor"]
+		if not isinstance(factor, (int, long, float)):
+			return make_response("Not a number for feed rate: %r" % factor, 400)
+		try:
+			printer.feedRate(factor)
+		except ValueError as e:
+			return make_response("Invalid value for feed rate: %s" % e.message, 400)
 
 	return NO_CONTENT
 

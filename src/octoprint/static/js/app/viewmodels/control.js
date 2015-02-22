@@ -24,6 +24,9 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.tools = ko.observableArray([]);
 
+    self.feedRate = ko.observable(100);
+    self.flowRate = ko.observable(100);
+
     self.feedbackControlLookup = {};
 
     self.controlsFromServer = [];
@@ -181,27 +184,20 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         };
         data[axis] = distance * multiplier;
 
-        $.ajax({
-            url: API_BASEURL + "printer/printhead",
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data)
-        });
+        self.sendPrintHeadCommand(data);
     };
 
     self.sendHomeCommand = function(axis) {
-        var data = {
+        self.sendPrintHeadCommand({
             "command": "home",
             "axes": axis
-        };
+        });
+    };
 
-        $.ajax({
-            url: API_BASEURL + "printer/printhead",
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data)
+    self.sendFeedRateCommand = function() {
+        self.sendPrintHeadCommand({
+            "command": "feedrate",
+            "factor": self.feedRate()
         });
     };
 
@@ -213,17 +209,35 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         self._sendECommand(-1);
     };
 
+    self.sendFlowRateCommand = function() {
+        self.sendToolCommand({
+            "command": "flowrate",
+            "factor": self.flowRate()
+        });
+    };
+
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
         if (!length) length = self.settings.printer_defaultExtrusionLength();
 
-        var data = {
+        self.sendToolCommand({
             command: "extrude",
             amount: length * dir
-        };
+        });
+    };
 
+    self.sendSelectToolCommand = function(data) {
+        if (!data || !data.key()) return;
+
+        self.sendToolCommand({
+            command: "select",
+            tool: data.key()
+        });
+    };
+
+    self.sendPrintHeadCommand = function(data) {
         $.ajax({
-            url: API_BASEURL + "printer/tool",
+            url: API_BASEURL + "printer/printhead",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -231,20 +245,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         });
     };
 
-    self.sendSelectToolCommand = function(data) {
-        if (!data || !data.key()) return;
-
-        var payload = {
-            command: "select",
-            tool: data.key()
-        };
-
+    self.sendToolCommand = function(data) {
         $.ajax({
             url: API_BASEURL + "printer/tool",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(payload)
+            data: JSON.stringify(data)
         });
     };
 
