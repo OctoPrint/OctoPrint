@@ -407,9 +407,8 @@ class MachineCom(object):
 			})
 
 			if self.isSdFileSelected():
-				if wasPaused:
-					self.sendCommand("M26 S0")
-					self._currentFile.setFilepos(0)
+				self.sendCommand("M26 S0")
+				self._currentFile.setFilepos(0)
 				self.sendCommand("M24")
 			else:
 				self._sendNext()
