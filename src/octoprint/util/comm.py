@@ -1027,7 +1027,7 @@ class MachineCom(object):
 
 								if self._sendFromQueue(sendChecksum=True):
 									pass
-								else:
+								elif not self.isSdPrinting():
 									self._sendNext()
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						if settings().get(["feature", "swallowOkAfterResend"]):
