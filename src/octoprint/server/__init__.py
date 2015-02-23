@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, render_template, send_from_directory, g, request, make_response, session
+from flask import Flask, render_template, send_from_directory, g, request, make_response, session, url_for
 from flask.ext.login import LoginManager
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel, gettext, ngettext
@@ -114,15 +114,68 @@ def index():
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
 	enable_accesscontrol = userManager is not None
+	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 
-	#~~ extract data from asset plugins
+	#~~ prepare assets
+
+	supported_stylesheets = ("css", "less")
+	assets = dict(
+		js=[],
+		stylesheets=[]
+	)
+	assets["js"] = [
+		url_for('static', filename='js/app/viewmodels/appearance.js'),
+		url_for('static', filename='js/app/viewmodels/connection.js'),
+		url_for('static', filename='js/app/viewmodels/control.js'),
+		url_for('static', filename='js/app/viewmodels/firstrun.js'),
+		url_for('static', filename='js/app/viewmodels/files.js'),
+		url_for('static', filename='js/app/viewmodels/loginstate.js'),
+		url_for('static', filename='js/app/viewmodels/navigation.js'),
+		url_for('static', filename='js/app/viewmodels/printerstate.js'),
+		url_for('static', filename='js/app/viewmodels/printerprofiles.js'),
+		url_for('static', filename='js/app/viewmodels/settings.js'),
+		url_for('static', filename='js/app/viewmodels/slicing.js'),
+		url_for('static', filename='js/app/viewmodels/temperature.js'),
+		url_for('static', filename='js/app/viewmodels/terminal.js'),
+		url_for('static', filename='js/app/viewmodels/users.js'),
+		url_for('static', filename='js/app/viewmodels/log.js')
+	]
+	if enable_gcodeviewer:
+		assets["js"] += [
+			url_for('static', filename='js/app/viewmodels/gcode.js'),
+			url_for('static', filename='gcodeviewer/js/ui.js'),
+			url_for('static', filename='gcodeviewer/js/gCodeReader.js'),
+			url_for('static', filename='gcodeviewer/js/renderer.js')
+		]
+	if enable_timelapse:
+		assets["js"].append(url_for('static', filename='js/app/viewmodels/timelapse.js'))
+
+	if preferred_stylesheet == "less":
+		assets["stylesheets"].append(("less", url_for('static', filename='less/octoprint.less')))
+	elif preferred_stylesheet == "css":
+		assets["stylesheets"].append(("css", url_for('static', filename='css/octoprint.css')))
 
 	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
-	asset_plugin_urls = dict()
 	for name, implementation in asset_plugins.items():
-		asset_plugin_urls[name] = implementation.get_assets()
+		all_assets = implementation.get_assets()
 
-	##~~ extract data from template plugins
+		if "js" in all_assets:
+			for asset in all_assets["js"]:
+				assets["js"].append(url_for('plugin_assets', name=name, filename=asset))
+
+		if preferred_stylesheet in all_assets:
+			for asset in all_assets[preferred_stylesheet]:
+				assets["stylesheets"].append((preferred_stylesheet, url_for('plugin_assets', name=name, filename=asset)))
+		else:
+			for stylesheet in supported_stylesheets:
+				if not stylesheet in all_assets:
+					continue
+
+				for asset in all_assets[stylesheet]:
+					assets["stylesheets"].append((stylesheet, url_for('plugin_assets', name=name, filename=asset)))
+				break
+
+	##~~ prepare templates
 
 	templates = dict(
 		navbar=dict(order=[], entries=dict()),
@@ -132,7 +185,7 @@ def index():
 		generic=dict(order=[], entries=dict())
 	)
 
-	#~~ navbar
+	# navbar
 
 	templates["navbar"]["entries"] = dict(
 		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin")
@@ -142,7 +195,7 @@ def index():
 	if enable_systemmenu:
 		templates["navbar"]["entries"]["systemmenu"] = dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False)
 
-	#~~ sidebar
+	# sidebar
 
 	templates["sidebar"]["entries"]= dict(
 		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isAdmin")),
@@ -150,7 +203,7 @@ def index():
 		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], header_addon="sidebar/files_header.jinja2"))
 	)
 
-	#~~ tabs
+	# tabs
 
 	templates["tab"]["entries"] = dict(
 		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
@@ -162,7 +215,7 @@ def index():
 	if enable_timelapse:
 		templates["tab"]["entries"]["timelapse"] = (gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
 
-	#~~ settings dialog
+	# settings dialog
 
 	templates["settings"]["entries"] = dict(
 		section_printer=(gettext("Printer"), None),
@@ -187,7 +240,7 @@ def index():
 	if enable_accesscontrol:
 		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False))
 
-	#~~ extract data from template plugins
+	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 
@@ -273,13 +326,12 @@ def index():
 		debug=debug,
 		version=VERSION,
 		display_version=DISPLAY_VERSION,
-		stylesheet=settings().get(["devel", "stylesheet"]),
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
 		templates=templates,
-		pluginNames=plugin_names,
-		assetPlugins=asset_plugin_urls,
+		assets=assets,
+		pluginNames=plugin_names
 	)
 	render_kwargs.update(plugin_vars)
 
@@ -348,7 +400,9 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		config = dict()
 	data = dict(config)
 
-	if "div" in rule:
+	if "div" in data:
+		data["_div"] = data["div"]
+	elif "div" in rule:
 		data["_div"] = rule["div"](name)
 		if "suffix" in data:
 			data["_div"] += "_" + data["suffix"]
