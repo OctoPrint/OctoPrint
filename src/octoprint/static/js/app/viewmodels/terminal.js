@@ -84,10 +84,12 @@ $(function() {
             }
 
             var container = $("#terminal-output");
-            container.text(output);
+            if (container.length) {
+                container.text(output);
 
-            if (self.autoscrollEnabled()) {
-                container.scrollTop(container[0].scrollHeight - container.height())
+                if (self.autoscrollEnabled()) {
+                    container.scrollTop(container[0].scrollHeight - container.height())
+                }
             }
         };
 

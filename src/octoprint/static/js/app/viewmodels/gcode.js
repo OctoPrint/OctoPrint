@@ -215,8 +215,16 @@ $(function() {
         self.currentCommand = undefined;
 
         self.initialize = function() {
-            self._configureLayerSlider();
-            self._configureLayerCommandSlider();
+            var layerSliderElement = $("#gcode_slider_layers");
+            var commandSliderElement = $("#gcode_slider_commands");
+            var containerElement = $("#gcode_canvas");
+
+            if (!(layerSliderElement.length && commandSliderElement.length && containerElement.length)) {
+                return;
+            }
+
+            self._configureLayerSlider(layerSliderElement);
+            self._configureLayerCommandSlider(commandSliderElement);
 
             self.settings.requestData(function() {
                 GCODE.ui.init({
@@ -244,38 +252,32 @@ $(function() {
             GCODE.ui.clear();
         };
 
-        self._configureLayerSlider = function() {
-            var layerSliderElement = $("#gcode_slider_layers");
-            if (layerSliderElement) {
-                self.layerSlider = layerSliderElement.slider({
-                    id: "gcode_layer_slider",
-                    reversed: true,
-                    selection: "after",
-                    orientation: "vertical",
-                    min: 0,
-                    max: 1,
-                    step: 1,
-                    value: 0,
-                    enabled: false,
-                    formatter: function(value) { return "Layer #" + (value + 1); }
-                }).on("slide", self.changeLayer);
-            }
+        self._configureLayerSlider = function(layerSliderElement) {
+            self.layerSlider = layerSliderElement.slider({
+                id: "gcode_layer_slider",
+                reversed: true,
+                selection: "after",
+                orientation: "vertical",
+                min: 0,
+                max: 1,
+                step: 1,
+                value: 0,
+                enabled: false,
+                formatter: function(value) { return "Layer #" + (value + 1); }
+            }).on("slide", self.changeLayer);
         };
 
-        self._configureLayerCommandSlider = function() {
-            var commandSliderElement = $("#gcode_slider_commands");
-            if (commandSliderElement) {
-                self.layerCommandSlider = commandSliderElement.slider({
-                    id: "gcode_command_slider",
-                    orientation: "horizontal",
-                    min: 0,
-                    max: 1,
-                    step: 1,
-                    value: [0, 1],
-                    enabled: false,
-                    tooltip: "hide"
-                }).on("slide", self.changeCommandRange);
-            }
+        self._configureLayerCommandSlider = function(commandSliderElement) {
+            self.layerCommandSlider = commandSliderElement.slider({
+                id: "gcode_command_slider",
+                orientation: "horizontal",
+                min: 0,
+                max: 1,
+                step: 1,
+                value: [0, 1],
+                enabled: false,
+                tooltip: "hide"
+            }).on("slide", self.changeCommandRange);
         };
 
         self.loadFile = function(filename, date){
