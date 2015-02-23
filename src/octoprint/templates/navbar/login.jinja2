@@ -4,11 +4,11 @@
 </a>
 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
     <label for="login_user">{{ _('Username') }}</label>
-    <input type="text" id="login_user" placeholder="{{ _('Username') }}" autocapitalize="none">
+    <input type="text" id="login_user" data-bind="value: loginState.loginUser, event: {'keyup': loginState.onLoginUserKeyup}" placeholder="{{ _('Username') }}" autocapitalize="none">
     <label for="login_pass">{{ _('Password') }}</label>
-    <input type="password" id="login_pass" placeholder="{{ _('Password') }}">
+    <input type="password" id="login_pass" data-bind="value: loginState.loginPass, event: {'keyup': loginState.onLoginPassKeyup}" placeholder="{{ _('Password') }}">
     <label class="checkbox">
-        <input type="checkbox" id="login_remember"> {{ _('Remember me') }}
+        <input type="checkbox" id="login_remember" data-bind="checked: loginState.loginRemember"> {{ _('Remember me') }}
     </label>
     <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">{{ _('Login') }}</button>
 </div>
