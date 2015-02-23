@@ -594,8 +594,8 @@ like so:
        }
 
        // This is how our plugin registers itself with the application, by adding some configuration
-       // information to the global variable ADDITIONAL_VIEWMODELS
-       ADDITIONAL_VIEWMODELS.push([
+       // information to the global variable OCTOPRINT_VIEWMODELS
+       OCTOPRINT_VIEWMODELS.push([
            // This is the constructor to call for instantiating the plugin
            HelloWorldViewModel,
 
@@ -604,8 +604,8 @@ like so:
            // instantiation via the parameters argument
            ["settingsViewModel"],
 
-           // Finally, this is the list of all elements we want this view model to be bound to.
-           [document.getElementById("tab_plugin_helloworld")]
+           // Finally, this is the list of selectors for all elements we want this view model to be bound to.
+           ["#tab_plugin_helloworld"]
        ]);
    });
 
