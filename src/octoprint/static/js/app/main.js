@@ -236,8 +236,12 @@ $(function() {
             return $(window).height() - 165;
         };
 
+        // Use bootstrap tabdrop for tabs and pills
+        $('.nav-pills, .nav-tabs').tabdrop();
+
         // Allow components to react to tab change
-        $('#tabs a[data-toggle="tab"]').on('show', function (e) {
+        var tabs = $('#tabs a[data-toggle="tab"]');
+        tabs.on('show', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
 
@@ -248,7 +252,7 @@ $(function() {
             });
         });
 
-        $('#tabs a[data-toggle="tab"]').on('shown', function (e) {
+        tabs.on('shown', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
 
@@ -293,7 +297,7 @@ $(function() {
                     return;
                 }
 
-                if (!Array.isArray(targets)) {
+                if (!_.isArray(targets)) {
                     targets = [targets];
                 }
 
@@ -318,14 +322,14 @@ $(function() {
                             object = target;
                         }
 
-                        if (object == undefined) {
-                            log.error("Could not apply binding for view model", viewModel.constructor.name, ": target", target, "does not exist");
+                        if (object == undefined || !object.length) {
+                            log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
                             return;
                         }
 
                         var element = object.get(0);
                         if (element == undefined) {
-                            log.error("Could not apply binding for view model", viewModel.constructor.name, ": target", target, "does not exist");
+                            log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
                             return;
                         }
 
