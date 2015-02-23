@@ -354,11 +354,11 @@ $(function() {
             }
         };
 
-        self.onTabChange = function(current, previous) {
+        self.onAfterTabChange = function(current, previous) {
             if (current != "#temp") {
                 return;
             }
-            temperatureViewModel.updatePlot();
+            self.updatePlot();
         }
 
     }

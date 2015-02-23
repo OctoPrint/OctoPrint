@@ -248,6 +248,17 @@ $(function() {
             });
         });
 
+        $('#tabs a[data-toggle="tab"]').on('shown', function (e) {
+            var current = e.target.hash;
+            var previous = e.relatedTarget.hash;
+
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onAfterTabChange")) {
+                    viewModel.onAfterTabChange(current, previous);
+                }
+            });
+        });
+
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
             e.stopPropagation();

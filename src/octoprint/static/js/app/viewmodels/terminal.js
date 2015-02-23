@@ -152,7 +152,7 @@ $(function() {
             return true;
         };
 
-        self.onTabChange = function(current, previous) {
+        self.onAfterTabChange = function(current, previous) {
             if (current != "#terminal") {
                 return;
             }
