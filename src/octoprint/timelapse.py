@@ -76,11 +76,11 @@ def configureTimelapse(config=None, persist=False):
 	type = config["type"]
 
 	postRoll = 0
-	if "postRoll" in config:
+	if "postRoll" in config and config["postRoll"] >= 0:
 		postRoll = config["postRoll"]
 
 	fps = 25
-	if "fps" in config:
+	if "fps" in config and config["fps"] > 0:
 		fps = config["fps"]
 
 	if type is None or "off" == type:
@@ -89,7 +89,7 @@ def configureTimelapse(config=None, persist=False):
 		current = ZTimelapse(postRoll=postRoll, fps=fps)
 	elif "timed" == type:
 		interval = 10
-		if "options" in config and "interval" in config["options"]:
+		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
 		current = TimedTimelapse(postRoll=postRoll, interval=interval, fps=fps)
 
