@@ -39,6 +39,9 @@ $(function() {
         self.timelapseTimedInterval.subscribe(function(newValue) {
             self.isDirty(true);
         });
+        self.timelapsePostRoll.subscribe(function(newValue) {
+            self.isDirty(true);
+        });
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -87,10 +90,16 @@ $(function() {
             self.timelapseType(config.type);
             self.listHelper.updateItems(response.files);
 
-            if (config.type == "timed" && response.config.interval) {
-                self.timelapseTimedInterval(response.config.interval);
+            if (config.type == "timed") {
+                if (response.config.interval != undefined && response.config.interval > 0) {
+                    self.timelapseTimedInterval(response.config.interval);
+                }
+                if (response.config.postRoll != undefined && response.config.postRoll >= 0) {
+                    self.timelapsePostRoll(response.config.postRoll);
+                }
             } else {
                 self.timelapseTimedInterval(undefined);
+                self.timelapsePostRoll(undefined);
             }
 
             self.persist(false);
