@@ -108,7 +108,7 @@ $(function() {
                 self.timelapsePostRoll(undefined);
             }
 
-            if (config.fps != undefined && config.fps >= 0) {
+            if (config.fps != undefined && config.fps > 0) {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(undefined);
