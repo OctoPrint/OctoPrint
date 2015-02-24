@@ -68,7 +68,8 @@ default_settings = {
 		"timelapse": {
 			"type": "off",
 			"options": {},
-			"postRoll": 0
+			"postRoll": 0,
+			"fps": 25
 		}
 	},
 	"gcodeViewer": {

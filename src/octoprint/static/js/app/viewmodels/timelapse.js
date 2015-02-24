@@ -7,6 +7,7 @@ $(function() {
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(undefined);
         self.timelapsePostRoll = ko.observable(undefined);
+        self.timelapseFps = ko.observable(undefined);
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -40,6 +41,9 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapsePostRoll.subscribe(function(newValue) {
+            self.isDirty(true);
+        });
+        self.timelapseFps.subscribe(function(newValue) {
             self.isDirty(true);
         });
 
@@ -107,6 +111,12 @@ $(function() {
                 self.timelapsePostRoll(undefined);
             }
 
+            if (config.fps != undefined && config.fps >= 0) {
+                self.timelapseFps(config.fps);
+            } else {
+                self.timelapseFps(undefined);
+            }
+
             self.persist(false);
             self.isDirty(false);
         };
@@ -142,6 +152,7 @@ $(function() {
             var payload = {
                 "type": self.timelapseType(),
                 "postRoll": self.timelapsePostRoll(),
+                "fps": self.timelapseFps(),
                 "save": self.persist()
             };
 

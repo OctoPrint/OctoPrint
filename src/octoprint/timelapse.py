@@ -79,15 +79,19 @@ def configureTimelapse(config=None, persist=False):
 	if "postRoll" in config:
 		postRoll = config["postRoll"]
 
+	fps = 25
+	if "fps" in config:
+		fps = config["fps"]
+
 	if type is None or "off" == type:
 		current = None
 	elif "zchange" == type:
-		current = ZTimelapse(postRoll=postRoll)
+		current = ZTimelapse(postRoll=postRoll, fps=fps)
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"]:
 			interval = config["options"]["interval"]
-		current = TimedTimelapse(postRoll=postRoll, interval=interval)
+		current = TimedTimelapse(postRoll=postRoll, interval=interval, fps=fps)
 
 	notifyCallbacks(current)
 
@@ -97,7 +101,7 @@ def configureTimelapse(config=None, persist=False):
 
 
 class Timelapse(object):
-	def __init__(self, postRoll=0):
+	def __init__(self, postRoll=0, fps=25):
 		self._logger = logging.getLogger(__name__)
 		self._imageNumber = None
 		self._inTimelapse = False
@@ -111,7 +115,7 @@ class Timelapse(object):
 		self._movieDir = settings().getBaseFolder("timelapse")
 		self._snapshotUrl = settings().get(["webcam", "snapshot"])
 
-		self._fps = 25
+		self._fps = fps
 
 		self._renderThread = None
 		self._captureMutex = threading.Lock()
@@ -126,6 +130,9 @@ class Timelapse(object):
 
 	def postRoll(self):
 		return self._postRoll
+
+	def fps(self):
+		return self._fps
 
 	def unload(self):
 		if self._inTimelapse:
@@ -267,7 +274,7 @@ class Timelapse(object):
 
 		# prepare ffmpeg command
 		command = [
-			ffmpeg, '-loglevel', 'error', '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b:v', bitrate,
+			ffmpeg, '-framerate', str(self._fps), '-loglevel', 'error', '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b', bitrate,
 			'-f', 'vob']
 
 		filters = []
@@ -335,8 +342,8 @@ class Timelapse(object):
 
 
 class ZTimelapse(Timelapse):
-	def __init__(self, postRoll=0):
-		Timelapse.__init__(self, postRoll=postRoll)
+	def __init__(self, postRoll=0, fps=25):
+		Timelapse.__init__(self, postRoll=postRoll, fps=fps)
 		self._logger.debug("ZTimelapse initialized")
 
 	def eventSubscriptions(self):
@@ -370,8 +377,8 @@ class ZTimelapse(Timelapse):
 
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, postRoll=0, interval=1):
-		Timelapse.__init__(self, postRoll=postRoll)
+	def __init__(self, postRoll=0, interval=1, fps=25):
+		Timelapse.__init__(self, postRoll=postRoll, fps=fps)
 		self._interval = interval
 		if self._interval < 1:
 			self._interval = 1 # force minimum interval of 1s

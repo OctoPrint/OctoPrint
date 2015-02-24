@@ -30,9 +30,11 @@ def getTimelapseData():
 	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
 		config["type"] = "zchange"
 		config["postRoll"] = timelapse.postRoll()
+		config["fps"] = timelapse.fps()
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		config["type"] = "timed"
 		config["postRoll"] = timelapse.postRoll()
+		config["fps"] = timelapse.fps()
 		config.update({
 			"interval": timelapse.interval()
 		})
@@ -70,6 +72,7 @@ def setTimelapseConfig():
 		config = {
 			"type": request.values["type"],
 			"postRoll": 0,
+			"fps": 25,
 			"options": {}
 		}
 
@@ -77,6 +80,12 @@ def setTimelapseConfig():
 		if "postRoll" in request.values:
 			try:
 				config["postRoll"] = int(request.values["postRoll"])
+			except ValueError:
+				pass
+
+		if "fps" in request.values:
+			try:
+				config["fps"] = int(request.values["fps"])
 			except ValueError:
 				pass
 
