@@ -91,14 +91,19 @@ $(function() {
             self.listHelper.updateItems(response.files);
 
             if (config.type == "timed") {
-                if (response.config.interval != undefined && response.config.interval > 0) {
-                    self.timelapseTimedInterval(response.config.interval);
+                if (config.interval != undefined && config.interval > 0) {
+                    self.timelapseTimedInterval(config.interval);
                 }
-                if (response.config.postRoll != undefined && response.config.postRoll >= 0) {
-                    self.timelapsePostRoll(response.config.postRoll);
+                if (config.postRoll != undefined && config.postRoll >= 0) {
+                    self.timelapsePostRoll(config.postRoll);
                 }
             } else {
                 self.timelapseTimedInterval(undefined);
+            }
+
+            if (config.postRoll != undefined && config.postRoll >= 0) {
+                self.timelapsePostRoll(config.postRoll);
+            } else {
                 self.timelapsePostRoll(undefined);
             }
 
