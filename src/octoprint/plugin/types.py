@@ -201,6 +201,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of navbar component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the navbar entry (``false``)
 		          or if a custom binding will be used by the plugin (``true``, default).
@@ -238,6 +244,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of sidebar component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the sidebar container (``false``)
 		          or if a custom binding will be used by the plugin (``true``, default).
@@ -279,6 +291,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of tab component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the tab pane and link
 		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
@@ -320,6 +338,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of settings component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default settings view model should be bound to the settings pane and link
 		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
