@@ -81,6 +81,12 @@ $(function() {
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
 
+        self.folder_uploads = ko.observable(undefined);
+        self.folder_timelapse = ko.observable(undefined);
+        self.folder_timelapseTmp = ko.observable(undefined);
+        self.folder_logs = ko.observable(undefined);
+        self.folder_watched = ko.observable(undefined);
+
         self.scripts_gcode_beforePrintStarted = ko.observable(undefined);
         self.scripts_gcode_afterPrintDone = ko.observable(undefined);
         self.scripts_gcode_afterPrintCancelled = ko.observable(undefined);
