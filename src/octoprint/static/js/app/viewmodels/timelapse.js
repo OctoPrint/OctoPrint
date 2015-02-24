@@ -4,10 +4,14 @@ $(function() {
 
         self.loginState = parameters[0];
 
+        self.defaultFps = 25;
+        self.defaultPostRoll = 0;
+        self.defaultInterval = 10;
+
         self.timelapseType = ko.observable(undefined);
-        self.timelapseTimedInterval = ko.observable(undefined);
-        self.timelapsePostRoll = ko.observable(undefined);
-        self.timelapseFps = ko.observable(undefined);
+        self.timelapseTimedInterval = ko.observable(self.defaultInterval);
+        self.timelapsePostRoll = ko.observable(self.defaultPostRoll);
+        self.timelapseFps = ko.observable(self.defaultFps);
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -99,19 +103,19 @@ $(function() {
                     self.timelapseTimedInterval(config.interval);
                 }
             } else {
-                self.timelapseTimedInterval(undefined);
+                self.timelapseTimedInterval(self.defaultInterval);
             }
 
             if (config.postRoll != undefined && config.postRoll >= 0) {
                 self.timelapsePostRoll(config.postRoll);
             } else {
-                self.timelapsePostRoll(undefined);
+                self.timelapsePostRoll(self.defaultPostRoll);
             }
 
             if (config.fps != undefined && config.fps > 0) {
                 self.timelapseFps(config.fps);
             } else {
-                self.timelapseFps(undefined);
+                self.timelapseFps(self.defaultFps);
             }
 
             self.persist(false);
