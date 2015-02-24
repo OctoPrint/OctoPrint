@@ -236,6 +236,26 @@ $(function() {
             return $(window).height() - 165;
         };
 
+        // jquery plugin to select all text in an element
+        // originally from: http://stackoverflow.com/a/987376
+        $.fn.selectText = function() {
+            var doc = document;
+            var element = this[0];
+            var range, selection;
+
+            if (doc.body.createTextRange) {
+                range = document.body.createTextRange();
+                range.moveToElementText(element);
+                range.select();
+            } else if (window.getSelection) {
+                selection = window.getSelection();
+                range = document.createRange();
+                range.selectNodeContents(element);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        };
+
         // Use bootstrap tabdrop for tabs and pills
         $('.nav-pills, .nav-tabs').tabdrop();
 

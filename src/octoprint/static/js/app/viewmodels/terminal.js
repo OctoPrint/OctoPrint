@@ -5,7 +5,8 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
-        self.log = [];
+        self.log = ko.observableArray([]);
+        self.buffer = ko.observable(300);
 
         self.command = ko.observable(undefined);
 
@@ -20,15 +21,56 @@ $(function() {
         self.autoscrollEnabled = ko.observable(true);
 
         self.filters = self.settings.terminalFilters;
-        self.filterRegex = undefined;
+        self.filterRegex = ko.observable();
 
         self.cmdHistory = [];
         self.cmdHistoryIdx = -1;
 
+        self.displayedLines = ko.computed(function() {
+            var regex = self.filterRegex();
+            var lineVisible = function(entry) {
+                return regex == undefined || !entry.line.match(regex);
+            };
+
+            var filtered = false;
+            var result = [];
+            _.each(self.log(), function(entry) {
+                if (lineVisible(entry)) {
+                    result.push(entry);
+                    filtered = false;
+                } else if (!filtered) {
+                    result.push(self._toInternalFormat("[...]", "filtered"));
+                    filtered = true;
+                }
+            });
+
+            return result;
+        });
+        self.displayedLines.subscribe(function() {
+            self.updateOutput();
+        });
+
+        self.lineCount = ko.computed(function() {
+            var total = self.log().length;
+            var displayed = _.filter(self.displayedLines(), function(entry) { return entry.type == "line" }).length;
+            var filtered = total - displayed;
+
+            if (total == displayed) {
+                return _.sprintf(gettext("showing %(displayed)d lines"), {displayed: displayed});
+            } else {
+                return _.sprintf(gettext("showing %(displayed)d lines (%(filtered)d of %(total)d total lines filtered)"), {displayed: displayed, total: total, filtered: filtered});
+            }
+        });
+
+        self.autoscrollEnabled.subscribe(function(newValue) {
+            if (newValue) {
+                self.log(self.log.slice(-self.buffer()));
+            }
+        });
+
         self.activeFilters = ko.observableArray([]);
         self.activeFilters.subscribe(function(e) {
             self.updateFilterRegex();
-            self.updateOutput();
         });
 
         self.fromCurrentData = function(data) {
@@ -42,16 +84,21 @@ $(function() {
         };
 
         self._processCurrentLogData = function(data) {
-            if (!self.log)
-                self.log = [];
-            self.log = self.log.concat(data);
-            self.log = self.log.slice(-300);
-            self.updateOutput();
+            self.log(self.log().concat(_.map(data, function(line) { return self._toInternalFormat(line) })));
+            if (self.autoscrollEnabled()) {
+                self.log(self.log.slice(-300));
+            }
         };
 
         self._processHistoryLogData = function(data) {
-            self.log = data;
-            self.updateOutput();
+            self.log(_.map(data, function(line) { return self._toInternalFormat(line) }));
+        };
+
+        self._toInternalFormat = function(line, type) {
+            if (type == undefined) {
+                type = "line";
+            }
+            return {line: line, type: type}
         };
 
         self._processStateData = function(data) {
@@ -67,29 +114,34 @@ $(function() {
         self.updateFilterRegex = function() {
             var filterRegexStr = self.activeFilters().join("|").trim();
             if (filterRegexStr == "") {
-                self.filterRegex = undefined;
+                self.filterRegex(undefined);
             } else {
-                self.filterRegex = new RegExp(filterRegexStr);
+                self.filterRegex(new RegExp(filterRegexStr));
             }
+            self.updateOutput();
         };
 
         self.updateOutput = function() {
-            if (!self.log)
-                return;
-
-            var output = "";
-            for (var i = 0; i < self.log.length; i++) {
-                if (self.filterRegex !== undefined && self.log[i].match(self.filterRegex)) continue;
-                output += self.log[i] + "\n";
+            if (self.autoscrollEnabled()) {
+                self.scrollToEnd();
             }
+        };
 
+        self.toggleAutoscroll = function() {
+            self.autoscrollEnabled(!self.autoscrollEnabled());
+        };
+
+        self.selectAll = function() {
             var container = $("#terminal-output");
             if (container.length) {
-                container.text(output);
+                container.selectText();
+            }
+        };
 
-                if (self.autoscrollEnabled()) {
-                    container.scrollTop(container[0].scrollHeight - container.height())
-                }
+        self.scrollToEnd = function() {
+            var container = $("#terminal-output");
+            if (container.length) {
+                container.scrollTop(container[0].scrollHeight - container.height())
             }
         };
 
@@ -155,10 +207,12 @@ $(function() {
         };
 
         self.onAfterTabChange = function(current, previous) {
-            if (current != "#terminal") {
+            if (current != "#term") {
                 return;
             }
-            self.updateOutput();
+            if (self.autoscrollEnabled()) {
+                self.scrollToEnd();
+            }
         };
 
     }

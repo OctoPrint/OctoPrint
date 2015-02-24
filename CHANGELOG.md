@@ -83,6 +83,13 @@
   message for now.
 * Daemonized OctoPrint now cleans up its pidfile when receiving a TERM signal ([#711](https://github.com/foosel/OctoPrint/issues/711))
 * Added serial types for OpenBSD ([#551](https://github.com/foosel/OctoPrint/pull/551))
+* Improved behaviour of terminal:
+  * Disabling autoscrolling now also stops cutting of the log while it's enabled, effectively preventing log lines from
+    being modified at all ([#735](https://github.com/foosel/OctoPrint/issues/735))
+  * Applying filters displays ``[...]`` where lines where removed
+  * Added a link to scroll to the end of the terminal log (useful for when autoscroll is disabled)
+  * Added a link to select all current contents of the terminal log for easy copy-pasting
+  * Added a display of how many lines are displayed, how many are filtered and how many are available in total
 
 ### Bug Fixes
 
