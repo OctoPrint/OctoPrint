@@ -76,7 +76,6 @@ def setTimelapseConfig():
 			"options": {}
 		}
 
-
 		if "postRoll" in request.values:
 			try:
 				postRoll = int(request.values["postRoll"])
@@ -100,15 +99,17 @@ def setTimelapseConfig():
 					return make_response("Invalid value for fps: %d" % fps, 400)
 
 		if "interval" in request.values:
+			config["options"] = {
+				"interval": 10
+			}
+
 			try:
 				interval = int(request.values["interval"])
 			except ValueError:
 				return make_response("Invalid value for interval: %r" % request.values["interval"])
 			else:
 				if interval > 0:
-					config["options"] = {
-						"interval": interval
-					}
+					config["options"]["interval"] = interval
 				else:
 					return make_response("Invalid value for interval: %d" % interval)
 
