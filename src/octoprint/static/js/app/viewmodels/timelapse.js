@@ -98,9 +98,6 @@ $(function() {
                 if (config.interval != undefined && config.interval > 0) {
                     self.timelapseTimedInterval(config.interval);
                 }
-                if (config.postRoll != undefined && config.postRoll >= 0) {
-                    self.timelapsePostRoll(config.postRoll);
-                }
             } else {
                 self.timelapseTimedInterval(undefined);
             }
