@@ -467,9 +467,8 @@ class MachineCom(object):
 			self.sendGcodeScript("beforePrintStarted", replacements=dict(event=payload))
 
 			if self.isSdFileSelected():
-				if wasPaused:
-					self.sendCommand("M26 S0")
-					self._currentFile.setFilepos(0)
+				self.sendCommand("M26 S0")
+				self._currentFile.setFilepos(0)
 				self.sendCommand("M24")
 			else:
 				line = self._getNext()

@@ -56,7 +56,7 @@ function DataUpdater(allViewModels) {
 
         if (self._autoReconnectTrial < self._autoReconnectTimeouts.length) {
             var timeout = self._autoReconnectTimeouts[self._autoReconnectTrial];
-            console.log("Reconnect trial #" + self._autoReconnectTrial + ", waiting " + timeout + "s");
+            log.info("Reconnect trial #" + self._autoReconnectTrial + ", waiting " + timeout + "s");
             setTimeout(self.reconnect, timeout * 1000);
             self._autoReconnectTrial++;
         } else {
@@ -165,7 +165,7 @@ function DataUpdater(allViewModels) {
                     var payload = data["payload"];
                     var html = "";
 
-                    console.log("Got event " + type + " with payload: " + JSON.stringify(payload));
+                    log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
                     if (type == "UpdatedFiles") {
                         _.each(self.allViewModels, function (viewModel) {

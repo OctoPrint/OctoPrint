@@ -303,6 +303,26 @@ class Printer():
 		self._comm.setTemperatureOffset(tool, bed)
 		self._stateMonitor.setTempOffsets(validatedOffsets)
 
+	def _convertRateValue(self, factor, min=0, max=200):
+		if not isinstance(factor, (int, float, long)):
+			raise ValueError("factor is not a number")
+
+		if isinstance(factor, float):
+			factor = int(factor * 100.0)
+
+		if factor < min or factor > max:
+			raise ValueError("factor must be a value between %f and %f" % (min, max))
+
+		return factor
+
+	def feedRate(self, factor):
+		factor = self._convertRateValue(factor, min=50, max=200)
+		self.command("M220 S%d" % factor)
+
+	def flowRate(self, factor):
+		factor = self._convertRateValue(factor, min=75, max=125)
+		self.command("M221 S%d" % factor)
+
 	def selectFile(self, filename, sd, printAfterSelect=False):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
 			self._logger.info("Cannot load file: printer not connected or currently busy")

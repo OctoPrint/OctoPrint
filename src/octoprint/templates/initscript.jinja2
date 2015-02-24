@@ -4,6 +4,8 @@
     var PLUGIN_BASEURL = BASEURL + "plugin/";
     var GCODE_WORKER = "{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}";
 
+    var CONFIG_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+
     var CONFIG_GCODEFILESPERPAGE = 5000;
     var CONFIG_TIMELAPSEFILESPERPAGE = 10;
     var CONFIG_LOGFILESPERPAGE = 10;
@@ -17,12 +19,13 @@
     var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
 
     var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
-    var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
+    var SOCKJS_DEBUG = CONFIG_DEBUG;
 
     var UI_API_KEY = "{{ uiApiKey }}";
     var VERSION = "{{ version }}";
     var DISPLAY_VERSION = "{{ display_version }}";
     var LOCALE = "{{ g.locale }}";
 
+    var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];
 </script>

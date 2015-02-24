@@ -32,6 +32,7 @@
   - Home: Home X and Y axes
   - End: Home Z axes
   - 1, 2, 3, 4: change step size used (0.1, 1, 10, 100mm)
+* Controls for adjusting feed and flow rate factor added to Controls ([#362](https://github.com/foosel/OctoPrint/issues/362))
 
 ### Improvements
 
@@ -98,6 +99,8 @@
   and exception to be raised due to a misnamed attribute in the code
 * [#717](https://github.com/foosel/OctoPrint/issues/717) - Use ``shutil.move`` instead of ``os.rename`` to avoid cross
   device renaming issues
+* [#780](https://github.com/foosel/OctoPrint/issues/780) - Always (re)set file position in SD files to 0 so that reprints
+  work correctly
 * Various fixes of bugs in newly introduced features and improvements:
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
     queue
@@ -140,6 +143,8 @@
 * [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
   (backport of [619fe9a](https://github.com/foosel/OctoPrint/commit/619fe9a0e78826bd1524b235a910156439bcb6d7)).
 * [#719](https://github.com/foosel/OctoPrint/issues/719) - Properly center print bed in GCODE viewer
+* [#780](https://github.com/foosel/OctoPrint/issues/780) - Always (re)set file position in SD files to 0 so that reprints
+  work correctly (backported from ``devel``)
 * [IRC] - Don't hiccup on slic3r ``filament_diameter`` comments generated for multi extruder setups
 * [ML] - Fixed relative URL to SockJS endpoint, wasn't yet using the proper base url
 * [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header

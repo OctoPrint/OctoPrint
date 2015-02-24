@@ -1,47 +1,20 @@
 <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
 <link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
 <link href="{{ url_for('static', filename='css/bootstrap-slider.css') }}" rel="stylesheet" media="screen">
+<link href="{{ url_for('static', filename='css/bootstrap-tabdrop.css') }}" rel="stylesheet" media="screen">
 <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
 <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
 <link href="{{ url_for('static', filename='css/pnotify.min.css') }}" rel="stylesheet" media="screen">
 
-{% if stylesheet == "less" %}
-    <link href="{{ url_for('static', filename='less/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
-
-    <!-- Plugin files -->
-    {% for name, assets in assetPlugins.items() %}
-        {% if "less" in assets %}
-            {% for asset in assets["less"] %}
-                <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet/less" type="text/css" media="screen">
-            {% endfor %}
-        {% elif "css" in assets %}
-            {% for asset in assets["css"] %}
-                <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet" type="text/css" media="screen">
-            {% endfor %}
-        {% endif %}
-    {% endfor %}
-    <!-- /Plugin files -->
-
-    <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
-{% else %}
-    <link href="{{ url_for('static', filename='css/octoprint.css') }}" rel="stylesheet" type="text/css" media="screen">
-    <!-- Plugin files -->
-    {% set lessneeded=[] %}
-    {% for name, assets in assetPlugins.items() %}
-        {% if "css" in assets %}
-            {% for asset in assets["css"] %}
-                <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet" type="text/css" media="screen">
-            {% endfor %}
-        {% elif "less" in assets %}
-            {% do lessneeded.append(1) %}
-            {% for asset in assets["less"] %}
-                <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet/less" type="text/css" media="screen">
-            {% endfor %}
-        {% endif %}
-    {% endfor %}
-    {% if lessneeded %}
-        <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
+{% set lessneeded=[] %}
+{% for type, url in assets["stylesheets"] %}
+    {% if type == "css" %}
+        <link href="{{ url }}" rel="stylesheet" type="text/css" media="screen">
+    {% elif type == "less" %}
+        {% do lessneeded.append(1) %}
+        <link href="{{ url }}" rel="stylesheet/less" type="text/css" media="screen">
     {% endif %}
-    <!-- /Plugin files -->
+{% endfor %}
+{% if lessneeded %}
+    <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
 {% endif %}
-
