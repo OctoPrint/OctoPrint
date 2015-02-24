@@ -4,9 +4,14 @@ $(function() {
 
         self.loginState = parameters[0];
 
+        self.defaultFps = 25;
+        self.defaultPostRoll = 0;
+        self.defaultInterval = 10;
+
         self.timelapseType = ko.observable(undefined);
-        self.timelapseTimedInterval = ko.observable(undefined);
-        self.timelapsePostRoll = ko.observable(undefined);
+        self.timelapseTimedInterval = ko.observable(self.defaultInterval);
+        self.timelapsePostRoll = ko.observable(self.defaultPostRoll);
+        self.timelapseFps = ko.observable(self.defaultFps);
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -40,6 +45,9 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapsePostRoll.subscribe(function(newValue) {
+            self.isDirty(true);
+        });
+        self.timelapseFps.subscribe(function(newValue) {
             self.isDirty(true);
         });
 
@@ -91,15 +99,23 @@ $(function() {
             self.listHelper.updateItems(response.files);
 
             if (config.type == "timed") {
-                if (response.config.interval != undefined && response.config.interval > 0) {
-                    self.timelapseTimedInterval(response.config.interval);
-                }
-                if (response.config.postRoll != undefined && response.config.postRoll >= 0) {
-                    self.timelapsePostRoll(response.config.postRoll);
+                if (config.interval != undefined && config.interval > 0) {
+                    self.timelapseTimedInterval(config.interval);
                 }
             } else {
-                self.timelapseTimedInterval(undefined);
-                self.timelapsePostRoll(undefined);
+                self.timelapseTimedInterval(self.defaultInterval);
+            }
+
+            if (config.postRoll != undefined && config.postRoll >= 0) {
+                self.timelapsePostRoll(config.postRoll);
+            } else {
+                self.timelapsePostRoll(self.defaultPostRoll);
+            }
+
+            if (config.fps != undefined && config.fps > 0) {
+                self.timelapseFps(config.fps);
+            } else {
+                self.timelapseFps(self.defaultFps);
             }
 
             self.persist(false);
@@ -137,6 +153,7 @@ $(function() {
             var payload = {
                 "type": self.timelapseType(),
                 "postRoll": self.timelapsePostRoll(),
+                "fps": self.timelapseFps(),
                 "save": self.persist()
             };
 

@@ -90,6 +90,7 @@
   * Added a link to scroll to the end of the terminal log (useful for when autoscroll is disabled)
   * Added a link to select all current contents of the terminal log for easy copy-pasting
   * Added a display of how many lines are displayed, how many are filtered and how many are available in total
+* Frame rate for timelapses can now be configured per timelapse ([#782](https://github.com/foosel/OctoPrint/pull/782))
 
 ### Bug Fixes
 
