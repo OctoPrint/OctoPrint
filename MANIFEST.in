@@ -2,3 +2,5 @@ recursive-include src/octoprint/static *
 recursive-include src/octoprint/templates *
 include versioneer.py
 include src/octoprint/_version.py
+include README.md
+include requirements.txt
