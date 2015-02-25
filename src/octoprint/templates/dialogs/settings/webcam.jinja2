@@ -24,6 +24,12 @@
         </div>
     </div>
     <div class="control-group">
+        <label class="control-label" for="settings-webcam_ffmpegThreads">{{ _('FFMPEG threads') }}</label>
+        <div class="controls">
+            <input class="input-block-level" data-bind="value: webcam_ffmpegThreads" id="settings-webcamFfmpegThreads" type="number" step="1" min="1" placeholder="Number of FFMPEG encoding threads">
+        </div>
+    </div>
+    <div class="control-group">
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: webcam_watermark" id="settings-webcamWatermark"> {{ _('Enable OctoPrint watermark in timelapse movies') }}

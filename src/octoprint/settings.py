@@ -61,6 +61,7 @@ default_settings = {
 		"stream": None,
 		"snapshot": None,
 		"ffmpeg": None,
+		"ffmpegThreads": 1,
 		"bitrate": "5000k",
 		"watermark": True,
 		"flipH": False,

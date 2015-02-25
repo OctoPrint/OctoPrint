@@ -114,6 +114,7 @@ class Timelapse(object):
 		self._captureDir = settings().getBaseFolder("timelapse_tmp")
 		self._movieDir = settings().getBaseFolder("timelapse")
 		self._snapshotUrl = settings().get(["webcam", "snapshot"])
+		self._ffmpegThreads = settings().get(["webcam", "ffmpegThreads"])
 
 		self._fps = fps
 
@@ -274,7 +275,7 @@ class Timelapse(object):
 
 		# prepare ffmpeg command
 		command = [
-			ffmpeg, '-framerate', str(self._fps), '-loglevel', 'error', '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b', bitrate,
+			ffmpeg, '-framerate', str(self._fps), '-loglevel', 'error', '-i', input, '-vcodec', 'mpeg2video', '-threads', str(self._ffmpegThreads), '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b', bitrate,
 			'-f', 'vob']
 
 		filters = []
