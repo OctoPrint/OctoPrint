@@ -167,6 +167,7 @@ class MachineCom(object):
 		self._sdAvailable = False
 		self._sdFileList = False
 		self._sdFiles = []
+		self._sdFileToSelect = None
 
 		# print job
 		self._currentFile = None
@@ -438,6 +439,7 @@ class MachineCom(object):
 			if not self.isOperational():
 				# printer is not connected, can't use SD
 				return
+			self._sdFileToSelect = filename
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename, self.getOffsets)
@@ -715,6 +717,9 @@ class MachineCom(object):
 						if filterNonAscii(filename):
 							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
+							if not filename.startswith("/"):
+								# file from the root of the sd -- we'll prepend a /
+								filename = "/" + filename
 							self._sdFiles.append((filename, size))
 						continue
 
@@ -783,7 +788,12 @@ class MachineCom(object):
 				elif 'File opened' in line:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = self._regex_sdFileOpened.search(line)
-					self._currentFile = PrintingSdFileInformation(match.group(1), int(match.group(2)))
+					if self._sdFileToSelect:
+						name = self._sdFileToSelect
+						self._sdFileToSelect = None
+					else:
+						name = match.group(1)
+					self._currentFile = PrintingSdFileInformation(name, int(match.group(2)))
 				elif 'File selected' in line:
 					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 					if self._currentFile is not None:

@@ -30,7 +30,7 @@ def getConnectionOptions():
 		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
 	}
 
-class Printer():
+class Printer(comm.MachineComPrintCallback):
 	def __init__(self, fileManager, analysisQueue, printerProfileManager):
 		from collections import deque
 
@@ -329,7 +329,7 @@ class Printer():
 			return
 
 		self._printAfterSelect = printAfterSelect
-		self._comm.selectFile(filename, sd)
+		self._comm.selectFile("/" + filename if sd else filename, sd)
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 
@@ -501,6 +501,10 @@ class Printer():
 
 	def _setJobData(self, filename, filesize, sd):
 		if filename is not None:
+			if sd:
+				filename = filename[1:]
+			else:
+				filename = self._fileManager.path_in_storage(FileDestinations.LOCAL, filename)
 			self._selectedFile = {
 				"filename": filename,
 				"filesize": filesize,
@@ -559,7 +563,7 @@ class Printer():
 
 		self._stateMonitor.setJobData({
 			"file": {
-				"name": os.path.basename(filename) if filename is not None else None,
+				"name": filename,
 				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
 				"size": filesize,
 				"date": date
@@ -701,7 +705,7 @@ class Printer():
 	def getSdFiles(self):
 		if self._comm is None or not self._comm.isSdReady():
 			return []
-		return self._comm.getSdFiles()
+		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
 
 	def addSdFile(self, filename, absolutePath, streamingFinishedCallback):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
@@ -715,14 +719,14 @@ class Printer():
 
 		remoteName = util.getDosFilename(filename, existingSdFiles)
 		self._timeEstimationData = TimeEstimationHelper()
-		self._comm.startFileTransfer(absolutePath, filename, remoteName)
+		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName)
 
 		return remoteName
 
 	def deleteSdFile(self, filename):
 		if not self._comm or not self._comm.isSdReady():
 			return
-		self._comm.deleteSdFile(filename)
+		self._comm.deleteSdFile("/" + filename)
 
 	def initSdCard(self):
 		if not self._comm or self._comm.isSdReady():
@@ -738,7 +742,7 @@ class Printer():
 		"""
 		Refreshs the list of file stored on the SD card attached to printer (if available and printer communication
 		available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
-		received (and can be accessed via self._comm.getSdFiles()). Defaults to a asynchronous operation.
+		received (and can be accessed via self._comm.getSdFiles()). Defaults to an asynchronous operation.
 		"""
 		if not self._comm or not self._comm.isSdReady():
 			return
