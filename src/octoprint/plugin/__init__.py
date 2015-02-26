@@ -12,6 +12,8 @@ from octoprint.settings import settings
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
 from octoprint.plugin.types import *
 
+from octoprint.util import deprecated
+
 # singleton
 _instance = None
 
@@ -103,56 +105,77 @@ class PluginSettings(object):
 			kwargs.update(dict(defaults=self.defaults))
 			return kwargs
 
-		self.access_methods = {
-			'get': (lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			'getInt': (lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			'getFloat': (lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			'getBoolean': (lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			'set': (lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			'setInt': (lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			'setFloat': (lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			'setBoolean': (lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs))
-		}
+		self.access_methods = dict(
+			get=("get", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
+			get_int=("getInt", lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
+			get_float=("getFloat", lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
+			get_boolean=("getBoolean", lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
+			set=("set", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
+			set_int=("setInt", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
+			set_float=("setFloat", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
+			set_boolean=("setBoolean", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs))
+		)
+		self.deprecated_access_methods = dict(getInt="get_int", getFloat="get_float", getBoolean="get_boolean", setInt="set_int", setFloat="set_float", setBoolean="set_boolean")
 
-	def globalGet(self, path):
+	def global_get(self, path):
 		return self.settings.get(path)
+	globalGet = deprecated("globalGet has been renamed to global_get")(global_get)
 
-	def globalGetInt(self, path):
+	def global_get_int(self, path):
 		return self.settings.getInt(path)
+	globalGetInt = deprecated("globalGetInt has been renamed to global_get_int")(global_get_int)
 
-	def globalGetFloat(self, path):
+	def global_get_float(self, path):
 		return self.settings.getFloat(path)
+	globalGetFloat = deprecated("globalGetFloat has been renamed to global_get_float")(global_get_float)
 
-	def globalGetBoolean(self, path):
+	def global_get_boolean(self, path):
 		return self.settings.getBoolean(path)
+	globalGetBoolean = deprecated("globalGetBoolean has been renamed to global_get_boolean")(global_get_boolean)
 
-	def globalSet(self, path, value):
+	def global_set(self, path, value):
 		self.settings.set(path, value)
+	globalSet = deprecated("globalSet has been renamed to global_set")(global_set)
 
-	def globalSetInt(self, path, value):
+	def global_set_int(self, path, value):
 		self.settings.setInt(path, value)
+	globalSetInt = deprecated("globalSetInt has been renamed to global_set_int")(global_set_int)
 
-	def globalSetFloat(self, path, value):
+	def global_set_float(self, path, value):
 		self.settings.setFloat(path, value)
+	globalSetFloat = deprecated("globalSetFloat has been renamed to global_set_float")(global_set_float)
 
-	def globalSetBoolean(self, path, value):
+	def global_set_boolean(self, path, value):
 		self.settings.setBoolean(path, value)
+	globalSetBoolean = deprecated("globalSetBoolean has been renamed to global_set_boolean")(global_set_boolean)
 
-	def globalGetBaseFolder(self, folder_type):
+	def global_get_basefolder(self, folder_type):
 		return self.settings.getBaseFolder(folder_type)
+	globalGetBaseFolder = deprecated("globalGetBaseFolder has been renamed to global_get_basefolder")(global_get_basefolder)
 
-	def getPluginLogfilePath(self, postfix=None):
+	def get_plugin_logfile_path(self, postfix=None):
 		filename = "plugin_" + self.plugin_key
 		if postfix is not None:
 			filename += "_" + postfix
 		filename += ".log"
 		return os.path.join(self.settings.getBaseFolder("logs"), filename)
+	getPluginLogfilePath = deprecated("getPluginLogfilePath has been renamed to get_plugin_logfile_path")(get_plugin_logfile_path)
 
 	def __getattr__(self, item):
-		if item in self.access_methods and hasattr(self.settings, item) and callable(getattr(self.settings, item)):
-			orig_item = getattr(self.settings, item)
-			args_mapper, kwargs_mapper = self.access_methods[item]
+		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
+		if item in all_access_methods:
+			decorator = None
+			if item in self.deprecated_access_methods:
+				new = self.deprecated_access_methods[item]
+				decorator = deprecated("{old} has been renamed to {new}".format(old=item, new=new), stacklevel=2)
+				item = new
 
-			return lambda *args, **kwargs: orig_item(*args_mapper(args), **kwargs_mapper(kwargs))
-		else:
-			return getattr(self.settings, item)
+			settings_name, args_mapper, kwargs_mapper = self.access_methods[item]
+			if hasattr(self.settings, settings_name) and callable(getattr(self.settings, settings_name)):
+				orig_func = getattr(self.settings, settings_name)
+				if decorator is not None:
+					orig_func = decorator(orig_func)
+
+				return lambda *args, **kwargs: orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
+
+		return getattr(self.settings, item)

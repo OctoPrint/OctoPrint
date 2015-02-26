@@ -783,6 +783,10 @@ class Server():
 
 		config = octoprint.util.dict_merge(defaultConfig, configFromFile)
 		logging.config.dictConfig(config)
+		logging.captureWarnings(True)
+
+		import warnings
+		warnings.simplefilter("always")
 
 		if settings().getBoolean(["serial", "log"]):
 			# enable debug logging to serial.log

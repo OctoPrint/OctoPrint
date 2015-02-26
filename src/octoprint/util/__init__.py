@@ -10,12 +10,33 @@ import re
 import tempfile
 import logging
 import shutil
+
+from functools import wraps
 from flask import make_response
+
+import warnings
 
 from octoprint.settings import settings, default_settings
 
 
 logger = logging.getLogger(__name__)
+
+def warning_decorator_factory(warning_type):
+	def specific_warning(message, stacklevel=1):
+		def decorator(func):
+			@wraps(func)
+			def func_wrapper(*args, **kwargs):
+				# we need to increment the stacklevel by one because otherwise we'll get the location of our
+				# func_wrapper in the log, instead of our caller (which is the real caller of the wrapped function)
+				warnings.warn(message, warning_type, stacklevel=stacklevel + 1)
+				return func(*args, **kwargs)
+			return func_wrapper
+
+		return decorator
+	return specific_warning
+
+deprecated = warning_decorator_factory(DeprecationWarning)
+pending_deprecation = warning_decorator_factory(PendingDeprecationWarning)
 
 def getFormattedSize(num):
 	"""
