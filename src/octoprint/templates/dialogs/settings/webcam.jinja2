@@ -1,26 +1,32 @@
 <form class="form-horizontal">
-    <div class="control-group">
+    <div class="control-group" title="{{ _('URL to embed into the UI for live viewing of the webcam stream') }}">
         <label class="control-label" for="settings-webcamStreamUrl">{{ _('Stream URL') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: webcam_streamUrl" id="settings-webcamStreamUrl">
         </div>
     </div>
-    <div class="control-group">
-        <label class="control-label" for="settings-webcamStreamUrl">{{ _('Snapshot URL') }}</label>
+    <div class="control-group" title="{{ _('URL to use for retrieving webcam snapshot images for timelapse creation') }}">
+        <label class="control-label" for="settings-webcamSnapshotUrl">{{ _('Snapshot URL') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: webcam_snapshotUrl" id="settings-webcamSnapshotUrl">
         </div>
     </div>
-    <div class="control-group">
-        <label class="control-label" for="settings-webcamStreamUrl">{{ _('Path to FFMPEG') }}</label>
+    <div class="control-group" title="{{ _('Full path to the FFMPEG binary') }}">
+        <label class="control-label" for="settings-webcamFfmpegPath">{{ _('Path to FFMPEG') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: webcam_ffmpegPath" id="settings-webcamFfmpegPath">
         </div>
     </div>
-    <div class="control-group">
+    <div class="control-group" title="{{ _('Bitrate to use for encoding the timelapse video') }}">
         <label class="control-label" for="settings-webcamBitrate">{{ _('Timelapse bitrate') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: webcam_bitrate" id="settings-webcamBitrate">
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Number of FFMPEG encoding threads') }}">
+        <label class="control-label" for="settings-webcam_ffmpegThreads">{{ _('FFMPEG threads') }}</label>
+        <div class="controls">
+            <input class="input-block-level" data-bind="value: webcam_ffmpegThreads" id="settings-webcamFfmpegThreads" type="number" step="1" min="1">
         </div>
     </div>
     <div class="control-group">
