@@ -46,6 +46,8 @@ $(function() {
                     return gettext("black");
                 case "white":
                     return gettext("white");
+                case "transparent":
+                    return gettext("transparent");
                 case "default":
                     return gettext("default");
                 default:
