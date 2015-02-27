@@ -117,40 +117,40 @@ class PluginSettings(object):
 		)
 		self.deprecated_access_methods = dict(getInt="get_int", getFloat="get_float", getBoolean="get_boolean", setInt="set_int", setFloat="set_float", setBoolean="set_boolean")
 
-	def global_get(self, path):
-		return self.settings.get(path)
+	def global_get(self, path, **kwargs):
+		return self.settings.get(path, **kwargs)
 	globalGet = deprecated("globalGet has been renamed to global_get")(global_get)
 
-	def global_get_int(self, path):
-		return self.settings.getInt(path)
+	def global_get_int(self, path, **kwargs):
+		return self.settings.getInt(path, **kwargs)
 	globalGetInt = deprecated("globalGetInt has been renamed to global_get_int")(global_get_int)
 
-	def global_get_float(self, path):
-		return self.settings.getFloat(path)
+	def global_get_float(self, path, **kwargs):
+		return self.settings.getFloat(path, **kwargs)
 	globalGetFloat = deprecated("globalGetFloat has been renamed to global_get_float")(global_get_float)
 
-	def global_get_boolean(self, path):
-		return self.settings.getBoolean(path)
+	def global_get_boolean(self, path, **kwargs):
+		return self.settings.getBoolean(path, **kwargs)
 	globalGetBoolean = deprecated("globalGetBoolean has been renamed to global_get_boolean")(global_get_boolean)
 
-	def global_set(self, path, value):
-		self.settings.set(path, value)
+	def global_set(self, path, value, **kwargs):
+		self.settings.set(path, value, **kwargs)
 	globalSet = deprecated("globalSet has been renamed to global_set")(global_set)
 
-	def global_set_int(self, path, value):
-		self.settings.setInt(path, value)
+	def global_set_int(self, path, value, **kwargs):
+		self.settings.setInt(path, value, **kwargs)
 	globalSetInt = deprecated("globalSetInt has been renamed to global_set_int")(global_set_int)
 
-	def global_set_float(self, path, value):
-		self.settings.setFloat(path, value)
+	def global_set_float(self, path, value, **kwargs):
+		self.settings.setFloat(path, value, **kwargs)
 	globalSetFloat = deprecated("globalSetFloat has been renamed to global_set_float")(global_set_float)
 
-	def global_set_boolean(self, path, value):
-		self.settings.setBoolean(path, value)
+	def global_set_boolean(self, path, value, **kwargs):
+		self.settings.setBoolean(path, value, **kwargs)
 	globalSetBoolean = deprecated("globalSetBoolean has been renamed to global_set_boolean")(global_set_boolean)
 
-	def global_get_basefolder(self, folder_type):
-		return self.settings.getBaseFolder(folder_type)
+	def global_get_basefolder(self, folder_type, **kwargs):
+		return self.settings.getBaseFolder(folder_type, **kwargs)
 	globalGetBaseFolder = deprecated("globalGetBaseFolder has been renamed to global_get_basefolder")(global_get_basefolder)
 
 	def get_plugin_logfile_path(self, postfix=None):
@@ -176,6 +176,10 @@ class PluginSettings(object):
 				if decorator is not None:
 					orig_func = decorator(orig_func)
 
-				return lambda *args, **kwargs: orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
+				def _func(*args, **kwargs):
+					return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
+				_func.__name__ = item
+
+				return _func
 
 		return getattr(self.settings, item)
