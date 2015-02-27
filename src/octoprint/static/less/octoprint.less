@@ -15,7 +15,7 @@ body {
   color: @text-color;
   @caret-color: average(@base, @text-color);
   @caret-hover-color: average(@caret-color, @text-color);
-  
+
   .caret {
     border-bottom-color: @caret-color;
     border-top-color: @caret-color;
@@ -68,7 +68,7 @@ body {
 .navbar-inner-color (@base) {
   @top: lighten(@base, 25%);
   @bottom: darken(@base, 15%);
-  
+
   @text-color-light: #f2f2f2;
   @text-color-dark: #333333;
   @text-color: contrast(@base, @text-color-dark, @text-color-light);
@@ -78,7 +78,7 @@ body {
   .brand, .nav>li>a {
     .navbar-inner-text(@base);
   }
-  
+
   .brand {
     .brand(@text-color, @text-color-dark, @text-color-light);
   }
@@ -123,7 +123,11 @@ body {
     @base: #383838;
     .navbar-inner-color(@base);
   }
-  
+  &.white {
+    @base: #ffffff;
+    .navbar-inner-color(@base);
+  }
+
   .brand span {
     background-size: 20px 20px;
     background-position: left center;
