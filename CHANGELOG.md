@@ -25,6 +25,8 @@
   - `action:pause`: Pauses the current job in OctoPrint
   - `action:resume`: Resumes the current job in OctoPrint
   - `action:disconnect`: Disconnects OctoPrint from the printer
+  Plugins can add supported commands by [hooking](http://docs.octoprint.org/en/devel/plugins/hooks.html) into the
+  ``octoprint.comm.protocol.action`` hook
 * Mousing over the webcam image in the control tab enables key control mode, allowing you to quickly move the axis of your
   printer with your computer's keyboard ([#610](https://github.com/foosel/OctoPrint/pull/610)):
   - arrow keys: X and Y axes
@@ -134,6 +136,7 @@
   * Color code successful or failed print results directly in file list, not just after a reload
   * Changing Timelapse post roll activates save button
   * Timelapse post roll is loaded properly from config
+  * Handling of files on the printer's SD card contained in folders now works correctly
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 

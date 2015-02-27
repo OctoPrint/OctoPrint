@@ -57,7 +57,7 @@ def downloadTimelapse(filename):
 @api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
 def deleteTimelapse(filename):
-	if util.isAllowedFile(filename, {"mpg"}):
+	if util.is_allowed_file(filename, {"mpg"}):
 		timelapse_folder = settings().getBaseFolder("timelapse")
 		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
 		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):

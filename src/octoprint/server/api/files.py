@@ -11,7 +11,7 @@ import octoprint.util as util
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 from octoprint.server.api import api
 from octoprint.events import Events
 import octoprint.filemanager
@@ -27,7 +27,7 @@ def readGcodeFiles():
 		filter = request.values["filter"]
 	files = _getFileList(FileDestinations.LOCAL, filter=filter)
 	files.extend(_getFileList(FileDestinations.SDCARD))
-	return jsonify(files=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
+	return jsonify(files=files, free=util.get_free_bytes(settings().getBaseFolder("uploads")))
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
@@ -38,7 +38,7 @@ def readGcodeFilesForOrigin(origin):
 	files = _getFileList(origin)
 
 	if origin == FileDestinations.LOCAL:
-		return jsonify(files=files, free=util.getFreeBytes(settings().getBaseFolder("uploads")))
+		return jsonify(files=files, free=util.get_free_bytes(settings().getBaseFolder("uploads")))
 	else:
 		return jsonify(files=files)
 
@@ -276,7 +276,7 @@ def gcodeFileCommand(filename, target):
 		"slice": []
 	}
 
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 

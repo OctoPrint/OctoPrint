@@ -33,9 +33,9 @@ def getFinishedTimelapses():
 		statResult = os.stat(os.path.join(basedir, osFile))
 		files.append({
 			"name": osFile,
-			"size": util.getFormattedSize(statResult.st_size),
+			"size": util.get_formatted_size(statResult.st_size),
 			"bytes": statResult.st_size,
-			"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(statResult.st_ctime))
+			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(statResult.st_ctime))
 		})
 	return files
 

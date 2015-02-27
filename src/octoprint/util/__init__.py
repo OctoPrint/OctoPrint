@@ -5,18 +5,12 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 import os
 import traceback
 import sys
-import time
 import re
 import tempfile
 import logging
 import shutil
-
 from functools import wraps
-from flask import make_response
-
 import warnings
-
-from octoprint.settings import settings, default_settings
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +32,7 @@ def warning_decorator_factory(warning_type):
 deprecated = warning_decorator_factory(DeprecationWarning)
 pending_deprecation = warning_decorator_factory(PendingDeprecationWarning)
 
-def getFormattedSize(num):
+def get_formatted_size(num):
 	"""
 	Taken from http://stackoverflow.com/a/1094933/2028598
 	"""
@@ -49,11 +43,11 @@ def getFormattedSize(num):
 	return "%3.1f%s" % (num, "TB")
 
 
-def isAllowedFile(filename, extensions):
+def is_allowed_file(filename, extensions):
 	return "." in filename and filename.rsplit(".", 1)[1] in extensions
 
 
-def getFormattedTimeDelta(d):
+def get_formatted_timedelta(d):
 	if d is None:
 		return None
 	hours = d.days * 24 + d.seconds // 3600
@@ -62,14 +56,14 @@ def getFormattedTimeDelta(d):
 	return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
 
-def getFormattedDateTime(d):
+def get_formatted_datetime(d):
 	if d is None:
 		return None
 
 	return d.strftime("%Y-%m-%d %H:%M")
 
 
-def getClass(name):
+def get_class(name):
 	"""
 	Taken from http://stackoverflow.com/a/452981/2028598
 	"""
@@ -81,47 +75,12 @@ def getClass(name):
 	return m
 
 
-def isDevVersion():
-	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../../.git"))
-	return os.path.exists(gitPath)
-
-
-def getExceptionString():
+def get_exception_string():
 	locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]
 	return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
 
 
-def getGitInfo():
-	gitPath = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../../.git"))
-	if not os.path.exists(gitPath):
-		return (None, None)
-
-	headref = None
-	with open(os.path.join(gitPath, "HEAD"), "r") as f:
-		headref = f.readline().strip()
-
-	if headref is None:
-		return (None, None)
-
-	headref = headref[len("ref: "):]
-	branch = headref[headref.rfind("/") + 1:]
-	with open(os.path.join(gitPath, headref)) as f:
-		head = f.readline().strip()
-
-	return (branch, head)
-
-
-def getNewTimeout(type):
-	now = time.time()
-
-	if type not in default_settings["serial"]["timeout"].keys():
-		# timeout immediately for unknown timeout type
-		return now
-
-	return now + settings().getFloat(["serial", "timeout", type])
-
-
-def getFreeBytes(path):
+def get_free_bytes(path):
 	"""
 	Taken from http://stackoverflow.com/a/2372171/2028598
 	"""
@@ -135,14 +94,7 @@ def getFreeBytes(path):
 		return st.f_bavail * st.f_frsize
 
 
-def getRemoteAddress(request):
-	forwardedFor = request.headers.get("X-Forwarded-For", None)
-	if forwardedFor is not None:
-		return forwardedFor.split(",")[0]
-	return request.remote_addr
-
-
-def getDosFilename(input, existingFilenames, extension=None):
+def get_dos_filename(input, existingFilenames, extension=None):
 	if input is None:
 		return None
 
@@ -150,10 +102,10 @@ def getDosFilename(input, existingFilenames, extension=None):
 		extension = "gco"
 
 	filename, ext = input.rsplit(".", 1)
-	return findCollisionfreeName(filename, extension, existingFilenames)
+	return find_collision_free_name(filename, extension, existingFilenames)
 
 
-def findCollisionfreeName(input, extension, existingFilenames):
+def find_collision_free_name(input, extension, existingFilenames):
 	filename = re.sub(r"\s+", "_", input.lower().translate({ord(i):None for i in ".\"/\\[]:;=,"}))
 
 	counter = 1
@@ -169,7 +121,7 @@ def findCollisionfreeName(input, extension, existingFilenames):
 	raise ValueError("Can't create a collision free filename")
 
 
-def safeRename(old, new, throw_error=False):
+def safe_rename(old, new, throw_error=False):
 	"""
 	Safely renames a file.
 
@@ -178,7 +130,7 @@ def safeRename(old, new, throw_error=False):
 	anything goes wrong during those steps, the backup (if already there) will be renamed to its old name and thus
 	the operation hopefully result in a no-op.
 
-	On other operating systems the atomic os.rename function will be used instead.
+	On other operating systems :func:`shutil.move` will be used instead.
 
 	@param old the path to the old file to be renamed
 	@param new the path to the new file to be created/replaced
@@ -190,7 +142,7 @@ def safeRename(old, new, throw_error=False):
 
 		try:
 			if os.path.exists(new):
-				silentRemove(backup)
+				silent_remove(backup)
 				os.rename(new, backup)
 			os.rename(old, new)
 			os.remove(backup)
@@ -198,7 +150,7 @@ def safeRename(old, new, throw_error=False):
 			# if anything went wrong, try to rename the backup file to its original name
 			logger.error("Could not perform safe rename, trying to revert")
 			if os.path.exists(backup):
-				silentRemove(new)
+				silent_remove(new)
 				os.rename(backup, new)
 			if throw_error:
 				raise e
@@ -207,7 +159,7 @@ def safeRename(old, new, throw_error=False):
 		shutil.move(old, new)
 
 
-def silentRemove(file):
+def silent_remove(file):
 	"""
 	Silently removes a file. Does not raise an error if the file doesn't exist.
 
@@ -220,11 +172,11 @@ def silentRemove(file):
 		pass
 
 
-def sanitizeAscii(line):
+def sanitize_ascii(line):
 	return unicode(line, 'ascii', 'replace').encode('ascii', 'replace').rstrip()
 
 
-def filterNonAscii(line):
+def filter_non_ascii(line):
 	"""
 	Returns True if the line contains non-ascii characters, false otherwise
 
@@ -236,22 +188,6 @@ def filterNonAscii(line):
 		return False
 	except ValueError:
 		return True
-
-
-def getJsonCommandFromRequest(request, valid_commands):
-	if not "application/json" in request.headers["Content-Type"]:
-		return None, None, make_response("Expected content-type JSON", 400)
-
-	data = request.json
-	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
-		return None, None, make_response("Expected valid command", 400)
-
-	command = data["command"]
-	for parameter in valid_commands[command]:
-		if not parameter in data:
-			return None, None, make_response("Mandatory parameter %s missing for command %s" % (parameter, command), 400)
-
-	return command, data, None
 
 
 def dict_merge(a, b):
@@ -332,7 +268,7 @@ def address_for_client(host, port):
 			sock.bind((address, 0))
 			sock.connect((host, port))
 			return address
-		except Exception as e:
-			pass
+		except:
+			continue
 
 

@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import request, make_response, jsonify
 
 from octoprint.server import printer, NO_CONTENT
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 from octoprint.server.api import api
 import octoprint.util as util
 
@@ -26,7 +26,7 @@ def controlJob():
 		"cancel": []
 	}
 
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 

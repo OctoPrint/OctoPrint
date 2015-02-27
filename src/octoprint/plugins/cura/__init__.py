@@ -92,7 +92,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		# default values for name, display name and description
 		profile_name = _sanitize_name(name)
 		profile_display_name = name
-		profile_description = "Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.getFormattedDateTime(datetime.datetime.now()))
+		profile_description = "Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.get_formatted_datetime(datetime.datetime.now()))
 		profile_allow_overwrite = False
 
 		# overrides

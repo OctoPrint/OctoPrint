@@ -20,11 +20,11 @@ from collections import deque
 from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
 
-from octoprint.settings import settings
+from octoprint.settings import settings, default_settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.util import getExceptionString, getNewTimeout, sanitizeAscii, filterNonAscii
+from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii
 from octoprint.util.virtual import VirtualPrinter
 
 try:
@@ -415,7 +415,7 @@ class MachineCom(object):
 				self._sendNext()
 		except:
 			self._logger.exception("Error while trying to start printing")
-			self._errorValue = getExceptionString()
+			self._errorValue = get_exception_string()
 			self._changeState(self.STATE_ERROR)
 			eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 
@@ -652,10 +652,10 @@ class MachineCom(object):
 			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
-		self._timeout = getNewTimeout("communication")
+		self._timeout = get_new_timeout("communication")
 
-		tempRequestTimeout = getNewTimeout("temperature")
-		sdStatusRequestTimeout = getNewTimeout("sdStatus")
+		tempRequestTimeout = get_new_timeout("temperature")
+		sdStatusRequestTimeout = get_new_timeout("sdStatus")
 
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		heatingUp = False
@@ -668,7 +668,7 @@ class MachineCom(object):
 				if line is None:
 					break
 				if line.strip() is not "":
-					self._timeout = getNewTimeout("communication")
+					self._timeout = get_new_timeout("communication")
 
 				##~~ debugging output handling
 				if line.startswith("//"):
@@ -714,7 +714,7 @@ class MachineCom(object):
 						size = None
 
 					if valid_file_type(filename, "gcode"):
-						if filterNonAscii(filename):
+						if filter_non_ascii(filename):
 							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
 							if not filename.startswith("/"):
@@ -886,12 +886,12 @@ class MachineCom(object):
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
 								self._baudrateDetectTestOk = 0
-								self._timeout = getNewTimeout("communication")
+								self._timeout = get_new_timeout("communication")
 								self._serial.write('\n')
 								self._sendCommand("M105")
 								self._testingBaudrate = True
 							except:
-								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, getExceptionString()))
+								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
 					elif 'ok' in line and 'T:' in line:
 						self._baudrateDetectTestOk += 1
 						if self._baudrateDetectTestOk < 10:
@@ -935,7 +935,7 @@ class MachineCom(object):
 							self._sendCommand(self._commandQueue.get())
 						else:
 							self._sendCommand("M105")
-						tempRequestTimeout = getNewTimeout("temperature")
+						tempRequestTimeout = get_new_timeout("temperature")
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						if settings().get(["feature", "swallowOkAfterResend"]):
@@ -951,16 +951,16 @@ class MachineCom(object):
 					if self.isSdPrinting():
 						if time.time() > tempRequestTimeout and not heatingUp:
 							self._sendCommand("M105")
-							tempRequestTimeout = getNewTimeout("temperature")
+							tempRequestTimeout = get_new_timeout("temperature")
 
 						if time.time() > sdStatusRequestTimeout and not heatingUp:
 							self._sendCommand("M27")
-							sdStatusRequestTimeout = getNewTimeout("sdStatus")
+							sdStatusRequestTimeout = get_new_timeout("sdStatus")
 					else:
 						# Even when printing request the temperature every 5 seconds.
 						if time.time() > tempRequestTimeout and not self.isStreaming():
 							self._commandQueue.put("M105")
-							tempRequestTimeout = getNewTimeout("temperature")
+							tempRequestTimeout = get_new_timeout("temperature")
 
 						if "ok" in line and swallowOk:
 							swallowOk = False
@@ -1000,7 +1000,7 @@ class MachineCom(object):
 					self._log("Error while connecting to %s: %s" % (p, str(e)))
 					pass
 				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (p, getExceptionString()))
+					self._log("Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string()))
 				programmer.close()
 			if self._serial is None:
 				self._log("Failed to autodetect serial port")
@@ -1023,7 +1023,7 @@ class MachineCom(object):
 				self._serial.parity = serial.PARITY_NONE
 				self._serial.open()
 			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
+				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, get_exception_string()))
 				self._errorValue = "Failed to open serial port, permissions correct?"
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
@@ -1060,14 +1060,14 @@ class MachineCom(object):
 		try:
 			ret = self._serial.readline()
 		except:
-			self._log("Unexpected error while reading serial port: %s" % (getExceptionString()))
-			self._errorValue = getExceptionString()
+			self._log("Unexpected error while reading serial port: %s" % (get_exception_string()))
+			self._errorValue = get_exception_string()
 			self.close(True)
 			return None
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		self._log("Recv: %s" % sanitizeAscii(ret))
+		self._log("Recv: %s" % sanitize_ascii(ret))
 		return ret
 
 	def _sendNext(self):
@@ -1191,12 +1191,12 @@ class MachineCom(object):
 			try:
 				self._serial.write(cmd + '\n')
 			except:
-				self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
-				self._errorValue = getExceptionString()
+				self._log("Unexpected error while writing serial port: %s" % (get_exception_string()))
+				self._errorValue = get_exception_string()
 				self.close(True)
 		except:
-			self._log("Unexpected error while writing serial port: %s" % (getExceptionString()))
-			self._errorValue = getExceptionString()
+			self._log("Unexpected error while writing serial port: %s" % (get_exception_string()))
+			self._errorValue = get_exception_string()
 			self.close(True)
 
 	def _gcode_T(self, cmd):
@@ -1301,7 +1301,7 @@ class MachineCom(object):
 		elif s_idx != -1:
 			# dwell time is specified in seconds
 			_timeout = int(cmd[s_idx+1:])
-		self._timeout = getNewTimeout("communication") + _timeout
+		self._timeout = get_new_timeout("communication") + _timeout
 		return cmd
 
 ### MachineCom callback ################################################################################################
@@ -1547,3 +1547,13 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 
 	def getRemoteFilename(self):
 		return self._remoteFilename
+
+
+def get_new_timeout(type):
+	now = time.time()
+
+	if type not in default_settings["serial"]["timeout"].keys():
+		# timeout immediately for unknown timeout type
+		return now
+
+	return now + settings().getFloat(["serial", "timeout", type])

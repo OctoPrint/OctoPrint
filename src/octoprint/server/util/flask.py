@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
+from flask import make_response
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -245,3 +246,25 @@ class AppSessionManager(object):
 
 			self._logger.debug("App sessions after cleanup: %r" % self._sessions)
 
+
+def get_remote_address(request):
+	forwardedFor = request.headers.get("X-Forwarded-For", None)
+	if forwardedFor is not None:
+		return forwardedFor.split(",")[0]
+	return request.remote_addr
+
+
+def get_json_command_from_request(request, valid_commands):
+	if not "application/json" in request.headers["Content-Type"]:
+		return None, None, make_response("Expected content-type JSON", 400)
+
+	data = request.json
+	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
+		return None, None, make_response("Expected valid command", 400)
+
+	command = data["command"]
+	for parameter in valid_commands[command]:
+		if not parameter in data:
+			return None, None, make_response("Mandatory parameter %s missing for command %s" % (parameter, command), 400)
+
+	return command, data, None

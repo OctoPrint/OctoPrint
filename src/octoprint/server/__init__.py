@@ -580,7 +580,7 @@ class Server():
 		if settings().getBoolean(["accessControl", "enabled"]):
 			userManagerName = settings().get(["accessControl", "userManager"])
 			try:
-				clazz = octoprint.util.getClass(userManagerName)
+				clazz = octoprint.util.get_class(userManagerName)
 				userManager = clazz()
 			except AttributeError, e:
 				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)

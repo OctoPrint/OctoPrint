@@ -12,7 +12,7 @@ import re
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 import octoprint.util as util
 
 #~~ Printer
@@ -64,7 +64,7 @@ def printerToolCommand():
 		"extrude": ["amount"],
 		"flowrate": ["factor"]
 	}
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 
@@ -166,7 +166,7 @@ def printerBedCommand():
 		"target": ["target"],
 		"offset": ["offset"]
 	}
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 
@@ -232,7 +232,7 @@ def printerPrintheadCommand():
 		"home": ["axes"],
 		"feedrate": ["factor"]
 	}
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 
@@ -293,7 +293,7 @@ def printerSdCommand():
 		"refresh": [],
 		"release": []
 	}
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 
