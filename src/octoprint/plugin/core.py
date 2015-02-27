@@ -1,4 +1,16 @@
 # coding=utf-8
+"""
+In this module resides the core data structures and logic of the plugin system. It is implemented in an OctoPrint-agnostic
+way and could be extracted into a separate Python module in the future.
+
+.. autoclass:: PluginManager
+
+.. autoclass:: PluginInfo
+
+.. autoclass:: Plugin
+
+"""
+
 from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -13,6 +25,15 @@ import logging
 
 
 class PluginInfo(object):
+	"""
+	The :class:`PluginInfo` class wraps all available information about a registered plugin.
+
+	This includes its meta data (like name, description, version, etc) as well as the actual plugin extensions like
+	implementations, hooks and helpers.
+
+	It works on Python module objects and extracts the relevant data from those via accessing the
+	:ref:`control properties <sec-plugins-infrastructure-controlproperties>`.
+	"""
 
 	attr_name = '__plugin_name__'
 
@@ -125,6 +146,12 @@ class PluginInfo(object):
 
 
 class PluginManager(object):
+	"""
+	The :class:`PluginManager` is the central component for finding, loading and accessing plugins provided to the
+	system.
+
+	It is able to discover plugins both through possible file system locations as well as customizable entry points.
+	"""
 
 	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None):
 		self.logger = logging.getLogger(__name__)
@@ -405,5 +432,34 @@ class PluginManager(object):
 
 
 class Plugin(object):
+	"""
+	The parent class of all plugin implementations.
+
+	.. attribute:: _identifier
+
+	   The identifier of the plugin. Injected by the plugin core system upon initialization of the implementation.
+
+	.. attribute:: _plugin_name
+
+	   The name of the plugin. Injected by the plugin core system upon initialization of the implementation.
+
+	.. attribute:: _plugin_version
+
+	   The version of the plugin. Injected by the plugin core system upon initialization of the implementation.
+
+	.. attribute:: _basefolder
+
+	   The base folder of the plugin. Injected by the plugin core system upon initialization of the implementation.
+
+	.. attribute:: _logger
+
+	   The logger instance to use, with the logging name set to the :attr:`PluginManager.logging_prefix` of the
+	   :class:`PluginManager` concatenated with :attr:`_identifier`. Injected by the plugin core system upon
+	   initialization of the implementation.
+	"""
+
 	def initialize(self):
+		"""
+		Called by the plugin core after performing all injections.
+		"""
 		pass

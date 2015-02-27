@@ -1,7 +1,7 @@
 .. _sec-development-interface:
 
-Interfaces
-==========
+Internal API
+============
 
 .. toctree::
    :maxdepth: 3
@@ -9,3 +9,4 @@ Interfaces
    filemanager.rst
    plugin.rst
    printer.rst
+   util.rst
