@@ -502,11 +502,13 @@ class Printer(comm.MachineComPrintCallback):
 	def _setJobData(self, filename, filesize, sd):
 		if filename is not None:
 			if sd:
-				filename = filename[1:]
+				path_in_storage = filename[1:]
+				path_on_disk = None
 			else:
-				filename = self._fileManager.path_in_storage(FileDestinations.LOCAL, filename)
+				path_in_storage = self._fileManager.path_in_storage(FileDestinations.LOCAL, filename)
+				path_on_disk = self._fileManager.path_on_disk(FileDestinations.LOCAL, filename)
 			self._selectedFile = {
-				"filename": filename,
+				"filename": path_in_storage,
 				"filesize": filesize,
 				"sd": sd,
 				"estimatedPrintTime": None
@@ -532,14 +534,14 @@ class Printer(comm.MachineComPrintCallback):
 		averagePrintTime = None
 		date = None
 		filament = None
-		if filename:
+		if path_on_disk:
 			# Use a string for mtime because it could be float and the
 			# javascript needs to exact match
 			if not sd:
-				date = int(os.stat(filename).st_ctime)
+				date = int(os.stat(path_on_disk).st_ctime)
 
 			try:
-				fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, filename)
+				fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, path_on_disk)
 			except:
 				fileData = None
 			if fileData is not None:
@@ -563,7 +565,7 @@ class Printer(comm.MachineComPrintCallback):
 
 		self._stateMonitor.setJobData({
 			"file": {
-				"name": filename,
+				"name": path_in_storage,
 				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
 				"size": filesize,
 				"date": date
@@ -717,7 +719,7 @@ class Printer(comm.MachineComPrintCallback):
 		self.refreshSdFiles(blocking=True)
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
-		remoteName = util.getDosFilename(filename, existingSdFiles)
+		remoteName = util.get_dos_filename(filename, existingSdFiles)
 		self._timeEstimationData = TimeEstimationHelper()
 		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName)
 
