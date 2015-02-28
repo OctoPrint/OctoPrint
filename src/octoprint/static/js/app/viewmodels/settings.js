@@ -24,7 +24,8 @@ $(function() {
             {key: "blue", name: gettext("blue")},
             {key: "violet", name: gettext("violet")},
             {key: "black", name: gettext("black")},
-            {key: "white", name: gettext("white")}
+            {key: "white", name: gettext("white")},
+            {key: "transparent", name: gettext("transparent")}
         ]);
 
         self.appearance_colorName = function(color) {
@@ -45,6 +46,8 @@ $(function() {
                     return gettext("black");
                 case "white":
                     return gettext("white");
+                case "transparent":
+                    return gettext("transparent");
                 case "default":
                     return gettext("default");
                 default:
