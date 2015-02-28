@@ -719,7 +719,7 @@ class Printer(comm.MachineComPrintCallback):
 		self.refreshSdFiles(blocking=True)
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
-		remoteName = util.get_dos_filename(filename, existingSdFiles)
+		remoteName = util.get_dos_filename(filename, existing_filenames=existingSdFiles, extension="gco")
 		self._timeEstimationData = TimeEstimationHelper()
 		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName)
 

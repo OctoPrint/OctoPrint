@@ -1,8 +1,19 @@
 .. _sec-development-interface-plugin:
 
-``octoprint.plugin``
---------------------
+octoprint.plugin
+----------------
 
 .. automodule:: octoprint.plugin
-   :members: plugin_manager, plugin_settings, call_plugin, PluginSettings
-   :undoc-members:
+
+.. _sec-development-interface-plugin-core:
+
+octoprint.plugin.core
+---------------------
+
+.. automodule:: octoprint.plugin.core
+
+octoprint.plugin.types
+----------------------
+
+.. automodule:: octoprint.plugin.types
+
