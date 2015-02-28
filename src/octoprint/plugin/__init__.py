@@ -1,4 +1,19 @@
 # coding=utf-8
+"""
+This module represents OctoPrint's plugin subsystem. This includes management and helper methods as well as the
+registered plugin types.
+
+.. autofunction:: plugin_manager
+
+.. autofunction:: plugin_settings
+
+.. autofunction:: call_plugin
+
+.. autoclass:: PluginSettings
+   :members:
+
+"""
+
 from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -18,9 +33,41 @@ from octoprint.util import deprecated
 _instance = None
 
 def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_entry_points=None, plugin_disabled_list=None):
+	"""
+	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
+	singleton.
+
+	Arguments:
+	    init (boolean): A flag indicating whether this is the initial call to construct the singleton (True) or not
+	        (False, default). If this is set to True and the plugin manager has already been initialized, a :class:`ValueError`
+	        will be raised. The same will happen if the plugin manager has not yet been initialized and this is set to
+	        False.
+	    plugin_folders (list): A list of folders (as strings containing the absolute path to them) in which to look for
+	        potential plugin modules. If not provided this defaults to the configured ``plugins`` base folder and
+	        ``src/plugins`` within OctoPrint's code base.
+	    plugin_types (list): A list of recognized plugin types for which to look for provided implementations. If not
+	        provided this defaults to the plugin types found in :mod:`octoprint.plugin.types` without
+	        :class:`~octoprint.plugin.OctoPrintPlugin`.
+	    plugin_entry_points (list): A list of entry points pointing to modules which to load as plugins. If not provided
+	        this defaults to the entry point ``octoprint.plugin``.
+	    plugin_disabled_list (list): A list of plugin identifiers that are currently disabled. If not provided this
+	        defaults to all plugins for which ``enabled`` is set to ``False`` in the settings.
+
+	Returns:
+	    PluginManager: A fully initialized :class:`~octoprint.plugin.core.PluginManager` instance to be used for plugin
+	        management tasks.
+
+	Raises:
+	    ValueError: ``init`` was True although the plugin manager was already initialized, or it was False although
+	        the plugin manager was not yet initialized.
+	"""
+
 	global _instance
 	if _instance is None:
 		if init:
+			if _instance is not None:
+				raise ValueError("Plugin Manager already initialized")
+
 			if plugin_folders is None:
 				plugin_folders = (settings().getBaseFolder("plugins"), os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")))
 			if plugin_types is None:
@@ -51,10 +98,59 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 
 
 def plugin_settings(plugin_key, defaults=None):
+	"""
+	Factory method for creating a :class:`PluginSettings` instance.
+
+	Arguments:
+	    plugin_key (string): The plugin identifier for which to create the settings instance.
+	    defaults (dict): The default settings for the plugin.
+
+	Returns:
+	    PluginSettings: A fully initialized :class:`PluginSettings` instance to be used to access the plugin's
+	        settings
+	"""
 	return PluginSettings(settings(), plugin_key, defaults=defaults)
 
 
 def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None):
+	"""
+	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
+	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
+	and/or failure of each call which can be used to return individual results to the calling code.
+
+	Example:
+
+	.. sourcecode:: python
+
+	   def my_success_callback(name, plugin, result):
+	       print("{name} was called successfully and returned {result!r}".format(**locals()))
+
+	   def my_error_callback(name, plugin, exc):
+	       print("{name} raised an exception: {exc!s}".format(**locals()))
+
+	   octoprint.plugin.call_plugin(
+	       [octoprint.plugin.StartupPlugin],
+	       "on_startup",
+	       args=(my_host, my_port),
+	       callback=my_success_callback,
+	       error_callback=my_error_callback
+	   )
+
+	Arguments:
+	    types (list): A list of plugin implementation types to match against.
+	    method (string): Name of the method to call on all matching implementations.
+	    args (tuple): A tuple containing the arguments to supply to the called ``method``. Optional.
+	    kwargs (dict): A dictionary containing the keyword arguments to supply to the called ``method``. Optional.
+	    callback (function): A callback to invoke after an implementation has been called successfully. Will be called
+	        with the three arguments ``name``, ``plugin`` and ``result``. ``name`` will be the plugin identifier,
+	        ``plugin`` the plugin implementation instance itself and ``result`` the result returned from the
+	        ``method`` invocation.
+	    error_callback (function): A callback to invoke after the call of an implementation resulted in an exception.
+	        Will be called with the three arguments ``name``, ``plugin`` and ``exc``. ``name`` will be the plugin
+	        identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
+
+	"""
+
 	if not isinstance(types, (list, tuple)):
 		types = [types]
 	if args is None:
@@ -69,14 +165,53 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 				result = getattr(plugin, method)(*args, **kwargs)
 				if callback:
 					callback(name, plugin, result)
-			except Exception as e:
+			except Exception as exc:
 				logging.getLogger(__name__).exception("Error while calling plugin %s" % name)
 				if error_callback:
-					error_callback(name, plugin, e)
+					error_callback(name, plugin, exc)
 
 
 class PluginSettings(object):
+	"""
+	The :class:`PluginSettings` class is the interface for plugins to their own or globally defined settings.
+
+	It provides a couple of convenience methods for directly accessing plugin settings via the regular
+	:class:`octoprint.settings.Settings` interfaces as well as means to access plugin specific folder locations.
+
+	.. method:: get(path, merged=False, asdict=False)
+
+	   Retrieves a raw key from the settings for ``path``, optionally merging the raw value with the default settings
+	   if ``merged`` is set to True.
+
+	   :param list path:      a list of path elements to navigate to the settings value
+	   :param boolean merged: whether to merge the returned result with the default settings (True) or not (False, default)
+	   :return: the retrieved settings value
+
+	.. method:: get_int(path)
+
+	.. method:: get_float(path)
+
+	.. method:: get_boolean(path)
+
+	.. method:: set(path, value, force=False)
+
+	.. method:: set_int(path, value, force=False)
+
+	.. method:: set_float(path, value, force=False)
+
+	.. method:: set_boolean(path, value, force=False)
+	"""
+
 	def __init__(self, settings, plugin_key, defaults=None):
+		"""
+		Initializes the object with the provided :class:`octoprint.settings.Settings` manager as ``settings``, using
+		the ``plugin_key`` and optional ``defaults``.
+
+		:param settings:
+		:param plugin_key:
+		:param defaults:
+		:return:
+		"""
 		self.settings = settings
 		self.plugin_key = plugin_key
 
@@ -119,39 +254,30 @@ class PluginSettings(object):
 
 	def global_get(self, path, **kwargs):
 		return self.settings.get(path, **kwargs)
-	globalGet = deprecated("globalGet has been renamed to global_get")(global_get)
 
 	def global_get_int(self, path, **kwargs):
 		return self.settings.getInt(path, **kwargs)
-	globalGetInt = deprecated("globalGetInt has been renamed to global_get_int")(global_get_int)
 
 	def global_get_float(self, path, **kwargs):
 		return self.settings.getFloat(path, **kwargs)
-	globalGetFloat = deprecated("globalGetFloat has been renamed to global_get_float")(global_get_float)
 
 	def global_get_boolean(self, path, **kwargs):
 		return self.settings.getBoolean(path, **kwargs)
-	globalGetBoolean = deprecated("globalGetBoolean has been renamed to global_get_boolean")(global_get_boolean)
 
 	def global_set(self, path, value, **kwargs):
 		self.settings.set(path, value, **kwargs)
-	globalSet = deprecated("globalSet has been renamed to global_set")(global_set)
 
 	def global_set_int(self, path, value, **kwargs):
 		self.settings.setInt(path, value, **kwargs)
-	globalSetInt = deprecated("globalSetInt has been renamed to global_set_int")(global_set_int)
 
 	def global_set_float(self, path, value, **kwargs):
 		self.settings.setFloat(path, value, **kwargs)
-	globalSetFloat = deprecated("globalSetFloat has been renamed to global_set_float")(global_set_float)
 
 	def global_set_boolean(self, path, value, **kwargs):
 		self.settings.setBoolean(path, value, **kwargs)
-	globalSetBoolean = deprecated("globalSetBoolean has been renamed to global_set_boolean")(global_set_boolean)
 
 	def global_get_basefolder(self, folder_type, **kwargs):
 		return self.settings.getBaseFolder(folder_type, **kwargs)
-	globalGetBaseFolder = deprecated("globalGetBaseFolder has been renamed to global_get_basefolder")(global_get_basefolder)
 
 	def get_plugin_logfile_path(self, postfix=None):
 		filename = "plugin_" + self.plugin_key
@@ -159,7 +285,6 @@ class PluginSettings(object):
 			filename += "_" + postfix
 		filename += ".log"
 		return os.path.join(self.settings.getBaseFolder("logs"), filename)
-	getPluginLogfilePath = deprecated("getPluginLogfilePath has been renamed to get_plugin_logfile_path")(get_plugin_logfile_path)
 
 	def __getattr__(self, item):
 		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
@@ -179,7 +304,43 @@ class PluginSettings(object):
 				def _func(*args, **kwargs):
 					return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
 				_func.__name__ = item
+				_func.__doc__ = orig_func.__doc__ if "__doc__" in dir(orig_func) else None
 
 				return _func
 
 		return getattr(self.settings, item)
+
+	##~~ deprecated methods follow
+
+	# TODO: Remove with release of 1.2.0
+
+	globalGet            = deprecated("globalGet has been renamed to global_get",
+	                                  includedoc="Replaced by :func:`global_get`",
+	                                  since="1.2.0-dev-546")(global_get)
+	globalGetInt         = deprecated("globalGetInt has been renamed to global_get_int",
+	                                  includedoc="Replaced by :func:`global_get_int`",
+	                                  since="1.2.0-dev-546")(global_get_int)
+	globalGetFloat       = deprecated("globalGetFloat has been renamed to global_get_float",
+	                                  includedoc="Replaced by :func:`global_get_float`",
+	                                  since="1.2.0-dev-546")(global_get_float)
+	globalGetBoolean     = deprecated("globalGetBoolean has been renamed to global_get_boolean",
+	                                  includedoc="Replaced by :func:`global_get_boolean`",
+	                                  since="1.2.0-dev-546")(global_get_boolean)
+	globalSet            = deprecated("globalSet has been renamed to global_set",
+	                                  includedoc="Replaced by :func:`global_set`",
+	                                  since="1.2.0-dev-546")(global_set)
+	globalSetInt         = deprecated("globalSetInt has been renamed to global_set_int",
+	                                  includedoc="Replaced by :func:`global_set_int`",
+	                                  since="1.2.0-dev-546")(global_set_int)
+	globalSetFloat       = deprecated("globalSetFloat has been renamed to global_set_float",
+	                                  includedoc="Replaced by :func:`global_set_float`",
+	                                  since="1.2.0-dev-546")(global_set_float)
+	globalSetBoolean     = deprecated("globalSetBoolean has been renamed to global_set_boolean",
+	                                  includedoc="Replaced by :func:`global_set_boolean`",
+	                                  since="1.2.0-dev-546")(global_set_boolean)
+	globalGetBaseFolder  = deprecated("globalGetBaseFolder has been renamed to global_get_basefolder",
+	                                  includedoc="Replaced by :func:`global_get_basefolder`",
+	                                  since="1.2.0-dev-546")(global_get_basefolder)
+	getPluginLogfilePath = deprecated("getPluginLogfilePath has been renamed to get_plugin_logfile_path",
+	                                  includedoc="Replaced by :func:`get_plugin_logfile_path`",
+	                                  since="1.2.0-dev-546")(get_plugin_logfile_path)

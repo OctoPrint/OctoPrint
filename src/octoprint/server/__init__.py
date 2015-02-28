@@ -533,23 +533,33 @@ class Server():
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
 
-		def plugin_settings_factory(name, implementation):
+		def octoprint_plugin_inject_factory(name, implementation):
+			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
+				return None
+			return dict(
+				plugin_manager=pluginManager,
+				printer_profile_manager=printerProfileManager,
+				event_bus=eventManager,
+				analysis_queue=analysisQueue,
+				slicing_manager=slicingManager,
+				file_manager=fileManager,
+				printer=printer,
+				app_session_manager=appSessionManager
+			)
+
+		def settings_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
 				return None
 			default_settings = implementation.get_settings_defaults()
 			plugin_settings = octoprint.plugin.plugin_settings(name, defaults=default_settings)
 			return dict(settings=plugin_settings)
 
-		pluginManager.initialize_implementations(additional_injects=dict(
-		    plugin_manager=pluginManager,
-		    printer_profile_manager=printerProfileManager,
-		    event_bus=eventManager,
-		    analysis_queue=analysisQueue,
-		    slicing_manager=slicingManager,
-		    file_manager=fileManager,
-		    printer=printer,
-		    app_session_manager=appSessionManager
-		), additional_inject_factories=[plugin_settings_factory])
+		pluginManager.initialize_implementations(
+			additional_inject_factories=[
+				octoprint_plugin_inject_factory,
+				settings_plugin_inject_factory
+			]
+		)
 		slicingManager.initialize()
 
 		# configure additional template folders for jinja2

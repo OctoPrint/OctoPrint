@@ -1,4 +1,15 @@
 # coding=utf-8
+"""
+This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
+class, :class:`OctoPrintPlugin`.
+
+Please note that the plugin implementation types are documented in the section
+:ref:`Available plugin mixins <sec-plugins-mixins>`.
+
+.. autoclass: OctoPrintPlugin
+
+"""
+
 from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -9,7 +20,29 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from .core import Plugin
 
 
-class StartupPlugin(Plugin):
+class OctoPrintPlugin(Plugin):
+	"""
+	.. attribute:: _plugin_manager
+
+	.. attribute:: _printer_profile_manager
+
+	.. attribute:: _event_bus
+
+	.. attribute:: _analysis_queue
+
+	.. attribute:: _slicing_manager
+
+	.. attribute:: _file_manager
+
+	.. attribute:: _printer
+
+	.. attribute:: _app_session_manager
+	"""
+
+	pass
+
+
+class StartupPlugin(OctoPrintPlugin):
 	"""
 	The ``StartupPlugin`` allows hooking into the startup of OctoPrint. It can be used to start up additional services
 	on or just after the startup of the server.
@@ -37,7 +70,7 @@ class StartupPlugin(Plugin):
 		pass
 
 
-class ShutdownPlugin(Plugin):
+class ShutdownPlugin(OctoPrintPlugin):
 	"""
 	The ``ShutdownPlugin`` allows hooking into the shutdown of OctoPrint. It's usually used in conjunction with the
 	:class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`
@@ -51,14 +84,14 @@ class ShutdownPlugin(Plugin):
 		pass
 
 
-class AssetPlugin(Plugin):
+class AssetPlugin(OctoPrintPlugin):
 	"""
 	The ``AssetPlugin`` mixin allows plugins to define additional static assets such as Javascript or CSS files to
 	be automatically embedded into the pages delivered by the server to be used within the client sided part of
 	the plugin.
 
 	A typical usage of the ``AssetPlugin`` functionality is to embed a custom view model to be used by templates injected
-	through :class:`TemplatePlugin`s.
+	through a :class:`TemplatePlugin`.
 	"""
 
 	def get_asset_folder(self):
@@ -104,7 +137,7 @@ class AssetPlugin(Plugin):
 		return dict()
 
 
-class TemplatePlugin(Plugin):
+class TemplatePlugin(OctoPrintPlugin):
 	"""
 	Using the ``TemplatePlugin`` mixin plugins may inject their own components into the OctoPrint web interface.
 
@@ -408,7 +441,7 @@ class TemplatePlugin(Plugin):
 		return os.path.join(self._basefolder, "templates")
 
 
-class SimpleApiPlugin(Plugin):
+class SimpleApiPlugin(OctoPrintPlugin):
 	"""
 	Utilizing the ``SimpleApiPlugin`` mixin plugins may implement a simple API based around one GET resource and one
 	resource accepting JSON commands POSTed to it. This is the easy alternative for plugin's which don't need the
@@ -543,7 +576,7 @@ class SimpleApiPlugin(Plugin):
 		return None
 
 
-class BlueprintPlugin(Plugin):
+class BlueprintPlugin(OctoPrintPlugin):
 	"""
 	The ``BlueprintPlugin`` mixin allows plugins to define their own full fledged endpoints for whatever purpose,
 	be it a more sophisticated API than what is possible via the :class:`SimpleApiPlugin` or a custom web frontend.
@@ -646,7 +679,7 @@ class BlueprintPlugin(Plugin):
 		return True
 
 
-class SettingsPlugin(Plugin):
+class SettingsPlugin(OctoPrintPlugin):
 	"""
 	Including the ``SettingsPlugin`` mixin allows plugins to store and retrieve their own settings within OctoPrint's
 	configuration.
@@ -697,6 +730,11 @@ class SettingsPlugin(Plugin):
 
 	Of course, you are always free to completely override both :func:`on_settings_load` and :func:`on_settings_save` if the
 	default implementations do not fit your requirements.
+
+	.. attribute:: _settings
+
+	   The :class:`~octoprint.plugin.PluginSettings` instance to use for accessing the plugin's settings. Injected by
+	   the plugin core system upon initialization of the implementation.
 	"""
 
 	def on_settings_load(self):
@@ -751,7 +789,7 @@ class SettingsPlugin(Plugin):
 		return dict()
 
 
-class EventHandlerPlugin(Plugin):
+class EventHandlerPlugin(OctoPrintPlugin):
 	"""
 	The ``EventHandlerPlugin`` mixin allows OctoPrint plugins to react to any of :ref:`OctoPrint's events <sec-events>`.
 	OctoPrint will call the :func:`on_event` method for any event fired on its internal event bus, supplying the
@@ -774,7 +812,7 @@ class EventHandlerPlugin(Plugin):
 		pass
 
 
-class SlicerPlugin(Plugin):
+class SlicerPlugin(OctoPrintPlugin):
 	"""
 	Via the ``SlicerPlugin`` mixin plugins can add support for slicing engines to be used by OctoPrint.
 
@@ -835,10 +873,10 @@ class SlicerPlugin(Plugin):
 		``False`` (defaults to ``True``), an ``IOError`` should be raised.
 
 		:param string path: the path to which to save the profile
-		:param :class:`SlicingProfile` profile: the profile to save
+		:param SlicingProfile profile: the profile to save
 		:param bool allow_overwrite: whether to allow to overwrite an existing profile at the indicated path (``True``, default)
-		                             or not (``False``) - if a profile already exists on the path and this is ``False``
-		                             and :class:`IOError` should be raised
+		    or not (``False``) - if a profile already exists on the path and this is ``False``
+		    and :class:`IOError` should be raised
 		:param dict overrides: profile overrides to apply to the ``profile`` before saving it
 		"""
 		pass
@@ -881,7 +919,7 @@ class SlicerPlugin(Plugin):
 		pass
 
 
-class ProgressPlugin(Plugin):
+class ProgressPlugin(OctoPrintPlugin):
 	"""
 	Via the ``ProgressPlugin`` mixing plugins can let themselves be called upon progress in print jobs or slicing jobs,
 	limited to minimally 1% steps.
@@ -911,7 +949,7 @@ class ProgressPlugin(Plugin):
 		pass
 
 
-class AppPlugin(Plugin):
+class AppPlugin(OctoPrintPlugin):
 	def get_additional_apps(self):
 		return []
 
