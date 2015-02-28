@@ -3,6 +3,7 @@
 @import "bootstrap/variables.less";
 @import "bootstrap/mixins.less";
 @import "variables.less";
+@import "mixins.less";
 
 // Body
 body {
@@ -10,7 +11,7 @@ body {
 }
 
 // Navigation bar
-.navbar-inner-text (@base) {
+.navbar-inner-text (@base, @text-color) {
   text-shadow: 0 1px 0 contrast(@base, lighten(@base, 15%), darken(@base, 15%));
   color: @text-color;
   @caret-color: average(@base, @text-color);
@@ -65,18 +66,27 @@ body {
   }
 }
 
-.navbar-inner-color (@base) {
+.navbar-background-color (@top, @bottom, @image) when (isstring(@image)) {
+  #imggradient > .vertical(@top, @bottom, @image);
+}
+
+.navbar-background-color(@top, @bottom, @image) when not (isstring(@image)) {
+  #gradient > .vertical(@top, @bottom);
+}
+
+
+.navbar-inner-color (@base, @gradientalpha: 100%, @image: false) {
   @top: lighten(@base, 25%);
   @bottom: darken(@base, 15%);
 
   @text-color-light: #f2f2f2;
   @text-color-dark: #333333;
-  @text-color: contrast(@base, @text-color-dark, @text-color-light);
+  @text-color: contrast(@bottom, @text-color-dark, @text-color-light);
 
-  #gradient > .vertical(@top, @bottom);
+  .navbar-background-color(fade(@top, @gradientalpha), fade(@bottom, @gradientalpha), @image);
 
   .brand, .nav>li>a {
-    .navbar-inner-text(@base);
+    .navbar-inner-text(@base, @text-color);
   }
 
   .brand {
@@ -86,7 +96,7 @@ body {
   .nav {
     li.dropdown.open>.dropdown-toggle, li.dropdown.active>.dropdown-toggle, li.dropdown.open.active>.dropdown-toggle {
       // invert for dropdown
-      #gradient > .vertical(@bottom, @top);
+      .navbar-background-color(fade(@bottom, @gradientalpha), fade(@top, @gradientalpha), @image);
     }
   }
 }
@@ -95,45 +105,73 @@ body {
   @base: #F2F2F2;
   .navbar-inner-color(@base);
 
+  &.transparent {
+    .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+  }
+
   &.red {
-    @base: #F22828;
+    @base: #bd362f;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.orange {
     @base: #F27728;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.yellow {
     @base: #F2DE28;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.green {
     @base: #77FF28;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.blue {
-    @base: #2877FF;
+    @base: #04c;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.violet {
     @base: #7728FF;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.black {
     @base: #383838;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.white {
-    @base: #ffffff;
+    @base: #eeeeee;
     .navbar-inner-color(@base);
-  }
-  &.transparent {
-    @base: #ffffff;
 
-    .navbar-inner-color(@base);
-    
-    background-image: url("../img/trans-background.png") ;
-    background-repeat: repeat-x;
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
 
   .brand span {

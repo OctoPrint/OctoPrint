@@ -1,0 +1,14 @@
+// Gradients with background images
+#imggradient {
+  .vertical(@startColor: #555, @endColor: #333, @image) {
+    background-color: mix(@startColor, @endColor, 60%);
+    background-image: @image; // fallback
+    background-image: -moz-linear-gradient(top, @startColor, @endColor), url(@image); // FF 3.6+
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(@startColor), to(@endColor)), url(@image); // Safari 4+, Chrome 2+
+    background-image: -webkit-linear-gradient(top, @startColor, @endColor), url(@image); // Safari 5.1+, Chrome 10+
+    background-image: -o-linear-gradient(top, @startColor, @endColor), url(@image); // Opera 11.10
+    background-image: linear-gradient(to bottom, @startColor, @endColor), url(@image); // Standard, IE10
+    background-repeat: repeat-x;
+    filter: e(%("progid:DXImageTransform.Microsoft.gradient(startColorstr='%d', endColorstr='%d', GradientType=0)",argb(@startColor),argb(@endColor))); // IE9 and down
+  }
+}
