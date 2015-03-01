@@ -9,6 +9,14 @@ $(function() {
 
         self.systemActions = self.settings.system_actions;
 
+        self.appearanceClasses = ko.computed(function() {
+            var classes = self.appearance.color();
+            if (self.appearance.colorTransparent()) {
+                classes += " transparent";
+            }
+            return classes;
+        });
+
         self.triggerAction = function(action) {
             var callback = function() {
                 $.ajax({

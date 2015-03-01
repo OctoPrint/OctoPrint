@@ -118,7 +118,8 @@ default_settings = {
 	},
 	"appearance": {
 		"name": "",
-		"color": "default"
+		"color": "default",
+		"colorTransparent": False
 	},
 	"controls": [],
 	"system": {

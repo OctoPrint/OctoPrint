@@ -12,6 +12,7 @@ $(function() {
 
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
+        self.appearance_colorTransparent = ko.observable();
 
         self.settingsDialog = undefined;
 
@@ -23,7 +24,8 @@ $(function() {
             {key: "green", name: gettext("green")},
             {key: "blue", name: gettext("blue")},
             {key: "violet", name: gettext("violet")},
-            {key: "black", name: gettext("black")}
+            {key: "black", name: gettext("black")},
+            {key: "white", name: gettext("white")},
         ]);
 
         self.appearance_colorName = function(color) {
@@ -42,6 +44,8 @@ $(function() {
                     return gettext("violet");
                 case "black":
                     return gettext("black");
+                case "white":
+                    return gettext("white");
                 case "default":
                     return gettext("default");
                 default:
@@ -182,6 +186,7 @@ $(function() {
 
             self.appearance_name(response.appearance.name);
             self.appearance_color(response.appearance.color);
+            self.appearance_colorTransparent(response.appearance.colorTransparent);
 
             self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
 
@@ -247,7 +252,8 @@ $(function() {
                 },
                 "appearance" : {
                     "name": self.appearance_name(),
-                    "color": self.appearance_color()
+                    "color": self.appearance_color(),
+                    "colorTransparent": self.appearance_colorTransparent()
                 },
                 "printer": {
                     "defaultExtrusionLength": self.printer_defaultExtrusionLength()
