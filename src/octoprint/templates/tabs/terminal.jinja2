@@ -1,14 +1,22 @@
-<pre id="terminal-output" class="pre-scrollable"></pre>
-<label class="checkbox">
-    <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> {{ _('Autoscroll') }}
-</label>
-<div data-bind="foreach: filters">
-    <label class="checkbox">
-        <input type="checkbox" data-bind="attr: { value: regex }, checked: $parent.activeFilters"> <span data-bind="text: name"></span>
-    </label>
+<div class="terminal">
+    <pre id="terminal-output" class="pre-scrollable" data-bind="foreach: displayedLines"><span data-bind="text: line, css: {muted: type == 'filtered'}"></span><br></pre>
+    <small class="pull-left"><button class="btn btn-mini" data-bind="click: toggleAutoscroll, css: {active: autoscrollEnabled}">{{ _('Autoscroll') }}</button> <span data-bind="text: lineCount"></span></small>
+    <small class="pull-right"><a href="#" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>&nbsp;|&nbsp;<a href="#" data-bind="click: selectAll">{{ _("Select all") }}</a></small>
 </div>
 
-<div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
-    <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
-    <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</button>
+<div class="row-fluid">
+    <div class="span6" id="termin-filterpanel">
+        <div data-bind="foreach: filters">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="attr: { value: regex }, checked: $parent.activeFilters"> <span data-bind="text: name"></span>
+            </label>
+        </div>
+    </div>
+    <div class="span6" id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.isUser">
+        <div class="input-append">
+            <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
+            <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</button>
+        </div>
+        <small class="muted">{{ _('Hint: Use the arrow up/down keys to recall commands sent previously') }}</small>
+    </div>
 </div>

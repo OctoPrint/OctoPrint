@@ -373,7 +373,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		finally:
 			# make sure the temporary files are removed again
 			for f in self._files:
-				octoprint.util.silentRemove(f)
+				octoprint.util.silent_remove(f)
 
 	# make all http methods trigger _handle_method
 	get = _handle_method

@@ -323,7 +323,7 @@ table {
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
-#webcam_timelapse_interval, #webcam_timelapse_postRoll {
+#webcam_timelapse_interval, #webcam_timelapse_postRoll, #webcam_timelapse_fps {
   text-align: right;
 }
 
@@ -590,8 +590,17 @@ ul.dropdown-menu li a {
 /** Terminal output */
 
 #term {
-  #terminal-output {
-    min-height: 340px;
+  .terminal {
+    #terminal-output {
+      min-height: 340px;
+      margin-bottom: 5px;
+    }
+
+    margin-bottom: 30px;
+  }
+
+  #terminal-sendpanel {
+    text-align: right;
   }
 }
 

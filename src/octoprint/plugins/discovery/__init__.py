@@ -467,7 +467,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		if self._settings.get(["pathPrefix"]):
 			path = self._settings.get(["pathPrefix"])
 		else:
-			prefix = self._settings.globalGet(["server", "reverseProxy", "prefixFallback"])
+			prefix = self._settings.global_get(["server", "reverseProxy", "prefixFallback"])
 			if prefix:
 				path = prefix
 
@@ -676,7 +676,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		return upnpUuid
 
 	def get_instance_name(self):
-		name = self._settings.globalGet(["appearance", "name"])
+		name = self._settings.global_get(["appearance", "name"])
 		if name:
 			return u"OctoPrint instance \"{}\"".format(name)
 		else:

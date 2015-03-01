@@ -36,7 +36,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 				self.filename = os.path.basename(self._path)
 
 			def save(self, target):
-				octoprint.util.safeRename(self._path, target)
+				octoprint.util.safe_rename(self._path, target)
 
 		file_wrapper = WatchdogFileWrapper(path)
 

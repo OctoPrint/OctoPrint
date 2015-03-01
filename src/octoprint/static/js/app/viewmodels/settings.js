@@ -55,6 +55,7 @@ $(function() {
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
+        self.webcam_ffmpegThreads = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);
@@ -188,6 +189,7 @@ $(function() {
             self.webcam_snapshotUrl(response.webcam.snapshotUrl);
             self.webcam_ffmpegPath(response.webcam.ffmpegPath);
             self.webcam_bitrate(response.webcam.bitrate);
+            self.webcam_ffmpegThreads(response.webcam.ffmpegThreads);
             self.webcam_watermark(response.webcam.watermark);
             self.webcam_flipH(response.webcam.flipH);
             self.webcam_flipV(response.webcam.flipV);
@@ -255,6 +257,7 @@ $(function() {
                     "snapshotUrl": self.webcam_snapshotUrl(),
                     "ffmpegPath": self.webcam_ffmpegPath(),
                     "bitrate": self.webcam_bitrate(),
+                    "ffmpegThreads": self.webcam_ffmpegThreads(),
                     "watermark": self.webcam_watermark(),
                     "flipH": self.webcam_flipH(),
                     "flipV": self.webcam_flipV()

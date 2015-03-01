@@ -11,7 +11,7 @@ from octoprint.settings import settings
 from octoprint.printer import getConnectionOptions
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 import octoprint.util as util
 
 
@@ -36,7 +36,7 @@ def connectionCommand():
 		"disconnect": []
 	}
 
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 

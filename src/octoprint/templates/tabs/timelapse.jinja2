@@ -8,6 +8,12 @@
         <option value="timed">{{ _('Timed') }}</option>
     </select>
 
+    <label for="webcam_timelapse_fps">{{ _('Timelapse frame rate (in frames per second)') }}</label>
+    <div class="input-append">
+        <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <span class="add-on">{{ _('fps') }}</span>
+    </div>
+
     <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
     <div class="input-append">
         <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">

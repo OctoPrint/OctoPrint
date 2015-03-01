@@ -39,26 +39,26 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def on_startup(self, host, port):
 		# setup our custom logger
-		cura_logging_handler = logging.handlers.RotatingFileHandler(self._settings.getPluginLogfilePath(postfix="engine"), maxBytes=2*1024*1024)
+		cura_logging_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="engine"), maxBytes=2*1024*1024)
 		cura_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
 		cura_logging_handler.setLevel(logging.DEBUG)
 
 		self._cura_logger.addHandler(cura_logging_handler)
-		self._cura_logger.setLevel(logging.DEBUG if self._settings.getBoolean(["debug_logging"]) else logging.CRITICAL)
+		self._cura_logger.setLevel(logging.DEBUG if self._settings.get_boolean(["debug_logging"]) else logging.CRITICAL)
 		self._cura_logger.propagate = False
 
 	##~~ BlueprintPlugin API
 
 	@octoprint.plugin.BlueprintPlugin.route("/import", methods=["POST"])
-	def importCuraProfile(self):
+	def import_cura_profile(self):
 		import datetime
 		import tempfile
 
 		from octoprint.server import slicingManager
 
 		input_name = "file"
-		input_upload_name = input_name + "." + self._settings.globalGet(["server", "uploads", "nameSuffix"])
-		input_upload_path = input_name + "." + self._settings.globalGet(["server", "uploads", "pathSuffix"])
+		input_upload_name = input_name + "." + self._settings.global_get(["server", "uploads", "nameSuffix"])
+		input_upload_path = input_name + "." + self._settings.global_get(["server", "uploads", "pathSuffix"])
 
 		if input_upload_name in flask.request.values and input_upload_path in flask.request.values:
 			filename = flask.request.values[input_upload_name]
@@ -92,7 +92,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		# default values for name, display name and description
 		profile_name = _sanitize_name(name)
 		profile_display_name = name
-		profile_description = "Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.getFormattedDateTime(datetime.datetime.now()))
+		profile_description = "Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.get_formatted_datetime(datetime.datetime.now()))
 		profile_allow_overwrite = False
 
 		# overrides
@@ -134,11 +134,11 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	##~~ SettingsPlugin API
 
 	def on_settings_save(self, data):
-		old_debug_logging = self._settings.getBoolean(["debug_logging"])
+		old_debug_logging = self._settings.get_boolean(["debug_logging"])
 
 		super(CuraPlugin, self).on_settings_save(data)
 
-		new_debug_logging = self._settings.getBoolean(["debug_logging"])
+		new_debug_logging = self._settings.get_boolean(["debug_logging"])
 		if old_debug_logging != new_debug_logging:
 			if new_debug_logging:
 				self._cura_logger.setLevel(logging.DEBUG)

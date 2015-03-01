@@ -61,6 +61,7 @@ default_settings = {
 		"stream": None,
 		"snapshot": None,
 		"ffmpeg": None,
+		"ffmpegThreads": 1,
 		"bitrate": "5000k",
 		"watermark": True,
 		"flipH": False,
@@ -68,7 +69,8 @@ default_settings = {
 		"timelapse": {
 			"type": "off",
 			"options": {},
-			"postRoll": 0
+			"postRoll": 0,
+			"fps": 25
 		}
 	},
 	"gcodeViewer": {

@@ -25,6 +25,8 @@
   - `action:pause`: Pauses the current job in OctoPrint
   - `action:resume`: Resumes the current job in OctoPrint
   - `action:disconnect`: Disconnects OctoPrint from the printer
+  Plugins can add supported commands by [hooking](http://docs.octoprint.org/en/devel/plugins/hooks.html) into the
+  ``octoprint.comm.protocol.action`` hook
 * Mousing over the webcam image in the control tab enables key control mode, allowing you to quickly move the axis of your
   printer with your computer's keyboard ([#610](https://github.com/foosel/OctoPrint/pull/610)):
   - arrow keys: X and Y axes
@@ -83,6 +85,14 @@
   message for now.
 * Daemonized OctoPrint now cleans up its pidfile when receiving a TERM signal ([#711](https://github.com/foosel/OctoPrint/issues/711))
 * Added serial types for OpenBSD ([#551](https://github.com/foosel/OctoPrint/pull/551))
+* Improved behaviour of terminal:
+  * Disabling autoscrolling now also stops cutting of the log while it's enabled, effectively preventing log lines from
+    being modified at all ([#735](https://github.com/foosel/OctoPrint/issues/735))
+  * Applying filters displays ``[...]`` where lines where removed
+  * Added a link to scroll to the end of the terminal log (useful for when autoscroll is disabled)
+  * Added a link to select all current contents of the terminal log for easy copy-pasting
+  * Added a display of how many lines are displayed, how many are filtered and how many are available in total
+* Frame rate for timelapses can now be configured per timelapse ([#782](https://github.com/foosel/OctoPrint/pull/782))
 
 ### Bug Fixes
 
@@ -126,6 +136,7 @@
   * Color code successful or failed print results directly in file list, not just after a reload
   * Changing Timelapse post roll activates save button
   * Timelapse post roll is loaded properly from config
+  * Handling of files on the printer's SD card contained in folders now works correctly
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
