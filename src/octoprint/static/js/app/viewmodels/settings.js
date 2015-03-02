@@ -238,6 +238,8 @@ $(function() {
     
             self.temperature_profiles(response.temperature.profiles);
 
+            self.system_actions(response.system.actions);
+
             self.terminalFilters(response.terminalFilters);
         };
 
