@@ -189,7 +189,7 @@ $(function() {
         self.sliceFile = function(file) {
             if (!file) return;
 
-            self.slicing.show(file.origin, file.name);
+            self.slicing.show(file.origin, file.name, true);
         };
 
         self.initSdCard = function() {
@@ -265,7 +265,7 @@ $(function() {
         };
 
         self.enableSlicing = function(data) {
-            return self.loginState.isUser() && !(self.isPrinting() || self.isPaused());
+            return self.loginState.isUser() && self.slicing.enableSlicingDialog();
         };
 
         self.enableAdditionalData = function(data) {
@@ -379,7 +379,7 @@ $(function() {
             }
 
             function gcode_upload_fail(e, data) {
-                var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and slicing support is enabled and configured.") + "</p>";
+                var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
                 error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
                 new PNotify({
                     title: "Upload failed",
@@ -551,21 +551,21 @@ $(function() {
             self.requestData();
         };
 
-        self.onUpdatedFiles = function(payload) {
+        self.onEventUpdatedFiles = function(payload) {
             if (payload.type == "gcode") {
                 self.requestData();
             }
         };
 
-        self.onSlicingDone = function(payload) {
+        self.onEventSlicingDone = function(payload) {
             self.requestData();
         };
 
-        self.onMetadataAnalysisFinished = function(payload) {
+        self.onEventMetadataAnalysisFinished = function(payload) {
             self.requestData();
         };
 
-        self.onMetadataStatisticsUpdated = function(payload) {
+        self.onEventMetadataStatisticsUpdated = function(payload) {
             self.requestData();
         };
     }

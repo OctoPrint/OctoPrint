@@ -250,6 +250,10 @@ def get_cmdclass():
 	return cmdclass
 
 
+def requirements(filename):
+	return filter(lambda line: line and not line.startswith("#"), map(lambda line: line.strip(), open(filename).read().split("\n")))
+
+
 def params():
 	name = "OctoPrint"
 	version = versioneer.get_version()
@@ -287,7 +291,16 @@ def params():
 
 	include_package_data = True
 	zip_safe = False
-	install_requires = open("requirements.txt").read().split("\n")
+	install_requires = requirements("requirements.txt")
+	extras_require = dict(
+		develop=requirements("requirements-dev.txt")
+	)
+
+	if os.environ.get('READTHEDOCS', None) == 'True':
+		# we can't tell read the docs to please perform a pip install -e .[develop], so we help
+		# it a bit here by explicitely adding the development dependencies, which include our
+		# documentation dependencies
+		install_requires = install_requires + extras_require['develop']
 
 	entry_points = {
 		"console_scripts": [

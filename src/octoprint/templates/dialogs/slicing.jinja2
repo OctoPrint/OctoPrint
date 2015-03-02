@@ -4,42 +4,47 @@
         <h3 data-bind="text: title"></h3>
     </div>
     <div class="modal-body">
-        <p>{{ _('Please configure which slicer and which slicing profile to use and name the GCode file to slice to below, or click "Cancel" if you do not wish to slice the file now.') }}</p>
-        <form class="form-horizontal">
-            <div class="control-group">
-                <label class="control-label">{{ _('Slicer') }}</label>
-                <div class="controls">
-                    <select data-bind="options: slicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicer...') }}', value: slicer, valueAllowUnset: true"></select>
-                </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('Slicing Profile') }}</label>
-                <div class="controls">
-                    <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicing profile...') }}', value: profile, valueAllowUnset: true"></select>
-                </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('Printer Profile') }}</label>
-                <div class="controls">
-                    <select data-bind="options: printerProfiles.profiles.items, optionsText: 'name', optionsValue: 'id', value: printerProfile, optionsCaption: '{{ _('Select a printer profile...') }}'"></select>
-                </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('GCode Filename') }}</label>
-                <div class="controls">
-                    <div class="input-append">
-                        <input type="text" data-bind="value: gcodeFilename">
-                        <span class="add-on">.gco</span>
+        <div data-bind="visible: !enableSlicingDialog()">
+            <p>{{ _('Slicing is currently disabled since no slicer has been configured yet. Please configure a slicer under "Settings".') }}</p>
+        </div>
+        <div data-bind="visible: enableSlicingDialog()">
+            <p>{{ _('Please configure which slicer and which slicing profile to use and name the GCode file to slice to below, or click "Cancel" if you do not wish to slice the file now.') }}</p>
+            <form class="form-horizontal">
+                <div class="control-group">
+                    <label class="control-label">{{ _('Slicer') }}</label>
+                    <div class="controls">
+                        <select data-bind="options: configured_slicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicer...') }}', value: slicer, valueAllowUnset: true"></select>
                     </div>
                 </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('After slicing...') }}</label>
-                <div class="controls">
-                    <select data-bind="options: afterSlicingOptions, optionsText: 'text', optionsValue: 'value', value: afterSlicing"></select>
+                <div class="control-group">
+                    <label class="control-label">{{ _('Slicing Profile') }}</label>
+                    <div class="controls">
+                        <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicing profile...') }}', value: profile, valueAllowUnset: true"></select>
+                    </div>
                 </div>
-            </div>
-        </form>
+                <div class="control-group">
+                    <label class="control-label">{{ _('Printer Profile') }}</label>
+                    <div class="controls">
+                        <select data-bind="options: printerProfiles.profiles.items, optionsText: 'name', optionsValue: 'id', value: printerProfile, optionsCaption: '{{ _('Select a printer profile...') }}'"></select>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">{{ _('GCode Filename') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="text" data-bind="value: gcodeFilename">
+                            <span class="add-on">.gco</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">{{ _('After slicing...') }}</label>
+                    <div class="controls">
+                        <select data-bind="options: afterSlicingOptions, optionsText: 'text', optionsValue: 'value', value: afterSlicing"></select>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>

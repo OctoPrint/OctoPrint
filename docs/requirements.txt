@@ -1,3 +1,0 @@
-sphinxcontrib-httpdomain
-sphinxcontrib-napoleon
-sphinx_rtd_theme

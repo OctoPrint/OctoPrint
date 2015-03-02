@@ -170,7 +170,7 @@ def uploadGcodeFile(target):
 		futureFilename = fileManager.sanitize_name(FileDestinations.LOCAL, upload.filename)
 	except:
 		futureFilename = None
-	if futureFilename is None or not (slicingManager.slicing_enabled or octoprint.filemanager.valid_file_type(futureFilename, type="gcode")):
+	if futureFilename is None:
 		return make_response("Can not upload file %s, wrong format?" % upload.filename, 415)
 
 	# prohibit overwriting currently selected file while it's being printed
