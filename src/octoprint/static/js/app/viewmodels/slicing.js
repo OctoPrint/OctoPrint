@@ -21,6 +21,12 @@ $(function() {
         self.profiles = ko.observableArray();
         self.printerProfile = ko.observable();
 
+        self.configured_slicers = ko.computed(function() {
+            return _.filter(self.slicers(), function(slicer) {
+                return slicer.configured;
+            });
+        });
+
         self.afterSlicingOptions = [
             {"value": "none", "text": gettext("Do nothing")},
             {"value": "select", "text": gettext("Select for printing")},
@@ -28,7 +34,11 @@ $(function() {
         ];
         self.afterSlicing = ko.observable("none");
 
-        self.show = function(target, file) {
+        self.show = function(target, file, force) {
+            if (!self.enableSlicingDialog() && !force) {
+                return;
+            }
+
             self.requestData();
             self.target = target;
             self.file = file;
@@ -41,6 +51,10 @@ $(function() {
 
         self.slicer.subscribe(function(newValue) {
             self.profilesForSlicer(newValue);
+        });
+
+        self.enableSlicingDialog = ko.computed(function() {
+            return self.configured_slicers().length > 0;
         });
 
         self.enableSliceButton = ko.computed(function() {
@@ -75,13 +89,14 @@ $(function() {
                     name = slicer.key;
                 }
 
-                if (slicer.default) {
+                if (slicer.default && slicer.configured) {
                     selectedSlicer = slicer.key;
                 }
 
                 self.slicers.push({
                     key: slicer.key,
-                    name: name
+                    name: name,
+                    configured: slicer.configured
                 });
             });
 
@@ -168,6 +183,10 @@ $(function() {
         };
 
         self.onStartup = function() {
+            self.requestData();
+        };
+
+        self.onEventSettingsUpdated = function(payload) {
             self.requestData();
         };
     }
