@@ -6,7 +6,8 @@ function DataUpdater(allViewModels) {
     self._socket = undefined;
     self._autoReconnecting = false;
     self._autoReconnectTrial = 0;
-    self._autoReconnectTimeouts = [1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
+    self._autoReconnectTimeouts = [0, 1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
+    self._autoReconnectDialogIndex = 1;
 
     self.connect = function() {
         var options = {};
@@ -31,28 +32,32 @@ function DataUpdater(allViewModels) {
     };
 
     self._onclose = function() {
-        var handled = false;
-        _.each(self.allViewModels, function(viewModel) {
-            if (handled == true) {
+        if (self._autoReconnectTrial >= self._autoReconnectDialogIndex) {
+            // Only consider it a real disconnect if the trial number has exceeded our threshold.
+
+            var handled = false;
+            _.each(self.allViewModels, function(viewModel) {
+                if (handled == true) {
+                    return;
+                }
+
+                if (viewModel.hasOwnProperty("onServerDisconnect")) {
+                    if (!viewModel.onServerDisconnect()) {
+                        handled = true;
+                    }
+                }
+            });
+
+            if (handled) {
                 return;
             }
 
-            if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                if (!viewModel.onServerDisconnect()) {
-                    handled = true;
-                }
-            }
-        });
-
-        if (handled) {
-            return;
+            showOfflineOverlay(
+                gettext("Server is offline"),
+                gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."),
+                self.reconnect
+            );
         }
-
-        showOfflineOverlay(
-            gettext("Server is offline"),
-            gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."),
-            self.reconnect
-        );
 
         if (self._autoReconnectTrial < self._autoReconnectTimeouts.length) {
             var timeout = self._autoReconnectTimeouts[self._autoReconnectTrial];
