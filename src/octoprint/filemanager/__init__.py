@@ -8,8 +8,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 
+import octoprint.plugin
+
 from octoprint.events import eventManager, Events
-from octoprint.plugin import plugin_manager, ProgressPlugin
 
 from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
@@ -114,7 +115,7 @@ class FileManager(object):
 		self._slicing_progress_callbacks = []
 		self._last_slicing_progress = None
 
-		self._progress_plugins = plugin_manager().get_implementations(ProgressPlugin)
+		self._progress_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.ProgressPlugin)
 
 		for storage_type, storage_manager in self._storage_managers.items():
 			self._determine_analysis_backlog(storage_type, storage_manager)
