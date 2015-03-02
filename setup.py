@@ -288,6 +288,9 @@ def params():
 	include_package_data = True
 	zip_safe = False
 	install_requires = open("requirements.txt").read().split("\n")
+	extras_require = dict(
+		develop=open("requirements-dev.txt").read().split("\n")
+	)
 
 	entry_points = {
 		"console_scripts": [
