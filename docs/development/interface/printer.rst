@@ -1,7 +1,7 @@
-.. _sec-development-interface-plugin:
+.. _sec-development-interface-printer:
 
-``octoprint.printer``
----------------------
+octoprint.printer
+-----------------
 
 .. automodule:: octoprint.printer
    :members: Printer

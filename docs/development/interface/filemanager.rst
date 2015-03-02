@@ -1,7 +1,7 @@
 .. _sec-development-interface-filemanager:
 
-``octoprint.filemanager``
--------------------------
+octoprint.filemanager
+---------------------
 
 .. automodule:: octoprint.filemanager
    :members:
@@ -9,8 +9,8 @@
 
 .. _sec-development-interface-filemanager-analysis:
 
-``octoprint.filemanager.analysis``
-----------------------------------
+octoprint.filemanager.analysis
+------------------------------
 
 .. automodule:: octoprint.filemanager.analysis
    :members:
@@ -18,8 +18,8 @@
 
 .. _sec-development-interface-filemanager-destinations:
 
-``octoprint.filemanager.destinations``
---------------------------------------
+octoprint.filemanager.destinations
+----------------------------------
 
 .. automodule:: octoprint.filemanager.destinations
    :members:
@@ -27,8 +27,8 @@
 
 .. _sec-development-interface-filemanager-storage:
 
-``octoprint.filemanager.storage``
----------------------------------
+octoprint.filemanager.storage
+-----------------------------
 
 .. automodule:: octoprint.filemanager.storage
    :members: StorageInterface, LocalFileStorage

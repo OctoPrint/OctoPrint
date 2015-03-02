@@ -182,7 +182,7 @@ def get_class(name):
 def get_exception_string():
 	"""
 	Retrieves the exception info of the last raised exception and returns it as a string formatted as
-	``<exception type>: <exception message> @ <source file>:<function name>:<line number>'.
+	``<exception type>: <exception message> @ <source file>:<function name>:<line number>``.
 
 	Returns:
 	    string: The formatted exception information.
@@ -195,7 +195,7 @@ def get_exception_string():
 def get_free_bytes(path):
 	"""
 	Retrieves the number of free bytes on the partition ``path`` is located at and returns it. Works on both Windows and
-	*nix.
+	Unix/Linux.
 
 	Taken from http://stackoverflow.com/a/2372171/2028598
 

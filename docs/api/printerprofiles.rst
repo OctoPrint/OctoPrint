@@ -65,7 +65,7 @@ Profile list
      - :ref:`Profile <sec-api-slicing-datamodel-profile>`
      - Information about a profile stored in the system.
 
-.. _sec-api-slicing-datamodel-update:
+.. _sec-api-printerprofiles-datamodel-update:
 
 Add or update request
 ---------------------
@@ -84,7 +84,7 @@ Add or update request
      - Information about the profile being added/updated. For adding new profiles, all fields must be populated. For updating
        and existing profile, only the values to be overwritten need to be supplied.
 
-.. _sec-api-slicing-datamodel-profile:
+.. _sec-api-printerprofiles-datamodel-profile:
 
 Profile
 -------
