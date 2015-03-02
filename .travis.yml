@@ -4,6 +4,6 @@ language: python
 python:
 - "2.7"
 install:
-- python setup.py install
+- pip install -e .[develop]
 script:
 - nosetests tests/
