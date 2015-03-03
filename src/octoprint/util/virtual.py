@@ -263,6 +263,8 @@ class VirtualPrinter():
 		self.outgoing.put("End file list")
 
 	def _selectSdFile(self, filename):
+		if filename.startswith("/"):
+			filename = filename[1:]
 		file = os.path.join(self._virtualSd, filename).lower()
 		if not os.path.exists(file) or not os.path.isfile(file):
 			self.outgoing.put("open failed, File: %s." % filename)
@@ -448,6 +450,8 @@ class VirtualPrinter():
 					pass
 
 	def _writeSdFile(self, filename):
+		if filename.startswith("/"):
+			filename = filename[1:]
 		file = os.path.join(self._virtualSd, filename).lower()
 		if os.path.exists(file):
 			if os.path.isfile(file):
@@ -507,6 +511,8 @@ class VirtualPrinter():
 				time.sleep(delay)
 
 	def _deleteSdFile(self, filename):
+		if filename.startswith("/"):
+			filename = filename[1:]
 		f = os.path.join(self._virtualSd, filename)
 		if os.path.exists(f) and os.path.isfile(f):
 			os.remove(f)
