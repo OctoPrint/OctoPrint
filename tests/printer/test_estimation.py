@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
+from octoprint.printer.estimation import TimeEstimationHelper
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -15,7 +16,7 @@ import octoprint.printer
 class EstimationTestCase(unittest.TestCase):
 
 	def setUp(self):
-		self.estimation_helper = type(octoprint.printer.TimeEstimationHelper)(octoprint.printer.TimeEstimationHelper.__name__, (octoprint.printer.TimeEstimationHelper,), {
+		self.estimation_helper = type(TimeEstimationHelper)(TimeEstimationHelper.__name__, (TimeEstimationHelper,), {
 			'STABLE_THRESHOLD': 0.1,
 			'STABLE_ROLLING_WINDOW': 3,
 			'STABLE_COUNTDOWN': 1

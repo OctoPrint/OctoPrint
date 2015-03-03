@@ -20,7 +20,7 @@ import octoprint.util as util
 
 @api.route("/printer", methods=["GET"])
 def printerState():
-	if not printer.isOperational():
+	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
 	# process excludes
@@ -38,11 +38,11 @@ def printerState():
 
 	# add sd information
 	if not "sd" in excludes and settings().getBoolean(["feature", "sdSupport"]):
-		result.update({"sd": {"ready": printer.isSdReady()}})
+		result.update({"sd": {"ready": printer.is_sd_ready()}})
 
 	# add state information
 	if not "state" in excludes:
-		state = printer.getCurrentData()["state"]
+		state = printer.get_current_data()["state"]
 		result.update({"state": state})
 
 	return jsonify(result)
@@ -54,7 +54,7 @@ def printerState():
 @api.route("/printer/tool", methods=["POST"])
 @restricted_access
 def printerToolCommand():
-	if not printer.isOperational():
+	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
 	valid_commands = {
@@ -78,7 +78,7 @@ def printerToolCommand():
 		if not tool.startswith("tool"):
 			return make_response("Invalid tool for selection: %s" % tool, 400)
 
-		printer.changeTool(tool)
+		printer.change_tool(tool)
 
 	##~~ temperature
 	elif command == "target":
@@ -95,7 +95,7 @@ def printerToolCommand():
 
 		# perform the actual temperature commands
 		for tool in validated_values.keys():
-			printer.setTemperature(tool, validated_values[tool])
+			printer.set_temperature(tool, validated_values[tool])
 
 	##~~ temperature offset
 	elif command == "offset":
@@ -113,11 +113,11 @@ def printerToolCommand():
 			validated_values[tool] = value
 
 		# set the offsets
-		printer.setTemperatureOffset(validated_values)
+		printer.set_temperature_offset(validated_values)
 
 	##~~ extrusion
 	elif command == "extrude":
-		if printer.isPrinting():
+		if printer.is_printing():
 			# do not extrude when a print job is running
 			return make_response("Printer is currently printing", 409)
 
@@ -131,7 +131,7 @@ def printerToolCommand():
 		if not isinstance(factor, (int, long, float)):
 			return make_response("Not a number for flow rate: %r" % factor, 400)
 		try:
-			printer.flowRate(factor)
+			printer.flow_rate(factor)
 		except ValueError as e:
 			return make_response("Invalid value for flow rate: %s" % e.message, 400)
 
@@ -140,7 +140,7 @@ def printerToolCommand():
 
 @api.route("/printer/tool", methods=["GET"])
 def printerToolState():
-	if not printer.isOperational():
+	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
 	def deleteBed(x):
@@ -159,7 +159,7 @@ def printerToolState():
 @api.route("/printer/bed", methods=["POST"])
 @restricted_access
 def printerBedCommand():
-	if not printer.isOperational():
+	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
 	valid_commands = {
@@ -179,7 +179,7 @@ def printerBedCommand():
 			return make_response("Not a number: %r" % target, 400)
 
 		# perform the actual temperature command
-		printer.setTemperature("bed", target)
+		printer.set_temperature("bed", target)
 
 	##~~ temperature offset
 	elif command == "offset":
@@ -192,14 +192,14 @@ def printerBedCommand():
 			return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
 
 		# set the offsets
-		printer.setTemperatureOffset({"bed": offset})
+		printer.set_temperature_offset({"bed": offset})
 
 	return NO_CONTENT
 
 
 @api.route("/printer/bed", methods=["GET"])
 def printerBedState():
-	if not printer.isOperational():
+	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
 	def deleteTools(x):
@@ -223,7 +223,7 @@ def printerBedState():
 @api.route("/printer/printhead", methods=["POST"])
 @restricted_access
 def printerPrintheadCommand():
-	if not printer.isOperational() or printer.isPrinting():
+	if not printer.is_operational() or printer.is_printing():
 		# do not jog when a print job is running or we don't have a connection
 		return make_response("Printer is not operational or currently printing", 409)
 
@@ -269,7 +269,7 @@ def printerPrintheadCommand():
 		if not isinstance(factor, (int, long, float)):
 			return make_response("Not a number for feed rate: %r" % factor, 400)
 		try:
-			printer.feedRate(factor)
+			printer.feed_rate(factor)
 		except ValueError as e:
 			return make_response("Invalid value for feed rate: %s" % e.message, 400)
 
@@ -285,7 +285,7 @@ def printerSdCommand():
 	if not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD support is disabled", 404)
 
-	if not printer.isOperational() or printer.isPrinting() or printer.isPaused():
+	if not printer.is_operational() or printer.is_printing() or printer.is_paused():
 		return make_response("Printer is not operational or currently busy", 409)
 
 	valid_commands = {
@@ -298,11 +298,11 @@ def printerSdCommand():
 		return response
 
 	if command == "init":
-		printer.initSdCard()
+		printer.init_sd_card()
 	elif command == "refresh":
-		printer.refreshSdFiles()
+		printer.refresh_sd_files()
 	elif command == "release":
-		printer.releaseSdCard()
+		printer.release_sd_card()
 
 	return NO_CONTENT
 
@@ -312,7 +312,7 @@ def printerSdState():
 	if not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD support is disabled", 404)
 
-	return jsonify(ready=printer.isSdReady())
+	return jsonify(ready=printer.is_sd_ready())
 
 
 ##~~ Commands
@@ -321,7 +321,7 @@ def printerSdState():
 @api.route("/printer/command", methods=["POST"])
 @restricted_access
 def printerCommand():
-	if not printer.isOperational():
+	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
 	if not "application/json" in request.headers["Content-Type"]:
@@ -364,13 +364,13 @@ def getCustomControls():
 
 
 def _getTemperatureData(filter):
-	if not printer.isOperational():
+	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
-	tempData = printer.getCurrentTemperatures()
+	tempData = printer.get_current_temperatures()
 
 	if "history" in request.values.keys() and request.values["history"] in valid_boolean_trues:
-		tempHistory = printer.getTemperatureHistory()
+		tempHistory = printer.get_temperature_history()
 
 		limit = 300
 		if "limit" in request.values.keys() and unicode(request.values["limit"]).isnumeric():

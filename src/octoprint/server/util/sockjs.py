@@ -13,8 +13,10 @@ import octoprint.timelapse
 import octoprint.server
 from octoprint.events import Events
 
+import octoprint.printer
 
-class PrinterStateConnection(sockjs.tornado.SockJSConnection):
+
+class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
 	def __init__(self, printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session):
 		sockjs.tornado.SockJSConnection.__init__(self, session)
 
@@ -49,7 +51,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
 		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY, "version": octoprint.server.VERSION, "display_version": octoprint.server.DISPLAY_VERSION})
 
-		self._printer.registerCallback(self)
+		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)
 		octoprint.timelapse.registerCallback(self)
 		self._pluginManager.register_client(self)
@@ -62,7 +64,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 
 	def on_close(self):
 		self._logger.info("Client connection closed: %s" % self._remoteAddress)
-		self._printer.unregisterCallback(self)
+		self._printer.unregister_callback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregisterCallback(self)
 		self._pluginManager.unregister_client(self)
@@ -74,7 +76,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 	def on_message(self, message):
 		pass
 
-	def sendCurrentData(self, data):
+	def on_printer_send_current_data(self, data):
 		# add current temperature, log and message backlogs to sent data
 		with self._temperatureBacklogMutex:
 			temperatures = self._temperatureBacklog
@@ -92,7 +94,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		if "job" in data and data["job"] is not None \
 				and "file" in data["job"] and "name" in data["job"]["file"] and "origin" in data["job"]["file"] \
 				and data["job"]["file"]["name"] is not None and data["job"]["file"]["origin"] is not None \
-				and (self._printer.isPrinting() or self._printer.isPaused()):
+				and (self._printer.is_printing() or self._printer.is_paused()):
 			busy_files.append(dict(origin=data["job"]["file"]["origin"], name=data["job"]["file"]["name"]))
 
 		data.update({
@@ -103,13 +105,13 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 		})
 		self._emit("current", data)
 
-	def sendHistoryData(self, data):
+	def on_printer_send_initial_data(self, data):
 		self._emit("history", data)
 
 	def sendEvent(self, type, payload=None):
 		self._emit("event", {"type": type, "payload": payload})
 
-	def sendFeedbackCommandOutput(self, name, output):
+	def on_printer_received_registered_message(self, name, output):
 		self._emit("feedbackCommandOutput", {"name": name, "output": output})
 
 	def sendTimelapseConfig(self, timelapseConfig):
@@ -123,15 +125,15 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection):
 	def sendPluginMessage(self, plugin, data):
 		self._emit("plugin", dict(plugin=plugin, data=data))
 
-	def addLog(self, data):
+	def on_printer_add_log(self, data):
 		with self._logBacklogMutex:
 			self._logBacklog.append(data)
 
-	def addMessage(self, data):
+	def on_printer_add_message(self, data):
 		with self._messageBacklogMutex:
 			self._messageBacklog.append(data)
 
-	def addTemperature(self, data):
+	def on_printer_add_temperature(self, data):
 		with self._temperatureBacklogMutex:
 			self._temperatureBacklog.append(data)
 

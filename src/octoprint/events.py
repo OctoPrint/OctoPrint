@@ -340,7 +340,7 @@ class CommandTrigger(GenericEventListener):
 			"__now": datetime.datetime.now().isoformat()
 		}
 
-		currentData = self._printer.getCurrentData()
+		currentData = self._printer.get_current_data()
 
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])

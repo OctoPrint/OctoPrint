@@ -12,7 +12,7 @@ from flask.exceptions import JSONBadRequest
 
 from octoprint.events import eventManager, Events
 from octoprint.settings import settings
-from octoprint.printer import getConnectionOptions
+from octoprint.printer import get_connection_options
 
 from octoprint.server import admin_permission
 from octoprint.server.api import api
@@ -28,7 +28,7 @@ import octoprint.util
 def getSettings():
 	s = settings()
 
-	connectionOptions = getConnectionOptions()
+	connectionOptions = get_connection_options()
 
 	data = {
 		"api": {

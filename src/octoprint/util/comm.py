@@ -223,15 +223,15 @@ class MachineCom(object):
 			if settings().get(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
-				self._callback.mcSdFiles([])
+				self._callback.on_comm_sd_files([])
 
 		oldState = self.getStateString()
 		self._state = newState
 		self._log('Changing monitoring state from \'%s\' to \'%s\'' % (oldState, self.getStateString()))
-		self._callback.mcStateChange(newState)
+		self._callback.on_comm_state_change(newState)
 
 	def _log(self, message):
-		self._callback.mcLog(message)
+		self._callback.on_comm_log(message)
 		self._serialLogger.debug(message)
 
 	def _addToLastLines(self, cmd):
@@ -494,7 +494,7 @@ class MachineCom(object):
 
 		self.sendCommand("M28 %s" % remoteFilename)
 		eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
-		self._callback.mcFileTransferStarted(remoteFilename, self._currentFile.getFilesize())
+		self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
 
 	def selectFile(self, filename, sd):
 		if self.isBusy():
@@ -512,7 +512,7 @@ class MachineCom(object):
 				"file": self._currentFile.getFilename(),
 				"origin": self._currentFile.getFileLocation()
 			})
-			self._callback.mcFileSelected(filename, self._currentFile.getFilesize(), False)
+			self._callback.on_comm_file_selected(filename, self._currentFile.getFilesize(), False)
 
 	def unselectFile(self):
 		if self.isBusy():
@@ -520,7 +520,7 @@ class MachineCom(object):
 
 		self._currentFile = None
 		eventManager().fire(Events.FILE_DESELECTED)
-		self._callback.mcFileSelected(None, None, False)
+		self._callback.on_comm_file_selected(None, None, False)
 
 	def cancelPrint(self):
 		if not self.isOperational() or self.isStreaming():
@@ -625,7 +625,7 @@ class MachineCom(object):
 		if settings().getBoolean(["feature", "sdAlwaysAvailable"]):
 			self._sdAvailable = True
 			self.refreshSdFiles()
-			self._callback.mcSdStateChange(self._sdAvailable)
+			self._callback.on_comm_sd_state_change(self._sdAvailable)
 
 	def releaseSdCard(self):
 		if not self.isOperational() or (self.isBusy() and self.isSdFileSelected()):
@@ -636,8 +636,8 @@ class MachineCom(object):
 		self._sdAvailable = False
 		self._sdFiles = []
 
-		self._callback.mcSdStateChange(self._sdAvailable)
-		self._callback.mcSdFiles(self._sdFiles)
+		self._callback.on_comm_sd_state_change(self._sdAvailable)
+		self._callback.on_comm_sd_files(self._sdFiles)
 
 	##~~ communication monitoring and handling
 
@@ -761,7 +761,7 @@ class MachineCom(object):
 							self.setPause(False)
 						elif action_command == "disconnect":
 							self._log("Disconnecting on request of the printer...")
-							self._callback.mcForceDisconnect()
+							self._callback.on_comm_force_disconnect()
 						else:
 							for hook in self._printer_action_hooks:
 								self._printer_action_hooks[hook](self, line, action_command)
@@ -803,7 +803,7 @@ class MachineCom(object):
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
 					self._processTemperatures(line)
-					self._callback.mcTempUpdate(self._temp, self._bedTemp)
+					self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = self._regex_repetierTempExtr.match(line)
@@ -818,7 +818,7 @@ class MachineCom(object):
 								self._temp[toolNum] = (actual, target)
 							else:
 								self._temp[toolNum] = (None, target)
-							self._callback.mcTempUpdate(self._temp, self._bedTemp)
+							self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 						except ValueError:
 							pass
 					elif matchBed is not None:
@@ -829,7 +829,7 @@ class MachineCom(object):
 								self._bedTemp = (actual, target)
 							else:
 								self._bedTemp = (None, target)
-							self._callback.mcTempUpdate(self._temp, self._bedTemp)
+							self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 						except ValueError:
 							pass
 
@@ -842,7 +842,7 @@ class MachineCom(object):
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
 					self._sdAvailable = False
 					self._sdFiles = []
-					self._callback.mcSdStateChange(self._sdAvailable)
+					self._callback.on_comm_sd_state_change(self._sdAvailable)
 				elif 'Not SD printing' in line:
 					if self.isSdFileSelected() and self.isPrinting():
 						# something went wrong, printer is reporting that we actually are not printing right now...
@@ -851,18 +851,18 @@ class MachineCom(object):
 				elif 'SD card ok' in line and not self._sdAvailable:
 					self._sdAvailable = True
 					self.refreshSdFiles()
-					self._callback.mcSdStateChange(self._sdAvailable)
+					self._callback.on_comm_sd_state_change(self._sdAvailable)
 				elif 'Begin file list' in line:
 					self._sdFiles = []
 					self._sdFileList = True
 				elif 'End file list' in line:
 					self._sdFileList = False
-					self._callback.mcSdFiles(self._sdFiles)
+					self._callback.on_comm_sd_files(self._sdFiles)
 				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = self._regex_sdPrintingByte.search(line)
 					self._currentFile.setFilepos(int(match.group(1)))
-					self._callback.mcProgress()
+					self._callback.on_comm_progress()
 				elif 'File opened' in line:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = self._regex_sdFileOpened.search(line)
@@ -875,7 +875,7 @@ class MachineCom(object):
 				elif 'File selected' in line:
 					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 					if self._currentFile is not None:
-						self._callback.mcFileSelected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
+						self._callback.on_comm_file_selected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
 						eventManager().fire(Events.FILE_SELECTED, {
 							"file": self._currentFile.getFilename(),
 							"origin": self._currentFile.getFileLocation()
@@ -887,7 +887,7 @@ class MachineCom(object):
 				elif 'Done printing file' in line:
 					# printer is reporting file finished printing
 					self._sdFilePos = 0
-					self._callback.mcPrintjobDone()
+					self._callback.on_comm_print_job_done()
 					self._changeState(self.STATE_OPERATIONAL)
 					eventManager().fire(Events.PRINT_DONE, {
 						"file": self._currentFile.getFilename(),
@@ -904,7 +904,7 @@ class MachineCom(object):
 						and not line.startswith('Resend:') \
 						and line != 'echo:Unknown command:""\n' \
 						and self.isOperational():
-					self._callback.mcMessage(line)
+					self._callback.on_comm_message(line)
 
 				##~~ Parsing for feedback commands
 				if feedbackControls:
@@ -922,7 +922,7 @@ class MachineCom(object):
 									formatFunction = unicode.format
 
 								if formatFunction is not None:
-									self._callback.mcReceivedRegisteredMessage(name, formatFunction(template, *(match.groups("n/a"))))
+									self._callback.on_comm_received_registered_message(name, formatFunction(template, *(match.groups("n/a"))))
 						except:
 							if not name in feedbackErrors:
 								self._logger.info("Something went wrong with feedbackControl \"%s\": " % name, exc_info=True)
@@ -1171,7 +1171,7 @@ class MachineCom(object):
 
 				self._currentFile = None
 				self._changeState(self.STATE_OPERATIONAL)
-				self._callback.mcFileTransferDone(remote)
+				self._callback.on_comm_file_transfer_done(remote)
 				eventManager().fire(Events.TRANSFER_DONE, payload)
 				self.refreshSdFiles()
 			else:
@@ -1181,7 +1181,7 @@ class MachineCom(object):
 					"origin": self._currentFile.getFileLocation(),
 					"time": self.getPrintTime()
 				}
-				self._callback.mcPrintjobDone()
+				self._callback.on_comm_print_job_done()
 				self._changeState(self.STATE_OPERATIONAL)
 				eventManager().fire(Events.PRINT_DONE, payload)
 
@@ -1193,7 +1193,7 @@ class MachineCom(object):
 			line = self._getNext()
 			if line is not None:
 				self._sendCommand(line, True)
-				self._callback.mcProgress()
+				self._callback.on_comm_progress()
 
 	def _handleResendRequest(self, line):
 		lineToResend = None
@@ -1325,7 +1325,7 @@ class MachineCom(object):
 					z = float(match.group(1))
 					if self._currentZ != z:
 						self._currentZ = z
-						self._callback.mcZChange(z)
+						self._callback.on_comm_z_change(z)
 				except ValueError:
 					pass
 		return cmd
@@ -1419,43 +1419,46 @@ class MachineCom(object):
 ### MachineCom callback ################################################################################################
 
 class MachineComPrintCallback(object):
-	def mcLog(self, message):
+	def on_comm_log(self, message):
 		pass
 
-	def mcTempUpdate(self, temp, bedTemp):
+	def on_comm_temperature_update(self, temp, bedTemp):
 		pass
 
-	def mcStateChange(self, state):
+	def on_comm_state_change(self, state):
 		pass
 
-	def mcMessage(self, message):
+	def on_comm_message(self, message):
 		pass
 
-	def mcProgress(self):
+	def on_comm_progress(self):
 		pass
 
-	def mcZChange(self, newZ):
+	def on_comm_print_job_done(self):
 		pass
 
-	def mcFileSelected(self, filename, filesize, sd):
+	def on_comm_z_change(self, newZ):
 		pass
 
-	def mcSdStateChange(self, sdReady):
+	def on_comm_file_selected(self, filename, filesize, sd):
 		pass
 
-	def mcSdFiles(self, files):
+	def on_comm_sd_state_change(self, sdReady):
 		pass
 
-	def mcSdPrintingDone(self):
+	def on_comm_sd_files(self, files):
 		pass
 
-	def mcFileTransferStarted(self, filename, filesize):
+	def on_comm_file_transfer_started(self, filename, filesize):
 		pass
 
-	def mcReceivedRegisteredMessage(self, command, message):
+	def on_comm_file_transfer_done(self, filename):
 		pass
 
-	def mcForceDisconnect(self):
+	def on_comm_received_registered_message(self, command, message):
+		pass
+
+	def on_comm_force_disconnect(self):
 		pass
 
 ### Printing file information classes ##################################################################################

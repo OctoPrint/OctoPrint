@@ -43,8 +43,9 @@ admin_permission = Permission(RoleNeed("admin"))
 user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
-from octoprint.printer import Printer, getConnectionOptions
+from octoprint.printer import get_connection_options
 from octoprint.printer.profile import PrinterProfileManager
+from octoprint.printer.standard import Printer
 from octoprint.settings import settings
 import octoprint.users as users
 import octoprint.events as events
@@ -673,7 +674,7 @@ class Server():
 		if settings().getBoolean(["serial", "autoconnect"]):
 			(port, baudrate) = settings().get(["serial", "port"]), settings().getInt(["serial", "baudrate"])
 			printer_profile = printerProfileManager.get_default()
-			connectionOptions = getConnectionOptions()
+			connectionOptions = get_connection_options()
 			if port in connectionOptions["ports"]:
 				printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
 
