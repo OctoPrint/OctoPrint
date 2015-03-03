@@ -103,6 +103,8 @@
   due to shaky network connections and/or weird browser behaviour when downloading things from the UI.
 * Development dependencies can now be installed with ``pip -e .[develop]``
 * White and transparent colors ;) are supported for the navigation bar ([#789](https://github.com/foosel/OctoPrint/pull/789))
+* Drag-n-drop overlay for file uploads now uses the full available screen space, improving usability on high resolution
+  displays ([#187](https://github.com/foosel/OctoPrint/issues/187))
 
 ### Bug Fixes
 

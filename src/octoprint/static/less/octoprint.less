@@ -760,38 +760,38 @@ textarea.block {
     right: 0;
     padding-top: 60px;
 
-    @dropzone_width: 400px;
-    @dropzone_height: 400px;
-    @dropzone_distance: 50px;
-    @dropzone_border: 2px;
+    @dropzone_width: 50%;
+    @dropzone_height: 100%;
+    @border_color: #cccccc;
 
     #drop, #drop_background {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      margin-left: -1 * @dropzone_width / 2;
-      margin-top: -1 * @dropzone_height / 2;
+      top: 0;
+      left: 0;
+      margin-left: 0;
+      width: 100%;
     }
 
     #drop_locally, #drop_locally_background {
       position: absolute;
-      top: 50%;
+      top: 0;
       left: 50%;
-      margin-left: -1 * @dropzone_width - @dropzone_distance / 2;
-      margin-top: -1 * @dropzone_height / 2;
+      margin-left: -50%;
+      width: 50%;
+      border-right: 2px dashed @border_color;
     }
 
     #drop_sd, #drop_sd_background {
       position: absolute;
-      top: 50%;
+      top: 0;
       left: 50%;
-      margin-left: @dropzone_distance / 2;
-      margin-top: -1 * @dropzone_height / 2;
+      margin-left: 0;
+      width: 50%;
+      border-left: 2px dashed @border_color;
     }
 
     .dropzone {
-      width: @dropzone_width + 2 * @dropzone_border;
-      height: @dropzone_height + 2 * @dropzone_border;
+      height: @dropzone_height;
       z-index: 10001;
 
       color: #ffffff;
@@ -801,13 +801,13 @@ textarea.block {
         font-size: 50px;
       }
 
-      .centered {
-        display: table-cell;
+      .text {
+        display: block;
         text-align: center;
-        vertical-align: middle;
-        width: @dropzone_width;
-        height: @dropzone_height;
         line-height: 40px;
+        position: absolute;
+        width: 100%;
+        bottom: 5%;
 
         filter:alpha(opacity=100);
         -moz-opacity:1.0;
@@ -819,10 +819,6 @@ textarea.block {
     .dropzone_background {
       width: @dropzone_width;
       height: @dropzone_height;
-      border: 2px dashed #eeeeee;
-      -webkit-border-radius: 10px;
-      -moz-border-radius: 10px;
-      border-radius: 10px;
 
       background-color: #000000;
       filter:alpha(opacity=25);
