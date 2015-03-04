@@ -953,6 +953,10 @@ class MachineCom(object):
 							pass
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
+				elif 'File deleted' in line and line.strip().endswith("ok"):
+					# buggy Marlin version that doesn't send a proper \r after the "File deleted" statement, fixed in
+					# current versions
+					self._clear_to_send.set()
 
 				##~~ Message handling
 				elif line.strip() != '' \
