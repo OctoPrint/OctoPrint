@@ -166,7 +166,7 @@ class MachineCom(object):
 		self._currentResendCount = 0
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
-		self._send_queue = queue.Queue()
+		self._send_queue = TypedQueue()
 		self._sd_status_timer = None
 		self._temperature_timer = None
 
@@ -252,7 +252,6 @@ class MachineCom(object):
 
 	def _addToLastLines(self, cmd):
 		self._lastLines.append(cmd)
-		self._logger.debug("Got %d lines of history in memory" % len(self._lastLines))
 
 	##~~ getters
 
@@ -413,12 +412,12 @@ class MachineCom(object):
 		if bed is not None:
 			self._bedTempOffset = bed
 
-	def sendCommand(self, cmd):
+	def sendCommand(self, cmd, cmd_type=None):
 		cmd = cmd.encode('ascii', 'replace')
 		if self.isPrinting() and not self.isSdFileSelected():
-			self._commandQueue.put(cmd)
+			self._commandQueue.put((cmd, cmd_type))
 		elif self.isOperational():
-			self._sendCommand(cmd)
+			self._sendCommand((cmd, cmd_type))
 
 	def sendGcodeScript(self, scriptName, replacements=None):
 		gcodeScripts = settings().get(["scripts", "gcode"], merged=True)
@@ -756,6 +755,8 @@ class MachineCom(object):
 			else:
 				self._bedTemp = (actual, None)
 
+	##~~ Serial monitor processing received messages
+
 	def _monitor(self):
 		feedbackControls = settings().getFeedbackControls()
 		pauseTriggers = settings().getPauseTriggers()
@@ -907,12 +908,12 @@ class MachineCom(object):
 				elif 'End file list' in line:
 					self._sdFileList = False
 					self._callback.on_comm_sd_files(self._sdFiles)
-				elif 'SD printing byte' in line:
+				elif 'SD printing byte' in line and self.isSdPrinting():
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = self._regex_sdPrintingByte.search(line)
 					self._currentFile.setFilepos(int(match.group(1)))
 					self._callback.on_comm_progress()
-				elif 'File opened' in line:
+				elif 'File opened' in line and not self._ignore_select:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = self._regex_sdFileOpened.search(line)
 					if self._sdFileToSelect:
@@ -934,8 +935,9 @@ class MachineCom(object):
 				elif 'Writing to file' in line:
 					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 					self._changeState(self.STATE_PRINTING)
+					self._clear_to_send.set()
 					line = "ok"
-				elif 'Done printing file' in line:
+				elif 'Done printing file' in line and self.isSdPrinting():
 					# printer is reporting file finished printing
 					self._sdFilePos = 0
 					self._callback.on_comm_print_job_done()
@@ -1092,39 +1094,31 @@ class MachineCom(object):
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
 
-	def _enqueue_for_sending(self, command, linenumber=None):
-		self._send_queue.put((command, linenumber))
-
-	def _send_loop(self):
-		while self._send_queue_active:
-			try:
-				entry = self._send_queue.get()
-				if not self._send_queue_active:
-					break
-
-				command, linenumber = entry
-				if linenumber is not None:
-					self._doSendWithChecksum(command, linenumber)
-				else:
-					self._doSendWithoutChecksum(command)
-				self._clear_to_send.clear()
-				self._clear_to_send.wait()
-			except:
-				self._logger.exception("Caught an exception in the send loop")
-		self._log("")
-		self._logger.info("Closing down send loop")
-
 	def _poll_temperature(self):
-		if self.isOperational() and not self.isStreaming() and not self._blocking_command:
-			self.sendCommand("M105")
+		"""
+		Polls the temperature after the temperature timeout, re-enqueues itself.
+
+		If the printer is not operational, not printing from sd, busy with a blocking command or heating, no poll
+		will be done.
+		"""
+
+		if self.isOperational() and not self.isStreaming() and not self._blocking_command and not self._heating:
+			self.sendCommand("M105", cmd_type="temperature_poll")
 
 		interval = get_interval("temperature")
 		self._temperature_timer = threading.Timer(interval, self._poll_temperature)
 		self._temperature_timer.start()
 
 	def _poll_sd_status(self):
-		if self.isOperational() and self.isSdPrinting() and not self._blocking_command:
-			self.sendCommand("M27")
+		"""
+		Polls the sd printing status after the sd status timeout, re-enqueues itself.
+
+		If the printer is not operational, not printing from sd, busy with a blocking command or heating, no poll
+		will be done.
+		"""
+
+		if self.isOperational() and self.isSdPrinting() and not self._blocking_command and not self._heating:
+			self.sendCommand("M27", cmd_type="sd_status_poll")
 
 		interval = get_interval("sdStatus")
 		self._sd_status_timer = threading.Timer(interval, self._poll_sd_status)
@@ -1209,12 +1203,12 @@ class MachineCom(object):
 
 			#Skip the communication errors, as those get corrected.
 			if 'checksum mismatch' in line \
-				or 'Wrong checksum' in line \
-				or 'Line Number is not Last Line Number' in line \
-				or 'expected line' in line \
-				or 'No Line Number with checksum' in line \
-				or 'No Checksum with line number' in line \
-				or 'Missing checksum' in line:
+					or 'Wrong checksum' in line \
+					or 'Line Number is not Last Line Number' in line \
+					or 'expected line' in line \
+					or 'No Line Number with checksum' in line \
+					or 'No Checksum with line number' in line \
+					or 'Missing checksum' in line:
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
 			elif not self.isError():
@@ -1323,7 +1317,6 @@ class MachineCom(object):
 
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
-			self._logger.debug("Resending line %r, delta is %r, last resend number is %r, current resend count is %r, lastCommError is %r" % (self._currentLine - self._resendDelta, self._resendDelta, self._lastResendNumber, self._currentResendCount, lastCommError))
 			cmd = self._lastLines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 
@@ -1335,7 +1328,13 @@ class MachineCom(object):
 				self._lastResendNumber = None
 				self._currentResendCount = 0
 
-	def _sendCommand(self, cmd, sendChecksum=False):
+	def _sendCommand(self, cmd_tuple, sendChecksum=False):
+		if isinstance(cmd_tuple, tuple):
+			cmd, cmd_type = cmd_tuple
+		else:
+			cmd = cmd_tuple
+			cmd_type = None
+
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			if self._serial is None:
@@ -1358,20 +1357,66 @@ class MachineCom(object):
 						cmd = getattr(self, gcodeHandler)(cmd)
 
 			if cmd is not None:
-				self._doSend(cmd, sendChecksum)
+				self._doSend(cmd, send_checksum=sendChecksum, cmd_type=cmd_type)
 
-	def _doSend(self, cmd, sendChecksum=False):
-		if sendChecksum or self._alwaysSendChecksum:
+	def _doSend(self, cmd, send_checksum=False, cmd_type=None):
+		if send_checksum or self._alwaysSendChecksum:
 			lineNumber = self._currentLine
 			self._addToLastLines(cmd)
 			self._currentLine += 1
-			self._enqueue_for_sending(cmd, linenumber=lineNumber)
+			self._enqueue_for_sending(cmd, linenumber=lineNumber, command_type=cmd_type)
 		else:
-			self._enqueue_for_sending(cmd)
+			self._enqueue_for_sending(cmd, command_type=cmd_type)
+
+	##~~ send loop handling
+
+	def _enqueue_for_sending(self, command, linenumber=None, command_type=None):
+		"""
+		Enqueues a command an optional linenumber to use for it in the send queue.
+
+		Arguments:
+		    command (str): The command to send.
+		    linenumber (int): The line number with which to send the command. May be ``None`` in which case the command
+		        will be sent without a line number and checksum.
+		"""
+
+		try:
+			self._send_queue.put((command, linenumber, command_type))
+		except TypeAlreadyInQueue as e:
+			self._logger.debug("Type already in queue: " + e.type)
+
+	def _send_loop(self):
+		"""
+		The send loop is reponsible of sending commands in ``self._send_queue`` over the line, if it is cleared for
+		sending (through received ``ok`` responses from the printer's firmware.
+		"""
+
+		while self._send_queue_active:
+			try:
+				# wait until we have something in the queue
+				entry = self._send_queue.get()
+
+				# make sure we are still active
+				if not self._send_queue_active:
+					break
+
+				# fetch command and optional linenumber from queue, send it
+				command, linenumber, _ = entry
+				if linenumber is not None:
+					self._doSendWithChecksum(command, linenumber)
+				else:
+					self._doSendWithoutChecksum(command)
+
+				# we just used up one ok, clear it, wait for the next clear
+				self._clear_to_send.clear()
+				self._clear_to_send.wait()
+			except:
+				self._logger.exception("Caught an exception in the send loop")
+		self._log("Closing down send loop")
+
+	##~~ actual sending via serial
 
 	def _doSendWithChecksum(self, cmd, lineNumber):
-		self._logger.debug("Sending cmd '%s' with lineNumber %r" % (cmd, lineNumber))
-
 		commandToSend = "N%d %s" % (lineNumber, cmd)
 		checksum = reduce(lambda x,y:x^y, map(ord, commandToSend))
 		commandToSend = "%s*%d" % (commandToSend, checksum)
@@ -1393,6 +1438,8 @@ class MachineCom(object):
 			self._log("Unexpected error while writing serial port: %s" % (get_exception_string()))
 			self._errorValue = get_exception_string()
 			self.close(True)
+
+	##~~ command handlers
 
 	def _gcode_T(self, cmd):
 		toolMatch = self._regex_paramTInt.search(cmd)
@@ -1747,6 +1794,40 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 
 	def getRemoteFilename(self):
 		return self._remoteFilename
+
+
+class TypedQueue(queue.Queue):
+
+	def __init__(self, maxsize=0):
+		queue.Queue.__init__(self, maxsize=maxsize)
+		self._lookup = []
+
+	def _put(self, item):
+		if isinstance(item, tuple) and len(item) == 3:
+			cmd, line, cmd_type = item
+			if cmd_type is not None:
+				if cmd_type in self._lookup:
+					raise TypeAlreadyInQueue(cmd_type, "Type {cmd_type} is already in queue".format(**locals()))
+				else:
+					self._lookup.append(cmd_type)
+
+		queue.Queue._put(self, item)
+
+	def _get(self):
+		item = queue.Queue._get(self)
+
+		if isinstance(item, tuple) and len(item) == 3:
+			cmd, line, cmd_type = item
+			if cmd_type is not None and cmd_type in self._lookup:
+				self._lookup.remove(cmd_type)
+
+		return item
+
+
+class TypeAlreadyInQueue(BaseException):
+	def __init__(self, t, *args, **kwargs):
+		BaseException.__init__(self, *args, **kwargs)
+		self.type = t
 
 
 def get_new_timeout(type):
