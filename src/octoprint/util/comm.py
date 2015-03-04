@@ -180,6 +180,7 @@ class MachineCom(object):
 		self._sdFileList = False
 		self._sdFiles = []
 		self._sdFileToSelect = None
+		self._ignore_select = False
 
 		# print job
 		self._currentFile = None
@@ -496,8 +497,14 @@ class MachineCom(object):
 			self.sendGcodeScript("beforePrintStarted", replacements=dict(event=payload))
 
 			if self.isSdFileSelected():
-				self.sendCommand("M26 S0")
+				#self.sendCommand("M26 S0") # setting the sd post apparently sometimes doesn't work, so we re-select
+				                            # the file instead
+
+				# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
+				self._ignore_select = True
+				self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()))
 				self._currentFile.setFilepos(0)
+
 				self.sendCommand("M24")
 				self._poll_sd_status()
 			else:
@@ -909,8 +916,10 @@ class MachineCom(object):
 						name = match.group(1)
 					self._currentFile = PrintingSdFileInformation(name, int(match.group(2)))
 				elif 'File selected' in line:
-					# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
-					if self._currentFile is not None:
+					if self._ignore_select:
+						self._ignore_select = False
+					elif self._currentFile is not None:
+						# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 						self._callback.on_comm_file_selected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
 						eventManager().fire(Events.FILE_SELECTED, {
 							"file": self._currentFile.getFilename(),
