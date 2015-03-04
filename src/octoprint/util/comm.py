@@ -844,7 +844,6 @@ class MachineCom(object):
 				if line.strip().startswith("ok"):
 					self._clear_to_send.set()
 					self._blocking_command = False
-					self._heating = False
 
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
@@ -887,6 +886,7 @@ class MachineCom(object):
 				if 'ok' in line and self._heatupWaitStartTime:
 					self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
 					self._heatupWaitStartTime = None
+					self._heating = False
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1501,11 +1501,13 @@ class MachineCom(object):
 	def _gcode_M109(self, cmd):
 		self._heatupWaitStartTime = time.time()
 		self._blocking_command = True
+		self._heating = True
 		return self._gcode_M104(cmd)
 
 	def _gcode_M190(self, cmd):
 		self._heatupWaitStartTime = time.time()
 		self._blocking_command = True
+		self._heating = True
 		return self._gcode_M140(cmd)
 
 	def _gcode_M110(self, cmd):
