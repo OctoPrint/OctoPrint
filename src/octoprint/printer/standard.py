@@ -631,7 +631,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def _setJobData(self, filename, filesize, sd):
 		if filename is not None:
 			if sd:
-				path_in_storage = filename[1:]
+				path_in_storage = filename
 				path_on_disk = None
 			else:
 				path_in_storage = self._fileManager.path_in_storage(FileDestinations.LOCAL, filename)
