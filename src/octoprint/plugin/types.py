@@ -600,18 +600,18 @@ class BlueprintPlugin(OctoPrintPlugin):
 	               return flask.make_response("Expected a text to echo back.", 400)
 	           return flask.request.values["text"]
 
-	   __plugin_implementations__ = [MyPlugin()]
+	   __plugin_implementations__ = [MyBlueprintPlugin()]
 
 	Your blueprint will be published by OctoPrint under the base URL ``/plugin/<plugin identifier>/``, so the above
 	example of a plugin with the identifier "myblueprintplugin" would be reachable under
 	``/plugin/myblueprintplugin/echo``.
 
 	Just like with regular blueprints you'll be able to create URLs via ``url_for``, just use the prefix
-	``plugin.<plugin identifier>``, e.g.:
+	``plugin.<plugin identifier>.<method_name>``, e.g.:
 
 	.. code-block:: python
 
-	   flask.url_for("plugin.myblueprintplugin.echo") # will return "/plugin/myblueprintplugin/echo"
+	   flask.url_for("plugin.myblueprintplugin.myEcho") # will return "/plugin/myblueprintplugin/echo"
 
 	"""
 
