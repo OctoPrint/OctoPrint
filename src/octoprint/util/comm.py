@@ -446,7 +446,7 @@ class MachineCom(object):
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
 
-		self._heatupWaitStartTime = 0
+		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0
 		self._pauseWaitStartTime = 0
 		self._pauseWaitTimeLost = 0.0
@@ -1025,7 +1025,7 @@ class MachineCom(object):
 							if self._resendDelta is not None:
 								self._resendNextCommand()
 							else:
-								if self._heatupWaitStartTime is None:
+								if not self._heatupWaitStartTime:
 									if time.time() > tempRequestTimeout:
 										self.sendCommand("M105")
 										tempRequestTimeout = get_new_timeout("temperature")
