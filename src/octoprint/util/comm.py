@@ -162,7 +162,7 @@ class MachineCom(object):
 		self._lastResendNumber = None
 		self._currentResendCount = 0
 
-		self._clear_to_send = CountedEvent(max=10)
+		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = queue.Queue()
 		self._sd_status_timer = None
 		self._temperature_timer = None
@@ -211,12 +211,12 @@ class MachineCom(object):
 		self._sendingLock = threading.Lock()
 
 		# monitoring thread
-		self.monitoring_thread = threading.Thread(target=self._monitor)
+		self.monitoring_thread = threading.Thread(target=self._monitor, name="comm._monitor")
 		self.monitoring_thread.daemon = True
 		self.monitoring_thread.start()
 
 		# sending thread
-		self.sending_thread = threading.Thread(target=self._send_loop)
+		self.sending_thread = threading.Thread(target=self._send_loop, name="comm.sending_thread")
 		self.sending_thread.daemon = True
 		self.sending_thread.start()
 
@@ -1044,7 +1044,8 @@ class MachineCom(object):
 				elif self._state == self.STATE_PRINTING:
 					if line == "" and time.time() > self._timeout:
 						self._log("Communication timeout during printing, forcing a line")
-						line = 'ok'
+						#line = 'ok'
+						self._clear_to_send.set()
 
 					if "ok" in line:
 						if swallowOk:
@@ -1096,15 +1097,29 @@ class MachineCom(object):
 
 	def _send_loop(self):
 		while True:
-			self._clear_to_send.wait()
-			command, linenumber = self._send_queue.get()
-			if linenumber is not None:
-				self._doSendWithChecksum(command, linenumber)
-			else:
-				self._doSendWithoutChecksum(command)
+			if self._send_queue.qsize() == 0:
+				# queue is empty, wait a bit before checking again
+				time.sleep(0.1)
+				continue
+
+			try:
+				entry = self._send_queue.get(block=False)
+			except queue.Empty:
+				entry = None
+
+			if entry is not None:
+				command, linenumber = entry
+				if linenumber is not None:
+					self._doSendWithChecksum(command, linenumber)
+				else:
+					self._doSendWithoutChecksum(command)
+				self._clear_to_send.clear()
+				self._clear_to_send.wait()
 
 	def _poll_temperature(self):
-		if self.isOperational() and not self.isStreaming() and self._heatupWaitStartTime is None:
+		print("temperature poll timer hit")
+		if self.isOperational() and not self.isStreaming() and not self._heatupWaitStartTime:
+			print("sending temperature poll")
 			self.sendCommand("M105")
 
 		interval = get_interval("temperature")
@@ -1112,11 +1127,13 @@ class MachineCom(object):
 		self._temperature_timer.start()
 
 	def _poll_sd_status(self):
-		if self.isOperational() and self.isSdPrinting() and self._heatupWaitStartTime is None:
+		print("sd status poll timer hit")
+		if self.isOperational() and self.isSdPrinting() and not self._heatupWaitStartTime:
+			print("sending sd status poll")
 			self.sendCommand("M27")
 
 		interval = get_interval("sdStatus")
-		self._sd_status_timer = threading.Timer(interval, self._poll_temperature)
+		self._sd_status_timer = threading.Timer(interval, self._poll_sd_status)
 		self._sd_status_timer.start()
 
 	def _onConnected(self):
