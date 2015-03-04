@@ -16,6 +16,11 @@ from serial import SerialTimeoutException
 from octoprint.settings import settings
 
 class VirtualPrinter():
+	command_regex = re.compile("[GM]\d+")
+	sleep_regex = re.compile("sleep (\d+)")
+	sleep_after_regex = re.compile("sleep_after ([GM]\d+) (\d+)")
+	sleep_after_next_regex = re.compile("sleep_after_next ([GM]\d+) (\d+)")
+
 	def __init__(self, read_timeout=5.0, write_timeout=10.0):
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
@@ -58,6 +63,9 @@ class VirtualPrinter():
 		self.lastN = 0
 
 		self._incoming_lock = threading.RLock()
+
+		self._sleepAfterNext = dict()
+		self._sleepAfter = dict()
 
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
@@ -235,6 +243,22 @@ class VirtualPrinter():
 				# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
 				self.buffered.put(data)
 
+			if len(self._sleepAfter) or len(self._sleepAfterNext):
+				command_match = VirtualPrinter.command_regex.match(data)
+				if command_match is not None:
+					command = command_match.group(0)
+
+					interval = None
+					if command in self._sleepAfter:
+						interval = self._sleepAfter[command]
+					elif command in self._sleepAfterNext:
+						interval = self._sleepAfterNext[command]
+						del self._sleepAfterNext[command]
+
+					if interval is not None:
+						self.outgoing.put("// sleeping for {interval} seconds".format(interval=interval))
+						time.sleep(interval)
+
 			if len(data.strip()) > 0:
 				self._sendOk()
 
@@ -245,6 +269,28 @@ class VirtualPrinter():
 			self.outgoing.put("// action:resume")
 		elif data == "action_disconnect":
 			self.outgoing.put("// action:disconnect")
+		else:
+			try:
+				sleep_match = VirtualPrinter.sleep_regex.match(data)
+				sleep_after_match = VirtualPrinter.sleep_after_regex.match(data)
+				sleep_after_next_match = VirtualPrinter.sleep_after_next_regex.match(data)
+
+				if sleep_match is not None:
+					interval = int(sleep_match.group(1))
+					self.outgoing.put("// sleeping for {interval} seconds".format(interval=interval))
+					time.sleep(interval)
+				elif sleep_after_match is not None:
+					command = sleep_after_match.group(1)
+					interval = int(sleep_after_match.group(2))
+					self._sleepAfter[command] = interval
+					self.outgoing.put("// going to sleep {interval} seconds after each {command}".format(**locals()))
+				elif sleep_after_next_match is not None:
+					command = sleep_after_next_match.group(1)
+					interval = int(sleep_after_next_match.group(2))
+					self._sleepAfterNext[command] = interval
+					self.outgoing.put("// going to sleep {interval} seconds after next {command}".format(**locals()))
+			except:
+				pass
 
 	def _listSd(self):
 		self.outgoing.put("Begin file list")

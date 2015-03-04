@@ -223,10 +223,6 @@ def printerBedState():
 @api.route("/printer/printhead", methods=["POST"])
 @restricted_access
 def printerPrintheadCommand():
-	if not printer.is_operational() or printer.is_printing():
-		# do not jog when a print job is running or we don't have a connection
-		return make_response("Printer is not operational or currently printing", 409)
-
 	valid_commands = {
 		"jog": [],
 		"home": ["axes"],
@@ -235,6 +231,10 @@ def printerPrintheadCommand():
 	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
+
+	if not printer.is_operational() or (printer.is_printing() and command != "feedrate"):
+		# do not jog when a print job is running or we don't have a connection
+		return make_response("Printer is not operational or currently printing", 409)
 
 	valid_axes = ["x", "y", "z"]
 	##~~ jog command
