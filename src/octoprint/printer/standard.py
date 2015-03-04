@@ -374,7 +374,21 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._selectedFile is None:
 			return
 
-		self._timeEstimationData = TimeEstimationHelper()
+		rolling_window = None
+		threshold = None
+		countdown = None
+		if self._selectedFile["sd"]:
+			# we are interesting in a rolling window of roughly the last 15s, so the number of entries has to be derived
+			# by that divided by the sd status polling interval
+			rolling_window = 15 / settings().get(["serial", "timeout", "sdStatus"])
+
+			# we are happy if the average of the estimates stays within 60s of the prior one
+			threshold = 60
+
+			# we are happy when one rolling window has been stable
+			countdown = rolling_window
+		self._timeEstimationData = TimeEstimationHelper(rolling_window=rolling_window, threshold=threshold, countdown=countdown)
+
 		self._lastProgressReport = None
 		self._setCurrentZ(None)
 		self._comm.startPrint()

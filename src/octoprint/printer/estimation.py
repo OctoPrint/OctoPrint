@@ -12,16 +12,27 @@ class TimeEstimationHelper(object):
 	STABLE_COUNTDOWN = 250
 	STABLE_ROLLING_WINDOW = 250
 
-	def __init__(self):
+	def __init__(self, rolling_window=None, countdown=None, threshold=None):
+		if rolling_window is None:
+			rolling_window = self.__class__.STABLE_ROLLING_WINDOW
+		if countdown is None:
+			countdown = self.__class__.STABLE_COUNTDOWN
+		if threshold is None:
+			threshold = self.__class__.STABLE_THRESHOLD
+
+		self._rolling_window = rolling_window
+		self._countdown = countdown
+		self._threshold = threshold
+
 		import collections
-		self._distances = collections.deque([], self.__class__.STABLE_ROLLING_WINDOW)
-		self._totals = collections.deque([], self.__class__.STABLE_ROLLING_WINDOW)
+		self._distances = collections.deque([], self._rolling_window)
+		self._totals = collections.deque([], self._rolling_window)
 		self._sum_total = 0
 		self._count = 0
 		self._stable_counter = None
 
 	def is_stable(self):
-		return self._stable_counter is not None and self._stable_counter >= self.__class__.STABLE_COUNTDOWN
+		return self._stable_counter is not None and self._stable_counter >= self._countdown
 
 	def update(self, newEstimate):
 			old_average_total = self.average_total
@@ -33,7 +44,7 @@ class TimeEstimationHelper(object):
 			if old_average_total:
 				self._distances.append(abs(self.average_total - old_average_total))
 
-			if -1.0 * self.__class__.STABLE_THRESHOLD < self.average_distance < self.__class__.STABLE_THRESHOLD:
+			if -1.0 * self._threshold < self.average_distance < self._threshold:
 				if self._stable_counter is None:
 					self._stable_counter = 0
 				else:
@@ -50,14 +61,14 @@ class TimeEstimationHelper(object):
 
 	@property
 	def average_total_rolling(self):
-		if not self._count or self._count < self.__class__.STABLE_ROLLING_WINDOW:
+		if not self._count or self._count < self._rolling_window:
 			return None
 		else:
 			return sum(self._totals) / len(self._totals)
 
 	@property
 	def average_distance(self):
-		if not self._count or self._count < self.__class__.STABLE_ROLLING_WINDOW + 1:
+		if not self._count or self._count < self._rolling_window + 1:
 			return None
 		else:
 			return sum(self._distances) / len(self._distances)
