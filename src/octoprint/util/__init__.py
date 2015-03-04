@@ -533,7 +533,7 @@ def address_for_client(host, port):
 class CountedEvent(object):
 
 	def __init__(self, value=0, max=None, name=None):
-		logger_name = __name__ + ".CountedEvent" + ("[{name}]".format(name=name) if name is not None else "")
+		logger_name = __name__ + ".CountedEvent" + (".{name}".format(name=name) if name is not None else "")
 		self._logger = logging.getLogger(logger_name)
 
 		self._counter = 0
