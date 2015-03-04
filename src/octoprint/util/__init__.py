@@ -14,6 +14,7 @@ import re
 import tempfile
 import logging
 import shutil
+import threading
 from functools import wraps
 import warnings
 
@@ -529,4 +530,40 @@ def address_for_client(host, port):
 		except:
 			continue
 
+class CountedEvent(object):
 
+	def __init__(self, value=0, max=None):
+		self._counter = 0
+		self._max = max
+		self._mutex = threading.Lock()
+		self._event = threading.Event()
+
+		self._internal_set(value)
+
+	def set(self):
+		with self._mutex:
+			self._internal_set(self._counter + 1)
+
+	def clear(self, completely=False):
+		with self._mutex:
+			if completely:
+				self._internal_set(0)
+			else:
+				self._internal_set(self._counter - 1)
+
+	def wait(self, timeout=None):
+		self._event.wait(timeout)
+
+	def blocked(self):
+		with self._mutex:
+			return self._counter == 0
+
+	def _internal_set(self, value):
+		self._counter = value
+		if self._counter <= 0:
+			self._counter = 0
+			self._event.clear()
+		else:
+			if self._max is not None and self._counter > self._max:
+				self._counter = self._max
+			self._event.set()
