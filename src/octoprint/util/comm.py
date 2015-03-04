@@ -153,6 +153,7 @@ class MachineCom(object):
 		self._currentExtruder = 0
 
 		self._blocking_command = False
+		self._heating = False
 
 		self._timeout = None
 
@@ -842,9 +843,14 @@ class MachineCom(object):
 				if line.strip().startswith("ok"):
 					self._clear_to_send.set()
 					self._blocking_command = False
+					self._heating = False
 
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
+					if not line.strip().startswith("ok") and not self._heating:
+						self._logger.debug("Externally triggered heatup detected")
+						self._heating = True
+						self._heatupWaitStartTime = time.time()
 					self._processTemperatures(line)
 					self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 
