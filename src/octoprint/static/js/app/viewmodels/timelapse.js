@@ -174,6 +174,10 @@ $(function() {
             self.requestData();
         };
 
+        self.onEventMovieDone = function(payload) {
+            self.requestData();
+        };
+
         self.onStartup = function() {
             self.requestData();
         };

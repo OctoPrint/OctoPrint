@@ -176,7 +176,6 @@ function DataUpdater(allViewModels) {
                         new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
                     } else if (type == "MovieDone") {
                         new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
-                        timelapseViewModel.requestData();
                     } else if (type == "MovieFailed") {
                         html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
                         html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');

@@ -162,6 +162,7 @@
   * Handling of files on the printer's SD card contained in folders now works correctly
   * Don't display a "Disconnected" screen when trying to download a timelapse in Firefox
   * Fixed handling of SD card files in folders
+  * Fixed refreshing of timelapse file list upon finished rendering of a new one
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
