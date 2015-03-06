@@ -1,5 +1,3 @@
-.. automodule:: octoprint.plugin.types
-
 .. _sec-plugins:
 
 #######

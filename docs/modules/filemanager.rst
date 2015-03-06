@@ -1,31 +1,28 @@
-.. _sec-development-interface-filemanager:
+.. _sec-modules-filemanager:
 
 octoprint.filemanager
 ---------------------
 
 .. automodule:: octoprint.filemanager
    :members:
-   :undoc-members:
 
-.. _sec-development-interface-filemanager-analysis:
+.. _sec-modules-filemanager-analysis:
 
 octoprint.filemanager.analysis
 ------------------------------
 
 .. automodule:: octoprint.filemanager.analysis
    :members:
-   :undoc-members:
 
-.. _sec-development-interface-filemanager-destinations:
+.. _sec-modules-filemanager-destinations:
 
 octoprint.filemanager.destinations
 ----------------------------------
 
 .. automodule:: octoprint.filemanager.destinations
    :members:
-   :undoc-members:
 
-.. _sec-development-interface-filemanager-storage:
+.. _sec-modules-filemanager-storage:
 
 octoprint.filemanager.storage
 -----------------------------

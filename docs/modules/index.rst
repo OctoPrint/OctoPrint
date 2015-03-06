@@ -1,7 +1,8 @@
-.. _sec-development-interface:
+.. _sec-modules:
 
-Internal API
-============
+################
+Internal Modules
+################
 
 .. toctree::
    :maxdepth: 3
@@ -9,4 +10,5 @@ Internal API
    filemanager.rst
    plugin.rst
    printer.rst
+   settings.rst
    util.rst

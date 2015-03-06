@@ -19,5 +19,5 @@ Contents
    api/index.rst
    events/index.rst
    plugins/index.rst
-   development/index.rst
+   modules/index.rst
 

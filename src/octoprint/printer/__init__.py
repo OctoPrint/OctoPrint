@@ -10,6 +10,9 @@ abstracted version of the actual printer communiciation.
 
 .. autoclass:: PrinterInterface
    :members:
+
+.. autoclass:: PrinterCallback
+   :members:
 """
 
 from __future__ import absolute_import

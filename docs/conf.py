@@ -31,7 +31,7 @@ year_current = date.today().year
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.todo', 'sphinx.ext.autodoc', 'sphinxcontrib.httpdomain', 'sphinx.ext.autosummary', 'sphinxcontrib.napoleon']
+extensions = ['sphinx.ext.todo', 'sphinx.ext.autodoc', 'sphinxcontrib.httpdomain', 'sphinxcontrib.napoleon']
 todo_include_todos = True
 
 # Add any paths that contain templates here, relative to this directory.

@@ -6,7 +6,7 @@ class, :class:`OctoPrintPlugin`.
 Please note that the plugin implementation types are documented in the section
 :ref:`Available plugin mixins <sec-plugins-mixins>`.
 
-.. autoclass: OctoPrintPlugin
+.. autoclass:: OctoPrintPlugin
 
 """
 
@@ -22,21 +22,47 @@ from .core import Plugin
 
 class OctoPrintPlugin(Plugin):
 	"""
+	The parent class of all OctoPrint plugin mixins.
+
 	.. attribute:: _plugin_manager
+
+	   The :class:`~octoprint.plugin.core.PluginManager` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
 
 	.. attribute:: _printer_profile_manager
 
+	   The :class:`~octoprint.printer.profile.PrinterProfileManager` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
 	.. attribute:: _event_bus
+
+	   The :class:`~octoprint.events.EventManager` instance. Injected by the plugin core system upon initialization of
+	   the implementation.
 
 	.. attribute:: _analysis_queue
 
+	   The :class:`~octoprint.filemanager.analysis.AnalysisQueue` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
 	.. attribute:: _slicing_manager
+
+	   The :class:`~octoprint.slicing.SlicingManager` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
 
 	.. attribute:: _file_manager
 
+	   The :class:`~octoprint.filemanager.FileManager` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
 	.. attribute:: _printer
 
+	   The :class:`~octoprint.printer.PrinterInterface` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
 	.. attribute:: _app_session_manager
+
+	   The :class:`~octoprint.users.SessionManager` instance. Injected by the plugin core system upon initialization of
+	   the implementation.
 	"""
 
 	pass

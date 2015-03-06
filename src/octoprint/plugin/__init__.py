@@ -11,7 +11,6 @@ registered plugin types.
 
 .. autoclass:: PluginSettings
    :members:
-
 """
 
 from __future__ import absolute_import
@@ -63,11 +62,12 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 	"""
 
 	global _instance
-	if _instance is None:
+	if _instance is not None:
 		if init:
-			if _instance is not None:
-				raise ValueError("Plugin Manager already initialized")
+			raise ValueError("Plugin Manager already initialized")
 
+	else:
+		if init:
 			if plugin_folders is None:
 				plugin_folders = (settings().getBaseFolder("plugins"), os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")))
 			if plugin_types is None:
@@ -178,40 +178,63 @@ class PluginSettings(object):
 	It provides a couple of convenience methods for directly accessing plugin settings via the regular
 	:class:`octoprint.settings.Settings` interfaces as well as means to access plugin specific folder locations.
 
+	All getter and setter methods will ensure that plugin settings are stored in their correct location within the
+	settings structure by modifying the supplied paths accordingly.
+
+	Arguments:
+	    settings (Settings): The :class:`~octoprint.settings.Settings` instance on which to operate.
+	    plugin_key (str): The plugin identifer of the plugin for which to create this instance.
+	    defaults (dict): The plugin's defaults settings, will be used to determine valid paths within the plugin's
+	        settings structure
+
 	.. method:: get(path, merged=False, asdict=False)
 
-	   Retrieves a raw key from the settings for ``path``, optionally merging the raw value with the default settings
+	   Retrieves a raw value from the settings for ``path``, optionally merging the raw value with the default settings
 	   if ``merged`` is set to True.
 
-	   :param list path:      a list of path elements to navigate to the settings value
-	   :param boolean merged: whether to merge the returned result with the default settings (True) or not (False, default)
-	   :return: the retrieved settings value
+	   :param path: The path for which to retrieve the value.
+	   :type path: list, tuple
+	   :param boolean merged: Whether to merge the returned result with the default settings (True) or not (False,
+	       default).
+	   :returns: The retrieved settings value.
+	   :rtype: object
 
 	.. method:: get_int(path)
 
+	   Like :func:`get` but tries to convert the retrieved value to ``int``.
+
 	.. method:: get_float(path)
+
+	   Like :func:`get` but tries to convert the retrieved value to ``float``.
 
 	.. method:: get_boolean(path)
 
+	   Like :func:`get` but tries to convert the retrieved value to ``boolean``.
+
 	.. method:: set(path, value, force=False)
+
+	   Sets the raw value on the settings for ``path``.
+
+	   :param path: The path for which to retrieve the value.
+	   :type path: list, tuple
+	   :param object value: The value to set.
+	   :param boolean force: If set to True, the modified configuration will even be written back to disk if
+	       the value didn't change.
 
 	.. method:: set_int(path, value, force=False)
 
+	   Like :func:`set` but ensures the value is an ``int`` through attempted conversion before setting it.
+
 	.. method:: set_float(path, value, force=False)
 
+	   Like :func:`set` but ensures the value is an ``float`` through attempted conversion before setting it.
+
 	.. method:: set_boolean(path, value, force=False)
+
+	   Like :func:`set` but ensures the value is an ``boolean`` through attempted conversion before setting it.
 	"""
 
 	def __init__(self, settings, plugin_key, defaults=None):
-		"""
-		Initializes the object with the provided :class:`octoprint.settings.Settings` manager as ``settings``, using
-		the ``plugin_key`` and optional ``defaults``.
-
-		:param settings:
-		:param plugin_key:
-		:param defaults:
-		:return:
-		"""
 		self.settings = settings
 		self.plugin_key = plugin_key
 
@@ -253,33 +276,83 @@ class PluginSettings(object):
 		self.deprecated_access_methods = dict(getInt="get_int", getFloat="get_float", getBoolean="get_boolean", setInt="set_int", setFloat="set_float", setBoolean="set_boolean")
 
 	def global_get(self, path, **kwargs):
+		"""
+		Getter for retrieving settings not managed by the plugin itself from the core settings structure. Use this
+		to access global settings outside of your plugin.
+
+		Directly forwards to :func:`octoprint.settings.Settings.get`.
+		"""
 		return self.settings.get(path, **kwargs)
 
 	def global_get_int(self, path, **kwargs):
+		"""
+		Like :func:`global_get` but directly forwards to :func:`octoprint.settings.Settings.getInt`.
+		"""
 		return self.settings.getInt(path, **kwargs)
 
 	def global_get_float(self, path, **kwargs):
+		"""
+		Like :func:`global_get` but directly forwards to :func:`octoprint.settings.Settings.getFloat`.
+		"""
 		return self.settings.getFloat(path, **kwargs)
 
 	def global_get_boolean(self, path, **kwargs):
+		"""
+		Like :func:`global_get` but directly orwards to :func:`octoprint.settings.Settings.getBoolean`.
+		"""
 		return self.settings.getBoolean(path, **kwargs)
 
 	def global_set(self, path, value, **kwargs):
+		"""
+		Setter for modifying settings not managed by the plugin itself on the core settings structure. Use this
+		to modify global settings outside of your plugin.
+
+		Directly forwards to :func:`octoprint.settings.Settings.set`.
+		"""
 		self.settings.set(path, value, **kwargs)
 
 	def global_set_int(self, path, value, **kwargs):
+		"""
+		Like :func:`global_set` but directly forwards to :func:`octoprint.settings.Settings.setInt`.
+		"""
 		self.settings.setInt(path, value, **kwargs)
 
 	def global_set_float(self, path, value, **kwargs):
+		"""
+		Like :func:`global_set` but directly forwards to :func:`octoprint.settings.Settings.setFloat`.
+		"""
 		self.settings.setFloat(path, value, **kwargs)
 
 	def global_set_boolean(self, path, value, **kwargs):
+		"""
+		Like :func:`global_set` but directly forwards to :func:`octoprint.settings.Settings.setBoolean`.
+		"""
 		self.settings.setBoolean(path, value, **kwargs)
 
 	def global_get_basefolder(self, folder_type, **kwargs):
+		"""
+		Retrieves a globally defined basefolder of the given ``folder_type``. Directly forwards to
+		:func:`octoprint.settings.Settings.getBaseFolder`.
+		"""
 		return self.settings.getBaseFolder(folder_type, **kwargs)
 
 	def get_plugin_logfile_path(self, postfix=None):
+		"""
+		Retrieves the path to a logfile specifically for the plugin. If ``postfix`` is not supplied, the logfile
+		will be named ``plugin_<plugin identifier>.log`` and located within the configured ``logs`` folder. If a
+		postfix is supplied, the name will be ``plugin_<plugin identifier>_<postfix>.log`` at the same location.
+
+		Plugins may use this for specific logging tasks. For example, a :class:`~octoprint.plugin.SlicingPlugin` might
+		want to create a log file for logging the output of the slicing engine itself if some debug flag is set.
+
+		Arguments:
+		    postfix (str): Postfix of the logfile for which to create the path. If set, the file name of the log file
+		        will be ``plugin_<plugin identifier>_<postfix>.log``, if not it will be
+		        ``plugin_<plugin identifier>.log``.
+
+		Returns:
+		    str: Absolute path to the log file, directly usable by the plugin.
+		"""
 		filename = "plugin_" + self.plugin_key
 		if postfix is not None:
 			filename += "_" + postfix

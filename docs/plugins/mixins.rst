@@ -9,7 +9,7 @@ The following plugin mixins are currently available:
    :local:
 
 Please note that all plugin mixins inherit from :class:`~octoprint.plugin.core.Plugin` and
-:class:`~octoprint.plugin.OctoPrintPlugin`, which also provide attributes of interest to plugin developers.
+:class:`~octoprint.plugin.types.OctoPrintPlugin`,  which also provide attributes of interest to plugin developers.
 
 .. _sec-plugins-mixins-startupplugin:
 

@@ -1,4 +1,4 @@
-.. _sec-development-interface-util:
+.. _sec-modules-util:
 
 octoprint.util
 --------------

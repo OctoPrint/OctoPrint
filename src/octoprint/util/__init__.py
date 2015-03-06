@@ -22,7 +22,7 @@ import warnings
 logger = logging.getLogger(__name__)
 
 def warning_decorator_factory(warning_type):
-	def specific_warning(message, stacklevel=1, since=None, includedoc=None):
+	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
 		def decorator(func):
 			@wraps(func)
 			def func_wrapper(*args, **kwargs):
@@ -33,7 +33,7 @@ def warning_decorator_factory(warning_type):
 
 			if includedoc is not None and since is not None:
 				docstring = "\n.. deprecated:: {since}\n   {message}\n\n".format(since=since, message=includedoc)
-				if hasattr(func_wrapper, "__doc__") and func_wrapper.__doc__ is not None:
+				if extenddoc and hasattr(func_wrapper, "__doc__") and func_wrapper.__doc__ is not None:
 					docstring = func_wrapper.__doc__ + "\n" + docstring
 				func_wrapper.__doc__ = docstring
 
@@ -57,6 +57,8 @@ Arguments:
         happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
         ``getattr`` methods).
     includedoc (string): Message about the deprecation to include in the wrapped function's docstring.
+    extenddoc (boolean): If True the original docstring of the wrapped function will be extended by the deprecation
+        message, if False (default) it will be replaced with the deprecation message.
     since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
 
 Returns:
@@ -77,6 +79,8 @@ Arguments:
         meaning the direct caller of the method. It might make sense to increase this in case of the function call
         happening dynamically from a fixed position to not shadow the real caller (e.g. in case of overridden
         ``getattr`` methods).
+    extenddoc (boolean): If True the original docstring of the wrapped function will be extended by the deprecation
+        message, if False (default) it will be replaced with the deprecation message.
     includedoc (string): Message about the deprecation to include in the wrapped function's docstring.
     since (string): Version since when the function was deprecated, must be present for the docstring to get extended.
 
