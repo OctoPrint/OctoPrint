@@ -299,7 +299,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			raise ValueError("offsets must be a dict")
 
 		validated_keys = filter(lambda x: PrinterInterface.valid_tool_regex.match(x), offsets.keys())
-		validated_values = filter(lambda x: isinstance(value, (int, long, float)), offsets.values())
+		validated_values = filter(lambda x: isinstance(x, (int, long, float)), offsets.values())
 
 		if len(validated_keys) != len(offsets):
 			raise ValueError("offsets contains invalid keys: {offsets}".format(offsets=offsets))
@@ -309,22 +309,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None:
 			return
 
-		tool, bed = self._comm.getOffsets()
-
-		validatedOffsets = dict()
-
-		for key in offsets:
-			value = offsets[key]
-			if key == "bed":
-				bed = value
-				validatedOffsets[key] = value
-			elif key.startswith("tool"):
-				toolNum = int(key[len("tool"):])
-				tool[toolNum] = value
-				validatedOffsets[key] = value
-
-		self._comm.setTemperatureOffset(tool, bed)
-		self._stateMonitor.set_temp_offsets(validatedOffsets)
+		self._comm.setTemperatureOffset(offsets)
+		self._stateMonitor.set_temp_offsets(offsets)
 
 	def _convert_rate_value(self, factor, min=0, max=200):
 		if not isinstance(factor, (int, float, long)):

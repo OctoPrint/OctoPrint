@@ -141,16 +141,15 @@ class MachineCom(object):
 		self._baudrateDetectList = baudrateList()
 		self._baudrateDetectRetry = 0
 		self._temp = {}
-		self._tempOffset = {}
 		self._bedTemp = None
-		self._bedTempOffset = 0
+		self._tempOffsets = dict()
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
 		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0
 		self._pauseWaitStartTime = None
 		self._pauseWaitTimeLost = 0.0
-		self._currentExtruder = 0
+		self._currentTool = 0
 
 		self._blocking_command = False
 		self._heating = False
@@ -356,7 +355,10 @@ class MachineCom(object):
 		return self._bedTemp
 
 	def getOffsets(self):
-		return self._tempOffset, self._bedTempOffset
+		return dict(self._tempOffsets)
+
+	def getCurrentTool(self):
+		return self._currentTool
 
 	def getConnection(self):
 		return self._port, self._baudrate
@@ -405,38 +407,40 @@ class MachineCom(object):
 			eventManager().fire(Events.PRINT_FAILED, payload)
 		eventManager().fire(Events.DISCONNECTED)
 
-	def setTemperatureOffset(self, tool=None, bed=None):
-		if tool is not None:
-			self._tempOffset = tool
+	def setTemperatureOffset(self, offsets):
+		self._tempOffsets.update(offsets)
 
-		if bed is not None:
-			self._bedTempOffset = bed
-
-	def sendCommand(self, cmd, cmd_type=None):
+	def sendCommand(self, cmd, cmd_type=None, processed=False):
 		cmd = cmd.encode('ascii', 'replace')
+		if not processed:
+			cmd = process_gcode_line(cmd)
+			if not cmd:
+				return
+
 		if self.isPrinting() and not self.isSdFileSelected():
 			self._commandQueue.put((cmd, cmd_type))
 		elif self.isOperational():
 			self._sendCommand((cmd, cmd_type))
 
 	def sendGcodeScript(self, scriptName, replacements=None):
-		gcodeScripts = settings().get(["scripts", "gcode"], merged=True)
-
-		if scriptName in gcodeScripts and gcodeScripts[scriptName]:
-			script = gcodeScripts[scriptName]
-		else:
-			return
-
-		if replacements is None:
-			replacements = dict()
-		replacements.update(dict(
-			disable_steppers=gcodeScripts["templates"]["disable_steppers"],
-			disable_hotends="\n".join(map(lambda x: gcodeScripts["templates"]["disable_hotends"].format(tool=x), range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]))),
-			disable_bed=gcodeScripts["templates"]["disable_bed"],
-			disable_fan=gcodeScripts["templates"]["disable_fan"]
+		context = dict()
+		if replacements is not None and isinstance(replacements, dict):
+			context.update(replacements)
+		context.update(dict(
+			printer_profile=self._printerProfileManager.get_current_or_default()
 		))
-		script = script.format(**replacements)
-		scriptLines = map(str.strip, script.split("\n"))
+
+		template = settings().loadScript("gcode", scriptName, context=context)
+		if template is None:
+			return None
+
+		scriptLines = filter(
+			lambda x: x is not None and x.strip() != "",
+			map(
+				lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
+				template.split("\n")
+			)
+		)
 
 		for hook in self._gcodescript_hooks:
 			try:
@@ -543,7 +547,7 @@ class MachineCom(object):
 			self._sdFileToSelect = filename
 			self.sendCommand("M23 %s" % filename)
 		else:
-			self._currentFile = PrintingGcodeFileInformation(filename, self.getOffsets)
+			self._currentFile = PrintingGcodeFileInformation(filename, offsets_callback=self.getOffsets, current_tool_callback=self.getCurrentTool)
 			eventManager().fire(Events.FILE_SELECTED, {
 				"file": self._currentFile.getFilename(),
 				"origin": self._currentFile.getFileLocation()
@@ -1444,7 +1448,7 @@ class MachineCom(object):
 	def _gcode_T(self, cmd):
 		toolMatch = self._regex_paramTInt.search(cmd)
 		if toolMatch:
-			self._currentExtruder = int(toolMatch.group(1))
+			self._currentTool = int(toolMatch.group(1))
 		return cmd
 
 	def _gcode_G0(self, cmd):
@@ -1467,7 +1471,7 @@ class MachineCom(object):
 	_gcode_M1 = _gcode_M0
 
 	def _gcode_M104(self, cmd):
-		toolNum = self._currentExtruder
+		toolNum = self._currentTool
 		toolMatch = self._regex_paramTInt.search(cmd)
 		if toolMatch:
 			toolNum = int(toolMatch.group(1))
@@ -1613,22 +1617,23 @@ class PrintingFileInformation(object):
 	"""
 
 	def __init__(self, filename):
+		self._logger = logging.getLogger(__name__)
 		self._filename = filename
-		self._filepos = 0
-		self._filesize = None
-		self._startTime = None
+		self._pos = 0
+		self._size = None
+		self._start_time = None
 
 	def getStartTime(self):
-		return self._startTime
+		return self._start_time
 
 	def getFilename(self):
 		return self._filename
 
 	def getFilesize(self):
-		return self._filesize
+		return self._size
 
 	def getFilepos(self):
-		return self._filepos
+		return self._pos
 
 	def getFileLocation(self):
 		return FileDestinations.LOCAL
@@ -1638,36 +1643,36 @@ class PrintingFileInformation(object):
 		The current progress of the file, calculated as relation between file position and absolute size. Returns -1
 		if file size is None or < 1.
 		"""
-		if self._filesize is None or not self._filesize > 0:
+		if self._size is None or not self._size > 0:
 			return -1
-		return float(self._filepos) / float(self._filesize)
+		return float(self._pos) / float(self._size)
 
 	def reset(self):
 		"""
 		Resets the current file position to 0.
 		"""
-		self._filepos = 0
+		self._pos = 0
 
 	def start(self):
 		"""
 		Marks the print job as started and remembers the start time.
 		"""
-		self._startTime = time.time()
+		self._start_time = time.time()
 
 class PrintingSdFileInformation(PrintingFileInformation):
 	"""
 	Encapsulates information regarding an ongoing print from SD.
 	"""
 
-	def __init__(self, filename, filesize):
+	def __init__(self, filename, size):
 		PrintingFileInformation.__init__(self, filename)
-		self._filesize = filesize
+		self._size = size
 
-	def setFilepos(self, filepos):
+	def setFilepos(self, pos):
 		"""
 		Sets the current file position.
 		"""
-		self._filepos = filepos
+		self._pos = pos
 
 	def getFileLocation(self):
 		return FileDestinations.SDCARD
@@ -1678,118 +1683,68 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 	that the file is closed in case of an error.
 	"""
 
-	def __init__(self, filename, offsetCallback):
+	def __init__(self, filename, offsets_callback=None, current_tool_callback=None):
 		PrintingFileInformation.__init__(self, filename)
 
-		self._filehandle = None
+		self._handle = None
 
-		self._filesetMenuModehandle = None
-		self._firstLine = None
-		self._currentTool = 0
+		self._first_line = None
 
-		self._offsetCallback = offsetCallback
-		self._regex_tempCommand = re.compile("M(104|109|140|190)")
-		self._regex_tempCommandTemperature = re.compile("S([-+]?\d*\.?\d*)")
-		self._regex_tempCommandTool = re.compile("T(\d+)")
-		self._regex_toolCommand = re.compile("^T(\d+)")
+		self._offsets_callback = offsets_callback
+		self._current_tool_callback = current_tool_callback
 
 		if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
 			raise IOError("File %s does not exist" % self._filename)
-		self._filesize = os.stat(self._filename).st_size
+		self._size = os.stat(self._filename).st_size
+		self._pos = 0
 
 	def start(self):
 		"""
 		Opens the file for reading and determines the file size. Start time won't be recorded until 100 lines in
 		"""
 		PrintingFileInformation.start(self)
-		self._filehandle = open(self._filename, "r")
+		self._handle = open(self._filename, "r")
 
 	def getNext(self):
 		"""
 		Retrieves the next line for printing.
 		"""
-		if self._filehandle is None:
+		if self._handle is None:
 			raise ValueError("File %s is not open for reading" % self._filename)
 
+		offsets = self._offsets_callback() if self._offsets_callback is not None else None
+		current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
+
 		try:
-			processedLine = None
-			while processedLine is None:
-				if self._filehandle is None:
+			processed = None
+			while processed is None:
+				if self._handle is None:
 					# file got closed just now
 					return None
-				line = self._filehandle.readline()
+				line = self._handle.readline()
 				if not line:
-					self._filehandle.close()
-					self._filehandle = None
-				processedLine = self._processLine(line)
-			self._filepos = self._filehandle.tell()
+					self._handle.close()
+					self._handle = None
+				processed = process_gcode_line(line, offsets=offsets, current_tool=current_tool)
+			self._pos = self._handle.tell()
 
-			return processedLine
-		except Exception as (e):
-			if self._filehandle is not None:
-				self._filehandle.close()
-				self._filehandle = None
+			return processed
+		except Exception as e:
+			if self._handle is not None:
+				self._handle.close()
+				self._handle = None
+			self._logger.exception("Exception while processing line")
 			raise e
-
-	def _processLine(self, line):
-		if ";" in line:
-			line = line[0:line.find(";")]
-		line = line.strip()
-		if len(line) > 0:
-			toolMatch = self._regex_toolCommand.match(line)
-			if toolMatch is not None:
-				# track tool changes
-				self._currentTool = int(toolMatch.group(1))
-			else:
-				## apply offsets
-				if self._offsetCallback is not None:
-					tempMatch = self._regex_tempCommand.match(line)
-					if tempMatch is not None:
-						# if we have a temperature command, retrieve current offsets
-						tempOffset, bedTempOffset = self._offsetCallback()
-						if tempMatch.group(1) == "104" or tempMatch.group(1) == "109":
-							# extruder temperature, determine which one and retrieve corresponding offset
-							toolNum = self._currentTool
-
-							toolNumMatch = self._regex_tempCommandTool.search(line)
-							if toolNumMatch is not None:
-								try:
-									toolNum = int(toolNumMatch.group(1))
-								except ValueError:
-									pass
-
-							offset = tempOffset[toolNum] if toolNum in tempOffset.keys() and tempOffset[toolNum] is not None else 0
-						elif tempMatch.group(1) == "140" or tempMatch.group(1) == "190":
-							# bed temperature
-							offset = bedTempOffset
-						else:
-							# unknown, should never happen
-							offset = 0
-
-						if not offset == 0:
-							# if we have an offset != 0, we need to get the temperature to be set and apply the offset to it
-							tempValueMatch = self._regex_tempCommandTemperature.search(line)
-							if tempValueMatch is not None:
-								try:
-									temp = float(tempValueMatch.group(1))
-									if temp > 0:
-										newTemp = temp + offset
-										line = line.replace("S" + tempValueMatch.group(1), "S%f" % newTemp)
-								except ValueError:
-									pass
-			return line
-		else:
-			return None
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 	def __init__(self, path, localFilename, remoteFilename):
-		PrintingGcodeFileInformation.__init__(self, path, None)
+		PrintingGcodeFileInformation.__init__(self, path)
 		self._localFilename = localFilename
 		self._remoteFilename = remoteFilename
 
 	def start(self):
 		PrintingGcodeFileInformation.start(self)
-		self._startTime = time.time()
+		self._start_time = time.time()
 
 	def getLocalFilename(self):
 		return self._localFilename
@@ -1842,3 +1797,65 @@ def get_interval(type):
 		return 0
 	else:
 		return settings().getFloat(["serial", "timeout", type])
+
+_temp_command_regex = re.compile("^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+S(?P<temperature>[-+]?\d*\.?\d*))+")
+
+def apply_temperature_offsets(line, offsets, current_tool=None):
+	if offsets is None:
+		return line
+
+	match = _temp_command_regex.match(line)
+	if match is None:
+		return line
+
+	groups = match.groupdict()
+	if not "temperature" in groups or groups["temperature"] is None:
+		return line
+
+	offset = 0
+	if current_tool is not None and (groups["command"] == "104" or groups["command"] == "109"):
+		# extruder temperature, determine which one and retrieve corresponding offset
+		tool_num = current_tool
+		if "tool" in groups and groups["tool"] is not None:
+			tool_num = int(groups["tool"])
+
+		tool_key = "tool%d" % tool_num
+		offset = offsets[tool_key] if tool_key in offsets and offsets[tool_key] else 0
+
+	elif groups["command"] == "140" or groups["command"] == "190":
+		# bed temperature
+		offset = offsets["bed"] if "bed" in offsets else 0
+
+	if offset == 0:
+		return line
+
+	temperature = float(groups["temperature"])
+	if temperature == 0:
+		return line
+
+	return line[:match.start("temperature")] + "%f" % (temperature + offset) + line[match.end("temperature"):]
+
+def strip_comment(line):
+	if not ";" in line:
+		# shortcut
+		return line
+
+	escaped = False
+	result = []
+	for c in line:
+		if c == ";" and not escaped:
+			break
+		result += c if c != "\\" or escaped else ""
+		escaped = (c == "\\") and not escaped
+	return "".join(result)
+
+def process_gcode_line(line, offsets=None, current_tool=None):
+	line = strip_comment(line).strip()
+	if not len(line):
+		return None
+
+	if offsets is not None:
+		line = apply_temperature_offsets(line, offsets, current_tool=current_tool)
+
+	return line
+

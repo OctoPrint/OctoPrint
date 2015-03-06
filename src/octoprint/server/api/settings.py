@@ -93,8 +93,24 @@ def getSettings():
 			"events": s.get(["system", "events"])
 		},
 		"terminalFilters": s.get(["terminalFilters"]),
-		"scripts": s.get(["scripts"], merged=True)
+		"scripts": {
+			"gcode": {
+				"afterPrinterConnected": None,
+				"beforePrintStarted": None,
+				"afterPrintCancelled": None,
+				"afterPrintDone": None,
+				"beforePrintPaused": None,
+				"afterPrintResumed": None,
+				"snippets": dict()
+			}
+		}
 	}
+
+	gcode_scripts = s.listScripts("gcode")
+	if gcode_scripts:
+		data["scripts"] = dict(gcode=dict())
+		for name in gcode_scripts:
+			data["scripts"]["gcode"][name] = s.loadScript("gcode", name, source=True)
 
 	def process_plugin_result(name, plugin, result):
 		if result:
@@ -196,10 +212,12 @@ def setSettings():
 		if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
 		if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
-		if "scripts" in data:
-			if "gcode" in data["scripts"]:
-				gcode_scripts = data["scripts"]["gcode"]
-				s.set(["scripts", "gcode"], octoprint.util.dict_merge(s.get(["scripts", "gcode"], merged=True), gcode_scripts))
+	if "scripts" in data:
+		if "gcode" in data["scripts"] and isinstance(data["scripts"]["gcode"], dict):
+			for name, script in data["scripts"]["gcode"].items():
+				if name == "snippets":
+					continue
+				s.saveScript("gcode", name, script.replace("\r\n", "\n").replace("\r", "\n"))
 
 	if "plugins" in data:
 		for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():

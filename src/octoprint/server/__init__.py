@@ -512,7 +512,7 @@ class Server():
 		debug = self._debug
 
 		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
-		self._initSettings(self._configfile, self._basedir)
+		settings(init=True, basedir=self._basedir, configfile=self._configfile)
 
 		# then initialize logging
 		self._initLogging(self._debug, self._logConf)
@@ -731,9 +731,6 @@ class Server():
 		if "geteuid" in dir(os) and os.geteuid() == 0:
 			exit("You should not run OctoPrint as root!")
 
-	def _initSettings(self, configfile, basedir):
-		settings(init=True, basedir=basedir, configfile=configfile)
-
 	def _initLogging(self, debug, logConf=None):
 		defaultConfig = {
 			"version": 1,
@@ -785,7 +782,7 @@ class Server():
 			defaultConfig["root"]["level"] = "DEBUG"
 
 		if logConf is None:
-			logConf = os.path.join(settings().settings_dir, "logging.yaml")
+			logConf = os.path.join(settings().getBaseFolder("base"), "logging.yaml")
 
 		configFromFile = {}
 		if os.path.exists(logConf) and os.path.isfile(logConf):
