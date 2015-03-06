@@ -1846,7 +1846,7 @@ def strip_comment(line):
 	for c in line:
 		if c == ";" and not escaped:
 			break
-		result += c if c != "\\" or escaped else ""
+		result += c
 		escaped = (c == "\\") and not escaped
 	return "".join(result)
 

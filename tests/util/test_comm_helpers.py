@@ -15,9 +15,9 @@ class TestCommHelpers(unittest.TestCase):
 	@data(
 		("M117 Test", "M117 Test"),
 		("M117 Test ; foo", "M117 Test "),
-		("M117 Test \\; foo", "M117 Test ; foo"),
-		("M117 Test \\\\; foo", "M117 Test \\"),
-		("M117 Test \\\\\\; foo", "M117 Test \\; foo"),
+		("M117 Test \\; foo", "M117 Test \\; foo"),
+		("M117 Test \\\\; foo", "M117 Test \\\\"),
+		("M117 Test \\\\\\; foo", "M117 Test \\\\\\; foo"),
 		("; foo", "")
 	)
 	@unpack
