@@ -277,14 +277,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"])
 
 	def change_tool(self, tool):
-		if not isinstance(tool, int) or tool < 0:
-			raise ValueError("tool must be an integer >= 0: {tool}".format(tool, tool))
+		if not PrinterInterface.valid_tool_regex.match(tool):
+			raise ValueError("tool must match \"tool[0-9]+\": {tool}".format(tool=tool))
 
-		toolNum = int(tool[len("tool"):])
-		self.commands("T%d" % toolNum)
+		tool_num = int(tool[len("tool"):])
+		self.commands("T%d" % tool_num)
 
 	def set_temperature(self, heater, value):
-		if not PrinterInterface.valid_tool_regex.match(heater):
+		if not PrinterInterface.valid_heater_regex.match(heater):
 			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(type=heater))
 
 		if not isinstance(value, (int, long, float)) or value < 0:
@@ -309,7 +309,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not isinstance(offsets, dict):
 			raise ValueError("offsets must be a dict")
 
-		validated_keys = filter(lambda x: PrinterInterface.valid_tool_regex.match(x), offsets.keys())
+		validated_keys = filter(lambda x: PrinterInterface.valid_heater_regex.match(x), offsets.keys())
 		validated_values = filter(lambda x: isinstance(x, (int, long, float)), offsets.values())
 
 		if len(validated_keys) != len(offsets):

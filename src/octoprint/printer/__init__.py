@@ -59,8 +59,11 @@ class PrinterInterface(object):
 	valid_axes = ("x", "y", "z", "e")
 	"""Valid axes identifiers."""
 
-	valid_tool_regex = re.compile("^(tool[0-9]+|bed)$")
+	valid_tool_regex = re.compile("^(tool\d+)$")
 	"""Regex for valid tool identifiers."""
+
+	valid_heater_regex = re.compile("^(tool\d+|bed)$")
+	"""Regex for valid heater identifiers."""
 
 	def connect(self, port=None, baudrate=None, profile=None):
 		"""
@@ -69,9 +72,9 @@ class PrinterInterface(object):
 		parameters.
 
 		Arguments:
-		    port (string): Name of the serial port to connect to. If not provided, an auto detection will be attempted.
+		    port (str): Name of the serial port to connect to. If not provided, an auto detection will be attempted.
 		    baudrate (int): Baudrate to connect with. If not provided, an auto detection will be attempted.
-		    profile (string): Name of the printer profile to use for this connection. If not provided, the default
+		    profile (str): Name of the printer profile to use for this connection. If not provided, the default
 		        will be retrieved from the :class:`PrinterProfileManager`.
 		"""
 		pass
@@ -99,7 +102,7 @@ class PrinterInterface(object):
 		Sends the provided ``commands`` to the printer.
 
 		Arguments:
-		    commands (string, list): The commands to send. Might be a single command provided just as a string or a list
+		    commands (str, list): The commands to send. Might be a single command provided just as a string or a list
 		        of multiple commands to send in order.
 		"""
 		raise NotImplementedError()
@@ -114,7 +117,7 @@ class PrinterInterface(object):
 		If the script is unknown, an :class:`UnknownScriptException` will be raised.
 
 		Arguments:
-		    name (string): The name of the GCODE script to render.
+		    name (str): The name of the GCODE script to render.
 		    context (dict): An optional context of additional template variables to provide to the renderer.
 
 		Raises:
@@ -127,7 +130,7 @@ class PrinterInterface(object):
 		Jogs the specified printer ``axis`` by the specified ``amount`` in mm.
 
 		Arguments:
-		    axis (string): The axis to jog, will be converted to lower case, one of "x", "y", "z" or "e"
+		    axis (str): The axis to jog, will be converted to lower case, one of "x", "y", "z" or "e"
 		    amount (int, float): The amount by which to jog in mm
 		"""
 		raise NotImplementedError()
@@ -137,7 +140,7 @@ class PrinterInterface(object):
 		Homes the specified printer ``axes``.
 
 		Arguments:
-		    axes (string, list): The axis or axes to home, each of which must converted to lower case must match one of
+		    axes (str, list): The axis or axes to home, each of which must converted to lower case must match one of
 		        "x", "y", "z" and "e"
 		"""
 		raise NotImplementedError()
@@ -156,7 +159,7 @@ class PrinterInterface(object):
 		Switch the currently active ``tool`` (for which extrude commands will apply).
 
 		Arguments:
-		    tool (int): The tool to switch to, index starting at 0, so first tool is 0, second 1, ...
+		    tool (str): The tool to switch to, matching the regex "tool[0-9]+" (e.g. "tool0", "tool1", ...)
 		"""
 		raise NotImplementedError()
 
@@ -165,7 +168,7 @@ class PrinterInterface(object):
 		Sets the target temperature on the specified ``heater`` to the given ``value`` in celsius.
 
 		Arguments:
-		    heater (string): The heater for which to set the target temperature. Either "bed" for setting the bed
+		    heater (str): The heater for which to set the target temperature. Either "bed" for setting the bed
 		        temperature or something matching the regular expression "tool[0-9]+" (e.g. "tool0", "tool1", ...) for
 		        the hotends of the printer
 		    value (int, float): The temperature in celsius to set the target temperature to.
@@ -209,7 +212,7 @@ class PrinterInterface(object):
 		Optionally can also directly start the print after selecting the file.
 
 		Arguments:
-		    path (string): The path to select for printing. Either an absolute path (local file) or a
+		    path (str): The path to select for printing. Either an absolute path (local file) or a
 		"""
 		raise NotImplementedError()
 
@@ -240,7 +243,7 @@ class PrinterInterface(object):
 	def get_state_string(self):
 		"""
 		Returns:
-		     (string) A human readable string corresponding to the current communication state.
+		     (str) A human readable string corresponding to the current communication state.
 		"""
 		raise NotImplementedError()
 
@@ -347,7 +350,7 @@ class PrinterCallback(object):
 		Called when the :class:`PrinterInterface` receives a new communication log entry from the communication layer.
 
 		Arguments:
-		    data (string): The received log line.
+		    data (str): The received log line.
 		"""
 		pass
 
@@ -356,7 +359,7 @@ class PrinterCallback(object):
 		Called when the :class:`PrinterInterface` receives a new message from the communication layer.
 
 		Arguments:
-		    data (string): The received message.
+		    data (str): The received message.
 		"""
 		pass
 
@@ -384,8 +387,8 @@ class PrinterCallback(object):
 		Called when the :class:`PrinterInterface` received a registered message, e.g. from a feedback command.
 
 		Arguments:
-		    name (string): Name of the registered message (e.g. the feedback command)
-		    output (string): Output for the registered message
+		    name (str): Name of the registered message (e.g. the feedback command)
+		    output (str): Output for the registered message
 		"""
 		pass
 
