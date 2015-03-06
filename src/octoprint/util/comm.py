@@ -472,6 +472,7 @@ class MachineCom(object):
 
 		for line in scriptLines:
 			self.sendCommand(line)
+		return "\n".join(scriptLines)
 
 	def startPrint(self):
 		if not self.isOperational() or self.isPrinting():

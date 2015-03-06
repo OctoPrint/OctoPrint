@@ -104,6 +104,24 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def script(self, name, context=None):
+		"""
+		Sends the GCODE script ``name`` to the printer.
+
+		The script will be run through the template engine, the rendering context can be extended by providing a
+		``context`` with additional template variables to use.
+
+		If the script is unknown, an :class:`UnknownScriptException` will be raised.
+
+		Arguments:
+		    name (string): The name of the GCODE script to render.
+		    context (dict): An optional context of additional template variables to provide to the renderer.
+
+		Raises:
+		    UnknownScriptException: There is no GCODE script with name ``name``
+		"""
+		raise NotImplementedError()
+
 	def jog(self, axis, amount):
 		"""
 		Jogs the specified printer ``axis`` by the specified ``amount`` in mm.
@@ -438,4 +456,6 @@ class PrinterCallback(object):
 		"""
 		pass
 
-
+class UnknownScript(BaseException):
+	def __init__(self, name, *args, **kwargs):
+		self.name = name

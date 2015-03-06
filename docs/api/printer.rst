@@ -953,8 +953,20 @@ Arbitrary Command Request
    * - ``command``
      - 0..1
      - String
-     - Single command to send to the printer, mutually exclusive with ``commands``.
+     - Single command to send to the printer, mutually exclusive with ``commands`` and ``script``.
    * - ``commands``
      - 0..*
      - Array of String
-     - Multiple commands to send to the printer (in the given order), mutually exclusive with ``command``.
+     - Multiple commands to send to the printer (in the given order), mutually exclusive with ``command`` and ``script``.
+   * - ``script``
+     - 0..*
+     - String
+     - Name of the GCODE script template to send to the printer, mutually exclusive with ``command`` and ``commands``.
+   * - ``parameters``
+     - 0..1
+     - Map of key value pairs
+     - Key value pairs of parameters to replace in sent commands/provide to the script renderer
+   * - ``context``
+     - 0..1
+     - Map of key value pairs
+     - (only if ``script`` is set) additional template variables to provide to the script renderer

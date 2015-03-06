@@ -122,7 +122,7 @@ $(function() {
         };
 
         self._processControl = function (control) {
-            if (control.type == "parametric_command" || control.type == "parametric_commands") {
+            if (_.startsWith(control.type, "parametric_")) {
                 for (var i = 0; i < control.input.length; i++) {
                     control.input[i].value = ko.observable(control.input[i].default);
                     if (!control.input[i].hasOwnProperty("slider")) {
@@ -281,9 +281,14 @@ $(function() {
             } else if (command.type == "commands" || command.type == "parametric_commands") {
                 // multi command
                 data = {"commands": command.commands};
+            } else if (command.type == "script" || command.type == "parametric_script") {
+                data = {"script": command.script};
+                if (command.hasOwnProperty("context")) {
+                    data["context"] = command.context;
+                }
             }
 
-            if (command.type == "parametric_command" || command.type == "parametric_commands") {
+            if (command.type == "parametric_command" || command.type == "parametric_commands" || command.type == "parametric_script") {
                 // parametric command(s)
                 data["parameters"] = {};
                 for (var i = 0; i < command.input.length; i++) {
@@ -319,9 +324,11 @@ $(function() {
                     return "customControls_sectionRowTemplate";
                 case "command":
                 case "commands":
+                case "script":
                     return "customControls_commandTemplate";
                 case "parametric_command":
                 case "parametric_commands":
+                case "parametric_script":
                     return "customControls_parametricCommandTemplate";
                 case "feedback_command":
                     return "customControls_feedbackCommandTemplate";

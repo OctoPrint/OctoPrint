@@ -1,8 +1,8 @@
 .. _sec-api:
 
-###
-API
-###
+########
+REST API
+########
 
 .. toctree::
    :maxdepth: 2

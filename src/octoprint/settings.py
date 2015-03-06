@@ -810,6 +810,7 @@ class Settings(object):
 	def loadScript(self, script_type, name, context=None, source=False):
 		if context is None:
 			context = dict()
+		context.update(dict(script=dict(type=script_type, name=name)))
 
 		template = self._get_script_template(script_type, name, source=source)
 		if template is None:

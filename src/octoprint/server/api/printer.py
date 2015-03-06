@@ -15,6 +15,8 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 import octoprint.util as util
 
+from octoprint.printer import UnknownScript
+
 #~~ Printer
 
 
@@ -332,29 +334,46 @@ def printerCommand():
 	except JSONBadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
-	parameters = dict()
-	if "parameters" in data.keys(): parameters = data["parameters"]
-
 	if "command" in data and "commands" in data:
 		return make_response("'command' and 'commands' are mutually exclusive", 400)
-	elif "command" in data:
-		commands = [data["command"]]
-	elif "commands" in data and isinstance(data["commands"], (list, tuple)):
-		commands = data["commands"]
-	else:
-		return make_response("Need either single 'command' or list of 'commands'", 400)
+	elif ("command" in data or "commands" in data) and "script" in data:
+		return make_response("'command'/'commands' and 'script' are mutually exclusive", 400)
+	elif not ("command" in data or "commands" in data or "script" in data):
+		return make_response("Need one of 'command', 'commands' or 'script'", 400)
 
-	commandsToSend = []
-	for command in commands:
-		commandToSend = command
-		if len(parameters) > 0:
-			commandToSend = command % parameters
-		commandsToSend.append(commandToSend)
+	parameters = dict()
+	if "parameters" in data:
+		parameters = data["parameters"]
 
-	printer.commands(commandsToSend)
+	if "command" in data or "commands" in data:
+		if "command" in data:
+			commands = [data["command"]]
+		else:
+			if not isinstance(data["commands"], (list, tuple)):
+				return make_response("'commands' needs to be a list", 400)
+			commands = data["commands"]
+
+		commandsToSend = []
+		for command in commands:
+			commandToSend = command
+			if len(parameters) > 0:
+				commandToSend = command % parameters
+			commandsToSend.append(commandToSend)
+
+		printer.commands(commandsToSend)
+
+	elif "script" in data:
+		script_name = data["script"]
+		context = dict(parameters=parameters)
+		if "context" in data:
+			context["context"] = data["context"]
+
+		try:
+			printer.script(script_name, context=context)
+		except UnknownScript:
+			return make_response("Unknown script: {script_name}".format(**locals()), 404)
 
 	return NO_CONTENT
-
 
 @api.route("/printer/command/custom", methods=["GET"])
 def getCustomControls():

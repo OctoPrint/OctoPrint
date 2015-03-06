@@ -19,7 +19,7 @@ from octoprint import util as util
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import FileDestinations
 from octoprint.plugin import plugin_manager, ProgressPlugin
-from octoprint.printer import PrinterInterface, PrinterCallback
+from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
@@ -229,6 +229,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		for command in commands:
 			self._comm.sendCommand(command)
+
+	def script(self, name, context=None):
+		if self._comm is None:
+			return
+
+		if name is None or not name:
+			raise ValueError("name must be set")
+
+		result = self._comm.sendGcodeScript(name, replacements=context)
+		if not result:
+			raise UnknownScript(name)
 
 	def jog(self, axis, amount):
 		if not isinstance(axis, (str, unicode)):
