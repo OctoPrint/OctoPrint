@@ -145,7 +145,7 @@ def printerBedCommand():
 
 	##~~ temperature offset
 	elif command == "offset":
-		offset = data["offsets"]
+		offset = data["offset"]
 
 		# make sure the offset is valid
 		if not isinstance(offset, (int, long, float)):
