@@ -46,6 +46,7 @@ def serialList():
 			   + glob.glob("/dev/ttyUSB*") \
 			   + glob.glob("/dev/ttyACM*") \
 			   + glob.glob("/dev/ttyAMA*") \
+			   + glob.glob("/dev/ttyO*") \
 			   + glob.glob("/dev/tty.usb*") \
 			   + glob.glob("/dev/cu.*") \
 			   + glob.glob("/dev/cuaU*") \
