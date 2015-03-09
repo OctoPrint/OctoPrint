@@ -18,6 +18,7 @@
 * [#719](https://github.com/foosel/OctoPrint/issues/719) - Properly center print bed in GCODE viewer
 * [#780](https://github.com/foosel/OctoPrint/issues/780) - Always (re)set file position in SD files to 0 so that reprints
   work correctly (backported from ``devel``)
+* [#801](https://github.com/foosel/OctoPrint/issues/801) - Fixed setting of bed temperature offset
 * [IRC] - Don't hiccup on slic3r ``filament_diameter`` comments generated for multi extruder setups
 * [ML] - Fixed relative URL to SockJS endpoint, wasn't yet using the proper base url
 * [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header

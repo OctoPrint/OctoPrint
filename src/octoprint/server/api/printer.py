@@ -17,8 +17,27 @@ def printerState():
 	if not printer.isOperational():
 		return make_response("Printer is not operational", 409)
 
+	# process excludes
+	excludes = []
+	if "exclude" in request.values:
+		excludeStr = request.values["exclude"]
+		if len(excludeStr.strip()) > 0:
+			excludes = filter(lambda x: x in ["temperature", "sd", "state"], map(lambda x: x.strip(), excludeStr.split(",")))
+
 	result = {}
-	result.update(_getTemperatureData(lambda x: x))
+
+	# add temperature information
+	if not "temperature" in excludes:
+		result.update({"temperature": _getTemperatureData(lambda x: x)})
+
+	# add sd information
+	if not "sd" in excludes and settings().getBoolean(["feature", "sdSupport"]):
+		result.update({"sd": {"ready": printer.isSdReady()}})
+
+	# add state information
+	if not "state" in excludes:
+		state = printer.getCurrentData()["state"]
+		result.update({"state": state})
 
 	return jsonify(result)
 
