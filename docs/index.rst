@@ -16,6 +16,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   configuration/index.rst
    api/index.rst
    events/index.rst
    plugins/index.rst

@@ -466,7 +466,15 @@ class Settings(object):
 
 	def _migrate_config(self):
 		dirty = False
-		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config, self._migrate_printer_parameters, self._migrate_gcode_scripts):
+
+		migrators = (
+			self._migrate_event_config,
+			self._migrate_reverse_proxy_config,
+			self._migrate_printer_parameters,
+			self._migrate_gcode_scripts
+		)
+
+		for migrate in migrators:
 			dirty = migrate() or dirty
 		if dirty:
 			self.save(force=True)

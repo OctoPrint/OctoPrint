@@ -122,18 +122,20 @@ $(function() {
         };
 
         self._processControl = function (control) {
-            if (_.startsWith(control.type, "parametric_")) {
+            if (control.type == "feedback_command" || control.type == "feedback") {
+                control.output = ko.observable("");
+                self.feedbackControlLookup[control.name] = control.output;
+            } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
+                control.children = self._processControls(control.children);
+            }
+
+            if (control.hasOwnProperty("input")) {
                 for (var i = 0; i < control.input.length; i++) {
                     control.input[i].value = ko.observable(control.input[i].default);
                     if (!control.input[i].hasOwnProperty("slider")) {
                         control.input[i].slider = false;
                     }
                 }
-            } else if (control.type == "feedback_command" || control.type == "feedback") {
-                control.output = ko.observable("");
-                self.feedbackControlLookup[control.name] = control.output;
-            } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
-                control.children = self._processControls(control.children);
             }
 
             var js;
@@ -275,25 +277,31 @@ $(function() {
                 })
             };
             var data = undefined;
-            if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
+            if (command.hasOwnProperty("command")) {
                 // single command
                 data = {"command": command.command};
-            } else if (command.type == "commands" || command.type == "parametric_commands") {
+            } else if (command.hasOwnProperty("commands")) {
                 // multi command
                 data = {"commands": command.commands};
-            } else if (command.type == "script" || command.type == "parametric_script") {
+            } else if (command.hasOwnProperty("script")) {
                 data = {"script": command.script};
                 if (command.hasOwnProperty("context")) {
                     data["context"] = command.context;
                 }
+            } else {
+                return;
             }
 
-            if (command.type == "parametric_command" || command.type == "parametric_commands" || command.type == "parametric_script") {
+            if (command.hasOwnProperty("input")) {
                 // parametric command(s)
                 data["parameters"] = {};
-                for (var i = 0; i < command.input.length; i++) {
-                    data["parameters"][command.input[i].parameter] = command.input[i].value();
-                }
+                _.each(command.input, function(input) {
+                    if (!input.hasOwnProperty("parameter") || !input.hasOwnProperty("value")) {
+                        return;
+                    }
+
+                    data["parameters"][input.parameter] = input.value();
+                });
             }
 
             if (command.confirm) {
