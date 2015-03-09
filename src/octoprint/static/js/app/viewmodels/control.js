@@ -125,8 +125,13 @@ $(function() {
             if (control.type == "feedback_command" || control.type == "feedback") {
                 control.output = ko.observable("");
                 self.feedbackControlLookup[control.name] = control.output;
-            } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
+            }
+
+            if (control.hasOwnProperty("children")) {
                 control.children = self._processControls(control.children);
+                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal")) {
+                    control.layout = "vertical";
+                }
             }
 
             if (control.hasOwnProperty("input")) {
@@ -324,12 +329,9 @@ $(function() {
 
         self.displayMode = function (customControl) {
             switch (customControl.type) {
+                case "container":
                 case "section":
                     return "customControls_sectionTemplate";
-                case "row":
-                    return "customControls_rowTemplate";
-                case "section_row":
-                    return "customControls_sectionRowTemplate";
                 case "command":
                 case "commands":
                 case "script":

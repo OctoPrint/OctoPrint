@@ -106,25 +106,21 @@
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_sectionTemplate">
+    <!-- ko if: name -->
     <h1 data-bind="text: name"></h1>
+    <!-- /ko -->
 
+    <!-- ko if: layout == 'vertical' -->
     <div class="custom_section" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
-</script>
-<script type="text/html" id="customControls_rowTemplate">
+    <!-- /ko -->
+
+    <!-- ko if: layout == 'horizontal' -->
     <div class="row-fluid custom_row">
         <!-- ko foreach: children -->
         <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
         <!-- /ko -->
     </div>
-</script>
-<script type="text/html" id="customControls_sectionRowTemplate">
-    <h1 data-bind="text: name"></h1>
-
-    <div class="row-fluid custom_row custom_section">
-        <!-- ko foreach: children -->
-        <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
-        <!-- /ko -->
-    </div>
+    <!-- /ko -->
 </script>
 <script type="text/html" id="customControls_commandTemplate">
     <form class="form-inline custom_command">

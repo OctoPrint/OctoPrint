@@ -98,22 +98,22 @@ of the types: ``name`` and ``type``.
 Types
 -----
 
-.. _sec-configuration-custom_controls-types:
+.. _sec-configuration-custom_controls-types-sections:
 
 Sections
 ........
 
-.. _sec-configuration-custom_controls-types:
+.. _sec-configuration-custom_controls-types-rows:
 
 Rows
 ....
 
-.. _sec-configuration-custom_controls-types:
+.. _sec-configuration-custom_controls-types-section_rows:
 
 Section rows
 ............
 
-.. _sec-configuration-custom_controls-types:
+.. _sec-configuration-custom_controls-types-commands:
 
 Commands
 ........
