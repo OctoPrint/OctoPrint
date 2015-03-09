@@ -278,7 +278,8 @@ def index():
 				else:
 					data = include[1]
 
-				key = "plugin_" + name + data["suffix"] if "suffix" in data else ""
+				suffix = data["suffix"] if "suffix" in data else ""
+				key = "plugin_" + name + suffix
 				if "replaces" in data:
 					key = data["replaces"]
 				templates[t]["entries"][key] = include
