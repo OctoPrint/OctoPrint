@@ -88,6 +88,22 @@ $(function() {
             return new viewModelClass(constructorParameters);
         };
 
+        // map any additional view model bindings we might need to make
+        var additionalBindings = {};
+        _.each(OCTOPRINT_ADDITIONAL_BINDINGS, function(bindings) {
+            var viewModelId = bindings[0];
+            var viewModelBindTargets = bindings[1];
+            if (!_.isArray(viewModelBindTargets)) {
+                viewModelBindTargets = [viewModelBindTargets];
+            }
+
+            if (!additionalBindings.hasOwnProperty(viewModelId)) {
+                additionalBindings[viewModelId] = viewModelBindTargets;
+            } else {
+                additionalBindings[viewModelId] = additionalBindings[viewModelId].concat(viewModelBindTargets);
+            }
+        });
+
         // helper for translating the name of a view model class into an identifier for the view model map
         var _getViewModelId = function(viewModel){
             var name = viewModel[0].name;
@@ -129,8 +145,16 @@ $(function() {
                 }
 
                 // we could resolve the depdendencies and the view model is not defined yet => add it, it's now fully processed
-                var viewModelBindTarget = viewModel[2];
-                allViewModelData.push([viewModelInstance, viewModelBindTarget]);
+                var viewModelBindTargets = viewModel[2];
+                if (!_.isArray(viewModelBindTargets)) {
+                    viewModelBindTargets = [viewModelBindTargets];
+                }
+
+                if (additionalBindings.hasOwnProperty(viewModelId)) {
+                    viewModelBindTargets = viewModelBindTargets.concat(additionalBindings[viewModelId]);
+                }
+
+                allViewModelData.push([viewModelInstance, viewModelBindTargets]);
                 allViewModels.push(viewModelInstance);
                 viewModelMap[viewModelId] = viewModelInstance;
             }
