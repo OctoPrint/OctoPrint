@@ -141,6 +141,11 @@ $(function() {
                         control.input[i].slider = false;
                     }
                 }
+            } else if (control.type == "feedback_command" || control.type == "feedback") {
+                control.output = ko.observable("");
+                self.feedbackControlLookup[control.name] = control.output;
+            } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
+                control.children = self._processControls(control.children);
             }
 
             var js;
@@ -166,6 +171,7 @@ $(function() {
                 }
             }
 
+            control.processed = true;
             return control;
         };
 

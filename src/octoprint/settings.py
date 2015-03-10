@@ -167,7 +167,27 @@ default_settings = {
 	"appearance": {
 		"name": "",
 		"color": "default",
-		"colorTransparent": False
+		"colorTransparent": False,
+		"components": {
+			"order": {
+				"navbar": ["settings", "systemmenu", "login"],
+				"sidebar": ["connection", "state", "files"],
+				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
+				"settings": [
+					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
+					"section_features", "features", "webcam", "accesscontrol", "api",
+					"section_octoprint", "folders", "appearance", "logs"
+				],
+				"generic": []
+			},
+			"disabled": {
+				"navbar": [],
+				"sidebar": [],
+				"tab": [],
+				"settings": [],
+				"generic": []
+			}
+		}
 	},
 	"controls": [],
 	"system": {

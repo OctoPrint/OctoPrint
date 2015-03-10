@@ -278,31 +278,27 @@ def index():
 				else:
 					data = include[1]
 
-				key = "plugin_" + name + data["suffix"] if "suffix" in data else ""
+				suffix = data["suffix"] if "suffix" in data else ""
+				key = "plugin_" + name + suffix
 				if "replaces" in data:
 					key = data["replaces"]
 				templates[t]["entries"][key] = include
 
 	#~~ order internal templates and plugins
 
-	templates["navbar"]["order"] = ["settings", "systemmenu", "login"]
-	templates["sidebar"]["order"] = ["connection", "state", "files"]
-	templates["tab"]["order"] = ["temperature", "control", "gcodeviewer", "terminal", "timelapse"]
-	templates["settings"]["order"] = [
-		"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
-		"section_features", "features", "webcam", "accesscontrol", "api",
-		"section_octoprint", "folders", "appearance", "logs"
-	]
-
 	# make sure that
 	# 1) we only have keys in our ordered list that we have entries for and
 	# 2) we have all entries located somewhere within the order
 
 	for t in ("navbar", "sidebar", "tab", "settings", "generic"):
-		templates[t]["order"] = [x for x in templates[t]["order"] if x in templates[t]["entries"]]
-		all_ordered = set(templates[t]["order"])
+		configured_order = settings().get(["appearance", "components", "order", t], merged=True)
+		configured_disabled = settings().get(["appearance", "components", "disabled", t])
+		templates[t]["order"] = [x for x in configured_order if x in templates[t]["entries"] and not x in configured_disabled]
 
-		missing_in_order = set(templates[t]["entries"].keys()).difference(all_ordered)
+		all_ordered = set(templates[t]["order"])
+		all_disabled = set(configured_disabled)
+
+		missing_in_order = set(templates[t]["entries"].keys()).difference(all_ordered).difference(all_disabled)
 		if len(missing_in_order) == 0:
 			continue
 
