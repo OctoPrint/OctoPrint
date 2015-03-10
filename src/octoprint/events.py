@@ -69,6 +69,7 @@ class Events(object):
 	CONVEYOR = "Conveyor"
 	EJECT = "Eject"
 	E_STOP = "EStop"
+	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
 	# Timelapse
 	CAPTURE_START = "CaptureStart"

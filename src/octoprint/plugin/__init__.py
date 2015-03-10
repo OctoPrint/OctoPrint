@@ -97,19 +97,21 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 	return _instance
 
 
-def plugin_settings(plugin_key, defaults=None):
+def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):
 	"""
 	Factory method for creating a :class:`PluginSettings` instance.
 
 	Arguments:
 	    plugin_key (string): The plugin identifier for which to create the settings instance.
 	    defaults (dict): The default settings for the plugin.
+	    get_preprocessors (dict): The getter preprocessors for the plugin.
+	    set_preprocessors (dict): The setter preprocessors for the plugin.
 
 	Returns:
 	    PluginSettings: A fully initialized :class:`PluginSettings` instance to be used to access the plugin's
 	        settings
 	"""
-	return PluginSettings(settings(), plugin_key, defaults=defaults)
+	return PluginSettings(settings(), plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors)
 
 
 def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None):
@@ -234,7 +236,7 @@ class PluginSettings(object):
 	   Like :func:`set` but ensures the value is an ``boolean`` through attempted conversion before setting it.
 	"""
 
-	def __init__(self, settings, plugin_key, defaults=None):
+	def __init__(self, settings, plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):
 		self.settings = settings
 		self.plugin_key = plugin_key
 
@@ -242,6 +244,16 @@ class PluginSettings(object):
 			defaults = dict()
 		self.defaults = dict(plugins=dict())
 		self.defaults["plugins"][plugin_key] = defaults
+
+		if get_preprocessors is None:
+			get_preprocessors = dict()
+		self.get_preprocessors = dict(plugins=dict())
+		self.get_preprocessors["plugins"][plugin_key] = get_preprocessors
+
+		if set_preprocessors is None:
+			set_preprocessors = dict()
+		self.set_preprocessors = dict(plugins=dict())
+		self.set_preprocessors["plugins"][plugin_key] = set_preprocessors
 
 		def prefix_path(path):
 			return ['plugins', self.plugin_key] + path
@@ -259,21 +271,32 @@ class PluginSettings(object):
 				result.extend(args_after)
 			return result
 
-		def add_defaults_to_kwargs(kwargs):
-			kwargs.update(dict(defaults=self.defaults))
+		def add_getter_kwargs(kwargs):
+			kwargs.update(defaults=self.defaults, preprocessors=self.get_preprocessors)
+			return kwargs
+
+		def add_setter_kwargs(kwargs):
+			kwargs.update(defaults=self.defaults, preprocessors=self.set_preprocessors)
 			return kwargs
 
 		self.access_methods = dict(
-			get=("get", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			get_int=("getInt", lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			get_float=("getFloat", lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			get_boolean=("getBoolean", lambda args,: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			set=("set", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			set_int=("setInt", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			set_float=("setFloat", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs)),
-			set_boolean=("setBoolean", lambda args: prefix_path_in_args(args), lambda kwargs: add_defaults_to_kwargs(kwargs))
+			get        =("get",        prefix_path_in_args, add_getter_kwargs),
+			get_int    =("getInt",     prefix_path_in_args, add_getter_kwargs),
+			get_float  =("getFloat",   prefix_path_in_args, add_getter_kwargs),
+			get_boolean=("getBoolean", prefix_path_in_args, add_getter_kwargs),
+			set        =("set",        prefix_path_in_args, add_setter_kwargs),
+			set_int    =("setInt",     prefix_path_in_args, add_setter_kwargs),
+			set_float  =("setFloat",   prefix_path_in_args, add_setter_kwargs),
+			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs)
 		)
-		self.deprecated_access_methods = dict(getInt="get_int", getFloat="get_float", getBoolean="get_boolean", setInt="set_int", setFloat="set_float", setBoolean="set_boolean")
+		self.deprecated_access_methods = dict(
+			getInt    ="get_int",
+			getFloat  ="get_float",
+			getBoolean="get_boolean",
+			setInt    ="set_int",
+			setFloat  ="set_float",
+			setBoolean="set_boolean"
+		)
 
 	def global_get(self, path, **kwargs):
 		"""

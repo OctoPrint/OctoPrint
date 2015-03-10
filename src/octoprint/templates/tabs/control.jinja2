@@ -105,7 +105,7 @@
 <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
 
 <!-- Templates for custom controls -->
-<script type="text/html" id="customControls_sectionTemplate">
+<script type="text/html" id="customControls_containerTemplate">
     <!-- ko if: name -->
     <h1 data-bind="text: name"></h1>
     <!-- /ko -->
@@ -122,34 +122,28 @@
     </div>
     <!-- /ko -->
 </script>
-<script type="text/html" id="customControls_commandTemplate">
-    <form class="form-inline custom_command">
-        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
+<script type="text/html" id="customControls_controlTemplate">
+    <form class="form-inline">
+        <!-- ko template: { name: 'customControls_controlTemplate_input', data: $data, if: $data.hasOwnProperty('input') } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_command', data: $data, if: $data.hasOwnProperty('command') || $data.hasOwnProperty('commands') } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_output', data: $data, if: $data.hasOwnProperty('output') } --><!-- /ko -->
     </form>
 </script>
-<script type="text/html" id="customControls_feedbackCommandTemplate">
-    <form class="form-inline custom_feedback_command">
-        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button> <span data-bind="text: output"></span>
-    </form>
-</script>
-<script type="text/html" id="customControls_feedbackTemplate">
-    <div class="custom_feedback">
-        <strong data-bind="text: name"></strong>: <span data-bind="text: output"></span>
-    </div>
-</script>
-<script type="text/html" id="customControls_parametricCommandTemplate">
-    <form class="form-inline custom_parametric_command">
-        <!-- ko foreach: input -->
-            <label data-bind="text: name"></label>
-            <!-- ko if: slider -->
-                <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}">
-            <!-- /ko -->
-            <!-- ko ifnot: slider -->
-                <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
-            <!-- /ko -->
+<script type="text/html" id="customControls_controlTemplate_input">
+    <!-- ko foreach: input -->
+        <label data-bind="text: name"></label>
+        <!-- ko if: slider -->
+            <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}">
         <!-- /ko -->
-        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
-    </form>
+        <!-- ko ifnot: slider -->
+            <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
+        <!-- /ko -->
+    <!-- /ko -->
 </script>
-<script type="text/html" id="customControls_emptyTemplate"><div></div></script>
+<script type="text/html" id="customControls_controlTemplate_output">
+    <label data-bind="text: output"></label>
+</script>
+<script type="text/html" id="customControls_controlTemplate_command">
+    <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
+</script>
 <!-- End of templates for custom controls -->

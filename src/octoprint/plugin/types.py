@@ -797,7 +797,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		   and iterate yourself over all your settings, retrieving them (if set) from the supplied received ``data``
 		   and using the proper setter methods on the settings manager to persist the data in the correct format.
 
-		:param dict data: the settings dictionary to be saved for the plugin
+		Arguments:
+		    data (dict): The settings dictionary to be saved for the plugin
 		"""
 		import octoprint.util
 
@@ -813,6 +814,43 @@ class SettingsPlugin(OctoPrintPlugin):
 		with included default values.
 		"""
 		return dict()
+
+	def get_settings_preprocessors(self):
+		"""
+		Retrieves the plugin's preprocessors to use for preprocessing returned or set values prior to returning/setting
+		them.
+
+		The preprocessors should be provided as a dictionary mapping the path of the values to preprocess
+		(hierarchically) to a transform function which will get the value to transform as only input and should return
+		the transformed value.
+
+		Example:
+
+		.. sourcecode: python
+
+		   def get_settings_defaults(self):
+		       return dict(some_key="Some_Value", some_other_key="Some_Value")
+
+		   def get_settings_preprocessors(self):
+		       return dict(some_key=lambda x: x.upper()),        # getter preprocessors
+		              dict(some_other_key=lambda x: x.lower())   # setter preprocessors
+
+		   def some_method(self):
+		       # getting the value for "some_key" should turn it to upper case
+		       assert self._settings.get(["some_key"]) == "SOME_VALUE"
+
+		       # the value for "some_other_key" should be left alone
+		       assert self._settings.get(["some_other_key"] = "Some_Value"
+
+		       # setting a value for "some_other_key" should cause the value to first be turned to lower case
+		       self._settings.set(["some_other_key"], "SOME_OTHER_VALUE")
+		       assert self._settings.get(["some_other_key"]) == "some_other_value"
+
+		Returns:
+		    (dict, dict): A tuple consisting of two dictionaries, the first being the plugin's preprocessors for
+		        getters, the second the preprocessors for setters
+		"""
+		return dict(), dict()
 
 
 class EventHandlerPlugin(OctoPrintPlugin):

@@ -549,7 +549,11 @@ class Server():
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
 				return None
 			default_settings = implementation.get_settings_defaults()
-			plugin_settings = octoprint.plugin.plugin_settings(name, defaults=default_settings)
+			get_preprocessors, set_preprocessors = implementation.get_settings_preprocessors()
+			plugin_settings = octoprint.plugin.plugin_settings(name,
+			                                                   defaults=default_settings,
+			                                                   get_preprocessors=get_preprocessors,
+			                                                   set_preprocessors=set_preprocessors)
 			return dict(settings=plugin_settings)
 
 		pluginManager.initialize_implementations(

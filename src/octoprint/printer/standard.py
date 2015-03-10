@@ -149,11 +149,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			try: callback.on_printer_send_current_data(copy.deepcopy(data))
 			except: self._logger.exception("Exception while pushing current data")
 
-	def _sendFeedbackCommandOutput(self, name, output):
-		for callback in self._callbacks:
-			try: callback.on_printer_received_registered_message(name, output)
-			except: self._logger.exception("Exception while pushing feedback command output")
-
 	#~~ callback from metadata analysis event
 
 	def _on_event_MetadataAnalysisFinished(self, event, data):
@@ -835,9 +830,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._setJobData(None, None, None)
 		self._setProgressData(None, None, None, None)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
-
-	def on_comm_received_registered_message(self, command, output):
-		self._sendFeedbackCommandOutput(command, output)
 
 	def on_comm_force_disconnect(self):
 		self.disconnect()

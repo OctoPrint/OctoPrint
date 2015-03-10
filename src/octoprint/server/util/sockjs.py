@@ -111,9 +111,6 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 	def sendEvent(self, type, payload=None):
 		self._emit("event", {"type": type, "payload": payload})
 
-	def on_printer_received_registered_message(self, name, output):
-		self._emit("feedbackCommandOutput", {"name": name, "output": output})
-
 	def sendTimelapseConfig(self, timelapseConfig):
 		self._emit("timelapse", timelapseConfig)
 

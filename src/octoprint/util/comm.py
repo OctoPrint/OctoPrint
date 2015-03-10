@@ -763,9 +763,9 @@ class MachineCom(object):
 	##~~ Serial monitor processing received messages
 
 	def _monitor(self):
-		feedbackControls = settings().getFeedbackControls()
-		pauseTriggers = settings().getPauseTriggers()
-		feedbackErrors = []
+		feedback_controls, feedback_matcher = convert_feedback_controls(settings().get(["controls"]))
+		feedback_errors = []
+		pause_triggers = convert_pause_triggers(settings().get(["printerParameters", "pauseTriggers"]))
 
 		#Open the serial port.
 		if not self._openSerial():
@@ -974,35 +974,21 @@ class MachineCom(object):
 					self._callback.on_comm_message(line)
 
 				##~~ Parsing for feedback commands
-				if feedbackControls:
-					for name, matcher, template in feedbackControls:
-						if name in feedbackErrors:
-							# we previously had an error with that one, so we'll skip it now
-							continue
-						try:
-							match = matcher.search(line)
-							if match is not None:
-								formatFunction = None
-								if isinstance(template, str):
-									formatFunction = str.format
-								elif isinstance(template, unicode):
-									formatFunction = unicode.format
-
-								if formatFunction is not None:
-									self._callback.on_comm_received_registered_message(name, formatFunction(template, *(match.groups("n/a"))))
-						except:
-							if not name in feedbackErrors:
-								self._logger.info("Something went wrong with feedbackControl \"%s\": " % name, exc_info=True)
-								feedbackErrors.append(name)
-							pass
+				if feedback_controls and feedback_matcher and not "_all" in feedback_errors:
+					try:
+						self._process_registered_message(line, feedback_matcher, feedback_controls, feedback_errors)
+					except:
+						# something went wrong while feedback matching
+						self._logger.exception("Error while trying to apply feedback control matching, disabling it")
+						feedback_errors.append("_all")
 
 				##~~ Parsing for pause triggers
-				if pauseTriggers and not self.isStreaming():
-					if "enable" in pauseTriggers.keys() and pauseTriggers["enable"].search(line) is not None:
+				if pause_triggers and not self.isStreaming():
+					if "enable" in pause_triggers.keys() and pause_triggers["enable"].search(line) is not None:
 						self.setPause(True)
-					elif "disable" in pauseTriggers.keys() and pauseTriggers["disable"].search(line) is not None:
+					elif "disable" in pause_triggers.keys() and pause_triggers["disable"].search(line) is not None:
 						self.setPause(False)
-					elif "toggle" in pauseTriggers.keys() and pauseTriggers["toggle"].search(line) is not None:
+					elif "toggle" in pause_triggers.keys() and pause_triggers["toggle"].search(line) is not None:
 						self.setPause(not self.isPaused())
 
 				### Baudrate detection
@@ -1098,6 +1084,41 @@ class MachineCom(object):
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
+
+	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
+		feedback_match = feedback_matcher.search(line)
+		if feedback_match is None:
+			return
+
+		for match_key in feedback_match.groupdict():
+			try:
+				feedback_key = match_key[len("group"):]
+				if not feedback_key in feedback_controls or feedback_key in feedback_errors or feedback_match.group(match_key) is None:
+					continue
+				matched_part = feedback_match.group(match_key)
+
+				if feedback_controls[feedback_key]["matcher"] is None:
+					continue
+
+				match = feedback_controls[feedback_key]["matcher"].search(matched_part)
+				if match is None:
+					continue
+
+				outputs = dict()
+				for template_key, template in feedback_controls[feedback_key]["templates"].items():
+					try:
+						output = template.format(*match.groups())
+					except KeyError:
+						output = template.format(**match.groupdict())
+					except:
+						output = None
+
+					if output is not None:
+						outputs[template_key] = output
+				eventManager().fire(Events.REGISTERED_MESSAGE_RECEIVED, dict(key=feedback_key, matched=matched_part, outputs=outputs))
+			except:
+				self._logger.exception("Error while trying to match feedback control output, disabling key {key}".format(key=match_key))
+				feedback_errors.append(match_key)
 
 	def _poll_temperature(self):
 		"""
@@ -1602,9 +1623,6 @@ class MachineComPrintCallback(object):
 	def on_comm_file_transfer_done(self, filename):
 		pass
 
-	def on_comm_received_registered_message(self, command, message):
-		pass
-
 	def on_comm_force_disconnect(self):
 		pass
 
@@ -1860,4 +1878,71 @@ def process_gcode_line(line, offsets=None, current_tool=None):
 		line = apply_temperature_offsets(line, offsets, current_tool=current_tool)
 
 	return line
+
+def convert_pause_triggers(configured_triggers):
+	triggers = {
+		"enable": [],
+		"disable": [],
+		"toggle": []
+	}
+	for trigger in configured_triggers:
+		if not "regex" in trigger or not "type" in trigger:
+			continue
+
+		try:
+			regex = trigger["regex"]
+			t = trigger["type"]
+			if t in triggers:
+				# make sure regex is valid
+				re.compile(regex)
+				# add to type list
+				triggers[t].append(regex)
+		except:
+			# invalid regex or something like this, we'll just skip this entry
+			pass
+
+	result = dict()
+	for t in triggers.keys():
+		if len(triggers[t]) > 0:
+			result[t] = re.compile("|".join(map(lambda pattern: "({pattern})".format(pattern=pattern), triggers[t])))
+	return result
+
+
+def convert_feedback_controls(configured_controls):
+	def preprocess_feedback_control(control, result):
+		if "key" in control and "regex" in control and "template" in control:
+			# key is always the md5sum of the regex
+			key = control["key"]
+
+			if result[key]["pattern"] is None or result[key]["matcher"] is None:
+				# regex has not been registered
+				try:
+					result[key]["matcher"] = re.compile(control["regex"])
+					result[key]["pattern"] = control["regex"]
+				except Exception as exc:
+					logging.getLogger(__name__).warn("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
+
+			result[key]["templates"][control["template_key"]] = control["template"]
+
+		elif "children" in control:
+			for c in control["children"]:
+				preprocess_feedback_control(c, result)
+
+	def prepare_result_entry():
+		return dict(pattern=None, matcher=None, templates=dict())
+
+	from collections import defaultdict
+	feedback_controls = defaultdict(prepare_result_entry)
+
+	for control in configured_controls:
+		preprocess_feedback_control(control, feedback_controls)
+
+	feedback_pattern = []
+	for match_key, entry in feedback_controls.items():
+		if entry["matcher"] is None or entry["pattern"] is None:
+			continue
+		feedback_pattern.append("(?P<group{key}>{pattern})".format(key=match_key, pattern=entry["pattern"]))
+	feedback_matcher = re.compile("|".join(feedback_pattern))
+
+	return feedback_controls, feedback_matcher
 

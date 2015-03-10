@@ -87,9 +87,14 @@ $(function() {
             self.isLoading(data.flags.loading);
         };
 
-        self.fromFeedbackCommandData = function (data) {
-            if (data.name in self.feedbackControlLookup) {
-                self.feedbackControlLookup[data.name](data.output);
+        self.onEventRegisteredMessageReceived = function(payload) {
+            if (payload.key in self.feedbackControlLookup) {
+                var outputs = self.feedbackControlLookup[payload.key];
+                _.each(payload.outputs, function(value, key) {
+                    if (outputs.hasOwnProperty(key)) {
+                        outputs[key](value);
+                    }
+                });
             }
         };
 
@@ -122,9 +127,16 @@ $(function() {
         };
 
         self._processControl = function (control) {
-            if (control.type == "feedback_command" || control.type == "feedback") {
+            if (control.hasOwnProperty("processed") && control.processed) {
+                return control;
+            }
+
+            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
                 control.output = ko.observable("");
-                self.feedbackControlLookup[control.name] = control.output;
+                if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
+                    self.feedbackControlLookup[control.key] = {};
+                }
+                self.feedbackControlLookup[control.key][control.template_key] = control.output;
             }
 
             if (control.hasOwnProperty("children")) {
@@ -141,11 +153,6 @@ $(function() {
                         control.input[i].slider = false;
                     }
                 }
-            } else if (control.type == "feedback_command" || control.type == "feedback") {
-                control.output = ko.observable("");
-                self.feedbackControlLookup[control.name] = control.output;
-            } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
-                control.children = self._processControls(control.children);
             }
 
             var js;
@@ -334,24 +341,10 @@ $(function() {
         };
 
         self.displayMode = function (customControl) {
-            switch (customControl.type) {
-                case "container":
-                case "section":
-                    return "customControls_sectionTemplate";
-                case "command":
-                case "commands":
-                case "script":
-                    return "customControls_commandTemplate";
-                case "parametric_command":
-                case "parametric_commands":
-                case "parametric_script":
-                    return "customControls_parametricCommandTemplate";
-                case "feedback_command":
-                    return "customControls_feedbackCommandTemplate";
-                case "feedback":
-                    return "customControls_feedbackTemplate";
-                default:
-                    return "customControls_emptyTemplate";
+            if (customControl.hasOwnProperty("children")) {
+                return "customControls_containerTemplate";
+            } else {
+                return "customControls_controlTemplate";
             }
         };
 
