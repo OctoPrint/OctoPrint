@@ -122,6 +122,10 @@ $(function() {
         };
 
         self._processControl = function (control) {
+            if (control.hasOwnProperty("processed") && control.processed) {
+                return control;
+            }
+
             if (_.startsWith(control.type, "parametric_")) {
                 for (var i = 0; i < control.input.length; i++) {
                     control.input[i].value = ko.observable(control.input[i].default);
@@ -129,7 +133,7 @@ $(function() {
                         control.input[i].slider = false;
                     }
                 }
-            } else if (control.type == "feedback_command" || control.type == "feedback") {
+            } else if ((control.type == "feedback_command" || control.type == "feedback") && !control.hasOwnProperty("output")) {
                 control.output = ko.observable("");
                 self.feedbackControlLookup[control.name] = control.output;
             } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
@@ -159,6 +163,7 @@ $(function() {
                 }
             }
 
+            control.processed = true;
             return control;
         };
 
