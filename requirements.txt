@@ -7,5 +7,4 @@
 # variables INSTALL_REQUIRES and EXTRA_REQUIRES.
 ###
 
---process-dependency-links
 .
