@@ -31,3 +31,8 @@
     font-family: FontAwesome;
     display: inline-block;
 }
+
+/* make whitespace visualization in code listings not appear on same vertical position as dashes */
+.highlight .w {
+    vertical-align: 10%;
+}
