@@ -12,7 +12,7 @@
     </head>
     <body>
         <div id="navbar" class="navbar navbar-static-top">
-            <div class="navbar-inner" data-bind="css: appearance.color">
+            <div class="navbar-inner" data-bind="css: appearanceClasses">
                 <div class="container">
                     <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
                     <div class="nav-collapse">
@@ -38,7 +38,8 @@
         <div class="container octoprint-container">
             <div class="row">
                 <!-- Sidebar -->
-                <div class="accordion span4">
+                {% if templates.sidebar.order %}
+                <div class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
                     {% for key in templates.sidebar.order %}
                         {% set entry, data = templates.sidebar.entries[key] %}
                         {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
@@ -67,9 +68,11 @@
                         {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                     {% endfor %}
                 </div>
+                {% endif %}
 
                 <!-- Tabs -->
-                <div class="span8 tabbable">
+                {% if templates.tab.order %}
+                <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}">
                     <ul class="nav nav-tabs" id="tabs">
                         {% for key in templates.tab.order %}
                             {% set entry, data = templates.tab.entries[key] %}
@@ -100,6 +103,7 @@
                         {% endfor %}
                     </div>
                 </div>
+                {% endif %}
             </div>
             <div class="footer">
                 <ul class="pull-left muted">

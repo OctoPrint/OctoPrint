@@ -6,7 +6,8 @@ function DataUpdater(allViewModels) {
     self._socket = undefined;
     self._autoReconnecting = false;
     self._autoReconnectTrial = 0;
-    self._autoReconnectTimeouts = [1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
+    self._autoReconnectTimeouts = [0, 1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
+    self._autoReconnectDialogIndex = 1;
 
     self.connect = function() {
         var options = {};
@@ -31,32 +32,36 @@ function DataUpdater(allViewModels) {
     };
 
     self._onclose = function() {
-        var handled = false;
-        _.each(self.allViewModels, function(viewModel) {
-            if (handled == true) {
+        if (self._autoReconnectTrial >= self._autoReconnectDialogIndex) {
+            // Only consider it a real disconnect if the trial number has exceeded our threshold.
+
+            var handled = false;
+            _.each(self.allViewModels, function(viewModel) {
+                if (handled == true) {
+                    return;
+                }
+
+                if (viewModel.hasOwnProperty("onServerDisconnect")) {
+                    if (!viewModel.onServerDisconnect()) {
+                        handled = true;
+                    }
+                }
+            });
+
+            if (handled) {
                 return;
             }
 
-            if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                if (!viewModel.onServerDisconnect()) {
-                    handled = true;
-                }
-            }
-        });
-
-        if (handled) {
-            return;
+            showOfflineOverlay(
+                gettext("Server is offline"),
+                gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."),
+                self.reconnect
+            );
         }
-
-        showOfflineOverlay(
-            gettext("Server is offline"),
-            gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."),
-            self.reconnect
-        );
 
         if (self._autoReconnectTrial < self._autoReconnectTimeouts.length) {
             var timeout = self._autoReconnectTimeouts[self._autoReconnectTrial];
-            console.log("Reconnect trial #" + self._autoReconnectTrial + ", waiting " + timeout + "s");
+            log.info("Reconnect trial #" + self._autoReconnectTrial + ", waiting " + timeout + "s");
             setTimeout(self.reconnect, timeout * 1000);
             self._autoReconnectTrial++;
         } else {
@@ -165,25 +170,12 @@ function DataUpdater(allViewModels) {
                     var payload = data["payload"];
                     var html = "";
 
-                    console.log("Got event " + type + " with payload: " + JSON.stringify(payload));
+                    log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
-                    if (type == "UpdatedFiles") {
-                        _.each(self.allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onUpdatedFiles")) {
-                                viewModel.onUpdatedFiles(payload);
-                            }
-                        });
-                    } else if (type == "MetadataAnalysisFinished") {
-                        _.each(self.allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onMetadataAnalysisFinished")) {
-                                viewModel.onMetadataAnalysisFinished(payload);
-                            }
-                        });
-                    } else if (type == "MovieRendering") {
+                    if (type == "MovieRendering") {
                         new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
                     } else if (type == "MovieDone") {
                         new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
-                        timelapseViewModel.requestData();
                     } else if (type == "MovieFailed") {
                         html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
                         html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
@@ -201,21 +193,10 @@ function DataUpdater(allViewModels) {
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
                         new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload), type: "success"});
-
-                        _.each(self.allViewModels, function (viewModel) {
-                            if (viewModel.hasOwnProperty("onSlicingDone")) {
-                                viewModel.onSlicingDone(payload);
-                            }
-                        });
                     } else if (type == "SlicingCancelled") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        _.each(self.allViewModels, function (viewModel) {
-                            if (viewModel.hasOwnProperty("onSlicingCancelled")) {
-                                viewModel.onSlicingCancelled(payload);
-                            }
-                        });
                     } else if (type == "SlicingFailed") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
@@ -223,11 +204,6 @@ function DataUpdater(allViewModels) {
 
                         html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
                         new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
-                        _.each(self.allViewModels, function (viewModel) {
-                            if (viewModel.hasOwnProperty("onSlicingFailed")) {
-                                viewModel.onSlicingFailed(payload);
-                            }
-                        });
                     } else if (type == "TransferStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
@@ -243,14 +219,26 @@ function DataUpdater(allViewModels) {
                         });
                         gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
-                    break;
-                }
-                case "feedbackCommandOutput": {
+
+                    var legacyEventHandlers = {
+                        "UpdatedFiles": "onUpdatedFiles",
+                        "MetadataStatisticsUpdated": "onMetadataStatisticsUpdated",
+                        "MetadataAnalysisFinished": "onMetadataAnalysisFinished",
+                        "SlicingDone": "onSlicingDone",
+                        "SlicingCancelled": "onSlicingCancelled",
+                        "SlicingFailed": "onSlicingFailed"
+                    };
                     _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromFeedbackCommandData")) {
-                            viewModel.fromFeedbackCommandData(data);
+                        if (viewModel.hasOwnProperty("onEvent" + type)) {
+                            viewModel["onEvent" + type](payload);
+                        } else if (legacyEventHandlers.hasOwnProperty(type) && viewModel.hasOwnProperty(legacyEventHandlers[type])) {
+                            // there might still be code that uses the old callbacks, make sure those still get called
+                            // but log a warning
+                            log.warn("View model " + viewModel.name + " is using legacy event handler " + legacyEventHandlers[type] + ", new handler is called " + legacyEventHandlers[type]);
+                            viewModel[legacyEventHandlers[type]](payload);
                         }
                     });
+
                     break;
                 }
                 case "timelapse": {

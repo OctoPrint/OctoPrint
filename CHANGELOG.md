@@ -25,6 +25,8 @@
   - `action:pause`: Pauses the current job in OctoPrint
   - `action:resume`: Resumes the current job in OctoPrint
   - `action:disconnect`: Disconnects OctoPrint from the printer
+  Plugins can add supported commands by [hooking](http://docs.octoprint.org/en/devel/plugins/hooks.html) into the
+  ``octoprint.comm.protocol.action`` hook
 * Mousing over the webcam image in the control tab enables key control mode, allowing you to quickly move the axis of your
   printer with your computer's keyboard ([#610](https://github.com/foosel/OctoPrint/pull/610)):
   - arrow keys: X and Y axes
@@ -32,6 +34,10 @@
   - Home: Home X and Y axes
   - End: Home Z axes
   - 1, 2, 3, 4: change step size used (0.1, 1, 10, 100mm)
+* Controls for adjusting feed and flow rate factor added to Controls ([#362](https://github.com/foosel/OctoPrint/issues/362))
+* Custom controls now also support slider controls
+* Custom controls now support a row layout
+* Users can now define custom GCODE scripts to run upon starting/pausing/resuming/success/failure of a print
 
 ### Improvements
 
@@ -58,7 +64,8 @@
   * The "Slicing done" notification is now colored green ([#558](https://github.com/foosel/OctoPrint/issues/558)).
   * The slicing API allows positioning the model to slice on the print bed (Note: this is not yet available in the UI).
 * File management now supports STL files as first class citizens (including UI adjustments to allow management of
-  uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
+  uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI). STL files
+  can be downloaded like GCODE files.
 * Also interpret lines starting with "!!" as errors
 * Added deletion of pyc files to the `python setup.py clean` command
 * Settings now show a QRCode for the API Key ([#637](https://github.com/foosel/OctoPrint/pull/637))
@@ -82,6 +89,22 @@
   message for now.
 * Daemonized OctoPrint now cleans up its pidfile when receiving a TERM signal ([#711](https://github.com/foosel/OctoPrint/issues/711))
 * Added serial types for OpenBSD ([#551](https://github.com/foosel/OctoPrint/pull/551))
+* Improved behaviour of terminal:
+  * Disabling autoscrolling now also stops cutting of the log while it's enabled, effectively preventing log lines from
+    being modified at all ([#735](https://github.com/foosel/OctoPrint/issues/735))
+  * Applying filters displays ``[...]`` where lines where removed
+  * Added a link to scroll to the end of the terminal log (useful for when autoscroll is disabled)
+  * Added a link to select all current contents of the terminal log for easy copy-pasting
+  * Added a display of how many lines are displayed, how many are filtered and how many are available in total
+* Frame rate for timelapses can now be configured per timelapse ([#782](https://github.com/foosel/OctoPrint/pull/782))
+* Added an option to specify the amount of encoding threads for FFMPEG ([#785](https://github.com/foosel/OctoPrint/pull/785))
+* "Disconnected" screen now is not shown directly after a close of the socket, instead the client first tries to
+  directly reconnect once, and only if that doesn't work displays the dialog. Should reduce short popups of the dialog
+  due to shaky network connections and/or weird browser behaviour when downloading things from the UI.
+* Development dependencies can now be installed with ``pip -e .[develop]``
+* White and transparent colors ;) are supported for the navigation bar ([#789](https://github.com/foosel/OctoPrint/pull/789))
+* Drag-n-drop overlay for file uploads now uses the full available screen space, improving usability on high resolution
+  displays ([#187](https://github.com/foosel/OctoPrint/issues/187))
 
 ### Bug Fixes
 
@@ -98,6 +121,14 @@
   and exception to be raised due to a misnamed attribute in the code
 * [#717](https://github.com/foosel/OctoPrint/issues/717) - Use ``shutil.move`` instead of ``os.rename`` to avoid cross
   device renaming issues
+* [#752](https://github.com/foosel/OctoPrint/pull/752) - Fix error in event handlers sending multiple gcode commands.
+* [#780](https://github.com/foosel/OctoPrint/issues/780) - Always (re)set file position in SD files to 0 so that reprints
+  work correctly
+* [#784](https://github.com/foosel/OctoPrint/pull/784) - Also include ``requirements.txt`` in files packed up for
+  ``python setup.py sdist``
+* [#330](https://github.com/foosel/OctoPrint/issues/330) - Ping pong sending to fix potential acknowledgement errors.
+  Also affects [#166](https://github.com/foosel/OctoPrint/issues/166), [#470](https://github.com/foosel/OctoPrint/issues/470)
+  and [#490](https://github.com/foosel/OctoPrint/issues/490).
 * Various fixes of bugs in newly introduced features and improvements:
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
     queue
@@ -116,10 +147,22 @@
   * [#724](https://github.com/foosel/OctoPrint/issues/724) - Fixed timelapse deletion for timelapses with non-ascii
     characters in their name
   * [#726](https://github.com/foosel/OctoPrint/issues/726) - Fixed ``babel_refresh`` command
+  * [#759](https://github.com/foosel/OctoPrint/pull/759) - Properly initialize counter for template plugins of type
+    "generic"
+  * [#775](https://github.com/foosel/OctoPrint/pull/775) - Error messages in javascript console show the proper name
+    of the objects
+  * [#795](https://github.com/foosel/OctoPrint/issues/795) - Allow adding slicing profiles for unconfigured slicers
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
   * Don't hiccup on slic3r filament_diameter comments in GCODE generated for multi extruder setups
+  * Color code successful or failed print results directly in file list, not just after a reload
+  * Changing Timelapse post roll activates save button
+  * Timelapse post roll is loaded properly from config
+  * Handling of files on the printer's SD card contained in folders now works correctly
+  * Don't display a "Disconnected" screen when trying to download a timelapse in Firefox
+  * Fixed handling of SD card files in folders
+  * Fixed refreshing of timelapse file list upon finished rendering of a new one
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
@@ -139,6 +182,9 @@
 * [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
   (backport of [619fe9a](https://github.com/foosel/OctoPrint/commit/619fe9a0e78826bd1524b235a910156439bcb6d7)).
 * [#719](https://github.com/foosel/OctoPrint/issues/719) - Properly center print bed in GCODE viewer
+* [#780](https://github.com/foosel/OctoPrint/issues/780) - Always (re)set file position in SD files to 0 so that reprints
+  work correctly (backported from ``devel``)
+* [#801](https://github.com/foosel/OctoPrint/issues/801) - Fixed setting of bed temperature offset
 * [IRC] - Don't hiccup on slic3r ``filament_diameter`` comments generated for multi extruder setups
 * [ML] - Fixed relative URL to SockJS endpoint, wasn't yet using the proper base url
 * [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header

@@ -36,14 +36,14 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 				self.filename = os.path.basename(self._path)
 
 			def save(self, target):
-				octoprint.util.safeRename(self._path, target)
+				octoprint.util.safe_rename(self._path, target)
 
 		file_wrapper = WatchdogFileWrapper(path)
 
 		# determine current job
 		currentFilename = None
 		currentOrigin = None
-		currentJob = self._printer.getCurrentJob()
+		currentJob = self._printer.get_current_job()
 		if currentJob is not None and "file" in currentJob.keys():
 			currentJobFile = currentJob["file"]
 			if "name" in currentJobFile.keys() and "origin" in currentJobFile.keys():
@@ -59,7 +59,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 			return
 
 		# prohibit overwriting currently selected file while it's being printed
-		if futureFilename == currentFilename and currentOrigin == octoprint.filemanager.FileDestinations.LOCAL and self._printer.isPrinting() or self._printer.isPaused():
+		if futureFilename == currentFilename and currentOrigin == octoprint.filemanager.FileDestinations.LOCAL and self._printer.is_printing() or self._printer.is_paused():
 			return
 
 		added_file = self._file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL,

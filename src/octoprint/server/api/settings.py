@@ -12,14 +12,14 @@ from flask.exceptions import JSONBadRequest
 
 from octoprint.events import eventManager, Events
 from octoprint.settings import settings
-from octoprint.printer import getConnectionOptions
+from octoprint.printer import get_connection_options
 
 from octoprint.server import admin_permission
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
 
 import octoprint.plugin
-
+import octoprint.util
 
 #~~ settings
 
@@ -28,7 +28,7 @@ import octoprint.plugin
 def getSettings():
 	s = settings()
 
-	connectionOptions = getConnectionOptions()
+	connectionOptions = get_connection_options()
 
 	data = {
 		"api": {
@@ -38,7 +38,8 @@ def getSettings():
 		},
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
-			"color": s.get(["appearance", "color"])
+			"color": s.get(["appearance", "color"]),
+			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"])
 		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
@@ -48,6 +49,7 @@ def getSettings():
 			"snapshotUrl": s.get(["webcam", "snapshot"]),
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
 			"bitrate": s.get(["webcam", "bitrate"]),
+			"ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
 			"watermark": s.getBoolean(["webcam", "watermark"]),
 			"flipH": s.getBoolean(["webcam", "flipH"]),
 			"flipV": s.getBoolean(["webcam", "flipV"])
@@ -91,12 +93,24 @@ def getSettings():
 			"events": s.get(["system", "events"])
 		},
 		"terminalFilters": s.get(["terminalFilters"]),
-		"cura": {
-			"enabled": s.getBoolean(["cura", "enabled"]),
-			"path": s.get(["cura", "path"]),
-			"config": s.get(["cura", "config"])
+		"scripts": {
+			"gcode": {
+				"afterPrinterConnected": None,
+				"beforePrintStarted": None,
+				"afterPrintCancelled": None,
+				"afterPrintDone": None,
+				"beforePrintPaused": None,
+				"afterPrintResumed": None,
+				"snippets": dict()
+			}
 		}
 	}
+
+	gcode_scripts = s.listScripts("gcode")
+	if gcode_scripts:
+		data["scripts"] = dict(gcode=dict())
+		for name in gcode_scripts:
+			data["scripts"]["gcode"][name] = s.loadScript("gcode", name, source=True)
 
 	def process_plugin_result(name, plugin, result):
 		if result:
@@ -134,6 +148,7 @@ def setSettings():
 	if "appearance" in data.keys():
 		if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
 		if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
+		if "colorTransparent" in data["appearance"].keys(): s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
 
 	if "printer" in data.keys():
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
@@ -143,6 +158,7 @@ def setSettings():
 		if "snapshotUrl" in data["webcam"].keys(): s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
 		if "ffmpegPath" in data["webcam"].keys(): s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
 		if "bitrate" in data["webcam"].keys(): s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
+		if "ffmpegThreads" in data["webcam"].keys(): s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
 		if "watermark" in data["webcam"].keys(): s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
 		if "flipH" in data["webcam"].keys(): s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
 		if "flipV" in data["webcam"].keys(): s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
@@ -196,19 +212,12 @@ def setSettings():
 		if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
 		if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
 
-	cura = data.get("cura", None)
-	if cura:
-		path = cura.get("path")
-		if path:
-			s.set(["cura", "path"], path)
-
-		config = cura.get("config")
-		if config:
-			s.set(["cura", "config"], config)
-
-		# Enabled is a boolean so we cannot check that we have a result
-		enabled = cura.get("enabled")
-		s.setBoolean(["cura", "enabled"], enabled)
+	if "scripts" in data:
+		if "gcode" in data["scripts"] and isinstance(data["scripts"]["gcode"], dict):
+			for name, script in data["scripts"]["gcode"].items():
+				if name == "snippets":
+					continue
+				s.saveScript("gcode", name, script.replace("\r\n", "\n").replace("\r", "\n"))
 
 	if "plugins" in data:
 		for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():

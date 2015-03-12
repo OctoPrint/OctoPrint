@@ -1,16 +1,10 @@
-flask==0.9
-werkzeug==0.8.3
-tornado==4.0.1
-sockjs-tornado>=1.0.0
-PyYAML==3.10
-Flask-Login==0.2.2
-Flask-Principal==0.3.5
-Flask-Babel==0.9
-pyserial
-netaddr
-watchdog
-sarge>=0.1.4
-netifaces
-pylru
-rsa
-pkginfo
+###
+# This file is only here to make sure that something like
+#
+#    pip install -e .[develop]
+#
+# works as expected. Requirements can be found in setup.py in the
+# variables INSTALL_REQUIRES and EXTRA_REQUIRES.
+###
+
+.

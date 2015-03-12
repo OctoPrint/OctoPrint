@@ -8,6 +8,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import unittest
 import os
 
+from ddt import ddt, unpack, data
+
 import octoprint.filemanager.storage
 
 
@@ -33,6 +35,7 @@ FILE_BP_CASE_STL = FileWrapper("bp_case.stl")
 FILE_BP_CASE_GCODE = FileWrapper("bp_case.gcode")
 FILE_CRAZYRADIO_STL = FileWrapper("crazyradio.stl")
 
+@ddt
 class LocalStorageTest(unittest.TestCase):
 
 	def setUp(self):
@@ -285,6 +288,77 @@ class LocalStorageTest(unittest.TestCase):
 
 		self.assertEquals(0, len(gcode_metadata["links"]))
 		self.assertEquals(1, len(stl_metadata["links"]))
+
+	@data(
+		("some_file.gco", "some_file.gco"),
+		("some_file with (parentheses) and ümläuts and digits 123.gco", "some_file_with_(parentheses)_and_mluts_and_digits_123.gco"),
+		("pengüino pequeño.stl", "pengino_pequeo.stl")
+	)
+	@unpack
+	def test_sanitize_name(self, input, expected):
+		actual = self.storage.sanitize_name(input)
+		self.assertEquals(expected, actual)
+
+	@data(
+		"some/folder/still/left.gco",
+		"also\\no\\backslashes.gco"
+	)
+	def test_sanitize_name_invalid(self, input):
+		try:
+			self.storage.sanitize_name(input)
+			self.fail("expected a ValueError")
+		except ValueError as e:
+			self.assertEquals("name must not contain / or \\", e.message)
+
+	@data(
+		("folder/with/subfolder", "/folder/with/subfolder"),
+		("folder/with/subfolder/../other/folder", "/folder/with/other/folder"),
+		("/folder/with/leading/slash", "/folder/with/leading/slash"),
+		("folder/with/leading/dot", "/folder/with/leading/dot")
+	)
+	@unpack
+	def test_sanitize_path(self, input, expected):
+		actual = self.storage.sanitize_path(input)
+		self.assertTrue(actual.startswith(self.basefolder))
+		self.assertEquals(expected, actual[len(self.basefolder):].replace(os.path.sep, "/"))
+
+	@data(
+		"../../folder/out/of/the/basefolder",
+		"some/folder/../../../and/then/back"
+	)
+	def test_sanitize_path_invalid(self, input):
+		try:
+			self.storage.sanitize_path(input)
+			self.fail("expected a ValueError")
+		except ValueError as e:
+			self.assertTrue(e.message.startswith("path not contained in base folder: "))
+
+	@data(
+		("some/folder/and/some file.gco", "/some/folder/and", "some_file.gco"),
+		(("some", "folder", "and", "some file.gco"), "/some/folder/and", "some_file.gco"),
+		("some file.gco", "/", "some_file.gco"),
+		(("some file.gco",), "/", "some_file.gco"),
+		("", "/", ""),
+		("some/folder/with/trailing/slash/", "/some/folder/with/trailing/slash", ""),
+		(("some", "folder", ""), "/some/folder", "")
+	)
+	@unpack
+	def test_sanitize(self, input, expected_path, expected_name):
+		actual = self.storage.sanitize(input)
+		self.assertTrue(isinstance(actual, tuple))
+		self.assertEquals(2, len(actual))
+
+		actual_path, actual_name = actual
+		self.assertTrue(actual_path.startswith(self.basefolder))
+		actual_path = actual_path[len(self.basefolder):].replace(os.path.sep, "/")
+		if not actual_path.startswith("/"):
+			# if the actual path originally was just the base folder, we just stripped
+			# away everything, so let's add a / again so the behaviour matches the
+			# other preprocessing of our test data here
+			actual_path = "/" + actual_path
+
+		self.assertEquals(expected_path, actual_path)
+		self.assertEquals(expected_name, actual_name)
 
 	def _add_file(self, path, expected_path, file_object, links=None, overwrite=False):
 		sanitized_path = self.storage.add_file(path, file_object, links=links, allow_overwrite=overwrite)

@@ -157,7 +157,7 @@ class FilebasedUserManager(UserManager):
 
 		userfile = settings().get(["accessControl", "userfile"])
 		if userfile is None:
-			userfile = os.path.join(settings().settings_dir, "users.yaml")
+			userfile = os.path.join(settings().getBaseFolder("base"), "users.yaml")
 		self._userfile = userfile
 		self._users = {}
 		self._dirty = False

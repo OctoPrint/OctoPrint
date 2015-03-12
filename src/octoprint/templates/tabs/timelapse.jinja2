@@ -1,69 +1,73 @@
-{% if enableTimelapse %}
-    <div style="display: none;" data-bind="visible: loginState.isUser">
-        <h1>{{ _('Timelapse Configuration') }}</h1>
+<div style="display: none;" data-bind="visible: loginState.isUser">
+    <h1>{{ _('Timelapse Configuration') }}</h1>
 
-        <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
-        <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
-            <option value="off">{{ _('Off') }}</option>
-            <option value="zchange">{{ _('On Z Change') }}</option>
-            <option value="timed">{{ _('Timed') }}</option>
-        </select>
+    <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
+    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
+        <option value="off">{{ _('Off') }}</option>
+        <option value="zchange">{{ _('On Z Change') }}</option>
+        <option value="timed">{{ _('Timed') }}</option>
+    </select>
 
-        <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
+    <label for="webcam_timelapse_fps">{{ _('Timelapse frame rate (in frames per second)') }}</label>
+    <div class="input-append">
+        <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <span class="add-on">{{ _('fps') }}</span>
+    </div>
+
+    <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
+    <div class="input-append">
+        <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <span class="add-on">{{ _('sec') }}</span>
+    </div>
+
+    <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
+        <label for="webcam_timelapse_interval">{{ _('Interval') }}</label>
         <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
             <span class="add-on">{{ _('sec') }}</span>
         </div>
-
-        <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
-            <label for="webcam_timelapse_interval">{{ _('Interval') }}</label>
-            <div class="input-append">
-                <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
-                <span class="add-on">{{ _('sec') }}</span>
-            </div>
-        </div>
-
-        <div data-bind="visible: loginState.isAdmin">
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
-            </label>
-        </div>
-
-        <div>
-            <button class="btn" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save config') }}</button>
-        </div>
     </div>
 
-    <h1>{{ _('Finished Timelapses') }}</h1>
+    <div data-bind="visible: loginState.isAdmin">
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
+        </label>
+    </div>
 
-    <div class="pull-right">
-        <small>{{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">{{ _('Creation date') }} ({{ _('descending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">{{ _('Size') }} ({{ _('descending') }})</a></small>
+    <div>
+        <button class="btn" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save config') }}</button>
     </div>
-    <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
-        <thead>
-        <tr>
-            <th class="timelapse_files_name">{{ _('Name') }}</th>
-            <th class="timelapse_files_size">{{ _('Size') }}</th>
-            <th class="timelapse_files_action">{{ _('Action') }}</th>
-        </tr>
-        </thead>
-        <tbody data-bind="foreach: listHelper.paginatedItems">
-        <tr data-bind="attr: {title: name}">
-            <td class="timelapse_files_name" data-bind="text: name"></td>
-            <td class="timelapse_files_size" data-bind="text: size"></td>
-            <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
-        </tr>
-        </tbody>
-    </table>
-    <div class="pagination pagination-mini pagination-centered">
-        <ul>
-            <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
-        </ul>
-        <ul data-bind="foreach: listHelper.pages">
-            <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a></li>
-        </ul>
-        <ul>
-            <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
-        </ul>
-    </div>
-{% endif %}
+</div>
+
+<h1>{{ _('Finished Timelapses') }}</h1>
+
+<div class="pull-right">
+    <small>{{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">{{ _('Creation date') }} ({{ _('descending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">{{ _('Size') }} ({{ _('descending') }})</a></small>
+</div>
+<table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
+    <thead>
+    <tr>
+        <th class="timelapse_files_name">{{ _('Name') }}</th>
+        <th class="timelapse_files_size">{{ _('Size') }}</th>
+        <th class="timelapse_files_action">{{ _('Action') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: listHelper.paginatedItems">
+    <tr data-bind="attr: {title: name}">
+        <td class="timelapse_files_name" data-bind="text: name"></td>
+        <td class="timelapse_files_size" data-bind="text: size"></td>
+        <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
+    </tr>
+    </tbody>
+</table>
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: listHelper.pages">
+        <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
+    </ul>
+</div>

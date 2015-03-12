@@ -20,7 +20,7 @@ import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, get_remote_address, get_json_command_from_request
 
 
 #~~ init api blueprint, including sub modules
@@ -73,7 +73,7 @@ def pluginCommand(name):
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)
 
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 
@@ -204,7 +204,7 @@ def login():
 				localNetworks.add(ip)
 
 			try:
-				remoteAddr = util.getRemoteAddress(request)
+				remoteAddr = get_remote_address(request)
 				if netaddr.IPAddress(remoteAddr) in localNetworks:
 					user = octoprint.server.userManager.findUser(autologinAs)
 					if user is not None:

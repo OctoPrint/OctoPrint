@@ -1,4 +1,15 @@
 # coding=utf-8
+"""
+This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
+class, :class:`OctoPrintPlugin`.
+
+Please note that the plugin implementation types are documented in the section
+:ref:`Available plugin mixins <sec-plugins-mixins>`.
+
+.. autoclass:: OctoPrintPlugin
+
+"""
+
 from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -9,7 +20,55 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from .core import Plugin
 
 
-class StartupPlugin(Plugin):
+class OctoPrintPlugin(Plugin):
+	"""
+	The parent class of all OctoPrint plugin mixins.
+
+	.. attribute:: _plugin_manager
+
+	   The :class:`~octoprint.plugin.core.PluginManager` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
+	.. attribute:: _printer_profile_manager
+
+	   The :class:`~octoprint.printer.profile.PrinterProfileManager` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
+	.. attribute:: _event_bus
+
+	   The :class:`~octoprint.events.EventManager` instance. Injected by the plugin core system upon initialization of
+	   the implementation.
+
+	.. attribute:: _analysis_queue
+
+	   The :class:`~octoprint.filemanager.analysis.AnalysisQueue` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
+	.. attribute:: _slicing_manager
+
+	   The :class:`~octoprint.slicing.SlicingManager` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
+	.. attribute:: _file_manager
+
+	   The :class:`~octoprint.filemanager.FileManager` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
+	.. attribute:: _printer
+
+	   The :class:`~octoprint.printer.PrinterInterface` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
+	.. attribute:: _app_session_manager
+
+	   The :class:`~octoprint.users.SessionManager` instance. Injected by the plugin core system upon initialization of
+	   the implementation.
+	"""
+
+	pass
+
+
+class StartupPlugin(OctoPrintPlugin):
 	"""
 	The ``StartupPlugin`` allows hooking into the startup of OctoPrint. It can be used to start up additional services
 	on or just after the startup of the server.
@@ -37,7 +96,7 @@ class StartupPlugin(Plugin):
 		pass
 
 
-class ShutdownPlugin(Plugin):
+class ShutdownPlugin(OctoPrintPlugin):
 	"""
 	The ``ShutdownPlugin`` allows hooking into the shutdown of OctoPrint. It's usually used in conjunction with the
 	:class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`
@@ -51,14 +110,14 @@ class ShutdownPlugin(Plugin):
 		pass
 
 
-class AssetPlugin(Plugin):
+class AssetPlugin(OctoPrintPlugin):
 	"""
 	The ``AssetPlugin`` mixin allows plugins to define additional static assets such as Javascript or CSS files to
 	be automatically embedded into the pages delivered by the server to be used within the client sided part of
 	the plugin.
 
 	A typical usage of the ``AssetPlugin`` functionality is to embed a custom view model to be used by templates injected
-	through :class:`TemplatePlugin`s.
+	through a :class:`TemplatePlugin`.
 	"""
 
 	def get_asset_folder(self):
@@ -104,7 +163,7 @@ class AssetPlugin(Plugin):
 		return dict()
 
 
-class TemplatePlugin(Plugin):
+class TemplatePlugin(OctoPrintPlugin):
 	"""
 	Using the ``TemplatePlugin`` mixin plugins may inject their own components into the OctoPrint web interface.
 
@@ -201,6 +260,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of navbar component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the navbar entry (``false``)
 		          or if a custom binding will be used by the plugin (``true``, default).
@@ -238,6 +303,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of sidebar component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the sidebar container (``false``)
 		          or if a custom binding will be used by the plugin (``true``, default).
@@ -279,6 +350,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of tab component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the tab pane and link
 		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
@@ -320,6 +397,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of settings component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default settings view model should be bound to the settings pane and link
 		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
@@ -384,18 +467,142 @@ class TemplatePlugin(Plugin):
 		return os.path.join(self._basefolder, "templates")
 
 
-class SimpleApiPlugin(Plugin):
+class SimpleApiPlugin(OctoPrintPlugin):
+	"""
+	Utilizing the ``SimpleApiPlugin`` mixin plugins may implement a simple API based around one GET resource and one
+	resource accepting JSON commands POSTed to it. This is the easy alternative for plugin's which don't need the
+	full power of a `Flask Blueprint <http://flask.pocoo.org/docs/0.10/blueprints/>`_ that the :class:`BlueprintPlugin`
+	mixin offers.
+
+	Use this mixin if all you need to do is return some kind of dynamic data to your plugin from the backend
+	and/or want to react to simple commands which boil down to a type of command and a couple of flat parameters
+	supplied with it.
+
+	The simple API constructed by OctoPrint for you will be made available under ``/api/plugin/<plugin identifier>/``.
+	OctoPrint will do some preliminary request validation for your defined commands, making sure the request body is in
+	the correct format (content type must be JSON) and contains all obligatory parameters for your command.
+
+	Let's take a look at a small example for such a simple API and how you would go about calling it.
+
+	Take this example of a plugin registered under plugin identifier ``mysimpleapiplugin``:
+
+	.. code-block:: python
+	   :linenos:
+
+	   import octoprint.plugin
+
+	   import flask
+
+	   class MySimpleApiPlugin(octoprint.plugin.SimpleApiPlugin):
+	       def get_api_commands(self):
+	           return dict(
+	               command1=[],
+	               command2=["some_parameter"]
+	           )
+
+	       def on_api_command(self, command, data):
+	           import flask
+	           if command == "command1":
+	               parameter = "unset"
+	               if "parameter" in data:
+	                   parameter = "set"
+	               self._logger.info("command1 called, parameter is {parameter}".format(**locals()))
+	           elif command == "command2":
+	               self._logger.info("command2 called, some_parameter is {some_parameter}".format(**data))
+
+	       def on_api_get(self, request):
+	           return flask.jsonify(foo="bar")
+
+	   __plugin_implementations__ = [MySimpleApiPlugin()]
+
+
+	Our plugin defines two commands, ``command1`` with no mandatory parameters and ``command2`` with one
+	mandatory parameter ``some_parameter``.
+
+	``command1`` can also accept an optional parameter ``parameter``, and will log whether
+	that parameter was set or unset. ``command2`` will log the content of the mandatory ``some_parameter`` parameter.
+
+	A valid POST request for ``command2`` sent to ``/api/plugin/mysimpleapiplugin`` would look like this:
+
+	.. sourcecode:: http
+
+	   POST /api/plugin/mysimpleapiplugin HTTP/1.1
+	   Host: example.com
+	   Content-Type: application/json
+	   X-Api-Key: abcdef...
+
+	   {
+	     "command": "command2",
+	     "some_parameter": "some_value",
+	     "some_optional_parameter": 2342
+	   }
+
+	which would produce a response like this:
+
+	.. sourcecode:: http
+
+	   HTTP/1.1 204 No Content
+
+	and print something like this line to ``octoprint.log``::
+
+	   2015-02-12 17:40:21,140 - octoprint.plugins.mysimpleapiplugin - INFO - command2 called, some_parameter is some_value
+
+	A GET request on our plugin's simple API resource will only return a JSON document like this:
+
+	.. sourcecode:: http
+
+	   HTTP/1.1 200 Ok
+	   Content-Type: application/json
+
+	   {
+	     "foo": "bar"
+	   }
+	"""
+
 	def get_api_commands(self):
+		"""
+		Return a dictionary here with the keys representing the accepted commands and the values being lists of
+		mandatory parameter names.
+		"""
 		return None
 
 	def on_api_command(self, command, data):
+		"""
+		Called by OctoPrint upon a POST request to ``/api/plugin/<plugin identifier>``. ``command`` will contain one of
+		the commands as specified via :func:`get_api_commands`, ``data`` will contain the full request body parsed
+		from JSON into a Python dictionary. Note that this will also contain the ``command`` attribute itself. For the
+		example given above, for the ``command2`` request the ``data`` received by the plugin would be equal to
+		``dict(command="command2", some_parameter="some_value")``.
+
+		If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
+		for you. You may also return regular responses as you would return from any Flask view here though, e.g.
+		``return flask.jsonify(result="some json result")`` or ``return flask.make_response("Not found", 404)``.
+
+		:param string command: the command with which the resource was called
+		:param dict data:      the full request body of the POST request parsed from JSON into a Python dictionary
+		:return: ``None`` in which case OctoPrint will generate a ``204 No content`` response with empty body, or optionally
+		         a proper Flask response.
+		"""
 		return None
 
 	def on_api_get(self, request):
+		"""
+		Called by OctoPrint upon a GET request to ``/api/plugin/<plugin identifier>``. ``request`` will contain the
+		received `Flask request object <http://flask.pocoo.org/docs/0.9/api/#flask.Request>`_ which you may evaluate
+		for additional arguments supplied with the request.
+
+		If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
+		for you. You may also return regular responses as you would return from any Flask view here though, e.g.
+		``return flask.jsonify(result="some json result")`` or ``return flask.make_response("Not found", 404)``.
+
+		:param request: the Flask request object
+		:return: ``None`` in which case OctoPrint will generate a ``204 No content`` response with empty body, or optionally
+		         a proper Flask response.
+		"""
 		return None
 
 
-class BlueprintPlugin(Plugin):
+class BlueprintPlugin(OctoPrintPlugin):
 	"""
 	The ``BlueprintPlugin`` mixin allows plugins to define their own full fledged endpoints for whatever purpose,
 	be it a more sophisticated API than what is possible via the :class:`SimpleApiPlugin` or a custom web frontend.
@@ -419,18 +626,18 @@ class BlueprintPlugin(Plugin):
 	               return flask.make_response("Expected a text to echo back.", 400)
 	           return flask.request.values["text"]
 
-	   __plugin_implementations__ = [MyPlugin()]
+	   __plugin_implementations__ = [MyBlueprintPlugin()]
 
 	Your blueprint will be published by OctoPrint under the base URL ``/plugin/<plugin identifier>/``, so the above
 	example of a plugin with the identifier "myblueprintplugin" would be reachable under
 	``/plugin/myblueprintplugin/echo``.
 
 	Just like with regular blueprints you'll be able to create URLs via ``url_for``, just use the prefix
-	``plugin.<plugin identifier>``, e.g.:
+	``plugin.<plugin identifier>.<method_name>``, e.g.:
 
 	.. code-block:: python
 
-	   flask.url_for("plugin.myblueprintplugin.echo") # will return "/plugin/myblueprintplugin/echo"
+	   flask.url_for("plugin.myblueprintplugin.myEcho") # will return "/plugin/myblueprintplugin/echo"
 
 	"""
 
@@ -498,7 +705,7 @@ class BlueprintPlugin(Plugin):
 		return True
 
 
-class SettingsPlugin(Plugin):
+class SettingsPlugin(OctoPrintPlugin):
 	"""
 	Including the ``SettingsPlugin`` mixin allows plugins to store and retrieve their own settings within OctoPrint's
 	configuration.
@@ -549,6 +756,11 @@ class SettingsPlugin(Plugin):
 
 	Of course, you are always free to completely override both :func:`on_settings_load` and :func:`on_settings_save` if the
 	default implementations do not fit your requirements.
+
+	.. attribute:: _settings
+
+	   The :class:`~octoprint.plugin.PluginSettings` instance to use for accessing the plugin's settings. Injected by
+	   the plugin core system upon initialization of the implementation.
 	"""
 
 	def on_settings_load(self):
@@ -585,7 +797,8 @@ class SettingsPlugin(Plugin):
 		   and iterate yourself over all your settings, retrieving them (if set) from the supplied received ``data``
 		   and using the proper setter methods on the settings manager to persist the data in the correct format.
 
-		:param dict data: the settings dictionary to be saved for the plugin
+		Arguments:
+		    data (dict): The settings dictionary to be saved for the plugin
 		"""
 		import octoprint.util
 
@@ -602,17 +815,99 @@ class SettingsPlugin(Plugin):
 		"""
 		return dict()
 
+	def get_settings_preprocessors(self):
+		"""
+		Retrieves the plugin's preprocessors to use for preprocessing returned or set values prior to returning/setting
+		them.
 
-class EventHandlerPlugin(Plugin):
+		The preprocessors should be provided as a dictionary mapping the path of the values to preprocess
+		(hierarchically) to a transform function which will get the value to transform as only input and should return
+		the transformed value.
+
+		Example:
+
+		.. sourcecode: python
+
+		   def get_settings_defaults(self):
+		       return dict(some_key="Some_Value", some_other_key="Some_Value")
+
+		   def get_settings_preprocessors(self):
+		       return dict(some_key=lambda x: x.upper()),        # getter preprocessors
+		              dict(some_other_key=lambda x: x.lower())   # setter preprocessors
+
+		   def some_method(self):
+		       # getting the value for "some_key" should turn it to upper case
+		       assert self._settings.get(["some_key"]) == "SOME_VALUE"
+
+		       # the value for "some_other_key" should be left alone
+		       assert self._settings.get(["some_other_key"] = "Some_Value"
+
+		       # setting a value for "some_other_key" should cause the value to first be turned to lower case
+		       self._settings.set(["some_other_key"], "SOME_OTHER_VALUE")
+		       assert self._settings.get(["some_other_key"]) == "some_other_value"
+
+		Returns:
+		    (dict, dict): A tuple consisting of two dictionaries, the first being the plugin's preprocessors for
+		        getters, the second the preprocessors for setters
+		"""
+		return dict(), dict()
+
+
+class EventHandlerPlugin(OctoPrintPlugin):
+	"""
+	The ``EventHandlerPlugin`` mixin allows OctoPrint plugins to react to any of :ref:`OctoPrint's events <sec-events>`.
+	OctoPrint will call the :func:`on_event` method for any event fired on its internal event bus, supplying the
+	event type and the associated payload. Please note that until your plugin returns from that method, further event
+	processing within OctoPrint will block - the event queue itself is run asynchronously from the rest of OctoPrint,
+	but the processing of the events within the queue itself happens consecutively.
+
+	This mixin is especially interesting for plugins which want to react on things like print jobs finishing, timelapse
+	videos rendering etc.
+	"""
+
 	def on_event(self, event, payload):
+		"""
+		Called by OctoPrint upon processing of a fired event on the platform.
+
+		:param string event: the type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
+		                     for possible values
+		:param dict payload: the payload as provided with the event
+		"""
 		pass
 
 
-class SlicerPlugin(Plugin):
+class SlicerPlugin(OctoPrintPlugin):
+	"""
+	Via the ``SlicerPlugin`` mixin plugins can add support for slicing engines to be used by OctoPrint.
+
+	"""
+
 	def is_slicer_configured(self):
+		"""
+		Unless the return value of this method is ``True``, OctoPrint will not register the slicer within the slicing
+		sub system upon startup. Plugins may use this to do some start up checks to verify that e.g. the path to
+		a slicing binary as set and the binary is executable, or credentials of a cloud slicing platform are properly
+		entered etc.
+		"""
 		return False
 
 	def get_slicer_properties(self):
+		"""
+		Plugins should override this method to return a ``dict`` containing a bunch of meta data about the implemented slicer.
+
+		The expected keys in the returned ``dict`` have the following meaning:
+
+		type
+		    The type identifier to use for the slicer. This should be a short unique lower case string which will be
+		    used to store slicer profiles under or refer to the slicer programmatically or from the API.
+		name
+		    The human readable name of the slicer. This will be displayed to the user during slicer selection.
+		same_device
+		    ``True`` if the slicer runs on the same device as OctoPrint, ``False`` otherwise. Slicers running on the same
+		    device will TODO
+		progress_report
+		    ``True`` if the slicer can report back slicing progress to OctoPrint ``False`` otherwise.
+		"""
 		return dict(
 			type=None,
 			name=None,
@@ -620,26 +915,75 @@ class SlicerPlugin(Plugin):
 			progress_report=False
 		)
 
-	def get_slicer_profile_options(self):
+	def get_slicer_default_profile(self):
+		"""
+		Should return a :class:`SlicingProfile` containing the default slicing profile to use with this slicer if
+		no other profile has been selected.
+		"""
 		return None
 
 	def get_slicer_profile(self, path):
-		return None
+		"""
+		Should return a :class:`SlicingProfile` parsed from the slicing profile stored at the indicated ``path``.
 
-	def get_slicer_default_profile(self):
+		:param string path: the path from which to read the slicing profile
+		"""
 		return None
 
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
+		"""
+		Should save the provided :class:`SlicingProfile` to the indicated ``path``, after applying any supplied
+		``overrides``. If a profile is already saved under the indicated path and ``allow_overwrite`` is set to
+		``False`` (defaults to ``True``), an ``IOError`` should be raised.
+
+		:param string path: the path to which to save the profile
+		:param SlicingProfile profile: the profile to save
+		:param bool allow_overwrite: whether to allow to overwrite an existing profile at the indicated path (``True``, default)
+		    or not (``False``) - if a profile already exists on the path and this is ``False``
+		    and :class:`IOError` should be raised
+		:param dict overrides: profile overrides to apply to the ``profile`` before saving it
+		"""
 		pass
 
-	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
+	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, position=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
+		"""
+		Called by OctoPrint to slice ``model_path`` for the indicated ``printer_profile``. If the ``machinecode_path`` is ``None``,
+		slicer implementations should generate it from the provided model_path.
+
+		If provided, the ``profile_path`` is guaranteed by OctoPrint to be a serialized slicing profile created through the slicing
+		plugin's own :func:`save_slicer_profile` method.
+
+		If provided, ``position`` will be a ``dict`` containing and ``x`` and a ``y`` key, indicating the position
+		the center of the model on the print bed should have in the final sliced machine code. If not provided, slicer
+		implementations should place the model in the center of the print bed.
+
+		``on_progress`` will be a callback which expects an additional keyword argument ``_progress`` with the current
+		slicing progress which - if progress reporting is supported - the slicing plugin should call like the following:
+
+		.. code-block:: python
+
+		   if on_progress is not None:
+		       if on_progress_args is None:
+		           on_progress_args = ()
+		       if on_progress_kwargs is None:
+		           on_progress_kwargs = dict()
+
+		       on_progress_kwargs["_progress"] = your_plugins_slicing_progress
+		       on_progress(*on_progress_args, **on_progress_kwargs)
+
+		Please note that both ``on_progress_args`` and ``on_progress_kwargs`` as supplied by OctoPrint might be ``None``,
+		so always make sure to initialize those values to sane defaults like depicted above before invoking the callback.
+		"""
 		pass
 
 	def cancel_slicing(self, machinecode_path):
+		"""
+		Cancels the slicing to the indicated file
+		"""
 		pass
 
 
-class ProgressPlugin(Plugin):
+class ProgressPlugin(OctoPrintPlugin):
 	"""
 	Via the ``ProgressPlugin`` mixing plugins can let themselves be called upon progress in print jobs or slicing jobs,
 	limited to minimally 1% steps.
@@ -669,7 +1013,7 @@ class ProgressPlugin(Plugin):
 		pass
 
 
-class AppPlugin(Plugin):
+class AppPlugin(OctoPrintPlugin):
 	def get_additional_apps(self):
 		return []
 

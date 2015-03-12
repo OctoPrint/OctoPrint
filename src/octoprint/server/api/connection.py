@@ -8,16 +8,16 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import request, jsonify, make_response
 
 from octoprint.settings import settings
-from octoprint.printer import getConnectionOptions
+from octoprint.printer import get_connection_options
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 import octoprint.util as util
 
 
 @api.route("/connection", methods=["GET"])
 def connectionState():
-	state, port, baudrate, printer_profile = printer.getCurrentConnection()
+	state, port, baudrate, printer_profile = printer.get_current_connection()
 	current = {
 		"state": state,
 		"port": port,
@@ -36,12 +36,12 @@ def connectionCommand():
 		"disconnect": []
 	}
 
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
+	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
 		return response
 
 	if command == "connect":
-		connection_options = getConnectionOptions()
+		connection_options = get_connection_options()
 
 		port = None
 		baudrate = None
@@ -72,7 +72,7 @@ def connectionCommand():
 	return NO_CONTENT
 
 def _get_options():
-	connection_options = getConnectionOptions()
+	connection_options = get_connection_options()
 	profile_options = printerProfileManager.get_all()
 	default_profile = printerProfileManager.get_default()
 

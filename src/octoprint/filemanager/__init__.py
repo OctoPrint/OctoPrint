@@ -8,8 +8,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 
+import octoprint.plugin
+
 from octoprint.events import eventManager, Events
-from octoprint.plugin import plugin_manager, ProgressPlugin
 
 from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
@@ -114,7 +115,7 @@ class FileManager(object):
 		self._slicing_progress_callbacks = []
 		self._last_slicing_progress = None
 
-		self._progress_plugins = plugin_manager().get_implementations(ProgressPlugin)
+		self._progress_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.ProgressPlugin)
 
 		for storage_type, storage_manager in self._storage_managers.items():
 			self._determine_analysis_backlog(storage_type, storage_manager)
@@ -157,7 +158,7 @@ class FileManager(object):
 
 	def slice(self, slicer_name, source_location, source_path, dest_location, dest_path,
 	          position=None, profile=None, printer_profile_id=None, overrides=None, callback=None, callback_args=None):
-		absolute_source_path = self.get_absolute_path(source_location, source_path)
+		absolute_source_path = self.path_on_disk(source_location, source_path)
 
 		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args, _error=None, _cancelled=False, _analysis=None):
 			try:
@@ -291,7 +292,7 @@ class FileManager(object):
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
-		absolute_path = self._storage(destination).get_absolute_path(file_path)
+		absolute_path = self._storage(destination).path_on_disk(file_path)
 
 		if analysis is None:
 			file_type = get_file_type(absolute_path)
@@ -343,8 +344,8 @@ class FileManager(object):
 	def remove_additional_metadata(self, destination, path, key):
 		self._storage(destination).remove_additional_metadata(path, key)
 
-	def get_absolute_path(self, destination, path):
-		return self._storage(destination).get_absolute_path(path)
+	def path_on_disk(self, destination, path):
+		return self._storage(destination).path_on_disk(path)
 
 	def sanitize(self, destination, path):
 		return self._storage(destination).sanitize(path)
@@ -361,8 +362,8 @@ class FileManager(object):
 	def join_path(self, destination, *path):
 		return self._storage(destination).join_path(*path)
 
-	def rel_path(self, destination, path):
-		return self._storage(destination).rel_path(path)
+	def path_in_storage(self, destination, path):
+		return self._storage(destination).path_in_storage(path)
 
 	def _storage(self, destination):
 		if not destination in self._storage_managers:

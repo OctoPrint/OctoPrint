@@ -23,6 +23,7 @@
         <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
         <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
         <div class="btn-group action-buttons">
+            <a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="{{ _('Download') }}"></i></a>
             <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
             <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSlicing($data)) { $root.sliceFile($data); } else { return; } }, css: {disabled: !$root.enableSlicing($data)}"><i class="icon-magic" title="{{ _('Slice') }}"></i></div>
         </div>
@@ -60,6 +61,6 @@
         <div class="bar" style="width: 0%"></div>
     </div>
     <div>
-        <small>{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
+        <small class="muted">{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
     </div>
 </div>

@@ -11,6 +11,8 @@ import octoprint.plugin
 import octoprint.events
 from octoprint.settings import settings
 
+from .exceptions import *
+
 
 class SlicingProfile(object):
 	def __init__(self, slicer, name, data, display_name=None, description=None):
@@ -44,10 +46,6 @@ class TemporaryProfile(object):
 			pass
 
 
-class SlicingCancelled(BaseException):
-	pass
-
-
 class SlicingManager(object):
 	def __init__(self, profile_path, printer_profile_manager):
 		self._profile_path = profile_path
@@ -71,8 +69,7 @@ class SlicingManager(object):
 	def _load_slicers(self):
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
 		for name, plugin in plugins.items():
-			if plugin.is_slicer_configured():
-				self._slicers[plugin.get_slicer_properties()["type"]] = plugin
+			self._slicers[plugin.get_slicer_properties()["type"]] = plugin
 
 	@property
 	def slicing_enabled(self):
@@ -89,13 +86,15 @@ class SlicingManager(object):
 	@property
 	def default_slicer(self):
 		slicer_name = settings().get(["slicing", "defaultSlicer"])
-		if slicer_name in self.configured_slicers:
+		if slicer_name in self.registered_slicers:
 			return slicer_name
 		else:
 			return None
 
 	def get_slicer(self, slicer, require_configured=True):
-		return self._slicers[slicer] if slicer in self._slicers and (not require_configured or self._slicers[slicer].is_slicer_configured()) else None
+		if slicer in self._slicers and (not require_configured or self._slicers[slicer].is_slicer_configured()):
+			return self._slicers[slicer]
+		raise SlicerNotConfigured(slicer)
 
 	def slice(self, slicer_name, source_path, dest_path, profile_name, callback, callback_args=None, callback_kwargs=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None, printer_profile_id=None, position=None):
 		if callback_args is None:
@@ -106,11 +105,13 @@ class SlicingManager(object):
 		if not slicer_name in self.configured_slicers:
 			if not slicer_name in self.registered_slicers:
 				error = "No such slicer: {slicer_name}".format(**locals())
+				exc = UnknownSlicer(slicer_name)
 			else:
 				error = "Slicer not configured: {slicer_name}".format(**locals())
-			callback_kwargs.update(dict(_error=error))
+				exc = SlicerNotConfigured(slicer_name)
+			callback_kwargs.update(dict(_error=error, _exc=exc))
 			callback(*callback_args, **callback_kwargs)
-			return False, error
+			raise exc
 
 		slicer = self.get_slicer(slicer_name)
 
@@ -154,23 +155,24 @@ class SlicingManager(object):
 
 	def cancel_slicing(self, slicer_name, source_path, dest_path):
 		if not slicer_name in self.registered_slicers:
-			return
+			raise UnknownSlicer(slicer_name)
+
 		slicer = self.get_slicer(slicer_name)
 		slicer.cancel_slicing(dest_path)
 
-	def load_profile(self, slicer, name):
+	def load_profile(self, slicer, name, require_configured=True):
 		if not slicer in self.registered_slicers:
-			return None
+			raise UnknownSlicer(slicer)
 
 		try:
 			path = self.get_profile_path(slicer, name, must_exist=True)
 		except IOError:
 			return None
-		return self._load_profile_from_path(slicer, path)
+		return self._load_profile_from_path(slicer, path, require_configured=require_configured)
 
 	def save_profile(self, slicer, name, profile, overrides=None, allow_overwrite=True, display_name=None, description=None):
 		if not slicer in self.registered_slicers:
-			return
+			raise UnknownSlicer(slicer)
 
 		if not isinstance(profile, SlicingProfile):
 			if isinstance(profile, dict):
@@ -191,7 +193,7 @@ class SlicingManager(object):
 
 	def temporary_profile(self, slicer, name=None, overrides=None):
 		if not slicer in self.registered_slicers:
-			return None
+			raise UnknownSlicer(slicer)
 
 		profile = self._get_default_profile(slicer)
 		if name:
@@ -207,16 +209,21 @@ class SlicingManager(object):
 
 	def delete_profile(self, slicer, name):
 		if not slicer in self.registered_slicers:
-			return None
+			raise UnknownSlicer(slicer)
+
+		if not name:
+			raise ValueError("name must be set")
 
 		path = self.get_profile_path(slicer, name)
 		if not os.path.exists(path) or not os.path.isfile(path):
 			return
 		os.remove(path)
 
-	def all_profiles(self, slicer):
+	def all_profiles(self, slicer, require_configured=False):
 		if not slicer in self.registered_slicers:
-			return None
+			raise UnknownSlicer(slicer)
+		if require_configured and not slicer in self.configured_slicers:
+			raise SlicerNotConfigured(slicer)
 
 		profiles = dict()
 		slicer_profile_path = self.get_slicer_profile_path(slicer)
@@ -228,12 +235,12 @@ class SlicingManager(object):
 			path = os.path.join(slicer_profile_path, entry)
 			profile_name = entry[:-len(".profile")]
 
-			profiles[profile_name] = self._load_profile_from_path(slicer, path)
+			profiles[profile_name] = self._load_profile_from_path(slicer, path, require_configured=require_configured)
 		return profiles
 
 	def get_slicer_profile_path(self, slicer):
 		if not slicer in self.registered_slicers:
-			return None
+			raise UnknownSlicer(slicer)
 
 		path = os.path.join(self._profile_path, slicer)
 		if not os.path.exists(path):
@@ -242,10 +249,10 @@ class SlicingManager(object):
 
 	def get_profile_path(self, slicer, name, must_exist=False):
 		if not slicer in self.registered_slicers:
-			return None
+			raise UnknownSlicer(slicer)
 
 		if not name:
-			return None
+			raise ValueError("name must be set")
 
 		name = self._sanitize(name)
 
@@ -269,11 +276,11 @@ class SlicingManager(object):
 		sanitized_name = sanitized_name.replace(" ", "_")
 		return sanitized_name
 
-	def _load_profile_from_path(self, slicer, path):
-		return self.get_slicer(slicer).get_slicer_profile(path)
+	def _load_profile_from_path(self, slicer, path, require_configured=False):
+		return self.get_slicer(slicer, require_configured=require_configured).get_slicer_profile(path)
 
-	def _save_profile_to_path(self, slicer, path, profile, allow_overwrite=True, overrides=None):
-		self.get_slicer(slicer).save_slicer_profile(path, profile, allow_overwrite=allow_overwrite, overrides=overrides)
+	def _save_profile_to_path(self, slicer, path, profile, allow_overwrite=True, overrides=None, require_configured=False):
+		self.get_slicer(slicer, require_configured=require_configured).save_slicer_profile(path, profile, allow_overwrite=allow_overwrite, overrides=overrides)
 
 	def _get_default_profile(self, slicer):
 		default_profiles = settings().get(["slicing", "defaultProfiles"])

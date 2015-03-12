@@ -1,4 +1,3 @@
-{% if enableGCodeVisualizer %}
 <div data-bind="visible: !waitForApproval()">
     <input id="gcode_slider_layers" type="text">
     <canvas id="gcode_canvas" width="568" height="568"></canvas>
@@ -74,4 +73,3 @@
         Yes, please visualize <span data-bind="text: selectedFile.name"></span> regardless of its size
     </button>
 </div>
-{% endif %}

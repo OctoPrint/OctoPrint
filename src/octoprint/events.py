@@ -69,6 +69,7 @@ class Events(object):
 	CONVEYOR = "Conveyor"
 	EJECT = "Eject"
 	E_STOP = "EStop"
+	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
 	# Timelapse
 	CAPTURE_START = "CaptureStart"
@@ -340,7 +341,7 @@ class CommandTrigger(GenericEventListener):
 			"__now": datetime.datetime.now().isoformat()
 		}
 
-		currentData = self._printer.getCurrentData()
+		currentData = self._printer.get_current_data()
 
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])

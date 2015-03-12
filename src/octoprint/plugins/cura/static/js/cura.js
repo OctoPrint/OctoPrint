@@ -187,5 +187,9 @@ $(function() {
     }
 
     // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([CuraViewModel, ["loginStateViewModel", "settingsViewModel", "slicingViewModel"], document.getElementById("settings_plugin_cura")]);
+    OCTOPRINT_VIEWMODELS.push([
+        CuraViewModel,
+        ["loginStateViewModel", "settingsViewModel", "slicingViewModel"],
+        "#settings_plugin_cura"
+    ]);
 });
