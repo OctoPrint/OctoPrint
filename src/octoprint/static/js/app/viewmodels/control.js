@@ -191,10 +191,27 @@ $(function() {
         };
 
         self.clickCustom = function (data) {
+            var callback;
             if (data.hasOwnProperty("javascript")) {
-                data.javascript(data);
+                callback = data.javascript;
             } else {
-                self.sendCustomCommand(data);
+                callback = self.sendCustomCommand;
+            }
+
+            if (data.confirm) {
+                var confirmationDialog = $("#confirmation_dialog");
+                var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+
+                $(".confirmation_dialog_message", confirmationDialog).text(data.confirm);
+                confirmationDialogAck.unbind("click");
+                confirmationDialogAck.bind("click", function (e) {
+                    e.preventDefault();
+                    $("#confirmation_dialog").modal("hide");
+                    callback(data);
+                });
+                confirmationDialog.modal("show");
+            } else {
+                callback(data);
             }
         };
 
@@ -285,15 +302,6 @@ $(function() {
             if (!command)
                 return;
 
-            var callback = function () {
-                $.ajax({
-                    url: API_BASEURL + "printer/command",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json; charset=UTF-8",
-                    data: JSON.stringify(data)
-                })
-            };
             var data = undefined;
             if (command.hasOwnProperty("command")) {
                 // single command
@@ -322,22 +330,13 @@ $(function() {
                 });
             }
 
-            if (command.confirm) {
-                var confirmationDialog = $("#confirmation_dialog");
-                var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
-
-                $(".confirmation_dialog_message", confirmationDialog).text(command.confirm);
-                confirmationDialogAck.unbind("click");
-                confirmationDialogAck.bind("click", function (e) {
-                    e.preventDefault();
-                    $("#confirmation_dialog").modal("hide");
-                    callback();
-                });
-                confirmationDialog.modal("show");
-            } else {
-                callback();
-            }
-
+            $.ajax({
+                url: API_BASEURL + "printer/command",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify(data)
+            })
         };
 
         self.displayMode = function (customControl) {

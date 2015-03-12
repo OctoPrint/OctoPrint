@@ -7,5 +7,6 @@ Configuration
 .. toctree::
    :maxdepth: 2
 
-   custom_controls.rst
    yaml.rst
+   config_yaml.rst
+   logging_yaml.rst

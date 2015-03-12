@@ -111,11 +111,15 @@
     <!-- /ko -->
 
     <!-- ko if: layout == 'vertical' -->
-    <div class="custom_section" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+    <div class="custom_section custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
     <!-- /ko -->
 
     <!-- ko if: layout == 'horizontal' -->
-    <div class="row-fluid custom_row">
+    <div class="custom_section custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+    <!-- /ko -->
+
+    <!-- ko if: layout == 'horizontal_grid' -->
+    <div class="row-fluid custom_section custom_section_horizontal_grid">
         <!-- ko foreach: children -->
         <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
         <!-- /ko -->
@@ -123,9 +127,9 @@
     <!-- /ko -->
 </script>
 <script type="text/html" id="customControls_controlTemplate">
-    <form class="form-inline">
+    <form class="form-inline custom_control">
         <!-- ko template: { name: 'customControls_controlTemplate_input', data: $data, if: $data.hasOwnProperty('input') } --><!-- /ko -->
-        <!-- ko template: { name: 'customControls_controlTemplate_command', data: $data, if: $data.hasOwnProperty('command') || $data.hasOwnProperty('commands') } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_command', data: $data, if: $data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') } --><!-- /ko -->
         <!-- ko template: { name: 'customControls_controlTemplate_output', data: $data, if: $data.hasOwnProperty('output') } --><!-- /ko -->
     </form>
 </script>
