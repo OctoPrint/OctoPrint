@@ -1569,10 +1569,10 @@ class MachineCom(object):
 		_timeout = 0
 		if p_idx != -1:
 			# dwell time is specified in milliseconds
-			_timeout = int(cmd[p_idx+1:]) / 1000.0
+			_timeout = float(cmd[p_idx+1:]) / 1000.0
 		elif s_idx != -1:
 			# dwell time is specified in seconds
-			_timeout = int(cmd[s_idx+1:])
+			_timeout = float(cmd[s_idx+1:])
 		self._timeout = get_new_timeout("communication") + _timeout
 		self._blocking_command = True
 		return cmd
