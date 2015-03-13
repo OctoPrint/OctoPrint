@@ -164,6 +164,9 @@ $(function() {
                         callback();
                     }
                     self.requestData();
+                },
+                error: function(jqXHR) {
+                    alert(jqXHR.responseText);
                 }
             });
         };
