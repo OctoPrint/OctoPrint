@@ -58,6 +58,7 @@ import octoprint.filemanager.analysis
 import octoprint.slicing
 
 from . import util
+util.tornado.fix_ioloop_scheduling()
 
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
@@ -656,13 +657,7 @@ class Server():
 
 		## Tornado initialization starts here
 
-		try:
-			import monotime
-			import time
-			ioloop = IOLoop(time_func=time.monotonic)
-		except:
-			import time
-			ioloop = IOLoop(time_func=time.time)
+		ioloop = IOLoop()
 		ioloop.install()
 
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
