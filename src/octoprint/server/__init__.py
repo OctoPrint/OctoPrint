@@ -95,6 +95,7 @@ def after_request(response):
 	# send no-cache headers with all POST responses
 	if request.method == "POST":
 		response.cache_control.no_cache = True
+	response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
 	return response
 
 
