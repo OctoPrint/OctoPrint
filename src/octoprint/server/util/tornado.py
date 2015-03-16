@@ -29,6 +29,36 @@ import tornado.util
 import octoprint.util
 
 
+#~~ Monkey patching
+
+
+def fix_ioloop_scheduling():
+	"""
+	This monkey patches tornado's :meth:`tornado.ioloop.PeriodicCallback._schedule_next` method so it no longer
+	blocks for long times on slow machines (RPi) when the system time happens to change by a large amount (e.g. due to
+	the first ever contact to an NTP server).
+
+	Patch by @nosyjoe on Github. See this PR against tornado: https://github.com/tornadoweb/tornado/pull/1290
+	"""
+
+	import math
+
+	# patched implementation taken from PR
+	def _schedule_next(self):
+		if self._running:
+			current_time = self.io_loop.time()
+
+			if self._next_timeout <= current_time:
+				callback_time_sec = self.callback_time / 1000.0
+				self._next_timeout += (math.floor((current_time - self._next_timeout) / callback_time_sec) + 1) * callback_time_sec
+
+			self._timeout = self.io_loop.add_timeout(self._next_timeout, self._run)
+
+	# replace original implementation with patched version
+	import tornado.ioloop
+	tornado.ioloop.PeriodicCallback._schedule_next = _schedule_next
+
+
 #~~ WSGI middleware
 
 

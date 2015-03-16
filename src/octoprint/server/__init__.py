@@ -58,6 +58,7 @@ import octoprint.filemanager.analysis
 import octoprint.slicing
 
 from . import util
+util.tornado.fix_ioloop_scheduling()
 
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
@@ -655,6 +656,11 @@ class Server():
 			app.register_blueprint(blueprint, url_prefix=url_prefix)
 			logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
 
+		## Tornado initialization starts here
+
+		ioloop = IOLoop()
+		ioloop.install()
+
 		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
 
 		upload_suffixes = dict(name=settings().get(["server", "uploads", "nameSuffix"]), path=settings().get(["server", "uploads", "pathSuffix"]))
@@ -683,8 +689,6 @@ class Server():
 		observer = Observer()
 		observer.schedule(util.watchdog.GcodeWatchdogHandler(fileManager, printer), settings().getBaseFolder("watched"))
 		observer.start()
-
-		ioloop = IOLoop.instance()
 
 		# run our startup plugins
 		octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
