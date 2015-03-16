@@ -105,6 +105,9 @@
 * White and transparent colors ;) are supported for the navigation bar ([#789](https://github.com/foosel/OctoPrint/pull/789))
 * Drag-n-drop overlay for file uploads now uses the full available screen space, improving usability on high resolution
   displays ([#187](https://github.com/foosel/OctoPrint/issues/187))
+* OctoPrint server should no longer hang when big changes in the system time happen, e.g. after first contact to an
+  NTP server on a Raspberry Pi image. Achieved through monkey patching Tornado with
+  [this PR](https://github.com/tornadoweb/tornado/pull/1290).
 
 ### Bug Fixes
 
@@ -152,6 +155,7 @@
   * [#775](https://github.com/foosel/OctoPrint/pull/775) - Error messages in javascript console show the proper name
     of the objects
   * [#795](https://github.com/foosel/OctoPrint/issues/795) - Allow adding slicing profiles for unconfigured slicers
+  * [#809](https://github.com/foosel/OctoPrint/issues/809) - Added proper form validation to printer profile editor
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
