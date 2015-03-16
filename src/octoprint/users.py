@@ -1,22 +1,110 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask.ext.login import UserMixin
 from flask.ext.principal import Identity
+from werkzeug.local import LocalProxy
 import hashlib
 import os
 import yaml
 import uuid
+
+import logging
 
 from octoprint.settings import settings
 
 class UserManager(object):
 	valid_roles = ["user", "admin"]
 
+	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+		self._session_users_by_session = dict()
+		self._session_users_by_username = dict()
+
+	def login_user(self, user):
+		self._cleanup_sessions()
+
+		if user is None \
+		        or (isinstance(user, LocalProxy) and not isinstance(user._get_current_object(), User)) \
+		        or (not isinstance(user, LocalProxy) and not isinstance(user, User)):
+			return None
+
+		if not isinstance(user, SessionUser):
+			user = SessionUser(user)
+		self._session_users_by_session[user.get_session()] = user
+
+		if not user.get_name() in self._session_users_by_username:
+			self._session_users_by_username[user.get_name()] = []
+		self._session_users_by_username[user.get_name()].append(user)
+
+		self._logger.debug("Logged in user: %r" % user)
+
+		return user
+
+	def logout_user(self, user):
+		if user is None:
+			return
+
+		if not isinstance(user, SessionUser):
+			return
+
+		if user.get_name() in self._session_users_by_username:
+			users_by_username = self._session_users_by_username[user.get_name()]
+			for u in users_by_username:
+				if u.get_session() == user.get_session():
+					users_by_username.remove(u)
+					break
+
+		if user.get_session() in self._session_users_by_session:
+			del self._session_users_by_session[user.get_session()]
+
+		self._logger.debug("Logged out user: %r" % user)
+
+	def _cleanup_sessions(self):
+		import time
+		for session, user in self._session_users_by_session.items():
+			if not isinstance(user, SessionUser):
+				continue
+			if user._created + (24 * 60 * 60) < time.time():
+				self.logout_user(user)
+
 	@staticmethod
-	def createPasswordHash(password):
-		return hashlib.sha512(password + "mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW").hexdigest()
+	def createPasswordHash(password, salt=None):
+		if not salt:
+			salt = settings().get(["accessControl", "salt"])
+			if salt is None:
+				import string
+				from random import choice
+				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
+				salt = "".join(choice(chars) for _ in xrange(32))
+				settings().set(["accessControl", "salt"], salt)
+				settings().save()
+
+		return hashlib.sha512(password + salt).hexdigest()
+
+	def checkPassword(self, username, password):
+		user = self.findUser(username)
+		if not user:
+			return False
+
+		hash = UserManager.createPasswordHash(password)
+		if user.check_password(hash):
+			# new hash matches, correct password
+			return True
+		else:
+			# new hash doesn't match, but maybe the old one does, so check that!
+			oldHash = UserManager.createPasswordHash(password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
+			if user.check_password(oldHash):
+				# old hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
+				self.changeUserPassword(username, password)
+				return True
+			else:
+				# old hash doesn't match either, wrong password
+				return False
 
 	def addUser(self, username, password, active, roles):
 		pass
@@ -43,9 +131,22 @@ class UserManager(object):
 		pass
 
 	def removeUser(self, username):
-		pass
+		if username in self._session_users_by_username:
+			users = self._session_users_by_username[username]
+			sessions = [user.get_session() for user in users if isinstance(user, SessionUser)]
+			for session in sessions:
+				if session in self._session_users_by_session:
+					del self._session_users_by_session[session]
+			del self._session_users_by_username[username]
 
-	def findUser(self, username=None):
+	def findUser(self, username=None, session=None):
+		if session is not None:
+			for session in self._session_users_by_session:
+				user = self._session_users_by_session[session]
+				if username is None or username == user.get_name():
+					return user
+				break
+
 		return None
 
 	def getAllUsers(self):
@@ -62,7 +163,7 @@ class FilebasedUserManager(UserManager):
 
 		userfile = settings().get(["accessControl", "userfile"])
 		if userfile is None:
-			userfile = os.path.join(settings().settings_dir, "users.yaml")
+			userfile = os.path.join(settings().getBaseFolder("base"), "users.yaml")
 		self._userfile = userfile
 		self._users = {}
 		self._dirty = False
@@ -104,7 +205,10 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password, active=False, roles=["user"], apikey=None):
+	def addUser(self, username, password, active=False, roles=None, apikey=None):
+		if not roles:
+			roles = ["user"]
+
 		if username in self._users.keys():
 			raise UserAlreadyExists(username)
 
@@ -204,6 +308,8 @@ class FilebasedUserManager(UserManager):
 		self._save()
 
 	def removeUser(self, username):
+		UserManager.removeUser(self, username)
+
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
@@ -211,17 +317,23 @@ class FilebasedUserManager(UserManager):
 		self._dirty = True
 		self._save()
 
-	def findUser(self, username=None, apikey=None):
+	def findUser(self, username=None, apikey=None, session=None):
+		user = UserManager.findUser(self, username=username, session=session)
+
+		if user is not None:
+			return user
+
 		if username is not None:
 			if username not in self._users.keys():
 				return None
-
 			return self._users[username]
+
 		elif apikey is not None:
 			for user in self._users.values():
 				if apikey == user._apikey:
 					return user
 			return None
+
 		else:
 			return None
 
@@ -293,6 +405,26 @@ class User(UserMixin):
 	def set_setting(self, key, value):
 		self._settings[key] = value
 
+	def __repr__(self):
+		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin())
+
+class SessionUser(User):
+	def __init__(self, user):
+		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey)
+
+		import string
+		import random
+		import time
+		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
+		self._session = "".join(random.choice(chars) for _ in xrange(10))
+		self._created = time.time()
+
+	def get_session(self):
+		return self._session
+
+	def __repr__(self):
+		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin(), self._session, self._created)
+
 ##~~ DummyUser object to use when accessControl is disabled
 
 class DummyUser(User):
@@ -310,9 +442,9 @@ def dummy_identity_loader():
 	return DummyIdentity()
 
 
-##~~ Apiuser object to use when api key is used to access the API
+##~~ Apiuser object to use when global api key is used to access the API
 
 
 class ApiUser(User):
 	def __init__(self):
-		User.__init__(self, "api", "", True, UserManager.valid_roles)
+		User.__init__(self, "_api", "", True, UserManager.valid_roles)

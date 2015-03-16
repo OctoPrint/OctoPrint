@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
+from flask import make_response
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -10,11 +11,57 @@ import flask
 import flask.ext.login
 import flask.ext.principal
 import functools
+import time
+import uuid
+import threading
+import logging
 
 from octoprint.settings import settings
 import octoprint.server
 import octoprint.users
 
+from werkzeug.contrib.cache import SimpleCache
+
+
+#~~ cache decorator for cacheable views
+
+_cache = SimpleCache()
+
+def cached(timeout=5 * 60, key="view/%s", unless=None, refreshif=None):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			logger = logging.getLogger(__name__)
+
+			# bypass the cache if "unless" condition is true
+			if callable(unless) and unless():
+				logger.debug("Cache bypassed, calling wrapped function")
+				return f(*args, **kwargs)
+
+			cache_key = key % flask.request.path
+
+			# only take the value from the cache if we are not required to refresh it from the wrapped function
+			if not callable(refreshif) or not refreshif():
+				rv = _cache.get(cache_key)
+				if rv is not None:
+					logger.debug("Serving entry from cache")
+					return rv
+
+			# get value from wrapped function
+			logger.debug("No cache entry or refreshing cache, calling wrapped function")
+			rv = f(*args, **kwargs)
+
+			# store it in the cache
+			_cache.set(cache_key, rv, timeout=timeout)
+
+			return rv
+
+		return decorated_function
+
+	return decorator
+
+def cache_check_headers():
+	return "no-cache" in flask.request.cache_control or "no-cache" in flask.request.pragma
 
 #~~ access validators for use with tornado
 
@@ -119,12 +166,7 @@ def restricted_access(func, api_enabled=True):
 		# if API is globally enabled, enabled for this request and an api key is provided that is not the current UI API key, try to use that
 		apikey = octoprint.server.util.get_api_key(flask.request)
 		if settings().get(["api", "enabled"]) and api_enabled and apikey is not None and apikey != octoprint.server.UI_API_KEY:
-			if apikey == settings().get(["api", "key"]):
-				# master key was used
-				user = octoprint.users.ApiUser()
-			else:
-				# user key might have been used
-				user = octoprint.server.userManager.findUser(apikey=apikey)
+			user = octoprint.server.util.get_user_for_apikey(apikey)
 
 			if user is None:
 				return flask.make_response("Invalid API key", 401)
@@ -137,18 +179,92 @@ def restricted_access(func, api_enabled=True):
 	return decorated_view
 
 
-def api_access(func):
-	@functools.wraps(func)
-	def decorated_view(*args, **kwargs):
-		if not settings().get(["api", "enabled"]):
-			flask.make_response("API disabled", 401)
-		apikey = octoprint.server.util.get_api_key(flask.request)
-		if apikey is None:
-			flask.make_response("No API key provided", 401)
-		if apikey != settings().get(["api", "key"]):
-			flask.make_response("Invalid API key", 403)
-		return func(*args, **kwargs)
-	return decorated_view
+class AppSessionManager(object):
+
+	VALIDITY_UNVERIFIED = 1 * 60 # 1 minute
+	VALIDITY_VERIFIED = 2 * 60 * 60 # 2 hours
+
+	def __init__(self):
+		self._sessions = dict()
+		self._oldest = None
+		self._mutex = threading.RLock()
+
+		self._logger = logging.getLogger(__name__)
+
+	def create(self):
+		self._clean_sessions()
+
+		key = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		created = time.time()
+		valid_until = created + self.__class__.VALIDITY_UNVERIFIED
+
+		with self._mutex:
+			self._sessions[key] = (created, False, valid_until)
+		return key, valid_until
+
+	def remove(self, key):
+		with self._mutex:
+			if not key in self._sessions:
+				return
+			del self._sessions[key]
+
+	def verify(self, key):
+		self._clean_sessions()
+
+		if not key in self._sessions:
+			return False
+
+		with self._mutex:
+			created, verified, _ = self._sessions[key]
+			if verified:
+				return False
+
+			valid_until = created + self.__class__.VALIDITY_VERIFIED
+			self._sessions[key] = created, True, created + self.__class__.VALIDITY_VERIFIED
+
+		return key, valid_until
+
+	def validate(self, key):
+		self._clean_sessions()
+		return key in self._sessions and self._sessions[key][1]
+
+	def _clean_sessions(self):
+		if self._oldest is not None and self._oldest > time.time():
+			return
+
+		with self._mutex:
+			self._oldest = None
+			for key, value in self._sessions.items():
+				created, verified, valid_until = value
+				if not verified:
+					valid_until = created + self.__class__.VALIDITY_UNVERIFIED
+
+				if valid_until < time.time():
+					del self._sessions[key]
+				elif self._oldest is None or valid_until < self._oldest:
+					self._oldest = valid_until
+
+			self._logger.debug("App sessions after cleanup: %r" % self._sessions)
 
 
+def get_remote_address(request):
+	forwardedFor = request.headers.get("X-Forwarded-For", None)
+	if forwardedFor is not None:
+		return forwardedFor.split(",")[0]
+	return request.remote_addr
 
+
+def get_json_command_from_request(request, valid_commands):
+	if not "application/json" in request.headers["Content-Type"]:
+		return None, None, make_response("Expected content-type JSON", 400)
+
+	data = request.json
+	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
+		return None, None, make_response("Expected valid command", 400)
+
+	command = data["command"]
+	for parameter in valid_commands[command]:
+		if not parameter in data:
+			return None, None, make_response("Mandatory parameter %s missing for command %s" % (parameter, command), 400)
+
+	return command, data, None

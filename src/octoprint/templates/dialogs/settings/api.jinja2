@@ -1,0 +1,28 @@
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" id="settings-apiEnabled" data-bind="checked: api_enabled"> {{ _('Enable') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" id="settings-apiCors" data-bind="checked: api_allowCrossOrigin"> {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" for="settings-apiKey">{{ _('API Key') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: api_key, valueUpdate: 'afterkeydown'" id="settings-apikey">
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('QR Code') }}</label>
+        <div class="controls">
+            <div data-bind="qrcode: {text: api_key, size: 180}"></div>
+        </div>
+    </div>
+</form>

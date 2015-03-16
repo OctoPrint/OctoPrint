@@ -3,6 +3,7 @@
 @import "bootstrap/variables.less";
 @import "bootstrap/mixins.less";
 @import "variables.less";
+@import "mixins.less";
 
 // Body
 body {
@@ -10,12 +11,12 @@ body {
 }
 
 // Navigation bar
-.navbar-inner-text (@base) {
+.navbar-inner-text (@base, @text-color) {
   text-shadow: 0 1px 0 contrast(@base, lighten(@base, 15%), darken(@base, 15%));
   color: @text-color;
   @caret-color: average(@base, @text-color);
   @caret-hover-color: average(@caret-color, @text-color);
-  
+
   .caret {
     border-bottom-color: @caret-color;
     border-top-color: @caret-color;
@@ -46,20 +47,48 @@ body {
   }
 }
 
-.navbar-inner-color (@base) {
+.nowrap {
+  white-space: nowrap;
+}
+
+.actioncol {
+  text-align: center;
+  .nowrap;
+
+  a {
+    text-decoration: none;
+    color: #000;
+
+    &.disabled {
+      color: #ccc;
+      cursor: default;
+    }
+  }
+}
+
+.navbar-background-color (@top, @bottom, @image) when (isstring(@image)) {
+  #imggradient > .vertical(@top, @bottom, @image);
+}
+
+.navbar-background-color(@top, @bottom, @image) when not (isstring(@image)) {
+  #gradient > .vertical(@top, @bottom);
+}
+
+
+.navbar-inner-color (@base, @gradientalpha: 100%, @image: false) {
   @top: lighten(@base, 25%);
   @bottom: darken(@base, 15%);
-  
+
   @text-color-light: #f2f2f2;
   @text-color-dark: #333333;
-  @text-color: contrast(@base, @text-color-dark, @text-color-light);
+  @text-color: contrast(@bottom, @text-color-dark, @text-color-light);
 
-  #gradient > .vertical(@top, @bottom);
+  .navbar-background-color(fade(@top, @gradientalpha), fade(@bottom, @gradientalpha), @image);
 
   .brand, .nav>li>a {
-    .navbar-inner-text(@base);
+    .navbar-inner-text(@base, @text-color);
   }
-  
+
   .brand {
     .brand(@text-color, @text-color-dark, @text-color-light);
   }
@@ -67,7 +96,7 @@ body {
   .nav {
     li.dropdown.open>.dropdown-toggle, li.dropdown.active>.dropdown-toggle, li.dropdown.open.active>.dropdown-toggle {
       // invert for dropdown
-      #gradient > .vertical(@bottom, @top);
+      .navbar-background-color(fade(@bottom, @gradientalpha), fade(@top, @gradientalpha), @image);
     }
   }
 }
@@ -76,35 +105,75 @@ body {
   @base: #F2F2F2;
   .navbar-inner-color(@base);
 
+  &.transparent {
+    .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+  }
+
   &.red {
-    @base: #F22828;
+    @base: #bd362f;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.orange {
     @base: #F27728;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.yellow {
     @base: #F2DE28;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.green {
     @base: #77FF28;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.blue {
-    @base: #2877FF;
+    @base: #04c;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.violet {
     @base: #7728FF;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
   &.black {
     @base: #383838;
     .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
   }
-  
+  &.white {
+    @base: #eeeeee;
+    .navbar-inner-color(@base);
+
+    &.transparent {
+      .navbar-inner-color(@base, 60%, "../img/trans-background.png");
+    }
+  }
+
   .brand span {
     background-size: 20px 20px;
     background-position: left center;
@@ -203,23 +272,13 @@ table {
     // gcode files
     &.gcode_files_name {
       text-overflow: ellipsis;
-      white-space: nowrap;
       text-align: left;
+      .nowrap;
     }
 
     &.gcode_files_action {
-      text-align: center;
       width: 90px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
     // timelapse files
@@ -234,18 +293,8 @@ table {
     }
 
     &.timelapse_files_action {
-      text-align: center;
       width: 45px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
     // user settings
@@ -260,18 +309,8 @@ table {
     }
 
     &.settings_users_actions {
-      text-align: center;
       width: 60px;
-
-      a {
-        text-decoration: none;
-        color: #000;
-
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+      .actioncol;
     }
 
     // log files
@@ -291,18 +330,24 @@ table {
     }
 
     &.settings_logs_action {
-      text-align: center;
       width: 70px;
+      .actioncol;
+    }
 
-      a {
-        text-decoration: none;
-        color: #000;
+    // Printer profiles
+    &.settings_printerProfiles_profiles_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
 
-        &.disabled {
-          color: #ccc;
-          cursor: default;
-        }
-      }
+    &.settings_printerProfiles_profiles_model {
+      text-align: left;
+      width: 250px;
+    }
+
+    &.settings_printerProfiles_profiles_action {
+      width: 80px;
+      .actioncol;
     }
 
   }
@@ -328,7 +373,7 @@ table {
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
-#webcam_timelapse_interval, #webcam_timelapse_postRoll {
+#webcam_timelapse_interval, #webcam_timelapse_postRoll, #webcam_timelapse_fps {
   text-align: right;
 }
 
@@ -338,7 +383,7 @@ ul.dropdown-menu li a {
 
 /** Connection settings */
 
-#connection_ports, #connection_baudrates {
+#connection_ports, #connection_baudrates, #connection_printers {
   width: 100%;
 }
 
@@ -384,6 +429,10 @@ ul.dropdown-menu li a {
 
 #webcam_container {
   width: 100%;
+  position: relative;
+  outline: none;
+
+  //min-height: 440px;
 
   .flipH {
     -webkit-transform: scaleX(-1);
@@ -398,6 +447,40 @@ ul.dropdown-menu li a {
   .flipH.flipV {
     -webkit-transform: scaleX(-1) scaleY(-1);
     -moz-transform: scaleX(-1) scaleY(-1);
+  }
+
+  .keycontrol_overlay {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    font-size: 85%;
+    color: white;
+    padding: 0;
+
+    kbd {
+      border: 1px solid #eeeeee;
+      border-radius: 3px;
+      margin-left: 2px;
+      margin-right: 2px;
+      font-size: 90%;
+      padding: 2px;
+      min-width: 1em;
+    }
+
+    .keycontrol_overlay_heading {
+      position: relative;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+    .keycontrol_overlay_column {
+      position: relative;
+      width: 45%;
+      padding: 10px;
+      float: left;
+    }
   }
 }
 
@@ -467,12 +550,18 @@ ul.dropdown-menu li a {
     text-align: left;
   }
 
-  .jog-panel > div {
-    text-align: center;
-  }
+  .jog-panel {
+    >div {
+      text-align: center;
+    }
 
-  .jog-panel > div.distance {
-    text-align: left;
+    >div.distance {
+      text-align: left;
+    }
+
+    .slider {
+      margin-bottom: 10px;
+    }
   }
 
   .box {
@@ -499,6 +588,24 @@ ul.dropdown-menu li a {
     height: 30px;
   }
 
+  .slider-handle {
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    margin-top: -3px;
+  }
+
+  .custom_section_horizontal .custom_control {
+    display: inline-block;
+  }
+
+  .custom_control {
+    .slider {
+      margin-left: 10px;
+      margin-right: 10px;
+      margin-bottom: 2px;
+    }
+  }
 }
 
 /** GCODE viewer */
@@ -537,8 +644,17 @@ ul.dropdown-menu li a {
 /** Terminal output */
 
 #term {
-  #terminal-output {
-    min-height: 340px;
+  .terminal {
+    #terminal-output {
+      min-height: 340px;
+      margin-bottom: 5px;
+    }
+
+    margin-bottom: 30px;
+  }
+
+  #terminal-sendpanel {
+    text-align: right;
   }
 }
 
@@ -599,7 +715,20 @@ ul.dropdown-menu li a {
   overflow: visible !important;
 }
 
+.border_box {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
 
+.hidden {
+  display: none;
+}
+
+textarea.block {
+  .border_box;
+  width: 100%;
+}
 
 #drop_overlay {
   position: fixed;
@@ -635,38 +764,38 @@ ul.dropdown-menu li a {
     right: 0;
     padding-top: 60px;
 
-    @dropzone_width: 400px;
-    @dropzone_height: 400px;
-    @dropzone_distance: 50px;
-    @dropzone_border: 2px;
+    @dropzone_width: 50%;
+    @dropzone_height: 100%;
+    @border_color: #cccccc;
 
     #drop, #drop_background {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      margin-left: -1 * @dropzone_width / 2;
-      margin-top: -1 * @dropzone_height / 2;
+      top: 0;
+      left: 0;
+      margin-left: 0;
+      width: 100%;
     }
 
     #drop_locally, #drop_locally_background {
       position: absolute;
-      top: 50%;
+      top: 0;
       left: 50%;
-      margin-left: -1 * @dropzone_width - @dropzone_distance / 2;
-      margin-top: -1 * @dropzone_height / 2;
+      margin-left: -50%;
+      width: 50%;
+      border-right: 2px dashed @border_color;
     }
 
     #drop_sd, #drop_sd_background {
       position: absolute;
-      top: 50%;
+      top: 0;
       left: 50%;
-      margin-left: @dropzone_distance / 2;
-      margin-top: -1 * @dropzone_height / 2;
+      margin-left: 0;
+      width: 50%;
+      border-left: 2px dashed @border_color;
     }
 
     .dropzone {
-      width: @dropzone_width + 2 * @dropzone_border;
-      height: @dropzone_height + 2 * @dropzone_border;
+      height: @dropzone_height;
       z-index: 10001;
 
       color: #ffffff;
@@ -676,13 +805,13 @@ ul.dropdown-menu li a {
         font-size: 50px;
       }
 
-      .centered {
-        display: table-cell;
+      .text {
+        display: block;
         text-align: center;
-        vertical-align: middle;
-        width: @dropzone_width;
-        height: @dropzone_height;
         line-height: 40px;
+        position: absolute;
+        width: 100%;
+        bottom: 5%;
 
         filter:alpha(opacity=100);
         -moz-opacity:1.0;
@@ -694,10 +823,6 @@ ul.dropdown-menu li a {
     .dropzone_background {
       width: @dropzone_width;
       height: @dropzone_height;
-      border: 2px dashed #eeeeee;
-      -webkit-border-radius: 10px;
-      -moz-border-radius: 10px;
-      border-radius: 10px;
 
       background-color: #000000;
       filter:alpha(opacity=25);

@@ -20,7 +20,7 @@ _instance = None
 
 
 def all_events():
-	return [name for name in Events.__dict__ if not name.startswith("__")]
+	return [getattr(Events, name) for name in Events.__dict__ if not name.startswith("__")]
 
 
 class Events(object):
@@ -42,6 +42,7 @@ class Events(object):
 	UPDATED_FILES = "UpdatedFiles"
 	METADATA_ANALYSIS_STARTED = "MetadataAnalysisStarted"
 	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
+	METADATA_STATISTICS_UPDATED = "MetadataStatisticsUpdated"
 
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
@@ -62,11 +63,13 @@ class Events(object):
 	HOME = "Home"
 	Z_CHANGE = "ZChange"
 	WAITING = "Waiting"
+	DWELL = "Dwelling"
 	COOLING = "Cooling"
 	ALERT = "Alert"
 	CONVEYOR = "Conveyor"
 	EJECT = "Eject"
 	E_STOP = "EStop"
+	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
 	# Timelapse
 	CAPTURE_START = "CaptureStart"
@@ -79,6 +82,10 @@ class Events(object):
 	SLICING_STARTED = "SlicingStarted"
 	SLICING_DONE = "SlicingDone"
 	SLICING_FAILED = "SlicingFailed"
+	SLICING_CANCELLED = "SlicingCancelled"
+
+	# Settings
+	SETTINGS_UPDATED = "SettingsUpdated"
 
 
 def eventManager():
@@ -103,22 +110,25 @@ class EventManager(object):
 		self._worker.start()
 
 	def _work(self):
-		while True:
-			(event, payload) = self._queue.get(True)
+		try:
+			while True:
+				(event, payload) = self._queue.get(True)
 
-			eventListeners = self._registeredListeners[event]
-			self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
+				eventListeners = self._registeredListeners[event]
+				self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
 
-			for listener in eventListeners:
-				self._logger.debug("Sending action to %r" % listener)
-				try:
-					listener(event, payload)
-				except:
-					self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
+				for listener in eventListeners:
+					self._logger.debug("Sending action to %r" % listener)
+					try:
+						listener(event, payload)
+					except:
+						self._logger.exception("Got an exception while sending event %s (Payload: %r) to %s" % (event, payload, listener))
 
-			octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
-			                             "on_event",
-			                             args=[event, payload])
+				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
+				                             "on_event",
+				                             args=[event, payload])
+		except:
+			self._logger.exception("Ooops, the event bus worker loop crashed")
 
 	def fire(self, event, payload=None):
 		"""
@@ -132,6 +142,15 @@ class EventManager(object):
 		"""
 
 		self._queue.put((event, payload), 0)
+
+		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
+			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
+			# TODO v1.3.0 Remove again
+			import copy
+			legacy_payload = copy.deepcopy(payload)
+			legacy_payload["type"] = "gcode"
+			self._queue.put((event, legacy_payload), 0)
+
 
 	def subscribe(self, event, callback):
 		"""
@@ -293,7 +312,7 @@ class CommandTrigger(GenericEventListener):
 	def _executeGcodeCommand(self, command):
 		commands = [command]
 		if isinstance(command, (list, tuple, set)):
-			self.logger.debug("Executing GCode commands: %r" % command)
+			self._logger.debug("Executing GCode commands: %r" % command)
 			commands = list(command)
 		else:
 			self._logger.debug("Executing GCode command: %s" % command)
@@ -322,7 +341,7 @@ class CommandTrigger(GenericEventListener):
 			"__now": datetime.datetime.now().isoformat()
 		}
 
-		currentData = self._printer.getCurrentData()
+		currentData = self._printer.get_current_data()
 
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])

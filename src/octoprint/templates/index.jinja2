@@ -7,113 +7,29 @@
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
-        <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/bootstrap-slider.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/pnotify.min.css') }}" rel="stylesheet" media="screen">
-
-        {% if stylesheet == "less" %}
-            <link href="{{ url_for('static', filename='less/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
-
-            <!-- Plugin files -->
-            {% for name, assets in assetPlugins.items() %}
-                {% if "less" in assets %}
-                    {% for asset in assets["less"] %}
-                        <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet/less" type="text/css" media="screen">
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-            <!-- /Plugin files -->
-
-            <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>
-        {% else %}
-            <link href="{{ url_for('static', filename='css/octoprint.css') }}" rel="stylesheet" type="text/css" media="screen">
-            <!-- Plugin files -->
-            {% for name, assets in assetPlugins.items() %}
-                {% if "css" in assets %}
-                    {% for asset in assets["css"] %}
-                        <link href="{{ url_for('plugin_assets', name=name, filename=asset) }}" rel="stylesheet" type="text/css" media="screen">
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-            <!-- /Plugin files -->
-        {% endif %}
-
-        <script lang="javascript">
-            var BASEURL = "{{ url_for('index') }}";
-            var API_BASEURL = BASEURL + "api/";
-            var GCODE_WORKER = "{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}";
-
-            var CONFIG_GCODEFILESPERPAGE = 5000;
-            var CONFIG_TIMELAPSEFILESPERPAGE = 10;
-            var CONFIG_LOGFILESPERPAGE = 10;
-            var CONFIG_USERSPERPAGE = 10;
-            var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
-            var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
-            var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
-            var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
-            var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
-            var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold }};
-            var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
-
-            var SOCKJS_URI = window.location.protocol.slice(0, -1) + "://" + (window.document ? window.document.domain : window.location.hostname) + ":" + window.location.port + BASEURL + "sockjs";
-            var SOCKJS_DEBUG = {%  if debug -%} true; {% else %} false; {%- endif %}
-
-            var UI_API_KEY = "{{ uiApiKey }}";
-            var VERSION = "{{ version }}";
-            var DISPLAY_VERSION = "{{ display_version }}";
-            var LOCALE = "{{ g.locale }}";
-
-            var ADDITIONAL_VIEWMODELS = [];
-        </script>
+        {% include 'stylesheets.jinja2' %}
+        {% include 'initscript.jinja2' %}
     </head>
     <body>
         <div id="navbar" class="navbar navbar-static-top">
-            <div class="navbar-inner" data-bind="css: appearance.color">
+            <div class="navbar-inner" data-bind="css: appearanceClasses">
                 <div class="container">
                     <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
                     <div class="nav-collapse">
+                        <!-- Navbar -->
                         <ul class="nav pull-right">
-                            <li style="display: none;" data-bind="visible: loginState.isAdmin">
-                                <a id="navbar_show_settings" class="pull-right" href="#settings_dialog">
-                                    <i class="icon-wrench"></i> {{ _('Settings') }}
-                                </a>
-                            </li>
-                            {% if enableSystemMenu %}
-                            <li class="dropdown" style="display: none" data-bind="visible: loginState.isAdmin">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="icon-off"></i> {{ _('System') }}
-                                    <b class="caret"></b>
-                                </a>
-                                <ul class="dropdown-menu" data-bind="foreach: systemActions">
-                                    <li><a href="#" data-bind="click: $root.triggerAction, text: name"></a></li>
-                                </ul>
-                            </li>
-                            {% endif %}
-                            {% if enableAccessControl %}
-                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="icon-user"></i> <span data-bind="text: loginState.userMenuText">{{ _('Login') }}</span>
-                                    <b class="caret"></b>
-                                </a>
-                                <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
-                                    <label for="login_user">{{ _('Username') }}</label>
-                                    <input type="text" id="login_user" placeholder="{{ _('Username') }}">
-                                    <label for="login_pass">{{ _('Password') }}</label>
-                                    <input type="password" id="login_pass" placeholder="{{ _('Password') }}">
-                                    <label class="checkbox">
-                                        <input type="checkbox" id="login_remember"> {{ _('Remember me') }}
-                                    </label>
-                                    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">{{ _('Login') }}</button>
-                                </div>
-                                <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
-                                    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">{{ _('Change Password') }}</a></li>
-                                    <li><a href="#" id="logout_button" data-bind="click: loginState.logout">{{ _('Logout') }}</a></li>
-                                </ul>
-                            </li>
-                            {% endif %}
+                            {% for key in templates.navbar.order %}
+                                {% set data = templates.navbar.entries[key] %}
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                                <li id="{{ data._div }}"
+                                    {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                    {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}
+                                    {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}
+                                        >
+                                    {% include data.template ignore missing %}
+                                </li>
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                            {% endfor %}
                         </ul>
                     </div>
                 </div>
@@ -121,495 +37,73 @@
         </div>
         <div class="container octoprint-container">
             <div class="row">
-                <div class="accordion span4">
-                    <div class="accordion-group" data-bind="visible: loginState.isUser" id="connection_accordion">
-                        <div class="accordion-heading">
-                            <a class="accordion-toggle" data-toggle="collapse" href="#connection"><i class="icon-signal"></i> {{ _('Connection') }}</a>
-                        </div>
-                        <div class="accordion-body collapse in" id="connection">
-                            <div class="accordion-inner">
-                                <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">{{ _('Serial Port') }}</label>
-                                <select id="connection_ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
-                                <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()">{{ _('Baudrate') }}</label>
-                                <select id="connection_baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"></select>
-                                <label class="checkbox">
-                                    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> {{ _('Save connection settings') }}
-                                </label>
-                                <label class="checkbox">
-                                    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> {{ _('Auto-connect on server startup') }}
-                                </label>
-                                <button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser()">{{ _('Connect') }}</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-group" id="state_accordion">
-                        <div class="accordion-heading">
-                            <a class="accordion-toggle" data-toggle="collapse" href="#state"><i class="icon-info-sign"></i> {{ _('State') }}</a>
-                        </div>
-                        <div class="accordion-body collapse in" id="state">
-                            <div class="accordion-inner">
-                                {{ _('Machine State') }}: <strong data-bind="text: stateString"></strong><br>
-                                {{ _('File') }}: <strong data-bind="text: filename"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
-                                {{ _('Timelapse') }}: <strong data-bind="text: timelapseString"></strong><br>
-                                <!-- ko foreach: filament -->
-                                <span data-bind="text: 'Filament (' + name() + '): '"></span><strong data-bind="text: formatFilament(data())"></strong><br>
-                                <!-- /ko -->
-                                {{ _('Approx. Total Print Time') }}: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
-                                {{ _('Print Time') }}: <strong data-bind="text: printTimeString"></strong><br>
-                                {{ _('Print Time Left') }}: <strong data-bind="text: printTimeLeftString"></strong><br>
-                                {{ _('Printed') }}: <strong data-bind="text: byteString"></strong><br>
-
-                                <div class="progress">
-                                    <div class="bar" id="job_progressBar" data-bind="style: { width: progressString() + '%' }"></div>
-                                </div>
-
-                                <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
-                                    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart') }}' : '{{ _('Print') }}')">{{ _('Print') }}</span></button>
-                                    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}"><i class="icon-pause"></i> <span>{{ _('Pause') }}</span></button>
-                                    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()"><i class="icon-stop"></i> {{ _('Cancel') }}</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-group" id="files_accordion">
-                        <div class="accordion-heading">
-                            <a class="accordion-toggle" data-toggle="collapse" href="#files"><i class="icon-list"></i> {{ _('Files') }}</a>
-
-                            <div class="settings-trigger accordion-heading-button btn-group">
-                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                    <span class="icon-wrench"></span>
+                <!-- Sidebar -->
+                {% if templates.sidebar.order %}
+                <div class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
+                    {% for key in templates.sidebar.order %}
+                        {% set entry, data = templates.sidebar.entries[key] %}
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                        <div id="{{ data._div }}_wrapper"
+                             class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                             {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                             {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                >
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
+                                    {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry }}
                                 </a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
-                                    {% if enableSdSupport %}
-                                    <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
-                                    {% endif %}
-                                    <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
-                                </ul>
+                                {% if "header_addon" in data %}
+                                    {% include data.header_addon ignore missing %}
+                                {% endif %}
                             </div>
-
-                            {% if enableSdSupport %}
-                            <div class="sd-trigger accordion-heading-button btn-group">
-                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                    <span class="icon-sd-black-14"></span>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> {{ _('Initialize SD card') }}</a></li>
-                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> {{ _('Refresh SD files') }}</a></li>
-                                    <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> {{ _('Release SD card') }}</a></li>
-                                </ul>
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="accordion-body collapse in overflow_visible" id="files">
-                            <div class="accordion-inner">
-                                <form class="form-search">
-                                    <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
-                                </form>
-                                <div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
-                                    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }">
-                                        <div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
-                                        <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
-                                        <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
-                                        <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
-                                        <div class="btn-group action-buttons">
-                                            <div class="btn btn-mini toggleAdditionalData" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }"><i class="icon-chevron-down"></i></div>
-                                            <a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}"><i class="icon-download-alt" title="{{ _('Download') }}"></i></a>
-                                            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data.name); } else { return; } }, css: {disabled: !$root.enableRemove($data)}"><i class="icon-trash" title="{{ _('Remove') }}"></i></div>
-                                            <div class="btn btn-mini" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, false); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-folder-open" title="{{ _('Load') }}"></i></div>
-                                            <div class="btn btn-mini"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data.name, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}"><i class="icon-print" title="{{ _('Load and Print') }}"></i></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="muted text-right">
-                                    <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span></small>
-                                </div>
-                                <div style="display: none;" data-bind="visible: loginState.isUser">
-                                    <div class="row-fluid upload-buttons">
-                                        {% if enableSdSupport %}
-                                        <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
-                                            <i class="icon-upload-alt icon-white"></i>
-                                            <span>{{ _('Upload') }}</span>
-                                            <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
-                                        </span>
-                                        <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
-                                            <i class="icon-upload-alt icon-white"></i>
-                                            <span>{{ _('Upload to SD') }}</span>
-                                            <input id="gcode_upload_sd" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
-                                        </span>
-                                        {% else %}
-                                        <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
-                                            <i class="icon-upload-alt icon-white"></i>
-                                            <span>{{ _('Upload') }}</span>
-                                            <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    <div id="gcode_upload_progress" class="progress" style="width: 100%;">
-                                        <div class="bar" style="width: 0%"></div>
-                                    </div>
-                                    <div>
-                                        <small>{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
-                                    </div>
+                            <div id="{{ data._div }}"
+                                 class="accordion-body collapse in {% if "classes_content" in data %}{{ data.classes_content|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
+                                    >
+                                <div class="accordion-inner">
+                                    {% include data.template ignore missing %}
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                    {% endfor %}
                 </div>
+                {% endif %}
 
-                <div class="span8 tabbable">
+                <!-- Tabs -->
+                {% if templates.tab.order %}
+                <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}">
                     <ul class="nav nav-tabs" id="tabs">
-                        <li class="active"><a href="#temp" data-toggle="tab">{{ _('Temperature') }}</a></li>
-                        <li><a href="#control" data-toggle="tab">{{ _('Control') }}</a></li>
-                        {% if enableGCodeVisualizer %}<li><a href="#gcode" data-toggle="tab">{{ _('GCode Viewer') }}</a></li>{% endif %}
-                        <li><a href="#term" data-toggle="tab">{{ _('Terminal') }}</a></li>
-                        {% if enableTimelapse %}<li><a href="#timelapse" data-toggle="tab">{{ _('Timelapse') }}</a></li>{% endif %}
+                        {% for key in templates.tab.order %}
+                            {% set entry, data = templates.tab.entries[key] %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                            <li id="{{ data._div }}_link"
+                                class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                    >
+                                    <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
+                            </li>
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                        {% endfor %}
                     </ul>
 
                     <div class="tab-content">
-                        <div class="tab-pane active" id="temp">
-                            {% if enableTemperatureGraph %}
-                            <div class="row" style="padding-left: 20px">
-                                <div id="temperature-graph"></div>
+                        {% for key in templates.tab.order %}
+                            {% set entry, data = templates.tab.entries[key] %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                            <div id="{{ data._div }}"
+                                 class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
+                                 {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                    >
+                                        {% include data.template ignore missing %}
                             </div>
-                            {% endif %}
-                            <div class="row-fluid">
-
-                                <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
-                                    <tr>
-                                        <th style="width: 18%"></th>
-                                        <th style="width: 12%; text-align: right">{{ _('Actual') }}</th>
-                                        <th style="width: 35%">{{ _('Target') }}</th>
-                                        <th style="width: 35%">{{ _('Offset') }}</th>
-                                    </tr>
-                                    <!-- ko foreach: tools -->
-                                    <tr data-bind="template: { name: 'temprow-template' }"></tr>
-                                    <!-- /ko -->
-                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
-                                </table>
-
-                                <script type="text/html" id="temprow-template">
-                                    <th style="vertical-align: middle" data-bind="text: name"></th>
-                                    <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
-                                    <td style="vertical-align: middle; overflow: visible">
-                                        <div class="input-append">
-                                            <input type="text" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
-                                            <span class="add-on">&deg;C</span>
-                                            <div class="btn-group">
-                                                <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
-                                                <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
-                                                    <span class="caret"></span>
-                                                </button>
-                                                <ul class="dropdown-menu">
-                                                    <!-- ko foreach: $root.temperature_profiles -->
-                                                    <li>
-                                                        <a href="#" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
-                                                    </li>
-                                                    <!-- /ko -->
-                                                    <li class="divider"></li>
-                                                    <li>
-                                                        <a href="#" data-bind="click: $root.setTargetToZero">{{ _('Off') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="vertical-align: middle">
-                                        <div class="input-append">
-                                            <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
-                                            <span class="add-on">&deg;C</span>
-                                            <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
-                                        </div>
-                                    </td>
-                                </script>
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="control">
-                            {% if webcamStream %}
-                            <div id="webcam_container">
-                                <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
-                            </div>
-                            {% endif %}
-
-                            <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
-                                <!-- XY jogging control panel -->
-                                <div class="jog-panel">
-                                    <h1>X/Y</h1>
-                                    <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
-                                    </div>
-                                    <div>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="icon-home"></i></button>
-                                        <button class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
-                                    </div>
-                                    <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
-                                    </div>
-                                </div>
-                                <!-- Z jogging control panel -->
-                                <div class="jog-panel">
-                                    <h1>Z</h1>
-                                    <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
-                                    </div>
-                                    <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['z']) }"><i class="icon-home"></i></button>
-                                    </div>
-                                    <div>
-                                        <button class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
-                                    </div>
-                                </div>
-                                <!-- Jog distance -->
-                                <div class="distance">
-                                    <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
-                                        <button type="button" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
-                                        <button type="button" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
-                                        <button type="button" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
-                                        <button type="button" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Extrusion control panel -->
-                            <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>Tool (E)</h1>
-                                <div>
-                                    <div class="btn-group control-box">
-                                        <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && !isPrinting() && !isPaused() && loginState.isUser()">
-                                            {{ _('Select Tool...') }}
-                                            <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu" data-bind="foreach: tools">
-                                            <li><a href="#" data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational() && !$root.isPrinting() && !$root.isPaused() && $root.loginState.isUser()"></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="input-append control-box">
-                                        <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: settings.printer_defaultExtrusionLength}">
-                                        <span class="add-on">mm</span>
-                                    </div>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">{{ _('Extrude') }}</button>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">{{ _('Retract') }}</button>
-                                </div>
-                            </div>
-                            <!-- General control panel -->
-                            <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>{{ _('General') }}</h1>
-                                <div>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">{{ _('Motors off') }}</button>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">{{ _('Fans on') }}</button>
-                                    <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">{{ _('Fans off') }}</button>
-                                </div>
-                            </div>
-
-                            <!-- Container for custom controls -->
-                            <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
-
-                            <!-- Templates for custom controls -->
-                            <script type="text/html" id="customControls_sectionTemplate">
-                                <h1 data-bind="text: name"></h1>
-
-                                <div data-bind="template: { name: $root.displayMode, foreach: children }"></div>
-                            </script>
-                            <script type="text/html" id="customControls_commandTemplate">
-                                <form class="form-inline">
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
-                                </form>
-                            </script>
-                            <script type="text/html" id="customControls_feedbackCommandTemplate">
-                                <form class="form-inline">
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button> <span data-bind="text: output"></span>
-                                </form>
-                            </script>
-                            <script type="text/html" id="customControls_feedbackTemplate">
-                                <div>
-                                    <strong data-bind="text: name"></strong>: <span data-bind="text: output"></span>
-                                </div>
-                            </script>
-                            <script type="text/html" id="customControls_parametricCommandTemplate">
-                                <form class="form-inline">
-                                    <!-- ko foreach: input -->
-                                        <label data-bind="text: name"></label>
-                                        <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
-                                    <!-- /ko -->
-                                    <button class="btn" data-bind="text: name, enable: $root.isOperational() && $root.loginState.isUser(), click: function() { $root.sendCustomCommand($data) }"></button>
-                                </form>
-                            </script>
-                            <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
-                            <!-- End of templates for custom controls -->
-                        </div>
-                        {% if enableGCodeVisualizer %}
-                        <div class="tab-pane" id="gcode">
-                            <div data-bind="visible: !waitForApproval()">
-                                <input id="gcode_slider_layers" type="text">
-                                <canvas id="gcode_canvas" width="568" height="568"></canvas>
-                                <input id="gcode_slider_commands" type="text" style="width: 554px">
-
-                                <div class="progress" >
-                                    <div class="bar" style="width: 0%;" data-bind="text: ui_progress_text, style: { width: ui_progress_percentage() + '%' }"></div>
-                                </div>
-
-                                <div class="row-fluid">
-                                    <div class="span7">
-                                        <h1>Model info</h1>
-                                        <p data-bind="html: ui_modelInfo"></p>
-
-                                        <h1>Layer info</h1>
-                                        <p data-bind="html: ui_layerInfo"></p>
-                                    </div>
-                                    <div class="span5">
-                                        <h1>Renderer options</h1>
-
-                                        <p>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_syncProgress">{{ _('Sync with job progress') }}
-                                            </label>
-                                        </p>
-                                        <p>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_centerViewport">{{ _('Center viewport on model') }}
-                                            </label>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_zoomOnModel">{{ _('Zoom in on model') }}
-                                            </label>
-                                        </p>
-
-                                        <p>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showMoves">{{ _('Show moves') }}
-                                            </label>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showRetracts">{{ _('Show retracts') }}
-                                            </label>
-                                        </p>
-
-                                        <p>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showPrevious">{{ _('Also show previous layer') }}
-                                            </label>
-                                            <label class="checkbox">
-                                                <input type="checkbox" data-bind="checked: renderer_showNext">{{ _('Also show next layer') }}
-                                            </label>
-                                        </p>
-
-                                        <p>
-                                            <button class="btn btn-block" data-bind="click: reload, enable: enableReload">{{ _('Reload') }}</button>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div data-bind="visible: waitForApproval">
-                                <h1>Warning</h1>
-
-                                <p>
-                                You've selected <strong data-bind="text: selectedFile.name"></strong> for printing which has a size of
-                                <strong data-bind="text: formatSize(selectedFile.size())"></strong>. Depending on your machine this
-                                might be too large for rendering and cause your browser to become unresponsive or crash.
-                                </p>
-
-                                <p>
-                                Are you sure you want to visualize this file nevertheless?
-                                </p>
-
-                                <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
-                                    Yes, please visualize <span data-bind="text: selectedFile.name"></span> regardless of its size
-                                </button>
-                            </div>
-                        </div>
-                        {% endif %}
-                        <div class="tab-pane" id="term">
-                            <pre id="terminal-output" class="pre-scrollable"></pre>
-                            <label class="checkbox">
-                                <input type="checkbox" id="terminal-autoscroll" data-bind="checked: autoscrollEnabled"> {{ _('Autoscroll') }}
-                            </label>
-                            <div data-bind="foreach: filters">
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="attr: { value: regex }, checked: $parent.activeFilters"> <span data-bind="text: name"></span>
-                                </label>
-                            </div>
-
-                            <div class="input-append" style="display: none;" data-bind="visible: loginState.isUser">
-                                <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
-                                <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</button>
-                            </div>
-                        </div>
-                        {% if enableTimelapse %}
-                        <div class="tab-pane" id="timelapse">
-                            <div style="display: none;" data-bind="visible: loginState.isUser">
-                                <h1>{{ _('Timelapse Configuration') }}</h1>
-
-                                <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
-                                <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
-                                    <option value="off">{{ _('Off') }}</option>
-                                    <option value="zchange">{{ _('On Z Change') }}</option>
-                                    <option value="timed">{{ _('Timed') }}</option>
-                                </select>
-
-                                <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
-                                <div class="input-append">
-                                    <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
-                                    <span class="add-on">{{ _('sec') }}</span>
-                                </div>
-
-                                <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
-                                    <label for="webcam_timelapse_interval">{{ _('Interval') }}</label>
-                                    <div class="input-append">
-                                        <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
-                                        <span class="add-on">{{ _('sec') }}</span>
-                                    </div>
-                                </div>
-
-                                <div data-bind="visible: loginState.isAdmin">
-                                    <label class="checkbox">
-                                        <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
-                                    </label>
-                                </div>
-
-                                <div>
-                                    <button class="btn" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save config') }}</button>
-                                </div>
-                            </div>
-
-                            <h1>{{ _('Finished Timelapses') }}</h1>
-
-                            <div class="pull-right">
-                                <small>{{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">{{ _('Creation date') }} ({{ _('descending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">{{ _('Size') }} ({{ _('descending') }})</a></small>
-                            </div>
-                            <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
-                                <thead>
-                                    <tr>
-                                        <th class="timelapse_files_name">{{ _('Name') }}</th>
-                                        <th class="timelapse_files_size">{{ _('Size') }}</th>
-                                        <th class="timelapse_files_action">{{ _('Action') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody data-bind="foreach: listHelper.paginatedItems">
-                                    <tr data-bind="attr: {title: name}">
-                                        <td class="timelapse_files_name" data-bind="text: name"></td>
-                                        <td class="timelapse_files_size" data-bind="text: size"></td>
-                                        <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="pagination pagination-mini pagination-centered">
-                                <ul>
-                                    <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
-                                </ul>
-                                <ul data-bind="foreach: listHelper.pages">
-                                    <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a></li>
-                                </ul>
-                                <ul>
-                                    <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        {% endif %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                        {% endfor %}
                     </div>
                 </div>
+                {% endif %}
             </div>
             <div class="footer">
                 <ul class="pull-left muted">
@@ -624,77 +118,25 @@
             </div>
         </div>
 
-        {% include 'settings.jinja2' %}
-        {% include 'dialogs.jinja2' %}
+        <!-- Dialogs -->
+        {% include 'dialogs/confirmation.jinja2' %}
+        {% include 'dialogs/firstrun.jinja2' %}
+        {% include 'dialogs/settings.jinja2' %}
+        {% include 'dialogs/slicing.jinja2' %}
+        <!-- End of dialogs -->
 
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/modernizr.custom.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore-min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/underscore.string.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/knockout.mapping-latest.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/babel.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/avltree.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modalmanager.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modal.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-slider.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.core.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.widget.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.mouse.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.flot.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.iframe-transport.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.fileupload.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.slimscroll.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/sockjs-0.3.4.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/moment-with-locales.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pusher.color.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/detectmobilebrowser.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/md5.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pnotify.min.js') }}"></script>
+        <!-- Overlays -->
+        {% include 'overlays/dragndrop.jinja2' %}
+        {% include 'overlays/offline.jinja2' %}
+        <!-- End of overlays -->
 
-        <!-- Include OctoPrint files -->
-        <!-- TODO: merge/minimize in the future -->
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/appearance.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/connection.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/control.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/firstrun.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/gcode.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/files.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/loginstate.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/navigation.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/printerstate.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/settings.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/temperature.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/terminal.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/timelapse.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/users.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/viewmodels/log.js') }}"></script>
-
-        <!-- Plugin files -->
-        {% for name, assets in assetPlugins.items() %}
-            {% if "js" in assets %}
-                {% for asset in assets["js"] %}
-                    <script type="text/javascript" src="{{ url_for('plugin_assets', name=name, filename=asset) }}"></script>
-                {% endfor %}
-            {% endif %}
+        <!-- Generic plugin template files -->
+        {% for key in templates.generic.order %}
+            {% set data = templates.generic.entries[key] %}
+            {% include data.template ignore missing %}
         {% endfor %}
-        <!-- /Plugin files -->
+        <!-- End of generic plugin template files -->
 
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/dataupdater.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/helpers.js') }}"></script>
-
-        <script type="text/javascript" src="{{ url_for('static', filename='js/app/main.js') }}"></script>
-        <!-- /Include OctoPrint files -->
-
-        <!-- Include i18n language files -->
-        {% if g.locale != 'en' %}
-            <script type="text/javascript" src="{{ url_for('static', filename='js/i18n/%s.js' % g.locale) }}"></script>
-        {% endif %}
-        <!-- /Include i18n language files -->
-
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
+        {% include 'javascripts.jinja2' %}
     </body>
 </html>

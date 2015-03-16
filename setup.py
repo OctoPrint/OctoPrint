@@ -1,7 +1,64 @@
-# coding=utf-8
 #!/usr/bin/env python
+# coding=utf-8
 
+from setuptools import setup, find_packages, Command
+import os
+import shutil
+import glob
 import versioneer
+
+#-----------------------------------------------------------------------------------------------------------------------
+
+# Requirements for out application
+INSTALL_REQUIRES = [
+	"flask==0.9",
+	"werkzeug==0.8.3",
+	"tornado==4.0.1",
+	"sockjs-tornado>=1.0.0",
+	"PyYAML==3.10",
+	"Flask-Login==0.2.2",
+	"Flask-Principal==0.3.5",
+	"Flask-Babel==0.9",
+	"pyserial",
+	"netaddr",
+	"watchdog",
+	"sarge>=0.1.4",
+	"netifaces",
+	"pylru",
+	"rsa",
+	"pkginfo"
+]
+
+# Requirements for developing etc
+EXTRA_REQUIRES = dict(
+	develop=[
+		# Testing dependencies
+		"mock>=1.0.1",
+		"nose>=1.3.0",
+		"ddt",
+
+		# Documentation dependencies
+		"sphinx>=1.3",
+		"sphinxcontrib-httpdomain",
+		"sphinx_rtd_theme",
+
+		# Translation dependencies
+		"po2json"
+	]
+)
+
+# Dependency links for any of the aforementioned dependencies
+DEPENDENCY_LINKS = []
+
+# I18N setup
+I18N_MAPPING_FILE = "babel.cfg"
+I18N_DOMAIN = "messages"
+I18N_INPUT_DIRS = "."
+I18N_OUTPUT_DIR_PY = os.path.join("src", "octoprint", "translations")
+I18N_OUTPUT_DIR_JS = os.path.join("src", "octoprint", "static", "js", "i18n")
+I18N_POT_FILE = os.path.join(I18N_OUTPUT_DIR_PY, "messages.pot")
+
+# Versioneer configuration
 versioneer.VCS = 'git'
 versioneer.versionfile_source = 'src/octoprint/_version.py'
 versioneer.versionfile_build = 'octoprint/_version.py'
@@ -9,17 +66,8 @@ versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = ''
 versioneer.lookupfile = '.versioneer-lookup'
 
-from setuptools import setup, find_packages, Command
-import os
-import shutil
-import glob
-
-I18N_MAPPING_FILE = "babel.cfg"
-I18N_DOMAIN = "messages"
-I18N_INPUT_DIRS = "."
-I18N_OUTPUT_DIR_PY = os.path.join("src", "octoprint", "translations")
-I18N_OUTPUT_DIR_JS = os.path.join("src", "octoprint", "static", "js", "i18n")
-I18N_POT_FILE = os.path.join(I18N_OUTPUT_DIR_PY, "messages.pot")
+#-----------------------------------------------------------------------------------------------------------------------
+# Anything below here is just command setup and general setup configuration
 
 def package_data_dirs(source, sub_folders):
 	dirs = []
@@ -33,6 +81,26 @@ def package_data_dirs(source, sub_folders):
 	return dirs
 
 
+def _recursively_handle_files(directory, file_matcher, folder_handler=None, file_handler=None):
+	applied_handler = False
+
+	for filename in os.listdir(directory):
+		path = os.path.join(directory, filename)
+
+		if file_handler is not None and file_matcher(filename):
+			file_handler(path)
+			applied_handler = True
+
+		elif os.path.isdir(path):
+			sub_applied_handler = _recursively_handle_files(path, file_matcher, folder_handler=folder_handler, file_handler=file_handler)
+			if sub_applied_handler:
+				applied_handler = True
+
+			if folder_handler is not None:
+				folder_handler(path, sub_applied_handler)
+
+	return applied_handler
+
 class CleanCommand(Command):
 	description = "clean build artifacts"
 	user_options = []
@@ -45,13 +113,56 @@ class CleanCommand(Command):
 		pass
 
 	def run(self):
+		# build folder
 		if os.path.exists('build'):
 			print "Deleting build directory"
 			shutil.rmtree('build')
+
+		# eggs
 		eggs = glob.glob('OctoPrint*.egg-info')
 		for egg in eggs:
 			print "Deleting %s directory" % egg
 			shutil.rmtree(egg)
+
+		# pyc files
+		def delete_folder_if_empty(path, applied_handler):
+			if not applied_handler:
+				return
+			if len(os.listdir(path)) == 0:
+				shutil.rmtree(path)
+				print "Deleted %s since it was empty" % path
+
+		def delete_file(path):
+			os.remove(path)
+			print "Deleted %s" % path
+
+		import fnmatch
+		_recursively_handle_files(
+			os.path.abspath("src"),
+			lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
+			folder_handler=delete_folder_if_empty,
+			file_handler=delete_file
+		)
+
+		# pyc files
+		def delete_folder_if_empty(path, applied_handler):
+			if not applied_handler:
+				return
+			if len(os.listdir(path)) == 0:
+				shutil.rmtree(path)
+				print "Deleted %s since it was empty" % path
+
+		def delete_file(path):
+			os.remove(path)
+			print "Deleted %s" % path
+
+		import fnmatch
+		_recursively_handle_files(
+			os.path.abspath("src"),
+			lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
+			folder_handler=delete_folder_if_empty,
+			file_handler=delete_file
+		)
 
 
 class NewTranslation(Command):
@@ -131,7 +242,7 @@ class RefreshTranslation(Command):
 		self.babel_extract_messages.copyright_holder = "The OctoPrint Project"
 		self.babel_extract_messages.finalize_options()
 
-		self.babel_update_messages.input_file = I18N_MAPPING_FILE
+		self.babel_update_messages.input_file = I18N_POT_FILE
 		self.babel_update_messages.output_dir = I18N_OUTPUT_DIR_PY
 		self.babel_update_messages.locale = self.locale
 
@@ -220,21 +331,29 @@ def params():
 
 	packages = find_packages(where="src")
 	package_dir = {"octoprint": "src/octoprint"}
-	package_data = {"octoprint": package_data_dirs('src/octoprint', ['static', 'templates', 'plugins'])}
+	package_data = {"octoprint": package_data_dirs('src/octoprint', ['static', 'templates', 'plugins', 'translations'])}
 
 	include_package_data = True
 	zip_safe = False
-	install_requires = open("requirements.txt").read().split("\n")
+	install_requires = INSTALL_REQUIRES
+	extras_require = EXTRA_REQUIRES
+	dependency_links = DEPENDENCY_LINKS
+
+	if os.environ.get('READTHEDOCS', None) == 'True':
+		# we can't tell read the docs to please perform a pip install -e .[develop], so we help
+		# it a bit here by explicitly adding the development dependencies, which include our
+		# documentation dependencies
+		install_requires = install_requires + extras_require['develop']
+
+	import sys
+	if sys.platform in ("linux2", "darwin"):
+		install_requires += ["monotime"]
 
 	entry_points = {
 		"console_scripts": [
 			"octoprint = octoprint:main"
 		]
 	}
-
-	#scripts = {
-	#	"scripts/octoprint.init": "/etc/init.d/octoprint"
-	#}
 
 	return locals()
 

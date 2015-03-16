@@ -1,0 +1,73 @@
+<form class="form-horizontal">
+    <div class="control-group" title="{{ _('Serial port to connect to, setting this to AUTO will make OctoPrint try to automatically find the right setting') }}">
+        <label class="control-label" for="settings-serialPort">{{ _('Serial Port') }}</label>
+        <div class="controls">
+            <select id="settings-serialPort" data-bind="options: serial_portOptions, optionsCaption: 'AUTO', value: serial_port"></select>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Serial baud rate to connect with, setting this to AUTO will make OctoPrint try to automatically find the right setting') }}">
+        <label class="control-label" for="settings-baudrate">{{ _('Baudrate') }}</label>
+        <div class="controls">
+            <select id="settings-baudrate" data-bind="options: serial_baudrateOptions, optionsCaption: 'AUTO', value: serial_baudrate"></select>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Makes OctoPrint try to connect to the printer automatically during start up') }}">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: serial_autoconnect" id="settings-serialAutoconnect"> {{ _('Auto-connect to printer on server start') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Time after which the communication with your printer will be considered timed out if nothing was sent by your printer (and an attempt to get it talking again will be done). Increase this if your printer takes longer than this for some moves. This is also the interval in which the temperature will be polled from the printer while not printing.') }}">
+        <label class="control-label" for="settings-serialTimeoutCommunication">{{ _('Communication timeout') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
+                <span class="add-on">s</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Interval in which to poll for the temperature information from the printer while printing') }}">
+        <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature timeout') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutTemperature" id="settings-serialTimeoutTemperature">
+                <span class="add-on">s</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Interval in which to poll for the SD printing status information from the printer while printing') }}">
+        <label class="control-label" for="settings-serialTimeoutSdStatus">{{ _('SD status timeout') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutSdStatus" id="settings-serialTimeoutSdStatus">
+                <span class="add-on">s</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Time after which a connection attempt to the printer will be considered as having failed') }}">
+        <label class="control-label" for="settings-serialTimeoutConnection">{{ _('Connection timeout') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutConnection" id="settings-serialTimeoutConnection">
+                <span class="add-on">s</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Time after which to consider an auto detection attempt to have failed if no successful connection is detected') }}">
+        <label class="control-label" for="settings-serialTimeoutDetection">{{ _('Autodetection timeout') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutDetection" id="settings-serialTimeoutDetection">
+                <span class="add-on">s</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: serial_log" id="settings-serialLog"> {{ _('Log communication to serial.log (might negatively impact performance)') }} <span class="label label-important">{{ _('Warning') }}</span>
+            </label>
+        </div>
+    </div>
+</form>

@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, abort, make_response
+from flask.exceptions import JSONBadRequest
 from flask.ext.login import current_user
 
 import octoprint.users as users
@@ -35,21 +36,26 @@ def addUser():
 	if userManager is None:
 		return jsonify(SUCCESS)
 
-	if "application/json" in request.headers["Content-Type"]:
+	if not "application/json" in request.headers["Content-Type"]:
+		return make_response("Expected content-type JSON", 400)
+
+	try:
 		data = request.json
+	except JSONBadRequest:
+		return make_response("Malformed JSON body in request", 400)
 
-		name = data["name"]
-		password = data["password"]
-		active = data["active"]
+	name = data["name"]
+	password = data["password"]
+	active = data["active"]
 
-		roles = ["user"]
-		if "admin" in data.keys() and data["admin"]:
-			roles.append("admin")
+	roles = ["user"]
+	if "admin" in data.keys() and data["admin"]:
+		roles.append("admin")
 
-		try:
-			userManager.addUser(name, password, active, roles)
-		except users.UserAlreadyExists:
-			abort(409)
+	try:
+		userManager.addUser(name, password, active, roles)
+	except users.UserAlreadyExists:
+		abort(409)
 	return getUsers()
 
 
@@ -78,18 +84,23 @@ def updateUser(username):
 
 	user = userManager.findUser(username)
 	if user is not None:
-		if "application/json" in request.headers["Content-Type"]:
+		if not "application/json" in request.headers["Content-Type"]:
+			return make_response("Expected content-type JSON", 400)
+
+		try:
 			data = request.json
+		except JSONBadRequest:
+			return make_response("Malformed JSON body in request", 400)
 
-			# change roles
-			roles = ["user"]
-			if "admin" in data.keys() and data["admin"]:
-				roles.append("admin")
-			userManager.changeUserRoles(username, roles)
+		# change roles
+		roles = ["user"]
+		if "admin" in data.keys() and data["admin"]:
+			roles.append("admin")
+		userManager.changeUserRoles(username, roles)
 
-			# change activation
-			if "active" in data.keys():
-				userManager.changeUserActivation(username, data["active"])
+		# change activation
+		if "active" in data.keys():
+			userManager.changeUserActivation(username, data["active"])
 		return getUsers()
 	else:
 		abort(404)
@@ -116,13 +127,22 @@ def changePasswordForUser(username):
 		return jsonify(SUCCESS)
 
 	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
-		if "application/json" in request.headers["Content-Type"]:
+		if not "application/json" in request.headers["Content-Type"]:
+			return make_response("Expected content-type JSON", 400)
+
+		try:
 			data = request.json
-			if "password" in data.keys() and data["password"]:
-				try:
-					userManager.changeUserPassword(username, data["password"])
-				except users.UnknownUser:
-					return make_response(("Unknown user: %s" % username, 404, []))
+		except JSONBadRequest:
+			return make_response("Malformed JSON body in request", 400)
+
+		if not "password" in data.keys() or not data["password"]:
+			return make_response("password is missing from request", 400)
+
+		try:
+			userManager.changeUserPassword(username, data["password"])
+		except users.UnknownUser:
+			return make_response(("Unknown user: %s" % username, 404, []))
+
 		return jsonify(SUCCESS)
 	else:
 		return make_response(("Forbidden", 403, []))

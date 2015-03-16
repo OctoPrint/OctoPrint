@@ -52,6 +52,19 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         return matcher(self.selectedItem());
     };
 
+    self.removeItem = function(matcher) {
+        var item = self.getItem(matcher, true);
+        if (item === undefined) {
+            return;
+        }
+
+        var index = self.allItems.indexOf(item);
+        if (index > -1) {
+            self.allItems.splice(index, 1);
+            self._updateItems();
+        }
+    };
+
     //~~ pagination
 
     self.paginatedItems = ko.dependentObservable(function() {
@@ -131,8 +144,13 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
     };
 
-    self.getItem = function(matcher) {
-        var itemList = self.items();
+    self.getItem = function(matcher, all) {
+        var itemList;
+        if (all !== undefined && all === true) {
+            itemList = self.allItems;
+        } else {
+            itemList = self.items();
+        }
         for (var i = 0; i < itemList.length; i++) {
             if (matcher(itemList[i])) {
                 return itemList[i];
@@ -322,6 +340,21 @@ function formatDuration(seconds) {
     var h = seconds / 3600;
 
     return _.sprintf(gettext(/* L10N: duration format */ "%(hour)02d:%(minute)02d:%(second)02d"), {hour: h, minute: m, second: s});
+}
+
+function formatFuzzyEstimation(seconds, base) {
+    if (!seconds) return "-";
+    if (seconds < 0) return "-";
+
+    var m;
+    if (base != undefined) {
+        m = moment(base);
+    } else {
+        m = moment();
+    }
+
+    m.add(seconds, "s");
+    return m.fromNow(true);
 }
 
 function formatDate(unixTimestamp) {

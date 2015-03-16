@@ -33,9 +33,9 @@ def getFinishedTimelapses():
 		statResult = os.stat(os.path.join(basedir, osFile))
 		files.append({
 			"name": osFile,
-			"size": util.getFormattedSize(statResult.st_size),
+			"size": util.get_formatted_size(statResult.st_size),
 			"bytes": statResult.st_size,
-			"date": util.getFormattedDateTime(datetime.datetime.fromtimestamp(statResult.st_ctime))
+			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(statResult.st_ctime))
 		})
 	return files
 
@@ -61,7 +61,7 @@ def notifyCallbacks(timelapse):
 		config = timelapse.configData()
 	for callback in updateCallbacks:
 		try: callback.sendTimelapseConfig(config)
-		except: pass
+		except: logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
 
 
 def configureTimelapse(config=None, persist=False):
@@ -76,18 +76,22 @@ def configureTimelapse(config=None, persist=False):
 	type = config["type"]
 
 	postRoll = 0
-	if "postRoll" in config:
+	if "postRoll" in config and config["postRoll"] >= 0:
 		postRoll = config["postRoll"]
+
+	fps = 25
+	if "fps" in config and config["fps"] > 0:
+		fps = config["fps"]
 
 	if type is None or "off" == type:
 		current = None
 	elif "zchange" == type:
-		current = ZTimelapse(postRoll=postRoll)
+		current = ZTimelapse(postRoll=postRoll, fps=fps)
 	elif "timed" == type:
 		interval = 10
-		if "options" in config and "interval" in config["options"]:
+		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
-		current = TimedTimelapse(postRoll=postRoll, interval=interval)
+		current = TimedTimelapse(postRoll=postRoll, interval=interval, fps=fps)
 
 	notifyCallbacks(current)
 
@@ -97,7 +101,7 @@ def configureTimelapse(config=None, persist=False):
 
 
 class Timelapse(object):
-	def __init__(self, postRoll=0):
+	def __init__(self, postRoll=0, fps=25):
 		self._logger = logging.getLogger(__name__)
 		self._imageNumber = None
 		self._inTimelapse = False
@@ -110,8 +114,9 @@ class Timelapse(object):
 		self._captureDir = settings().getBaseFolder("timelapse_tmp")
 		self._movieDir = settings().getBaseFolder("timelapse")
 		self._snapshotUrl = settings().get(["webcam", "snapshot"])
+		self._ffmpegThreads = settings().get(["webcam", "ffmpegThreads"])
 
-		self._fps = 25
+		self._fps = fps
 
 		self._renderThread = None
 		self._captureMutex = threading.Lock()
@@ -126,6 +131,9 @@ class Timelapse(object):
 
 	def postRoll(self):
 		return self._postRoll
+
+	def fps(self):
+		return self._fps
 
 	def unload(self):
 		if self._inTimelapse:
@@ -227,8 +235,12 @@ class Timelapse(object):
 			self._logger.warn("Cannot capture image, capture directory is unset")
 			return
 
+		if self._imageNumber is None:
+			self._logger.warn("Cannot capture image, image number is unset")
+			return
+
 		with self._captureMutex:
-			filename = os.path.join(self._captureDir, "tmp_%05d.jpg" % (self._imageNumber))
+			filename = os.path.join(self._captureDir, "tmp_%05d.jpg" % self._imageNumber)
 			self._imageNumber += 1
 		self._logger.debug("Capturing image to %s" % filename)
 		captureThread = threading.Thread(target=self._captureWorker, kwargs={"filename": filename})
@@ -243,8 +255,9 @@ class Timelapse(object):
 			self._logger.debug("Image %s captured from %s" % (filename, self._snapshotUrl))
 		except:
 			self._logger.exception("Could not capture image %s from %s, decreasing image counter again" % (filename, self._snapshotUrl))
-			if self._imageNumber is not None and self._imageNumber > 0:
-				self._imageNumber -= 1
+			with self._captureMutex:
+				if self._imageNumber is not None and self._imageNumber > 0:
+					self._imageNumber -= 1
 		eventManager().fire(Events.CAPTURE_DONE, {"file": filename})
 
 	def _createMovie(self, success=True):
@@ -262,7 +275,7 @@ class Timelapse(object):
 
 		# prepare ffmpeg command
 		command = [
-			ffmpeg, '-loglevel', 'error', '-i', input, '-vcodec', 'mpeg2video', '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b:v', bitrate,
+			ffmpeg, '-framerate', str(self._fps), '-loglevel', 'error', '-i', input, '-vcodec', 'mpeg2video', '-threads', str(self._ffmpegThreads), '-pix_fmt', 'yuv420p', '-r', str(self._fps), '-y', '-b', bitrate,
 			'-f', 'vob']
 
 		filters = []
@@ -299,7 +312,7 @@ class Timelapse(object):
 
 		# finalize command with output file
 		self._logger.debug("Rendering movie to %s" % output)
-		command.append(output)
+		command.append("\"" + output + "\"")
 		eventManager().fire(Events.MOVIE_RENDERING, {"gcode": self._gcodeFile, "movie": output, "movie_basename": os.path.basename(output)})
 
 		command_str = " ".join(command)
@@ -330,8 +343,8 @@ class Timelapse(object):
 
 
 class ZTimelapse(Timelapse):
-	def __init__(self, postRoll=0):
-		Timelapse.__init__(self, postRoll=postRoll)
+	def __init__(self, postRoll=0, fps=25):
+		Timelapse.__init__(self, postRoll=postRoll, fps=fps)
 		self._logger.debug("ZTimelapse initialized")
 
 	def eventSubscriptions(self):
@@ -365,8 +378,8 @@ class ZTimelapse(Timelapse):
 
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, postRoll=0, interval=1):
-		Timelapse.__init__(self, postRoll=postRoll)
+	def __init__(self, postRoll=0, interval=1, fps=25):
+		Timelapse.__init__(self, postRoll=postRoll, fps=fps)
 		self._interval = interval
 		if self._interval < 1:
 			self._interval = 1 # force minimum interval of 1s

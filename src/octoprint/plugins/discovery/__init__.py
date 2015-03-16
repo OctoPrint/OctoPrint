@@ -24,7 +24,10 @@ except:
 
 __plugin_name__ = "Discovery"
 __plugin_version__ = "0.1"
+__plugin_author__ = "Gina Häußge"
+__plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery"
 __plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
+__plugin_license__ = "AGPLv3"
 
 def __plugin_init__():
 	if not pybonjour:
@@ -47,93 +50,16 @@ def __plugin_init__():
 			zeroconf_unregister=discovery_plugin.zeroconf_unregister
 		))
 
-
-default_settings = {
-	"publicHost": None,
-	"publicPort": None,
-	"pathPrefix": None,
-	"httpUsername": None,
-	"httpPassword": None,
-	"upnpUuid": None,
-	"zeroConf": [],
-	"model": {
-		"name": None,
-		"description": None,
-		"number": None,
-		"url": None,
-		"serial": None,
-		"vendor": None,
-		"vendorUrl": None
-	}
-}
-s = octoprint.plugin.plugin_settings("discovery", defaults=default_settings)
-
-def get_uuid():
-	upnpUuid = s.get(["upnpUuid"])
-	if upnpUuid is None:
-		import uuid
-		upnpUuid = str(uuid.uuid4())
-		s.set(["upnpUuid"], upnpUuid)
-		s.save()
-	return upnpUuid
-UUID = get_uuid()
-del get_uuid
-
-
-def get_instance_name():
-	name = s.globalGet(["appearance", "name"])
-	if name:
-		return "OctoPrint instance \"{}\"".format(name)
-	else:
-		import socket
-		return "OctoPrint instance on {}".format(socket.gethostname())
-
-
-#~~ custom blueprint for providing discovery.xml
-
-blueprint = flask.Blueprint("plugin.discovery", __name__, template_folder=os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates"))
-
-@blueprint.route("/discovery.xml")
-def discovery():
-	logging.getLogger("octoprint.plugins." + __name__).debug("Rendering discovery.xml")
-
-	modelName = s.get(["model", "name"])
-	if not modelName:
-		import octoprint.server
-		modelName = octoprint.server.DISPLAY_VERSION
-
-	vendor = s.get(["model", "vendor"])
-	vendorUrl = s.get(["model", "vendorUrl"])
-	if not vendor:
-		vendor = "The OctoPrint Project"
-		vendorUrl = "http://www.octoprint.org/"
-
-	response = flask.make_response(flask.render_template("discovery.jinja2",
-	                             friendlyName=get_instance_name(),
-	                             manufacturer=vendor,
-	                             manufacturerUrl=vendorUrl,
-	                             modelName=modelName,
-	                             modelDescription=s.get(["model", "description"]),
-	                             modelNumber=s.get(["model", "number"]),
-	                             modelUrl=s.get(["model", "url"]),
-	                             serialNumber=s.get(["model", "serial"]),
-	                             uuid=UUID,
-	                             presentationUrl=flask.url_for("index", _external=True)))
-	response.headers['Content-Type'] = 'application/xml'
-	return response
-
-
 class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
                       octoprint.plugin.ShutdownPlugin,
-                      octoprint.plugin.BlueprintPlugin):
+                      octoprint.plugin.BlueprintPlugin,
+                      octoprint.plugin.SettingsPlugin):
 
 	ssdp_multicast_addr = "239.255.255.250"
 
 	ssdp_multicast_port = 1900
 
 	def __init__(self):
-		self.logger = logging.getLogger("octoprint.plugins." + __name__)
-
 		self.host = None
 		self.port = None
 
@@ -147,18 +73,69 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self._ssdp_notify_timeout = 10
 		self._ssdp_last_notify = 0
 
+	##~~ SettingsPlugin API
+
+	def get_settings_defaults(self):
+		return {
+			"publicHost": None,
+			"publicPort": None,
+			"pathPrefix": None,
+			"httpUsername": None,
+			"httpPassword": None,
+			"upnpUuid": None,
+			"zeroConf": [],
+			"model": {
+				"name": None,
+				"description": None,
+				"number": None,
+				"url": None,
+				"serial": None,
+				"vendor": None,
+				"vendorUrl": None
+			}
+		}
+
 	##~~ BlueprintPlugin API -- used for providing the SSDP device descriptor XML
 
-	def get_blueprint(self):
-		return blueprint
+	@octoprint.plugin.BlueprintPlugin.route("/discovery.xml", methods=["GET"])
+	def discovery(self):
+		self._logger.debug("Rendering discovery.xml")
+
+		modelName = self._settings.get(["model", "name"])
+		if not modelName:
+			import octoprint.server
+			modelName = octoprint.server.DISPLAY_VERSION
+
+		vendor = self._settings.get(["model", "vendor"])
+		vendorUrl = self._settings.get(["model", "vendorUrl"])
+		if not vendor:
+			vendor = "The OctoPrint Project"
+			vendorUrl = "http://www.octoprint.org/"
+
+		response = flask.make_response(flask.render_template("discovery.xml.jinja2",
+		                                                     friendlyName=self.get_instance_name(),
+		                                                     manufacturer=vendor,
+		                                                     manufacturerUrl=vendorUrl,
+		                                                     modelName=modelName,
+		                                                     modelDescription=self._settings.get(["model", "description"]),
+		                                                     modelNumber=self._settings.get(["model", "number"]),
+		                                                     modelUrl=self._settings.get(["model", "url"]),
+		                                                     serialNumber=self._settings.get(["model", "serial"]),
+		                                                     uuid=self.get_uuid(),
+		                                                     presentationUrl=flask.url_for("index", _external=True)))
+		response.headers['Content-Type'] = 'application/xml'
+		return response
+
+	def is_blueprint_protected(self):
+		return False
 
 	##~~ StartupPlugin API -- used for registering OctoPrint's Zeroconf and SSDP services upon application startup
 
 	def on_startup(self, host, port):
-		public_host = s.get(["publicHost"])
+		public_host = self._settings.get(["publicHost"])
 		if public_host:
 			host = public_host
-		public_port = s.get(["publicPort"])
+		public_port = self._settings.get(["publicPort"])
 		if public_port:
 			port = public_port
 
@@ -166,13 +143,13 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		self.port = port
 
 		# Zeroconf
-		self.zeroconf_register("_http._tcp", get_instance_name(), txt_record=self._create_http_txt_record_dict())
-		self.zeroconf_register("_octoprint._tcp", get_instance_name(), txt_record=self._create_octoprint_txt_record_dict())
-		for zeroconf in s.get(["zeroConf"]):
+		self.zeroconf_register("_http._tcp", self.get_instance_name(), txt_record=self._create_http_txt_record_dict())
+		self.zeroconf_register("_octoprint._tcp", self.get_instance_name(), txt_record=self._create_octoprint_txt_record_dict())
+		for zeroconf in self._settings.get(["zeroConf"]):
 			if "service" in zeroconf:
 				self.zeroconf_register(
 					zeroconf["service"],
-					zeroconf["name"] if "name" in zeroconf else get_instance_name(),
+					zeroconf["name"] if "name" in zeroconf else self.get_instance_name(),
 					port=zeroconf["port"] if "port" in zeroconf else None,
 					txt_record=zeroconf["txtRecord"] if "txtRecord" in zeroconf else None
 				)
@@ -207,7 +184,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			return
 
 		if not name:
-			name = get_instance_name()
+			name = self.get_instance_name()
 		if not port:
 			port = self.port
 
@@ -221,7 +198,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		key = (reg_type, port)
 		self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
-		self.logger.info("Registered {name} for {reg_type}".format(**locals()))
+		self._logger.info(u"Registered {name} for {reg_type}".format(**locals()))
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
@@ -245,9 +222,9 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		sd_ref = self._sd_refs[key]
 		try:
 			sd_ref.close()
-			self.logger.debug("Unregistered {reg_type} on port {port}".format(reg_type=reg_type, port=port))
+			self._logger.debug("Unregistered {reg_type} on port {port}".format(reg_type=reg_type, port=port))
 		except:
-			self.logger.exception("Could not unregister {reg_type} on port {port}".format(reg_type=reg_type, port=port))
+			self._logger.exception("Could not unregister {reg_type} on port {port}".format(reg_type=reg_type, port=port))
 
 	def zeroconf_browse(self, service_type, block=True, callback=None, browse_timeout=5, resolve_timeout=5):
 		"""
@@ -311,7 +288,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				name = fullname[:fullname.find(service_type) - 1].replace("\\032", " ")
 				host = hosttarget[:-1]
 
-				self.logger.debug("Resolved a result for Zeroconf resolution of {service_type}: {name} @ {host}".format(service_type=service_type, name=name, host=host))
+				self._logger.debug("Resolved a result for Zeroconf resolution of {service_type}: {name} @ {host}".format(service_type=service_type, name=name, host=host))
 				result.append(dict(
 					name=name,
 					host=host,
@@ -327,7 +304,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			if not (flags & pybonjour.kDNSServiceFlagsAdd):
 				return
 
-			self.logger.debug("Got a browsing result for Zeroconf resolution of {service_type}, resolving...".format(service_type=service_type))
+			self._logger.debug("Got a browsing result for Zeroconf resolution of {service_type}, resolving...".format(service_type=service_type))
 			resolve_ref = pybonjour.DNSServiceResolve(0, interface_index, service_name, regtype, reply_domain, resolve_callback)
 
 			try:
@@ -342,7 +319,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			finally:
 				resolve_ref.close()
 
-		self.logger.debug("Browsing Zeroconf for {service_type}".format(service_type=service_type))
+		self._logger.debug("Browsing Zeroconf for {service_type}".format(service_type=service_type))
 
 		def browse():
 			sd_ref = pybonjour.DNSServiceBrowse(regtype=service_type, callBack=browse_callback)
@@ -487,16 +464,16 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		# determine path entry
 		path = "/"
-		if s.get(["pathPrefix"]):
-			path = s.get(["pathPrefix"])
+		if self._settings.get(["pathPrefix"]):
+			path = self._settings.get(["pathPrefix"])
 		else:
-			prefix = s.globalGet(["server", "reverseProxy", "prefixFallback"])
+			prefix = self._settings.global_get(["server", "reverseProxy", "prefixFallback"])
 			if prefix:
 				path = prefix
 
 		# fetch username and password (if set)
-		username = s.get(["httpUsername"])
-		password = s.get(["httpPassword"])
+		username = self._settings.get(["httpUsername"])
+		password = self._settings.get(["httpPassword"])
 
 		entries = dict(
 			path=path
@@ -534,10 +511,10 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			api=octoprint.server.api.VERSION,
 			))
 
-		modelName = s.get(["model", "name"])
+		modelName = self._settings.get(["model", "name"])
 		if modelName:
 			entries.update(dict(model=modelName))
-		vendor = s.get(["model", "vendor"])
+		vendor = self._settings.get(["model", "vendor"])
 		if vendor:
 			entries.update(dict(vendor=vendor))
 
@@ -595,7 +572,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 				location = "http://{addr}:{port}/plugin/discovery/discovery.xml".format(addr=addr, port=self.port)
 
-				self.logger.debug("Sending NOTIFY {} via {}".format("alive" if alive else "byebye", addr))
+				self._logger.debug("Sending NOTIFY {} via {}".format("alive" if alive else "byebye", addr))
 				notify_message = "".join([
 					"NOTIFY * HTTP/1.1\r\n",
 					"Server: Python/2.7\r\n",
@@ -606,7 +583,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 					"USN: uuid:{uuid}::upnp:rootdevice\r\n",
 					"HOST: {mcast_addr}:{mcast_port}\r\n\r\n"
 				])
-				message = notify_message.format(uuid=UUID,
+				message = notify_message.format(uuid=self.get_uuid(),
 				                                location=location,
 				                                nts="ssdp:alive" if alive else "ssdp:byebye",
 				                                mcast_addr=self.__class__.ssdp_multicast_addr,
@@ -660,7 +637,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.__class__.ssdp_multicast_addr) + socket.inet_aton('0.0.0.0'))
 
-		self.logger.info("Registered {} for SSDP".format(get_instance_name()))
+		self._logger.info(u"Registered {} for SSDP".format(self.get_instance_name()))
 
 		self._ssdp_notify(alive=True)
 
@@ -672,11 +649,11 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 					if not request.error_code and request.command == "M-SEARCH" and request.path == "*" and (request.headers["ST"] == "upnp:rootdevice" or request.headers["ST"] == "ssdp:all") and request.headers["MAN"] == '"ssdp:discover"':
 						interface_address = octoprint.util.address_for_client(*address)
 						if not interface_address:
-							self.logger.warn("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
+							self._logger.warn("Can't determine address to user for client {}, not sending a M-SEARCH reply".format(address))
 							continue
-						message = location_message.format(uuid=UUID, location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=interface_address, port=self.port))
+						message = location_message.format(uuid=self.get_uuid(), location="http://{host}:{port}/plugin/discovery/discovery.xml".format(host=interface_address, port=self.port))
 						sock.sendto(message, address)
-						self.logger.debug("Sent M-SEARCH reply for {path} and {st} to {address!r}".format(path=request.path, st=request.headers["ST"], address=address))
+						self._logger.debug("Sent M-SEARCH reply for {path} and {st} to {address!r}".format(path=request.path, st=request.headers["ST"], address=address))
 				except socket.timeout:
 					pass
 				finally:
@@ -687,4 +664,21 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 			except:
 				pass
 
+	##~~ helpers
 
+	def get_uuid(self):
+		upnpUuid = self._settings.get(["upnpUuid"])
+		if upnpUuid is None:
+			import uuid
+			upnpUuid = str(uuid.uuid4())
+			self._settings.set(["upnpUuid"], upnpUuid)
+			self._settings.save()
+		return upnpUuid
+
+	def get_instance_name(self):
+		name = self._settings.global_get(["appearance", "name"])
+		if name:
+			return u"OctoPrint instance \"{}\"".format(name)
+		else:
+			import socket
+			return u"OctoPrint instance on {}".format(socket.gethostname())
