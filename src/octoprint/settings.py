@@ -168,6 +168,7 @@ default_settings = {
 		"name": "",
 		"color": "default",
 		"colorTransparent": False,
+		"defaultLanguage": None,
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "login"],
@@ -178,6 +179,7 @@ default_settings = {
 					"section_features", "features", "webcam", "accesscontrol", "api",
 					"section_octoprint", "folders", "appearance", "logs"
 				],
+				"usersettings": ["access", "interface"],
 				"generic": []
 			},
 			"disabled": {
@@ -185,6 +187,7 @@ default_settings = {
 				"sidebar": [],
 				"tab": [],
 				"settings": [],
+				"usersettings": [],
 				"generic": []
 			}
 		}

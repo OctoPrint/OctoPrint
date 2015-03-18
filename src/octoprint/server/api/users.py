@@ -148,6 +148,40 @@ def changePasswordForUser(username):
 		return make_response(("Forbidden", 403, []))
 
 
+@api.route("/users/<username>/settings", methods=["GET"])
+@restricted_access
+def getSettingsForUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.is_admin()):
+		return make_response("Forbidden", 403)
+
+	try:
+		return jsonify(userManager.getAllUserSettings(username))
+	except users.UnknownUser:
+		return make_response("Unknown user: %s" % username, 404)
+
+@api.route("/users/<username>/settings", methods=["PATCH"])
+@restricted_access
+def changeSettingsForUser(username):
+	if userManager is None:
+		return jsonify(SUCCESS)
+
+	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.is_admin()):
+		return make_response("Forbidden", 403)
+
+	try:
+		data = request.json
+	except JSONBadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	try:
+		userManager.changeUserSettings(username, data)
+		return jsonify(SUCCESS)
+	except users.UnknownUser:
+		return make_response("Unknown user: %s" % username, 404)
+
 @api.route("/users/<username>/apikey", methods=["DELETE"])
 @restricted_access
 def deleteApikeyForUser(username):

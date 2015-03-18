@@ -9,7 +9,7 @@ import logging
 import netaddr
 import sarge
 
-from flask import Blueprint, request, jsonify, abort, current_app, session, make_response
+from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
 from flask.ext.login import login_user, logout_user, current_user
 from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
 
@@ -20,7 +20,7 @@ import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
-from octoprint.server.util.flask import restricted_access, get_remote_address, get_json_command_from_request
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
 #~~ init api blueprint, including sub modules
@@ -180,40 +180,14 @@ def login():
 				if octoprint.server.userManager is not None:
 					user = octoprint.server.userManager.login_user(user)
 					session["usersession.id"] = user.get_session()
+					g.user = user
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
 				return jsonify(user.asDict())
 		return make_response(("User unknown or password incorrect", 401, []))
 
-	elif "passive" in request.values.keys():
-		if octoprint.server.userManager is not None:
-			user = octoprint.server.userManager.login_user(current_user)
-		else:
-			user = current_user
-
-		if user is not None and not user.is_anonymous():
-			identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
-			return jsonify(user.asDict())
-		elif s().getBoolean(["accessControl", "autologinLocal"]) \
-			and s().get(["accessControl", "autologinAs"]) is not None \
-			and s().get(["accessControl", "localNetworks"]) is not None:
-
-			autologinAs = s().get(["accessControl", "autologinAs"])
-			localNetworks = netaddr.IPSet([])
-			for ip in s().get(["accessControl", "localNetworks"]):
-				localNetworks.add(ip)
-
-			try:
-				remoteAddr = get_remote_address(request)
-				if netaddr.IPAddress(remoteAddr) in localNetworks:
-					user = octoprint.server.userManager.findUser(autologinAs)
-					if user is not None:
-						login_user(user)
-						identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
-						return jsonify(user.asDict())
-			except:
-				logger = logging.getLogger(__name__)
-				logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
+	elif "passive" in request.values:
+		return passive_login()
 	return NO_CONTENT
 
 

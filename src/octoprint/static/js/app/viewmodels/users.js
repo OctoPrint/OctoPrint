@@ -33,6 +33,10 @@ $(function() {
         self.editorAdmin = ko.observable(undefined);
         self.editorActive = ko.observable(undefined);
 
+        self.addUserDialog = undefined;
+        self.editUserDialog = undefined;
+        self.changePasswordDialog = undefined;
+
         self.currentUser.subscribe(function(newValue) {
             if (newValue === undefined) {
                 self.editorUsername(undefined);
@@ -79,7 +83,7 @@ $(function() {
 
             self.currentUser(undefined);
             self.editorActive(true);
-            $("#settings-usersDialogAddUser").modal("show");
+            self.addUserDialog.modal("show");
         };
 
         self.confirmAddUser = function() {
@@ -89,7 +93,7 @@ $(function() {
             self.addUser(user, function() {
                 // close dialog
                 self.currentUser(undefined);
-                $("#settings-usersDialogAddUser").modal("hide");
+                self.addUserDialog.modal("hide");
             });
         };
 
@@ -97,7 +101,7 @@ $(function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
             self.currentUser(user);
-            $("#settings-usersDialogEditUser").modal("show");
+            self.editUserDialog.modal("show");
         };
 
         self.confirmEditUser = function() {
@@ -111,7 +115,7 @@ $(function() {
             self.updateUser(user, function() {
                 // close dialog
                 self.currentUser(undefined);
-                $("#settings-usersDialogEditUser").modal("hide");
+                self.editUserDialog.modal("hide");
             });
         };
 
@@ -119,7 +123,7 @@ $(function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
             self.currentUser(user);
-            $("#settings-usersDialogChangePassword").modal("show");
+            self.changePasswordDialog.modal("show");
         };
 
         self.confirmChangePassword = function() {
@@ -128,7 +132,7 @@ $(function() {
             self.updatePassword(self.currentUser().name, self.editorPassword(), function() {
                 // close dialog
                 self.currentUser(undefined);
-                $("#settings-usersDialogChangePassword").modal("hide");
+                self.changePasswordDialog.modal("hide");
             });
         };
 
@@ -151,6 +155,14 @@ $(function() {
         self._updateApikey = function(apikey) {
             self.editorApikey(apikey);
             self.requestData();
+        };
+
+        //~~ Framework
+
+        self.onStartup = function() {
+            self.addUserDialog = $("#settings-usersDialogAddUser");
+            self.editUserDialog = $("#settings-usersDialogEditUser");
+            self.changePasswordDialog = $("#settings-usersDialogChangePassword");
         };
 
         //~~ AJAX calls

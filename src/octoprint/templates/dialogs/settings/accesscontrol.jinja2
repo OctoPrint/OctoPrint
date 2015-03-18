@@ -107,7 +107,7 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmEditUser(); }">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmUserSettingsDialog(); }">{{ _('Confirm') }}</button>
     </div>
 </div>
 
@@ -144,14 +144,6 @@
 
                     </div>
                 </div>
-                <!-- TODO Figure out issue where text isn't properly bound and hence the QR code is worthless
-                <div class="control-group">
-                    <label class="control-label">{{ _('QR Code') }}</label>
-                    <div class="controls">
-                        <div data-bind="qrcode: {text: $root.users.editorApiKey, size: 150}"></div>
-                    </div>
-                </div>
-                -->
             </fieldset>
         </form>
     </div>

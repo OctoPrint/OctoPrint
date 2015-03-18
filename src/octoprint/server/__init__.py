@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import uuid
 from sockjs.tornado import SockJSRouter
 from flask import Flask, render_template, send_from_directory, g, request, make_response, session, url_for
-from flask.ext.login import LoginManager
+from flask.ext.login import LoginManager, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel, gettext, ngettext
 from babel import Locale
@@ -104,11 +104,25 @@ def after_request(response):
 def get_locale():
 	if "l10n" in request.values:
 		return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+
+	if g.identity:
+		userid = g.identity.id
+		try:
+			user_language = userManager.getUserSetting(userid, ("interface", "language"))
+			if user_language is not None:
+				return Locale.negotiate([user_language], LANGUAGES)
+		except octoprint.users.UnknownUser:
+			pass
+
+	default_language = settings().get(["appearance", "defaultLanguage"])
+	if default_language and default_language in LANGUAGES:
+		return Locale.negotiate([default_language], LANGUAGES)
+
 	return request.accept_languages.best_match(LANGUAGES)
 
 
 @app.route("/")
-@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values)
+@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values, key=lambda: "view/%s/%s" % (request.path, g.locale))
 def index():
 
 	#~~ a bunch of settings
@@ -118,8 +132,9 @@ def index():
 	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
 	enable_accesscontrol = userManager is not None
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
+	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 
-	#~~ prepare assets
+#~~ prepare assets
 
 	supported_stylesheets = ("css", "less")
 	assets = dict(
@@ -141,7 +156,8 @@ def index():
 		url_for('static', filename='js/app/viewmodels/temperature.js'),
 		url_for('static', filename='js/app/viewmodels/terminal.js'),
 		url_for('static', filename='js/app/viewmodels/users.js'),
-		url_for('static', filename='js/app/viewmodels/log.js')
+		url_for('static', filename='js/app/viewmodels/log.js'),
+		url_for('static', filename='js/app/viewmodels/usersettings.js')
 	]
 	if enable_gcodeviewer:
 		assets["js"] += [
@@ -185,8 +201,10 @@ def index():
 		sidebar=dict(order=[], entries=dict()),
 		tab=dict(order=[], entries=dict()),
 		settings=dict(order=[], entries=dict()),
+		usersettings=dict(order=[], entries=dict()),
 		generic=dict(order=[], entries=dict())
 	)
+	template_types = templates.keys()
 
 	# navbar
 
@@ -244,6 +262,14 @@ def index():
 	if enable_accesscontrol:
 		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False))
 
+	# user settings dialog
+
+	if enable_accesscontrol:
+		templates["usersettings"]["entries"] = dict(
+			access=(gettext("Access"), dict(template="dialogs/usersettings/access.jinja2", _div="usersettings_access", custom_bindings=False)),
+			interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
+		)
+
 	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
@@ -254,6 +280,7 @@ def index():
 		sidebar=dict(div=lambda x: "sidebar_plugin_" + x, template=lambda x: x + "_sidebar.jinja2", to_entry=lambda data: (data["name"], data)),
 		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
 		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
+		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
 		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
 	)
 
@@ -273,7 +300,7 @@ def index():
 
 		includes = _process_template_configs(name, implementation, configs, rules)
 
-		for t in ("navbar", "sidebar", "tab", "settings", "generic"):
+		for t in template_types:
 			for include in includes[t]:
 				if t == "navbar" or t == "generic":
 					data = include
@@ -292,7 +319,7 @@ def index():
 	# 1) we only have keys in our ordered list that we have entries for and
 	# 2) we have all entries located somewhere within the order
 
-	for t in ("navbar", "sidebar", "tab", "settings", "generic"):
+	for t in template_types:
 		configured_order = settings().get(["appearance", "components", "order", t], merged=True)
 		configured_disabled = settings().get(["appearance", "components", "disabled", t])
 		templates[t]["order"] = [x for x in configured_order if x in templates[t]["entries"] and not x in configured_disabled]
@@ -309,7 +336,7 @@ def index():
 			sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
 		if t == "navbar":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
-		elif t == "sidebar" or t == "tab" or t == "generic":
+		elif t == "sidebar" or t == "tab" or t == "generic" or t == "usersettings":
 			templates[t]["order"] += sorted_missing
 		elif t == "settings":
 			templates[t]["entries"]["section_plugins"] = (gettext("Plugins"), None)
@@ -331,7 +358,8 @@ def index():
 		uiApiKey=UI_API_KEY,
 		templates=templates,
 		assets=assets,
-		pluginNames=plugin_names
+		pluginNames=plugin_names,
+		locales=locales
 	)
 	render_kwargs.update(plugin_vars)
 

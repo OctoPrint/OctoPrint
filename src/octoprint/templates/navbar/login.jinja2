@@ -13,6 +13,6 @@
     <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">{{ _('Login') }}</button>
 </div>
 <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
-    <li><a href="#" id="change_password_button" data-bind="click: function() { users.showChangePasswordDialog(loginState.currentUser()); }">{{ _('Change Password') }}</a></li>
+    <li><a href="#" id="usersettings_button" data-bind="click: function() { usersettings.show(); }">{{ _('User Settings') }}</a></li>
     <li><a href="#" id="logout_button" data-bind="click: loginState.logout">{{ _('Logout') }}</a></li>
 </ul>

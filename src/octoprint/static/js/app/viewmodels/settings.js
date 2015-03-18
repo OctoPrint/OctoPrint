@@ -13,6 +13,7 @@ $(function() {
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
+        self.appearance_defaultLanguage = ko.observable();
 
         self.settingsDialog = undefined;
 
@@ -52,6 +53,12 @@ $(function() {
                     return color;
             }
         };
+
+        var auto_locale = {language: undefined, display: gettext("Autodetect from browser"), english: undefined};
+        self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
+            return n.display;
+        })));
+        self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -187,6 +194,11 @@ $(function() {
             self.appearance_name(response.appearance.name);
             self.appearance_color(response.appearance.color);
             self.appearance_colorTransparent(response.appearance.colorTransparent);
+            if (_.includes(self.locale_languages, response.appearance.defaultLanguage)) {
+                self.appearance_defaultLanguage(response.appearance.defaultLanguage);
+            } else {
+                self.appearance_defaultLanguage(undefined);
+            }
 
             self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
 
@@ -255,7 +267,8 @@ $(function() {
                 "appearance" : {
                     "name": self.appearance_name(),
                     "color": self.appearance_color(),
-                    "colorTransparent": self.appearance_colorTransparent()
+                    "colorTransparent": self.appearance_colorTransparent(),
+                    "defaultLanguage": self.appearance_defaultLanguage()
                 },
                 "printer": {
                     "defaultExtrusionLength": self.printer_defaultExtrusionLength()
@@ -326,7 +339,7 @@ $(function() {
                 data: JSON.stringify(data),
                 success: function(response) {
                     self.fromResponse(response);
-                    $("#settings_dialog").modal("hide");
+                    self.settingsDialog.modal("hide");
                 }
             });
         };
