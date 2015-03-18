@@ -1,6 +1,9 @@
 <form class="form-horizontal">
     <fieldset>
         <legend>{{ _('Password') }}</legend>
+        <p>
+            {{ _('If you do not wish to change your password, just leave the following fields empty.') }}
+        </p>
         <div class="control-group">
             <label class="control-label" for="userSettings-access_password">{{ _('New Password') }}</label>
             <div class="controls">
@@ -28,13 +31,11 @@
 
             </div>
         </div>
-        <!-- TODO Figure out issue where text isn't properly bound and hence the QR code is worthless
         <div class="control-group">
             <label class="control-label">{{ _('QR Code') }}</label>
             <div class="controls">
                 <div data-bind="qrcode: {text: access_apikey, size: 150}"></div>
             </div>
         </div>
-        -->
     </fieldset>
 </form>
