@@ -19,10 +19,10 @@ OctoPrint plus everything you need to run it:
 * OctoPrint plus its dependencies
 * [MJPG-Streamer](http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page)
 
-You can download the most current version and nightly builds from one of the following mirrors:
+You can download the most current version from one of the following mirrors:
 
 * [Mirror #1](http://mirror.tsone.net.uk/octopi/)
-* [Mirror #2](http://docstech.net/OctoPiMirror/)
+* [Mirror #2](http://docstech.net/OctoPiMirror/) (also includes nightly builds)
 
 The source is available [here](https://github.com/guysoft/OctoPi).
 
