@@ -108,6 +108,10 @@
 * OctoPrint server should no longer hang when big changes in the system time happen, e.g. after first contact to an
   NTP server on a Raspberry Pi image. Achieved through monkey patching Tornado with
   [this PR](https://github.com/tornadoweb/tornado/pull/1290).
+* Serial ports matching ``/dev/ttyAMA*`` are not anymore listed by default (this was the reason for a lot of people
+  attempting to connect to their printer on their Raspberry Pis, on which ``/dev/ttyAMA0`` is the OS's serial console
+  by default). Added configuration of additional ports to the Serial Connection section in the Settings to make it easier
+  for those people who do indeed have their printer connected to ``/dev/ttyAMA0``.
 
 ### Bug Fixes
 

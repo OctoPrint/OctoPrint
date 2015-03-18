@@ -70,4 +70,11 @@
             </label>
         </div>
     </div>
+    <div class="control-group">
+        <label class="control-label" for="settings-serialAdditionalPorts">{{ _('Additional serial ports') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" id="settings-serialAdditionalPorts" data-bind="value: serial_additionalPorts"></textarea>
+            <span class="help-inline">{{ _('Use this to define additional <a href="%%(glob_url)s">glob patterns</a> matching serial ports to list for connecting against, e.g. <code>/dev/ttyAMA*</code>. One entry per line.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
+        </div>
+    </div>
 </form>
