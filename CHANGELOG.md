@@ -171,6 +171,7 @@
   * Don't display a "Disconnected" screen when trying to download a timelapse in Firefox
   * Fixed handling of SD card files in folders
   * Fixed refreshing of timelapse file list upon finished rendering of a new one
+  * Fixed ``/api/printer`` which wasn't adapter yet to new internal offset data model
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 

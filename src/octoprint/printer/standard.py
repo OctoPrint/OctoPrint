@@ -436,24 +436,23 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def get_current_temperatures(self):
 		if self._comm is not None:
-			tempOffset, bedTempOffset = self._comm.getOffsets()
+			offsets = self._comm.getOffsets()
 		else:
-			tempOffset = {}
-			bedTempOffset = None
+			offsets = dict()
 
 		result = {}
 		if self._temp is not None:
 			for tool in self._temp.keys():
 				result["tool%d" % tool] = {
-				"actual": self._temp[tool][0],
-				"target": self._temp[tool][1],
-				"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
+					"actual": self._temp[tool][0],
+					"target": self._temp[tool][1],
+					"offset": offsets[tool] if tool in offsets and offsets[tool] is not None else 0
 				}
 		if self._bedTemp is not None:
 			result["bed"] = {
-			"actual": self._bedTemp[0],
-			"target": self._bedTemp[1],
-			"offset": bedTempOffset
+				"actual": self._bedTemp[0],
+				"target": self._bedTemp[1],
+				"offset": offsets["bed"] if "bed" in offsets and offsets["bed"] is not None else 0
 			}
 
 		return result
