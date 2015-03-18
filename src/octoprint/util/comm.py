@@ -432,15 +432,15 @@ class MachineCom(object):
 
 		template = settings().loadScript("gcode", scriptName, context=context)
 		if template is None:
-			return None
-
-		scriptLines = filter(
-			lambda x: x is not None and x.strip() != "",
-			map(
-				lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
-				template.split("\n")
+			scriptLines = []
+		else:
+			scriptLines = filter(
+				lambda x: x is not None and x.strip() != "",
+				map(
+					lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
+					template.split("\n")
+				)
 			)
-		)
 
 		for hook in self._gcodescript_hooks:
 			try:
