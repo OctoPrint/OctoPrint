@@ -168,7 +168,7 @@ default_settings = {
 		"name": "",
 		"color": "default",
 		"colorTransparent": False,
-		"defaultLanguage": None,
+		"defaultLanguage": "_default",
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "login"],

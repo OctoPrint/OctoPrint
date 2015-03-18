@@ -7,7 +7,7 @@ $(function() {
 
         self.userSettingsDialog = undefined;
 
-        var auto_locale = {language: undefined, display: gettext("Site default"), english: undefined};
+        var auto_locale = {language: "_default", display: gettext("Site default"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
             return n.display;
         })));
@@ -20,14 +20,13 @@ $(function() {
 
         self.currentUser = ko.observable(undefined);
         self.currentUser.subscribe(function(newUser) {
-            if (newUser == undefined) {
-                self.access_password(undefined);
-                self.access_repeatedPassword(undefined);
-                self.access_apikey(undefined);
-                self.interface_language(LOCALE);
-            } else {
+            self.access_password(undefined);
+            self.access_repeatedPassword(undefined);
+            self.access_apikey(undefined);
+            self.interface_language("_default");
+
+            if (newUser != undefined) {
                 self.access_apikey(newUser.apikey);
-                self.interface_language(undefined);
                 if (newUser.settings.hasOwnProperty("interface") && newUser.settings.interface.hasOwnProperty("language")) {
                     self.interface_language(newUser.settings.interface.language);
                 }
@@ -65,6 +64,7 @@ $(function() {
                 // close dialog
                 self.currentUser(undefined);
                 self.userSettingsDialog.modal("hide");
+                self.loginState.reloadUser();
             });
         };
 

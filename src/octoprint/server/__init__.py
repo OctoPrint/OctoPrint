@@ -109,13 +109,13 @@ def get_locale():
 		userid = g.identity.id
 		try:
 			user_language = userManager.getUserSetting(userid, ("interface", "language"))
-			if user_language is not None:
+			if user_language is not None and not user_language == "_default":
 				return Locale.negotiate([user_language], LANGUAGES)
 		except octoprint.users.UnknownUser:
 			pass
 
 	default_language = settings().get(["appearance", "defaultLanguage"])
-	if default_language and default_language in LANGUAGES:
+	if default_language is not None and not default_language == "_default" and default_language in LANGUAGES:
 		return Locale.negotiate([default_language], LANGUAGES)
 
 	return request.accept_languages.best_match(LANGUAGES)

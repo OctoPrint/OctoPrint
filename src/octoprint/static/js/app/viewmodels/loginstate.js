@@ -27,6 +27,18 @@ $(function() {
             self.subscribers.push(callback);
         };
 
+        self.reloadUser = function() {
+            if (self.currentUser() == undefined) {
+                return;
+            }
+
+            $.ajax({
+                url: API_BASEURL + "users/" + self.currentUser().name,
+                type: "GET",
+                success: self.fromResponse
+            })
+        };
+
         self.requestData = function() {
             $.ajax({
                 url: API_BASEURL + "login",

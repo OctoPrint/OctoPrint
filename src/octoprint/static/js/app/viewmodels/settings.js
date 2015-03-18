@@ -54,7 +54,7 @@ $(function() {
             }
         };
 
-        var auto_locale = {language: undefined, display: gettext("Autodetect from browser"), english: undefined};
+        var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
             return n.display;
         })));
@@ -194,10 +194,9 @@ $(function() {
             self.appearance_name(response.appearance.name);
             self.appearance_color(response.appearance.color);
             self.appearance_colorTransparent(response.appearance.colorTransparent);
+            self.appearance_defaultLanguage("_default");
             if (_.includes(self.locale_languages, response.appearance.defaultLanguage)) {
                 self.appearance_defaultLanguage(response.appearance.defaultLanguage);
-            } else {
-                self.appearance_defaultLanguage(undefined);
             }
 
             self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
