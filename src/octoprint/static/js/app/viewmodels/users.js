@@ -178,7 +178,9 @@ $(function() {
                 data: JSON.stringify(user),
                 success: function(response) {
                     self.fromResponse(response);
-                    callback();
+                    if (callback) {
+                        callback(response);
+                    }
                 }
             });
         };
@@ -198,7 +200,9 @@ $(function() {
                 type: "DELETE",
                 success: function(response) {
                     self.fromResponse(response);
-                    callback();
+                    if (callback) {
+                        callback(response);
+                    }
                 }
             });
         };
@@ -214,7 +218,9 @@ $(function() {
                 data: JSON.stringify(user),
                 success: function(response) {
                     self.fromResponse(response);
-                    callback();
+                    if (callback) {
+                        callback(response);
+                    }
                 }
             });
         };
@@ -227,7 +233,11 @@ $(function() {
                 type: "PUT",
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify({password: password}),
-                success: callback
+                success: function(response) {
+                    if (callback) {
+                        callback(response);
+                    }
+                }
             });
         };
 
@@ -237,7 +247,11 @@ $(function() {
             $.ajax({
                 url: API_BASEURL + "users/" + username + "/apikey",
                 type: "POST",
-                success: callback
+                success: function(response) {
+                    if (callback) {
+                        callback(response);
+                    }
+                }
             });
         };
 
@@ -247,7 +261,11 @@ $(function() {
             $.ajax({
                 url: API_BASEURL + "users/" + username + "/apikey",
                 type: "DELETE",
-                success: callback
+                success: function(response) {
+                    if (callback) {
+                        callback(response);
+                    }
+                }
             });
         }
     }
