@@ -368,6 +368,10 @@ $(function() {
                     z: {
                         speed: parseInt(self.editorAxisZSpeed()),
                         inverted: self.editorAxisZInverted()
+                    },
+                    e: {
+                        speed: parseInt(self.editorAxisESpeed()),
+                        inverted: self.editorAxisEInverted()
                     }
                 }
             };
