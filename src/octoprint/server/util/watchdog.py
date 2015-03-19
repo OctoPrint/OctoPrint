@@ -62,24 +62,10 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		if futureFilename == currentFilename and currentOrigin == octoprint.filemanager.FileDestinations.LOCAL and self._printer.is_printing() or self._printer.is_paused():
 			return
 
-		added_file = self._file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL,
-		                                         file_wrapper.filename,
-		                                         file_wrapper,
-		                                         allow_overwrite=True)
-		if added_file is None:
-			return
-
-		slicer_name = self._file_manager.default_slicer
-		if octoprint.filemanager.valid_file_type(added_file, "stl") and slicer_name:
-			# if it's an STL we now have to slice it before we can continue
-			import os
-			name, ext = os.path.splitext(added_file)
-			gcode_path = name + ".gco"
-			self._file_manager.slice(slicer_name,
-			                         octoprint.filemanager.FileDestinations.LOCAL,
-			                         added_file,
-			                         octoprint.filemanager.FileDestinations.LOCAL,
-			                         gcode_path)
+		self._file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL,
+		                            file_wrapper.filename,
+		                            file_wrapper,
+		                            allow_overwrite=True)
 
 	def on_created(self, event):
 		self._upload(event.src_path)
