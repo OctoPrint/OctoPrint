@@ -869,9 +869,10 @@ class EventHandlerPlugin(OctoPrintPlugin):
 		"""
 		Called by OctoPrint upon processing of a fired event on the platform.
 
-		:param string event: the type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
-		                     for possible values
-		:param dict payload: the payload as provided with the event
+		Arguments:
+		    event (str): The type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
+		        for possible values
+		    payload (dict): The payload as provided with the event
 		"""
 		pass
 
@@ -903,10 +904,14 @@ class SlicerPlugin(OctoPrintPlugin):
 		name
 		    The human readable name of the slicer. This will be displayed to the user during slicer selection.
 		same_device
-		    ``True`` if the slicer runs on the same device as OctoPrint, ``False`` otherwise. Slicers running on the same
-		    device will TODO
+		    True if the slicer runs on the same device as OctoPrint, False otherwise. Slicers running on the same
+		    device will not be allowed to slice while a print is running due to performance reasons. Slice requests
+		    against slicers running on the same device will result in an error.
 		progress_report
 		    ``True`` if the slicer can report back slicing progress to OctoPrint ``False`` otherwise.
+
+		Returns:
+		    dict: A dict describing the slicer as outlined above.
 		"""
 		return dict(
 			type=None,
@@ -917,38 +922,48 @@ class SlicerPlugin(OctoPrintPlugin):
 
 	def get_slicer_default_profile(self):
 		"""
-		Should return a :class:`SlicingProfile` containing the default slicing profile to use with this slicer if
-		no other profile has been selected.
+		Should return a :class:`~octoprint.slicing.SlicingProfile` containing the default slicing profile to use with
+		this slicer if no other profile has been selected.
+
+		Returns:
+		    SlicingProfile: The :class:`~octoprint.slicing.SlicingProfile` containing the default slicing profile for
+		        this slicer.
 		"""
 		return None
 
 	def get_slicer_profile(self, path):
 		"""
-		Should return a :class:`SlicingProfile` parsed from the slicing profile stored at the indicated ``path``.
+		Should return a :class:`~octoprint.slicing.SlicingProfile` parsed from the slicing profile stored at the
+		indicated ``path``.
 
-		:param string path: the path from which to read the slicing profile
+		Arguments:
+		    path (str): The absolute path from which to read the slicing profile.
+
+		Returns:
+		    SlicingProfile: The specified slicing profile.
 		"""
 		return None
 
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
 		"""
-		Should save the provided :class:`SlicingProfile` to the indicated ``path``, after applying any supplied
-		``overrides``. If a profile is already saved under the indicated path and ``allow_overwrite`` is set to
-		``False`` (defaults to ``True``), an ``IOError`` should be raised.
+		Should save the provided :class:`~octoprint.slicing.SlicingProfile` to the indicated ``path``, after applying
+		any supplied ``overrides``. If a profile is already saved under the indicated path and ``allow_overwrite`` is
+		set to False (defaults to True), an :class:`IOError` should be raised.
 
-		:param string path: the path to which to save the profile
-		:param SlicingProfile profile: the profile to save
-		:param bool allow_overwrite: whether to allow to overwrite an existing profile at the indicated path (``True``, default)
-		    or not (``False``) - if a profile already exists on the path and this is ``False``
-		    and :class:`IOError` should be raised
-		:param dict overrides: profile overrides to apply to the ``profile`` before saving it
+		Arguments:
+		    path (str): The absolute path to which to save the profile.
+		    profile (SlicingProfile): The profile to save.
+		    allow_overwrite (boolean): Whether to allow to overwrite an existing profile at the indicated path (True,
+		        default) or not (False). If a profile already exists on teh path and this is False an
+		        :class:`IOError` should be raised.
+		    overrides (dict): Profile overrides to apply to the ``profile`` before saving it
 		"""
 		pass
 
 	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, position=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		"""
 		Called by OctoPrint to slice ``model_path`` for the indicated ``printer_profile``. If the ``machinecode_path`` is ``None``,
-		slicer implementations should generate it from the provided model_path.
+		slicer implementations should generate it from the provided ``model_path``.
 
 		If provided, the ``profile_path`` is guaranteed by OctoPrint to be a serialized slicing profile created through the slicing
 		plugin's own :func:`save_slicer_profile` method.
@@ -973,12 +988,40 @@ class SlicerPlugin(OctoPrintPlugin):
 
 		Please note that both ``on_progress_args`` and ``on_progress_kwargs`` as supplied by OctoPrint might be ``None``,
 		so always make sure to initialize those values to sane defaults like depicted above before invoking the callback.
+
+		In order to support external cancellation of an ongoing slicing job via :func:`cancel_slicing`, implementations
+		should make sure to track the started jobs via the ``machinecode_path``, if provided.
+
+		The method should return a 2-tuple consisting of a boolean ``flag`` indicating whether the slicing job was
+		finished successfully (True) or not (False) and a ``result`` depending on the success of the slicing job.
+
+		For jobs that finished successfully, ``result`` should be a :class:`dict` containing additional information
+		about the slicing job under the following keys:
+
+		_analysis
+		    Analysis result of the generated machine code as returned by the slicer itself. This should match the
+		    data structure described for the analysis queue of the matching maching code format, e.g.
+		    :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue` for GCODE files.
+
+		For jobs that did not finish successfully (but not due to being cancelled!), ``result`` should be a :class:`str`
+		containing a human readable reason for the error.
+
+		If the job gets cancelled, a :class:`~octoprint.slicing.SlicingCancelled` exception should be raised.
+
+		Returns:
+		    tuple: A 2-tuple (boolean, object) as outlined above.
+
+		Raises:
+		    SlicingCancelled: The slicing job was cancelled (via :meth:`cancel_slicing`).
 		"""
 		pass
 
 	def cancel_slicing(self, machinecode_path):
 		"""
-		Cancels the slicing to the indicated file
+		Cancels the slicing to the indicated file.
+
+		Arguments:
+		    machinecode_path (str): The absolute path to the machine code file to which to stop slicing to.
 		"""
 		pass
 

@@ -106,12 +106,15 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			from octoprint.server.api import valid_boolean_trues
 			profile_allow_overwrite = flask.request.values["allowOverwrite"] in valid_boolean_trues
 
-		slicingManager.save_profile("cura",
-		                            profile_name,
-		                            profile_dict,
-		                            allow_overwrite=profile_allow_overwrite,
-		                            display_name=profile_display_name,
-		                            description=profile_description)
+		try:
+			slicingManager.save_profile("cura",
+			                            profile_name,
+			                            profile_dict,
+			                            allow_overwrite=profile_allow_overwrite,
+			                            display_name=profile_display_name,
+			                            description=profile_description)
+		except octoprint.slicing.ProfileAlreadyExists:
+			return flask.make_response("A profile named {profile_name} already exists for slicer cura".format(**locals()), 409)
 
 		result = dict(
 			resource=flask.url_for("api.slicingGetSlicerProfile", slicer="cura", name=profile_name, _external=True),
@@ -191,6 +194,9 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		return octoprint.slicing.SlicingProfile(properties["type"], "unknown", profile_dict, display_name=display_name, description=description)
 
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
+		if os.path.exists(path) and not allow_overwrite:
+			raise octoprint.slicing.ProfileAlreadyExists("cura", profile.name)
+
 		new_profile = Profile.merge_profile(profile.data, overrides=overrides)
 
 		if profile.display_name is not None:
@@ -388,9 +394,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		return profile_dict
 
 	def _save_profile(self, path, profile, allow_overwrite=True):
-		if not allow_overwrite and os.path.exists(path):
-			raise IOError("Cannot overwrite {path}".format(path=path))
-
 		import yaml
 		with open(path, "wb") as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
