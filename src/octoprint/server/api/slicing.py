@@ -89,11 +89,10 @@ def slicingAddSlicerProfile(slicer, name):
 		description = json_data["description"]
 
 	try:
-		profile = slicingManager.save_profile(slicer, name, data, display_name=display_name, description=description)
+		profile = slicingManager.save_profile(slicer, name, data,
+		                                      allow_overwrite=True, display_name=display_name, description=description)
 	except UnknownSlicer:
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
-	except ProfileAlreadyExists:
-		return make_response("A profile named {name} already exists for slicer {slicer}".format(**locals()), 409)
 
 	result = _getSlicingProfileData(slicer, name, profile)
 	r = make_response(jsonify(result), 201)
@@ -137,10 +136,8 @@ def slicingPatchSlicerProfile(slicer, name):
 		s().set(["slicing", "defaultProfiles"], default_profiles)
 		s().save(force=True)
 
-	try:
-		saved_profile = slicingManager.save_profile(slicer, name, profile, overrides=data, display_name=display_name, description=description)
-	except ProfileAlreadyExists:
-		return make_response("Profile named {name} for slicer {slicer} does already exist".format(**locals()), 409)
+	saved_profile = slicingManager.save_profile(slicer, name, profile,
+	                                            allow_overwrite=True, overrides=data, display_name=display_name, description=description)
 	return jsonify(_getSlicingProfileData(slicer, name, saved_profile))
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["DELETE"])
@@ -150,8 +147,6 @@ def slicingDelSlicerProfile(slicer, name):
 		slicingManager.delete_profile(slicer, name)
 	except UnknownSlicer:
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
-	except UnknownProfile:
-		return make_response("Unknown profile {name} for slicer {slicer}".format(**locals()), 404)
 
 	return NO_CONTENT
 

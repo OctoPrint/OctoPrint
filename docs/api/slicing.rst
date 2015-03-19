@@ -110,7 +110,7 @@ List Slicing Profiles of a Specific Slicer
 
    :param slicer:   The identifying key of the slicer for which to list the available profiles.
    :statuscode 200: No error
-   :statuscode 404: If the ``slicer`` was unknown to the system.
+   :statuscode 404: If the ``slicer`` was unknown to the system or not yet configured.
 
 .. _sec-api-slicing-listspecific:
 
@@ -155,7 +155,7 @@ Retrieve Specific Profile
    :param slicer:   The identifying key of the slicer for which to list the available profiles.
    :param name:     The identifying key of the profile to retrieve
    :statuscode 200: No error
-   :statuscode 404: If the ``slicer`` or the profile was unknown to the system.
+   :statuscode 404: If the ``slicer`` or the profile ``key`` was unknown to the system.
 
 .. _sec-api-slicing-add:
 
@@ -215,7 +215,8 @@ Delete Slicing Profile
 
 .. http:delete:: /api/slicing/(string:slicer)/profiles/(string:key)
 
-   Delete the slicing profile identified by ``key`` for the slicer ``slicer``.
+   Delete the slicing profile identified by ``key`` for the slicer ``slicer``. If the profile doesn't exist, the
+   request will succeed anyway.
 
    :param slicer:   The identifying key of the slicer for which to delete the profile
    :param key:      The identifying key of the profile to delete

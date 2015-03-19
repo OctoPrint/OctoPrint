@@ -434,7 +434,7 @@ class SlicingManager(object):
 			raise ValueError("name must be set")
 
 		try:
-			path = self.get_profile_path(slicer, name)
+			path = self.get_profile_path(slicer, name, must_exist=True)
 		except UnknownProfile:
 			return
 		os.remove(path)
