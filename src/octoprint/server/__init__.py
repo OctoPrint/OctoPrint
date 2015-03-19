@@ -105,7 +105,7 @@ def get_locale():
 	if "l10n" in request.values:
 		return Locale.negotiate([request.values["l10n"]], LANGUAGES)
 
-	if g.identity:
+	if hasattr(g, "identity") and g.identity and userManager is not None:
 		userid = g.identity.id
 		try:
 			user_language = userManager.getUserSetting(userid, ("interface", "language"))
