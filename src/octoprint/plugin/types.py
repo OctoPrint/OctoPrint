@@ -7,6 +7,7 @@ Please note that the plugin implementation types are documented in the section
 :ref:`Available plugin mixins <sec-plugins-mixins>`.
 
 .. autoclass:: OctoPrintPlugin
+   :show-inheritance:
 
 """
 
