@@ -32,7 +32,7 @@ needs_sphinx = '1.3'
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['codeblockext', 'sphinx.ext.todo', 'sphinx.ext.autodoc', 'sphinxcontrib.httpdomain', 'sphinxcontrib.napoleon']
+extensions = ['codeblockext', 'sphinx.ext.todo', 'sphinx.ext.autodoc', 'sphinxcontrib.httpdomain', 'sphinx.ext.napoleon']
 todo_include_todos = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -191,7 +191,7 @@ htmlhelp_basename = 'OctoPrintdoc'
 
 # -- Options for LaTeX output --------------------------------------------------
 
-latex_elements = {
+#latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
 #'papersize': 'letterpaper',
 
@@ -200,14 +200,14 @@ latex_elements = {
 
 # Additional stuff for the LaTeX preamble.
 #'preamble': '',
-}
+#}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [
-  ('index', 'OctoPrint.tex', u'OctoPrint Documentation',
-   u'Gina Häußge', 'manual'),
-]
+#latex_documents = [
+#  ('index', 'OctoPrint.tex', u'OctoPrint Documentation',
+#   u'Gina Häußge', 'manual'),
+#]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
