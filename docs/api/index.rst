@@ -14,3 +14,4 @@ API Documentation
    printer.rst
    job.rst
    logs.rst
+   datamodel.rst
