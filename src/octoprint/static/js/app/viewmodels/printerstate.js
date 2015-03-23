@@ -129,7 +129,7 @@ function PrinterStateViewModel(loginStateViewModel) {
             var i = 0;
             do {
                 var key = "tool" + i;
-                if (data.filament[key].hasOwnProperty("length") && data.filament[key].length > 0) {
+                if (data.filament.hasOwnProperty(key) && data.filament[key].hasOwnProperty("length") && data.filament[key].length > 0) {
                     result.push({
                         name: ko.observable("Tool " + i),
                         data: ko.observable(data.filament[key])
