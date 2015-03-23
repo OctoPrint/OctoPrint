@@ -175,7 +175,7 @@
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
-## 1.1.2 (Unreleased)
+## 1.1.2 (2015-03-23)
 
 ### Improvements
 
@@ -186,6 +186,8 @@
 
 ### Bug Fixes
 
+* [#539](https://github.com/foosel/OctoPrint/issues/539) - Limit maximum number of tools, sanity check tool numbers in
+  GCODE files against upper limit and refuse to create 10000 tools due to weird slicers. (backported from `devel`)
 * [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
   by versioneer
 * [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
@@ -199,6 +201,8 @@
 * [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header
   sent by proxies into account for included host and port, also fixed [#698](https://github.com/foosel/OctoPrint/issues/698)
   introduced by this
+* [unreported] Fixed a bug causing gcodeInterpreter to hiccup on GCODES containing invalid coordinates such as Xnan or
+  Yinf (backported from `devel`)
 * Small fixes for timelapse creation:
   - [#344](https://github.com/foosel/OctoPrint/issues/344) - Made timelapses capable of coping with missing captures in between by decrementing the image counter again if there
     was an error fetching the latest image from the snapshot URL (backport of [1a7a468](https://github.com/foosel/OctoPrint/commit/1a7a468eb65fdf2a13b4c7a7723280e822c9c34b)
@@ -207,7 +211,7 @@
   - [unreported] Synchronize image counter decrementing as well as incrementing to prevent rare race conditions when generating the
     image file names
 
-([Commits](https://github.com/foosel/OctoPrint/compare/1.1.1...master))
+([Commits](https://github.com/foosel/OctoPrint/compare/1.1.1...1.1.2))
 
 ## 1.1.1 (2014-10-27)
 
