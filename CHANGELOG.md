@@ -36,7 +36,7 @@
   - [unreported] Synchronize image counter decrementing as well as incrementing to prevent rare race conditions when generating the
     image file names
 
-([Commits](https://github.com/foosel/OctoPrint/compare/1.1.1...master))
+([Commits](https://github.com/foosel/OctoPrint/compare/1.1.1...1.1.2))
 
 ## 1.1.1 (2014-10-27)
 
