@@ -511,7 +511,7 @@ class MachineCom(object):
 
 				self.sendCommand("M24")
 
-				self._sd_status_timer = RepeatedTimer(get_interval("sdStatus"), self._poll_sd_status, run_first=True)
+				self._sd_status_timer = RepeatedTimer(lambda: get_interval("sdStatus"), self._poll_sd_status, run_first=True)
 				self._sd_status_timer.start()
 			else:
 				line = self._getNext()
@@ -1144,7 +1144,7 @@ class MachineCom(object):
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
 	def _onConnected(self):
-		self._temperature_timer = RepeatedTimer(get_interval("temperature"), self._poll_temperature, run_first=True)
+		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature"), self._poll_temperature, run_first=True)
 		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
