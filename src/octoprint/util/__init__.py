@@ -534,6 +534,69 @@ def address_for_client(host, port):
 		except:
 			continue
 
+class RepeatedTimer(threading.Thread):
+	"""
+	This class represents an action that should be run repeatedly in a predefined interval. It is similar to python's
+	own :class:`threading.Timer` class, but instead of only running once the ``function`` will be run again and again,
+	sleeping the stated ``interval`` in between.
+
+	RepeatedTimers are started, as with threads, by calling their ``start()`` method. The timer can be stopped (in
+	between runs) by calling the :func:`cancel` method. The interval the time waited before execution of a loop may
+	not be exactly the same as the interval specified by the user.
+
+	For example:
+
+	.. code-block:: python
+
+	   def hello():
+	       print("Hello World!")
+
+	   t = Timer(1.0, hello)
+	   t.start() # prints "Hello World!" every second
+
+	Arguments:
+	    interval (float): The interval between each ``function`` call, in seconds.
+	    function (callable): The function to call.
+	    args (list or tuple): The arguments for the ``function`` call.
+	    kwargs (dict): The keyword arguments for the ``function`` call.
+	    run_first (boolean): If set to True, the function will be run for the first time *before* the first wait period.
+	        If set to False (the default), the function will be run for the first time *after* the first wait period.
+	"""
+
+	def __init__(self, interval, function, args=None, kwargs=None, run_first=False):
+		threading.Thread.__init__(self)
+
+		if args is None:
+			args = []
+		if kwargs is None:
+			kwargs = dict()
+
+		self.interval = interval
+		self.function = function
+		self.finished = threading.Event()
+		self.args = args
+		self.kwargs = kwargs
+		self.run_first = run_first
+
+	def cancel(self):
+		self.finished.set()
+
+	def run(self):
+		while True:
+			if self.run_first:
+				# if we are to run the function BEFORE waiting for the first time
+				self.function(*self.args, **self.kwargs)
+
+			# wait, but break if we are cancelled
+			self.finished.wait(self.interval)
+			if self.finished.is_set():
+				return
+
+			if not self.run_first:
+				# if we are to run the function AFTER waiting for the first time
+				self.function(*self.args, **self.kwargs)
+
+
 class CountedEvent(object):
 
 	def __init__(self, value=0, max=None, name=None):

@@ -24,7 +24,7 @@ from octoprint.settings import settings, default_settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent
+from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer
 from octoprint.util.virtual import VirtualPrinter
 
 try:
@@ -165,8 +165,8 @@ class MachineCom(object):
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
-		self._sd_status_timer = None
 		self._temperature_timer = None
+		self._sd_status_timer = None
 
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
@@ -510,7 +510,9 @@ class MachineCom(object):
 				self._currentFile.setFilepos(0)
 
 				self.sendCommand("M24")
-				self._poll_sd_status()
+
+				self._sd_status_timer = RepeatedTimer(get_interval("sdStatus"), self._poll_sd_status, run_first=True)
+				self._sd_status_timer.start()
 			else:
 				line = self._getNext()
 				if line is not None:
@@ -1130,10 +1132,6 @@ class MachineCom(object):
 		if self.isOperational() and not self.isStreaming() and not self._blocking_command and not self._heating:
 			self.sendCommand("M105", cmd_type="temperature_poll")
 
-		interval = get_interval("temperature")
-		self._temperature_timer = threading.Timer(interval, self._poll_temperature)
-		self._temperature_timer.start()
-
 	def _poll_sd_status(self):
 		"""
 		Polls the sd printing status after the sd status timeout, re-enqueues itself.
@@ -1145,12 +1143,9 @@ class MachineCom(object):
 		if self.isOperational() and self.isSdPrinting() and not self._blocking_command and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
-		interval = get_interval("sdStatus")
-		self._sd_status_timer = threading.Timer(interval, self._poll_sd_status)
-		self._sd_status_timer.start()
-
 	def _onConnected(self):
-		self._poll_temperature()
+		self._temperature_timer = RepeatedTimer(get_interval("temperature"), self._poll_temperature, run_first=True)
+		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
 
