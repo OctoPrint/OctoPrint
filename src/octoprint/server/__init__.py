@@ -592,6 +592,7 @@ class Server():
 				settings_plugin_inject_factory
 			]
 		)
+		pluginManager.log_all_plugins()
 		slicingManager.initialize()
 
 		# configure additional template folders for jinja2

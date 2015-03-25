@@ -98,7 +98,28 @@ class PluginInfo(object):
 		self._license = license
 
 	def __str__(self):
-		return "{name} ({version})".format(name=self.name, version=self.version if self.version else "unknown")
+		if self.version:
+			return "{name} ({version})".format(name=self.name, version=self.version)
+		else:
+			return self.name
+
+	def long_str(self, show_bundled=False, bundled_str=(" [B]", ""),
+	             show_location=False, location_str=" - {location}",
+	             show_enabled=False, enabled_str=("* ", "  ")):
+		if show_enabled:
+			ret = enabled_str[0] if self.enabled else enabled_str[1]
+		else:
+			ret = ""
+
+		ret += str(self)
+
+		if show_bundled:
+			ret += bundled_str[0] if self.bundled else bundled_str[1]
+
+		if show_location and self.location:
+			ret += location_str.format(location=self.location)
+
+		return ret
 
 	def get_hook(self, hook):
 		"""
@@ -425,7 +446,7 @@ class PluginManager(object):
 		return key in self.plugin_disabled_list or key.endswith('disabled')
 
 	def reload_plugins(self):
-		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(self.plugin_folders)))
+		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))))
 		self.plugins, self.disabled_plugins = self._find_plugins()
 
 		for name, plugin in self.plugins.items():
@@ -448,7 +469,14 @@ class PluginManager(object):
 			except:
 				self.logger.exception("There was an error loading plugin %s" % name)
 
-		self.log_registered_plugins()
+		if len(self.plugins) <= 0:
+			self.logger.info("No plugins found")
+		else:
+			self.logger.info("Found {count} plugin(s) providing {implementations} mixin implementations, {hooks} hook handlers".format(
+				count=len(self.plugins) + len(self.disabled_plugins),
+				implementations=sum(map(lambda x: len(x), self.plugin_implementations.values())),
+				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
+			))
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
 		if additional_injects is None:
@@ -491,16 +519,25 @@ class PluginManager(object):
 					self.logger.exception("Exception while initializing plugin")
 					# TODO disable plugin!
 
-		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
+		self.logger.debug("Initialized {count} plugin mixin implementation(s)".format(count=len(self.plugin_implementations)))
 
-	def log_registered_plugins(self):
-		if len(self.plugins) <= 0:
-			self.logger.info("No plugins found")
+	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True, location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!")):
+		all_plugins = self.plugins.values() + self.disabled_plugins.values()
+
+		if len(all_plugins) <= 0:
+			self.logger.info("No plugins available")
 		else:
-			self.logger.info("Found {count} plugin(s): {plugins}".format(count=len(self.plugins), plugins=", ".join(map(lambda x: str(x), self.plugins.values()))))
-
-		if len(self.disabled_plugins) > 0:
-			self.logger.info("{count} plugin(s) currently disabled: {plugins}".format(count=len(self.disabled_plugins), plugins=", ".join(map(lambda x: str(x), self.disabled_plugins.values()))))
+			self.logger.info("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins), plugins="\n".join(
+				sorted(
+					map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
+					                                bundled_str=bundled_str,
+					                                show_location=show_location,
+					                                location_str=location_str,
+					                                show_enabled=show_enabled,
+					                                enabled_str=enabled_str),
+					    self.plugins.values())
+				)
+			)))
 
 	def get_plugin(self, name):
 		if not name in self.plugins:

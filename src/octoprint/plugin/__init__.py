@@ -69,7 +69,10 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 	else:
 		if init:
 			if plugin_folders is None:
-				plugin_folders = (settings().getBaseFolder("plugins"), os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")))
+				plugin_folders = (
+					settings().getBaseFolder("plugins"),
+					(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")), True)
+				)
 			if plugin_types is None:
 				plugin_types = [StartupPlugin,
 				                ShutdownPlugin,
