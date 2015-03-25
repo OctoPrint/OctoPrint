@@ -1362,16 +1362,35 @@ class MachineCom(object):
 
 			if not self.isStreaming():
 				for hook in self._gcode_hooks:
-					hook_cmd = self._gcode_hooks[hook](self, cmd)
-					if hook_cmd and isinstance(hook_cmd, basestring):
+					hook_cmd = self._gcode_hooks[hook](self, cmd, cmd_type=cmd_type, send_checksum=sendChecksum)
+
+					# hook might have returned (cmd, sendChecksum) or (cmd, sendChecksum, cmd_type), split that
+					if isinstance(hook_cmd, tuple):
+						if len(hook_cmd) == 2:
+							hook_cmd, cmd_type = hook_cmd
+						elif len(hook_cmd) == 3:
+							hook_cmd, cmd_type, sendChecksum = hook_cmd
+
+					# hook might have returned None for cmd, if so stop processing, we won't send this command
+					# to the printer
+					if hook_cmd is None:
+						cmd = None
+						break
+
+					# if hook_cmd is a string, we'll replace cmd with it (it's been rewritten by the hook handler
+					elif isinstance(hook_cmd, basestring):
 						cmd = hook_cmd
+
+				# try to parse the cmd and extract the gcode type
 				gcode = self._regex_command.search(cmd)
 				if gcode:
 					gcode = gcode.group(1)
 
+					# fire events if necessary
 					if gcode in gcodeToEvent:
 						eventManager().fire(gcodeToEvent[gcode])
 
+					# send it through the specific handler if it exists
 					gcodeHandler = "_gcode_" + gcode
 					if hasattr(self, gcodeHandler):
 						cmd = getattr(self, gcodeHandler)(cmd)
@@ -1387,6 +1406,25 @@ class MachineCom(object):
 			self._enqueue_for_sending(cmd, linenumber=lineNumber, command_type=cmd_type)
 		else:
 			self._enqueue_for_sending(cmd, command_type=cmd_type)
+
+	def gcode_command_for_cmd(self, cmd):
+		"""
+		Tries to parse the provided ``cmd`` and extract the GCODE command identifier from it (e.g. "G0" for "G0 X10.0").
+
+		Arguments:
+		    cmd (str): The command to try to parse.
+
+		Returns:
+		    str or None: The GCODE command identifier if it could be parsed, or None if not.
+		"""
+		if not cmd:
+			return None
+
+		gcode = self._regex_command.search(cmd)
+		if not gcode:
+			return None
+
+		return gcode.group(1)
 
 	##~~ send loop handling
 
