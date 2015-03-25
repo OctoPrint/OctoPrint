@@ -269,6 +269,8 @@ class VirtualPrinter():
 			self.outgoing.put("// action:resume")
 		elif data == "action_disconnect":
 			self.outgoing.put("// action:disconnect")
+		elif data == "action_custom":
+			self.outgoing.put("// action:custom")
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)

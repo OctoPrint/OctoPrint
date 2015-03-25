@@ -3,6 +3,34 @@
 Available plugin hooks
 ======================
 
+.. _sec-plugins-hook-comm-protocol-action:
+
+octoprint.comm.protocol.action
+------------------------------
+
+.. py:function:: hook(comm_instance, line, action, *args, **kwargs)
+
+   React to a :ref:`action command <sec-features-action_commands>` received from the printer.
+
+   Hook handlers may use this to react to react to custom firmware messages. OctoPrint parses the received action
+   command ``line`` and provides the parsed ``action`` (so anything after ``// action:``) to the hook handler.
+
+   No returned value is expected.
+
+   **Example:**
+
+   Logs if the ``custom`` action (``// action:custom``) is received from the printer's firmware.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+
+   :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str line: The complete line as received from the printer, format ``// action:<command>``
+   :param str action: The parsed out action command, so for a ``line`` like ``// action:some_command`` this will be
+       ``some_command``
+
 .. _sec-plugins-hook-comm-protocol-gcode:
 
 octoprint.comm.protocol.gcode
@@ -39,6 +67,8 @@ octoprint.comm.protocol.gcode
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/rewrite_m107.py
       :linenos:
+      :tab-width: 4
+      :caption: `rewrite_m107.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/rewrite_m107.py>`_
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str cmd: The GCODE command for which the hook was triggered. This is the full command as taken either
@@ -48,25 +78,6 @@ octoprint.comm.protocol.gcode
    :param boolean with_checksum: Whether the ``cmd`` was to be sent with a checksum (True) or not (False)
    :return: A rewritten ``cmd``, a tuple of ``cmd`` and ``cmd_type`` or ``cmd``, ``cmd_type`` and ``with_checksum``
        or None to suppress sending of the ``cmd`` to the printer. See above for details.
-
-.. _sec-plugins-hook-comm-protocol-action:
-
-octoprint.comm.protocol.action
-------------------------------
-
-.. py:function:: hook(comm_instance, line, action, *args, **kwargs)
-
-   React to a :ref:`action command <sec-features-action_commands>` received from the printer.
-
-   Hook handlers may use this to react to react to custom firmware messages. OctoPrint parses the received action
-   command ``line`` and provides the parsed ``action`` (so anything after ``// action:``) to the hook handler.
-
-   No returned value is expected.
-
-   :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
-   :param str line: The complete line as received from the printer, format ``// action:<command>``
-   :param str action: The parsed out action command, so for a ``line`` like ``// action:some_command`` this will be
-       ``some_command``
 
 .. _sec-plugins-hook-comm-protocol-scripts:
 
@@ -87,10 +98,14 @@ octoprint.comm.protocol.scripts
    The returned entries may be either iterables of script lines or a string including newlines of the script lines (which
    will be split by the caller if necessary).
 
-   Example:
+   **Example:**
+
+   Appends an ``M117 OctoPrint connected`` to the configured ``afterPrinterConnected`` GCODE script.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/message_on_connect.py
       :linenos:
+      :tab-width: 4
+      :caption: `message_on_connect.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/message_on_connect.py>`_
 
    :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str script_type: The type of the script for which the hook was called, currently only "gcode" is supported here.

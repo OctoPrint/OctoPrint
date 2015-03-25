@@ -135,54 +135,13 @@ If you want your hook handler to be an instance method of a mixin implementation
 need access to instance variables handed to your implementation via mixin invocations), you can get this work
 by using a small trick. Instead of defining it directly via ``__plugin_hooks__`` utilize the ``__plugin_init__``
 property instead, manually instantiate your implementation instance and then add its hook handler method to the
-``__plugin_hooks__`` property and itself to the ``__plugin_implementations__`` property. Example:
+``__plugin_hooks__`` property and itself to the ``__plugin_implementations__`` property. See the following example.
 
-.. code-block:: python
+.. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
    :linenos:
-
-   # ...
-
-   class MyPluginImplementation(octoprint.plugin.StartupPlugin):
-
-       def __init__(self):
-           self._host = None
-           self._port = None
-
-       def on_startup(self, host, port):
-           self._host = host
-           self._port = port
-
-       def my_script_hook_handler(self, comm, script_type, script_name):
-           if not script_type == "gcode" or not script_name == "afterPrinterConnected":
-               # we only extend the gcode script afterPrinterConnected, ignore this
-               return None
-
-           if not self._host or not self._port:
-               # oops, we haven't started up yet, shouldn't even happen...
-               return None
-
-           # we only append something to the existing script, we don't prepend
-           prefix = None
-           postfix = ["M117 Hello World from %s:%d" % (self._host, self._port)]
-           return prefix, postfix
-
-   # ...
-
-   __plugin_implementations__ = []
-   __plugin_hooks__ = dict()
-
-   def __plugin_init__():
-       # this gets called when OctoPrint initializes the plugin, so let's create the
-       # instance of our main implementation ...
-       plugin = MyPluginImplementation()
-
-       # ... register it as implementation ...
-       global __plugin_implementations__
-       __plugin_implementations__ = [plugin]
-
-       # ... and its hook handler method as hook handler.
-       global __plugin_hooks__
-       __plugin_hooks__ = {"octoprint.comm.protocol.scripts": plugin.my_script_hook_handler}
+   :tab-width: 4
+   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+   :name: sec-plugin-concepts-hooks-example
 
 .. seealso::
 
