@@ -39,7 +39,6 @@ octoprint.comm.protocol.gcode
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/rewrite_m107.py
       :linenos:
-      :lines: 3-
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str cmd: The GCODE command for which the hook was triggered. This is the full command as taken either
@@ -57,7 +56,7 @@ octoprint.comm.protocol.action
 
 .. py:function:: hook(comm_instance, line, action, *args, **kwargs)
 
-   React to a :ref:`action command <>` received from the printer.
+   React to a :ref:`action command <sec-features-action_commands>` received from the printer.
 
    Hook handlers may use this to react to react to custom firmware messages. OctoPrint parses the received action
    command ``line`` and provides the parsed ``action`` (so anything after ``// action:``) to the hook handler.
@@ -90,18 +89,8 @@ octoprint.comm.protocol.scripts
 
    Example:
 
-   .. code-block:: python
-
-      def handler(comm_instance, script_type, script_name):
-          if not script_type == "gcode" or not script_name == "afterPrinterConnected":
-              return None
-
-          prefix = "M117 Hello\nM117 Hello World"
-          postfix = ["M117 Connected", "M117 to OctoPrint"]
-          return prefix, postfix
-
-      __plugin_name__ = "Example: GCODE script hook demo"
-      __plugin_hooks__ = {"octoprint.comm.protocol.scripts": handler}
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/message_on_connect.py
+      :linenos:
 
    :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str script_type: The type of the script for which the hook was called, currently only "gcode" is supported here.
