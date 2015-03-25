@@ -15,6 +15,7 @@ additional slicers. More plugin types are planned for the future.
    :maxdepth: 3
 
    using.rst
+   concepts.rst
    gettingstarted.rst
    infrastructure.rst
    templates.rst
