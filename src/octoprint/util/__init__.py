@@ -551,7 +551,7 @@ class RepeatedTimer(threading.Thread):
 	   def hello():
 	       print("Hello World!")
 
-	   t = Timer(1.0, hello)
+	   t = RepeatedTimer(1.0, hello)
 	   t.start() # prints "Hello World!" every second
 
 	Arguments:
