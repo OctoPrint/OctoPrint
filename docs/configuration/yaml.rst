@@ -166,8 +166,7 @@ Examples
 Based on the three types explained above, quite complex data structures are possible (whitespace made visible to
 help track indentation):
 
-.. code-block-ext:: yaml
-   :whitespace:
+.. code-block:: yaml
 
    general:
      some_setting: some_value
@@ -205,8 +204,7 @@ just playing a trick on you due to the list's dashes ``-`` being on the same lev
 also just add two more spaces to your identation and write that part like this, which makes the structure a bit
 clearer (whitespace again made visible to help track indentation):
 
-.. code-block-ext:: yaml
-   :whitespace:
+.. code-block:: yaml
 
    general:
        some_setting: some_value
