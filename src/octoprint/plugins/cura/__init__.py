@@ -65,7 +65,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			try:
 				profile_dict = Profile.from_cura_ini(flask.request.values[input_upload_path])
 			except Exception as e:
-				return flask.make_response("Something went wrong while converting imported profile: {message}".format(e.message), 500)
+				return flask.make_response("Something went wrong while converting imported profile: {message}".format(str(e)), 500)
 
 		elif input_name in flask.request.files:
 			temp_file = tempfile.NamedTemporaryFile("wb", delete=False)
@@ -75,7 +75,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				upload.save(temp_file.name)
 				profile_dict = Profile.from_cura_ini(temp_file.name)
 			except Exception as e:
-				return flask.make_response("Something went wrong while converting imported profile: {message}".format(e.message), 500)
+				return flask.make_response("Something went wrong while converting imported profile: {message}".format(str(e)), 500)
 			finally:
 				os.remove(temp_file)
 

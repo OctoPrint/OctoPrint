@@ -65,7 +65,7 @@ def printerProfilesAdd():
 	except CouldNotOverwriteError:
 		return make_response("Profile already exists and overwriting was not allowed", 400)
 	except Exception as e:
-		return make_response("Could not save profile: %s" % e.message, 500)
+		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
@@ -118,7 +118,7 @@ def printerProfilesUpdate(identifier):
 	except CouldNotOverwriteError:
 		return make_response("Profile already exists and overwriting was not allowed", 400)
 	except Exception as e:
-		return make_response("Could not save profile: %s" % e.message, 500)
+		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 

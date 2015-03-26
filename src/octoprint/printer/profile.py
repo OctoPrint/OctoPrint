@@ -310,7 +310,7 @@ class PrinterProfileManager(object):
 			try:
 				yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 			except Exception as e:
-				raise SaveError("Cannot save profile %s: %s" % (profile["id"], e.message))
+				raise SaveError("Cannot save profile %s: %s" % (profile["id"], str(e)))
 
 	def _remove_from_path(self, path):
 		try:
