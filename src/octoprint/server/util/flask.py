@@ -15,6 +15,7 @@ import time
 import uuid
 import threading
 import logging
+import netaddr
 
 from octoprint.settings import settings
 import octoprint.server
@@ -23,11 +24,46 @@ import octoprint.users
 from werkzeug.contrib.cache import SimpleCache
 
 
+#~~ passive login helper
+
+def passive_login():
+	if octoprint.server.userManager is not None:
+		user = octoprint.server.userManager.login_user(flask.ext.login.current_user)
+	else:
+		user = flask.ext.login.current_user
+
+	if user is not None and not user.is_anonymous():
+		flask.g.user = user
+		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+		return flask.jsonify(user.asDict())
+	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
+			and settings().get(["accessControl", "autologinAs"]) is not None \
+			and settings().get(["accessControl", "localNetworks"]) is not None:
+
+		autologinAs = settings().get(["accessControl", "autologinAs"])
+		localNetworks = netaddr.IPSet([])
+		for ip in settings().get(["accessControl", "localNetworks"]):
+			localNetworks.add(ip)
+
+		try:
+			remoteAddr = get_remote_address(flask.request)
+			if netaddr.IPAddress(remoteAddr) in localNetworks:
+				user = octoprint.server.userManager.findUser(autologinAs)
+				if user is not None:
+					flask.g.user = user
+					flask.ext.login.login_user(user)
+					flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+					return flask.jsonify(user.asDict())
+		except:
+			logger = logging.getLogger(__name__)
+			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
+
+
 #~~ cache decorator for cacheable views
 
 _cache = SimpleCache()
 
-def cached(timeout=5 * 60, key="view/%s", unless=None, refreshif=None):
+def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=None, refreshif=None):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
@@ -38,7 +74,7 @@ def cached(timeout=5 * 60, key="view/%s", unless=None, refreshif=None):
 				logger.debug("Cache bypassed, calling wrapped function")
 				return f(*args, **kwargs)
 
-			cache_key = key % flask.request.path
+			cache_key = key()
 
 			# only take the value from the cache if we are not required to refresh it from the wrapped function
 			if not callable(refreshif) or not refreshif():

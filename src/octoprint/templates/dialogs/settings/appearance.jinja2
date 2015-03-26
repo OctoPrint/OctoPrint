@@ -19,4 +19,15 @@
             </label>
         </div>
     </div>
+    <div class="control-group" title="">
+        <label class="control-label" for="settings-appearanceDefaultLanguage">{{ _('Default Language') }}</label>
+        <div class="controls">
+            <select id="settings-appearanceDefaultLanguage" data-bind="options: locales,
+                                   optionsText: function(item) { return item.display + ((item.language != undefined && item.english != undefined) ? ' [' + item.language + ', ' + item.english + ']' : '') },
+                                   optionsValue: 'language',
+                                   value: appearance_defaultLanguage">
+            </select>
+            <span class="help-inline">{{ _('Changes to the default interface language will only become active after a reload of the page and only be active if not overridden by the user''s language settings.') }}</span>
+        </div>
+    </div>
 </form>

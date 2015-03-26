@@ -241,14 +241,6 @@ function DataUpdater(allViewModels) {
 
                     break;
                 }
-                case "feedbackCommandOutput": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromFeedbackCommandData")) {
-                            viewModel.fromFeedbackCommandData(data);
-                        }
-                    });
-                    break;
-                }
                 case "timelapse": {
                     _.each(self.allViewModels, function(viewModel) {
                         if (viewModel.hasOwnProperty("fromTimelapseData")) {

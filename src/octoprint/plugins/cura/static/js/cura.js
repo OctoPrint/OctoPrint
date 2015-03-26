@@ -71,6 +71,7 @@ $(function() {
                 self.placeholderDisplayName(name);
                 self.placeholderDescription("Imported from " + self.fileName() + " on " + formatDate(new Date().getTime() / 1000));
 
+                self.uploadButton.unbind("click");
                 self.uploadButton.on("click", function() {
                     var form = {
                         allowOverwrite: self.profileAllowOverwrite()
@@ -183,7 +184,6 @@ $(function() {
             self.settings = self.settingsViewModel.settings;
             self.requestData();
         };
-
     }
 
     // view model class, parameters for constructor, container to bind to

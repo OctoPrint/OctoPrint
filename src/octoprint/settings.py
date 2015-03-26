@@ -167,7 +167,30 @@ default_settings = {
 	"appearance": {
 		"name": "",
 		"color": "default",
-		"colorTransparent": False
+		"colorTransparent": False,
+		"defaultLanguage": "_default",
+		"components": {
+			"order": {
+				"navbar": ["settings", "systemmenu", "login"],
+				"sidebar": ["connection", "state", "files"],
+				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
+				"settings": [
+					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
+					"section_features", "features", "webcam", "accesscontrol", "api",
+					"section_octoprint", "folders", "appearance", "logs"
+				],
+				"usersettings": ["access", "interface"],
+				"generic": []
+			},
+			"disabled": {
+				"navbar": [],
+				"sidebar": [],
+				"tab": [],
+				"settings": [],
+				"usersettings": [],
+				"generic": []
+			}
+		}
 	},
 	"controls": [],
 	"system": {
@@ -302,6 +325,11 @@ class Settings(object):
 		self._config = None
 		self._dirty = False
 		self._mtime = None
+
+		self._get_preprocessors = dict(
+			controls=self._process_custom_controls
+		)
+		self._set_preprocessors = dict()
 
 		self._init_basedir(basedir)
 
@@ -450,6 +478,30 @@ class Settings(object):
 	def _get_scripts(self, script_type):
 		return self._script_env.list_templates(filter_func=lambda x: x.startswith(script_type+"/"))
 
+	def _process_custom_controls(self, controls):
+		def process_control(c):
+			# shallow copy
+			result = dict(c)
+
+			if "regex" in result and "template" in result:
+				# if it's a template matcher, we need to add a key to associate with the matcher output
+				import hashlib
+				key_hash = hashlib.md5()
+				key_hash.update(result["regex"])
+				result["key"] = key_hash.hexdigest()
+
+				template_key_hash = hashlib.md5()
+				template_key_hash.update(result["template"])
+				result["template_key"] = template_key_hash.hexdigest()
+
+			elif "children" in result:
+				# if it has children we need to process them recursively
+				result["children"] = map(process_control, result["children"])
+
+			return result
+
+		return map(process_control, controls)
+
 	#~~ load and save
 
 	def load(self, migrate=False):
@@ -466,7 +518,15 @@ class Settings(object):
 
 	def _migrate_config(self):
 		dirty = False
-		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config, self._migrate_printer_parameters, self._migrate_gcode_scripts):
+
+		migrators = (
+			self._migrate_event_config,
+			self._migrate_reverse_proxy_config,
+			self._migrate_printer_parameters,
+			self._migrate_gcode_scripts
+		)
+
+		for migrate in migrators:
 			dirty = migrate() or dirty
 		if dirty:
 			self.save(force=True)
@@ -697,7 +757,7 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False, defaults=None, merged=False):
+	def get(self, path, asdict=False, defaults=None, preprocessors=None, merged=False):
 		import octoprint.util as util
 
 		if len(path) == 0:
@@ -706,17 +766,23 @@ class Settings(object):
 		config = self._config
 		if defaults is None:
 			defaults = default_settings
+		if preprocessors is None:
+			preprocessors = self._get_preprocessors
 
 		while len(path) > 1:
 			key = path.pop(0)
-			if key in config.keys() and key in defaults.keys():
+			if key in config and key in defaults:
 				config = config[key]
 				defaults = defaults[key]
-			elif key in defaults.keys():
+			elif key in defaults:
 				config = {}
 				defaults = defaults[key]
 			else:
 				return None
+
+			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors:
+				preprocessors = preprocessors[key]
+
 
 		k = path.pop(0)
 		if not isinstance(k, (list, tuple)):
@@ -729,7 +795,7 @@ class Settings(object):
 		else:
 			results = []
 		for key in keys:
-			if key in config.keys():
+			if key in config:
 				value = config[key]
 				if merged and key in defaults:
 					value = util.dict_merge(defaults[key], value)
@@ -737,6 +803,9 @@ class Settings(object):
 				value = defaults[key]
 			else:
 				value = None
+
+			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors and callable(preprocessors[key]):
+				value = preprocessors[key](value)
 
 			if asdict:
 				results[key] = value
@@ -751,8 +820,8 @@ class Settings(object):
 		else:
 			return results
 
-	def getInt(self, path, defaults=None):
-		value = self.get(path, defaults=defaults)
+	def getInt(self, path, defaults=None, preprocessors=None):
+		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 
@@ -762,8 +831,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getFloat(self, path, defaults=None):
-		value = self.get(path, defaults=defaults)
+	def getFloat(self, path, defaults=None, preprocessors=None):
+		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 
@@ -773,8 +842,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getBoolean(self, path, defaults=None):
-		value = self.get(path, defaults=defaults)
+	def getBoolean(self, path, defaults=None, preprocessors=None):
+		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 		if isinstance(value, bool):
@@ -827,57 +896,9 @@ class Settings(object):
 
 		return script
 
-	def getFeedbackControls(self):
-		feedbackControls = []
-		for control in self.get(["controls"]):
-			feedbackControls.extend(self._getFeedbackControls(control))
-		return feedbackControls
-
-	def _getFeedbackControls(self, control=None):
-		if control["type"] == "feedback_command" or control["type"] == "feedback":
-			pattern = control["regex"]
-			try:
-				matcher = re.compile(pattern)
-				return [(control["name"], matcher, control["template"])]
-			except:
-				# invalid regex or something like this, we'll just skip this entry
-				pass
-		elif control["type"] == "section":
-			result = []
-			for c in control["children"]:
-				result.extend(self._getFeedbackControls(c))
-			return result
-		else:
-			return []
-
-	def getPauseTriggers(self):
-		triggers = {
-			"enable": [],
-			"disable": [],
-			"toggle": []
-		}
-		for trigger in self.get(["printerParameters", "pauseTriggers"]):
-			try:
-				regex = trigger["regex"]
-				type = trigger["type"]
-				if type in triggers.keys():
-					# make sure regex is valid
-					re.compile(regex)
-					# add to type list
-					triggers[type].append(regex)
-			except:
-				# invalid regex or something like this, we'll just skip this entry
-				pass
-
-		result = {}
-		for type in triggers.keys():
-			if len(triggers[type]) > 0:
-				result[type] = re.compile("|".join(map(lambda x: "(%s)" % x, triggers[type])))
-		return result
-
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None):
+	def set(self, path, value, force=False, defaults=None, preprocessors=None):
 		if len(path) == 0:
 			return
 
@@ -887,6 +908,8 @@ class Settings(object):
 		config = self._config
 		if defaults is None:
 			defaults = default_settings
+		if preprocessors is None:
+			preprocessors = self._set_preprocessors
 
 		while len(path) > 1:
 			key = path.pop(0)
@@ -900,7 +923,14 @@ class Settings(object):
 			else:
 				return
 
+			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors:
+				preprocessors = preprocessors[key]
+
 		key = path.pop(0)
+
+		if preprocessors and isinstance(preprocessors, dict) and key in preprocessors and callable(preprocessors[key]):
+			value = preprocessors[key](value)
+
 		if not force and key in defaults and key in config and defaults[key] == value:
 			del config[key]
 			self._dirty = True
@@ -911,9 +941,9 @@ class Settings(object):
 				config[key] = value
 			self._dirty = True
 
-	def setInt(self, path, value, force=False, defaults=None):
+	def setInt(self, path, value, force=False, defaults=None, preprocessors=None):
 		if value is None:
-			self.set(path, None, force=force, defaults=defaults)
+			self.set(path, None, force=force, defaults=defaults, preprocessors=preprocessors)
 			return
 
 		try:
@@ -924,9 +954,9 @@ class Settings(object):
 
 		self.set(path, intValue, force)
 
-	def setFloat(self, path, value, force=False, defaults=None):
+	def setFloat(self, path, value, force=False, defaults=None, preprocessors=None):
 		if value is None:
-			self.set(path, None, force=force, defaults=defaults)
+			self.set(path, None, force=force, defaults=defaults, preprocessors=preprocessors)
 			return
 
 		try:
@@ -937,13 +967,13 @@ class Settings(object):
 
 		self.set(path, floatValue, force)
 
-	def setBoolean(self, path, value, force=False, defaults=None):
+	def setBoolean(self, path, value, force=False, defaults=None, preprocessors=None):
 		if value is None or isinstance(value, bool):
-			self.set(path, value, force=force, defaults=defaults)
+			self.set(path, value, force=force, defaults=defaults, preprocessors=preprocessors)
 		elif value.lower() in valid_boolean_trues:
-			self.set(path, True, force=force, defaults=defaults)
+			self.set(path, True, force=force, defaults=defaults, preprocessors=preprocessors)
 		else:
-			self.set(path, False, force=force, defaults=defaults)
+			self.set(path, False, force=force, defaults=defaults, preprocessors=preprocessors)
 
 	def setBaseFolder(self, type, path, force=False):
 		if type not in default_settings["folder"].keys():

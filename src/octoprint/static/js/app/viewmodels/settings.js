@@ -13,6 +13,7 @@ $(function() {
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
+        self.appearance_defaultLanguage = ko.observable();
 
         self.settingsDialog = undefined;
 
@@ -53,6 +54,12 @@ $(function() {
             }
         };
 
+        var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
+        self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
+            return n.display;
+        })));
+        self.locale_languages = _.keys(AVAILABLE_LOCALES);
+
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
         self.webcam_streamUrl = ko.observable(undefined);
@@ -85,6 +92,7 @@ $(function() {
         self.serial_timeoutTemperature = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
+        self.serial_additionalPorts = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -187,6 +195,10 @@ $(function() {
             self.appearance_name(response.appearance.name);
             self.appearance_color(response.appearance.color);
             self.appearance_colorTransparent(response.appearance.colorTransparent);
+            self.appearance_defaultLanguage("_default");
+            if (_.includes(self.locale_languages, response.appearance.defaultLanguage)) {
+                self.appearance_defaultLanguage(response.appearance.defaultLanguage);
+            }
 
             self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
 
@@ -220,6 +232,7 @@ $(function() {
             self.serial_timeoutTemperature(response.serial.timeoutTemperature);
             self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
             self.serial_log(response.serial.log);
+            self.serial_additionalPorts(response.serial.additionalPorts.join("\n"));
 
             self.folder_uploads(response.folder.uploads);
             self.folder_timelapse(response.folder.timelapse);
@@ -255,7 +268,8 @@ $(function() {
                 "appearance" : {
                     "name": self.appearance_name(),
                     "color": self.appearance_color(),
-                    "colorTransparent": self.appearance_colorTransparent()
+                    "colorTransparent": self.appearance_colorTransparent(),
+                    "defaultLanguage": self.appearance_defaultLanguage()
                 },
                 "printer": {
                     "defaultExtrusionLength": self.printer_defaultExtrusionLength()
@@ -290,7 +304,14 @@ $(function() {
                     "timeoutCommunication": self.serial_timeoutCommunication(),
                     "timeoutTemperature": self.serial_timeoutTemperature(),
                     "timeoutSdStatus": self.serial_timeoutSdStatus(),
-                    "log": self.serial_log()
+                    "log": self.serial_log(),
+                    "additionalPorts": _.filter(
+                        _.map(
+                            self.serial_additionalPorts().split("\n"),
+                            function(item) { return (item) ? item.trim() : ""; }
+                        ),
+                        function(item) { return item && !_.startsWith(item, "#"); }
+                    )
                 },
                 "folder": {
                     "uploads": self.folder_uploads(),
@@ -326,7 +347,7 @@ $(function() {
                 data: JSON.stringify(data),
                 success: function(response) {
                     self.fromResponse(response);
-                    $("#settings_dialog").modal("hide");
+                    self.settingsDialog.modal("hide");
                 }
             });
         };

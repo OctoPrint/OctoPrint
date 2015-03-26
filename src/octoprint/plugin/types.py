@@ -7,6 +7,7 @@ Please note that the plugin implementation types are documented in the section
 :ref:`Available plugin mixins <sec-plugins-mixins>`.
 
 .. autoclass:: OctoPrintPlugin
+   :show-inheritance:
 
 """
 
@@ -797,7 +798,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		   and iterate yourself over all your settings, retrieving them (if set) from the supplied received ``data``
 		   and using the proper setter methods on the settings manager to persist the data in the correct format.
 
-		:param dict data: the settings dictionary to be saved for the plugin
+		Arguments:
+		    data (dict): The settings dictionary to be saved for the plugin
 		"""
 		import octoprint.util
 
@@ -813,6 +815,43 @@ class SettingsPlugin(OctoPrintPlugin):
 		with included default values.
 		"""
 		return dict()
+
+	def get_settings_preprocessors(self):
+		"""
+		Retrieves the plugin's preprocessors to use for preprocessing returned or set values prior to returning/setting
+		them.
+
+		The preprocessors should be provided as a dictionary mapping the path of the values to preprocess
+		(hierarchically) to a transform function which will get the value to transform as only input and should return
+		the transformed value.
+
+		Example:
+
+		.. sourcecode: python
+
+		   def get_settings_defaults(self):
+		       return dict(some_key="Some_Value", some_other_key="Some_Value")
+
+		   def get_settings_preprocessors(self):
+		       return dict(some_key=lambda x: x.upper()),        # getter preprocessors
+		              dict(some_other_key=lambda x: x.lower())   # setter preprocessors
+
+		   def some_method(self):
+		       # getting the value for "some_key" should turn it to upper case
+		       assert self._settings.get(["some_key"]) == "SOME_VALUE"
+
+		       # the value for "some_other_key" should be left alone
+		       assert self._settings.get(["some_other_key"] = "Some_Value"
+
+		       # setting a value for "some_other_key" should cause the value to first be turned to lower case
+		       self._settings.set(["some_other_key"], "SOME_OTHER_VALUE")
+		       assert self._settings.get(["some_other_key"]) == "some_other_value"
+
+		Returns:
+		    (dict, dict): A tuple consisting of two dictionaries, the first being the plugin's preprocessors for
+		        getters, the second the preprocessors for setters
+		"""
+		return dict(), dict()
 
 
 class EventHandlerPlugin(OctoPrintPlugin):
@@ -831,9 +870,10 @@ class EventHandlerPlugin(OctoPrintPlugin):
 		"""
 		Called by OctoPrint upon processing of a fired event on the platform.
 
-		:param string event: the type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
-		                     for possible values
-		:param dict payload: the payload as provided with the event
+		Arguments:
+		    event (str): The type of event that got fired, see :ref:`the list of events <sec-events-available_events>`
+		        for possible values
+		    payload (dict): The payload as provided with the event
 		"""
 		pass
 
@@ -865,10 +905,14 @@ class SlicerPlugin(OctoPrintPlugin):
 		name
 		    The human readable name of the slicer. This will be displayed to the user during slicer selection.
 		same_device
-		    ``True`` if the slicer runs on the same device as OctoPrint, ``False`` otherwise. Slicers running on the same
-		    device will TODO
+		    True if the slicer runs on the same device as OctoPrint, False otherwise. Slicers running on the same
+		    device will not be allowed to slice while a print is running due to performance reasons. Slice requests
+		    against slicers running on the same device will result in an error.
 		progress_report
 		    ``True`` if the slicer can report back slicing progress to OctoPrint ``False`` otherwise.
+
+		Returns:
+		    dict: A dict describing the slicer as outlined above.
 		"""
 		return dict(
 			type=None,
@@ -879,38 +923,48 @@ class SlicerPlugin(OctoPrintPlugin):
 
 	def get_slicer_default_profile(self):
 		"""
-		Should return a :class:`SlicingProfile` containing the default slicing profile to use with this slicer if
-		no other profile has been selected.
+		Should return a :class:`~octoprint.slicing.SlicingProfile` containing the default slicing profile to use with
+		this slicer if no other profile has been selected.
+
+		Returns:
+		    SlicingProfile: The :class:`~octoprint.slicing.SlicingProfile` containing the default slicing profile for
+		        this slicer.
 		"""
 		return None
 
 	def get_slicer_profile(self, path):
 		"""
-		Should return a :class:`SlicingProfile` parsed from the slicing profile stored at the indicated ``path``.
+		Should return a :class:`~octoprint.slicing.SlicingProfile` parsed from the slicing profile stored at the
+		indicated ``path``.
 
-		:param string path: the path from which to read the slicing profile
+		Arguments:
+		    path (str): The absolute path from which to read the slicing profile.
+
+		Returns:
+		    SlicingProfile: The specified slicing profile.
 		"""
 		return None
 
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
 		"""
-		Should save the provided :class:`SlicingProfile` to the indicated ``path``, after applying any supplied
-		``overrides``. If a profile is already saved under the indicated path and ``allow_overwrite`` is set to
-		``False`` (defaults to ``True``), an ``IOError`` should be raised.
+		Should save the provided :class:`~octoprint.slicing.SlicingProfile` to the indicated ``path``, after applying
+		any supplied ``overrides``. If a profile is already saved under the indicated path and ``allow_overwrite`` is
+		set to False (defaults to True), an :class:`IOError` should be raised.
 
-		:param string path: the path to which to save the profile
-		:param SlicingProfile profile: the profile to save
-		:param bool allow_overwrite: whether to allow to overwrite an existing profile at the indicated path (``True``, default)
-		    or not (``False``) - if a profile already exists on the path and this is ``False``
-		    and :class:`IOError` should be raised
-		:param dict overrides: profile overrides to apply to the ``profile`` before saving it
+		Arguments:
+		    path (str): The absolute path to which to save the profile.
+		    profile (SlicingProfile): The profile to save.
+		    allow_overwrite (boolean): Whether to allow to overwrite an existing profile at the indicated path (True,
+		        default) or not (False). If a profile already exists on teh path and this is False an
+		        :class:`IOError` should be raised.
+		    overrides (dict): Profile overrides to apply to the ``profile`` before saving it
 		"""
 		pass
 
 	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, position=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		"""
 		Called by OctoPrint to slice ``model_path`` for the indicated ``printer_profile``. If the ``machinecode_path`` is ``None``,
-		slicer implementations should generate it from the provided model_path.
+		slicer implementations should generate it from the provided ``model_path``.
 
 		If provided, the ``profile_path`` is guaranteed by OctoPrint to be a serialized slicing profile created through the slicing
 		plugin's own :func:`save_slicer_profile` method.
@@ -935,12 +989,40 @@ class SlicerPlugin(OctoPrintPlugin):
 
 		Please note that both ``on_progress_args`` and ``on_progress_kwargs`` as supplied by OctoPrint might be ``None``,
 		so always make sure to initialize those values to sane defaults like depicted above before invoking the callback.
+
+		In order to support external cancellation of an ongoing slicing job via :func:`cancel_slicing`, implementations
+		should make sure to track the started jobs via the ``machinecode_path``, if provided.
+
+		The method should return a 2-tuple consisting of a boolean ``flag`` indicating whether the slicing job was
+		finished successfully (True) or not (False) and a ``result`` depending on the success of the slicing job.
+
+		For jobs that finished successfully, ``result`` should be a :class:`dict` containing additional information
+		about the slicing job under the following keys:
+
+		_analysis
+		    Analysis result of the generated machine code as returned by the slicer itself. This should match the
+		    data structure described for the analysis queue of the matching maching code format, e.g.
+		    :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue` for GCODE files.
+
+		For jobs that did not finish successfully (but not due to being cancelled!), ``result`` should be a :class:`str`
+		containing a human readable reason for the error.
+
+		If the job gets cancelled, a :class:`~octoprint.slicing.SlicingCancelled` exception should be raised.
+
+		Returns:
+		    tuple: A 2-tuple (boolean, object) as outlined above.
+
+		Raises:
+		    SlicingCancelled: The slicing job was cancelled (via :meth:`cancel_slicing`).
 		"""
 		pass
 
 	def cancel_slicing(self, machinecode_path):
 		"""
-		Cancels the slicing to the indicated file
+		Cancels the slicing to the indicated file.
+
+		Arguments:
+		    machinecode_path (str): The absolute path to the machine code file to which to stop slicing to.
 		"""
 		pass
 
@@ -976,6 +1058,28 @@ class ProgressPlugin(OctoPrintPlugin):
 
 
 class AppPlugin(OctoPrintPlugin):
+	"""
+	Using the :class:`AppPlugin mixin` plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
+	within the system.
+	"""
+
 	def get_additional_apps(self):
+		"""
+		Overrides this to return your additional app information to be used for validating app session keys. You'll
+		need to return a :class:`list` of 3-tuples of the format (id, version, public key).
+
+		The ``id`` should be the (unique) identifier of the app. Using a domain prefix might make sense here, e.g.
+		``org.octoprint.example.MyApp``.
+
+		``version`` should be a string specifying the version of the app for which the public key is valid. You can
+		provide the string ``any`` here, in which case the provided public key will be valid for all versions of the
+		app for which no specific public key is defined.
+
+		Finally, the public key is expected to be provided as a PKCS1 string without newlines.
+
+		Returns:
+		    list: A list of 3-tuples as described above.
+		"""
+
 		return []
 

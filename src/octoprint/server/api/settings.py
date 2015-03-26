@@ -39,7 +39,8 @@ def getSettings():
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"]),
-			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"])
+			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"]),
+			"defaultLanguage": s.get(["appearance", "defaultLanguage"])
 		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
@@ -76,7 +77,8 @@ def getSettings():
 			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
 			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
-			"log": s.getBoolean(["serial", "log"])
+			"log": s.getBoolean(["serial", "log"]),
+			"additionalPorts": s.get(["serial", "additionalPorts"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -149,6 +151,7 @@ def setSettings():
 		if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
 		if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 		if "colorTransparent" in data["appearance"].keys(): s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
+		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
 
 	if "printer" in data.keys():
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
@@ -183,6 +186,7 @@ def setSettings():
 		if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
 		if "timeoutTemperature" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
 		if "timeoutSdStatus" in data["serial"].keys(): s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
+		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])

@@ -4,10 +4,13 @@ In this module resides the core data structures and logic of the plugin system. 
 way and could be extracted into a separate Python module in the future.
 
 .. autoclass:: PluginManager
+   :members:
 
 .. autoclass:: PluginInfo
+   :members:
 
 .. autoclass:: Plugin
+   :members:
 
 """
 
@@ -33,29 +36,51 @@ class PluginInfo(object):
 
 	It works on Python module objects and extracts the relevant data from those via accessing the
 	:ref:`control properties <sec-plugins-infrastructure-controlproperties>`.
+
+	Arguments:
+	    key (str): Identifier of the plugin
+	    location (str): Installation folder of the plugin
+	    instance (module): Plugin module instance
+	    name (str): Human readable name of the plugin
+	    version (str): Version of the plugin
+	    description (str): Description of the plugin
+	    author (str): Author of the plugin
+	    url (str): URL of the website of the plugin
+	    license (str): License of the plugin
 	"""
 
 	attr_name = '__plugin_name__'
+	""" Module attribute from which to retrieve the plugin's human readable name. """
 
 	attr_description = '__plugin_description__'
+	""" Module attribute from which to retrieve the plugin's description. """
 
 	attr_version = '__plugin_version__'
+	""" Module attribute from which to retrieve the plugin's version. """
 
 	attr_author = '__plugin_author__'
+	""" Module attribute from which to retrieve the plugin's author. """
 
 	attr_url = '__plugin_url__'
+	""" Module attribute from which to retrieve the plugin's website URL. """
 
 	attr_license = '__plugin_license__'
+	""" Module attribute from which to retrieve the plugin's license. """
 
 	attr_hooks = '__plugin_hooks__'
+	""" Module attribute from which to retrieve the plugin's provided hooks. """
 
 	attr_implementations = '__plugin_implementations__'
+	""" Module attribute from which to retrieve the plugin's provided implementations. """
 
 	attr_helpers = '__plugin_helpers__'
+	""" Module attribute from which to retrieve the plugin's provided helpers. """
 
 	attr_check = '__plugin_check__'
+	""" Module attribute which to call to determine if the plugin can be loaded. """
 
 	attr_init = '__plugin_init__'
+	""" Module attribute which to call when loading the plugin. """
 
 	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None):
 		self.key = key
@@ -73,14 +98,51 @@ class PluginInfo(object):
 		self._license = license
 
 	def __str__(self):
-		return "{name} ({version})".format(name=self.name, version=self.version if self.version else "unknown")
+		if self.version:
+			return "{name} ({version})".format(name=self.name, version=self.version)
+		else:
+			return self.name
+
+	def long_str(self, show_bundled=False, bundled_str=(" [B]", ""),
+	             show_location=False, location_str=" - {location}",
+	             show_enabled=False, enabled_str=("* ", "  ")):
+		if show_enabled:
+			ret = enabled_str[0] if self.enabled else enabled_str[1]
+		else:
+			ret = ""
+
+		ret += str(self)
+
+		if show_bundled:
+			ret += bundled_str[0] if self.bundled else bundled_str[1]
+
+		if show_location and self.location:
+			ret += location_str.format(location=self.location)
+
+		return ret
 
 	def get_hook(self, hook):
+		"""
+		Arguments:
+		    hook (str): Hook to return.
+
+		Returns:
+		    callable or None: Handler for the requested ``hook`` or None if no handler is registered.
+		"""
+
 		if not hook in self.hooks:
 			return None
 		return self.hooks[hook]
 
 	def get_implementations(self, *types):
+		"""
+		Arguments:
+		    types (list): List of :class:`Plugin` sub classes all returned implementations need to implement.
+
+		Returns:
+		    ~__builtin__.set: The plugin's implementations matching all of the requested ``types``. Might be empty.
+		"""
+
 		result = set()
 		for implementation in self.implementations:
 			matches_all = True
@@ -93,46 +155,125 @@ class PluginInfo(object):
 
 	@property
 	def name(self):
+		"""
+		Human readable name of the plugin. Will be taken from name attribute of the plugin module if available,
+		otherwise from the ``name`` supplied during construction with a fallback to ``key``.
+
+		Returns:
+		    str: Name of the plugin, fallback is the plugin's identifier.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_name, defaults=(self._name, self.key))
 
 	@property
 	def description(self):
+		"""
+		Description of the plugin. Will be taken from the description attribute of the plugin module as defined in
+		:attr:`attr_description` if available, otherwise from the ``description`` supplied during construction.
+		May be None.
+
+		Returns:
+		    str or None: Description of the plugin.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_description, default=self._description)
 
 	@property
 	def version(self):
+		"""
+		Version of the plugin. Will be taken from the version attribute of the plugin module as defined in
+		:attr:`attr_version` if available, otherwise from the ``version`` supplied during construction. May be None.
+
+		Returns:
+		    str or None: Version of the plugin.
+		"""
 		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=self._version)
 
 	@property
 	def author(self):
+		"""
+		Author of the plugin. Will be taken from the author attribute of the plugin module as defined in
+		:attr:`attr_author` if available, otherwise from the ``author`` supplied during construction. May be None.
+
+		Returns:
+		    str or None: Author of the plugin.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_author, default=self._author)
 
 	@property
 	def url(self):
+		"""
+		Website URL for the plugin. Will be taken from the url attribute of the plugin module as defined in
+		:attr:`attr_url` if available, otherwise from the ``url`` supplied during construction. May be None.
+
+		Returns:
+		    str or None: Website URL for the plugin.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_url, default=self._url)
 
 	@property
 	def license(self):
+		"""
+		License of the plugin. Will be taken from the license attribute of the plugin module as defined in
+		:attr:`attr_license` if available, otherwise from the ``license`` supplied during construction. May be None.
+
+		Returns:
+		    str or None: License of the plugin.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_license, default=self._license)
 
 	@property
 	def hooks(self):
+		"""
+		Hooks provided by the plugin. Will be taken from the hooks attribute of the plugin module as defiend in
+		:attr:`attr_hooks` if available, otherwise an empty dictionary is returned.
+
+		Returns:
+		    dict: Hooks provided by the plugin.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_hooks, default={})
 
 	@property
 	def implementations(self):
+		"""
+		Implementations provided by the plugin. Will be taken from the implementations attribute of the plugin module
+		as defined in :attr:`attr_implementations` if available, otherwise an empty list is returned.
+
+		Returns:
+		    list: Implementations provided by the plugin.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_implementations, default=[])
 
 	@property
 	def helpers(self):
+		"""
+		Helpers provided by the plugin. Will be taken from the helpers attribute of the plugin module as defined in
+		:attr:`attr_helpers` if available, otherwise an empty list is returned.
+
+		Returns:
+		    dict: Helpers provided by the plugin.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_helpers, default={})
 
 	@property
 	def check(self):
+		"""
+		Method for pre-load check of plugin. Will be taken from the check attribute of the plugin module as defined in
+		:attr:`attr_check` if available, otherwise a lambda always returning True is returned.
+
+		Returns:
+		    callable: Check method for the plugin module which should return True if the plugin can be loaded, False
+		        otherwise.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_check, default=lambda: True)
 
 	@property
 	def init(self):
+		"""
+		Method for initializing the plugin module. Will be taken from the init attribute of the plugin module as defined
+		in :attr:`attr_init` if available, otherwise a lambda always returning True is returned.
+
+		Returns:
+		    callable: Init method for the plugin module.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_init, default=lambda: True)
 
 	def _get_instance_attribute(self, attr, default=None, defaults=None):
@@ -305,7 +446,7 @@ class PluginManager(object):
 		return key in self.plugin_disabled_list or key.endswith('disabled')
 
 	def reload_plugins(self):
-		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(self.plugin_folders)))
+		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))))
 		self.plugins, self.disabled_plugins = self._find_plugins()
 
 		for name, plugin in self.plugins.items():
@@ -328,7 +469,14 @@ class PluginManager(object):
 			except:
 				self.logger.exception("There was an error loading plugin %s" % name)
 
-		self.log_registered_plugins()
+		if len(self.plugins) <= 0:
+			self.logger.info("No plugins found")
+		else:
+			self.logger.info("Found {count} plugin(s) providing {implementations} mixin implementations, {hooks} hook handlers".format(
+				count=len(self.plugins) + len(self.disabled_plugins),
+				implementations=sum(map(lambda x: len(x), self.plugin_implementations.values())),
+				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
+			))
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
 		if additional_injects is None:
@@ -371,16 +519,25 @@ class PluginManager(object):
 					self.logger.exception("Exception while initializing plugin")
 					# TODO disable plugin!
 
-		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
+		self.logger.debug("Initialized {count} plugin mixin implementation(s)".format(count=len(self.plugin_implementations)))
 
-	def log_registered_plugins(self):
-		if len(self.plugins) <= 0:
-			self.logger.info("No plugins found")
+	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True, location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!")):
+		all_plugins = self.plugins.values() + self.disabled_plugins.values()
+
+		if len(all_plugins) <= 0:
+			self.logger.info("No plugins available")
 		else:
-			self.logger.info("Found {count} plugin(s): {plugins}".format(count=len(self.plugins), plugins=", ".join(map(lambda x: str(x), self.plugins.values()))))
-
-		if len(self.disabled_plugins) > 0:
-			self.logger.info("{count} plugin(s) currently disabled: {plugins}".format(count=len(self.disabled_plugins), plugins=", ".join(map(lambda x: str(x), self.disabled_plugins.values()))))
+			self.logger.info("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins), plugins="\n".join(
+				sorted(
+					map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
+					                                bundled_str=bundled_str,
+					                                show_location=show_location,
+					                                location_str=location_str,
+					                                show_enabled=show_enabled,
+					                                enabled_str=enabled_str),
+					    self.plugins.values())
+				)
+			)))
 
 	def get_plugin(self, name):
 		if not name in self.plugins:
@@ -460,6 +617,6 @@ class Plugin(object):
 
 	def initialize(self):
 		"""
-		Called by the plugin core after performing all injections.
+		Called by the plugin core after performing all injections. Override this to initialize your implementation.
 		"""
 		pass

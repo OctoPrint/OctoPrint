@@ -12,7 +12,7 @@
         <td class="settings_printerProfiles_profiles_name"><span class="icon-star" data-bind="invisible: !isdefault()"></span> <span data-bind="text: name"></span></td>
         <td class="settings_printerProfiles_profiles_model" data-bind="text: model"></td>
         <td class="settings_printerProfiles_profiles_action">
-            <a href="#" class="icon-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { $root.printerProfiles.makeDefault($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-pencil" title="{{ _('Edit Profile') }}" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Profile') }}" data-bind="click: function() { $root.printerProfiles.removeProfile($data); }"></a>
+            <a href="#" class="icon-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { $root.printerProfiles.makeDefault($data); }, css: {disabled: $root.printerProfiles.requestInProgress()}, enabled: !$root.printerProfiles.requestInProgress()"></a>&nbsp;|&nbsp;<a href="#" class="icon-pencil" title="{{ _('Edit Profile') }}" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog($data); }, css: {disabled: $root.printerProfiles.requestInProgress()}, enabled: !$root.printerProfiles.requestInProgress()"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Profile') }}" data-bind="click: function() { $root.printerProfiles.removeProfile($data); }, css: {disabled: $root.printerProfiles.requestInProgress()}, enabled: !$root.printerProfiles.requestInProgress()"></a>
         </td>
     </tr>
     </tbody>
@@ -40,16 +40,18 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            <div class="control-group">
+            <div class="control-group" data-bind="css: {error: printerProfiles.editorNameInvalid()}">
                 <label class="control-label">{{ _('Name') }}</label>
                 <div class="controls">
-                    <input type="text" data-bind="value: printerProfiles.editorName">
+                    <input type="text" data-bind="value: printerProfiles.editorName, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: printerProfiles.editorNameInvalid()"><br><span class="help-inline">{{ _('Name must be set') }}</span></span>
                 </div>
             </div>
-            <div class="control-group">
+            <div class="control-group" data-bind="css: {error: printerProfiles.editorIdentifierInvalid()}">
                 <label class="control-label">{{ _('Identifier') }}</label>
                 <div class="controls">
-                    <input type="text" data-bind="value: printerProfiles.editorIdentifier, enable: $root.printerProfiles.editorNew, css: {disabled: !$root.printerProfiles.editorNew()}">
+                    <input type="text" data-bind="value: printerProfiles.editorIdentifier, valueUpdate: 'afterkeydown', enable: printerProfiles.editorNew, css: {disabled: !printerProfiles.editorNew()}, attr: {placeholder: printerProfiles.editorIdentifierPlaceholder}">
+                    <span data-bind="visible: printerProfiles.editorIdentifierInvalid()"><br><span class="help-inline" data-bind="text: printerProfiles.editorIdentifierInvalidText()"></span></span>
                 </div>
             </div>
             <div class="control-group">
@@ -180,6 +182,6 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary btn-confirm">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary btn-confirm" data-bind="enabled: printerProfiles.enableEditorSubmitButton, css: {disabled: !printerProfiles.enableEditorSubmitButton()}"><i class="icon-spinner icon-spin" data-bind="visible: printerProfiles.requestInProgress()"></i> {{ _('Confirm') }}</button>
     </div>
 </div>

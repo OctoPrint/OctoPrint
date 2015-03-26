@@ -23,7 +23,6 @@ except:
 
 
 __plugin_name__ = "Discovery"
-__plugin_version__ = "0.1"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery"
 __plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"

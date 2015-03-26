@@ -149,11 +149,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			try: callback.on_printer_send_current_data(copy.deepcopy(data))
 			except: self._logger.exception("Exception while pushing current data")
 
-	def _sendFeedbackCommandOutput(self, name, output):
-		for callback in self._callbacks:
-			try: callback.on_printer_received_registered_message(name, output)
-			except: self._logger.exception("Exception while pushing feedback command output")
-
 	#~~ callback from metadata analysis event
 
 	def _on_event_MetadataAnalysisFinished(self, event, data):
@@ -441,24 +436,23 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def get_current_temperatures(self):
 		if self._comm is not None:
-			tempOffset, bedTempOffset = self._comm.getOffsets()
+			offsets = self._comm.getOffsets()
 		else:
-			tempOffset = {}
-			bedTempOffset = None
+			offsets = dict()
 
 		result = {}
 		if self._temp is not None:
 			for tool in self._temp.keys():
 				result["tool%d" % tool] = {
-				"actual": self._temp[tool][0],
-				"target": self._temp[tool][1],
-				"offset": tempOffset[tool] if tool in tempOffset.keys() and tempOffset[tool] is not None else 0
+					"actual": self._temp[tool][0],
+					"target": self._temp[tool][1],
+					"offset": offsets[tool] if tool in offsets and offsets[tool] is not None else 0
 				}
 		if self._bedTemp is not None:
 			result["bed"] = {
-			"actual": self._bedTemp[0],
-			"target": self._bedTemp[1],
-			"offset": bedTempOffset
+				"actual": self._bedTemp[0],
+				"target": self._bedTemp[1],
+				"offset": offsets["bed"] if "bed" in offsets and offsets["bed"] is not None else 0
 			}
 
 		return result
@@ -835,9 +829,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._setJobData(None, None, None)
 		self._setProgressData(None, None, None, None)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
-
-	def on_comm_received_registered_message(self, command, output):
-		self._sendFeedbackCommandOutput(command, output)
 
 	def on_comm_force_disconnect(self):
 		self.disconnect()

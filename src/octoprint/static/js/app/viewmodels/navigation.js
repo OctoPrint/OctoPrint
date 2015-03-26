@@ -5,7 +5,7 @@ $(function() {
         self.loginState = parameters[0];
         self.appearance = parameters[1];
         self.settings = parameters[2];
-        self.users = parameters[3];
+        self.usersettings = parameters[3];
 
         self.systemActions = self.settings.system_actions;
 
@@ -54,9 +54,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         NavigationViewModel,
-        ["loginStateViewModel", "appearanceViewModel", "settingsViewModel", "usersViewModel"],
+        ["loginStateViewModel", "appearanceViewModel", "settingsViewModel", "userSettingsViewModel"],
         "#navbar"
     ]);
-
-    // TODO usersViewModel is needed for what?
 });

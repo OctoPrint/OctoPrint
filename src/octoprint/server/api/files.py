@@ -15,6 +15,7 @@ from octoprint.server.util.flask import restricted_access, get_json_command_from
 from octoprint.server.api import api
 from octoprint.events import Events
 import octoprint.filemanager
+import octoprint.slicing
 
 
 #~~ GCODE file handling
@@ -297,17 +298,20 @@ def gcodeFileCommand(filename, target):
 		printer.select_file(filenameToSelect, sd, printAfterLoading)
 
 	elif command == "slice":
-		if "slicer" in data.keys():
-			slicer = data["slicer"]
-			del data["slicer"]
-			if not slicer in slicingManager.registered_slicers:
-				return make_response("Slicer {slicer} is not available".format(**locals()), 400)
-			slicer_instance = slicingManager.get_slicer(slicer)
-		elif "cura" in slicingManager.registered_slicers:
-			slicer = "cura"
-			slicer_instance = slicingManager.get_slicer("cura")
-		else:
-			return make_response("Cannot slice {filename}, no slicer available".format(**locals()), 415)
+		try:
+			if "slicer" in data:
+				slicer = data["slicer"]
+				del data["slicer"]
+				slicer_instance = slicingManager.get_slicer(slicer)
+
+			elif "cura" in slicingManager.registered_slicers:
+				slicer = "cura"
+				slicer_instance = slicingManager.get_slicer("cura")
+
+			else:
+				return make_response("Cannot slice {filename}, no slicer available".format(**locals()), 415)
+		except octoprint.slicing.UnknownSlicer as e:
+			return make_response("Slicer {slicer} is not available".format(slicer=e.slicer), 400)
 
 		if not octoprint.filemanager.valid_file_type(filename, type="stl"):
 			return make_response("Cannot slice {filename}, not an STL file".format(**locals()), 415)
@@ -316,7 +320,7 @@ def gcodeFileCommand(filename, target):
 			# slicer runs on same device as OctoPrint, slicing while printing is hence disabled
 			return make_response("Cannot slice on {slicer} while printing due to performance reasons".format(**locals()), 409)
 
-		if "gcode" in data.keys() and data["gcode"]:
+		if "gcode" in data and data["gcode"]:
 			gcode_name = data["gcode"]
 			del data["gcode"]
 		else:
@@ -374,31 +378,31 @@ def gcodeFileCommand(filename, target):
 					filenameToSelect = fileManager.path_on_disk(target, gcode_name)
 				printer.select_file(filenameToSelect, sd, print_after_slicing)
 
-		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name,
-		                               profile=profile,
-		                               printer_profile_id=printerProfile,
-		                               position=position,
-		                               overrides=overrides,
-		                               callback=slicing_done,
-		                               callback_args=(target, gcode_name, select_after_slicing, print_after_slicing))
+		try:
+			fileManager.slice(slicer, target, filename, target, gcode_name,
+			                  profile=profile,
+			                  printer_profile_id=printerProfile,
+			                  position=position,
+			                  overrides=overrides,
+			                  callback=slicing_done,
+			                  callback_args=(target, gcode_name, select_after_slicing, print_after_slicing))
+		except octoprint.slicing.UnknownProfile:
+			return make_response("Profile {profile} doesn't exist".format(**locals()), 400)
 
-		if ok:
-			files = {}
-			location = url_for(".readGcodeFile", target=target, filename=gcode_name, _external=True)
-			result = {
-				"name": gcode_name,
-				"origin": FileDestinations.LOCAL,
-				"refs": {
-					"resource": location,
-					"download": url_for("index", _external=True) + "downloads/files/" + target + "/" + gcode_name
-				}
+		files = {}
+		location = url_for(".readGcodeFile", target=target, filename=gcode_name, _external=True)
+		result = {
+			"name": gcode_name,
+			"origin": FileDestinations.LOCAL,
+			"refs": {
+				"resource": location,
+				"download": url_for("index", _external=True) + "downloads/files/" + target + "/" + gcode_name
 			}
+		}
 
-			r = make_response(jsonify(result), 202)
-			r.headers["Location"] = location
-			return r
-		else:
-			return make_response("Could not slice: {result}".format(result=result), 500)
+		r = make_response(jsonify(result), 202)
+		r.headers["Location"] = location
+		return r
 
 	return NO_CONTENT
 

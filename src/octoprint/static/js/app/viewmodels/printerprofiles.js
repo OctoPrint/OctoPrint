@@ -31,6 +31,8 @@ $(function() {
             }
         };
 
+        self.requestInProgress = ko.observable(false);
+
         self.profiles = new ItemListHelper(
             "printerProfiles",
             {
@@ -57,6 +59,7 @@ $(function() {
         self.editorName = ko.observable();
         self.editorColor = ko.observable();
         self.editorIdentifier = ko.observable();
+        self.editorIdentifierPlaceholder = ko.observable();
         self.editorModel = ko.observable();
 
         self.editorVolumeWidth = ko.observable();
@@ -110,6 +113,46 @@ $(function() {
             return extruderOffsets.slice(0, numExtruders);
         });
 
+        self.editorNameInvalid = ko.computed(function() {
+            return !self.editorName();
+        });
+
+        self.editorIdentifierInvalid = ko.computed(function() {
+            var identifier = self.editorIdentifier();
+            var placeholder = self.editorIdentifierPlaceholder();
+            var data = identifier;
+            if (!identifier) {
+                data = placeholder;
+            }
+
+            var validCharacters = (data && (data == self._sanitize(data)));
+
+            var existingProfile = self.profiles.getItem(function(item) {return item.id == data});
+            return !data || !validCharacters || (self.editorNew() && existingProfile != undefined);
+        });
+
+        self.editorIdentifierInvalidText = ko.computed(function() {
+            if (!self.editorIdentifierInvalid()) {
+                return "";
+            }
+
+            if (!self.editorIdentifier() && !self.editorIdentifierPlaceholder()) {
+                return gettext("Identifier must be set");
+            } else if (self.editorIdentifier() != self._sanitize(self.editorIdentifier())) {
+                return gettext("Invalid characters, only a-z, A-Z, 0-9, -, ., _, ( and ) are allowed")
+            } else {
+                return gettext("A profile with such an identifier already exists");
+            }
+        });
+
+        self.enableEditorSubmitButton = ko.computed(function() {
+            return !self.editorNameInvalid() && !self.editorIdentifierInvalid() && !self.requestInProgress();
+        });
+
+        self.editorName.subscribe(function() {
+            self.editorIdentifierPlaceholder(self._sanitize(self.editorName()).toLowerCase());
+        });
+
         self.makeDefault = function(data) {
             var profile = {
                 id: data.id,
@@ -153,6 +196,7 @@ $(function() {
 
         self.addProfile = function(callback) {
             var profile = self._editorData();
+            self.requestInProgress(true);
             $.ajax({
                 url: API_BASEURL + "printerprofiles",
                 type: "POST",
@@ -160,20 +204,35 @@ $(function() {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify({profile: profile}),
                 success: function() {
+                    self.requestInProgress(false);
                     if (callback !== undefined) {
                         callback();
                     }
                     self.requestData();
+                },
+                error: function() {
+                    self.requestInProgress(false);
+                    var text = gettext("There was unexpected error while saving the printer profile, please consult the logs.");
+                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
                 }
             });
         };
 
         self.removeProfile = function(data) {
+            self.requestInProgress(true);
             $.ajax({
                 url: data.resource,
                 type: "DELETE",
                 dataType: "json",
-                success: self.requestData
+                success: function() {
+                    self.requestInProgress(false);
+                    self.requestData();
+                },
+                error: function() {
+                    self.requestInProgress(false);
+                    var text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
+                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
+                }
             })
         };
 
@@ -182,6 +241,8 @@ $(function() {
                 profile = self._editorData();
             }
 
+            self.requestInProgress(true);
+
             $.ajax({
                 url: API_BASEURL + "printerprofiles/" + profile.id,
                 type: "PATCH",
@@ -189,10 +250,16 @@ $(function() {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify({profile: profile}),
                 success: function() {
+                    self.requestInProgress(false);
                     if (callback !== undefined) {
                         callback();
                     }
                     self.requestData();
+                },
+                error: function() {
+                    self.requestInProgress(false);
+                    var text = gettext("There was unexpected error while updating the printer profile, please consult the logs.");
+                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
                 }
             });
         };
@@ -245,7 +312,9 @@ $(function() {
             dialogTitle.text(add ? gettext("Add Printer Profile") : _.sprintf(gettext("Edit Printer Profile \"%(name)s\""), {name: data.name}));
             confirmButton.unbind("click");
             confirmButton.bind("click", function() {
-                self.confirmEditProfile(add);
+                if (self.enableEditorSubmitButton()) {
+                    self.confirmEditProfile(add);
+                }
             });
             editDialog.modal("show");
         };
@@ -263,8 +332,13 @@ $(function() {
         };
 
         self._editorData = function() {
+            var identifier = self.editorIdentifier();
+            if (!identifier) {
+                identifier = self.editorIdentifierPlaceholder();
+            }
+
             var profile = {
-                id: self.editorIdentifier(),
+                id: identifier,
                 name: self.editorName(),
                 color: self.editorColor(),
                 model: self.editorModel(),
@@ -294,6 +368,10 @@ $(function() {
                     z: {
                         speed: parseInt(self.editorAxisZSpeed()),
                         inverted: self.editorAxisZInverted()
+                    },
+                    e: {
+                        speed: parseInt(self.editorAxisESpeed()),
+                        inverted: self.editorAxisEInverted()
                     }
                 }
             };
@@ -309,6 +387,10 @@ $(function() {
             }
 
             return profile;
+        };
+
+        self._sanitize = function(name) {
+            return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
         };
 
         self.onSettingsShown = self.requestData;

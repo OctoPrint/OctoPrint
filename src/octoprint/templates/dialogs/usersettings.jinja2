@@ -1,0 +1,49 @@
+<div id="usersettings_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('User Settings') }}</h3>
+    </div>
+    <div class="modal-body">
+        <ul class="nav nav-pills">
+            {% set mark_active = True %}
+            {% for key in templates.usersettings.order %}
+                {% set entry, data = templates.usersettings.entries[key] %}
+                {% if data is none %}
+                    <li class="nav-header">{{ entry }}</li>
+                {% else %}
+                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                    <li id="{{ data._div }}_link"
+                        {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                        class="{% if mark_active %}active{% set mark_active = False %}{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                            {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                            >
+                        <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
+                    </li>
+                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                {% endif %}
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content">
+            {% set mark_active = True %}
+            {% for key in templates.usersettings.order %}
+                {% set entry, data = templates.usersettings.entries[key] %}
+                {% if data is not none %}
+                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                    <div id="{{ data._div }}"
+                         {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                         class="tab-pane {% if mark_active %}active{% set mark_active = False %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
+                            {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                            >
+                        {% include data.template ignore missing %}
+                    </div>
+                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { save(); }, enable: saveEnabled()">{{ _('Confirm') }}</button>
+    </div>
+</div>

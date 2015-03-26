@@ -87,9 +87,14 @@ $(function() {
             self.isLoading(data.flags.loading);
         };
 
-        self.fromFeedbackCommandData = function (data) {
-            if (data.name in self.feedbackControlLookup) {
-                self.feedbackControlLookup[data.name](data.output);
+        self.onEventRegisteredMessageReceived = function(payload) {
+            if (payload.key in self.feedbackControlLookup) {
+                var outputs = self.feedbackControlLookup[payload.key];
+                _.each(payload.outputs, function(value, key) {
+                    if (outputs.hasOwnProperty(key)) {
+                        outputs[key](value);
+                    }
+                });
             }
         };
 
@@ -122,18 +127,32 @@ $(function() {
         };
 
         self._processControl = function (control) {
-            if (_.startsWith(control.type, "parametric_")) {
+            if (control.hasOwnProperty("processed") && control.processed) {
+                return control;
+            }
+
+            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
+                control.output = ko.observable("");
+                if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
+                    self.feedbackControlLookup[control.key] = {};
+                }
+                self.feedbackControlLookup[control.key][control.template_key] = control.output;
+            }
+
+            if (control.hasOwnProperty("children")) {
+                control.children = self._processControls(control.children);
+                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal")) {
+                    control.layout = "vertical";
+                }
+            }
+
+            if (control.hasOwnProperty("input")) {
                 for (var i = 0; i < control.input.length; i++) {
                     control.input[i].value = ko.observable(control.input[i].default);
                     if (!control.input[i].hasOwnProperty("slider")) {
                         control.input[i].slider = false;
                     }
                 }
-            } else if (control.type == "feedback_command" || control.type == "feedback") {
-                control.output = ko.observable("");
-                self.feedbackControlLookup[control.name] = control.output;
-            } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
-                control.children = self._processControls(control.children);
             }
 
             var js;
@@ -159,6 +178,7 @@ $(function() {
                 }
             }
 
+            control.processed = true;
             return control;
         };
 
@@ -171,10 +191,27 @@ $(function() {
         };
 
         self.clickCustom = function (data) {
+            var callback;
             if (data.hasOwnProperty("javascript")) {
-                data.javascript(data);
+                callback = data.javascript;
             } else {
-                self.sendCustomCommand(data);
+                callback = self.sendCustomCommand;
+            }
+
+            if (data.confirm) {
+                var confirmationDialog = $("#confirmation_dialog");
+                var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+
+                $(".confirmation_dialog_message", confirmationDialog).text(data.confirm);
+                confirmationDialogAck.unbind("click");
+                confirmationDialogAck.bind("click", function (e) {
+                    e.preventDefault();
+                    $("#confirmation_dialog").modal("hide");
+                    callback(data);
+                });
+                confirmationDialog.modal("show");
+            } else {
+                callback(data);
             }
         };
 
@@ -265,77 +302,48 @@ $(function() {
             if (!command)
                 return;
 
-            var callback = function () {
-                $.ajax({
-                    url: API_BASEURL + "printer/command",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json; charset=UTF-8",
-                    data: JSON.stringify(data)
-                })
-            };
             var data = undefined;
-            if (command.type == "command" || command.type == "parametric_command" || command.type == "feedback_command") {
+            if (command.hasOwnProperty("command")) {
                 // single command
                 data = {"command": command.command};
-            } else if (command.type == "commands" || command.type == "parametric_commands") {
+            } else if (command.hasOwnProperty("commands")) {
                 // multi command
                 data = {"commands": command.commands};
-            } else if (command.type == "script" || command.type == "parametric_script") {
+            } else if (command.hasOwnProperty("script")) {
                 data = {"script": command.script};
                 if (command.hasOwnProperty("context")) {
                     data["context"] = command.context;
                 }
+            } else {
+                return;
             }
 
-            if (command.type == "parametric_command" || command.type == "parametric_commands" || command.type == "parametric_script") {
+            if (command.hasOwnProperty("input")) {
                 // parametric command(s)
                 data["parameters"] = {};
-                for (var i = 0; i < command.input.length; i++) {
-                    data["parameters"][command.input[i].parameter] = command.input[i].value();
-                }
-            }
+                _.each(command.input, function(input) {
+                    if (!input.hasOwnProperty("parameter") || !input.hasOwnProperty("value")) {
+                        return;
+                    }
 
-            if (command.confirm) {
-                var confirmationDialog = $("#confirmation_dialog");
-                var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
-
-                $(".confirmation_dialog_message", confirmationDialog).text(command.confirm);
-                confirmationDialogAck.unbind("click");
-                confirmationDialogAck.bind("click", function (e) {
-                    e.preventDefault();
-                    $("#confirmation_dialog").modal("hide");
-                    callback();
+                    data["parameters"][input.parameter] = input.value();
                 });
-                confirmationDialog.modal("show");
-            } else {
-                callback();
             }
 
+            $.ajax({
+                url: API_BASEURL + "printer/command",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify(data)
+            })
         };
 
         self.displayMode = function (customControl) {
-            switch (customControl.type) {
-                case "section":
-                    return "customControls_sectionTemplate";
-                case "row":
-                    return "customControls_rowTemplate";
-                case "section_row":
-                    return "customControls_sectionRowTemplate";
-                case "command":
-                case "commands":
-                case "script":
-                    return "customControls_commandTemplate";
-                case "parametric_command":
-                case "parametric_commands":
-                case "parametric_script":
-                    return "customControls_parametricCommandTemplate";
-                case "feedback_command":
-                    return "customControls_feedbackCommandTemplate";
-                case "feedback":
-                    return "customControls_feedbackTemplate";
-                default:
-                    return "customControls_emptyTemplate";
+            if (customControl.hasOwnProperty("children")) {
+                return "customControls_containerTemplate";
+            } else {
+                return "customControls_controlTemplate";
             }
         };
 

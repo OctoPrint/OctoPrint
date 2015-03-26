@@ -11,4 +11,5 @@ Internal Modules
    plugin.rst
    printer.rst
    settings.rst
+   slicing.rst
    util.rst

@@ -24,7 +24,7 @@ from octoprint.settings import settings, default_settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent
+from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer
 from octoprint.util.virtual import VirtualPrinter
 
 try:
@@ -46,7 +46,6 @@ def serialList():
 	baselist = baselist \
 			   + glob.glob("/dev/ttyUSB*") \
 			   + glob.glob("/dev/ttyACM*") \
-			   + glob.glob("/dev/ttyAMA*") \
 			   + glob.glob("/dev/tty.usb*") \
 			   + glob.glob("/dev/cu.*") \
 			   + glob.glob("/dev/cuaU*") \
@@ -166,8 +165,8 @@ class MachineCom(object):
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
-		self._sd_status_timer = None
 		self._temperature_timer = None
+		self._sd_status_timer = None
 
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
@@ -432,15 +431,15 @@ class MachineCom(object):
 
 		template = settings().loadScript("gcode", scriptName, context=context)
 		if template is None:
-			return None
-
-		scriptLines = filter(
-			lambda x: x is not None and x.strip() != "",
-			map(
-				lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
-				template.split("\n")
+			scriptLines = []
+		else:
+			scriptLines = filter(
+				lambda x: x is not None and x.strip() != "",
+				map(
+					lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
+					template.split("\n")
+				)
 			)
-		)
 
 		for hook in self._gcodescript_hooks:
 			try:
@@ -511,7 +510,9 @@ class MachineCom(object):
 				self._currentFile.setFilepos(0)
 
 				self.sendCommand("M24")
-				self._poll_sd_status()
+
+				self._sd_status_timer = RepeatedTimer(lambda: get_interval("sdStatus"), self._poll_sd_status, run_first=True)
+				self._sd_status_timer.start()
 			else:
 				line = self._getNext()
 				if line is not None:
@@ -763,9 +764,9 @@ class MachineCom(object):
 	##~~ Serial monitor processing received messages
 
 	def _monitor(self):
-		feedbackControls = settings().getFeedbackControls()
-		pauseTriggers = settings().getPauseTriggers()
-		feedbackErrors = []
+		feedback_controls, feedback_matcher = convert_feedback_controls(settings().get(["controls"]))
+		feedback_errors = []
+		pause_triggers = convert_pause_triggers(settings().get(["printerParameters", "pauseTriggers"]))
 
 		#Open the serial port.
 		if not self._openSerial():
@@ -974,35 +975,21 @@ class MachineCom(object):
 					self._callback.on_comm_message(line)
 
 				##~~ Parsing for feedback commands
-				if feedbackControls:
-					for name, matcher, template in feedbackControls:
-						if name in feedbackErrors:
-							# we previously had an error with that one, so we'll skip it now
-							continue
-						try:
-							match = matcher.search(line)
-							if match is not None:
-								formatFunction = None
-								if isinstance(template, str):
-									formatFunction = str.format
-								elif isinstance(template, unicode):
-									formatFunction = unicode.format
-
-								if formatFunction is not None:
-									self._callback.on_comm_received_registered_message(name, formatFunction(template, *(match.groups("n/a"))))
-						except:
-							if not name in feedbackErrors:
-								self._logger.info("Something went wrong with feedbackControl \"%s\": " % name, exc_info=True)
-								feedbackErrors.append(name)
-							pass
+				if feedback_controls and feedback_matcher and not "_all" in feedback_errors:
+					try:
+						self._process_registered_message(line, feedback_matcher, feedback_controls, feedback_errors)
+					except:
+						# something went wrong while feedback matching
+						self._logger.exception("Error while trying to apply feedback control matching, disabling it")
+						feedback_errors.append("_all")
 
 				##~~ Parsing for pause triggers
-				if pauseTriggers and not self.isStreaming():
-					if "enable" in pauseTriggers.keys() and pauseTriggers["enable"].search(line) is not None:
+				if pause_triggers and not self.isStreaming():
+					if "enable" in pause_triggers.keys() and pause_triggers["enable"].search(line) is not None:
 						self.setPause(True)
-					elif "disable" in pauseTriggers.keys() and pauseTriggers["disable"].search(line) is not None:
+					elif "disable" in pause_triggers.keys() and pause_triggers["disable"].search(line) is not None:
 						self.setPause(False)
-					elif "toggle" in pauseTriggers.keys() and pauseTriggers["toggle"].search(line) is not None:
+					elif "toggle" in pause_triggers.keys() and pause_triggers["toggle"].search(line) is not None:
 						self.setPause(not self.isPaused())
 
 				### Baudrate detection
@@ -1099,6 +1086,41 @@ class MachineCom(object):
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
 
+	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
+		feedback_match = feedback_matcher.search(line)
+		if feedback_match is None:
+			return
+
+		for match_key in feedback_match.groupdict():
+			try:
+				feedback_key = match_key[len("group"):]
+				if not feedback_key in feedback_controls or feedback_key in feedback_errors or feedback_match.group(match_key) is None:
+					continue
+				matched_part = feedback_match.group(match_key)
+
+				if feedback_controls[feedback_key]["matcher"] is None:
+					continue
+
+				match = feedback_controls[feedback_key]["matcher"].search(matched_part)
+				if match is None:
+					continue
+
+				outputs = dict()
+				for template_key, template in feedback_controls[feedback_key]["templates"].items():
+					try:
+						output = template.format(*match.groups())
+					except KeyError:
+						output = template.format(**match.groupdict())
+					except:
+						output = None
+
+					if output is not None:
+						outputs[template_key] = output
+				eventManager().fire(Events.REGISTERED_MESSAGE_RECEIVED, dict(key=feedback_key, matched=matched_part, outputs=outputs))
+			except:
+				self._logger.exception("Error while trying to match feedback control output, disabling key {key}".format(key=match_key))
+				feedback_errors.append(match_key)
+
 	def _poll_temperature(self):
 		"""
 		Polls the temperature after the temperature timeout, re-enqueues itself.
@@ -1109,10 +1131,6 @@ class MachineCom(object):
 
 		if self.isOperational() and not self.isStreaming() and not self._blocking_command and not self._heating:
 			self.sendCommand("M105", cmd_type="temperature_poll")
-
-		interval = get_interval("temperature")
-		self._temperature_timer = threading.Timer(interval, self._poll_temperature)
-		self._temperature_timer.start()
 
 	def _poll_sd_status(self):
 		"""
@@ -1125,12 +1143,9 @@ class MachineCom(object):
 		if self.isOperational() and self.isSdPrinting() and not self._blocking_command and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
-		interval = get_interval("sdStatus")
-		self._sd_status_timer = threading.Timer(interval, self._poll_sd_status)
-		self._sd_status_timer.start()
-
 	def _onConnected(self):
-		self._poll_temperature()
+		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature"), self._poll_temperature, run_first=True)
+		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
 
@@ -1347,16 +1362,35 @@ class MachineCom(object):
 
 			if not self.isStreaming():
 				for hook in self._gcode_hooks:
-					hook_cmd = self._gcode_hooks[hook](self, cmd)
-					if hook_cmd and isinstance(hook_cmd, basestring):
+					hook_cmd = self._gcode_hooks[hook](self, cmd, cmd_type=cmd_type, send_checksum=sendChecksum)
+
+					# hook might have returned (cmd, sendChecksum) or (cmd, sendChecksum, cmd_type), split that
+					if isinstance(hook_cmd, tuple):
+						if len(hook_cmd) == 2:
+							hook_cmd, cmd_type = hook_cmd
+						elif len(hook_cmd) == 3:
+							hook_cmd, cmd_type, sendChecksum = hook_cmd
+
+					# hook might have returned None for cmd, if so stop processing, we won't send this command
+					# to the printer
+					if hook_cmd is None:
+						cmd = None
+						break
+
+					# if hook_cmd is a string, we'll replace cmd with it (it's been rewritten by the hook handler
+					elif isinstance(hook_cmd, basestring):
 						cmd = hook_cmd
+
+				# try to parse the cmd and extract the gcode type
 				gcode = self._regex_command.search(cmd)
 				if gcode:
 					gcode = gcode.group(1)
 
+					# fire events if necessary
 					if gcode in gcodeToEvent:
 						eventManager().fire(gcodeToEvent[gcode])
 
+					# send it through the specific handler if it exists
 					gcodeHandler = "_gcode_" + gcode
 					if hasattr(self, gcodeHandler):
 						cmd = getattr(self, gcodeHandler)(cmd)
@@ -1372,6 +1406,25 @@ class MachineCom(object):
 			self._enqueue_for_sending(cmd, linenumber=lineNumber, command_type=cmd_type)
 		else:
 			self._enqueue_for_sending(cmd, command_type=cmd_type)
+
+	def gcode_command_for_cmd(self, cmd):
+		"""
+		Tries to parse the provided ``cmd`` and extract the GCODE command identifier from it (e.g. "G0" for "G0 X10.0").
+
+		Arguments:
+		    cmd (str): The command to try to parse.
+
+		Returns:
+		    str or None: The GCODE command identifier if it could be parsed, or None if not.
+		"""
+		if not cmd:
+			return None
+
+		gcode = self._regex_command.search(cmd)
+		if not gcode:
+			return None
+
+		return gcode.group(1)
 
 	##~~ send loop handling
 
@@ -1548,10 +1601,10 @@ class MachineCom(object):
 		_timeout = 0
 		if p_idx != -1:
 			# dwell time is specified in milliseconds
-			_timeout = int(cmd[p_idx+1:]) / 1000.0
+			_timeout = float(cmd[p_idx+1:]) / 1000.0
 		elif s_idx != -1:
 			# dwell time is specified in seconds
-			_timeout = int(cmd[s_idx+1:])
+			_timeout = float(cmd[s_idx+1:])
 		self._timeout = get_new_timeout("communication") + _timeout
 		self._blocking_command = True
 		return cmd
@@ -1600,9 +1653,6 @@ class MachineComPrintCallback(object):
 		pass
 
 	def on_comm_file_transfer_done(self, filename):
-		pass
-
-	def on_comm_received_registered_message(self, command, message):
 		pass
 
 	def on_comm_force_disconnect(self):
@@ -1860,4 +1910,71 @@ def process_gcode_line(line, offsets=None, current_tool=None):
 		line = apply_temperature_offsets(line, offsets, current_tool=current_tool)
 
 	return line
+
+def convert_pause_triggers(configured_triggers):
+	triggers = {
+		"enable": [],
+		"disable": [],
+		"toggle": []
+	}
+	for trigger in configured_triggers:
+		if not "regex" in trigger or not "type" in trigger:
+			continue
+
+		try:
+			regex = trigger["regex"]
+			t = trigger["type"]
+			if t in triggers:
+				# make sure regex is valid
+				re.compile(regex)
+				# add to type list
+				triggers[t].append(regex)
+		except:
+			# invalid regex or something like this, we'll just skip this entry
+			pass
+
+	result = dict()
+	for t in triggers.keys():
+		if len(triggers[t]) > 0:
+			result[t] = re.compile("|".join(map(lambda pattern: "({pattern})".format(pattern=pattern), triggers[t])))
+	return result
+
+
+def convert_feedback_controls(configured_controls):
+	def preprocess_feedback_control(control, result):
+		if "key" in control and "regex" in control and "template" in control:
+			# key is always the md5sum of the regex
+			key = control["key"]
+
+			if result[key]["pattern"] is None or result[key]["matcher"] is None:
+				# regex has not been registered
+				try:
+					result[key]["matcher"] = re.compile(control["regex"])
+					result[key]["pattern"] = control["regex"]
+				except Exception as exc:
+					logging.getLogger(__name__).warn("Invalid regex {regex} for custom control: {exc}".format(regex=control["regex"], exc=str(exc)))
+
+			result[key]["templates"][control["template_key"]] = control["template"]
+
+		elif "children" in control:
+			for c in control["children"]:
+				preprocess_feedback_control(c, result)
+
+	def prepare_result_entry():
+		return dict(pattern=None, matcher=None, templates=dict())
+
+	from collections import defaultdict
+	feedback_controls = defaultdict(prepare_result_entry)
+
+	for control in configured_controls:
+		preprocess_feedback_control(control, feedback_controls)
+
+	feedback_pattern = []
+	for match_key, entry in feedback_controls.items():
+		if entry["matcher"] is None or entry["pattern"] is None:
+			continue
+		feedback_pattern.append("(?P<group{key}>{pattern})".format(key=match_key, pattern=entry["pattern"]))
+	feedback_matcher = re.compile("|".join(feedback_pattern))
+
+	return feedback_controls, feedback_matcher
 

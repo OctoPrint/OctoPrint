@@ -124,6 +124,18 @@ class UserManager(object):
 	def changeUserPassword(self, username, password):
 		pass
 
+	def getUserSetting(self, username, key):
+		return None
+
+	def getAllUserSettings(self, username):
+		return dict()
+
+	def changeUserSetting(self, username, key, value):
+		pass
+
+	def changeUserSettings(self, username, new_settings):
+		pass
+
 	def removeUser(self, username):
 		if username in self._session_users_by_username:
 			users = self._session_users_by_username[username]
@@ -175,7 +187,10 @@ class FilebasedUserManager(UserManager):
 					apikey = None
 					if "apikey" in attributes:
 						apikey = attributes["apikey"]
-					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"], apikey)
+					settings = dict()
+					if "settings" in attributes:
+						settings = attributes["settings"]
+					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"], apikey=apikey, settings=settings)
 		else:
 			self._customized = False
 
@@ -190,7 +205,8 @@ class FilebasedUserManager(UserManager):
 				"password": user._passwordHash,
 				"active": user._active,
 				"roles": user._roles,
-				"apikey": user._apikey
+				"apikey": user._apikey,
+				"settings": user._settings
 			}
 
 		with open(self._userfile, "wb") as f:
@@ -205,7 +221,7 @@ class FilebasedUserManager(UserManager):
 		if username in self._users.keys():
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey)
+		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey=apikey)
 		self._dirty = True
 		self._save()
 
@@ -262,6 +278,43 @@ class FilebasedUserManager(UserManager):
 			user._passwordHash = passwordHash
 			self._dirty = True
 			self._save()
+
+	def changeUserSetting(self, username, key, value):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		current = user.get_setting(key)
+		if not current or current != value:
+			old_value = user.get_setting(key)
+			user.set_setting(key, value)
+			self._dirty = self._dirty or old_value != value
+			self._save()
+
+	def changeUserSettings(self, username, new_settings):
+		if not username in self._users:
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		for key, value in new_settings.items():
+			old_value = user.get_setting(key)
+			user.set_setting(key, value)
+			self._dirty = self._dirty or old_value != value
+		self._save()
+
+	def getAllUserSettings(self, username):
+		if not username in self._users.key():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		return user.get_all_settings()
+
+	def getUserSetting(self, username, key):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		user = self._users[username]
+		return user.get_setting(key)
 
 	def generateApiKey(self, username):
 		if not username in self._users.keys():
@@ -335,12 +388,16 @@ class UnknownRole(Exception):
 ##~~ User object
 
 class User(UserMixin):
-	def __init__(self, username, passwordHash, active, roles, apikey=None):
+	def __init__(self, username, passwordHash, active, roles, apikey=None, settings=None):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
 		self._roles = roles
 		self._apikey = apikey
+
+		if not settings:
+			settings = dict()
+		self._settings = settings
 
 	def asDict(self):
 		return {
@@ -348,7 +405,8 @@ class User(UserMixin):
 			"active": self.is_active(),
 			"admin": self.is_admin(),
 			"user": self.is_user(),
-			"apikey": self._apikey
+			"apikey": self._apikey,
+			"settings": self._settings
 		}
 
 	def check_password(self, passwordHash):
@@ -368,6 +426,48 @@ class User(UserMixin):
 
 	def is_admin(self):
 		return "admin" in self._roles
+
+	def get_all_settings(self):
+		return self._settings
+
+	def get_setting(self, key):
+		if not isinstance(key, (tuple, list)):
+			path = [key]
+		else:
+			path = key
+
+		return self._get_setting(path)
+
+	def set_setting(self, key, value):
+		if not isinstance(key, (tuple, list)):
+			path = [key]
+		else:
+			path = key
+		self._set_setting(path, value)
+
+	def _get_setting(self, path):
+		s = self._settings
+		for p in path:
+			if p in s:
+				s = s[p]
+			else:
+				return None
+		return s
+
+	def _set_setting(self, path, value):
+		s = self._settings
+		for p in path[:-1]:
+			if not p in s:
+				s[p] = dict()
+
+			if not isinstance(s[p], dict):
+				return False
+
+			s = s[p]
+
+		key = path[-1]
+		s[key] = value
+		return True
 
 	def __repr__(self):
 		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin())

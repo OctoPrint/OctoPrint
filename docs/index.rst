@@ -6,16 +6,14 @@ Welcome to OctoPrint's documentation!
    :alt: The OctoPrint Logo
    :align: right
 
-This is a work in progress. The goal is to document OctoPrint's REST API, event system, configuration etc in a way that
-allows different documentation per development branch in Git, which so far did not scale well with the Github-Wiki-based
-approach.
-
 Contents
 ========
 
 .. toctree::
    :maxdepth: 2
 
+   features/index.rst
+   configuration/index.rst
    api/index.rst
    events/index.rst
    plugins/index.rst

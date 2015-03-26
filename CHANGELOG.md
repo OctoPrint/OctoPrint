@@ -105,6 +105,13 @@
 * White and transparent colors ;) are supported for the navigation bar ([#789](https://github.com/foosel/OctoPrint/pull/789))
 * Drag-n-drop overlay for file uploads now uses the full available screen space, improving usability on high resolution
   displays ([#187](https://github.com/foosel/OctoPrint/issues/187))
+* OctoPrint server should no longer hang when big changes in the system time happen, e.g. after first contact to an
+  NTP server on a Raspberry Pi image. Achieved through monkey patching Tornado with
+  [this PR](https://github.com/tornadoweb/tornado/pull/1290).
+* Serial ports matching ``/dev/ttyAMA*`` are not anymore listed by default (this was the reason for a lot of people
+  attempting to connect to their printer on their Raspberry Pis, on which ``/dev/ttyAMA0`` is the OS's serial console
+  by default). Added configuration of additional ports to the Serial Connection section in the Settings to make it easier
+  for those people who do indeed have their printer connected to ``/dev/ttyAMA0``.
 
 ### Bug Fixes
 
@@ -152,6 +159,7 @@
   * [#775](https://github.com/foosel/OctoPrint/pull/775) - Error messages in javascript console show the proper name
     of the objects
   * [#795](https://github.com/foosel/OctoPrint/issues/795) - Allow adding slicing profiles for unconfigured slicers
+  * [#809](https://github.com/foosel/OctoPrint/issues/809) - Added proper form validation to printer profile editor
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
@@ -163,10 +171,11 @@
   * Don't display a "Disconnected" screen when trying to download a timelapse in Firefox
   * Fixed handling of SD card files in folders
   * Fixed refreshing of timelapse file list upon finished rendering of a new one
+  * Fixed ``/api/printer`` which wasn't adapter yet to new internal offset data model
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
-## 1.1.2 (Unreleased)
+## 1.1.2 (2015-03-23)
 
 ### Improvements
 
@@ -177,6 +186,8 @@
 
 ### Bug Fixes
 
+* [#539](https://github.com/foosel/OctoPrint/issues/539) - Limit maximum number of tools, sanity check tool numbers in
+  GCODE files against upper limit and refuse to create 10000 tools due to weird slicers. (backported from `devel`)
 * [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
   by versioneer
 * [#679](https://github.com/foosel/OctoPrint/issues/679) - Fix error where API state is requested and printer is offline
@@ -184,11 +195,14 @@
 * [#719](https://github.com/foosel/OctoPrint/issues/719) - Properly center print bed in GCODE viewer
 * [#780](https://github.com/foosel/OctoPrint/issues/780) - Always (re)set file position in SD files to 0 so that reprints
   work correctly (backported from ``devel``)
+* [#801](https://github.com/foosel/OctoPrint/issues/801) - Fixed setting of bed temperature offset
 * [IRC] - Don't hiccup on slic3r ``filament_diameter`` comments generated for multi extruder setups
 * [ML] - Fixed relative URL to SockJS endpoint, wasn't yet using the proper base url
 * [unreported] & [#698](https://github.com/foosel/OctoPrint/issues/698) - Generated URLs now take X-Forwarded-Host header
   sent by proxies into account for included host and port, also fixed [#698](https://github.com/foosel/OctoPrint/issues/698)
   introduced by this
+* [unreported] Fixed a bug causing gcodeInterpreter to hiccup on GCODES containing invalid coordinates such as Xnan or
+  Yinf (backported from `devel`)
 * Small fixes for timelapse creation:
   - [#344](https://github.com/foosel/OctoPrint/issues/344) - Made timelapses capable of coping with missing captures in between by decrementing the image counter again if there
     was an error fetching the latest image from the snapshot URL (backport of [1a7a468](https://github.com/foosel/OctoPrint/commit/1a7a468eb65fdf2a13b4c7a7723280e822c9c34b)
@@ -197,7 +211,7 @@
   - [unreported] Synchronize image counter decrementing as well as incrementing to prevent rare race conditions when generating the
     image file names
 
-([Commits](https://github.com/foosel/OctoPrint/compare/1.1.1...master))
+([Commits](https://github.com/foosel/OctoPrint/compare/1.1.1...1.1.2))
 
 ## 1.1.1 (2014-10-27)
 

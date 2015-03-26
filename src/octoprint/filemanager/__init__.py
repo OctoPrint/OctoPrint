@@ -232,18 +232,17 @@ class FileManager(object):
 			self._slicing_jobs[dest_job_key] = self._slicing_jobs[source_job_key] = (slicer_name, absolute_source_path, temp_path)
 
 		args = (source_location, source_path, temp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args)
-		return self._slicing_manager.slice(
-			slicer_name,
-			absolute_source_path,
-			temp_path,
-			profile,
-			stlProcessed,
-			position=position,
-			callback_args=args,
-			overrides=overrides,
-			printer_profile_id=printer_profile_id,
-			on_progress=self.on_slicing_progress,
-			on_progress_args=(slicer_name, source_location, source_path, dest_location, dest_path))
+		self._slicing_manager.slice(slicer_name,
+		                            absolute_source_path,
+		                            temp_path,
+		                            profile,
+		                            stlProcessed,
+		                            position=position,
+		                            callback_args=args,
+		                            overrides=overrides,
+		                            printer_profile_id=printer_profile_id,
+		                            on_progress=self.on_slicing_progress,
+		                            on_progress_args=(slicer_name, source_location, source_path, dest_location, dest_path))
 
 	def on_slicing_progress(self, slicer, source_location, source_path, dest_location, dest_path, _progress=None):
 		if not _progress:
