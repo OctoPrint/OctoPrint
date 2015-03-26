@@ -24,6 +24,7 @@ octoprint.comm.protocol.action
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
       :linenos:
       :tab-width: 4
+      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str line: The complete line as received from the printer, format ``// action:<command>``
@@ -67,6 +68,7 @@ octoprint.comm.protocol.gcode
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/rewrite_m107.py
       :linenos:
       :tab-width: 4
+      :caption: `rewrite_m107.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/rewrite_m107.py>`_
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str cmd: The GCODE command for which the hook was triggered. This is the full command as taken either
@@ -103,6 +105,7 @@ octoprint.comm.protocol.scripts
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/message_on_connect.py
       :linenos:
       :tab-width: 4
+      :caption: `message_on_connect.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/message_on_connect.py>`_
 
    :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str script_type: The type of the script for which the hook was called, currently only "gcode" is supported here.
