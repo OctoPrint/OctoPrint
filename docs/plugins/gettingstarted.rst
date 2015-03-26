@@ -260,8 +260,7 @@ Our plugin's directory structure should now look like this::
 
 Restart OctoPrint and open the web interface in your browser (make sure to clear your browser's cache!).
 
-.. _fig-plugins-gettingstarted-helloworld_navbar:
-.. figure:: ../images/plugins_gettingstarted_helloworld_navbar.png
+.. image:: ../images/plugins_gettingstarted_helloworld_navbar.png
    :align: center
    :alt: Our "Hello World" navigation bar element in action
 
@@ -458,8 +457,7 @@ Restart OctoPrint and shift-reload your browser. Your link in the navigation bar
 defined in ``config.yaml`` earlier. Open the "Settings" and click on the new "Hello World" entry that shows up under
 "Plugins".
 
-.. _fig-plugins-gettingstarted-helloworld_settings:
-.. figure:: ../images/plugins_gettingstarted_helloworld_settings.png
+.. image:: ../images/plugins_gettingstarted_helloworld_settings.png
    :align: center
    :alt: Our "Hello World" navigation bar element in action
 
@@ -623,8 +621,7 @@ which we bound to the click event of the "Go" button in our template.
 Restart OctoPrint and shift-reload the browser. You should see a shiny new "Hello World" tab right at the end of the
 tab bar. Click on it!
 
-.. _fig-plugins-gettingstarted-helloworld_tab:
-.. figure:: ../images/plugins_gettingstarted_helloworld_tab.png
+.. image:: ../images/plugins_gettingstarted_helloworld_tab.png
    :align: center
    :alt: Our "Hello World" tab in action
 

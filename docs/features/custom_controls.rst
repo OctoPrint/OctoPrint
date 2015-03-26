@@ -80,12 +80,14 @@ a GCODE script including user input.
              step: 1
 
 Adding this to ``config.yaml``, restarting the OctoPrint server and switching to the "Control" tab within its
-interface yields the following visual representation:
+interface yields the visual representation in :numref:`fig-configuration-customcontrols-example`.
 
-.. _fig-configuration-custom_controls-example:
+.. _fig-configuration-customcontrols-example:
 .. figure:: ../images/features-custom_controls-example.png
    :align: center
    :alt: The rendered output created through the example configuration
+
+   The rendered output created through the example configuration
 
 As you can see you have two basic types of control definitions here: controls that actually do something (providing a
 button that sends one or more commands to the printer when clicked, displaying output received from the printer) and
@@ -209,12 +211,14 @@ Controls
    * - ``confirm``
      - (Optional) A text to display to the user to confirm his button press. Can be used with sensitive custom controls
        like changing EEPROM values in order to prevent accidental clicks. The text will be displayed in a confirmation
-       dialog like the following:
+       dialog like in :numref:`fig-configuration-customcontrols-confirm`.
 
-       .. _fig-configuration-custom_controls-confirm:
-       .. figure:: ../images/features-custom_controls-confirm.png
-          :align: center
-          :alt: An example confirmation dialog
+.. _fig-configuration-customcontrols-confirm:
+.. figure:: ../images/features-custom_controls-confirm.png
+   :align: center
+   :alt: An example confirmation dialog
+
+   An example confirmation dialog
 
 .. _sec-features-custom_controls-examples:
 

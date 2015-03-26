@@ -250,6 +250,8 @@ class TemplatePlugin(OctoPrintPlugin):
 		      :align: center
 		      :alt: Structure of navbar plugins
 
+		      Structure of navbar plugins
+
 		   Configures a navbar component to inject. The following keys are supported:
 
 		   .. list-table::
@@ -285,6 +287,8 @@ class TemplatePlugin(OctoPrintPlugin):
 		   .. figure:: ../images/template-plugin-type-sidebar.png
 		      :align: center
 		      :alt: Structure of sidebar plugins
+
+		      Structure of sidebar plugins
 
 		   Configures a sidebar component to inject. The following keys are supported:
 
@@ -338,6 +342,8 @@ class TemplatePlugin(OctoPrintPlugin):
 		      :align: center
 		      :alt: Structure of tab plugins
 
+		      Structure of tab plugins
+
 		   Configures a tab component to inject. The value must be a dictionary, supported values are the following:
 
 		   .. list-table::
@@ -384,6 +390,8 @@ class TemplatePlugin(OctoPrintPlugin):
 		   .. figure:: ../images/template-plugin-type-settings.png
 		      :align: center
 		      :alt: Structure of settings plugins
+
+		      Structure of settings plugins
 
 		   Configures a settings component to inject. The value must be a dictionary, supported values are the following:
 
