@@ -140,8 +140,6 @@ property instead, manually instantiate your implementation instance and then add
 .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
    :linenos:
    :tab-width: 4
-   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
-   :name: sec-plugin-concepts-hooks-example
 
 .. seealso::
 

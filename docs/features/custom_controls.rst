@@ -24,7 +24,7 @@ The following example defines a control for enabling the cooling fan with a vari
 feedback evaluation for the result of the M114 "Get Position" gcode inside a section named "Reporting" and finally
 a GCODE script including user input.
 
-.. code-block:: yaml
+.. code-block-ext:: yaml
 
    controls:
      - name: Fan
@@ -167,7 +167,7 @@ Controls
        additional input fields. ``command``/``commands`` may contain placeholders to be replaced by the values obtained
        from the user for the defined input fields:
 
-       .. code-block:: yaml
+       .. code-block-ext:: yaml
 
           name: Enable Fan
           command: M106 S%(speed)s
@@ -226,9 +226,7 @@ Examples
 Parameterized GCODE Script
 ..........................
 
-.. code-block:: yaml
-   :caption: Control definition in ~/.octoprint/config.yaml
-   :name: code-features-custom_controls-example-gcode_script-config_yaml
+.. code-block-ext:: yaml
 
    name: Dance
    script: custom/dance.gco
@@ -241,9 +239,7 @@ Parameterized GCODE Script
        min: 1
        step: 1
 
-.. code-block:: jinja
-   :caption: ~/.octoprint/scripts/gcode/custom/dance.gco
-   :name: code-features-custom_controls-example-gcode_script-dance_gco
+.. code-block-ext:: jinja
 
    {% set center_x = printer_profile.volume.width / 2 %}
    {% set center_y = printer_profile.volume.depth / 2 %}
