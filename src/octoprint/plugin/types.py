@@ -747,18 +747,18 @@ class SettingsPlugin(OctoPrintPlugin):
 	           )
 
 	       def on_settings_save(self, data):
-	           old_flag = self._settings.getBoolean(["sub", "some_flag"])
+	           old_flag = self._settings.get_boolean(["sub", "some_flag"])
 
 	           super(MySettingsPlugin, self).on_settings_save(data)
 
-	           new_flag = self._settings.getBoolean(["sub", "some_flag"])
+	           new_flag = self._settings.get_boolean(["sub", "some_flag"])
 	           if old_flag != new_flag:
 	               self._logger.info("sub.some_flag changed from {old_flag} to {new_flag}".format(**locals()))
 
 	       def on_after_startup(self):
 	           some_setting = self._settings.get(["some_setting"])
-	           some_value = self._settings.getInt(["some_value"])
-	           some_flag = self._settings.getBoolean(["sub", "some_flag"])
+	           some_value = self._settings.get_int(["some_value"])
+	           some_flag = self._settings.get_boolean(["sub", "some_flag"])
 	           self._logger.info("some_setting = {some_setting}, some_value = {some_value}, sub.some_flag = {some_flag}".format(**locals())
 
 	   __plugin_implementations__ = [MySettingsPlugin()]
@@ -835,7 +835,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		Example:
 
-		.. sourcecode: python
+		.. code-block:: python
 
 		   def get_settings_defaults(self):
 		       return dict(some_key="Some_Value", some_other_key="Some_Value")
