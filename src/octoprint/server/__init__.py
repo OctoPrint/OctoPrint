@@ -175,7 +175,8 @@ def index():
 		assets["stylesheets"].append(("css", url_for('static', filename='css/octoprint.css')))
 
 	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
-	for name, implementation in asset_plugins.items():
+	for implementation in asset_plugins:
+		name = implementation._identifier
 		all_assets = implementation.get_assets()
 
 		if "js" in all_assets:
@@ -285,8 +286,11 @@ def index():
 	)
 
 	plugin_vars = dict()
-	plugin_names = template_plugins.keys()
-	for name, implementation in template_plugins.items():
+	plugin_names = set()
+	for implementation in template_plugins:
+		name = implementation._identifier
+		plugin_names.add(name)
+
 		vars = implementation.get_template_vars()
 		if not isinstance(vars, dict):
 			vars = dict()
@@ -458,11 +462,15 @@ def robotsTxt():
 
 @app.route("/plugin_assets/<string:name>/<path:filename>")
 def plugin_assets(name, filename):
-	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
+	asset_plugins = pluginManager.get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.AssetPlugin)
 
-	if not name in asset_plugins:
+	if not asset_plugins:
 		return make_response("Asset not found", 404)
-	asset_plugin = asset_plugins[name]
+
+	if len(asset_plugins) > 1:
+		return make_response("More than one asset provider for {name}, can't proceed".format(name=name), 500)
+
+	asset_plugin = asset_plugins[0]
 	asset_folder = asset_plugin.get_asset_folder()
 	if asset_folder is None:
 		return make_response("Asset not found", 404)
@@ -598,7 +606,7 @@ class Server():
 		# configure additional template folders for jinja2
 		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 		additional_template_folders = []
-		for plugin in template_plugins.values():
+		for plugin in template_plugins:
 			folder = plugin.get_template_folder()
 			if folder is not None:
 				additional_template_folders.append(plugin.get_template_folder())
@@ -671,7 +679,8 @@ class Server():
 
 		# also register any blueprints defined in BlueprintPlugins
 		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
-		for name, plugin in blueprint_plugins.items():
+		for plugin in blueprint_plugins:
+			name = plugin._identifier
 			blueprint = plugin.get_blueprint()
 			if blueprint is None:
 				continue

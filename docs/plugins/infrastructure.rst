@@ -21,8 +21,8 @@ Control Properties
   provided.
 ``__plugin_license__``
   License of your plugin, optional, overrides the license specified in ``setup.py`` if provided.
-``__plugin_implementations__``
-  Instances of one or more of the various :ref:`plugin mixins <sec-plugins-mixins>`
+``__plugin_implementation__``
+  Instance of an implementation of one or more :ref:`plugin mixins <sec-plugins-mixins>`
 ``__plugin_hooks__``
   Handlers for one or more of the various :ref:`plugin hooks <sec-plugins-hooks>`
 ``__plugin_check__``

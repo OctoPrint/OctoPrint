@@ -53,14 +53,14 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    __plugin_name__ = "Hello World"
    __plugin_version__ = "1.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 and restart OctoPrint. You now get this output in the log::
 
    2015-01-27 11:17:10,792 - octoprint.plugins.helloworld - INFO - Hello World!
 
 Neat, isn't it? We added a custom class that subclasses one of OctoPrint's :ref:`plugin mixins <sec-plugins-mixins>`
-with :class:`~octoprint.plugin.StartupPlugin` and another control property, ``__plugin_implementations__``, that instantiates
+with :class:`~octoprint.plugin.StartupPlugin` and another control property, ``__plugin_implementation__``, that instantiates
 our plugin class and tells OctoPrint about it. Taking a look at the documentation of :class:`~octoprint.plugin.StartupPlugin` we see that
 this mixin offers two methods that get called by OctoPrint during startup of the server, :func:`~octoprint.plugin.StartupPlugin.on_startup` and
 :func:`~octoprint.plugin.StartupPlugin.on_after_startup`. We decided to add our logging output by overriding :func:`~octoprint.plugin.StartupPlugin.on_after_startup`, but we could also have
@@ -169,7 +169,7 @@ and ``__plugin_description__``:
        def on_after_startup(self):
            self._logger.info("Hello World!")
 
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 and restart OctoPrint::
 
@@ -192,7 +192,7 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
            self._logger.info("Hello World!")
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 
 Restart OctoPrint again::
@@ -238,7 +238,7 @@ add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
            self._logger.info("Hello World!")
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 Next, we'll create a sub folder ``templates`` underneath our ``octoprint_helloworld`` folder, and within that a file
 ``helloworld_navbar.jinja2`` like so:
@@ -304,7 +304,7 @@ Let's take a look at how all that would look in our plugin's ``__init__.py``:
            return dict(url="https://en.wikipedia.org/wiki/Hello_world")
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 Restart OctoPrint. You should see something like this::
 
@@ -341,7 +341,7 @@ Adjust your plugin's ``__init__.py`` like this:
            return dict(url=self._settings.get(["url"]))
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
 
@@ -451,7 +451,7 @@ again since we don't use that anymore:
        ]
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 Restart OctoPrint and shift-reload your browser. Your link in the navigation bar should still point to the URL we
 defined in ``config.yaml`` earlier. Open the "Settings" and click on the new "Hello World" entry that shows up under
@@ -550,7 +550,7 @@ like so:
         )
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 Note how we did not add another entry to the return value of :func:`~octoprint.plugin.TemplatePlugin.get_template_configs`.
 Remember how we only added those since we wanted OctoPrint to use existing bindings on our navigation bar and settings
@@ -731,7 +731,7 @@ a reference to our CSS file:
         )
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 Restart OctoPrint, shift-reload your browser and take a look. Everything should still look like before, but now
 OctoPrint linked to our stylesheet and the style information for the ``iframe`` is taken from that instead of
@@ -801,7 +801,7 @@ Then adjust our returned assets to include our LESS file as well:
        )
 
    __plugin_name__ = "Hello World"
-   __plugin_implementations__ = [HelloWorldPlugin()]
+   __plugin_implementation__ = HelloWorldPlugin()
 
 
 and enable LESS mode by adjusting one of OctoPrint's ``devel`` flags via the ``config.yaml`` file:

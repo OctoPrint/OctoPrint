@@ -522,7 +522,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 	       def on_api_get(self, request):
 	           return flask.jsonify(foo="bar")
 
-	   __plugin_implementations__ = [MySimpleApiPlugin()]
+	   __plugin_implementation__ = MySimpleApiPlugin()
 
 
 	Our plugin defines two commands, ``command1`` with no mandatory parameters and ``command2`` with one
@@ -635,7 +635,7 @@ class BlueprintPlugin(OctoPrintPlugin):
 	               return flask.make_response("Expected a text to echo back.", 400)
 	           return flask.request.values["text"]
 
-	   __plugin_implementations__ = [MyBlueprintPlugin()]
+	   __plugin_implementation__ = MyBlueprintPlugin()
 
 	Your blueprint will be published by OctoPrint under the base URL ``/plugin/<plugin identifier>/``, so the above
 	example of a plugin with the identifier "myblueprintplugin" would be reachable under
@@ -761,7 +761,7 @@ class SettingsPlugin(OctoPrintPlugin):
 	           some_flag = self._settings.get_boolean(["sub", "some_flag"])
 	           self._logger.info("some_setting = {some_setting}, some_value = {some_value}, sub.some_flag = {some_flag}".format(**locals())
 
-	   __plugin_implementations__ = [MySettingsPlugin()]
+	   __plugin_implementation__ = MySettingsPlugin()
 
 	Of course, you are always free to completely override both :func:`on_settings_load` and :func:`on_settings_save` if the
 	default implementations do not fit your requirements.

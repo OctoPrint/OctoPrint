@@ -37,7 +37,8 @@
 * Controls for adjusting feed and flow rate factor added to Controls ([#362](https://github.com/foosel/OctoPrint/issues/362))
 * Custom controls now also support slider controls
 * Custom controls now support a row layout
-* Users can now define custom GCODE scripts to run upon starting/pausing/resuming/success/failure of a print
+* Users can now define custom GCODE scripts to run upon starting/pausing/resuming/success/failure of a print or for
+  custom controls ([#457](https://github.com/foosel/OctoPrint/issues/457), [#347](https://github.com/foosel/OctoPrint/issues/347))
 
 ### Improvements
 

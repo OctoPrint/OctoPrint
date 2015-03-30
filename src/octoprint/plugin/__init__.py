@@ -164,16 +164,16 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 		kwargs = dict()
 
 	plugins = plugin_manager().get_implementations(*types)
-	for name, plugin in plugins.items():
+	for plugin in plugins:
 		if hasattr(plugin, method):
 			try:
 				result = getattr(plugin, method)(*args, **kwargs)
 				if callback:
-					callback(name, plugin, result)
+					callback(plugin._identifier, plugin, result)
 			except Exception as exc:
-				logging.getLogger(__name__).exception("Error while calling plugin %s" % name)
+				logging.getLogger(__name__).exception("Error while calling plugin %s" % plugin._identifier)
 				if error_callback:
-					error_callback(name, plugin, exc)
+					error_callback(plugin._identifier, plugin, exc)
 
 
 class PluginSettings(object):

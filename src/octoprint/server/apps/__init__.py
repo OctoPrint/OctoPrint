@@ -87,7 +87,7 @@ def _get_registered_apps():
 			apps[app]["enabled"] = True
 
 	app_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.AppPlugin)
-	for name, plugin in app_plugins.items():
+	for plugin in app_plugins:
 		additional_apps = plugin.get_additional_apps()
 		any_version_enabled = dict()
 

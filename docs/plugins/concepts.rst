@@ -20,7 +20,7 @@ Mixins
 
 Plugin mixins are the heart of OctoPrint's plugin system. They are :ref:`special base classes <sec-plugins-mixins>`
 which are to be subclassed and extended to add functionality to OctoPrint. Plugins declare their instances that
-implement one or multiple mixins using the ``__plugin_implementations__`` control property. OctoPrint's plugin core
+implement one or multiple mixins using the ``__plugin_implementation__`` control property. OctoPrint's plugin core
 collects those from the plugins and offers methods to access them based on the mixin type, which get used at multiple
 locations within OctoPrint.
 
@@ -135,7 +135,7 @@ If you want your hook handler to be an instance method of a mixin implementation
 need access to instance variables handed to your implementation via mixin invocations), you can get this work
 by using a small trick. Instead of defining it directly via ``__plugin_hooks__`` utilize the ``__plugin_init__``
 property instead, manually instantiate your implementation instance and then add its hook handler method to the
-``__plugin_hooks__`` property and itself to the ``__plugin_implementations__`` property. See the following example.
+``__plugin_hooks__`` property and itself to the ``__plugin_implementation__`` property. See the following example.
 
 .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
    :linenos:
@@ -153,3 +153,74 @@ property instead, manually instantiate your implementation instance and then add
 
 Helpers
 -------
+
+Helpers are methods that plugin can exposed to other plugins in order to make common functionality available on the
+system. They are registered with the OctoPrint plugin system through the use of the control property ``__plugin_helpers__``.
+
+An example for providing a couple of helper functions to the system can be found in the
+`Discovery Plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery>`_,
+which provides it's SSDP browsing and Zeroconf browsing and publishing functions as helper methods.
+
+.. code-block:: python
+   :linenos:
+   :emphasize-lines: 11-20
+   :caption: Excerpt from the Discovery Plugin showing the declaration of its exported helpers.
+   :name: sec-plugin-concepts-helpers-example-export
+
+   def __plugin_init__():
+       if not pybonjour:
+           # no pybonjour available, we can't use that
+           logging.getLogger("octoprint.plugins." + __name__).info("pybonjour is not installed, Zeroconf Discovery won't be available")
+
+       plugin = DiscoveryPlugin()
+
+       global __plugin_implementation__
+       __plugin_implementation__ = plugin
+
+       global __plugin_helpers__
+       __plugin_helpers__ = dict(
+           ssdp_browse=plugin.ssdp_browse
+       )
+       if pybonjour:
+           __plugin_helpers__.update(dict(
+               zeroconf_browse=plugin.zeroconf_browse,
+               zeroconf_register=plugin.zeroconf_register,
+               zeroconf_unregister=plugin.zeroconf_unregister
+           ))
+
+An example of how to use helpers can be found in the `Growl Plugin <https://github.com/OctoPrint/OctoPrint-Growl>`_.
+Using :meth:`~octoprint.plugin.code.PluginManager.get_helpers` plugins can retrieve exported helper methods and call
+them as (hopefully) documented.
+
+.. code-block:: python
+   :linenos:
+   :emphasize-lines: 6-8,20
+   :caption: Excerpt from the Growl Plugin showing utilization of the helpers published by the Discovery Plugin.
+   :name: sec-plugin-concepts-helpers-example-usage
+   
+   def on_after_startup(self):
+       host = self._settings.get(["hostname"])
+       port = self._settings.getInt(["port"])
+       password = self._settings.get(["password"])
+
+       helpers = self._plugin_manager.get_helpers("discovery", "zeroconf_browse")
+       if helpers and "zeroconf_browse" in helpers:
+           self.zeroconf_browse = helpers["zeroconf_browse"]
+
+       self.growl, _ = self._register_growl(host, port, password=password)
+
+   # ...
+   
+   def on_api_get(self, request):
+       if not self.zeroconf_browse:
+           return flask.jsonify(dict(
+               browsing_enabled=False
+           ))
+
+       browse_results = self.zeroconf_browse("_gntp._tcp", block=True)
+       growl_instances = [dict(name=v["name"], host=v["host"], port=v["port"]) for v in browse_results]
+
+       return flask.jsonify(dict(
+           browsing_enabled=True,
+           growl_instances=growl_instances
+       ))

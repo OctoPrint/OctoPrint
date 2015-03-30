@@ -14,4 +14,4 @@ class TestMixedPlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsP
 
 __plugin_name__ = "Mixed Plugin"
 __plugin_description__ = "Test mixed plugin"
-__plugin_implementations__ = (TestMixedPlugin(),)
+__plugin_implementation__ = TestMixedPlugin()
