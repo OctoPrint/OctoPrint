@@ -224,7 +224,7 @@ def setSettings():
 				s.saveScript("gcode", name, script.replace("\r\n", "\n").replace("\r", "\n"))
 
 	if "plugins" in data:
-		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():
+		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):
 			plugin_id = plugin._identifer
 			if plugin_id in data["plugins"]:
 				plugin.on_settings_save(data["plugins"][plugin_id])
