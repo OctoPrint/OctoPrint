@@ -838,7 +838,7 @@ class MachineCom(object):
 						filename = preprocessed_line
 						size = None
 
-					if valid_file_type(filename, "gcode"):
+					if valid_file_type(filename, "machinecode"):
 						if filter_non_ascii(filename):
 							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
