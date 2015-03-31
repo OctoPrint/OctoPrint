@@ -155,7 +155,7 @@ of information now defined twice:
 
 The nice thing about our plugin now being a proper python package is that OctoPrint can and will access the metadata defined
 within ``setup.py``! So, we don't really need to define all this data twice. Remove ``__plugin_name__``, ``__plugin_version__``
-and ``__plugin_description__``:
+and ``__plugin_description__`` from ``__init__.py``:
 
 .. code-block:: python
    :linenos:
