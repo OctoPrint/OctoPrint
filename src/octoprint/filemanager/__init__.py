@@ -23,7 +23,8 @@ extensions = dict(
 	),
 	# extensions for printable machine code
 	machinecode=dict(
-		gcode=["gcode", "gco", "g"]
+		gcode=["gcode", "gco", "g"],
+		x3g=["x3g", "s3g"]
 	)
 )
 
