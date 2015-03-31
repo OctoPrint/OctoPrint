@@ -22,8 +22,13 @@ We'll start at the most basic form a plugin can take - just a couple of simple l
 Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you something resembling these log entries upon server startup::
 
    2015-01-27 11:14:35,124 - octoprint.server - INFO - Starting OctoPrint 1.2.0-dev-448-gd96e56e (devel branch)
+   [...]
    2015-01-27 11:14:35,124 - octoprint.plugin.core - INFO - Loading plugins from /home/pi/.octoprint/plugins, /home/pi/OctoPrint/src/octoprint/plugins and installed plugin packages...
-   2015-01-27 11:14:36,135 - octoprint.plugin.core - INFO - Found 3 plugin(s): Hello World (1.0), CuraEngine (0.1), Discovery (0.1)
+   [...]
+   2015-01-27 11:14:36,135 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
+   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
+   | Hello World (1.0) = /home/pi/.octoprint/plugins/helloworld.py
 
 OctoPrint found that plugin in the folder and took a look into it. The name and the version it displays in that log
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
@@ -68,7 +73,7 @@ used :func:`~octoprint.plugin.StartupPlugin.on_startup` instead, in which case o
 up and ready to serve requests.
 
 You'll also note that we are using ``self._logger`` for logging. Where did that one come from? OctoPrint's plugin system
-injects :ref:`a couple of useful objects <sec-plugins-infrastructure-injections>` into our plugin implementation classes,
+injects :ref:`a couple of useful objects <sec-plugins-concepts-injectedproperties>` into our plugin implementation classes,
 one of those being a fully instantiated `python logger <https://docs.python.org/2/library/logging.html>`_ ready to be
 used by your plugin. As you can see in the log output above, that logger uses the namespace ``octoprint.plugins.helloworld``
 for our little plugin here, or more generally ``octoprint.plugins.<plugin identifier>``.
@@ -85,8 +90,7 @@ You basically have two options to distribute your plugin. One would be about the
 as a simple python file following the naming convention ``<plugin identifier>.py`` that your users add to their
 ``~/.octoprint/plugins`` folder. You already know how that works. But let's say you have more than just a simple plugin
 that can be done in one file. Distributing multiple files and getting your users to install them in the right way
-so that OctoPrint will be able to actually find and load them is certainly not impossible (see :ref:`the plugin distribution
-documentation <sec-plugins-distribution>` if you want to take a closer look at that option), but we want to do it in the
+so that OctoPrint will be able to actually find and load them is certainly not impossible, but we want to do it in the
 best way possible, meaning we want to make our plugin a fully installable python module that your users will be able to
 install directly via Python's standard package manager ``pip`` or alternatively via `OctoPrint's own plugin manager <https://github.com/OctoPrint/OctoPrint-PluginManager>`_.
 
@@ -130,8 +134,13 @@ discoverable by OctoPrint, however we don't have to reinstall it after any chang
 Restart OctoPrint. Your plugin should still be properly discovered and the log line should be printed::
 
    2015-01-27 13:43:34,134 - octoprint.server - INFO - Starting OctoPrint 1.2.0-dev-448-gd96e56e (devel branch)
+   [...]
    2015-01-27 13:43:34,134 - octoprint.plugin.core - INFO - Loading plugins from /home/pi/.octoprint/plugins, /home/pi/OctoPrint/src/octoprint/plugins and installed plugin packages...
-   2015-01-27 13:43:34,818 - octoprint.plugin.core - INFO - Found 3 plugin(s): Hello World (1.0), CuraEngine (0.1), Discovery (0.1)
+   [...]
+   2015-01-27 13:43:34,818 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
+   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
+   | Hello World (1.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
    [...]
    2015-01-27 13:43:38,997 - octoprint.plugins.helloworld - INFO - Hello World!
 
@@ -142,13 +151,16 @@ of information now defined twice:
 
 .. code-block:: python
    :linenos:
+   :caption: __init__.py
 
-   # __init__.py:
    __plugin_name__ = "Hello World"
    __plugin_version__ = "1.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
 
-   # setup.py
+.. code-block:: python
+   :linenos:
+   :caption: setup.py
+
    plugin_name = "OctoPrint-HelloWorld"
    plugin_version = "1.0"
    plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
@@ -173,7 +185,10 @@ and ``__plugin_description__`` from ``__init__.py``:
 
 and restart OctoPrint::
 
-   2015-01-27 13:46:33,786 - octoprint.plugin.core - INFO - Found 3 plugin(s): OctoPrint-HelloWorld (1.0), CuraEngine (0.1), Discovery (0.1)
+   2015-01-27 13:46:33,786 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
+   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
+   | OctoPrint-HelloWorld (1.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
 
 Our "Hello World" Plugin still gets detected fine, but it's now listed under the same name it's installed under,
 "OctoPrint-HelloWorld". That's a bit redundant and squashed, so we'll override that bit via ``__plugin_name__`` again:
@@ -197,10 +212,13 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
 
 Restart OctoPrint again::
 
-   2015-01-27 13:48:54,122 - octoprint.plugin.core - INFO - Found 3 plugin(s): Hello World (1.0), CuraEngine (0.1), Discovery (0.1)
+   2015-01-27 13:48:54,122 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
+   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
+   | Hello World (1.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
 
 Much better! You can override pretty much all of the metadata defined within ``setup.py`` from within your Plugin itself --
-take a look at :ref:`the available control properties <sec-plugins-infrastructure-controlproperties>` for all available
+take a look at :ref:`the available control properties <sec-plugin-concepts-controlproperties>` for all available
 overrides.
 
 Following the README of the `Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_ you could now

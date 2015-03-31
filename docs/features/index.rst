@@ -10,3 +10,4 @@ Features
    custom_controls.rst
    gcode_scripts.rst
    action_commands.rst
+   plugins.rst

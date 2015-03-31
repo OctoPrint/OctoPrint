@@ -35,7 +35,7 @@ class PluginInfo(object):
 	implementations, hooks and helpers.
 
 	It works on Python module objects and extracts the relevant data from those via accessing the
-	:ref:`control properties <sec-plugins-infrastructure-controlproperties>`.
+	:ref:`control properties <sec-plugin-concepts-controlproperties>`.
 
 	Arguments:
 	    key (str): Identifier of the plugin
