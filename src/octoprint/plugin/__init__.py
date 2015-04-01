@@ -188,7 +188,7 @@ class PluginSettings(object):
 
 	Arguments:
 	    settings (Settings): The :class:`~octoprint.settings.Settings` instance on which to operate.
-	    plugin_key (str): The plugin identifer of the plugin for which to create this instance.
+	    plugin_key (str): The plugin identifier of the plugin for which to create this instance.
 	    defaults (dict): The plugin's defaults settings, will be used to determine valid paths within the plugin's
 	        settings structure
 

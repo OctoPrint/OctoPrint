@@ -4,7 +4,7 @@ Concepts
 ========
 
 OctoPrint's plugins are `Python Packages <https://docs.python.org/2/tutorial/modules.html#packages>`_ which in their
-top-level module define a bunch of :ref:`control properties <sec-plugins-infrastructure-controlproperties>` defining
+top-level module define a bunch of :ref:`control properties <sec-plugin-concepts-controlproperties>` defining
 metadata (like name, version etc of the plugin) as well as information on how to initialize the plugin and into what
 parts of the system the plugin will actually plug in to perform its job.
 
@@ -12,6 +12,57 @@ There are three types of ways a plugin might attach itself to the system, throug
 :ref:`mixin <sec-plugin-concepts-mixins>` implementations, by attaching itself to specified
 :ref:`hook <sec-plugin-concepts-hooks>` or by offering :ref:`helper <sec-plugin-concepts-helpers>` functionality to be
 used by other plugins.
+
+Plugin mixin implementations will get a bunch of :ref:`properties injected <sec-plugins-concepts-injectedproperties>`
+by OctoPrint plugin system to help them work.
+
+.. _sec-plugin-concepts-controlproperties:
+
+Control Properties
+------------------
+
+As already mentioned above, plugins are Python packages which provide certain pieces of metadata to tell OctoPrint's
+plugin subsystem about themselves. These are simple package attributes defined in the top most package file, e.g.:
+
+.. code-block:: python
+
+   import octoprint.plugin
+
+   # ...
+
+   __plugin_name__ = "My Plugin"
+   def __plugin_init__():
+       # whatever you need to do to init your plugin, if anything at all
+       pass
+
+The following properties are recognized:
+
+``__plugin_name__``
+  Name of your plugin, optional, overrides the name specified in ``setup.py`` if provided. If neither this property nor
+  a name from ``setup.py`` is available to the plugin subsystem, the plugin's identifier (= package name) will be
+  used instead.
+``__plugin_version__``
+  Version of your plugin, optional, overrides the version specified in ``setup.py`` if provided.
+``__plugin_description__``
+  Description of your plugin, optional, overrides the description specified in ``setup.py`` if provided.
+``__plugin_author__``
+  Author of your plugin, optional, overrides the author specified in ``setup.py`` if provided.
+``__plugin_url__``
+  URL of the webpage of your plugin, e.g. the Github repository, optional, overrides the URL specified in ``setup.py`` if
+  provided.
+``__plugin_license__``
+  License of your plugin, optional, overrides the license specified in ``setup.py`` if provided.
+``__plugin_implementation__``
+  Instance of an implementation of one or more :ref:`plugin mixins <sec-plugins-mixins>`.
+``__plugin_hooks__``
+  Handlers for one or more of the various :ref:`plugin hooks <sec-plugins-hooks>`.
+``__plugin_check__``
+  Method called upon discovery of the plugin by the plugin subsystem, should return ``True`` if the
+  plugin can be instantiated later on, ``False`` if there are reasons why not, e.g. if dependencies
+  are missing.
+``__plugin_init__``
+  Method called upon initializing of the plugin by the plugin subsystem, can be used to instantiate
+  plugin implementations, connecting them to hooks etc.
 
 .. _sec-plugin-concepts-mixins:
 
@@ -224,3 +275,51 @@ them as (hopefully) documented.
            browsing_enabled=True,
            growl_instances=growl_instances
        ))
+
+.. _sec-plugins-concepts-injectedproperties:
+
+Injected Properties
+-------------------
+
+OctoPrint's plugin subsystem will inject a bunch of properties into each :ref:`mixin implementation <sec-plugin-concepts-mixins>`.
+An overview of these properties follows.
+
+``self._identifier``
+  The plugin's identifier.
+``self._plugin_name``
+  The plugin's name, as taken from either the ``__plugin_name__`` control property or the package info.
+``self._plugin_version``
+  The plugin's version, as taken from either the ``__plugin_version__`` control property or the package info.
+``self._basefolder``
+  The plugin's base folder where it's installed. Can be used to refer to files relative to the plugin's installation
+  location, e.g. included scripts, templates or assets.
+``self._logger``
+  A `python logger instance <https://docs.python.org/2/library/logging.html>`_ logging to the log target
+  ``octoprint.plugin.<plugin identifier>``.
+``self._settings``
+  The plugin's personalized settings manager, injected only into plugins that include the :class:`~octoprint.plugin.SettingsPlugin` mixin.
+  An instance of :class:`octoprint.plugin.PluginSettings`.
+``self._plugin_manager``
+  OctoPrint's plugin manager object, an instance of :class:`octoprint.plugin.core.PluginManager`.
+``self._printer_profile_manager``
+  OctoPrint's printer profile manager, an instance of :class:`octoprint.printer.profile.PrinterProfileManager`.
+``self._event_bus``
+  OctoPrint's event bus, an instance of :class:`octoprint.events.EventManager`.
+``self._analysis_queue``
+  OctoPrint's analysis queue for analyzing GCODEs or other files, an instance of :class:`octoprint.filemanager.analysis.AnalysisQueue`.
+``self._slicing_manager``
+  OctoPrint's slicing manager, an instance of :class:`octoprint.slicing.SlicingManager`.
+``self._file_manager``
+  OctoPrint's file manager, an instance of :class:`octoprint.filemanager.FileManager`.
+``self._printer``
+  OctoPrint's printer management object, an instance of :class:`octoprint.printer.PrinterInterface`.
+``self._app_session_manager``
+  OctoPrint's application session manager, an instance of :class:`octoprint.server.util.flask.AppSessionManager`.
+
+.. seealso::
+
+   :class:`~octoprint.plugin.core.Plugin` and :class:`~octoprint.plugin.types.OctoPrintPlugin`
+       Class documentation also containing the properties shared among all mixing implementations.
+
+   :ref:`Available Mixins <sec-plugins-mixins>`
+       Some mixin types trigger the injection of additional properties.

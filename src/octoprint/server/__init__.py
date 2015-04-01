@@ -311,8 +311,7 @@ def index():
 				else:
 					data = include[1]
 
-				suffix = data["suffix"] if "suffix" in data else ""
-				key = "plugin_" + name + suffix
+				key = data["_key"]
 				if "replaces" in data:
 					key = data["replaces"]
 				templates[t]["entries"][key] = include
@@ -324,25 +323,38 @@ def index():
 	# 2) we have all entries located somewhere within the order
 
 	for t in template_types:
+		default_order = settings().get(["appearance", "components", "order", t], merged=True, config=dict())
 		configured_order = settings().get(["appearance", "components", "order", t], merged=True)
 		configured_disabled = settings().get(["appearance", "components", "disabled", t])
+
+		# first create the ordered list of all component ids according to the configured order
 		templates[t]["order"] = [x for x in configured_order if x in templates[t]["entries"] and not x in configured_disabled]
+
+		# now append the entries from the default order that are not already in there
+		templates[t]["order"] += [x for x in default_order if not x in templates[t]["order"] and x in templates[t]["entries"] and not x in configured_disabled]
 
 		all_ordered = set(templates[t]["order"])
 		all_disabled = set(configured_disabled)
 
+		# check if anything is missing, if not we are done here
 		missing_in_order = set(templates[t]["entries"].keys()).difference(all_ordered).difference(all_disabled)
 		if len(missing_in_order) == 0:
 			continue
 
+		# finally add anything that's not included in our order yet
 		sorted_missing = list(missing_in_order)
 		if not t == "navbar" and not t == "generic":
+			# anything but navbar and generic components get sorted by their name
 			sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+
 		if t == "navbar":
+			# additional navbar components are prepended
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
 		elif t == "sidebar" or t == "tab" or t == "generic" or t == "usersettings":
+			# additional sidebar, generic or usersettings components are appended
 			templates[t]["order"] += sorted_missing
 		elif t == "settings":
+			# additional settings items are added to the plugin section
 			templates[t]["entries"]["section_plugins"] = (gettext("Plugins"), None)
 			templates[t]["order"] += ["section_plugins"] + sorted_missing
 
@@ -432,26 +444,31 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		config = dict()
 	data = dict(config)
 
+	if not "suffix" in data and counter > 1:
+		data["suffix"] = "_%d" % counter
+
 	if "div" in data:
 		data["_div"] = data["div"]
 	elif "div" in rule:
 		data["_div"] = rule["div"](name)
 		if "suffix" in data:
-			data["_div"] += "_" + data["suffix"]
-		elif counter > 1:
-			data["_div"] += "_%d" % counter
-			data["suffix"] = "_%d" % counter
-		else:
-			data["suffix"] = ""
+			data["_div"] = data["_div"] + data["suffix"]
+
 	if not "template" in data:
 		data["template"] = rule["template"](name)
+
 	if not "name" in data:
 		data["name"] = implementation._plugin_name
+
 	if not "custom_bindings" in data or data["custom_bindings"]:
 		data_bind = "allowBindings: true"
 		if "data_bind" in data:
 			data_bind = data_bind + ", " + data["data_bind"]
 		data["data_bind"] = data_bind
+
+	data["_key"] = "plugin_" + name
+	if "suffix" in data:
+		data["_key"] += data["suffix"]
 
 	return data
 
