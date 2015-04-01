@@ -109,9 +109,7 @@ class PluginInfo(object):
 		self._url = url
 		self._license = license
 
-		self._validate()
-
-	def _validate(self):
+	def validate(self):
 		# if the plugin still uses __plugin_implementations__, log a deprecation warning and put the first
 		# item into __plugin_implementation__
 		if hasattr(self.instance, self.__class__.attr_implementations):
@@ -483,6 +481,9 @@ class PluginManager(object):
 			try:
 				# initialize the plugin
 				plugin.init()
+
+				# validate the plugin
+				plugin.validate()
 
 				# evaluate registered hooks
 				for hook, callback in plugin.hooks.items():
