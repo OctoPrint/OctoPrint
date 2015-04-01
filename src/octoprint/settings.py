@@ -221,7 +221,7 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok (B|T\d*):)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
 	"plugins": {},
@@ -757,13 +757,14 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False, defaults=None, preprocessors=None, merged=False):
+	def get(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False):
 		import octoprint.util as util
 
 		if len(path) == 0:
 			return None
 
-		config = self._config
+		if config is None:
+			config = self._config
 		if defaults is None:
 			defaults = default_settings
 		if preprocessors is None:
@@ -820,7 +821,7 @@ class Settings(object):
 		else:
 			return results
 
-	def getInt(self, path, defaults=None, preprocessors=None):
+	def getInt(self, path, config=None, defaults=None, preprocessors=None):
 		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
@@ -831,8 +832,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getFloat(self, path, defaults=None, preprocessors=None):
-		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
+	def getFloat(self, path, config=None, defaults=None, preprocessors=None):
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 
@@ -842,8 +843,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getBoolean(self, path, defaults=None, preprocessors=None):
-		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
+	def getBoolean(self, path, config=None, defaults=None, preprocessors=None):
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 		if isinstance(value, bool):

@@ -11,6 +11,10 @@ settings.
 
 Note that many of these settings are available from the "Settings" menu in OctoPrint itself.
 
+.. contents::
+
+.. _sec-configuration-config_yaml-serial:
+
 Serial
 ------
 
@@ -51,6 +55,8 @@ Use the following settings to configure the serial connection to the printer:
      # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
      additionalPorts:
      - /dev/myPrinterSymlink
+
+.. _sec-configuration-config_yaml-server:
 
 Server
 ------
@@ -95,6 +101,8 @@ Use the following settings to configure the server:
    `into OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples>`_ for a couple
    of examples on how to configure this.
 
+.. _sec-configuration-config_yaml-webcam:
+
 Webcam
 ------
 
@@ -133,6 +141,8 @@ Use the following settings to configure webcam support:
        options:
          interval: 2
 
+.. _sec-configuration-config_yaml-feature:
+
 Feature
 -------
 
@@ -161,6 +171,8 @@ Use the following settings to enable or disable OctoPrint features:
 
      # Specifies whether support for SD printing and file management should be enabled
      sdSupport: true
+
+.. _sec-configuration-config_yaml-folder:
 
 Folder
 ------
@@ -194,6 +206,8 @@ Use the following settings to set custom paths for folders used by OctoPrint:
      # and/or sliced objects to print in the future.
      watched: /path/to/watched/folder
 
+.. _sec-configuration-config_yaml-temperature:
+
 Temperature
 -----------
 
@@ -210,21 +224,128 @@ Use the following settings to configure temperature profiles which will be displ
        extruder: 180
        bed: 60
 
+.. _sec-configuration-config_yaml-appearance:
+
 Appearance
 ----------
 
 Use the following settings to tweak OctoPrint's appearance a bit to better distinguish multiple instances/printers
-appearance:
+appearance or to modify the order and presence of the various UI components:
 
 .. code-block:: yaml
 
    appearance:
-     # Use this to give your printer a name. It will be displayed in the title bar (as "<Name> [OctoPrint]") and in the
-     # navigation bar (as "OctoPrint: <Name>")
-     name: My Printer Model
+     # Use this to give your printer a name. It will be displayed in the title bar
+     # (as "<Name> [OctoPrint]") and in the navigation bar (as "OctoPrint: <Name>")
+     name: My Printer
 
-     # Use this to color the navigation bar. Supported colors are red, orange, yellow, green, blue, violet and default.
-     color: blue
+     # Use this to color the navigation bar. Supported colors are red, orange,
+     # yellow, green, blue, violet and default.
+     color: default
+
+     # Makes the color of the navigation bar "transparent". In case your printer uses
+     # acrylic for its frame ;)
+     colorTransparent: false
+
+     # Configures the order and availability of the UI components
+     components:
+
+       # Defines the order of the components within their respective containers.
+       #
+       # If overridden by the user the resulting order for display will be calculated as
+       # follows:
+       #
+       # - first all components as defined by the user
+       # - then all enabled core components as define in the default order (see below)
+       #
+       # Components not contained within the default order (e.g. from plugins) will be either
+       # prepended or appended to that result, depending on component type.
+       #
+       # Note that a component is not included in the order as defined by the user will still
+       # be put into the container, according to the default order. To fully disable a
+       # component, you'll need to add it to the container's disabled list further below.
+       order:
+
+         # order of navbar items
+         navbar:
+         - settings
+         - systemmenu
+         - login
+
+         # order of sidebar items
+         sidebar:
+         - connection
+         - state
+         - files
+
+         # order of tab items
+         tab:
+         - temperature
+         - control
+         - gcodeviewer
+         - terminal
+         - timelapse
+
+         # order of settings, if settings plugins are registered gets extended internally by
+         # section_plugins and all settings plugins
+         settings
+         - section_printer
+         - serial
+         - printerprofiles
+         - temperatures
+         - terminalfilters
+         - gcodescripts
+         - section_features
+         - features
+         - webcam
+         - accesscontrol
+         - api
+         - section_octoprint
+         - folders
+         - appearance
+         - logs
+
+         # order of user settings
+         usersettings:
+         - access
+         - interface
+
+         # order of generic templates
+         generic: []
+
+     # Disabled components per container. If a component is included here it will not
+     # be included in OctoPrint's UI at all. Note that this might mean that critical
+     # functionality will not be available if no replacement is registered.
+     disabled:
+       navbar: [],
+       sidebar: [],
+       tab: [],
+       settings: [],
+       usersettings: [],
+       generic: []
+
+.. note::
+
+   By modifying the ``components`` > ``order`` lists you may reorder OctoPrint's UI components as you like. You can also
+   inject Plugins at another than their default location in their respective container by adding the entry
+   ``plugin_<plugin identifier>`` where you want them to appear.
+
+   Example: If you want the tab of the :ref:`Hello World Plugin <sec-plugins-gettingstarted>` to appear as the first tab
+   in OctoPrint, you'd need to redefine ``components`` > ``order`` > ``tab`` by including something like this in your
+   ``config.yaml``:
+
+   .. code-block:: yaml
+
+      appearance:
+        components:
+          order:
+            tab:
+            - plugin_helloworld
+
+   OctoPrint will then turn this into the order ``plugin_helloworld``, ``temperature``, ``control``, ``gcodeviewer``,
+   ``terminal``, ``timelapse`` plus any other plugins.
+
+.. _sec-configuration-config_yaml-controls:
 
 Controls
 --------
@@ -249,6 +370,8 @@ OctoPrint.
            type: command
            command: M107
 
+.. _sec-configuration-config_yaml-system:
+
 System
 ------
 
@@ -268,6 +391,8 @@ OctoPrint is running is allowed to do this without password entry:
        action: shutdown
        command: sudo shutdown -h now
        confirm: You are about to shutdown the system.
+
+.. _sec-configuration-config_yaml-accesscontrol:
 
 Access Control
 --------------
@@ -305,6 +430,8 @@ Use the following settings to enable access control:
      - 127.0.0.0/8
      - 192.168.1.0/24
 
+.. _sec-configuration-config_yaml-events:
+
 Events
 ------
 
@@ -326,6 +453,8 @@ Use the following settings to add shell/gcode commands to be executed on certain
          type: gcode
          enabled: False
 
+.. _sec-configuration-config_yaml-terminalfilters:
+
 Terminal Filters
 ----------------
 
@@ -343,6 +472,8 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
    - name: Suppress M27 requests/responses
      regex: '(Send: M27)|(Recv: SD printing byte)'
 
+.. _sec-configuration-config_yaml-api:
+
 API
 ---
 
@@ -356,6 +487,8 @@ Settings for the REST API:
 
      # current API key needed for accessing the API
      apikey: ...
+
+.. _sec-configuration-config_yaml-devel:
 
 Development settings
 --------------------

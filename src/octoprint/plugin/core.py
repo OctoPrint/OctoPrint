@@ -35,7 +35,7 @@ class PluginInfo(object):
 	implementations, hooks and helpers.
 
 	It works on Python module objects and extracts the relevant data from those via accessing the
-	:ref:`control properties <sec-plugins-infrastructure-controlproperties>`.
+	:ref:`control properties <sec-plugin-concepts-controlproperties>`.
 
 	Arguments:
 	    key (str): Identifier of the plugin
@@ -70,8 +70,20 @@ class PluginInfo(object):
 	attr_hooks = '__plugin_hooks__'
 	""" Module attribute from which to retrieve the plugin's provided hooks. """
 
+	attr_implementation = '__plugin_implementation__'
+	""" Module attribute from which to retrieve the plugin's provided mixin implementation. """
+
 	attr_implementations = '__plugin_implementations__'
-	""" Module attribute from which to retrieve the plugin's provided implementations. """
+	"""
+	Module attribute from which to retrieve the plugin's provided implementations.
+
+	This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_implementation`. Only the
+	first entry will be evaluated.
+
+	.. deprecated:: 1.2.0-dev-694
+
+	   Use :attr:`attr_implementation` instead.
+	"""
 
 	attr_helpers = '__plugin_helpers__'
 	""" Module attribute from which to retrieve the plugin's provided helpers. """
@@ -108,6 +120,25 @@ class PluginInfo(object):
 		self._author = author
 		self._url = url
 		self._license = license
+
+		self._validate()
+
+	def _validate(self):
+		# if the plugin still uses __plugin_implementations__, log a deprecation warning and put the first
+		# item into __plugin_implementation__
+		if hasattr(self.instance, self.__class__.attr_implementations):
+			if not hasattr(self.instance, self.__class__.attr_implementation):
+				# deprecation warning
+				import warnings
+				warnings.warn("{name} uses deprecated control property __plugin_implementations__, use __plugin_implementation__ instead - only the first implementation of {name} will be recognized".format(name=self.key), DeprecationWarning)
+
+				# put first item into __plugin_implementation__
+				implementations = getattr(self.instance, self.__class__.attr_implementations)
+				if len(implementations) > 0:
+					setattr(self.instance, self.__class__.attr_implementation, implementations[0])
+
+			# delete __plugin_implementations__
+			delattr(self.instance, self.__class__.attr_implementations)
 
 	def __str__(self):
 		if self.version:
@@ -146,24 +177,23 @@ class PluginInfo(object):
 			return None
 		return self.hooks[hook]
 
-	def get_implementations(self, *types):
+	def get_implementation(self, *types):
 		"""
 		Arguments:
 		    types (list): List of :class:`Plugin` sub classes all returned implementations need to implement.
 
 		Returns:
-		    ~__builtin__.set: The plugin's implementations matching all of the requested ``types``. Might be empty.
+		    object: The plugin's implementation if it matches all of the requested ``types``, None otherwise.
 		"""
 
-		result = set()
-		for implementation in self.implementations:
-			matches_all = True
-			for type in types:
-				if not isinstance(implementation, type):
-					matches_all = False
-			if matches_all:
-				result.add(implementation)
-		return result
+		if not self.implementation:
+			return None
+
+		for t in types:
+			if not isinstance(self.implementation, t):
+				return None
+
+		return self.implementation
 
 	@property
 	def name(self):
@@ -244,7 +274,7 @@ class PluginInfo(object):
 		return self._get_instance_attribute(self.__class__.attr_hooks, default={})
 
 	@property
-	def implementations(self):
+	def implementation(self):
 		"""
 		Implementations provided by the plugin. Will be taken from the implementations attribute of the plugin module
 		as defined in :attr:`attr_implementations` if available, otherwise an empty list is returned.
@@ -252,7 +282,7 @@ class PluginInfo(object):
 		Returns:
 		    list: Implementations provided by the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_implementations, default=[])
+		return self._get_instance_attribute(self.__class__.attr_implementation, default=None)
 
 	@property
 	def helpers(self):
@@ -347,7 +377,7 @@ class PluginManager(object):
 
 		self.plugins = dict()
 		self.plugin_hooks = defaultdict(list)
-		self.plugin_implementations = defaultdict(set)
+		self.plugin_implementations = dict()
 		self.plugin_implementations_by_type = defaultdict(list)
 
 		self.implementation_injects = dict()
@@ -502,12 +532,23 @@ class PluginManager(object):
 		for name, plugin in plugins.items():
 			self.load_plugin(name, plugin)
 
+				# evaluate registered implementations
+				for plugin_type in self.plugin_types:
+					implementations = plugin.get_implementations(plugin_type)
+					self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
+
+				plugin_implementations = plugin.get_implementations()
+				if len(plugin_implementations):
+					self.plugin_implementations[name].update(plugin_implementations)
+			except:
+				self.logger.exception("There was an error loading plugin %s" % name)
+
 		if len(self.plugins) <= 0:
 			self.logger.info("No plugins found")
 		else:
 			self.logger.info("Found {count} plugin(s) providing {implementations} mixin implementations, {hooks} hook handlers".format(
 				count=len(self.plugins) + len(self.disabled_plugins),
-				implementations=sum(map(lambda x: len(x), self.plugin_implementations.values())),
+				implementations=len(self.plugin_implementations),
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
 
@@ -707,17 +748,72 @@ class PluginManager(object):
 				)
 			)))
 
-	def get_plugin(self, name):
-		if not name in self.plugins:
-			return None
-		return self.plugins[name].instance
+	def get_plugin(self, identifier, require_enabled=True):
+		"""
+		Retrieves the module of the plugin identified by ``identifier``. If the plugin is not registered or disabled and
+		``required_enabled`` is True (the default) None will be returned.
+
+		Arguments:
+		    identifier (str): The identifier of the plugin to retrieve.
+		    require_enabled (boolean): Whether to only return the plugin if is enabled (True, default) or also if it's
+		        disabled.
+
+		Returns:
+		    module: The requested plugin module or None
+		"""
+
+		plugin_info = self.get_plugin_info(identifier, require_enabled=require_enabled)
+		if plugin_info is not None:
+			return plugin_info.instance
+		return None
+
+	def get_plugin_info(self, identifier, require_enabled=True):
+		"""
+		Retrieves the :class:`PluginInfo` instance identified by ``identifier``. If the plugin is not registered or
+		disabled and ``required_enabled`` is True (the default) None will be returned.
+
+		Arguments:
+		    identifier (str): The identifier of the plugin to retrieve.
+		    require_enabled (boolean): Whether to only return the plugin if is enabled (True, default) or also if it's
+		        disabled.
+
+		Returns:
+		    ~.PluginInfo: The requested :class:`PluginInfo` or None
+		"""
+
+		if identifier in self.plugins:
+			return self.plugins[identifier]
+		elif not require_enabled and identifier in self.disabled_plugins:
+			return self.disabled_plugins[identifier]
+
+		return None
 
 	def get_hooks(self, hook):
+		"""
+		Retrieves all registered handlers for the specified hook.
+
+		Arguments:
+		    hook (str): The hook for which to retrieve the handlers.
+
+		Returns:
+		    dict: A dict containing all registered handlers mapped by their plugin's identifier.
+		"""
+
 		if not hook in self.plugin_hooks:
 			return dict()
 		return {hook[0]: hook[1] for hook in self.plugin_hooks[hook]}
 
 	def get_implementations(self, *types):
+		"""
+		Get all mixin implementations that implement *all* of the provided ``types``.
+
+		Arguments:
+		    types (one or more type): The types a mixin implementation needs to implement in order to be returned.
+
+		Returns:
+		    list: A list of all found implementations
+		"""
+
 		result = None
 
 		for t in types:
@@ -729,9 +825,40 @@ class PluginManager(object):
 
 		if result is None:
 			return dict()
-		return {impl[0]: impl[1] for impl in result}
+		return [impl[1] for impl in result]
+
+	def get_filtered_implementations(self, f, *types):
+		"""
+		Get all mixin implementation that implementat *all* of the provided ``types`` and match the provided filter `f`.
+
+		Arguments:
+		    f (callable): A filter function returning True for implementations to return and False for those to exclude.
+		    types (one or more type): The types a mixin implementation needs to implement in order to be returned.
+
+		Returns:
+		    list: A list of all found and matching implementations.
+		"""
+
+		assert callable(f)
+		implementations = self.get_implementations(*types)
+		return filter(f, implementations)
 
 	def get_helpers(self, name, *helpers):
+		"""
+		Retrieves the named ``helpers`` for the plugin with identifier ``name``.
+
+		If the plugin is not available, returns None. Otherwise returns a :class:`dict` with the requested plugin
+		helper names mapped to the method - if a helper could not be resolved, it will be missing from the dict.
+
+		Arguments:
+		    name (str): Identifier of the plugin for which to look up the ``helpers``.
+		    helpers (one or more str): Identifiers of the helpers of plugin ``name`` to return.
+
+		Returns:
+		    dict: A dictionary of all resolved helpers, mapped by their identifiers, or None if the plugin was not
+		        registered with the system.
+		"""
+
 		if not name in self.plugins:
 			return None
 		plugin = self.plugins[name]
@@ -742,17 +869,35 @@ class PluginManager(object):
 		else:
 			return all_helpers
 
-	def register_client(self, client):
+	def register_message_receiver(self, client):
+		"""
+		Registers a ``client`` for receiving plugin messages. The ``client`` needs to be a callable accepting two
+		input arguments, ``plugin`` (the sending plugin's identifier) and ``data`` (the message itself).
+		"""
+
 		if client is None:
 			return
 		self.registered_clients.append(client)
 
-	def unregister_client(self, client):
+	def unregister_message_receiver(self, client):
+		"""
+		Unregisters a ``client`` for receiving plugin messages.
+		"""
+
 		self.registered_clients.remove(client)
 
 	def send_plugin_message(self, plugin, data):
+		"""
+		Sends ``data`` in the name of ``plugin`` to all currently registered message receivers by invoking them
+		with the two arguments.
+
+		Arguments:
+		    plugin (str): The sending plugin's identifier.
+		    data (object): The message.
+		"""
+
 		for client in self.registered_clients:
-			try: client.sendPluginMessage(plugin, data)
+			try: client(plugin, data)
 			except: self.logger.exception("Exception while sending plugin data to client")
 
 

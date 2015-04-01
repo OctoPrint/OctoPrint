@@ -33,20 +33,20 @@ def __plugin_init__():
 		# no pybonjour available, we can't use that
 		logging.getLogger("octoprint.plugins." + __name__).info("pybonjour is not installed, Zeroconf Discovery won't be available")
 
-	discovery_plugin = DiscoveryPlugin()
+	plugin = DiscoveryPlugin()
 
-	global __plugin_implementations__
-	__plugin_implementations__ = [discovery_plugin]
+	global __plugin_implementation__
+	__plugin_implementation__ = plugin
 
 	global __plugin_helpers__
 	__plugin_helpers__ = dict(
-		ssdp_browse=discovery_plugin.ssdp_browse
+		ssdp_browse=plugin.ssdp_browse
 	)
 	if pybonjour:
 		__plugin_helpers__.update(dict(
-			zeroconf_browse=discovery_plugin.zeroconf_browse,
-			zeroconf_register=discovery_plugin.zeroconf_register,
-			zeroconf_unregister=discovery_plugin.zeroconf_unregister
+			zeroconf_browse=plugin.zeroconf_browse,
+			zeroconf_register=plugin.zeroconf_register,
+			zeroconf_unregister=plugin.zeroconf_unregister
 		))
 
 class DiscoveryPlugin(octoprint.plugin.StartupPlugin,

@@ -121,7 +121,7 @@ class SlicingManager(object):
 		available slicers.
 		"""
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
-		for name, plugin in plugins.items():
+		for plugin in plugins:
 			self._slicers[plugin.get_slicer_properties()["type"]] = plugin
 
 	@property

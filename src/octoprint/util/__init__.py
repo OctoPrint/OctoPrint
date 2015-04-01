@@ -389,7 +389,11 @@ def silent_remove(file):
 
 
 def sanitize_ascii(line):
-	return unicode(line, 'ascii', 'replace').encode('ascii', 'replace').rstrip()
+	if not isinstance(line, basestring):
+		raise ValueError("Expected either str or unicode but got {} instead".format(line.__class__.__name__ if line is not None else None))
+	if isinstance(line, str):
+		line = unicode(line, 'ascii', 'replace')
+	return line.encode('ascii', 'replace').rstrip()
 
 
 def filter_non_ascii(line):

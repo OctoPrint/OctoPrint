@@ -48,11 +48,14 @@ api.after_request(corsResponseHandler)
 
 @api.route("/plugin/<string:name>", methods=["GET"])
 def pluginData(name):
-	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
-	if not name in api_plugins:
+	api_plugins = octoprint.plugin.plugin_manager().get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.SimpleApiPlugin)
+	if not api_plugins:
 		return make_response("Not found", 404)
 
-	api_plugin = api_plugins[name]
+	if len(api_plugins) > 1:
+		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
+
+	api_plugin = api_plugins[0]
 	response = api_plugin.on_api_get(request)
 
 	if response is not None:
@@ -64,11 +67,15 @@ def pluginData(name):
 @api.route("/plugin/<string:name>", methods=["POST"])
 @restricted_access
 def pluginCommand(name):
-	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
-	if not name in api_plugins:
+	api_plugins = octoprint.plugin.plugin_manager().get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.SimpleApiPlugin)
+
+	if not api_plugins:
 		return make_response("Not found", 404)
 
-	api_plugin = api_plugins[name]
+	if len(api_plugins) > 1:
+		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
+
+	api_plugin = api_plugins[0]
 	valid_commands = api_plugin.get_api_commands()
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)

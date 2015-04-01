@@ -257,11 +257,11 @@ class FileManager(object):
 
 			if progress_int:
 				def call_plugins(slicer, source_location, source_path, dest_location, dest_path, progress):
-					for name, plugin in self._progress_plugins.items():
+					for plugin in self._progress_plugins:
 						try:
 							plugin.on_slicing_progress(slicer, source_location, source_path, dest_location, dest_path, progress)
 						except:
-							self._logger.exception("Exception while sending slicing progress to plugin %s" % name)
+							self._logger.exception("Exception while sending slicing progress to plugin %s" % plugin._identifier)
 
 				import threading
 				thread = threading.Thread(target=call_plugins, args=(slicer, source_location, source_path, dest_location, dest_path, progress_int))

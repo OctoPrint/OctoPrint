@@ -1250,7 +1250,13 @@ class MachineCom(object):
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		self._log("Recv: %s" % sanitize_ascii(ret))
+
+		try:
+			self._log("Recv: %s" % sanitize_ascii(ret))
+		except ValueError as e:
+			self._log("WARN: While reading last line: %s" % e)
+			self._log("Recv: %r" % ret)
+
 		return ret
 
 	def _getNext(self):
