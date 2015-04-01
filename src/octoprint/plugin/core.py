@@ -276,11 +276,11 @@ class PluginInfo(object):
 	@property
 	def implementation(self):
 		"""
-		Implementations provided by the plugin. Will be taken from the implementations attribute of the plugin module
-		as defined in :attr:`attr_implementations` if available, otherwise an empty list is returned.
+		Implementation provided by the plugin. Will be taken from the implementation attribute of the plugin module
+		as defined in :attr:`attr_implementation` if available, otherwise None is returned.
 
 		Returns:
-		    list: Implementations provided by the plugin.
+		    object: Implementation provided by the plugin.
 		"""
 		return self._get_instance_attribute(self.__class__.attr_implementation, default=None)
 
@@ -524,24 +524,15 @@ class PluginManager(object):
 		return key in self.plugin_disabled_list or key.endswith('disabled')
 
 	def reload_plugins(self):
-		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))))
+		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(
+			folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))
+		))
 		plugins, disabled_plugins = self._find_plugins()
 
 		self.disabled_plugins = disabled_plugins
 
 		for name, plugin in plugins.items():
 			self.load_plugin(name, plugin)
-
-				# evaluate registered implementations
-				for plugin_type in self.plugin_types:
-					implementations = plugin.get_implementations(plugin_type)
-					self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
-
-				plugin_implementations = plugin.get_implementations()
-				if len(plugin_implementations):
-					self.plugin_implementations[name].update(plugin_implementations)
-			except:
-				self.logger.exception("There was an error loading plugin %s" % name)
 
 		if len(self.plugins) <= 0:
 			self.logger.info("No plugins found")
@@ -639,14 +630,13 @@ class PluginManager(object):
 		for hook, callback in plugin.hooks.items():
 			self.plugin_hooks[hook].append((name, callback))
 
-		# evaluate registered implementations
-		for plugin_type in self.plugin_types:
-			implementations = plugin.get_implementations(plugin_type)
-			self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
+		# evaluate registered implementation
+		if plugin.implementation:
+			for plugin_type in self.plugin_types:
+				if isinstance(plugin.implementation, plugin_type):
+					self.plugin_implementations_by_type[plugin_type].append((name, plugin.implementation))
 
-		plugin_implementations = plugin.get_implementations()
-		if len(plugin_implementations):
-			self.plugin_implementations[name].update(plugin_implementations)
+			self.plugin_implementations[name] = plugin.implementation
 
 		self.on_plugin_activated(name, plugin)
 
@@ -655,31 +645,32 @@ class PluginManager(object):
 		for hook, callback in plugin.hooks.items():
 			self.plugin_hooks[hook].remove((name, callback))
 
-		for plugin_type in self.plugin_types:
-			implementations = plugin.get_implementations(plugin_type)
-			map(lambda x: self.plugin_implementations_by_type[plugin_type].remove(x),
-			    ( (name, implementation) for implementation in implementations ))
+		if plugin.implementation is not None:
+			del self.plugin_implementations[name]
+			for plugin_type in self.plugin_types:
+				try:
+					self.plugin_implementations_by_type[plugin_type].remove((name, plugin.implementation))
+				except ValueError:
+					# that's ok, the plugin was just not registered for the type
+					pass
 
-		del self.plugin_implementations[name]
 		self.on_plugin_deactivated(name, plugin)
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
-		for name, implementations in self.plugin_implementations.items():
-			plugin = self.plugins[name]
-			self.initialize_implementations_of_plugin(name, plugin,
-			                                          additional_injects=additional_injects,
-			                                          additional_inject_factories=additional_inject_factories)
+		for name, plugin in self.plugins.items():
+			self.initialize_implementation_of_plugin(name, plugin,
+			                                         additional_injects=additional_injects,
+			                                         additional_inject_factories=additional_inject_factories)
 
 		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
 
-	def initialize_implementations_of_plugin(self, name, plugin, additional_injects=None, additional_inject_factories=None):
-		if not plugin.implementations:
+	def initialize_implementation_of_plugin(self, name, plugin, additional_injects=None, additional_inject_factories=None):
+		if plugin.implementation is None:
 			return
 
-		for implementation in plugin.implementations:
-			self.initialize_implementation(name, plugin, implementation,
-			                               additional_injects=additional_injects,
-			                               additional_inject_factories=additional_inject_factories)
+		self.initialize_implementation(name, plugin, plugin.implementation,
+		                               additional_injects=additional_injects,
+		                               additional_inject_factories=additional_inject_factories)
 
 	def initialize_implementation(self, name, plugin, implementation, additional_injects=None, additional_inject_factories=None):
 		if additional_injects is None:
@@ -720,14 +711,18 @@ class PluginManager(object):
 							for arg, value in return_value.items():
 								setattr(implementation, "_" + arg, value)
 
-			implementation.initialize()
+			result = implementation.initialize()
+			if result is not None and not result:
+				self.logger.warn("Initialization of {name} returned False, disabling it".format(**locals()))
+				self._deactivate_plugin(name, plugin)
+				return
 		except:
 			self.logger.exception("Exception while initializing plugin {name}, disabling it".format(**locals()))
 			self._deactivate_plugin(name, plugin)
 		else:
 			self.on_plugin_implementations_initialized(name, plugin)
 
-		self.logger.debug("Initialized {count} plugin mixin implementation(s)".format(count=len(self.plugin_implementations)))
+		self.logger.debug("Initialized plugin mixin implementation for plugin {name}".format(**locals()))
 
 
 	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True, location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!")):
