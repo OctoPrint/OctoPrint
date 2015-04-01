@@ -586,12 +586,21 @@ class Server():
 			                                                   set_preprocessors=set_preprocessors)
 			return dict(settings=plugin_settings)
 
-		pluginManager.initialize_implementations(
-			additional_inject_factories=[
-				octoprint_plugin_inject_factory,
-				settings_plugin_inject_factory
-			]
-		)
+		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
+		pluginManager.initialize_implementations()
+
+		def on_plugin_event_factory(text):
+			def on_plugin_event(name, plugin):
+				logger.info(text.format(**locals()))
+			return on_plugin_event
+
+		pluginManager.on_plugin_loaded = on_plugin_event_factory("Loaded plugin {name}: {plugin}")
+		pluginManager.on_plugin_unloaded = on_plugin_event_factory("Unloaded plugin {name}: {plugin}")
+		pluginManager.on_plugin_activated = on_plugin_event_factory("Activated plugin {name}: {plugin}")
+		pluginManager.on_plugin_deactivated = on_plugin_event_factory("Deactivated plugin {name}: {plugin}")
+		pluginManager.on_plugin_enabled = on_plugin_event_factory("Enabled plugin {name}: {plugin}")
+		pluginManager.on_plugin_disabled = on_plugin_event_factory("Disabled plugin {name}: {plugin}")
+
 		pluginManager.log_all_plugins()
 		slicingManager.initialize()
 

@@ -82,6 +82,18 @@ class PluginInfo(object):
 	attr_init = '__plugin_init__'
 	""" Module attribute which to call when loading the plugin. """
 
+	attr_load = '__plugin_load__'
+
+	attr_unload = '__plugin_unload__'
+
+	attr_enable = '__plugin_enable__'
+
+	attr_disable = '__plugin_disable__'
+
+	attr_activate = '__plugin_activate__'
+
+	attr_deactivate = '__plugin_deactivate__'
+
 	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None):
 		self.key = key
 		self.location = location
@@ -266,15 +278,40 @@ class PluginInfo(object):
 		return self._get_instance_attribute(self.__class__.attr_check, default=lambda: True)
 
 	@property
-	def init(self):
+	def load(self):
 		"""
-		Method for initializing the plugin module. Will be taken from the init attribute of the plugin module as defined
-		in :attr:`attr_init` if available, otherwise a lambda always returning True is returned.
+		Method for loading the plugin module. Will be taken from the load attribute of the plugin module as defined
+		in :attr:`attr_load` if available, otherwise a no-operation lambda will be returned.
 
 		Returns:
 		    callable: Init method for the plugin module.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_init, default=lambda: True)
+		load = self._get_instance_attribute(self.__class__.attr_load, default=None)
+		if load is None:
+			load = self._get_instance_attribute(self.__class__.attr_init, default=lambda:True)
+		return load
+
+	@property
+	def unload(self):
+		return self._get_instance_attribute(self.__class__.attr_unload, default=lambda: True)
+
+	@property
+	def activate(self):
+		return self._get_instance_attribute(self.__class__.attr_activate, default=lambda: True)
+
+	@property
+	def deactivate(self):
+		return self._get_instance_attribute(self.__class__.attr_deactivate, default=lambda: True)
+
+	@property
+	def enable(self):
+		self.enabled = True
+		return self._get_instance_attribute(self.__class__.attr_enable, default=lambda: True)
+
+	@property
+	def disable(self):
+		self.enabled = False
+		return self._get_instance_attribute(self.__class__.attr_disable, default=lambda: True)
 
 	def _get_instance_attribute(self, attr, default=None, defaults=None):
 		if not hasattr(self.instance, attr):
@@ -313,7 +350,18 @@ class PluginManager(object):
 		self.plugin_implementations = defaultdict(set)
 		self.plugin_implementations_by_type = defaultdict(list)
 
+		self.implementation_injects = dict()
+		self.implementation_inject_factories = []
+
 		self.disabled_plugins = dict()
+
+		self.on_plugin_loaded = lambda *args, **kwargs: None
+		self.on_plugin_unloaded = lambda *args, **kwargs: None
+		self.on_plugin_activated = lambda *args, **kwargs: None
+		self.on_plugin_deactivated = lambda *args, **kwargs: None
+		self.on_plugin_enabled = lambda *args, **kwargs: None
+		self.on_plugin_disabled = lambda *args, **kwargs: None
+		self.on_plugin_implementations_initialized = lambda *args, **kwargs: None
 
 		self.registered_clients = []
 
@@ -355,7 +403,7 @@ class PluginManager(object):
 					# plugin is already defined, ignore it
 					continue
 
-				plugin = self._load_plugin_from_module(key, folder=folder)
+				plugin = self._import_plugin_from_module(key, folder=folder)
 				if plugin:
 					plugin.origin = ("folder", folder)
 					if readonly:
@@ -400,7 +448,7 @@ class PluginManager(object):
 						license=module_pkginfo.license
 					))
 
-				plugin = self._load_plugin_from_module(key, **kwargs)
+				plugin = self._import_plugin_from_module(key, **kwargs)
 				if plugin:
 					plugin.origin = ("entry_point", group, module_name)
 
@@ -412,7 +460,7 @@ class PluginManager(object):
 
 		return plugins, disabled_plugins
 
-	def _load_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None):
+	def _import_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None):
 		# TODO error handling
 		try:
 			if folder:
@@ -425,7 +473,7 @@ class PluginManager(object):
 			self.logger.warn("Could not locate plugin {key}")
 			return None
 
-		plugin = self._load_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
+		plugin = self._import_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
 		if plugin:
 			if plugin.check():
 				return plugin
@@ -434,7 +482,7 @@ class PluginManager(object):
 				return None
 
 
-	def _load_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None):
+	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None):
 		try:
 			instance = imp.load_module(key, f, filename, description)
 			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
@@ -447,27 +495,12 @@ class PluginManager(object):
 
 	def reload_plugins(self):
 		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))))
-		self.plugins, self.disabled_plugins = self._find_plugins()
+		plugins, disabled_plugins = self._find_plugins()
 
-		for name, plugin in self.plugins.items():
-			try:
-				# initialize the plugin
-				plugin.init()
+		self.disabled_plugins = disabled_plugins
 
-				# evaluate registered hooks
-				for hook, callback in plugin.hooks.items():
-					self.plugin_hooks[hook].append((name, callback))
-
-				# evaluate registered implementations
-				for plugin_type in self.plugin_types:
-					implementations = plugin.get_implementations(plugin_type)
-					self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
-
-				plugin_implementations = plugin.get_implementations()
-				if len(plugin_implementations):
-					self.plugin_implementations[name].update(plugin_implementations)
-			except:
-				self.logger.exception("There was an error loading plugin %s" % name)
+		for name, plugin in plugins.items():
+			self.load_plugin(name, plugin)
 
 		if len(self.plugins) <= 0:
 			self.logger.info("No plugins found")
@@ -478,48 +511,183 @@ class PluginManager(object):
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
 
+	@property
+	def all_plugins(self):
+		plugins = dict(self.plugins)
+		plugins.update(self.disabled_plugins)
+		return plugins
+
+	def load_plugin(self, name, plugin):
+		try:
+			plugin.load()
+			self._activate_plugin(name, plugin)
+		except:
+			self.logger.exception("There was an error loading plugin %s" % name)
+			self.disabled_plugins[name] = plugin
+		else:
+			self.plugins[name] = plugin
+			self.on_plugin_loaded(name, plugin)
+			self.logger.debug("Loaded plugin {name}: {plugin}".format(**locals()))
+
+	def unload_plugin(self, name):
+		if not name in self.plugins:
+			if name in self.disabled_plugins:
+				plugin = self.disabled_plugins[name]
+			else:
+				self.logger.warn("Trying to unload unknown plugin {name}".format(**locals()))
+				return
+		else:
+			plugin = self.plugins[name]
+
+		try:
+			self._deactivate_plugin(name, plugin)
+			plugin.unload()
+			if name in self.plugins:
+				del self.plugins[name]
+			if name in self.disabled_plugins:
+				del self.disabled_plugins[name]
+		except:
+			self.logger.exception("There was an error unloading plugin {name}".format(**locals()))
+		else:
+			self.on_plugin_unloaded(name, plugin)
+			self.logger.debug("Unloaded plugin {name}: {plugin}".format(**locals()))
+
+	def enable_plugin(self, name):
+		if not name in self.disabled_plugins:
+			self.logger.warn("Tried to enable plugin {name}, however it is not disabled".format(**locals()))
+			return
+
+		plugin = self.disabled_plugins[name]
+
+		try:
+			del self.disabled_plugins[name]
+			plugin.enable()
+			self._activate_plugin(name, plugin)
+			self.initialize_implementation_of_plugin(name, plugin)
+			self.plugins[name] = plugin
+		except:
+			self.logger.exception("There was an error while enabling plugin {name}".format(**locals()))
+			self.disabled_plugins[name] = plugin
+		else:
+			self.on_plugin_enabled(name, plugin)
+			self.logger.debug("Enabled plugin {name}: {plugin}".format(**locals()))
+
+	def disable_plugin(self, name):
+		if not name in self.plugins:
+			self.logger.warn("Tried to disable plugin {name}, however it is not enabled".format(**locals()))
+			return
+
+		plugin = self.plugins[name]
+
+		try:
+			del self.plugins[name]
+			plugin.disable()
+			self._deactivate_plugin(name, plugin)
+			self.disabled_plugins[name] = plugin
+		except:
+			self.logger.exception("There was an error while disabling plugin {name}".format(**locals()))
+			self.plugins[name] = plugin
+		else:
+			self.on_plugin_disabled(name, plugin)
+			self.logger.debug("Disabled plugin {name}: {plugin}".format(**locals()))
+
+	def _activate_plugin(self, name, plugin):
+		plugin.activate()
+
+		# evaluate registered hooks
+		for hook, callback in plugin.hooks.items():
+			self.plugin_hooks[hook].append((name, callback))
+
+		# evaluate registered implementations
+		for plugin_type in self.plugin_types:
+			implementations = plugin.get_implementations(plugin_type)
+			self.plugin_implementations_by_type[plugin_type] += ( (name, implementation) for implementation in implementations )
+
+		plugin_implementations = plugin.get_implementations()
+		if len(plugin_implementations):
+			self.plugin_implementations[name].update(plugin_implementations)
+
+		self.on_plugin_activated(name, plugin)
+
+	def _deactivate_plugin(self, name, plugin):
+		plugin.deactivate()
+		for hook, callback in plugin.hooks.items():
+			self.plugin_hooks[hook].remove((name, callback))
+
+		for plugin_type in self.plugin_types:
+			implementations = plugin.get_implementations(plugin_type)
+			map(lambda x: self.plugin_implementations_by_type[plugin_type].remove(x),
+			    ( (name, implementation) for implementation in implementations ))
+
+		del self.plugin_implementations[name]
+		self.on_plugin_deactivated(name, plugin)
+
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
+		for name, implementations in self.plugin_implementations.items():
+			plugin = self.plugins[name]
+			self.initialize_implementations_of_plugin(name, plugin,
+			                                          additional_injects=additional_injects,
+			                                          additional_inject_factories=additional_inject_factories)
+
+		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
+
+	def initialize_implementations_of_plugin(self, name, plugin, additional_injects=None, additional_inject_factories=None):
+		if not plugin.implementations:
+			return
+
+		for implementation in plugin.implementations:
+			self.initialize_implementation(name, plugin, implementation,
+			                               additional_injects=additional_injects,
+			                               additional_inject_factories=additional_inject_factories)
+
+	def initialize_implementation(self, name, plugin, implementation, additional_injects=None, additional_inject_factories=None):
 		if additional_injects is None:
 			additional_injects = dict()
 		if additional_inject_factories is None:
 			additional_inject_factories = []
 
-		for name, implementations in self.plugin_implementations.items():
-			plugin = self.plugins[name]
-			for implementation in implementations:
+		injects = self.implementation_injects
+		injects.update(additional_injects)
+
+		inject_factories = self.implementation_inject_factories
+		inject_factories += additional_inject_factories
+
+		try:
+			kwargs = dict(injects)
+
+			kwargs.update(dict(
+				identifier=name,
+				plugin_name=plugin.name,
+				plugin_version=plugin.version,
+				basefolder=os.path.realpath(plugin.location),
+				logger=logging.getLogger(self.logging_prefix + name),
+				))
+
+			# inject the additional_injects
+			for arg, value in kwargs.items():
+				setattr(implementation, "_" + arg, value)
+
+			# inject any injects produced in the additional_inject_factories
+			for factory in inject_factories:
 				try:
-					kwargs = dict(additional_injects)
-
-					kwargs.update(dict(
-						identifier=name,
-						plugin_name=plugin.name,
-						plugin_version=plugin.version,
-						basefolder=os.path.realpath(plugin.location),
-						logger=logging.getLogger(self.logging_prefix + name),
-					))
-
-					# inject the additional_injects
-					for arg, value in kwargs.items():
-						setattr(implementation, "_" + arg, value)
-
-					# inject any injects produced in the additional_inject_factories
-					for factory in additional_inject_factories:
-						try:
-							return_value = factory(name, implementation)
-						except:
-							self.logger.exception("Exception while executing injection factory %r" % factory)
-						else:
-							if return_value is not None:
-								if isinstance(return_value, dict):
-									for arg, value in return_value.items():
-										setattr(implementation, "_" + arg, value)
-
-					implementation.initialize()
+					return_value = factory(name, implementation)
 				except:
-					self.logger.exception("Exception while initializing plugin")
-					# TODO disable plugin!
+					self.logger.exception("Exception while executing injection factory %r" % factory)
+				else:
+					if return_value is not None:
+						if isinstance(return_value, dict):
+							for arg, value in return_value.items():
+								setattr(implementation, "_" + arg, value)
+
+			implementation.initialize()
+		except:
+			self.logger.exception("Exception while initializing plugin {name}, disabling it".format(**locals()))
+			self._deactivate_plugin(name, plugin)
+		else:
+			self.on_plugin_implementations_initialized(name, plugin)
 
 		self.logger.debug("Initialized {count} plugin mixin implementation(s)".format(count=len(self.plugin_implementations)))
+
 
 	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True, location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!")):
 		all_plugins = self.plugins.values() + self.disabled_plugins.values()
