@@ -18,7 +18,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from .core import Plugin
+from .core import (Plugin, RestartNeedingPlugin)
 
 
 class OctoPrintPlugin(Plugin):
@@ -68,6 +68,8 @@ class OctoPrintPlugin(Plugin):
 
 	pass
 
+class ReloadNeedingPlugin(Plugin):
+	pass
 
 class StartupPlugin(OctoPrintPlugin):
 	"""
@@ -111,7 +113,7 @@ class ShutdownPlugin(OctoPrintPlugin):
 		pass
 
 
-class AssetPlugin(OctoPrintPlugin):
+class AssetPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
 	The ``AssetPlugin`` mixin allows plugins to define additional static assets such as Javascript or CSS files to
 	be automatically embedded into the pages delivered by the server to be used within the client sided part of
@@ -164,7 +166,7 @@ class AssetPlugin(OctoPrintPlugin):
 		return dict()
 
 
-class TemplatePlugin(OctoPrintPlugin):
+class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
 	Using the ``TemplatePlugin`` mixin plugins may inject their own components into the OctoPrint web interface.
 
@@ -549,7 +551,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 		return None
 
 
-class BlueprintPlugin(OctoPrintPlugin):
+class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 	"""
 	The ``BlueprintPlugin`` mixin allows plugins to define their own full fledged endpoints for whatever purpose,
 	be it a more sophisticated API than what is possible via the :class:`SimpleApiPlugin` or a custom web frontend.

@@ -113,16 +113,18 @@ class SlicingManager(object):
 		Initializes the slicing manager by loading and initializing all available
 		:class:`~octoprint.plugin.SlicerPlugin` implementations.
 		"""
-		self._load_slicers()
+		self.reload_slicers()
 
-	def _load_slicers(self):
+	def reload_slicers(self):
 		"""
 		Retrieves all registered :class:`~octoprint.plugin.SlicerPlugin` implementations and registers them as
 		available slicers.
 		"""
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
+		slicers = dict()
 		for plugin in plugins:
-			self._slicers[plugin.get_slicer_properties()["type"]] = plugin
+			slicers[plugin.get_slicer_properties()["type"]] = plugin
+		self._slicers = slicers
 
 	@property
 	def slicing_enabled(self):

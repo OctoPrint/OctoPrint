@@ -539,9 +539,15 @@ class Server():
 		self._logConf = logConf
 		self._server = None
 
+		self._logger = None
+
+		self._lifecycle_callbacks = defaultdict(list)
+
+		self._template_searchpaths = []
+
 	def run(self):
 		if not self._allowRoot:
-			self._checkForRoot()
+			self._check_for_root()
 
 		global printer
 		global printerProfileManager
@@ -566,12 +572,12 @@ class Server():
 		settings(init=True, basedir=self._basedir, configfile=self._configfile)
 
 		# then initialize logging
-		self._initLogging(self._debug, self._logConf)
-		logger = logging.getLogger(__name__)
+		self._setup_logging(self._debug, self._logConf)
+		self._logger = logging.getLogger(__name__)
 		def exception_logger(exc_type, exc_value, exc_tb):
-			logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
+			self._logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
 		sys.excepthook = exception_logger
-		logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
+		self._logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
 
 		# then initialize the plugin manager
 		pluginManager = octoprint.plugin.plugin_manager(init=True)
@@ -614,37 +620,25 @@ class Server():
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
 		pluginManager.initialize_implementations()
 
-		def on_plugin_event_factory(text):
-			def on_plugin_event(name, plugin):
-				logger.info(text.format(**locals()))
-			return on_plugin_event
-
-		pluginManager.on_plugin_loaded = on_plugin_event_factory("Loaded plugin {name}: {plugin}")
-		pluginManager.on_plugin_unloaded = on_plugin_event_factory("Unloaded plugin {name}: {plugin}")
-		pluginManager.on_plugin_activated = on_plugin_event_factory("Activated plugin {name}: {plugin}")
-		pluginManager.on_plugin_deactivated = on_plugin_event_factory("Deactivated plugin {name}: {plugin}")
-		pluginManager.on_plugin_enabled = on_plugin_event_factory("Enabled plugin {name}: {plugin}")
-		pluginManager.on_plugin_disabled = on_plugin_event_factory("Disabled plugin {name}: {plugin}")
-
+		lifecycleManager = LifecycleManager(self, pluginManager)
 		pluginManager.log_all_plugins()
+
+		# initialize slicing manager and register it for changes in the registered plugins
 		slicingManager.initialize()
+		lifecycleManager.add_callback(["enabled", "disabled"], lambda name, plugin: slicingManager.reload_slicers())
 
-		# configure additional template folders for jinja2
-		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
-		additional_template_folders = []
-		for plugin in template_plugins:
-			folder = plugin.get_template_folder()
-			if folder is not None:
-				additional_template_folders.append(plugin.get_template_folder())
-
-		import jinja2
-		jinja_loader = jinja2.ChoiceLoader([
-			app.jinja_loader,
-			jinja2.FileSystemLoader(additional_template_folders)
-		])
-		app.jinja_loader = jinja_loader
-		del jinja2
-		app.jinja_env.add_extension("jinja2.ext.do")
+		# setup jinja2
+		self._setup_jinja2()
+		def template_enabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._register_additional_template_plugin(plugin.implementation)
+		def template_disabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._unregister_additional_template_plugin(plugin.implementation)
+		lifecycleManager.add_callback("enabled", template_enabled)
+		lifecycleManager.add_callback("disabled", template_disabled)
 
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
@@ -660,7 +654,7 @@ class Server():
 				clazz = octoprint.util.get_class(userManagerName)
 				userManager = clazz()
 			except AttributeError, e:
-				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
+				self._logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
 
 		app.wsgi_app = util.ReverseProxied(
 			app.wsgi_app,
@@ -696,36 +690,20 @@ class Server():
 
 		app.debug = self._debug
 
-		from octoprint.server.api import api
-		from octoprint.server.apps import apps
-
 		# register API blueprint
-		app.register_blueprint(api, url_prefix="/api")
-		app.register_blueprint(apps, url_prefix="/apps")
-
-		# also register any blueprints defined in BlueprintPlugins
-		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
-		for plugin in blueprint_plugins:
-			name = plugin._identifier
-			blueprint = plugin.get_blueprint()
-			if blueprint is None:
-				continue
-
-			if plugin.is_blueprint_protected():
-				from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
-				blueprint.before_request(apiKeyRequestHandler)
-				blueprint.after_request(corsResponseHandler)
-
-			url_prefix = "/plugin/{name}".format(name=name)
-			app.register_blueprint(blueprint, url_prefix=url_prefix)
-			logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+		self._setup_blueprints()
+		def blueprint_enabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.BlueprintPlugin):
+				return
+			self._register_blueprint_plugin(plugin.implementation)
+		lifecycleManager.add_callback(["enabled"], blueprint_enabled)
 
 		## Tornado initialization starts here
 
 		ioloop = IOLoop()
 		ioloop.install()
 
-		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
+		self._router = SockJSRouter(self._create_socket_connection, "/sockjs")
 
 		upload_suffixes = dict(name=settings().get(["server", "uploads", "nameSuffix"]), path=settings().get(["server", "uploads", "pathSuffix"]))
 		self._tornado_app = Application(self._router.urls + [
@@ -759,9 +737,16 @@ class Server():
 		                             "on_startup",
 		                             args=(self._host, self._port))
 
+		def call_on_startup(name, plugin):
+			implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
+			if implementation is None:
+				return
+			implementation.on_startup(self._host, self._port)
+		lifecycleManager.add_callback("enabled", call_on_startup)
+
 		# prepare our after startup function
 		def on_after_startup():
-			logger.info("Listening on http://%s:%d" % (self._host, self._port))
+			self._logger.info("Listening on http://%s:%d" % (self._host, self._port))
 
 			# now this is somewhat ugly, but the issue is the following: startup plugins might want to do things for
 			# which they need the server to be already alive (e.g. for being able to resolve urls, such as favicons
@@ -771,13 +756,21 @@ class Server():
 			def work():
 				octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
 				                             "on_after_startup")
+
+				def call_on_after_startup(name, plugin):
+					implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
+					if implementation is None:
+						return
+					implementation.on_after_startup()
+				lifecycleManager.add_callback("enabled", call_on_after_startup)
+
 			import threading
 			threading.Thread(target=work).start()
 		ioloop.add_callback(on_after_startup)
 
 		# prepare our shutdown function
 		def on_shutdown():
-			logger.info("Goodbye!")
+			self._logger.info("Goodbye!")
 			observer.stop()
 			observer.join()
 			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
@@ -789,18 +782,18 @@ class Server():
 		except KeyboardInterrupt:
 			pass
 		except:
-			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
-			logger.exception("Stacktrace follows:")
+			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
+			self._logger.exception("Stacktrace follows:")
 
-	def _createSocketConnection(self, session):
+	def _create_socket_connection(self, session):
 		global printer, fileManager, analysisQueue, userManager, eventManager
 		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session)
 
-	def _checkForRoot(self):
+	def _check_for_root(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
 			exit("You should not run OctoPrint as root!")
 
-	def _initLogging(self, debug, logConf=None):
+	def _setup_logging(self, debug, logConf=None):
 		defaultConfig = {
 			"version": 1,
 			"formatters": {
@@ -870,6 +863,115 @@ class Server():
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
+
+	def _setup_jinja2(self):
+		app.jinja_env.add_extension("jinja2.ext.do")
+
+		# configure additional template folders for jinja2
+		import jinja2
+		filesystem_loader = jinja2.FileSystemLoader([])
+		filesystem_loader.searchpath = self._template_searchpaths
+
+		jinja_loader = jinja2.ChoiceLoader([
+			app.jinja_loader,
+			filesystem_loader
+		])
+		app.jinja_loader = jinja_loader
+		del jinja2
+
+		self._register_template_plugins()
+
+	def _register_template_plugins(self):
+		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
+		for plugin in template_plugins:
+			self._register_additional_template_plugin(plugin)
+
+	def _register_additional_template_plugin(self, plugin):
+		folder = plugin.get_template_folder()
+		if folder is not None and not folder in self._template_searchpaths:
+			self._template_searchpaths.append(folder)
+
+	def _unregister_additional_template_plugin(self, plugin):
+		folder = plugin.get_template_folder()
+		if folder is not None and folder in self._template_searchpaths:
+			self._template_searchpaths.remove(folder)
+
+	def _setup_blueprints(self):
+		from octoprint.server.api import api
+		from octoprint.server.apps import apps
+
+		app.register_blueprint(api, url_prefix="/api")
+		app.register_blueprint(apps, url_prefix="/apps")
+
+		# also register any blueprints defined in BlueprintPlugins
+		self._register_blueprint_plugins()
+
+	def _register_blueprint_plugins(self):
+		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
+		for plugin in blueprint_plugins:
+			self._register_blueprint_plugin(plugin)
+
+	def _register_blueprint_plugin(self, plugin):
+		name = plugin._identifier
+		blueprint = plugin.get_blueprint()
+		if blueprint is None:
+			return
+
+		if plugin.is_blueprint_protected():
+			from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
+			blueprint.before_request(apiKeyRequestHandler)
+			blueprint.after_request(corsResponseHandler)
+
+		url_prefix = "/plugin/{name}".format(name=name)
+		app.register_blueprint(blueprint, url_prefix=url_prefix)
+
+		if self._logger:
+			self._logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+
+class LifecycleManager(object):
+	def __init__(self, server, plugin_manager):
+		self._server = server
+		self._plugin_manager = plugin_manager
+
+		self._plugin_lifecycle_callbacks = defaultdict(list)
+		self._logger = logging.getLogger(__name__)
+
+		def on_plugin_event_factory(lifecycle_event, text):
+			def on_plugin_event(name, plugin):
+				self.on_plugin_event(lifecycle_event, name, plugin)
+				self._logger.debug(text.format(**locals()))
+			return on_plugin_event
+
+		self._plugin_manager.on_plugin_loaded = on_plugin_event_factory("loaded", "Loaded plugin {name}: {plugin}")
+		self._plugin_manager.on_plugin_unloaded = on_plugin_event_factory("unloaded", "Unloaded plugin {name}: {plugin}")
+		self._plugin_manager.on_plugin_activated = on_plugin_event_factory("activated", "Activated plugin {name}: {plugin}")
+		self._plugin_manager.on_plugin_deactivated = on_plugin_event_factory("deactivated", "Deactivated plugin {name}: {plugin}")
+		self._plugin_manager.on_plugin_enabled = on_plugin_event_factory("enabled", "Enabled plugin {name}: {plugin}")
+		self._plugin_manager.on_plugin_disabled = on_plugin_event_factory("disabled", "Disabled plugin {name}: {plugin}")
+
+	def on_plugin_event(self, event, name, plugin):
+		for lifecycle_callback in self._plugin_lifecycle_callbacks[event]:
+			lifecycle_callback(name, plugin)
+
+	def add_callback(self, events, callback):
+		if isinstance(events, (str, unicode)):
+			events = [events]
+
+		for event in events:
+			self._plugin_lifecycle_callbacks[event].append(callback)
+
+	def remove_callback(self, callback, events=None):
+		if events is None:
+			for event in self._plugin_lifecycle_callbacks:
+				if callback in self._plugin_lifecycle_callbacks[event]:
+					self._plugin_lifecycle_callbacks[event].remove(callback)
+		else:
+			if isinstance(events, (str, unicode)):
+				events = [events]
+
+			for event in events:
+				if callback in self._plugin_lifecycle_callbacks[event]:
+					self._plugin_lifecycle_callbacks[event].remove(callback)
 
 if __name__ == "__main__":
 	server = Server()
