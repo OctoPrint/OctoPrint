@@ -168,7 +168,8 @@ FileSelected
 
    Payload:
 
-     * ``file``: the file's name
+     * ``file``: the full path to the file
+     * ``filename``: the file's name
      * ``origin``: the origin of the file, either ``local`` or ``sdcard``
 
 FileDeselected
