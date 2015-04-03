@@ -921,6 +921,8 @@ class MachineCom(object):
 					match = self._regex_sdPrintingByte.search(line)
 					self._currentFile.setFilepos(int(match.group(1)))
 					self._callback.on_comm_progress()
+				elif 'SD printing paused' in line and self.isSdPrinting():
+					self._changeState(self.STATE_PAUSED)
 				elif 'File opened' in line and not self._ignore_select:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = self._regex_sdFileOpened.search(line)
@@ -941,7 +943,7 @@ class MachineCom(object):
 							"origin": self._currentFile.getFileLocation()
 						})
 				elif 'Writing to file' in line:
-					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
+					# answer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 					self._changeState(self.STATE_PRINTING)
 					self._clear_to_send.set()
 					line = "ok"
@@ -1197,6 +1199,7 @@ class MachineCom(object):
 	def _openSerial(self):
 		self._logger.info("_openSerial")
 		for hook in self._serial_hooks:
+			self._changeState(self.STATE_OPEN_SERIAL)
 			_serialT = None
 			try:
 				serialT = self._serial_hooks[hook](self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
@@ -1206,7 +1209,6 @@ class MachineCom(object):
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				return False
 			if serialT is not None:
-				self._changeState(self.STATE_OPEN_SERIAL);
 				self._serial = serialT
 				return True
 				# first hook to succeed wins, but any can pass on to the next
