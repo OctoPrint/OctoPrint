@@ -313,7 +313,8 @@ class VirtualPrinter():
 	def _selectSdFile(self, filename):
 		if filename.startswith("/"):
 			filename = filename[1:]
-		file = os.path.join(self._virtualSd, filename).lower()
+		filename = filename.lower()
+		file = os.path.join(self._virtualSd, filename)
 		if not os.path.exists(file) or not os.path.isfile(file):
 			self.outgoing.put("open failed, File: %s." % filename)
 		else:
@@ -500,7 +501,8 @@ class VirtualPrinter():
 	def _writeSdFile(self, filename):
 		if filename.startswith("/"):
 			filename = filename[1:]
-		file = os.path.join(self._virtualSd, filename).lower()
+		filename = filename.lower()
+		file = os.path.join(self._virtualSd, filename)
 		if os.path.exists(file):
 			if os.path.isfile(file):
 				os.remove(file)
