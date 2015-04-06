@@ -643,13 +643,13 @@ class MachineCom(object):
 			return
 
 		self._changeState(self.STATE_TRANSFERING_FILE)
-		self.sendCommand("M28 %s" % filename.lower())
+		self.sendCommand("M28 %s" % filename)
 
 	def endSdFileTransfer(self, filename):
 		if not self.isOperational() or self.isBusy():
 			return
 
-		self.sendCommand("M29 %s" % filename.lower())
+		self.sendCommand("M29 %s" % filename)
 		self._changeState(self.STATE_OPERATIONAL)
 		self.refreshSdFiles()
 
@@ -660,7 +660,7 @@ class MachineCom(object):
 			# do not delete a file from sd we are currently printing from
 			return
 
-		self.sendCommand("M30 %s" % filename.lower())
+		self.sendCommand("M30 %s" % filename)
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
@@ -822,7 +822,7 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					preprocessed_line = line.strip().lower()
+					preprocessed_line = line.strip()
 					fileinfo = preprocessed_line.rsplit(None, 1)
 					if len(fileinfo) > 1:
 						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
