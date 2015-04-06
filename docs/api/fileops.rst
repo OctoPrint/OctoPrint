@@ -219,6 +219,9 @@ Upload file
                     to ``false``.
    :form print:     Whether to start printing the file directly after upload (``true``) or not (``false``). If set, `select`
                     is implicitely ``true`` as well. Optional, defaults to ``false``.
+   :form userdata:  [Optional] An optional string that if specified will be saved along with the file as metadata.
+   :form userjson:  [Optional] An optional string that if specified will be intepreted as json and then saved along with
+                    the file as metadata.
    :statuscode 201: No error
    :statuscode 400: If no `file` is included in the request, or the request is otherwise invalid.
    :statuscode 404: If `location` is neither ``local`` nor ``sdcard`` or trying to upload to SD card and SD card support
