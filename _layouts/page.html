@@ -1,5 +1,12 @@
 ---
 layout: default
 ---
-{% include JB/setup %}
-{% include themes/octoprint/page.html %}
+{% include pageheader.html %}
+
+<div class="container">
+    <div class="content row-fluid">
+        <div class="span12">
+            {{ content }}
+        </div>
+    </div>
+</div>

@@ -2,6 +2,7 @@
 layout: page
 title: Download & Setup
 ---
+
 OctoPrint is currently available in the following forms:
 
 * as part of a specialized distribution for the RaspberryPi called "OctoPi"
