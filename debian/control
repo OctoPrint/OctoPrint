@@ -1,0 +1,12 @@
+Source: octoprint
+Maintainer: Chris Roadfeldt <chris@roadfeldt.com>
+Section: misc
+Priority: optional
+Standards-Version: 1.2.0
+Build-Depends: build-essential, debhelper (>= 9), swig, python-smbus, python, dh-python, python-dev
+X-Python-Version: 2.7
+
+Package: octoprint
+Architecture: armhf
+Depends: swig, python, python-smbus
+Description: OctoPrint provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software and released under the GNU Affero General Public License V3.

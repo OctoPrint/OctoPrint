@@ -1,0 +1,5 @@
+octoprint (1.2.0) UNRELEASED; urgency=low
+
+  * Initial release. (Closes: #XXXXXX) Initial debian package creation
+
+ -- Chris Roadfeldt <chris@roadfeldt.com>  Wed, 4 Apr 2015 18:42:43 -0500
