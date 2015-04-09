@@ -9,6 +9,7 @@
 
 # Add Wheezy backports repo
 echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
+apt-get update
 
 # Install python-flask from wheezy-backports
 apt-get install python-flask -t wheezy-backports
