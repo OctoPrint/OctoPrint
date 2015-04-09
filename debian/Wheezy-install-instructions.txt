@@ -69,8 +69,8 @@ wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4.orig.tar.gz
 wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4-1.debian.tar.xz
 tar Jxf nose_1.3.4-1.debian.tar.xz
 tar zxf nose_1.3.4.orig.tar.gz
-mv debian nose_1.3.4-1
-cd nose_1.3.4-1
+mv debian nose-1.3.4-1
+cd nose-1.3.4-1
 dpkg-buildpackage -uc -b
 dpkg -i ../python*-nose_*_all.deb
 
