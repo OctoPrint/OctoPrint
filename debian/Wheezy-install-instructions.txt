@@ -40,7 +40,7 @@ cd /usr/src
 git clone git://anonscm.debian.org/pkg-julia/sphinx-rtd-theme.git
 cd sphinx-rtd-theme
 dpkg-buildpackage -uc -b
-dpkg -i ../python-sphinx-rtd-theme_*_all.deb
+dpkg -i ../python*-sphinx-rtd-theme_*_all.deb
 
 # Install sphinxcontrib-httpdomain
 apt-get install -y openstack-pkg-tools python-six python3-sphinx python3-six
@@ -71,6 +71,11 @@ cd /usr/src
 wget http://http.us.debian.org/debian/pool/main/p/python-mock/python-mock_1.0.1-3_all.deb
 dpkg -i python-mock_1.0.1-3_all.deb
 
+# Install ieee-data
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/i/ieee-data/ieee-data_20141019.1_all.deb
+dpkg -i ieee-data_20141019.1_all.deb
+
 # Update python-netaddr
 apt-get install -y cdbs ieee-data
 cd /usr/src
@@ -84,8 +89,17 @@ dpkg -i python-serial_2.6-1.1_all.deb
 
 # Install python-blinker
 cd /usr/src
-wget http://http.us.debian.org/debian/pool/main/b/blinker/python-blinker_1.3.dfsg2-1_all.deb
-dpkg -i python-blinker_1.3.dfsg2-1_all.deb
+mkdir python-blinker
+cd python-blinker
+wget http://ftp.de.debian.org/debian/pool/main/b/blinker/blinker_1.3.dfsg2-1.dsc
+wget http://ftp.de.debian.org/debian/pool/main/b/blinker/blinker_1.3.dfsg2.orig.tar.gz
+wget http://ftp.de.debian.org/debian/pool/main/b/blinker/blinker_1.3.dfsg2-1.debian.tar.xz
+tar Jxf blinker_1.3.dfsg2-1.debian.tar.xz
+tar zxf blinker_1.3.dfsg2.orig.tar.gz
+mv debian blinker-1.3.dfsg2
+cd blinker-1.3.dfsg2
+dpkg-buildpackage -uc -b
+dpkg -i ../python*-blinker_*_all.deb
 
 # Install python-flask-principal
 cd /usr/src
