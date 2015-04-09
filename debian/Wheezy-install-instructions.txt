@@ -16,12 +16,17 @@ fi
 apt-get update
 
 # Install python-flask from wheezy-backports
-apt-get install python-flask -t wheezy-backports
+apt-get install -y python-flask -t wheezy-backports
 
 # Install python-flask-login
 cd /usr/src
 wget http://http.us.debian.org/debian/pool/main/f/flask-login/python-flask-login_0.2.6-1_all.deb
 dpkg -i python-flask-login_0.2.6-1_all.deb
+
+# Install python-tornado
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/p/python-tornado/python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
+dpkg -i python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
 
 # Install python-sockjs-tornado
 cd /usr/src
@@ -31,6 +36,9 @@ dpkg -i python-sockjs-tornado_1.0.0-1_all.deb
 # Install sphinx-rtd-theme
 apt-get install -y python-all python3-all python3-setuptools fonts-font-awesome
 cd /usr/src
+git clone git://anonscm.debian.org/pkg-julia/sphinx-rtd-theme.git
+cd sphinx-rtd-theme
+dpkg-buildpackage -uc -b
 wget http://http.us.debian.org/debian/pool/main/s/sphinx-rtd-theme/python-sphinx-rtd-theme_0.1.6-1_all.deb
 dpkg -i python-sphinx-rtd-theme_0.1.6-1_all.deb
 
@@ -83,11 +91,6 @@ dpkg -i python-blinker_1.3.dfsg2-1_all.deb
 cd /usr/src
 wget http://http.us.debian.org/debian/pool/main/f/flask-principal/python-flask-principal_0.4.0-1_all.deb
 dpkg -i python-flask-principal_0.4.0-1_all.deb
-
-# Update python-tornado
-cd /usr/src
-wget http://http.us.debian.org/debian/pool/main/p/python-tornado/python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
-dpkg -i python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
 
 # Install backports.ssl_match_hostname
 pip install backports.ssl_match_hostname
