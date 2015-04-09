@@ -3,7 +3,7 @@ Description=OctoPrint
 
 [Service]
 Type=simple
-ExecStart=/home/octo/run
+ExecStart=/usr/bin/octoprint
 Restart=always
 RestartSec=60
 User=octo
