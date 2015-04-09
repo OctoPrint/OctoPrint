@@ -1,0 +1,89 @@
+# In order to install or build Octoprint on Wheezy based distros, the following python modules need 
+# to be installed or updated. These are all required required pre-reqs.
+# Some are from backports, others are straight python modules from Jessie.
+# The goal here to is to have packaged and as easy install on Wheezy as possible.
+# 
+# Run this script first, then install the Octoprint deb package.
+# sh ./Wheezy-install-instructions.txt
+# dpkg -i octoprint-X.X.X.deb
+
+# Add Wheezy backports repo
+echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
+
+# Install python-flask from wheezy-backports
+apt-get install python-flask -t wheezy-backports
+
+# Install python-flask-login
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/f/flask-login/python-flask-login_0.2.6-1_all.deb
+dpkg -i python-flask-login_0.2.6-1_all.deb
+
+# Install python-sockjs-tornado
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/p/python-sockjs-tornado/python-sockjs-tornado_1.0.0-1_all.deb
+dpkg -i python-sockjs-tornado_1.0.0-1_all.deb
+
+# Install sphinx-rtd-theme
+apt-get install -y python-all python3-all python3-setuptools fonts-font-awesome
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/s/sphinx-rtd-theme/python-sphinx-rtd-theme_0.1.6-1_all.deb
+dpkg -i python-sphinx-rtd-theme_0.1.6-1_all.deb
+
+# Install sphinxcontrib-httpdomain
+apt-get install -y openstack-pkg-tools python-six python3-sphinx python3-six
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/s/sphinxcontrib-httpdomain/python-sphinxcontrib-httpdomain_1.3.0-1_all.deb
+wget http://http.us.debian.org/debian/pool/main/s/sphinxcontrib-httpdomain/python-sphinxcontrib.httpdomain_1.3.0-1_all.deb
+dpkg -i python-sphinxcontrib-httpdomain_1.3.0-1_all.deb python-sphinxcontrib.httpdomain_1.3.0-1_all.deb
+
+# Install libjs-jquery-hotkeys
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/libj/libjs-jquery-hotkeys/libjs-jquery-hotkeys_0~20130707+git2d51e3a9+dfsg-2_all.deb
+dpkg -i libjs-jquery-hotkeys_0~20130707+git2d51e3a9+dfsg-2_all.deb
+
+# Install libjs-jquery-isonscreen
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/libj/libjs-jquery-isonscreen/libjs-jquery-isonscreen_1.2.0-1_all.deb
+dpkg -i libjs-jquery-isonscreen_1.2.0-1_all.deb
+
+# Update python-nose
+apt-get install -y libjs-jquery-tablesorter python-coverage
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/n/nose/python-nose_1.3.4-1_all.deb
+dpkg -i python-nose_1.3.4-1_all.deb
+
+# Update python-mock
+apt-get install -y python-unittest2
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/p/python-mock/python-mock_1.0.1-3_all.deb
+dpkg -i python-mock_1.0.1-3_all.deb
+
+# Update python-netaddr
+apt-get install -y cdbs
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/p/python-netaddr/python-netaddr_0.7.12-2_all.deb
+dpkg -i python-netaddr_0.7.12-2_all.deb
+
+# Update python-serial
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/p/pyserial/python-serial_2.6-1.1_all.deb
+dpkg -i python-serial_2.6-1.1_all.deb
+
+# Install python-blinker
+cd /usr/src
+http://http.us.debian.org/debian/pool/main/b/blinker/python-blinker_1.3.dfsg2-1_all.deb
+dpkg -i python-blinker_1.3.dfsg2-1_all.deb
+
+# Install python-flask-principal
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/f/flask-principal/python-flask-principal_0.4.0-1_all.deb
+dpkg -i python-flask-principal_0.4.0-1_all.deb
+
+# Update python-tornado
+cd /usr/src
+wget http://http.us.debian.org/debian/pool/main/p/python-tornado/python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
+dpkg -i python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
+
+# Install backports.ssl_match_hostname
+pip install backports.ssl_match_hostname
+
