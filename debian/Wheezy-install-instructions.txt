@@ -62,8 +62,17 @@ dpkg -i libjs-jquery-isonscreen_1.2.0-1_all.deb
 # Update python-nose
 apt-get install -y libjs-jquery-tablesorter python-coverage
 cd /usr/src
-wget http://http.us.debian.org/debian/pool/main/n/nose/python-nose_1.3.4-1_all.deb
-dpkg -i python-nose_1.3.4-1_all.deb
+mkdir python-nose
+cd python-nose
+wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4-1.dsc
+wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4.orig.tar.gz
+wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4-1.debian.tar.xz
+tar Jxf nose_1.3.4-1.debian.tar.xz
+tar zxf nose_1.3.4.orig.tar.gz
+mv debian nose_1.3.4-1
+cd nose_1.3.4-1
+dpkg-buildpackage -uc -b
+dpkg -i ../python*-nose_*_all.deb
 
 # Update python-mock
 apt-get install -y python-unittest2
