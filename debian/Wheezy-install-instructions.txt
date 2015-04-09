@@ -7,8 +7,12 @@
 # sh ./Wheezy-install-instructions.txt
 # dpkg -i octoprint-X.X.X.deb
 
-# Add Wheezy backports repo
-echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
+# Add Wheezy backports repo, if needed.
+grep -i "deb http://http.debian.net/debian wheezy-backports main" /etc/apt/sources.list
+if [ $? -ne 0 ]; then 
+	echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
+fi
+
 apt-get update
 
 # Install python-flask from wheezy-backports
