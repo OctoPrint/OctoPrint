@@ -24,6 +24,7 @@ wget http://http.us.debian.org/debian/pool/main/f/flask-login/python-flask-login
 dpkg -i python-flask-login_0.2.6-1_all.deb
 
 # Install python-tornado
+apt-get install -y python-pycurl
 cd /usr/src
 wget http://http.us.debian.org/debian/pool/main/p/python-tornado/python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
 dpkg -i python-tornado_3.2.2-1.1_`dpkg --print-architecture`.deb
@@ -39,8 +40,7 @@ cd /usr/src
 git clone git://anonscm.debian.org/pkg-julia/sphinx-rtd-theme.git
 cd sphinx-rtd-theme
 dpkg-buildpackage -uc -b
-wget http://http.us.debian.org/debian/pool/main/s/sphinx-rtd-theme/python-sphinx-rtd-theme_0.1.6-1_all.deb
-dpkg -i python-sphinx-rtd-theme_0.1.6-1_all.deb
+dpkg -i ../python-sphinx-rtd-theme_*_all.deb
 
 # Install sphinxcontrib-httpdomain
 apt-get install -y openstack-pkg-tools python-six python3-sphinx python3-six
