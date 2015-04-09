@@ -84,7 +84,7 @@ dpkg -i python-serial_2.6-1.1_all.deb
 
 # Install python-blinker
 cd /usr/src
-http://http.us.debian.org/debian/pool/main/b/blinker/python-blinker_1.3.dfsg2-1_all.deb
+wget http://http.us.debian.org/debian/pool/main/b/blinker/python-blinker_1.3.dfsg2-1_all.deb
 dpkg -i python-blinker_1.3.dfsg2-1_all.deb
 
 # Install python-flask-principal
