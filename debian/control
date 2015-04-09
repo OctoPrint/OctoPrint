@@ -2,7 +2,7 @@ Source: octoprint
 Maintainer: Chris Roadfeldt <chris@roadfeldt.com>
 Section: misc
 Priority: optional
-Standards-Version: 1.2.0
+Standards-Version: 1.1.2
 Build-Depends: build-essential, debhelper (>= 9), swig, python-smbus, python, dh-python, python-dev
 X-Python-Version: 2.7
 

@@ -5,7 +5,7 @@ PYTHON=`which python`
 DESTDIR=/
 BUILDIR=$(CURDIR)/debian/redeem
 PROJECT=myprojectname
-VERSION=1.2.0
+VERSION=1.1.2
 
 all:
 	@echo "make source - Create source package"
