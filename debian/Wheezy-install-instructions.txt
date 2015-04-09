@@ -35,7 +35,7 @@ wget http://http.us.debian.org/debian/pool/main/p/python-sockjs-tornado/python-s
 dpkg -i python-sockjs-tornado_1.0.0-1_all.deb
 
 # Install sphinx-rtd-theme
-apt-get install -y python-all python3-all python3-setuptools fonts-font-awesome
+apt-get install -y python-all python3-all python3-setuptools fonts-font-awesome dh-python python-sphinx
 cd /usr/src
 git clone git://anonscm.debian.org/pkg-julia/sphinx-rtd-theme.git
 cd sphinx-rtd-theme
