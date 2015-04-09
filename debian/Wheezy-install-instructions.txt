@@ -72,7 +72,7 @@ wget http://http.us.debian.org/debian/pool/main/p/python-mock/python-mock_1.0.1-
 dpkg -i python-mock_1.0.1-3_all.deb
 
 # Update python-netaddr
-apt-get install -y cdbs
+apt-get install -y cdbs ieee-data
 cd /usr/src
 wget http://http.us.debian.org/debian/pool/main/p/python-netaddr/python-netaddr_0.7.12-2_all.deb
 dpkg -i python-netaddr_0.7.12-2_all.deb
