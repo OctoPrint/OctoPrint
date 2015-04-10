@@ -3,7 +3,7 @@
 
 PYTHON=`which python`
 DESTDIR=/
-BUILDIR=$(CURDIR)/debian/redeem
+BUILDIR=$(CURDIR)/debian/octoprint
 PROJECT=myprojectname
 VERSION=1.1.2
 
