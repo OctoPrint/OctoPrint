@@ -96,7 +96,7 @@ git clone https://github.com/croadfeldt/OctoPrint.git
 
 Next we need to install pre-requisites before building and then running Octoprint.
 
-You will need roughly 1GB of available RAM/SWAP to build the prereqs. If you're build system is below 1GB of RAM/SWAP together, use the following commands to add 512MB of swap, adjust as needed and for available storage.
+You will need roughly 1GB of available RAM/SWAP to build the prereqs. If your build system is below 1GB of RAM/SWAP together, use the following commands to add 512MB of swap, adjust as needed and for available storage.
 
 ```
 dd if=/dev/zero of=/tmp/swapfile bs=1024 count=524288
