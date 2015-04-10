@@ -90,8 +90,8 @@ To create a Debian Wheezy packages, do the following.
 Grab source
 
 ```
+cd /usr/src
 git clone https://github.com/croadfeldt/OctoPrint.git
-cd Octoprint/debian
 ```
 
 Next we need to install pre-requisites before building and then running Octoprint.
@@ -107,8 +107,8 @@ swapon /tmp/swapfile
 Install prereqs, build them if needed by using the following instructions.
 
 ```
+cd /usr/src/Octoprint/debian
 sh Wheezy-install-instructions.txt
-cd ..
 ```
 
 Remove the added swap if you created it.
@@ -120,14 +120,14 @@ rm /tmp/swapfile
 
 Build Octoprint debian package.
 
-```
-make builddeb
-cd ..
-```
+`make builddeb`
 
-Install Octoprint, please note the versioning is a bit messed up, with the package reporting 1.2.0 when it should be 1.1.2.
+Install Octoprint.
 
-`dpkg -i octoprint_1.2.0_armhf.deb`
+```
+cd /usr/src
+dpkg -i octoprint_1.1.2_armhf.deb
+```
 
 Start it up!
 
