@@ -95,10 +95,23 @@ cd Octoprint/debian
 ```
 
 Install build and run prereqs
+WARNING: If you are building on a SOC device, you will need roughly 1GB of available RAM/SWAP to build the prereqs. If you're build system is below 1GB of RAM/SWAP together, use the following commands to add 512MB of swap, adjust as needed and for available storage.
+```
+dd if=/dev/zero of=/tmp/swapfile bs=1024 count=524288
+mkswap /tmp/swapfile
+swapon /tmp/swapfile
+```
 
 ```
 sh Wheezy-install-instructions.txt
 cd ..
+```
+
+Remove the added swap if you created it.
+
+```
+swapoff /tmp/swapfile
+rm /tmp/swapfile
 ```
 
 Build Octoprint debian package.
