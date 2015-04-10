@@ -35,7 +35,7 @@ wget http://http.us.debian.org/debian/pool/main/p/python-sockjs-tornado/python-s
 dpkg -i python-sockjs-tornado_1.0.0-1_all.deb
 
 # Install sphinx-rtd-theme
-apt-get install -y python-all python3-all python3-setuptools fonts-font-awesome dh-python python-sphinx
+apt-get install -y python-all python3-all python3-setuptools fonts-font-awesome dh-python python-sphinx python3-sphinx
 cd /usr/src
 git clone git://anonscm.debian.org/pkg-julia/sphinx-rtd-theme.git
 cd sphinx-rtd-theme
@@ -43,7 +43,7 @@ dpkg-buildpackage -uc -b
 dpkg -i ../python*-sphinx-rtd-theme_*_all.deb
 
 # Install sphinxcontrib-httpdomain
-apt-get install -y openstack-pkg-tools python-six python3-sphinx python3-six
+apt-get install -y openstack-pkg-tools python-six python3-six
 cd /usr/src
 wget http://http.us.debian.org/debian/pool/main/s/sphinxcontrib-httpdomain/python-sphinxcontrib-httpdomain_1.3.0-1_all.deb
 wget http://http.us.debian.org/debian/pool/main/s/sphinxcontrib-httpdomain/python-sphinxcontrib.httpdomain_1.3.0-1_all.deb
@@ -67,13 +67,13 @@ cd python-nose
 wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4-1.dsc
 wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4.orig.tar.gz
 wget http://ftp.de.debian.org/debian/pool/main/n/nose/nose_1.3.4-1.debian.tar.xz
-xz --decompress nose_1.3.4-1.debian.tar.xz
-tar xf nose_1.3.4-1.debian.tar
+tar Jxf nose_1.3.4-1.debian.tar.xz
 tar zxf nose_1.3.4.orig.tar.gz
-mv debian nose-1.3.4-1
-cd nose-1.3.4-1
+mv debian nose-1.3.4
+cd nose-1.3.4
 dpkg-buildpackage -uc -b
-dpkg -i ../python*-nose_*_all.deb
+# Don't install python3-nose, conflict with python-nose /usr/man/man1/nosetests.1.gz
+dpkg -i ../python-nose_*_all.deb
 
 # Update python-mock
 apt-get install -y python-unittest2
@@ -104,8 +104,7 @@ cd python-blinker
 wget http://ftp.de.debian.org/debian/pool/main/b/blinker/blinker_1.3.dfsg2-1.dsc
 wget http://ftp.de.debian.org/debian/pool/main/b/blinker/blinker_1.3.dfsg2.orig.tar.gz
 wget http://ftp.de.debian.org/debian/pool/main/b/blinker/blinker_1.3.dfsg2-1.debian.tar.xz
-xz --decompress blinker_1.3.dfsg2-1.debian.tar.xz
-tar xf blinker_1.3.dfsg2-1.debian.tar
+tar Jxf blinker_1.3.dfsg2-1.debian.tar.xz
 tar zxf blinker_1.3.dfsg2.orig.tar.gz
 mv debian blinker-1.3.dfsg2
 cd blinker-1.3.dfsg2
