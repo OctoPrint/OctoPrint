@@ -104,7 +104,7 @@ mkswap /tmp/swapfile
 swapon /tmp/swapfile
 ```
 
-Install prereqs, build them if needed by using the following instructions.
+Install prereqs using the following commands. This will take a bit as some prereqs will be compiled, packaged and installed. Be patient.
 
 ```
 cd /usr/src/Octoprint/debian
