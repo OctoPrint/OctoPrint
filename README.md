@@ -120,7 +120,10 @@ rm /tmp/swapfile
 
 Build Octoprint debian package.
 
-`make builddeb`
+```
+cd /usr/src/Octoprint
+make builddeb
+```
 
 Install Octoprint.
 
