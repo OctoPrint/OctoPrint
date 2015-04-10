@@ -119,3 +119,12 @@ dpkg -i python-flask-principal_0.4.0-1_all.deb
 # Install backports.ssl_match_hostname
 pip install backports.ssl_match_hostname
 
+# Install remaining items needed to build Octoprint
+apt-get install -y swig python-yaml python-dev
+
+echo "All set, you should be able to build the Octoprint package and install it now."
+echo "Go to the Octoprint directory and type the following to build the debian package."
+echo "make builddeb"
+echo "Once it's complete, go to the parent directory of Octoprint and you should see the octoprint debian packages."
+echo "Install it and enjoy!"
+
