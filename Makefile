@@ -4,7 +4,7 @@
 PYTHON=`which python`
 DESTDIR=/
 BUILDIR=$(CURDIR)/debian/octoprint
-PROJECT=octoprint
+PROJECT=myprojectname
 VERSION=1.1.2
 
 all:
