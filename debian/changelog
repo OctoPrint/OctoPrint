@@ -1,4 +1,4 @@
-octoprint (1.1.2) UNRELEASED; urgency=low
+octoprint (1.1.2-1) UNRELEASED; urgency=low
 
   * Initial release. (Closes: #XXXXXX) Initial debian package creation
 
