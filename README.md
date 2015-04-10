@@ -83,7 +83,7 @@ configuration settings can also easily be edited from OctoPrint's settings dialo
 Debian Wheezy Package build
 ---------------------
 
-Below is a Wheezy packaging process built using wheezy, wheezy-backports and jessie packages built using official debian sources for the pre-requisites and git master branch of Octoprint. Currently this process uses hardcoded versions of some prereq packages and uses some updated packages than Octoprint requires. So far no ill effects have been noticed and the build is clean and provides a deb package for clean install, upgrade and removal. This is bound to change as upstream packages are updated. A more robust prereq install would be greatly appreciated. Hint, hint... :)
+Below is a Wheezy packaging process built using wheezy, wheezy-backports and jessie packages built using official debian sources for the pre-requisites and git master branch of Octoprint. Currently this process uses hardcoded versions of some prereq packages and uses some updated packages beyond what Octoprint requires. So far no ill effects have been noticed and the build is clean and provides a deb package for clean install, upgrade and removal. This is bound to change as upstream packages are updated. A more robust prereq install would be greatly appreciated. Hint, hint... :)
 
 To create a Debian Wheezy package for octoprint, do the following.
 
