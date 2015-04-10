@@ -79,3 +79,26 @@ at `~/Library/Application Support/OctoPrint` on MacOS.
 A comprehensive overview of all available configuration settings can be found
 [on the wiki](https://github.com/foosel/OctoPrint/wiki/Configuration). Please note that the most commonly used
 configuration settings can also easily be edited from OctoPrint's settings dialog.
+
+Debian Package build
+---------------------
+
+There is a Wheezy packaging process built using wheezy-backports, jessie packages and some custom debian packages built using official debian sources. Currently this process uses hardcoded versions of some packages and requires some newer packages than Octoprint was designed for, so far no ill effects have been noticed and the build is clean and provides a deb package for clean install, upgrade and removal.
+
+To create a Debian Wheezy packages, do the following.
+
+# Grab source
+git clone https://github.com/croadfeldt/OctoPrint.git
+cd Octoprint/debian
+# Install build and run prereqs
+sh Wheezy-install-instructions.txt
+cd ..
+# Build Octoprint debian package.
+make builddeb
+cd ..
+# Install Octoprint, please note the versioning is a bit messed up, with the package reporting 1.2.0 when it should be 1.1.2.
+dpkg -i octoprint_1.2.0_armhf.deb
+# Start it up!
+systemctl restart octoprint.service
+# Start it on boot.
+systemctl enable octoprint.service
