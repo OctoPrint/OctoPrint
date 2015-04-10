@@ -129,7 +129,7 @@ Install Octoprint.
 
 ```
 cd /usr/src
-dpkg -i octoprint_1.1.2_\`dpkg --print-architecture\`.deb
+dpkg -i octoprint_1.1.2_`dpkg --print-architecture`.deb
 ```
 
 Start it up!
