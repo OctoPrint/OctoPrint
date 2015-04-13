@@ -162,6 +162,7 @@ class MachineCom(object):
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
+		self._resendSwallowNextOk = False
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
@@ -1048,7 +1049,9 @@ class MachineCom(object):
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 					if "ok" in line:
 						# if we still have commands to process, process them
-						if self._resendDelta is not None:
+						if self._resendSwallowNextOk:
+							self._resendSwallowNextOk = False
+						elif self._resendDelta is not None:
 							self._resendNextCommand()
 						elif self._sendFromQueue():
 							pass
@@ -1067,8 +1070,12 @@ class MachineCom(object):
 							self._logger.debug("Ran into a communication timeout, but a blocking command is currently active")
 
 					if "ok" in line:
-						if self._resendDelta is not None:
+						if self._resendSwallowNextOk:
+							self._resendSwallowNextOk = False
+
+						elif self._resendDelta is not None:
 							self._resendNextCommand()
+
 						else:
 							if self._sendFromQueue(sendChecksum=True):
 								pass
@@ -1308,6 +1315,8 @@ class MachineCom(object):
 				lineToResend = int(line.split()[1])
 
 		if lineToResend is not None:
+			self._resendSwallowNextOk = True
+
 			lastCommError = self._lastCommError
 			self._lastCommError = None
 
@@ -1339,7 +1348,6 @@ class MachineCom(object):
 				self._resendNextCommand()
 
 	def _resendNextCommand(self):
-		lastCommError = self._lastCommError
 		self._lastCommError = None
 
 		# Make sure we are only handling one sending job at a time
