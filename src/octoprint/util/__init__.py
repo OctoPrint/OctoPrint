@@ -306,6 +306,11 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	# TODO unit test!
 
+	if not isinstance(filename, unicode):
+		filename = unicode(filename)
+	if not isinstance(extension, unicode):
+		extension = unicode(extension)
+
 	def make_valid(text):
 		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
 
