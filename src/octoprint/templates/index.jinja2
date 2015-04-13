@@ -52,8 +52,8 @@
                                 <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
                                     {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry }}
                                 </a>
-                                {% if "header_addon" in data %}
-                                    {% include data.header_addon ignore missing %}
+                                {% if "template_header" in data %}
+                                    {% include data.template_header ignore missing %}
                                 {% endif %}
                             </div>
                             <div id="{{ data._div }}"
