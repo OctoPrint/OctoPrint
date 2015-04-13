@@ -1,11 +1,11 @@
 <form class="form-horizontal">
     <div class="row-fluid">
-        <div class="offset3 span3"><h4>{{ _('Extruder') }}</h4></div>
+        <div class="offset4 span3"><h4>{{ _('Extruder') }}</h4></div>
         <div class="span3"><h4>{{ _('Bed') }}</h4></div>
     </div>
     <div data-bind="foreach: temperature_profiles">
         <div class="row-fluid" style="margin-bottom: 5px">
-            <div class="span3">
+            <div class="span4">
                 <input type="text" class="span12 text-right" data-bind="value: name">
             </div>
             <div class="input-append span3">
@@ -22,7 +22,7 @@
         </div>
     </div>
     <div class="row-fluid">
-        <div class="offset9 span2">
+        <div class="offset10 span2">
             <a title="Add Profile" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="icon-plus"></i></a>
         </div>
     </div>

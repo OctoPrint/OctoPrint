@@ -660,6 +660,11 @@ ul.dropdown-menu li a {
 
 /** Settings dialog */
 #settings_dialog {
+  .modal-body {
+    #settings_dialog_menu {
+      margin-left: 0;
+    }
+  }
 }
 
 /** Footer */
@@ -906,11 +911,31 @@ textarea.block {
   }
 }
 
-.modal-body {
-  .span4 {
-    width: 25%;
+.modal.large {
+  width: 975px;
+  margin-left: -487px;
+}
+
+.full-sized-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+
+  padding: 15px;
+
+  .row-fluid {
+    height: 100%;
   }
-  .span8 {
-    width: 65%;
+
+  @media (max-width: 979px) {
+    position: static;
   }
+}
+
+.scrollable {
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }

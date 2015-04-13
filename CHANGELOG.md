@@ -113,6 +113,8 @@
   attempting to connect to their printer on their Raspberry Pis, on which ``/dev/ttyAMA0`` is the OS's serial console
   by default). Added configuration of additional ports to the Serial Connection section in the Settings to make it easier
   for those people who do indeed have their printer connected to ``/dev/ttyAMA0``.
+* Better behaviour of the settings dialog on low-width devices, navigation and content also now scroll independently 
+  from each other (see also [#823](https://github.com/foosel/OctoPrint/pull/823))
 
 ### Bug Fixes
 
