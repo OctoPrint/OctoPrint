@@ -1214,7 +1214,7 @@ class MachineCom(object):
 				# first hook to succeed wins, but any can pass on to the next
 
 		if self._port is None or self._port == 'AUTO':
-			if self._detectPort(False) is None:
+			if self.detectPort(False) is None:
 				return False
 		elif self._port == 'VIRTUAL':
 			self._changeState(self.STATE_OPEN_SERIAL)
