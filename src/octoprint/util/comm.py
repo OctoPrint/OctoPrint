@@ -174,6 +174,7 @@ class MachineCom(object):
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
+		self._serial_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.serial")
 
 		# SD status data
 		self._sdAvailable = False
@@ -1179,8 +1180,7 @@ class MachineCom(object):
 		else:
 			return False
 
-	def _openSerial(self):
-		if self._port == 'AUTO':
+	def detectPort(self, close):
 			self._changeState(self.STATE_DETECT_SERIAL)
 			programmer = stk500v2.Stk500v2()
 			self._log("Serial port list: %s" % (str(serialList())))
@@ -1201,6 +1201,30 @@ class MachineCom(object):
 				self._errorValue = 'Failed to autodetect serial port.'
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				return None
+			if (close):
+				self._serial.close()
+				self._serial = None
+			return p
+
+	def _openSerial(self):
+		for hook in self._serial_hooks:
+			_serialT = None
+			try:
+				serialT = self._serial_hooks[hook](self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
+			except Exception as e:
+				self._errorValue = get_exception_string()
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				return False
+			if serialT is not None:
+				self._changeState(self.STATE_OPEN_SERIAL);
+				self._serial = serialT
+				return True
+				# first hook to succeed wins, but any can pass on to the next
+
+		if self._port is None or self._port == 'AUTO':
+			if self.detectPort(False) is None:
 				return False
 		elif self._port == 'VIRTUAL':
 			self._changeState(self.STATE_OPEN_SERIAL)
