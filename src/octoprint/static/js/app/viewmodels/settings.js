@@ -160,11 +160,12 @@ $(function() {
 
         self.show = function() {
             // show settings, ensure centered position
-            self.settingsDialog.modal()
-                .css({
-                    width: 'auto',
-                    'margin-left': function() { return -($(this).width() /2); }
-                });
+            self.settingsDialog.modal({
+                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+            }).css({
+                width: 'auto',
+                'margin-left': function() { return -($(this).width() /2); }
+            });
 
             return false;
         };

@@ -115,7 +115,7 @@ class MachineCom(object):
 	STATE_ERROR = 9
 	STATE_CLOSED_WITH_ERROR = 10
 	STATE_TRANSFERING_FILE = 11
-	
+
 	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
@@ -162,6 +162,7 @@ class MachineCom(object):
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
+		self._resendSwallowNextOk = False
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
@@ -255,7 +256,7 @@ class MachineCom(object):
 
 	def getState(self):
 		return self._state
-	
+
 	def getStateString(self):
 		if self._state == self.STATE_NONE:
 			return "Offline"
@@ -287,19 +288,19 @@ class MachineCom(object):
 		if self._state == self.STATE_TRANSFERING_FILE:
 			return "Transfering file to SD"
 		return "?%d?" % (self._state)
-	
+
 	def getErrorString(self):
 		return self._errorValue
-	
+
 	def isClosedOrError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED
 
 	def isError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR
-	
+
 	def isOperational(self):
 		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED or self._state == self.STATE_TRANSFERING_FILE
-	
+
 	def isPrinting(self):
 		return self._state == self.STATE_PRINTING
 
@@ -349,7 +350,7 @@ class MachineCom(object):
 
 	def getTemp(self):
 		return self._temp
-	
+
 	def getBedTemp(self):
 		return self._bedTemp
 
@@ -552,6 +553,7 @@ class MachineCom(object):
 			self._currentFile = PrintingGcodeFileInformation(filename, offsets_callback=self.getOffsets, current_tool_callback=self.getCurrentTool)
 			eventManager().fire(Events.FILE_SELECTED, {
 				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
 			self._callback.on_comm_file_selected(filename, self._currentFile.getFilesize(), False)
@@ -836,7 +838,7 @@ class MachineCom(object):
 						filename = preprocessed_line
 						size = None
 
-					if valid_file_type(filename, "gcode"):
+					if valid_file_type(filename, "machinecode"):
 						if filter_non_ascii(filename):
 							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
@@ -1047,7 +1049,9 @@ class MachineCom(object):
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 					if "ok" in line:
 						# if we still have commands to process, process them
-						if self._resendDelta is not None:
+						if self._resendSwallowNextOk:
+							self._resendSwallowNextOk = False
+						elif self._resendDelta is not None:
 							self._resendNextCommand()
 						elif self._sendFromQueue():
 							pass
@@ -1066,8 +1070,12 @@ class MachineCom(object):
 							self._logger.debug("Ran into a communication timeout, but a blocking command is currently active")
 
 					if "ok" in line:
-						if self._resendDelta is not None:
+						if self._resendSwallowNextOk:
+							self._resendSwallowNextOk = False
+
+						elif self._resendDelta is not None:
 							self._resendNextCommand()
+
 						else:
 							if self._sendFromQueue(sendChecksum=True):
 								pass
@@ -1307,6 +1315,8 @@ class MachineCom(object):
 				lineToResend = int(line.split()[1])
 
 		if lineToResend is not None:
+			self._resendSwallowNextOk = True
+
 			lastCommError = self._lastCommError
 			self._lastCommError = None
 
@@ -1338,7 +1348,6 @@ class MachineCom(object):
 				self._resendNextCommand()
 
 	def _resendNextCommand(self):
-		lastCommError = self._lastCommError
 		self._lastCommError = None
 
 		# Make sure we are only handling one sending job at a time

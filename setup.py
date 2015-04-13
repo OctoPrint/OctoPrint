@@ -345,10 +345,6 @@ def params():
 		# documentation dependencies
 		install_requires = install_requires + extras_require['develop']
 
-	import sys
-	if sys.platform in ("linux2", "darwin"):
-		install_requires += ["monotime"]
-
 	entry_points = {
 		"console_scripts": [
 			"octoprint = octoprint:main"

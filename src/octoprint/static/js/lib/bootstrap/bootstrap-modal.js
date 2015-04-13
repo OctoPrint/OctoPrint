@@ -102,7 +102,8 @@
 
 		layout: function () {
 			var prop = this.options.height ? 'height' : 'max-height',
-				value = this.options.height || this.options.maxHeight;
+				value = this.options.height || this.options.maxHeight,
+				minHeight = this.options.minHeight;
 
 			if (this.options.width){
 				this.$element.css('width', this.options.width);
@@ -122,7 +123,8 @@
 
 			this.$element.find('.modal-body')
 				.css('overflow', '')
-				.css(prop, '');
+				.css(prop, '')
+				.css('min-height', '');
 
 			var modalOverflow = $(window).height() - 10 < this.$element.height();
 
@@ -130,6 +132,11 @@
 				this.$element.find('.modal-body')
 					.css('overflow', 'auto')
 					.css(prop, value);
+			}
+
+			if (minHeight) {
+				this.$element.find('.modal-body')
+					.css('min-height', minHeight);
 			}
 
 			if (modalOverflow || this.options.modalOverflow) {
@@ -339,6 +346,7 @@
 		width: null,
 		height: null,
 		maxHeight: null,
+		minHeight: null,
 		modalOverflow: false,
 		consumeTab: true,
 		focusOn: null,
