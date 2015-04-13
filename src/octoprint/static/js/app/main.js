@@ -57,6 +57,16 @@ $(function() {
         // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {};
 
+        // Fix Function#name on browsers that do not support it (IE):
+        // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie 
+        if (!(function f() {}).name) {
+            Object.defineProperty(Function.prototype, 'name', {
+                get: function() {
+                    return this.toString().match(/^\s*function\s*(\S*)\s*\(/)[1];
+                }
+            });
+        }
+
         // helper to create a view model instance with injected constructor parameters from the view model map
         var _createViewModelInstance = function(viewModel, viewModelMap){
             var viewModelClass = viewModel[0];

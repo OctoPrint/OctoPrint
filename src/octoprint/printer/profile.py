@@ -291,6 +291,7 @@ class PrinterProfileManager(object):
 		import yaml
 		with open(path) as f:
 			profile = yaml.safe_load(f)
+		profile = dict_merge(self._load_default(), profile)
 		profile = self._ensure_valid_profile(profile)
 		if not profile:
 			self._logger.warn("Invalid profile: %s" % path)

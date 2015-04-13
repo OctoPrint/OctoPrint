@@ -173,6 +173,7 @@ class MachineCom(object):
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
+		self._serial_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.serial")
 
 		# SD status data
 		self._sdAvailable = False
@@ -642,13 +643,13 @@ class MachineCom(object):
 			return
 
 		self._changeState(self.STATE_TRANSFERING_FILE)
-		self.sendCommand("M28 %s" % filename.lower())
+		self.sendCommand("M28 %s" % filename)
 
 	def endSdFileTransfer(self, filename):
 		if not self.isOperational() or self.isBusy():
 			return
 
-		self.sendCommand("M29 %s" % filename.lower())
+		self.sendCommand("M29 %s" % filename)
 		self._changeState(self.STATE_OPERATIONAL)
 		self.refreshSdFiles()
 
@@ -659,7 +660,7 @@ class MachineCom(object):
 			# do not delete a file from sd we are currently printing from
 			return
 
-		self.sendCommand("M30 %s" % filename.lower())
+		self.sendCommand("M30 %s" % filename)
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
@@ -821,7 +822,7 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					preprocessed_line = line.strip().lower()
+					preprocessed_line = line.strip()
 					fileinfo = preprocessed_line.rsplit(None, 1)
 					if len(fileinfo) > 1:
 						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
@@ -837,7 +838,7 @@ class MachineCom(object):
 						filename = preprocessed_line
 						size = None
 
-					if valid_file_type(filename, "gcode"):
+					if valid_file_type(filename, "machinecode"):
 						if filter_non_ascii(filename):
 							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
@@ -920,6 +921,8 @@ class MachineCom(object):
 					match = self._regex_sdPrintingByte.search(line)
 					self._currentFile.setFilepos(int(match.group(1)))
 					self._callback.on_comm_progress()
+				elif 'SD printing paused' in line and self.isSdPrinting():
+					self._changeState(self.STATE_PAUSED)
 				elif 'File opened' in line and not self._ignore_select:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = self._regex_sdFileOpened.search(line)
@@ -940,7 +943,7 @@ class MachineCom(object):
 							"origin": self._currentFile.getFileLocation()
 						})
 				elif 'Writing to file' in line:
-					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
+					# answer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
 					self._changeState(self.STATE_PRINTING)
 					self._clear_to_send.set()
 					line = "ok"
@@ -1166,8 +1169,7 @@ class MachineCom(object):
 		else:
 			return False
 
-	def _openSerial(self):
-		if self._port == 'AUTO':
+	def detectPort(self, close):
 			self._changeState(self.STATE_DETECT_SERIAL)
 			programmer = stk500v2.Stk500v2()
 			self._log("Serial port list: %s" % (str(serialList())))
@@ -1188,6 +1190,31 @@ class MachineCom(object):
 				self._errorValue = 'Failed to autodetect serial port.'
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				return None
+			if (close):
+				self._serial.close()
+				self._serial = None
+			return p
+
+	def _openSerial(self):
+		self._logger.info("_openSerial")
+		for hook in self._serial_hooks:
+			self._changeState(self.STATE_OPEN_SERIAL)
+			_serialT = None
+			try:
+				serialT = self._serial_hooks[hook](self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
+			except Exception as e:
+				self._errorValue = get_exception_string()
+				self._changeState(self.STATE_ERROR)
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				return False
+			if serialT is not None:
+				self._serial = serialT
+				return True
+				# first hook to succeed wins, but any can pass on to the next
+
+		if self._port is None or self._port == 'AUTO':
+			if self.detectPort(False) is None:
 				return False
 		elif self._port == 'VIRTUAL':
 			self._changeState(self.STATE_OPEN_SERIAL)
