@@ -12,11 +12,6 @@
 # serve to show the default.
 
 import sys, os
-import octoprint._version
-from datetime import date
-
-year_since = 2013
-year_current = date.today().year
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -47,14 +42,14 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'OctoPrint'
-copyright = u'%d-%d, Gina Häußge' % (year_since, year_current) if year_current > year_since else u'%d, Gina Häußge' % year_since
+copyright = u'2013, Gina Häußge'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = octoprint._version.get_versions()["version"]
+version = open("../VERSION").read().strip()
 # The full version, including alpha/beta/rc tags.
 release = version
 

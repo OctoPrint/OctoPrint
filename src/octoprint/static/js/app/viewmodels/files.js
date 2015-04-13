@@ -106,21 +106,13 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isSdReady(data.flags.sdReady);
     };
 
-    self._otherRequestInProgress = false;
     self.requestData = function(filenameToFocus, locationToFocus) {
-        if (self._otherRequestInProgress) return;
-
-        self._otherRequestInProgress = true;
         $.ajax({
             url: API_BASEURL + "files",
             method: "GET",
             dataType: "json",
             success: function(response) {
                 self.fromResponse(response, filenameToFocus, locationToFocus);
-                self._otherRequestInProgress = false;
-            },
-            error: function() {
-                self._otherRequestInProgress = false;
             }
         });
     };
@@ -273,21 +265,21 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
             if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                 var filament = data["gcodeAnalysis"]["filament"];
                 if (_.keys(filament).length == 1) {
-                    output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
-                } else if (_.keys(filament).length > 1) {
-                    for (var toolKey in filament) {
-                        if (!_.startsWith(toolKey, "tool") || !filament[toolKey] || !filament[toolKey].hasOwnProperty("length") || filament[toolKey]["length"] <= 0) continue;
-
-                        output += gettext("Filament") + " (" + gettext("Tool") + " " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
-                    }
+                    output += "Filament: " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+                } else {
+                    var i = 0;
+                    do {
+                        output += "Filament (Tool " + i + "): " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
+                        i++;
+                    } while (filament.hasOwnProperty("tool" + i));
                 }
             }
-            output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
         }
         if (data["prints"] && data["prints"]["last"]) {
-            output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+            output += "<br>Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]);
             if (data["prints"]["last"]["lastPrintTime"]) {
-                output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                output += "<br>Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
             }
         }
         return output;
@@ -304,26 +296,5 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         }
     };
 
-    self.onDataUpdaterReconnect = function() {
-        self.requestData();
-    };
-
-    self.onStartup = function() {
-        self.requestData();
-    };
-
-    self.onUpdatedFiles = function(payload) {
-        if (payload.type == "gcode") {
-            self.requestData();
-        }
-    };
-
-    self.onSlicingDone = function(payload) {
-        self.requestData();
-    };
-
-    self.onMetadataAnalysisFinished = function(payload) {
-        self.requestData();
-    };
 }
 

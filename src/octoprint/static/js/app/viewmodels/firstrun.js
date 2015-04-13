@@ -34,7 +34,9 @@ function FirstRunViewModel() {
     };
 
     self.disableAccessControl = function() {
-        $("#confirmation_dialog .confirmation_dialog_message").html(gettext("If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>"));
+        $("#confirmation_dialog .confirmation_dialog_message").html("If you disable Access Control <strong>and</strong> your OctoPrint " +
+            "installation is accessible from the internet, your printer <strong>will be accessible by everyone - " +
+            "that also includes the bad guys!</strong>");
         $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
         $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {
             e.preventDefault();

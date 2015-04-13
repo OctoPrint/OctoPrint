@@ -195,26 +195,23 @@ class gcode(object):
 					absoluteE = False
 
 			elif T is not None:
-				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):
-					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
-				else:
-					posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-					posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+				posOffset[0] -= offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] -= offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
 
-					currentExtruder = T
+				currentExtruder = T
 
-					posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
-					posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
+				posOffset[0] += offsets[currentExtruder]["x"] if currentExtruder < len(offsets) else 0
+				posOffset[1] += offsets[currentExtruder]["y"] if currentExtruder < len(offsets) else 0
 
-					if len(currentE) <= currentExtruder:
-						for i in range(len(currentE), currentExtruder + 1):
-							currentE.append(0.0)
-					if len(maxExtrusion) <= currentExtruder:
-						for i in range(len(maxExtrusion), currentExtruder + 1):
-							maxExtrusion.append(0.0)
-					if len(totalExtrusion) <= currentExtruder:
-						for i in range(len(totalExtrusion), currentExtruder + 1):
-							totalExtrusion.append(0.0)
+				if len(currentE) <= currentExtruder:
+					for i in range(len(currentE), currentExtruder + 1):
+						currentE.append(0.0)
+				if len(maxExtrusion) <= currentExtruder:
+					for i in range(len(maxExtrusion), currentExtruder + 1):
+						maxExtrusion.append(0.0)
+				if len(totalExtrusion) <= currentExtruder:
+					for i in range(len(totalExtrusion), currentExtruder + 1):
+						totalExtrusion.append(0.0)
 
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)

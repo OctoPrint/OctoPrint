@@ -170,7 +170,7 @@ function UsersViewModel(loginStateViewModel) {
 
         if (user.name == loginStateViewModel.username()) {
             // we do not allow to delete ourselves
-            new PNotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
+            $.pnotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
             return;
         }
 

@@ -8,13 +8,10 @@ import sys
 import time
 import re
 import tempfile
-import logging
 from flask import make_response
 
 from octoprint.settings import settings, default_settings
 
-
-logger = logging.getLogger(__name__)
 
 def getFormattedSize(num):
 	"""
@@ -174,7 +171,6 @@ def safeRename(old, new):
 			os.remove(backup)
 		except OSError:
 			# if anything went wrong, try to rename the backup file to its original name
-			logger.error("Could not perform safe rename, trying to revert")
 			if os.path.exists(backup):
 				os.remove(new)
 			os.rename(backup, new)
@@ -248,36 +244,3 @@ def dict_merge(a, b):
 		else:
 			result[k] = deepcopy(v)
 	return result
-
-
-class Object(object):
-	pass
-
-def interface_addresses(family=None):
-	import netifaces
-	if not family:
-		family = netifaces.AF_INET
-
-	for interface in netifaces.interfaces():
-		try:
-			ifaddresses = netifaces.ifaddresses(interface)
-		except:
-			continue
-		if family in ifaddresses:
-			for ifaddress in ifaddresses[family]:
-				if not ifaddress["addr"].startswith("169.254."):
-					yield ifaddress["addr"]
-
-def address_for_client(host, port):
-	import socket
-
-	for address in interface_addresses():
-		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.bind((address, 0))
-			sock.connect((host, port))
-			return address
-		except Exception as e:
-			pass
-
-

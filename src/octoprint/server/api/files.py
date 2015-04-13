@@ -1,9 +1,8 @@
 # coding=utf-8
-from __future__ import absolute_import
+from octoprint.events import Events
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, make_response, url_for
 
@@ -11,10 +10,8 @@ import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.server import printer, gcodeManager, eventManager, NO_CONTENT
-from octoprint.server.util.flask import restricted_access
+from octoprint.server import printer, gcodeManager, eventManager, restricted_access, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.events import Events
 
 
 #~~ GCODE file handling
@@ -54,17 +51,14 @@ def _getFileList(origin):
 
 		files = []
 		if sdFileList is not None:
-			for sdFile, sdSize in sdFileList:
-				file = {
+			for sdFile in sdFileList:
+				files.append({
 					"name": sdFile,
 					"origin": FileDestinations.SDCARD,
 					"refs": {
 						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile, _external=True)
 					}
-				}
-				if sdSize is not None:
-					file.update({"size": sdSize})
-				files.append(file)
+				})
 	else:
 		files = gcodeManager.getAllFileData()
 		for file in files:
@@ -79,7 +73,7 @@ def _getFileList(origin):
 
 def _verifyFileExists(origin, filename):
 	if origin == FileDestinations.SDCARD:
-		availableFiles = map(lambda x: x[0], printer.getSdFiles())
+		availableFiles = printer.getSdFiles()
 	else:
 		availableFiles = gcodeManager.getAllFilenames()
 
@@ -92,22 +86,13 @@ def uploadGcodeFile(target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
 
-	input_name = "file"
-	input_upload_name = input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
-	input_upload_path = input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
-	if input_upload_name in request.values and input_upload_path in request.values:
-		import shutil
-		upload = util.Object()
-		upload.filename = request.values[input_upload_name]
-		upload.save = lambda new_path: shutil.move(request.values[input_upload_path], new_path)
-	elif input_name in request.files:
-		upload = request.files[input_name]
-	else:
+	if not "file" in request.files.keys():
 		return make_response("No file included", 400)
 
 	if target == FileDestinations.SDCARD and not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD card support is disabled", 404)
 
+	file = request.files["file"]
 	sd = target == FileDestinations.SDCARD
 	selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues
 	printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues
@@ -121,22 +106,22 @@ def uploadGcodeFile(target):
 
 	# determine current job
 	currentFilename = None
-	currentOrigin = None
+	currentSd = None
 	currentJob = printer.getCurrentJob()
-	if currentJob is not None and "file" in currentJob.keys():
-		currentJobFile = currentJob["file"]
-		if "name" in currentJobFile.keys() and "origin" in currentJobFile.keys():
-			currentFilename = currentJobFile["name"]
-			currentOrigin = currentJobFile["origin"]
+	if currentJob is not None and "filename" in currentJob.keys() and "sd" in currentJob.keys():
+		currentFilename = currentJob["filename"]
+		currentSd = currentJob["sd"]
 
 	# determine future filename of file to be uploaded, abort if it can't be uploaded
-	futureFilename = gcodeManager.getFutureFilename(upload)
+	futureFilename = gcodeManager.getFutureFilename(file)
 	if futureFilename is None or (not settings().getBoolean(["cura", "enabled"]) and not gcodefiles.isGcodeFileName(futureFilename)):
-		return make_response("Can not upload file %s, wrong format?" % upload.filename, 415)
+		return make_response("Can not upload file %s, wrong format?" % file.filename, 415)
 
 	# prohibit overwriting currently selected file while it's being printed
-	if futureFilename == currentFilename and target == currentOrigin and printer.isPrinting() or printer.isPaused():
+	if futureFilename == currentFilename and sd == currentSd and printer.isPrinting() or printer.isPaused():
 		return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
+
+	filename = None
 
 	def fileProcessingFinished(filename, absFilename, destination):
 		"""
@@ -148,10 +133,10 @@ def uploadGcodeFile(target):
 		if destination == FileDestinations.SDCARD:
 			return filename, printer.addSdFile(filename, absFilename, selectAndOrPrint)
 		else:
-			selectAndOrPrint(filename, absFilename, destination)
+			selectAndOrPrint(absFilename, destination)
 			return filename
 
-	def selectAndOrPrint(filename, absFilename, destination):
+	def selectAndOrPrint(nameToSelect, destination):
 		"""
 		Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
 		the case after they have finished streaming to the printer, which is why this callback is also used
@@ -160,12 +145,14 @@ def uploadGcodeFile(target):
 		Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
 		exact file is already selected, such reloading it.
 		"""
-		if selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination):
-			printer.selectFile(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
+		sd = destination == FileDestinations.SDCARD
+		if selectAfterUpload or printAfterSelect or (currentFilename == filename and currentSd == sd):
+			printer.selectFile(nameToSelect, sd, printAfterSelect)
 
-	filename, done = gcodeManager.addFile(upload, target, fileProcessingFinished)
+	destination = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
+	filename, done = gcodeManager.addFile(file, destination, fileProcessingFinished)
 	if filename is None:
-		return make_response("Could not upload the file %s" % upload.filename, 500)
+		return make_response("Could not upload the file %s" % file.filename, 500)
 
 	sdFilename = None
 	if isinstance(filename, tuple):

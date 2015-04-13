@@ -1,17 +1,13 @@
 # coding=utf-8
-from __future__ import absolute_import
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, make_response, Response
+from flask import request, jsonify, make_response
 import re
 
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.server import printer, NO_CONTENT
+from octoprint.server import printer, restricted_access, NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
 import octoprint.util as util
 
 #~~ Printer
@@ -42,7 +38,10 @@ def printerState():
 	# add state information
 	if not "state" in excludes:
 		state = printer.getCurrentData()["state"]
-		result.update({"state": state})
+		result.update({"state": {
+			"text": state["stateString"],
+			"flags": state["flags"]
+		}})
 
 	return jsonify(result)
 
@@ -129,9 +128,6 @@ def printerToolCommand():
 
 @api.route("/printer/tool", methods=["GET"])
 def printerToolState():
-	if not printer.isOperational():
-		return make_response("Printer is not operational", 409)
-
 	def deleteBed(x):
 		data = dict(x)
 
@@ -188,9 +184,6 @@ def printerBedCommand():
 
 @api.route("/printer/bed", methods=["GET"])
 def printerBedState():
-	if not printer.isOperational():
-		return make_response("Printer is not operational", 409)
-
 	def deleteTools(x):
 		data = dict(x)
 
@@ -199,11 +192,7 @@ def printerBedState():
 				del data[k]
 		return data
 
-	data = _getTemperatureData(deleteTools)
-	if isinstance(data, Response):
-		return data
-	else:
-		return jsonify(data)
+	return jsonify(_getTemperatureData(deleteTools))
 
 
 ##~~ Print head

@@ -1,8 +1,0 @@
-[main]
-host = https://www.transifex.com
-
-[octoprint.messages]
-file_filter = src/octoprint/translations/<lang>/LC_MESSAGES/messages.po
-source_file = src/octoprint/translations/messages.pot
-source_lang = en
-

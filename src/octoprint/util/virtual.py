@@ -155,20 +155,8 @@ class VirtualPrinter():
 
 	def _listSd(self):
 		self.readList.append("Begin file list")
-		if settings().getBoolean(["devel", "virtualPrinter", "extendedSdFileList"]):
-			self.readList.extend(
-				map(
-					lambda x: "%s %d" % (x.upper(), os.stat(os.path.join(self._virtualSd, x)).st_size),
-					os.listdir(self._virtualSd)
-				)
-			)
-		else:
-			self.readList.extend(
-				map(
-					lambda x: x.upper(),
-					os.listdir(self._virtualSd)
-				)
-			)
+		for osFile in os.listdir(self._virtualSd):
+			self.readList.append(osFile.upper())
 		self.readList.append("End file list")
 		self._sendOk()
 

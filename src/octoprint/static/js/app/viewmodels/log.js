@@ -49,7 +49,7 @@ function LogViewModel(loginStateViewModel) {
             return;
 
         self.listHelper.updateItems(files);
-    };
+    }
 
     self.removeFile = function(filename) {
         $.ajax({
@@ -58,13 +58,5 @@ function LogViewModel(loginStateViewModel) {
             dataType: "json",
             success: self.requestData
         });
-    };
-
-    self.onDataUpdaterReconnect = function() {
-        self.requestData();
-    };
-
-    self.onStartup = function() {
-        self.requestData();
-    };
+    }
 }

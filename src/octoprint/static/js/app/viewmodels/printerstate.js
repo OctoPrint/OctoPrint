@@ -24,16 +24,13 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.filament = ko.observableArray([]);
     self.estimatedPrintTime = ko.observable(undefined);
-    self.lastPrintTime = ko.observable(undefined);
 
     self.currentHeight = ko.observable(undefined);
 
     self.estimatedPrintTimeString = ko.computed(function() {
-        if (self.lastPrintTime())
-            return formatDuration(self.lastPrintTime());
-        if (self.estimatedPrintTime())
-            return formatDuration(self.estimatedPrintTime());
-        return "-";
+        if (!self.estimatedPrintTime())
+            return "-";
+        return formatDuration(self.estimatedPrintTime());
     });
     self.byteString = ko.computed(function() {
         if (!self.filesize())
@@ -55,7 +52,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         if (!self.printTimeLeft())
             return "-";
         return formatDuration(self.printTimeLeft());
-    });
+    })
     self.progressString = ko.computed(function() {
         if (!self.progress())
             return 0;
@@ -63,9 +60,9 @@ function PrinterStateViewModel(loginStateViewModel) {
     });
     self.pauseString = ko.computed(function() {
         if (self.isPaused())
-            return gettext("Continue");
+            return "Continue";
         else
-            return gettext("Pause");
+            return "Pause";
     });
 
     self.timelapseString = ko.computed(function() {
@@ -76,9 +73,9 @@ function PrinterStateViewModel(loginStateViewModel) {
 
         var type = timelapse["type"];
         if (type == "zchange") {
-            return gettext("On Z Change");
+            return "On Z Change";
         } else if (type == "timed") {
-            return gettext("Timed") + " (" + timelapse["options"]["interval"] + " " + gettext("sec") + ")";
+            return "Timed (" + timelapse["options"]["interval"] + "s)";
         } else {
             return "-";
         }
@@ -86,25 +83,25 @@ function PrinterStateViewModel(loginStateViewModel) {
 
     self.fromCurrentData = function(data) {
         self._fromData(data);
-    };
+    }
 
     self.fromHistoryData = function(data) {
         self._fromData(data);
-    };
+    }
 
     self.fromTimelapseData = function(data) {
         self.timelapse(data);
-    };
+    }
 
     self._fromData = function(data) {
-        self._processStateData(data.state);
+        self._processStateData(data.state)
         self._processJobData(data.job);
         self._processProgressData(data.progress);
         self._processZData(data.currentZ);
-    };
+    }
 
     self._processStateData = function(data) {
-        self.stateString(gettext(data.text));
+        self.stateString(data.stateString);
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);
@@ -112,7 +109,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.isError(data.flags.error);
         self.isReady(data.flags.ready);
         self.isSdReady(data.flags.sdReady);
-    };
+    }
 
     self._processJobData = function(data) {
         if (data.file) {
@@ -124,23 +121,22 @@ function PrinterStateViewModel(loginStateViewModel) {
             self.filesize(undefined);
             self.sd(undefined);
         }
-
         self.estimatedPrintTime(data.estimatedPrintTime);
-        self.lastPrintTime(data.lastPrintTime);
 
         var result = [];
         if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
-            for (var key in data.filament) {
-                if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) continue;
-
-                result.push({
-                    name: ko.observable(gettext("Tool") + " " + key.substr("tool".length)),
+            var i = 0;
+            do {
+                var key = "tool" + i;
+                result[i] = {
+                    name: ko.observable("Tool " + i),
                     data: ko.observable(data.filament[key])
-                });
-            }
+                }
+                i++;
+            } while (data.filament.hasOwnProperty("tool" + i));
         }
         self.filament(result);
-    };
+    }
 
     self._processProgressData = function(data) {
         if (data.completion) {
@@ -151,19 +147,19 @@ function PrinterStateViewModel(loginStateViewModel) {
         self.filepos(data.filepos);
         self.printTime(data.printTime);
         self.printTimeLeft(data.printTimeLeft);
-    };
+    }
 
     self._processZData = function(data) {
         self.currentHeight(data);
-    };
+    }
 
     self.print = function() {
         var restartCommand = function() {
             self._jobCommand("restart");
-        };
+        }
 
         if (self.isPaused()) {
-            $("#confirmation_dialog .confirmation_dialog_message").text(gettext("This will restart the print job from the beginning."));
+            $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
             $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
             $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); restartCommand(); });
             $("#confirmation_dialog").modal("show");
@@ -171,15 +167,15 @@ function PrinterStateViewModel(loginStateViewModel) {
             self._jobCommand("start");
         }
 
-    };
+    }
 
     self.pause = function() {
         self._jobCommand("pause");
-    };
+    }
 
     self.cancel = function() {
         self._jobCommand("cancel");
-    };
+    }
 
     self._jobCommand = function(command) {
         $.ajax({
