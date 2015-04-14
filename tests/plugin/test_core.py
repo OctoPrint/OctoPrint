@@ -23,7 +23,7 @@ class PluginTestCase(unittest.TestCase):
 		self.plugin_manager.initialize_implementations()
 
 	def test_plugin_loading(self):
-		self.assertEquals(5, len(self.plugin_manager.plugins))
+		self.assertEquals(5, len(self.plugin_manager.enabled_plugins))
 		self.assertEquals(1, len(self.plugin_manager.plugin_hooks))
 		self.assertEquals(4, len(self.plugin_manager.plugin_implementations))
 		self.assertEquals(3, len(self.plugin_manager.plugin_implementations_by_type))
@@ -65,8 +65,8 @@ class PluginTestCase(unittest.TestCase):
 		all_implementations = self.plugin_manager.plugin_implementations
 		self.assertEquals(4, len(all_implementations))
 		for name, impl in all_implementations.items():
-			self.assertTrue(name in self.plugin_manager.plugins)
-			plugin = self.plugin_manager.plugins[name]
+			self.assertTrue(name in self.plugin_manager.enabled_plugins)
+			plugin = self.plugin_manager.enabled_plugins[name]
 
 			# test that the standard fields were properly initialized
 			self.assertTrue(hasattr(impl, "_identifier"))
@@ -162,8 +162,8 @@ class PluginTestCase(unittest.TestCase):
 		client2.on_plugin_message.assert_called_once_with(plugin, data)
 
 	def test_validate_plugin(self):
-		self.assertTrue("deprecated_plugin" in self.plugin_manager.plugins)
+		self.assertTrue("deprecated_plugin" in self.plugin_manager.enabled_plugins)
 
-		plugin = self.plugin_manager.plugins["deprecated_plugin"]
+		plugin = self.plugin_manager.enabled_plugins["deprecated_plugin"]
 		self.assertTrue(hasattr(plugin.instance, plugin.__class__.attr_implementation))
 		self.assertFalse(hasattr(plugin.instance, plugin.__class__.attr_implementations))

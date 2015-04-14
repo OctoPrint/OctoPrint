@@ -92,19 +92,27 @@ class PluginInfo(object):
 	""" Module attribute which to call to determine if the plugin can be loaded. """
 
 	attr_init = '__plugin_init__'
-	""" Module attribute which to call when loading the plugin. """
+	"""
+	Module attribute which to call when loading the plugin.
+
+	This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_load`.
+
+	.. deprecated:: 1.2.0-dev-720
+
+	   Use :attr:`attr_load` instead.
+	"""
 
 	attr_load = '__plugin_load__'
+	""" Module attribute which to call when loading the plugin. """
 
 	attr_unload = '__plugin_unload__'
+	""" Module attribute which to call when unloading the plugin. """
 
 	attr_enable = '__plugin_enable__'
+	""" Module attribute which to call when enabling the plugin. """
 
 	attr_disable = '__plugin_disable__'
-
-	attr_activate = '__plugin_activate__'
-
-	attr_deactivate = '__plugin_deactivate__'
+	""" Module attribute which to call when disabling the plugin. """
 
 	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None):
 		self.key = key
@@ -139,24 +147,65 @@ class PluginInfo(object):
 			# delete __plugin_implementations__
 			delattr(self.instance, self.__class__.attr_implementations)
 
+		# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
+		if hasattr(self.instance, self.__class__.attr_init):
+			if not hasattr(self.instance, self.__class__.attr_load):
+				# deprecation warning
+				import warnings
+				warnings.warn("{name} uses deprecated control property __plugin_init__, use __plugin_load__ instead".format(name=self.key), DeprecationWarning)
+
+				# move it
+				init = getattr(self.instance, self.__class__.attr_init)
+				setattr(self.instance, self.__class__.attr_load, init)
+
+			# delete __plugin_init__
+			delattr(self.instance, self.__class__.attr_init)
+
 	def __str__(self):
 		if self.version:
 			return "{name} ({version})".format(name=self.name, version=self.version)
 		else:
 			return self.name
 
-	def long_str(self, show_bundled=False, bundled_str=(" [B]", ""),
+	def long_str(self, show_bundled=False, bundled_strs=(" [B]", ""),
 	             show_location=False, location_str=" - {location}",
-	             show_enabled=False, enabled_str=("* ", "  ")):
+	             show_enabled=False, enabled_strs=("* ", "  ")):
+		"""
+		Long string representation of the plugin's information. Will return a string of the format ``<enabled><str(self)><bundled><location>``.
+
+		``enabled``, ``bundled`` and ``location`` will only be displayed if the corresponding flags are set to ``True``.
+		The will be filled from ``enabled_str``, ``bundled_str`` and ``location_str`` as follows:
+
+		``enabled_str``
+		    a 2-tuple, the first entry being the string to insert when the plugin is enabled, the second
+		    entry the string to insert when it is not.
+		``bundled_str``
+		    a 2-tuple, the first entry being the string to insert when the plugin is bundled, the second
+		    entry the string to insert when it is not.
+		``location_str``
+		    a format string (to be parsed with ``str.format``), the ``{location}`` placeholder will be
+		    replaced with the plugin's installation folder on disk.
+
+		Arguments:
+		    show_enabled (boolean): whether to show the ``enabled`` part
+		    enabled_strs (tuple): the 2-tuple containing the two possible strings to use for displaying the enabled state
+		    show_bundled (boolean): whether to show the ``bundled`` part
+		    bundled_strs(tuple): the 2-tuple containing the two possible strings to use for displaying the bundled state
+		    show_location (boolean): whether to show the ``location`` part
+		    location_str (str): the format string to use for displaying the plugin's installation location
+
+		Returns:
+		    str: The long string representation of the plugin as described above
+		"""
 		if show_enabled:
-			ret = enabled_str[0] if self.enabled else enabled_str[1]
+			ret = enabled_strs[0] if self.enabled else enabled_strs[1]
 		else:
 			ret = ""
 
 		ret += str(self)
 
 		if show_bundled:
-			ret += bundled_str[0] if self.bundled else bundled_str[1]
+			ret += bundled_strs[0] if self.bundled else bundled_strs[1]
 
 		if show_location and self.location:
 			ret += location_str.format(location=self.location)
@@ -313,33 +362,41 @@ class PluginInfo(object):
 		in :attr:`attr_load` if available, otherwise a no-operation lambda will be returned.
 
 		Returns:
-		    callable: Init method for the plugin module.
+		    callable: Load method for the plugin module.
 		"""
-		load = self._get_instance_attribute(self.__class__.attr_load, default=None)
-		if load is None:
-			load = self._get_instance_attribute(self.__class__.attr_init, default=lambda:True)
-		return load
+		return self._get_instance_attribute(self.__class__.attr_load, default=lambda: True)
 
 	@property
 	def unload(self):
+		"""
+		Method for unloading the plugin module. Will be taken from the unload attribute of the plugin module as defined
+		in :attr:`attr_unload` if available, otherwise a no-operation lambda will be returned.
+
+		Returns:
+		    callable: Unload method for the plugin module.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_unload, default=lambda: True)
 
 	@property
-	def activate(self):
-		return self._get_instance_attribute(self.__class__.attr_activate, default=lambda: True)
-
-	@property
-	def deactivate(self):
-		return self._get_instance_attribute(self.__class__.attr_deactivate, default=lambda: True)
-
-	@property
 	def enable(self):
-		self.enabled = True
+		"""
+		Method for enabling the plugin module. Will be taken from the enable attribute of the plugin module as defined
+		in :attr:`attr_enable` if available, otherwise a no-operation lambda will be returned.
+
+		Returns:
+		    callable: Enable method for the plugin module.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_enable, default=lambda: True)
 
 	@property
 	def disable(self):
-		self.enabled = False
+		"""
+		Method for disabling the plugin module. Will be taken from the disable attribute of the plugin module as defined
+		in :attr:`attr_disable` if available, otherwise a no-operation lambda will be returned.
+
+		Returns:
+		    callable: Disable method for the plugin module.
+		"""
 		return self._get_instance_attribute(self.__class__.attr_disable, default=lambda: True)
 
 	def _get_instance_attribute(self, attr, default=None, defaults=None):
@@ -374,15 +431,14 @@ class PluginManager(object):
 		self.plugin_disabled_list = plugin_disabled_list
 		self.logging_prefix = logging_prefix
 
-		self.plugins = dict()
+		self.enabled_plugins = dict()
+		self.disabled_plugins = dict()
 		self.plugin_hooks = defaultdict(list)
 		self.plugin_implementations = dict()
 		self.plugin_implementations_by_type = defaultdict(list)
 
 		self.implementation_injects = dict()
 		self.implementation_inject_factories = []
-
-		self.disabled_plugins = dict()
 
 		self.on_plugin_loaded = lambda *args, **kwargs: None
 		self.on_plugin_unloaded = lambda *args, **kwargs: None
@@ -395,14 +451,14 @@ class PluginManager(object):
 		self.reload_plugins(startup=True, initialize_implementations=False)
 
 	@property
-	def all_plugins(self):
-		plugins = dict(self.plugins)
+	def plugins(self):
+		plugins = dict(self.enabled_plugins)
 		plugins.update(self.disabled_plugins)
 		return plugins
 
 	def find_plugins(self, existing=None):
 		if existing is None:
-			existing = self.all_plugins
+			existing = self.plugins
 
 		result = dict()
 		if self.plugin_folders:
@@ -547,22 +603,22 @@ class PluginManager(object):
 			except (PluginLifecycleException, PluginNeedsRestart):
 				pass
 
-		if len(self.plugins) <= 0:
+		if len(self.enabled_plugins) <= 0:
 			self.logger.info("No plugins found")
 		else:
 			self.logger.info("Found {count} plugin(s) providing {implementations} mixin implementations, {hooks} hook handlers".format(
-				count=len(self.plugins) + len(self.disabled_plugins),
+				count=len(self.enabled_plugins) + len(self.disabled_plugins),
 				implementations=len(self.plugin_implementations),
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
 
 	def load_plugin(self, name, plugin=None, startup=False, initialize_implementation=True):
-		if not name in self.all_plugins:
+		if not name in self.plugins:
 			self.logger.warn("Trying to load an unknown plugin {name}".format(**locals()))
 			return
 
 		if plugin is None:
-			plugin = self.all_plugins[name]
+			plugin = self.plugins[name]
 
 		try:
 			plugin.load()
@@ -578,11 +634,11 @@ class PluginManager(object):
 			self.logger.exception("There was an error loading plugin %s" % name)
 
 	def unload_plugin(self, name):
-		if not name in self.all_plugins:
+		if not name in self.plugins:
 			self.logger.warn("Trying to unload unknown plugin {name}".format(**locals()))
 			return
 
-		plugin = self.all_plugins[name]
+		plugin = self.plugins[name]
 
 		try:
 			if plugin.enabled:
@@ -591,8 +647,8 @@ class PluginManager(object):
 			plugin.unload()
 			self.on_plugin_unloaded(name, plugin)
 
-			if name in self.plugins:
-				del self.plugins[name]
+			if name in self.enabled_plugins:
+				del self.enabled_plugins[name]
 
 			if name in self.disabled_plugins:
 				del self.disabled_plugins[name]
@@ -606,8 +662,8 @@ class PluginManager(object):
 			self.logger.exception("There was an error unloading plugin {name}".format(**locals()))
 
 			# make sure the plugin is NOT in the list of enabled plugins but in the list of disabled plugins
-			if name in self.plugins:
-				del self.plugins[name]
+			if name in self.enabled_plugins:
+				del self.enabled_plugins[name]
 			if not name in self.disabled_plugins:
 				self.disabled_plugins[name] = plugin
 
@@ -633,7 +689,7 @@ class PluginManager(object):
 		else:
 			if name in self.disabled_plugins:
 				del self.disabled_plugins[name]
-			self.plugins[name] = plugin
+			self.enabled_plugins[name] = plugin
 			plugin.enabled = True
 
 			if plugin.implementation:
@@ -648,12 +704,12 @@ class PluginManager(object):
 		return True
 
 	def disable_plugin(self, name, plugin=None):
-		if not name in self.plugins:
+		if not name in self.enabled_plugins:
 			self.logger.warn("Tried to disable plugin {name}, however it is not enabled".format(**locals()))
 			return
 
 		if plugin is None:
-			plugin = self.plugins[name]
+			plugin = self.enabled_plugins[name]
 
 		if plugin.implementation and isinstance(plugin.implementation, RestartNeedingPlugin):
 			raise PluginNeedsRestart(name)
@@ -667,8 +723,8 @@ class PluginManager(object):
 			self.logger.exception("There was an error while disabling plugin {name}".format(**locals()))
 			return False
 		else:
-			if name in self.plugins:
-				del self.plugins[name]
+			if name in self.enabled_plugins:
+				del self.enabled_plugins[name]
 			self.disabled_plugins[name] = plugin
 			plugin.enabled = False
 
@@ -716,7 +772,7 @@ class PluginManager(object):
 					pass
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
-		for name, plugin in self.plugins.items():
+		for name, plugin in self.enabled_plugins.items():
 			self.initialize_implementation_of_plugin(name, plugin,
 			                                         additional_injects=additional_injects,
 			                                         additional_inject_factories=additional_inject_factories)
@@ -789,7 +845,7 @@ class PluginManager(object):
 
 
 	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True, location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!")):
-		all_plugins = self.plugins.values() + self.disabled_plugins.values()
+		all_plugins = self.enabled_plugins.values() + self.disabled_plugins.values()
 
 		if len(all_plugins) <= 0:
 			self.logger.info("No plugins available")
@@ -797,12 +853,12 @@ class PluginManager(object):
 			self.logger.info("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins), plugins="\n".join(
 				sorted(
 					map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
-					                                bundled_str=bundled_str,
+					                                bundled_strs=bundled_str,
 					                                show_location=show_location,
 					                                location_str=location_str,
 					                                show_enabled=show_enabled,
-					                                enabled_str=enabled_str),
-					    self.plugins.values())
+					                                enabled_strs=enabled_str),
+					    self.enabled_plugins.values())
 				)
 			)))
 
@@ -839,8 +895,8 @@ class PluginManager(object):
 		    ~.PluginInfo: The requested :class:`PluginInfo` or None
 		"""
 
-		if identifier in self.plugins:
-			return self.plugins[identifier]
+		if identifier in self.enabled_plugins:
+			return self.enabled_plugins[identifier]
 		elif not require_enabled and identifier in self.disabled_plugins:
 			return self.disabled_plugins[identifier]
 
@@ -917,9 +973,9 @@ class PluginManager(object):
 		        registered with the system.
 		"""
 
-		if not name in self.plugins:
+		if not name in self.enabled_plugins:
 			return None
-		plugin = self.plugins[name]
+		plugin = self.enabled_plugins[name]
 
 		all_helpers = plugin.helpers
 		if len(helpers):

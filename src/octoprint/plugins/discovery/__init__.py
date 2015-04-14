@@ -28,7 +28,7 @@ __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery"
 __plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
 __plugin_license__ = "AGPLv3"
 
-def __plugin_init__():
+def __plugin_load__():
 	if not pybonjour:
 		# no pybonjour available, we can't use that
 		logging.getLogger("octoprint.plugins." + __name__).info("pybonjour is not installed, Zeroconf Discovery won't be available")

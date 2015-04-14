@@ -60,9 +60,15 @@ The following properties are recognized:
   Method called upon discovery of the plugin by the plugin subsystem, should return ``True`` if the
   plugin can be instantiated later on, ``False`` if there are reasons why not, e.g. if dependencies
   are missing.
-``__plugin_init__``
-  Method called upon initializing of the plugin by the plugin subsystem, can be used to instantiate
+``__plugin_load__``
+  Method called upon loading of the plugin by the plugin subsystem, can be used to instantiate
   plugin implementations, connecting them to hooks etc.
+``__plugin_unload__``
+  Method called upon unloading of the plugin by the plugin subsystem, can be used to do any final clean ups.
+``__plugin_enable__``
+  Method called upon enabling of the plugin by the plugin subsystem. Also see :func:`~octoprint.plugin.core.Plugin.on_plugin_enabled``.
+``__plugin_disable__``
+  Method called upon disabling of the plugin by the plugin subsystem. Also see :func:`~octoprint.plugin.core.Plugin.on_plugin_disabled``.
 
 .. _sec-plugin-concepts-mixins:
 
@@ -323,3 +329,12 @@ An overview of these properties follows.
 
    :ref:`Available Mixins <sec-plugins-mixins>`
        Some mixin types trigger the injection of additional properties.
+
+.. _sec-plugins-concept-lifecycle:
+
+Lifecycle
+---------
+
+.. image:: ../images/plugins_lifecycle.png
+   :align: center
+   :alt: The lifecycle of OctoPrint plugins.
