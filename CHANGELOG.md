@@ -115,6 +115,9 @@
   for those people who do indeed have their printer connected to ``/dev/ttyAMA0``.
 * Better behaviour of the settings dialog on low-width devices, navigation and content also now scroll independently 
   from each other (see also [#823](https://github.com/foosel/OctoPrint/pull/823))
+* Renamed "Temperature Timeout" and "SD Status Timeout" in Settings to "Temperature Interval" and "SD Status Interval"
+  to better reflect what those values are actually used for.
+* Better behaviour of the settings dialog on mobile devices.
 
 ### Bug Fixes
 
@@ -175,6 +178,9 @@
   * Fixed handling of SD card files in folders
   * Fixed refreshing of timelapse file list upon finished rendering of a new one
   * Fixed ``/api/printer`` which wasn't adapter yet to new internal offset data model
+  * Made initial connection to printer a bit more responsive: Having to wait for the first serial timeout before sending 
+    the first ``M105`` even when not waiting for seeing a "start" caused unnecessary wait times for reaching the 
+    "Operational" state.
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 

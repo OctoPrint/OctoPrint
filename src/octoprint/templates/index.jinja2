@@ -7,137 +7,143 @@
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
         {% include 'stylesheets.jinja2' %}
         {% include 'initscript.jinja2' %}
     </head>
     <body>
-        <div id="navbar" class="navbar navbar-static-top">
-            <div class="navbar-inner" data-bind="css: appearanceClasses">
-                <div class="container">
-                    <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
-                    <div class="nav-collapse">
-                        <!-- Navbar -->
-                        <ul class="nav pull-right">
-                            {% for key in templates.navbar.order %}
-                                {% set data = templates.navbar.entries[key] %}
-                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-                                <li id="{{ data._div }}"
-                                    {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                                    {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}
-                                    {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}
+        <div class="page-container">
+            <div id="navbar" class="navbar navbar-static-top">
+                <div class="navbar-inner" data-bind="css: appearanceClasses">
+                    <div class="container">
+                        <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
+                        <div class="nav-collapse">
+                            <!-- Navbar -->
+                            <ul class="nav pull-right">
+                                {% for key in templates.navbar.order %}
+                                    {% set data = templates.navbar.entries[key] %}
+                                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                                    <li id="{{ data._div }}"
+                                        {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                        {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}
+                                        {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}
+                                            >
+                                        {% include data.template ignore missing %}
+                                    </li>
+                                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container octoprint-container">
+                <div class="row">
+                    <!-- Sidebar -->
+                    {% if templates.sidebar.order %}
+                    <div class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
+                        {% for key in templates.sidebar.order %}
+                            {% set entry, data = templates.sidebar.entries[key] %}
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                            <div id="{{ data._div }}_wrapper"
+                                 class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                 {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                 {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                    >
+                                <div class="accordion-heading">
+                                    <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
+                                        {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry }}
+                                    </a>
+                                    {% if "template_header" in data %}
+                                        {% include data.template_header ignore missing %}
+                                    {% endif %}
+                                </div>
+                                <div id="{{ data._div }}"
+                                     class="accordion-body collapse in {% if "classes_content" in data %}{{ data.classes_content|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                     {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
                                         >
-                                    {% include data.template ignore missing %}
+                                    <div class="accordion-inner">
+                                        {% include data.template ignore missing %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Tabs -->
+                    {% if templates.tab.order %}
+                    <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}">
+                        <ul class="nav nav-tabs" id="tabs">
+                            {% for key in templates.tab.order %}
+                                {% set entry, data = templates.tab.entries[key] %}
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                                <li id="{{ data._div }}_link"
+                                    class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                                    {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                    {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                        >
+                                        <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
                                 </li>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                             {% endfor %}
                         </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="container octoprint-container">
-            <div class="row">
-                <!-- Sidebar -->
-                {% if templates.sidebar.order %}
-                <div class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
-                    {% for key in templates.sidebar.order %}
-                        {% set entry, data = templates.sidebar.entries[key] %}
-                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-                        <div id="{{ data._div }}_wrapper"
-                             class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
-                             {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                             {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                                >
-                            <div class="accordion-heading">
-                                <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
-                                    {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry }}
-                                </a>
-                                {% if "template_header" in data %}
-                                    {% include data.template_header ignore missing %}
-                                {% endif %}
-                            </div>
-                            <div id="{{ data._div }}"
-                                 class="accordion-body collapse in {% if "classes_content" in data %}{{ data.classes_content|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
-                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
-                                    >
-                                <div class="accordion-inner">
-                                    {% include data.template ignore missing %}
+
+                        <div class="tab-content">
+                            {% for key in templates.tab.order %}
+                                {% set entry, data = templates.tab.entries[key] %}
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                                <div id="{{ data._div }}"
+                                     class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
+                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                                     {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                                        >
+                                            {% include data.template ignore missing %}
                                 </div>
-                            </div>
+                                {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                            {% endfor %}
                         </div>
-                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <!-- Tabs -->
-                {% if templates.tab.order %}
-                <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}">
-                    <ul class="nav nav-tabs" id="tabs">
-                        {% for key in templates.tab.order %}
-                            {% set entry, data = templates.tab.entries[key] %}
-                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-                            <li id="{{ data._div }}_link"
-                                class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
-                                {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                                {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                                    >
-                                    <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
-                            </li>
-                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                        {% endfor %}
-                    </ul>
-
-                    <div class="tab-content">
-                        {% for key in templates.tab.order %}
-                            {% set entry, data = templates.tab.entries[key] %}
-                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-                            <div id="{{ data._div }}"
-                                 class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
-                                 {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                                    >
-                                        {% include data.template ignore missing %}
-                            </div>
-                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                        {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
-                {% endif %}
+                <div class="footer">
+                    <ul class="pull-left muted">
+                        <li><small>{{ _('Version') }}: <span class="version">{{ display_version }}</span></small></li>
+                    </ul>
+                    <ul class="pull-right">
+                        <li><a href="http://octoprint.org"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> {{ _('Sourcecode') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
+                    </ul>
+                </div>
             </div>
-            <div class="footer">
-                <ul class="pull-left muted">
-                    <li><small>{{ _('Version') }}: <span class="version">{{ display_version }}</span></small></li>
-                </ul>
-                <ul class="pull-right">
-                    <li><a href="http://octoprint.org"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-download"></i> {{ _('Sourcecode') }}</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/wiki"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
-                </ul>
-            </div>
+
+            <!-- Dialogs -->
+            {% include 'dialogs/confirmation.jinja2' %}
+            {% include 'dialogs/firstrun.jinja2' %}
+            {% include 'dialogs/settings.jinja2' %}
+            {% include 'dialogs/slicing.jinja2' %}
+            {% include 'dialogs/usersettings.jinja2' %}
+            <!-- End of dialogs -->
+
+            <!-- Overlays -->
+            {% include 'overlays/dragndrop.jinja2' %}
+            {% include 'overlays/offline.jinja2' %}
+            <!-- End of overlays -->
+
+            <!-- Generic plugin template files -->
+            {% for key in templates.generic.order %}
+                {% set data = templates.generic.entries[key] %}
+                {% include data.template ignore missing %}
+            {% endfor %}
+            <!-- End of generic plugin template files -->
+
+            {% include 'javascripts.jinja2' %}
         </div>
-
-        <!-- Dialogs -->
-        {% include 'dialogs/confirmation.jinja2' %}
-        {% include 'dialogs/firstrun.jinja2' %}
-        {% include 'dialogs/settings.jinja2' %}
-        {% include 'dialogs/slicing.jinja2' %}
-        {% include 'dialogs/usersettings.jinja2' %}
-        <!-- End of dialogs -->
-
-        <!-- Overlays -->
-        {% include 'overlays/dragndrop.jinja2' %}
-        {% include 'overlays/offline.jinja2' %}
-        <!-- End of overlays -->
-
-        <!-- Generic plugin template files -->
-        {% for key in templates.generic.order %}
-            {% set data = templates.generic.entries[key] %}
-            {% include data.template ignore missing %}
-        {% endfor %}
-        <!-- End of generic plugin template files -->
-
-        {% include 'javascripts.jinja2' %}
     </body>
 </html>
