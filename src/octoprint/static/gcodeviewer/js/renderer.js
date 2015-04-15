@@ -266,11 +266,6 @@ GCODE.renderer = (function(){
             y: -1 * renderOptions["bed"]["y"] * zoomFactor
         };
 
-        if (renderOptions["bed"]["centeredOrigin"]) {
-            origin.x -= width / 2;
-            origin.y += height / 2;
-        }
-
         ctx.beginPath();
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.fillStyle = "#ffffff";
@@ -286,15 +281,15 @@ GCODE.renderer = (function(){
 
         ctx.beginPath();
         for (i = 0; i <= renderOptions["bed"]["x"]; i += gridStep) {
-            ctx.moveTo(origin.x + i * zoomFactor, origin.y);
-            ctx.lineTo(origin.x + i * zoomFactor, origin.y + height);
+            ctx.moveTo(i * zoomFactor, 0);
+            ctx.lineTo(i * zoomFactor, -1 * renderOptions["bed"]["y"] * zoomFactor);
         }
         ctx.stroke();
 
         ctx.beginPath();
         for (i = 0; i <= renderOptions["bed"]["y"]; i += gridStep) {
-            ctx.moveTo(origin.x, origin.y + i * zoomFactor);
-            ctx.lineTo(origin.x + width, origin.y + i * zoomFactor);
+            ctx.moveTo(0, -1 * i * zoomFactor);
+            ctx.lineTo(renderOptions["bed"]["x"] * zoomFactor, -1 * i * zoomFactor);
         }
         ctx.stroke();
     };
@@ -501,7 +496,7 @@ GCODE.renderer = (function(){
             offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
             offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
             offsetBedY = (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
-        } else if (renderOptions["bed"]["circular"] || renderOptions["bed"]["centeredOrigin"]) {
+        } else if (renderOptions["bed"]["circular"]) {
             canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
             offsetModelX = canvasCenter.x;
             offsetModelY = canvasCenter.y;

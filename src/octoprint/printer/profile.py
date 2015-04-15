@@ -72,11 +72,6 @@ class PrinterProfileManager(object):
 	   * - ``volume.formFactor``
 	     - ``string``
 	     - Form factor of the print bed, either ``rectangular`` or ``circular``
-	   * - ``centeredOrigin``
-	     - ``bool``
-		 - Whether the printer's origin is in the center of the bed, otherwise
-		 - the origin is assumed to be the lower left and all valid coordinates
-		 - positive.
 	   * - ``heatedBed``
 	     - ``bool``
 	     - Whether the printer has a heated bed (``True``) or not (``False``)
@@ -145,7 +140,6 @@ class PrinterProfileManager(object):
 			formFactor = BedTypes.RECTANGULAR,
 		),
 		heatedBed = False,
-		centeredOrigin = False,
 		extruder=dict(
 			count = 1,
 			offsets = [
@@ -297,7 +291,6 @@ class PrinterProfileManager(object):
 		import yaml
 		with open(path) as f:
 			profile = yaml.safe_load(f)
-		profile = dict_merge(self._load_default(), profile)
 		profile = self._ensure_valid_profile(profile)
 		if not profile:
 			self._logger.warn("Invalid profile: %s" % path)

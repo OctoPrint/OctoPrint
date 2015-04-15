@@ -68,7 +68,6 @@ $(function() {
         self.editorVolumeFormFactor = ko.observable();
 
         self.editorHeatedBed = ko.observable();
-        self.editorCenteredOrigin = ko.observable();
 
         self.editorNozzleDiameter = ko.observable();
         self.editorExtruders = ko.observable();
@@ -285,7 +284,6 @@ $(function() {
             self.editorVolumeFormFactor(data.volume.formFactor);
 
             self.editorHeatedBed(data.heatedBed);
-            self.editorCenteredOrigin(data.centeredOrigin);
 
             self.editorNozzleDiameter(data.extruder.nozzleDiameter);
             self.editorExtruders(data.extruder.count);
@@ -351,7 +349,6 @@ $(function() {
                     formFactor: self.editorVolumeFormFactor()
                 },
                 heatedBed: self.editorHeatedBed(),
-                centeredOrigin: self.editorCenteredOrigin(),
                 extruder: {
                     count: parseInt(self.editorExtruders()),
                     offsets: [
