@@ -174,6 +174,7 @@ class MachineCom(object):
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
+		self._serial_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.serial")
 
 		# SD status data
 		self._sdAvailable = False
