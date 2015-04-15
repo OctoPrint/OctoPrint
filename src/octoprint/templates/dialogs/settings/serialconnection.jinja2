@@ -18,17 +18,8 @@
             </label>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Time after which the communication with your printer will be considered timed out if nothing was sent by your printer (and an attempt to get it talking again will be done). Increase this if your printer takes longer than this for some moves. This is also the interval in which the temperature will be polled from the printer while not printing.') }}">
-        <label class="control-label" for="settings-serialTimeoutCommunication">{{ _('Communication timeout') }}</label>
-        <div class="controls">
-            <div class="input-append">
-                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
-                <span class="add-on">s</span>
-            </div>
-        </div>
-    </div>
     <div class="control-group" title="{{ _('Interval in which to poll for the temperature information from the printer while printing') }}">
-        <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature timeout') }}</label>
+        <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature interval') }}</label>
         <div class="controls">
             <div class="input-append">
                 <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutTemperature" id="settings-serialTimeoutTemperature">
@@ -37,10 +28,19 @@
         </div>
     </div>
     <div class="control-group" title="{{ _('Interval in which to poll for the SD printing status information from the printer while printing') }}">
-        <label class="control-label" for="settings-serialTimeoutSdStatus">{{ _('SD status timeout') }}</label>
+        <label class="control-label" for="settings-serialTimeoutSdStatus">{{ _('SD status interval') }}</label>
         <div class="controls">
             <div class="input-append">
                 <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutSdStatus" id="settings-serialTimeoutSdStatus">
+                <span class="add-on">s</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Time after which the communication with your printer will be considered timed out if nothing was sent by your printer (and an attempt to get it talking again will be done). Increase this if your printer takes longer than this for some moves. This is also the interval in which the temperature will be polled from the printer while not printing.') }}">
+        <label class="control-label" for="settings-serialTimeoutCommunication">{{ _('Communication timeout') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
                 <span class="add-on">s</span>
             </div>
         </div>
