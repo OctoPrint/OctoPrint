@@ -101,6 +101,14 @@
                 </div>
             </div>
             <div class="control-group">
+                <label class="control-label">{{ _('Bed Origin') }}</label>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: printerProfiles.editorCenteredOrigin">{{ _('Origin (0, 0) is in the center of the bed') }}
+                    </label>
+                </div>
+            </div>
+            <div class="control-group">
                 <label class="control-label">{{ _('Heated Bed') }}</label>
                 <div class="controls">
                     <input type="checkbox" data-bind="checked: printerProfiles.editorHeatedBed">
