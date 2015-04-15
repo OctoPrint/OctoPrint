@@ -787,6 +787,11 @@ class MachineCom(object):
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
 
+		# enqueue an M105 first thing
+		self._sendCommand("M105")
+		if startSeen:
+			self._clear_to_send.set()
+
 		while self._monitoring_active:
 			try:
 				line = self._readline()
@@ -1007,6 +1012,7 @@ class MachineCom(object):
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
 							self._sendCommand("M105")
+							self._clear_to_send.set()
 							self._testingBaudrate = True
 						else:
 							baudrate = self._baudrateDetectList.pop(0)
@@ -1019,6 +1025,7 @@ class MachineCom(object):
 								self._timeout = get_new_timeout("communication")
 								self._serial.write('\n')
 								self._sendCommand("M105")
+								self._clear_to_send.set()
 								self._testingBaudrate = True
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
@@ -1036,10 +1043,9 @@ class MachineCom(object):
 
 				### Connection attempt
 				elif self._state == self.STATE_CONNECTING:
-					if (line == "" or "wait" in line) and startSeen:
-						self._sendCommand("M105")
-					elif "start" in line:
+					if "start" in line and not startSeen:
 						startSeen = True
+						self._clear_to_send.set()
 					elif "ok" in line and startSeen:
 						self._onConnected()
 					elif time.time() > self._timeout:
@@ -1216,7 +1222,6 @@ class MachineCom(object):
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				return False
-		self._clear_to_send.set()
 		return True
 
 	def _handleErrors(self, line):
@@ -1463,6 +1468,8 @@ class MachineCom(object):
 		The send loop is reponsible of sending commands in ``self._send_queue`` over the line, if it is cleared for
 		sending (through received ``ok`` responses from the printer's firmware.
 		"""
+
+		self._clear_to_send.wait()
 
 		while self._send_queue_active:
 			try:
