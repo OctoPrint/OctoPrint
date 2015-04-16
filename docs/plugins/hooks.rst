@@ -192,3 +192,38 @@ octoprint.comm.transport.serial.factory
    :rtype: A serial instance implementing implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
        optionally ``baudrate`` and ``timeout`` attributes as described above.
 
+.. _sec-plugins-hook-filemanager-extensiontree:
+
+octoprint.filemanager.extension_tree
+------------------------------------
+
+.. py:function:: hook()
+
+   Return additional entries for the tree of accepted file extensions for uploading/handling by the file manager.
+
+   Should return a dictionary to merge with the existing extension tree, adding additional extension groups to
+   ``machinecode`` or ``model`` types.
+
+   **Example:**
+
+   The following handler would add a new file type "x3g" as accepted ``machinecode`` format, with extensions ``x3g``
+   and ``s3g``:
+
+   .. code-block:: python
+      :linenos:
+
+      def support_x3g_machinecode():
+          return dict(
+              machinecode=dict(
+                  x3g=["x3g", "s3g"]
+              )
+          )
+
+   .. note::
+
+      This will only add the supplied extensions to the extension tree, allowing the files to be uploaded and managed
+      through the file manager. Plugins will need to add further steps to ensure that the files will be processable
+      in the rest of the system (e.g. handling/preprocessing new machine code file types for printing etc)!
+
+   :return: The partial extension tree to merge with the full extension tree.
+   :rtype: dict

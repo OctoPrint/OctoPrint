@@ -9,6 +9,7 @@ import logging
 import os
 
 import octoprint.plugin
+import octoprint.util
 
 from octoprint.events import eventManager, Events
 
@@ -17,19 +18,35 @@ from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
 
 extensions = dict(
-	# extensions for 3d model files
-	model=dict(
-		stl=["stl"]
-	),
-	# extensions for printable machine code
-	machinecode=dict(
-		gcode=["gcode", "gco", "g"]
-	)
 )
+
+def full_extension_tree():
+	result = dict(
+		# extensions for 3d model files
+		model=dict(
+			stl=["stl"]
+		),
+		# extensions for printable machine code
+		machinecode=dict(
+			gcode=["gcode", "gco", "g"]
+		)
+	)
+
+	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
+	for name, hook in extension_tree_hooks.items():
+		try:
+			hook_result = hook()
+			if hook_result is None or not isinstance(hook_result, dict):
+				continue
+			result = octoprint.util.dict_merge(result, hook_result)
+		except:
+			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
+
+	return result
 
 def get_extensions(type, subtree=None):
 	if not subtree:
-		subtree = extensions
+		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
 		if key == type:
@@ -43,7 +60,7 @@ def get_extensions(type, subtree=None):
 
 def get_all_extensions(subtree=None):
 	if not subtree:
-		subtree = extensions
+		subtree = full_extension_tree()
 
 	result = []
 	if isinstance(subtree, dict):
@@ -58,7 +75,7 @@ def get_all_extensions(subtree=None):
 
 def get_path_for_extension(extension, subtree=None):
 	if not subtree:
-		subtree = extensions
+		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
 		if isinstance(value, (list, tuple)) and extension in value:
@@ -70,11 +87,9 @@ def get_path_for_extension(extension, subtree=None):
 
 	return None
 
-all_extensions = get_all_extensions()
-
 def valid_extension(extension, type=None):
 	if not type:
-		return extension in all_extensions
+		return extension in get_all_extensions()
 	else:
 		extensions = get_extensions(type)
 		if extensions:
