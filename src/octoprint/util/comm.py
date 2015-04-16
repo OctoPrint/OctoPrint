@@ -25,7 +25,6 @@ from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer
-from octoprint.util.virtual import VirtualPrinter
 
 try:
 	import _winreg
@@ -174,7 +173,7 @@ class MachineCom(object):
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
-		self._serial_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.serial")
+		self._serial_factory_hooks = self._pluginManager.get_hooks("octoprint.comm.transport.serial.factory")
 
 		# SD status data
 		self._sdAvailable = False
@@ -1205,8 +1204,8 @@ class MachineCom(object):
 		return None
 
 	def _openSerial(self):
-		def default(_, port, baudrate, connection_timeout):
-			if self._port is None or self._port == 'AUTO':
+		def default(_, port, baudrate, read_timeout):
+			if port is None or port == 'AUTO':
 				# no known port, try auto detection
 				self._changeState(self.STATE_DETECT_SERIAL)
 				serial_obj = self._detectPort(False)
@@ -1217,24 +1216,20 @@ class MachineCom(object):
 					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 					return None
 
-			elif port == "VIRTUAL":
-				# virtual printer, use that
-				serial_obj = VirtualPrinter()
-
 			else:
 				# connect to regular serial port
-				self._log("Connecting to: %s" % self._port)
+				self._log("Connecting to: %s" % port)
 				if baudrate == 0:
-					serial_obj = serial.Serial(str(port), 115200, timeout=connection_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+					serial_obj = serial.Serial(str(port), 115200, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 				else:
-					serial_obj = serial.Serial(str(port), baudrate, timeout=connection_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+					serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 				serial_obj.close()
 				serial_obj.parity = serial.PARITY_NONE
 				serial_obj.open()
 
 			return serial_obj
 
-		serial_factories = self._serial_hooks.items() + [("default", default)]
+		serial_factories = self._serial_factory_hooks.items() + [("default", default)]
 		for name, factory in serial_factories:
 			try:
 				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))

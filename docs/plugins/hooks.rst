@@ -3,6 +3,9 @@
 Available plugin hooks
 ======================
 
+.. contents::
+   :local:
+
 .. _sec-plugins-hook-comm-protocol-action:
 
 octoprint.comm.protocol.action
@@ -112,3 +115,80 @@ octoprint.comm.protocol.scripts
    :param str script_name: The name of the script for which the hook was called.
    :return: A 2-tuple in the form ``(prefix, postfix)`` or None
    :rtype: tuple or None
+
+.. _sec-plugins-hook-comm-transport-serial-factory:
+
+octoprint.comm.transport.serial.factory
+---------------------------------------
+
+.. py:function:: hook(comm_instance, port, baudrate, read_timeout, *args, **kwargs)
+
+   Return a serial object to use as serial connection to the printer. If a handler cannot create a serial object
+   for the specified ``port`` (and ``baudrate``), it should just return ``None``.
+
+   If the hook handler needs to perform state switches (e.g. for autodetection) or other operations on the
+   :class:`~octoprint.util.comm.MachineCom` instance, it can use the supplied ``comm_instance`` to do so. Plugin
+   authors should keep in mind however that due to a pending change in the communication layer of
+   OctoPrint, that interface will change in the future. Authors are advised to follow OctoPrint's development
+   closely if directly utilizing :class:`~octoprint.util.comm.MachineCom` functionality.
+
+   A valid serial instance is expected to provide the following methods, analogue to PySerial's
+   `serial.Serial <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial>`_:
+
+   readline(size=None, eol='\n')
+       Reads a line from the serial connection, compare `serial.Filelike.readline <https://pythonhosted.org//pyserial/pyserial_api.html#serial.FileLike.readline>`_.
+   write(data)
+       Writes data to the serial connection, compare `serial.Filelike.write <https://pythonhosted.org//pyserial/pyserial_api.html#serial.FileLike.write>`_.
+   close()
+       Closes the serial connection, compare `serial.Serial.close <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.close>`_.
+
+   Additionally setting the following attributes need to be supported if baudrate detection is supposed to work:
+
+   baudrate
+       An integer describing the baudrate to use for the serial connection, compare `serial.Serial.baudrate <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.baudrate>`_.
+   timeout
+       An integer describing the read timeout on the serial connection, compare `serial.Serial.timeout <https://pythonhosted.org//pyserial/pyserial_api.html#serial.Serial.timeout>`_.
+
+   **Example:**
+
+   Serial factory similar to the default one which performs auto detection of the serial port if ``port`` is ``None``
+   or ``AUTO``.
+
+   .. code-block:: python
+      :linenos:
+
+      def default(comm_instance, port, baudrate, connection_timeout):
+          if port is None or port == 'AUTO':
+              # no known port, try auto detection
+              comm_instance._changeState(comm_instance.STATE_DETECT_SERIAL)
+              serial_obj = comm_instance._detectPort(False)
+              if serial_obj is None:
+                  comm_instance._log("Failed to autodetect serial port")
+                  comm_instance._errorValue = 'Failed to autodetect serial port.'
+                  comm_instance._changeState(comm_instance.STATE_ERROR)
+                  eventManager().fire(Events.ERROR, {"error": comm_instance.getErrorString()})
+                  return None
+
+          else:
+              # connect to regular serial port
+              comm_instance._log("Connecting to: %s" % port)
+              if baudrate == 0:
+                  serial_obj = serial.Serial(str(port), 115200, timeout=connection_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+              else:
+                  serial_obj = serial.Serial(str(port), baudrate, timeout=connection_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+              serial_obj.close()
+              serial_obj.parity = serial.PARITY_NONE
+              serial_obj.open()
+
+          return serial_obj
+
+   :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param port str: The port for which to construct a serial instance. May be ``None`` or ``AUTO`` in which case port
+       auto detection is to be performed.
+   :param baudrate int: The baudrate for which to construct a serial instance. May be 0 in which case baudrate auto
+       detection is to be performed.
+   :param read_timeout int: The read timeout to set on the serial port.
+   :return: The constructed serial object ready for use, or ``None`` if the handler could not construct the object.
+   :rtype: A serial instance implementing implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
+       optionally ``baudrate`` and ``timeout`` attributes as described above.
+
