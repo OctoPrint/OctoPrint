@@ -9,7 +9,7 @@ import versioneer
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-# Requirements for out application
+# Requirements for our application
 INSTALL_REQUIRES = [
 	"flask==0.9",
 	"werkzeug==0.8.3",
