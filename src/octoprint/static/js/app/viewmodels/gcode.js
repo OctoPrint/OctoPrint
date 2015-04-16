@@ -137,22 +137,27 @@ $(function() {
             }
 
             if (currentProfileData && currentProfileData.volume && currentProfileData.volume.formFactor() && currentProfileData.volume.width() && currentProfileData.volume.depth()) {
-                var x = undefined, y = undefined, r = undefined, circular = false;
+                var x = undefined, y = undefined, r = undefined, circular = false, centeredOrigin = false;
 
                 var formFactor = currentProfileData.volume.formFactor();
                 if (formFactor == "circular") {
                     r = currentProfileData.volume.width() / 2;
                     circular = true;
+                    centeredOrigin = true;
                 } else {
                     x = currentProfileData.volume.width();
                     y = currentProfileData.volume.depth();
+                    if (currentProfileData.volume.origin) {
+                        centeredOrigin = currentProfileData.volume.origin() == "center";
+                    }
                 }
 
                 return {
                     x: x,
                     y: y,
                     r: r,
-                    circular: circular
+                    circular: circular,
+                    centeredOrigin: centeredOrigin
                 };
             } else {
                 return undefined;

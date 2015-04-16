@@ -31,6 +31,14 @@ class BedTypes(object):
 	def values(cls):
 		return [getattr(cls, name) for name in cls.__dict__ if not name.startswith("__")]
 
+class BedOrigin(object):
+	LOWERLEFT = "lowerleft"
+	CENTER = "center"
+
+	@classmethod
+	def values(cls):
+		return [getattr(cls, name) for name in cls.__dict__ if not name.startswith("__")]
+
 class PrinterProfileManager(object):
 	"""
 	Manager for printer profiles. Offers methods to select the globally used printer profile and to list, add, remove,
@@ -72,6 +80,10 @@ class PrinterProfileManager(object):
 	   * - ``volume.formFactor``
 	     - ``string``
 	     - Form factor of the print bed, either ``rectangular`` or ``circular``
+		 - ``volume.origin``
+		 - ``string``
+		 - Location of gcode origin in the print volume, either ``lowerleft``
+		 - or ``center``
 	   * - ``heatedBed``
 	     - ``bool``
 	     - Whether the printer has a heated bed (``True``) or not (``False``)
@@ -138,6 +150,7 @@ class PrinterProfileManager(object):
 			depth = 200,
 			height = 200,
 			formFactor = BedTypes.RECTANGULAR,
+			origin = BedOrigin.LOWERLEFT
 		),
 		heatedBed = False,
 		extruder=dict(
