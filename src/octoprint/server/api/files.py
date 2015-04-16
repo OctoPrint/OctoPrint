@@ -142,6 +142,15 @@ def uploadGcodeFile(target):
 	else:
 		return make_response("No file included", 400)
 
+	# Store any additional user data the caller may have passed.
+	userdata = None
+	if "userdata" in request.values:
+		import json
+		try:
+			userdata = json.loads(request.values["userdata"])
+		except:
+			return make_response("userdata contains invalid JSON", 400)
+
 	if target == FileDestinations.SDCARD and not settings().getBoolean(["feature", "sdSupport"]):
 		return make_response("SD card support is disabled", 404)
 
@@ -214,12 +223,9 @@ def uploadGcodeFile(target):
 		filename = fileProcessingFinished(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), target)
 		done = True
 
-    # Store any additional user data the caller may have passed.
-	if 'userjson' in request.values:
-		import json
-		fileManager.set_additional_metadata(FileDestinations.LOCAL, added_file, 'userjson', json.loads(request.values['userjson']))
-	if 'userdata' in request.values:
-		fileManager.set_additional_metadata(FileDestinations.LOCAL, added_file, 'userdata', request.values['userdata'])
+	if userdata is not None:
+		# upload included userdata, add this now to the metadata
+		fileManager.set_additional_metadata(FileDestinations.LOCAL, added_file, "userdata", userdata)
 
 	sdFilename = None
 	if isinstance(filename, tuple):
