@@ -58,6 +58,8 @@ def passive_login():
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
+	return ("", 204)
+
 
 #~~ cache decorator for cacheable views
 
