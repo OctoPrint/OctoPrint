@@ -140,7 +140,7 @@ $(function() {
             }
 
             if (control.hasOwnProperty("children")) {
-                control.children = self._processControls(control.children);
+                control.children = ko.observableArray(self._processControls(control.children));
                 if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal")) {
                     control.layout = "vertical";
                 }
