@@ -174,6 +174,7 @@ class MachineCom(object):
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
+		self._serial_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.serial")
 
 		# SD status data
 		self._sdAvailable = False
@@ -1179,50 +1180,79 @@ class MachineCom(object):
 		else:
 			return False
 
-	def _openSerial(self):
-		if self._port == 'AUTO':
-			self._changeState(self.STATE_DETECT_SERIAL)
-			programmer = stk500v2.Stk500v2()
-			self._log("Serial port list: %s" % (str(serialList())))
-			for p in serialList():
-				try:
-					self._log("Connecting to: %s" % (p))
-					programmer.connect(p)
-					self._serial = programmer.leaveISP()
-					break
-				except ispBase.IspError as (e):
-					self._log("Error while connecting to %s: %s" % (p, str(e)))
-					pass
-				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string()))
-				programmer.close()
-			if self._serial is None:
-				self._log("Failed to autodetect serial port")
-				self._errorValue = 'Failed to autodetect serial port.'
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
-				return False
-		elif self._port == 'VIRTUAL':
-			self._changeState(self.STATE_OPEN_SERIAL)
-			self._serial = VirtualPrinter()
-		else:
-			self._changeState(self.STATE_OPEN_SERIAL)
+	def _detectPort(self, close):
+		programmer = stk500v2.Stk500v2()
+		self._log("Serial port list: %s" % (str(serialList())))
+		for p in serialList():
+			serial_obj = None
+
 			try:
-				self._log("Connecting to: %s" % self._port)
-				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000, parity=serial.PARITY_ODD)
-				else:
-					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000, parity=serial.PARITY_ODD)
-				self._serial.close()
-				self._serial.parity = serial.PARITY_NONE
-				self._serial.open()
+				self._log("Connecting to: %s" % (p))
+				programmer.connect(p)
+				serial_obj = programmer.leaveISP()
+				break
+			except ispBase.IspError as (e):
+				self._log("Error while connecting to %s: %s" % (p, str(e)))
 			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, get_exception_string()))
+				self._log("Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string()))
+
+			if serial_obj is not None:
+				if (close):
+					serial_obj.close()
+				return serial_obj
+
+			programmer.close()
+		return None
+
+	def _openSerial(self):
+		def default(_, port, baudrate, connection_timeout):
+			if self._port is None or self._port == 'AUTO':
+				# no known port, try auto detection
+				self._changeState(self.STATE_DETECT_SERIAL)
+				serial_obj = self._detectPort(False)
+				if serial_obj is None:
+					self._log("Failed to autodetect serial port")
+					self._errorValue = 'Failed to autodetect serial port.'
+					self._changeState(self.STATE_ERROR)
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+					return None
+
+			elif port == "VIRTUAL":
+				# virtual printer, use that
+				serial_obj = VirtualPrinter()
+
+			else:
+				# connect to regular serial port
+				self._log("Connecting to: %s" % self._port)
+				if baudrate == 0:
+					serial_obj = serial.Serial(str(port), 115200, timeout=connection_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+				else:
+					serial_obj = serial.Serial(str(port), baudrate, timeout=connection_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+				serial_obj.close()
+				serial_obj.parity = serial.PARITY_NONE
+				serial_obj.open()
+
+			return serial_obj
+
+		serial_factories = self._serial_hooks.items() + [("default", default)]
+		for name, factory in serial_factories:
+			try:
+				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
+			except Exception:
+				self._log("Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, get_exception_string(), name))
 				self._errorValue = "Failed to open serial port, permissions correct?"
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				return False
-		return True
+
+			if serial_obj is not None:
+				# first hook to succeed wins, but any can pass on to the next
+				self._changeState(self.STATE_OPEN_SERIAL)
+				self._serial = serial_obj
+				self._clear_to_send.clear()
+				return True
+
+		return False
 
 	def _handleErrors(self, line):
 		# No matter the state, if we see an error, goto the error state and store the error for reference.
