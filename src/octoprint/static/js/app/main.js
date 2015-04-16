@@ -273,7 +273,7 @@ $(function() {
 
                 $(element).contextMenu(val);
             }
-        }
+        };
 
         //~~ some additional hooks and initializations
 
@@ -305,7 +305,7 @@ $(function() {
 
         $.fn.isChildOf = function (element) {
             return $(element).has(this).length > 0;
-        }
+        };
 
         // from http://jsfiddle.net/KyleMit/X9tgY/
         $.fn.contextMenu = function (settings) {
