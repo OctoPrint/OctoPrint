@@ -214,6 +214,13 @@ def uploadGcodeFile(target):
 		filename = fileProcessingFinished(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), target)
 		done = True
 
+    # Store any additional user data the caller may have passed.
+	if 'userjson' in request.values:
+		import json
+		fileManager.set_additional_metadata(FileDestinations.LOCAL, added_file, 'userjson', json.loads(request.values['userjson']))
+	if 'userdata' in request.values:
+		fileManager.set_additional_metadata(FileDestinations.LOCAL, added_file, 'userdata', request.values['userdata'])
+
 	sdFilename = None
 	if isinstance(filename, tuple):
 		filename, sdFilename = filename
