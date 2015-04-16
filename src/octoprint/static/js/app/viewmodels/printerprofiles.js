@@ -69,6 +69,12 @@ $(function() {
         self.editorVolumeFormFactor = ko.observable();
         self.editorVolumeOrigin = ko.observable();
 
+        self.editorVolumeFormFactor.subscribe(function(oldVal, newVal) {
+            if (oldVal != newVal && newVal == "circular") {
+                self.editorVolumeOrigin("center");
+            }
+        });
+
         self.editorHeatedBed = ko.observable();
 
         self.editorNozzleDiameter = ko.observable();
@@ -95,10 +101,27 @@ $(function() {
             {key: "black", name: gettext("black")}
         ]);
 
-        self.availableOrigins = ko.observable([
-            {key: "lowerleft", name: gettext("Lower Left")},
-            {key: "center", name: gettext("Centered")}
-        ]);
+        self.availableOrigins = ko.computed(function() {
+            var formFactor = self.editorVolumeFormFactor();
+
+            var possibleOrigins = {
+                "lowerleft": gettext("Lower Left"),
+                "center": gettext("Center")
+            };
+
+            var keys = [];
+            if (formFactor == "rectangular") {
+                keys = ["lowerleft", "center"];
+            } else if (formFactor == "circular") {
+                keys = ["center"];
+            }
+
+            var result = [];
+            _.each(keys, function(key) {
+               result.push({key: key, name: possibleOrigins[key]});
+            });
+            return result;
+        });
 
         self.koEditorExtruderOffsets = ko.computed(function() {
             var extruderOffsets = self.editorExtruderOffsets();
