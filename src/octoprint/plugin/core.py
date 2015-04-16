@@ -26,6 +26,8 @@ import imp
 from collections import defaultdict, namedtuple
 import logging
 
+import pkg_resources
+import pkginfo
 
 class PluginInfo(object):
 	"""
@@ -511,9 +513,6 @@ class PluginManager(object):
 	def _find_plugins_from_entry_points(self, groups, existing):
 		result = dict()
 
-		import pkg_resources
-		import pkginfo
-
 		# let's make sure we have a current working set
 		working_set = pkg_resources.WorkingSet()
 
@@ -532,7 +531,7 @@ class PluginManager(object):
 
 				kwargs = dict(module_name=module_name, version=version)
 				try:
-					module_pkginfo = pkginfo.Installed(module_name)
+					module_pkginfo = InstalledEntryPoint(entry_point)
 				except:
 					self.logger.exception("Something went wrong while retrieving package info data for module %s" % module_name)
 				else:
@@ -1013,6 +1012,58 @@ class PluginManager(object):
 		for client in self.registered_clients:
 			try: client(plugin, data)
 			except: self.logger.exception("Exception while sending plugin data to client")
+
+
+class InstalledEntryPoint(pkginfo.Installed):
+
+	def __init__(self, entry_point, metadata_version=None):
+		self.entry_point = entry_point
+		package = entry_point.module_name
+		pkginfo.Installed.__init__(self, package, metadata_version=metadata_version)
+
+	def read(self):
+		import sys
+		import glob
+		import warnings
+
+		opj = os.path.join
+		if self.package is not None:
+			package = self.package.__package__
+			if package is None:
+				package = self.package.__name__
+
+			project = pkg_resources.to_filename(pkg_resources.safe_name(self.entry_point.dist.project_name))
+
+			package_pattern = '%s*.egg-info' % package
+			project_pattern = '%s*.egg-info' % project
+
+			file = getattr(self.package, '__file__', None)
+			if file is not None:
+				candidates = []
+
+				def _add_candidate(where):
+					candidates.extend(glob.glob(where))
+
+				for entry in sys.path:
+					if file.startswith(entry):
+						_add_candidate(opj(entry, 'EGG-INFO')) # egg?
+						for pattern in (package_pattern, project_pattern): # dist-installed?
+							_add_candidate(opj(entry, pattern))
+
+				dir, name = os.path.split(self.package.__file__)
+				for pattern in (package_pattern, project_pattern):
+					_add_candidate(opj(dir, pattern))
+					_add_candidate(opj(dir, '..', pattern))
+
+				for candidate in candidates:
+					if os.path.isdir(candidate):
+						path = opj(candidate, 'PKG-INFO')
+					else:
+						path = candidate
+					if os.path.exists(path):
+						with open(path) as f:
+							return f.read()
+		warnings.warn('No PKG-INFO found for package: %s' % self.package_name)
 
 
 class Plugin(object):
