@@ -15,6 +15,7 @@ from octoprint.server.util.flask import restricted_access, get_json_command_from
 from octoprint.server.api import api
 from octoprint.events import Events
 import octoprint.filemanager
+import octoprint.filemanager.util
 import octoprint.slicing
 
 
@@ -133,12 +134,9 @@ def uploadGcodeFile(target):
 	input_upload_name = input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
 	input_upload_path = input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
 	if input_upload_name in request.values and input_upload_path in request.values:
-		import shutil
-		upload = util.Object()
-		upload.filename = request.values[input_upload_name]
-		upload.save = lambda new_path: shutil.move(request.values[input_upload_path], new_path)
+		upload = octoprint.filemanager.util.DiskFileWrapper(request.values[input_upload_name], request.values[input_upload_path])
 	elif input_name in request.files:
-		upload = request.files[input_name]
+		upload = WerkzeugFileWrapper(request.files[input_name])
 	else:
 		return make_response("No file included", 400)
 
@@ -456,3 +454,31 @@ def _getCurrentFile():
 	else:
 		return None, None
 
+
+class WerkzeugFileWrapper(octoprint.filemanager.util.AbstractFileWrapper):
+	"""
+	A wrapper around a Werkzeug ``FileStorage`` object.
+
+	Arguments:
+	    file_obj (werkzeug.datastructures.FileStorage): The Werkzeug ``FileStorage`` instance to wrap.
+
+	.. seealso::
+
+	   `werkzeug.datastructures.FileStorage <http://werkzeug.pocoo.org/docs/0.10/datastructures/#werkzeug.datastructures.FileStorage>`_
+	        The documentation of Werkzeug's ``FileStorage`` class.
+	"""
+	def __init__(self, file_obj):
+		octoprint.filemanager.util.AbstractFileWrapper.__init__(self, file_obj.filename)
+		self.file_obj = file_obj
+
+	def save(self, path):
+		"""
+		Delegates to ``werkzeug.datastructures.FileStorage.save``
+		"""
+		self.file_obj.save(path)
+
+	def stream(self):
+		"""
+		Returns ``werkzeug.datastructures.FileStorage.stream``
+		"""
+		return self.file_obj.stream

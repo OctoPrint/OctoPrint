@@ -30,3 +30,10 @@ octoprint.filemanager.storage
 .. automodule:: octoprint.filemanager.storage
    :members: StorageInterface, LocalFileStorage
 
+.. _sec-modules-filemanager-util:
+
+octoprint.filemanager.util
+--------------------------
+
+.. automodule:: octoprint.filemanager.util
+   :members:

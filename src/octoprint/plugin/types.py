@@ -64,6 +64,11 @@ class OctoPrintPlugin(Plugin):
 
 	   The :class:`~octoprint.users.SessionManager` instance. Injected by the plugin core system upon initialization of
 	   the implementation.
+
+	.. attribute:: _plugin_lifecycle_manager
+
+	   The :class:`~octoprint.server.LifecycleManager` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
 	"""
 
 	pass

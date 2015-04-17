@@ -591,6 +591,7 @@ class Server():
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
+		pluginLifecycleManager = LifecycleManager(pluginManager)
 
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
@@ -603,7 +604,8 @@ class Server():
 				slicing_manager=slicingManager,
 				file_manager=fileManager,
 				printer=printer,
-				app_session_manager=appSessionManager
+				app_session_manager=appSessionManager,
+				plugin_lifecycle_manager=pluginLifecycleManager
 			)
 
 		def settings_plugin_inject_factory(name, implementation):
@@ -620,12 +622,15 @@ class Server():
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
 		pluginManager.initialize_implementations()
 
-		lifecycleManager = LifecycleManager(self, pluginManager)
 		pluginManager.log_all_plugins()
+
+		# initialize file manager and register it for changes in the registered plugins
+		fileManager.initialize()
+		pluginLifecycleManager.add_callback(["enabled", "disabled"], lambda name, plugin: fileManager.reload_plugins())
 
 		# initialize slicing manager and register it for changes in the registered plugins
 		slicingManager.initialize()
-		lifecycleManager.add_callback(["enabled", "disabled"], lambda name, plugin: slicingManager.reload_slicers())
+		pluginLifecycleManager.add_callback(["enabled", "disabled"], lambda name, plugin: slicingManager.reload_slicers())
 
 		# setup jinja2
 		self._setup_jinja2()
@@ -637,8 +642,8 @@ class Server():
 			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
 				return
 			self._unregister_additional_template_plugin(plugin.implementation)
-		lifecycleManager.add_callback("enabled", template_enabled)
-		lifecycleManager.add_callback("disabled", template_disabled)
+		pluginLifecycleManager.add_callback("enabled", template_enabled)
+		pluginLifecycleManager.add_callback("disabled", template_disabled)
 
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
@@ -696,7 +701,7 @@ class Server():
 			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.BlueprintPlugin):
 				return
 			self._register_blueprint_plugin(plugin.implementation)
-		lifecycleManager.add_callback(["enabled"], blueprint_enabled)
+		pluginLifecycleManager.add_callback(["enabled"], blueprint_enabled)
 
 		## Tornado initialization starts here
 
@@ -742,7 +747,7 @@ class Server():
 			if implementation is None:
 				return
 			implementation.on_startup(self._host, self._port)
-		lifecycleManager.add_callback("enabled", call_on_startup)
+		pluginLifecycleManager.add_callback("enabled", call_on_startup)
 
 		# prepare our after startup function
 		def on_after_startup():
@@ -762,7 +767,7 @@ class Server():
 					if implementation is None:
 						return
 					implementation.on_after_startup()
-				lifecycleManager.add_callback("enabled", call_on_after_startup)
+				pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
 
 			import threading
 			threading.Thread(target=work).start()
@@ -929,25 +934,23 @@ class Server():
 			self._logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
 
 class LifecycleManager(object):
-	def __init__(self, server, plugin_manager):
-		self._server = server
+	def __init__(self, plugin_manager):
 		self._plugin_manager = plugin_manager
 
 		self._plugin_lifecycle_callbacks = defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
-		def on_plugin_event_factory(lifecycle_event, text):
+		def on_plugin_event_factory(lifecycle_event):
 			def on_plugin_event(name, plugin):
 				self.on_plugin_event(lifecycle_event, name, plugin)
-				self._logger.debug(text.format(**locals()))
 			return on_plugin_event
 
-		self._plugin_manager.on_plugin_loaded = on_plugin_event_factory("loaded", "Loaded plugin {name}: {plugin}")
-		self._plugin_manager.on_plugin_unloaded = on_plugin_event_factory("unloaded", "Unloaded plugin {name}: {plugin}")
-		self._plugin_manager.on_plugin_activated = on_plugin_event_factory("activated", "Activated plugin {name}: {plugin}")
-		self._plugin_manager.on_plugin_deactivated = on_plugin_event_factory("deactivated", "Deactivated plugin {name}: {plugin}")
-		self._plugin_manager.on_plugin_enabled = on_plugin_event_factory("enabled", "Enabled plugin {name}: {plugin}")
-		self._plugin_manager.on_plugin_disabled = on_plugin_event_factory("disabled", "Disabled plugin {name}: {plugin}")
+		self._plugin_manager.on_plugin_loaded = on_plugin_event_factory("loaded")
+		self._plugin_manager.on_plugin_unloaded = on_plugin_event_factory("unloaded")
+		self._plugin_manager.on_plugin_activated = on_plugin_event_factory("activated")
+		self._plugin_manager.on_plugin_deactivated = on_plugin_event_factory("deactivated")
+		self._plugin_manager.on_plugin_enabled = on_plugin_event_factory("enabled")
+		self._plugin_manager.on_plugin_disabled = on_plugin_event_factory("disabled")
 
 	def on_plugin_event(self, event, name, plugin):
 		for lifecycle_callback in self._plugin_lifecycle_callbacks[event]:

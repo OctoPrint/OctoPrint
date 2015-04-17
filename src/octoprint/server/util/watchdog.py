@@ -9,6 +9,7 @@ import logging
 import watchdog.events
 
 import octoprint.filemanager
+import octoprint.filemanager.util
 import octoprint.util
 
 
@@ -26,17 +27,8 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		self._printer = printer
 
 	def _upload(self, path):
-		class WatchdogFileWrapper(object):
-
-			def __init__(self, path):
-				import os
-				self._path = path
-				self.filename = os.path.basename(self._path)
-
-			def save(self, target):
-				octoprint.util.safe_rename(self._path, target)
-
-		file_wrapper = WatchdogFileWrapper(path)
+		import os
+		file_wrapper = octoprint.filemanager.util.DiskFileWrapper(os.path.basename(path), path)
 
 		# determine current job
 		currentFilename = None

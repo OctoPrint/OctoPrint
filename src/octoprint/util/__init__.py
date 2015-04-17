@@ -335,50 +335,6 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	raise ValueError("Can't create a collision free filename")
 
 
-def safe_rename(old, new, throw_error=False):
-	"""
-	Safely renames a file.
-
-	On Windows this is achieved by first creating a backup file of the new file (if it
-	already exists), thus moving it, then renaming the old into the new file and finally removing the backup. If
-	anything goes wrong during those steps, the backup (if already there) will be renamed to its old name and thus
-	the operation hopefully result in a no-op.
-
-	On other operating systems :func:`shutil.move` will be used instead.
-
-	Arguments:
-	    old (string): The path to the old file to be renamed.
-	    new (string): The path to the new file to be created/replaced.
-	    throw_error (boolean): Whether to throw an error upon errors during the renaming procedure (True) or not
-	        (False, default).
-
-	Raises:
-	    OSError: One of the renaming steps on windows failed and ``throw_error`` was True
-	"""
-
-	if sys.platform == "win32":
-		fh, backup = tempfile.mkstemp()
-		os.close(fh)
-
-		try:
-			if os.path.exists(new):
-				silent_remove(backup)
-				os.rename(new, backup)
-			os.rename(old, new)
-			os.remove(backup)
-		except OSError as e:
-			# if anything went wrong, try to rename the backup file to its original name
-			logger.error("Could not perform safe rename, trying to revert")
-			if os.path.exists(backup):
-				silent_remove(new)
-				os.rename(backup, new)
-			if throw_error:
-				raise e
-	else:
-		# on anything else than windows it's ooooh so much easier...
-		shutil.move(old, new)
-
-
 def silent_remove(file):
 	"""
 	Silently removes a file. Does not raise an error if the file doesn't exist.

@@ -13,8 +13,6 @@ import tempfile
 
 import octoprint.filemanager
 
-from octoprint.util import safe_rename
-
 class StorageInterface(object):
 	"""
 	Interface of storage adapters for OctoPrint.
@@ -1003,7 +1001,8 @@ class LocalFileStorage(StorageInterface):
 				with open(metadata_temporary_path, "w") as f:
 					import yaml
 					yaml.safe_dump(metadata, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
-				safe_rename(metadata_temporary_path, metadata_path, throw_error=True)
+				import shutil
+				shutil.move(metadata_temporary_path, metadata_path)
 			except:
 				self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
 			else:

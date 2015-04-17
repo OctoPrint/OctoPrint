@@ -183,11 +183,11 @@ octoprint.comm.transport.serial.factory
           return serial_obj
 
    :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
-   :param port str: The port for which to construct a serial instance. May be ``None`` or ``AUTO`` in which case port
+   :param str port: The port for which to construct a serial instance. May be ``None`` or ``AUTO`` in which case port
        auto detection is to be performed.
-   :param baudrate int: The baudrate for which to construct a serial instance. May be 0 in which case baudrate auto
+   :param int baudrate: The baudrate for which to construct a serial instance. May be 0 in which case baudrate auto
        detection is to be performed.
-   :param read_timeout int: The read timeout to set on the serial port.
+   :param int read_timeout: The read timeout to set on the serial port.
    :return: The constructed serial object ready for use, or ``None`` if the handler could not construct the object.
    :rtype: A serial instance implementing implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
        optionally ``baudrate`` and ``timeout`` attributes as described above.
@@ -227,3 +227,37 @@ octoprint.filemanager.extension_tree
 
    :return: The partial extension tree to merge with the full extension tree.
    :rtype: dict
+
+.. _sec-plugins-hook-filemanager-preprocessor:
+
+octoprint.filemanager.preprocessor
+----------------------------------
+
+.. py:function:: hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False)
+
+   Replace the ``file_object`` used for saving added files to storage by calling :func:`~octoprint.filemanager.util.AbstractFileWrapper.save`.
+
+   ``path`` will be the future path of the file on the storage. The file's name is accessible via
+   :attr:`~octoprint.filemanager.util.AbstractFileWrapper.filename`.
+
+   ``file_object`` will be a subclass of :class:`~octoprint.filemanager.util.AbstractFileWrapper`. Handlers may
+   access the raw data of the file via :func:`~octoprint.filemanager.util.AbstractFileWrapper.stream`, e.g.
+   to wrap it further. Handlers which do not wish to handle the `file_object`
+
+   **Example**
+
+   The following plugin example strips all comments from uploaded/generated GCODE files ending on the name postfix ``_strip``.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/strip_all_comments.py
+      :linenos:
+      :tab-width: 4
+      :caption: `strip_all_comments.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/strip_all_comments.py>`_
+
+   :param str path: The path on storage the `file_object` is to be stored
+   :param AbstractFileWrapper file_object: The :class:`~octoprint.filemanager.util.AbstractFileWrapper` instance
+       representing the file object to store.
+   :param dict links: The links that are going to be stored with the file.
+   :param dict printer_profile: The printer profile associated with the file.
+   :param boolean allow_overwrite: Whether to allow overwriting an existing file named the same or not.
+   :return: The `file_object` as passed in or None, or a replaced version to use instead for further processing.
+   :rtype: AbstractFileWrapper or None

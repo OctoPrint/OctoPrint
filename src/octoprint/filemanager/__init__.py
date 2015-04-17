@@ -16,6 +16,7 @@ from octoprint.events import eventManager, Events
 from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
+from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
 extensions = dict(
 )
@@ -130,10 +131,17 @@ class FileManager(object):
 		self._slicing_progress_callbacks = []
 		self._last_slicing_progress = None
 
-		self._progress_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.ProgressPlugin)
+		self._progress_plugins = []
+		self._preprocessor_hooks = dict()
 
+	def initialize(self):
+		self.reload_plugins()
 		for storage_type, storage_manager in self._storage_managers.items():
 			self._determine_analysis_backlog(storage_type, storage_manager)
+
+	def reload_plugins(self):
+		self._progress_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.ProgressPlugin)
+		self._preprocessor_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.preprocessor")
 
 	def register_slicingprogress_callback(self, callback):
 		self._slicing_progress_callbacks.append(callback)
@@ -185,22 +193,12 @@ class FileManager(object):
 					source_meta = self.get_metadata(source_location, source_path)
 					hash = source_meta["hash"]
 
-					class Wrapper(object):
-						def __init__(self, stl_name, temp_path, hash):
-							self.stl_name = stl_name
-							self.temp_path = temp_path
-							self.hash = hash
-
-						def save(self, absolute_dest_path):
-							with open(absolute_dest_path, "w") as d:
-								d.write(";Generated from {stl_name} {hash}\r".format(**vars(self)))
-								with open(tmp_path, "r") as s:
-									import shutil
-									shutil.copyfileobj(s, d)
-
+					import io
 					links = [("model", dict(name=source_path))]
 					_, stl_name = self.split_path(source_location, source_path)
-					file_obj = Wrapper(stl_name, temp_path, hash)
+					file_obj = StreamWrapper(os.path.basename(dest_path),
+					                         io.BytesIO(u";Generated from {stl_name} {hash}\n".format(**locals()).encode("ascii", "replace")),
+					                         io.FileIO(tmp_path, "rb"))
 
 					printer_profile = self._printer_profile_manager.get(printer_profile_id)
 					self.add_file(dest_location, dest_path, file_obj, links=links, allow_overwrite=True, printer_profile=printer_profile, analysis=_analysis)
@@ -305,6 +303,10 @@ class FileManager(object):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
+		for hook in self._preprocessor_hooks.values():
+			hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
+			if hook_file_object is not None:
+				file_object = hook_file_object
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 		absolute_path = self._storage(destination).path_on_disk(file_path)
 
