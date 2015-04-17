@@ -317,6 +317,7 @@ $(function() {
 
                     $(settings.menuSelector)
                         .data("invokedOn", $(e.target))
+                        .data("contextParent", $(this))
                         .show()
                         .css({
                             position: "absolute",
@@ -330,10 +331,7 @@ $(function() {
 
                             $(this).hide();
 
-                            var $invokedOn = $(this).data("invokedOn");
-                            var $selectedMenu = $(e.target);
-
-                            settings.menuSelected.call(this, $invokedOn, $selectedMenu);
+                            settings.menuSelected.call(this, $(this).data('invokedOn'), $(this).data('contextParent'), $(e.target));
                         });
 
                     return false;
