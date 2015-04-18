@@ -431,3 +431,17 @@ function showOfflineOverlay(title, message, reconnectCallback) {
 function hideOfflineOverlay() {
     $("#offline_overlay").hide();
 }
+
+function showConfirmationDialog(message, onacknowledge) {
+    var confirmationDialog = $("#confirmation_dialog");
+    var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+
+    $(".confirmation_dialog_message", confirmationDialog).text(message);
+    confirmationDialogAck.unbind("click");
+    confirmationDialogAck.bind("click", function (e) {
+        e.preventDefault();
+        $("#confirmation_dialog").modal("hide");
+        onacknowledge(e);
+    });
+    confirmationDialog.modal("show");
+}

@@ -141,7 +141,7 @@ $(function() {
 
             if (control.hasOwnProperty("children")) {
                 control.children = ko.observableArray(self._processControls(control.children));
-                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal")) {
+                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal" || control.layout == "horizontal_grid")) {
                     control.layout = "vertical";
                 }
             }
@@ -199,17 +199,9 @@ $(function() {
             }
 
             if (data.confirm) {
-                var confirmationDialog = $("#confirmation_dialog");
-                var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
-
-                $(".confirmation_dialog_message", confirmationDialog).text(data.confirm);
-                confirmationDialogAck.unbind("click");
-                confirmationDialogAck.bind("click", function (e) {
-                    e.preventDefault();
-                    $("#confirmation_dialog").modal("hide");
+                showConfirmationDialog(data.confirm, function (e) {
                     callback(data);
                 });
-                confirmationDialog.modal("show");
             } else {
                 callback(data);
             }
