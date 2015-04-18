@@ -106,25 +106,27 @@
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate">
-    <!-- ko if: name -->
-    <h1 data-bind="text: name"></h1>
-    <!-- /ko -->
+    <div class="custom_section" data-bind="css: { 'custom_section_vertical_section': !($parent && $parent.layout == 'horizontal'), 'custom_section_horizontal_section': $parent && $parent.layout == 'horizontal' }">
+        <!-- ko if: name -->
+        <h1 data-bind="text: name"></h1>
+        <!-- /ko -->
 
-    <!-- ko if: layout == 'vertical' -->
-    <div class="custom_section custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
-    <!-- /ko -->
+        <!-- ko if: layout == 'vertical' -->
+        <div class="custom_section custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+        <!-- /ko -->
 
-    <!-- ko if: layout == 'horizontal' -->
-    <div class="custom_section custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
-    <!-- /ko -->
+        <!-- ko if: layout == 'horizontal' -->
+        <div class="custom_section custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+        <!-- /ko -->
 
-    <!-- ko if: layout == 'horizontal_grid' -->
-    <div class="row-fluid custom_section custom_section_horizontal_grid">
-        <!-- ko foreach: children -->
-        <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+        <!-- ko if: layout == 'horizontal_grid' -->
+        <div class="row-fluid custom_section custom_section_horizontal_grid">
+            <!-- ko foreach: children -->
+            <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+            <!-- /ko -->
+        </div>
         <!-- /ko -->
     </div>
-    <!-- /ko -->
 </script>
 <script type="text/html" id="customControls_controlTemplate">
     <form class="form-inline custom_control">
