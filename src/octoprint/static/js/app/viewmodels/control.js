@@ -87,6 +87,10 @@ $(function() {
             self.isLoading(data.flags.loading);
         };
 
+        self.onEventSettingsUpdated = function (payload) {
+            self.requestData();
+        }
+
         self.onEventRegisteredMessageReceived = function(payload) {
             if (payload.key in self.feedbackControlLookup) {
                 var outputs = self.feedbackControlLookup[payload.key];
