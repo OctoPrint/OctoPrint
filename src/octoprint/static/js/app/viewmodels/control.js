@@ -22,6 +22,7 @@ $(function() {
 
         self.extrusionAmount = ko.observable(undefined);
         self.controls = ko.observableArray([]);
+        self.staticID = 0;
 
         self.tools = ko.observableArray([]);
 
@@ -131,6 +132,8 @@ $(function() {
         };
 
         self._processControl = function (control) {
+            control.id = ko.observable("settingsCustomControl_id" + self.staticID++);
+
             if (control.hasOwnProperty("processed") && control.processed) {
                 return control;
             }
