@@ -106,7 +106,7 @@
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate">
-    <div class="custom_section" data-bind="css: { 'custom_section_vertical_section': !($parent && $parent.layout == 'horizontal'), 'custom_section_horizontal_section': $parent && $parent.layout == 'horizontal' }">
+    <div class="custom_section" data-bind="css: { 'custom_section_horizontal_section': $parent && $parent.layout == 'horizontal' }">
         <!-- ko if: layout == 'vertical' -->
         <div class="custom_section custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
         <!-- /ko -->
