@@ -107,22 +107,46 @@
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate">
     <div class="custom_section" data-bind="css: { 'custom_section_vertical_section': !($parent && $parent.layout == 'horizontal'), 'custom_section_horizontal_section': $parent && $parent.layout == 'horizontal' }">
-        <!-- ko if: name -->
-        <a class="accordion-toggle" data-toggle="collapse" data-bind="attr: { 'data-target': '#' + id() }"><h1 data-bind="text: name"></h1></a>
-        <!-- /ko -->
-
         <!-- ko if: layout == 'vertical' -->
-        <div class="custom_section custom_section_vertical collapse in" data-bind="template: { name: $root.displayMode, foreach: children }, attr: { 'id': id }"></div>
+        <div class="custom_section custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
         <!-- /ko -->
 
         <!-- ko if: layout == 'horizontal' -->
-        <div class="custom_section custom_section_horizontal collapse in" data-bind="template: { name: $root.displayMode, foreach: children }, attr: { 'id': id }"></div>
+        <div class="custom_section custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
         <!-- /ko -->
 
         <!-- ko if: layout == 'horizontal_grid' -->
-        <div class="row-fluid custom_section custom_section_horizontal_grid collapse in" data-bind="attr: { 'id': id }">
+        <div class="row-fluid custom_section custom_section_horizontal_grid">
             <!-- ko foreach: children -->
             <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+            <!-- /ko -->
+        </div>
+        <!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customControls_containerTemplate_accordion">
+    <div class="custom_section accordion-group" data-bind="css: { 'custom_section_horizontal_section': $parent && $parent.layout == 'horizontal' }">
+        <!-- ko if: name -->
+        <div class="accordion-heading">
+            <a class="accordion-toggle" style="display: block; text-decoration: none" data-bind="style: { 'cursor': collapsable ? '' : 'default' }, attr: { 'data-target': collapsable ? '#' + id() : '', 'data-toggle': collapsable ? 'collapse' : '', 'onclick':  collapsable ? '$(this).children().toggleClass(\'icon-caret-right icon-caret-down\')' : '' }"><h1 data-bind="text: name, css: { 'icon-caret-down': collapsable }"></h1></a>
+        </div>
+        <!-- /ko -->
+
+        <!-- ko if: layout -->
+        <div class="accordion-body" data-bind="attr: { 'id': id }, css: { 'collapse in': collapsable }">
+            <!-- ko if: layout == 'vertical' -->
+            <div class="custom_section custom_section_vertical accordion-inner" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+            <!-- /ko -->
+            <!-- ko if: layout == 'horizontal' -->
+            <div class="custom_section custom_section_horizontal accordion-inner" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+            <!-- /ko -->
+
+            <!-- ko if: layout == 'horizontal_grid' -->
+            <div class="row-fluid custom_section custom_section_horizontal_grid accordion-inner">
+                <!-- ko foreach: children -->
+                <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+                <!-- /ko -->
+            </div>
             <!-- /ko -->
         </div>
         <!-- /ko -->

@@ -138,8 +138,8 @@ $(function() {
                 return control;
             }
 
-            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
-                control.output = ko.observable("");
+            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("deflt") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
+                control.output = ko.observable(control.deflt);
                 if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
                     self.feedbackControlLookup[control.key] = {};
                 }
@@ -151,6 +151,9 @@ $(function() {
                 if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal" || control.layout == "horizontal_grid")) {
                     control.layout = "vertical";
                 }
+
+                if (!control.hasOwnProperty("collapsable"))
+                    control.collapsable = false;
             }
 
             if (control.hasOwnProperty("input")) {
@@ -340,7 +343,7 @@ $(function() {
 
         self.displayMode = function (customControl) {
             if (customControl.hasOwnProperty("children")) {
-                return "customControls_containerTemplate";
+                return (customControl.hasOwnProperty("name") && customControl.name != "") ? "customControls_containerTemplate_accordion" : "customControls_containerTemplate";
             } else {
                 return "customControls_controlTemplate";
             }
