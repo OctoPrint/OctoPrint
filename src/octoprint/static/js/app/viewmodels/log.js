@@ -22,8 +22,8 @@ $(function() {
                 },
                 "size": function(a, b) {
                     // sorts descending
-                    if (a["bytes"] > b["bytes"]) return -1;
-                    if (a["bytes"] < b["bytes"]) return 1;
+                    if (a["size"] > b["size"]) return -1;
+                    if (a["size"] < b["size"]) return 1;
                     return 0;
                 }
             },
