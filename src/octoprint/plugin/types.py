@@ -469,7 +469,6 @@ class SimpleApiPlugin(OctoPrintPlugin):
 
 	   __plugin_implementation__ = MySimpleApiPlugin()
 
-
 	Our plugin defines two commands, ``command1`` with no mandatory parameters and ``command2`` with one
 	mandatory parameter ``some_parameter``.
 
@@ -519,6 +518,12 @@ class SimpleApiPlugin(OctoPrintPlugin):
 		mandatory parameter names.
 		"""
 		return None
+
+	def is_api_adminonly(self):
+		"""
+		Return True if the API is only available to users having the admin role.
+		"""
+		return False
 
 	def on_api_command(self, command, data):
 		"""

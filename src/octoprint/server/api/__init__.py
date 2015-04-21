@@ -56,6 +56,9 @@ def pluginData(name):
 		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
 
 	api_plugin = api_plugins[0]
+	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+		return make_response("Forbidden", 403)
+
 	response = api_plugin.on_api_get(request)
 
 	if response is not None:
@@ -79,6 +82,9 @@ def pluginCommand(name):
 	valid_commands = api_plugin.get_api_commands()
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)
+
+	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+		return make_response("Forbidden", 403)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
 	if response is not None:
