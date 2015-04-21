@@ -476,6 +476,12 @@ $(function() {
                 }
             });
             log.info("... binding done");
+
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onStartupComplete")) {
+                    viewModel.onStartupComplete();
+                }
+            });
         };
 
         if (!_.has(viewModelMap, "settingsViewModel")) {

@@ -61,12 +61,10 @@ $(function() {
             });
         };
 
-        self.onDataUpdaterReconnect = function() {
-            self.requestData();
-        };
-
-        self.onStartup = function() {
-            self.requestData();
+        self.onUserLoggedIn = function(user) {
+            if (user.admin) {
+                self.requestData();
+            }
         };
     }
 

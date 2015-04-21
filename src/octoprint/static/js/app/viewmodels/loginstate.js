@@ -11,6 +11,8 @@ $(function() {
         self.isAdmin = ko.observable(false);
         self.isUser = ko.observable(false);
 
+        self.allViewModels = undefined;
+
         self.currentUser = ko.observable(undefined);
 
         self.userMenuText = ko.computed(function() {
@@ -20,12 +22,6 @@ $(function() {
                 return gettext("Login");
             }
         });
-
-        self.subscribers = [];
-        self.subscribe = function(callback) {
-            if (callback === undefined) return;
-            self.subscribers.push(callback);
-        };
 
         self.reloadUser = function() {
             if (self.currentUser() == undefined) {
@@ -57,7 +53,11 @@ $(function() {
 
                 self.currentUser(response);
 
-                _.each(self.subscribers, function(callback) { callback("login", response); });
+                _.each(self.allViewModels, function(viewModel) {
+                    if (viewModel.hasOwnProperty("onUserLoggedIn")) {
+                        viewModel.onUserLoggedIn(response);
+                    }
+                });
             } else {
                 self.loggedIn(false);
                 self.username(undefined);
@@ -66,7 +66,11 @@ $(function() {
 
                 self.currentUser(undefined);
 
-                _.each(self.subscribers, function(callback) { callback("logout", {}); });
+                _.each(self.allViewModels, function(viewModel) {
+                    if (viewModel.hasOwnProperty("onUserLoggedOut")) {
+                        viewModel.onUserLoggedOut();
+                    }
+                });
             }
         };
 
@@ -116,11 +120,15 @@ $(function() {
             }
         };
 
+        self.onAllBound = function(allViewModels) {
+            self.allViewModels = allViewModels;
+        };
+
         self.onDataUpdaterReconnect = function() {
             self.requestData();
         };
 
-        self.onStartup = function() {
+        self.onStartupComplete = function() {
             self.requestData();
         };
     }

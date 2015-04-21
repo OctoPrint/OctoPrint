@@ -57,12 +57,6 @@ $(function() {
             return self.editorPassword() != self.editorRepeatedPassword();
         });
 
-        self.loginState.subscribe(function(change, data) {
-            if (change == "login" && data.admin) {
-                self.requestData();
-            }
-        });
-
         self.requestData = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
@@ -267,6 +261,12 @@ $(function() {
                     }
                 }
             });
+        };
+
+        self.onUserLoggedIn = function(user) {
+            if (user.admin) {
+                self.requestData();
+            }
         }
     }
 
