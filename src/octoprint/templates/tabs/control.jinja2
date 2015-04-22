@@ -106,17 +106,17 @@
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate">
-    <div class="custom_section" data-bind="css: { 'custom_section_horizontal_section': $parent && $parent.layout == 'horizontal' }">
+    <div class="custom_section" data-bind="attr: { 'id': id }, css: { 'accordion-body': name && name != '', 'collapse in': collapsable }">
         <!-- ko if: layout == 'vertical' -->
-        <div class="custom_section custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+        <div class="custom_section custom_section_vertical" data-bind="css: { 'accordion-inner': name && name != '' }, template: { name: $root.displayMode, foreach: children }"></div>
         <!-- /ko -->
 
         <!-- ko if: layout == 'horizontal' -->
-        <div class="custom_section custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+        <div class="custom_section custom_section_horizontal" data-bind="css: { 'accordion-inner': name && name != '' }, template: { name: $root.displayMode, foreach: children }"></div>
         <!-- /ko -->
 
         <!-- ko if: layout == 'horizontal_grid' -->
-        <div class="row-fluid custom_section custom_section_horizontal_grid">
+        <div class="row-fluid custom_section custom_section_horizontal_grid" data-bind="css: { 'accordion-inner': name }">
             <!-- ko foreach: children -->
             <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
             <!-- /ko -->
@@ -125,31 +125,14 @@
     </div>
 </script>
 <script type="text/html" id="customControls_containerTemplate_accordion">
-    <div class="custom_section accordion-group" data-bind="css: { 'custom_section_horizontal_section': $parent && $parent.layout == 'horizontal' }">
+    <div class="custom_section accordion-group">
         <!-- ko if: name -->
         <div class="accordion-heading">
             <a class="accordion-toggle" style="display: block; text-decoration: none" data-bind="style: { 'cursor': collapsable ? '' : 'default' }, attr: { 'data-target': collapsable ? '#' + id() : '', 'data-toggle': collapsable ? 'collapse' : '', 'onclick':  collapsable ? '$(this).children().toggleClass(\'icon-caret-right icon-caret-down\')' : '' }"><h1 data-bind="text: name, css: { 'icon-caret-down': collapsable }"></h1></a>
         </div>
         <!-- /ko -->
 
-        <!-- ko if: layout -->
-        <div class="accordion-body" data-bind="attr: { 'id': id }, css: { 'collapse in': collapsable }">
-            <!-- ko if: layout == 'vertical' -->
-            <div class="custom_section custom_section_vertical accordion-inner" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
-            <!-- /ko -->
-            <!-- ko if: layout == 'horizontal' -->
-            <div class="custom_section custom_section_horizontal accordion-inner" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
-            <!-- /ko -->
-
-            <!-- ko if: layout == 'horizontal_grid' -->
-            <div class="row-fluid custom_section custom_section_horizontal_grid accordion-inner">
-                <!-- ko foreach: children -->
-                <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
-                <!-- /ko -->
-            </div>
-            <!-- /ko -->
-        </div>
-        <!-- /ko -->
+        <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
     </div>
 </script>
 <script type="text/html" id="customControls_controlTemplate">
@@ -161,7 +144,6 @@
 </script>
 <script type="text/html" id="customControls_controlTemplate_input">
     <!-- ko foreach: input -->
-    <div class="form-inline">
         <label style="cursor: default" data-bind="text: name"></label>
         <!-- ko if: slider -->
             <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}">
@@ -169,7 +151,6 @@
         <!-- ko ifnot: slider -->
             <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
         <!-- /ko -->
-    </div>
     <!-- /ko -->
 </script>
 <script type="text/html" id="customControls_controlTemplate_output">

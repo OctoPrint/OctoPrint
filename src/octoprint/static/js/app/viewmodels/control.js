@@ -22,7 +22,7 @@ $(function() {
 
         self.extrusionAmount = ko.observable(undefined);
         self.controls = ko.observableArray([]);
-        self.staticID = 0;
+        self.controlIndex = 0;
 
         self.tools = ko.observableArray([]);
 
@@ -132,14 +132,14 @@ $(function() {
         };
 
         self._processControl = function (control) {
-            control.id = ko.observable("settingsCustomControl_id" + self.staticID++);
+            control.id = ko.observable("settingsCustomControl_id" + self.controlIndex++);
 
             if (control.hasOwnProperty("processed") && control.processed) {
                 return control;
             }
 
-            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("defaultValue") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
-                control.output = ko.observable(control.defaultValue);
+            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
+                control.output = ko.observable(control.defaultValue || "");
                 if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
                     self.feedbackControlLookup[control.key] = {};
                 }
@@ -152,13 +152,14 @@ $(function() {
                     control.layout = "vertical";
                 }
 
-                if (!control.hasOwnProperty("collapsable"))
+                if (!control.hasOwnProperty("collapsable")) {
                     control.collapsable = false;
+                }
             }
 
             if (control.hasOwnProperty("input")) {
                 for (var i = 0; i < control.input.length; i++) {
-                    control.input[i].value = ko.observable(control.input[i].defaultValue);
+                    control.input[i].value = ko.observable(control.input[i].defaultValue || "0");
                     if (!control.input[i].hasOwnProperty("slider")) {
                         control.input[i].slider = false;
                     }
