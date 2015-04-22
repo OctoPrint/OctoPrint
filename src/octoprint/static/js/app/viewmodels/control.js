@@ -138,8 +138,8 @@ $(function() {
                 return control;
             }
 
-            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("deflt") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
-                control.output = ko.observable(control.deflt);
+            if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("defaultValue") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
+                control.output = ko.observable(control.defaultValue);
                 if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
                     self.feedbackControlLookup[control.key] = {};
                 }
@@ -158,7 +158,7 @@ $(function() {
 
             if (control.hasOwnProperty("input")) {
                 for (var i = 0; i < control.input.length; i++) {
-                    control.input[i].value = ko.observable(control.input[i].default);
+                    control.input[i].value = ko.observable(control.input[i].defaultValue);
                     if (!control.input[i].hasOwnProperty("slider")) {
                         control.input[i].slider = false;
                     }
