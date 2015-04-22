@@ -237,6 +237,9 @@ default_settings = {
 	},
 	"devel": {
 		"stylesheet": "css",
+		"cache": {
+			"enabled": True
+		},
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,

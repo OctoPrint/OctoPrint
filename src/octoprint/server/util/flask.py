@@ -76,6 +76,11 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 				logger.debug("Cache bypassed, calling wrapped function")
 				return f(*args, **kwargs)
 
+			# also bypass the cache if it's disabled completely
+			if not settings().getBoolean(["devel", "cache", "enabled"]):
+				logger.debug("Cache disabled, calling wrapped function")
+				return f(*args, **kwargs)
+
 			cache_key = key()
 
 			# only take the value from the cache if we are not required to refresh it from the wrapped function
