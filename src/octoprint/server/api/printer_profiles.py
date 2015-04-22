@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 
 from flask import jsonify, make_response, request, url_for
-from flask.exceptions import JSONBadRequest
+from flask.exceptions import BadRequest
 
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
@@ -32,7 +32,7 @@ def printerProfilesAdd():
 
 	try:
 		json_data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -91,7 +91,7 @@ def printerProfilesUpdate(identifier):
 
 	try:
 		json_data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:

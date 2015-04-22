@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 
 from flask import request, jsonify, make_response
-from flask.exceptions import JSONBadRequest
+from flask.exceptions import BadRequest
 
 from octoprint.events import eventManager, Events
 from octoprint.settings import settings
@@ -138,7 +138,7 @@ def setSettings():
 
 	try:
 		data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 	s = settings()
 
