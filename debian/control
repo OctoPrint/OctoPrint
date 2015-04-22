@@ -1,0 +1,12 @@
+Source: octoprint
+Maintainer: Chris Roadfeldt <chris@roadfeldt.com>
+Section: misc
+Priority: optional
+Standards-Version: 1.1.2
+Build-Depends: build-essential, debhelper (>= 9), swig, python-flask (>=0.9), python-werkzeug (>=0.8.3), python-tornado (>=3.0.2), python-sockjs-tornado (>=1.0.0), python-yaml (>=3.10), python-flask-login (>=0.2.2) , python-flask-principal (>=0.3.5), python-serial (>=2.6), python-netaddr (>=0.7.10), python-mock (>=1.0.1), python-nose (>=1.3.0), python, dh-python, python-dev, python-sphinx
+X-Python-Version: 2.7
+
+Package: octoprint
+Architecture: armhf
+Depends: swig, python-flask (>=0.9), python-werkzeug (>=0.8.3), python-tornado (>=3.0.2), python-sockjs-tornado (>=1.0.0), python-yaml (>=3.10), python-flask-login (>=0.2.2) , python-flask-principal (>=0.3.5), python-serial (>=2.6), python-netaddr (>=0.7.10), python-mock (>=1.0.1), python-nose (>=1.3.0), python, dh-python, python-dev, python-sphinx
+Description: OctoPrint provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software and released under the GNU Affero General Public License V3.

@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+#export DH_VERBOSE=1
+export PYBUILD_NAME=octoprint
+
+%:
+	dh $@ --with python2 --buildsystem=pybuild
+
+clean::
+	rm -rf build build-stamp configure-stamp build/ MANIFEST
+	dh_clean
+

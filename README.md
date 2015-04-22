@@ -79,3 +79,63 @@ at `~/Library/Application Support/OctoPrint` on MacOS.
 A comprehensive overview of all available configuration settings can be found
 [on the wiki](https://github.com/foosel/OctoPrint/wiki/Configuration). Please note that the most commonly used
 configuration settings can also easily be edited from OctoPrint's settings dialog.
+
+Debian Wheezy Package build
+---------------------
+
+Below is a Wheezy packaging process built using wheezy, wheezy-backports and jessie packages built using official debian sources for the pre-requisites and git master branch of Octoprint. Currently this process uses hardcoded versions of some prereq packages and uses some updated packages beyond what Octoprint requires. So far no ill effects have been noticed and the build is clean and provides a deb package for clean install, upgrade and removal. This is bound to change as upstream packages are updated. A more robust prereq install would be greatly appreciated. Hint, hint... :)
+
+To create a Debian Wheezy package for octoprint, do the following.
+
+Grab source
+
+```
+cd /usr/src
+git clone https://github.com/croadfeldt/OctoPrint.git
+```
+
+Next we need to install pre-requisites before building and then running Octoprint.
+
+You will need roughly 1GB of available RAM/SWAP to build the prereqs. If your build system is below 1GB of RAM/SWAP together, use the following commands to add 512MB of swap, adjust as needed and for available storage.
+
+```
+dd if=/dev/zero of=/tmp/swapfile bs=1024 count=524288
+mkswap /tmp/swapfile
+swapon /tmp/swapfile
+```
+
+Install prereqs using the following commands. This will take a bit as some prereqs will be compiled, packaged and installed. Be patient.
+
+```
+cd /usr/src/Octoprint/debian
+sh Wheezy-install-instructions.txt
+```
+
+Remove the added swap if you created it.
+
+```
+swapoff /tmp/swapfile
+rm /tmp/swapfile
+```
+
+Build Octoprint debian package.
+
+```
+cd /usr/src/Octoprint
+make builddeb
+```
+
+Install Octoprint.
+
+```
+cd /usr/src
+dpkg -i octoprint_1.1.2_`dpkg --print-architecture`.deb
+```
+
+Start it up!
+
+`systemctl restart octoprint.service`
+
+Start it on boot.
+
+`systemctl enable octoprint.service`

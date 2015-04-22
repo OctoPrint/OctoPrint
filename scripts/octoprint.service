@@ -1,0 +1,12 @@
+[Unit]
+Description=OctoPrint
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/octoprint
+Restart=always
+RestartSec=60
+User=octo
+
+[Install]
+WantedBy=multi-user.target

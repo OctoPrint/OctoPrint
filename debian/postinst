@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Create octoprint user
+useradd -r -s /bin/false -G tty,dialout -m -U octo
+
+# Start and enable autostart of Octoprint via systemd
+systemctl start octoprint.service
+systemctl enable octoprint.service
+
