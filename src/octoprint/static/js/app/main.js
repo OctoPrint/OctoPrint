@@ -458,7 +458,7 @@ $(function() {
                             ko.applyBindings(viewModel, element);
                             log.debug("View model", viewModel.constructor.name, "bound to", target);
                         } catch (exc) {
-                            log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", exc.stack);
+                            log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
                         }
                     });
                 }
