@@ -105,35 +105,33 @@
 <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
 
 <!-- Templates for custom controls -->
-<script type="text/html" id="customControls_containerTemplate">
-    <div class="custom_section" data-bind="attr: { 'id': id }, css: { 'accordion-body': name && name != '', 'collapse in': collapsable }">
-        <!-- ko if: layout == 'vertical' -->
-        <div class="custom_section custom_section_vertical" data-bind="css: { 'accordion-inner': name && name != '' }, template: { name: $root.displayMode, foreach: children }"></div>
-        <!-- /ko -->
-
-        <!-- ko if: layout == 'horizontal' -->
-        <div class="custom_section custom_section_horizontal" data-bind="css: { 'accordion-inner': name && name != '' }, template: { name: $root.displayMode, foreach: children }"></div>
-        <!-- /ko -->
-
-        <!-- ko if: layout == 'horizontal_grid' -->
-        <div class="row-fluid custom_section custom_section_horizontal_grid" data-bind="css: { 'accordion-inner': name }">
-            <!-- ko foreach: children -->
-            <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
-            <!-- /ko -->
-        </div>
-        <!-- /ko -->
-    </div>
-</script>
-<script type="text/html" id="customControls_containerTemplate_accordion">
-    <div class="custom_section accordion-group">
-        <!-- ko if: name -->
-        <div class="accordion-heading">
-            <a class="accordion-toggle" style="display: block; text-decoration: none" data-bind="style: { 'cursor': collapsable ? '' : 'default' }, attr: { 'data-target': collapsable ? '#' + id() : '', 'data-toggle': collapsable ? 'collapse' : '', 'onclick':  collapsable ? '$(this).children().toggleClass(\'icon-caret-right icon-caret-down\')' : '' }"><h1 data-bind="text: name, css: { 'icon-caret-down': collapsable }"></h1></a>
-        </div>
-        <!-- /ko -->
-
+<script type="text/html" id="customControls_containerTemplate_nameless">
+    <div class="custom_section" data-bind="attr: { 'id': id }">
         <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
     </div>
+</script>
+<script type="text/html" id="customControls_containerTemplate_collapsable">
+    <div class="custom_section" data-bind="attr: { 'id': id }">
+        <h1><a onclick="$(this).children().first().toggleClass('icon-caret-down icon-caret-right').parent().parent().next().slideToggle('fast')"><i data-bind="css: {'icon-caret-down': !collapsed, 'icon-caret-right': collapsed}"></i> <span data-bind="text: name"></span></a></h1>
+        <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customControls_containerTemplate">
+    <!-- ko if: layout == 'vertical' -->
+    <div class="custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }, css: {hide: collapsed && name}"></div>
+    <!-- /ko -->
+
+    <!-- ko if: layout == 'horizontal' -->
+    <div class="custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }, css: {hide: collapsed && name}"></div>
+    <!-- /ko -->
+
+    <!-- ko if: layout == 'horizontal_grid' -->
+    <div class="row-fluid custom_section_horizontal_grid" data-bind="css: {hide: collapsed && name}">
+        <!-- ko foreach: children -->
+        <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+        <!-- /ko -->
+    </div>
+    <!-- /ko -->
 </script>
 <script type="text/html" id="customControls_controlTemplate">
     <form class="form-inline custom_control">

@@ -152,8 +152,8 @@ $(function() {
                     control.layout = "vertical";
                 }
 
-                if (!control.hasOwnProperty("collapsable")) {
-                    control.collapsable = false;
+                if (!control.hasOwnProperty("collapsed")) {
+                    control.collapsed = false;
                 }
             }
 
@@ -344,7 +344,11 @@ $(function() {
 
         self.displayMode = function (customControl) {
             if (customControl.hasOwnProperty("children")) {
-                return (customControl.hasOwnProperty("name") && customControl.name != "") ? "customControls_containerTemplate_accordion" : "customControls_containerTemplate";
+                if (customControl.name) {
+                    return "customControls_containerTemplate_collapsable";
+                } else {
+                    return "customControls_containerTemplate_nameless";
+                }
             } else {
                 return "customControls_controlTemplate";
             }
