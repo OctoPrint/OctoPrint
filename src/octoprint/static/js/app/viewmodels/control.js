@@ -90,7 +90,7 @@ $(function() {
 
         self.onEventSettingsUpdated = function (payload) {
             self.requestData();
-        }
+        };
 
         self.onEventRegisteredMessageReceived = function(payload) {
             if (payload.key in self.feedbackControlLookup) {
