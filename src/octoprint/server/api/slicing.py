@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, make_response, url_for
-from flask.exceptions import JSONBadRequest
+from flask.exceptions import BadRequest
 
 from octoprint.server import slicingManager
 from octoprint.server.util.flask import restricted_access
@@ -75,7 +75,7 @@ def slicingAddSlicerProfile(slicer, name):
 
 	try:
 		json_data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	data = dict()
@@ -114,7 +114,7 @@ def slicingPatchSlicerProfile(slicer, name):
 
 	try:
 		json_data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	data = dict()
