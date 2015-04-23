@@ -87,6 +87,10 @@ $(function() {
             self.isLoading(data.flags.loading);
         };
 
+        self.onEventSettingsUpdated = function (payload) {
+            self.requestData();
+        };
+
         self.onEventRegisteredMessageReceived = function(payload) {
             if (payload.key in self.feedbackControlLookup) {
                 var outputs = self.feedbackControlLookup[payload.key];
@@ -132,7 +136,7 @@ $(function() {
             }
 
             if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
-                control.output = ko.observable("");
+                control.output = ko.observable(control.defaultValue || "");
                 if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
                     self.feedbackControlLookup[control.key] = {};
                 }
@@ -141,14 +145,18 @@ $(function() {
 
             if (control.hasOwnProperty("children")) {
                 control.children = ko.observableArray(self._processControls(control.children));
-                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal")) {
+                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal" || control.layout == "horizontal_grid")) {
                     control.layout = "vertical";
+                }
+
+                if (!control.hasOwnProperty("collapsed")) {
+                    control.collapsed = false;
                 }
             }
 
             if (control.hasOwnProperty("input")) {
                 for (var i = 0; i < control.input.length; i++) {
-                    control.input[i].value = ko.observable(control.input[i].default);
+                    control.input[i].value = ko.observable(control.input[i].defaultValue || "0");
                     if (!control.input[i].hasOwnProperty("slider")) {
                         control.input[i].slider = false;
                     }
@@ -199,17 +207,9 @@ $(function() {
             }
 
             if (data.confirm) {
-                var confirmationDialog = $("#confirmation_dialog");
-                var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
-
-                $(".confirmation_dialog_message", confirmationDialog).text(data.confirm);
-                confirmationDialogAck.unbind("click");
-                confirmationDialogAck.bind("click", function (e) {
-                    e.preventDefault();
-                    $("#confirmation_dialog").modal("hide");
+                showConfirmationDialog(data.confirm, function (e) {
                     callback(data);
                 });
-                confirmationDialog.modal("show");
             } else {
                 callback(data);
             }
@@ -341,7 +341,11 @@ $(function() {
 
         self.displayMode = function (customControl) {
             if (customControl.hasOwnProperty("children")) {
-                return "customControls_containerTemplate";
+                if (customControl.name) {
+                    return "customControls_containerTemplate_collapsable";
+                } else {
+                    return "customControls_containerTemplate_nameless";
+                }
             } else {
                 return "customControls_controlTemplate";
             }

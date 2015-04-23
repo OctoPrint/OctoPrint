@@ -156,6 +156,13 @@ $(function() {
                     }
                 });
             });
+            self.settingsDialog.on('beforeSave', function () {
+                _.each(allViewModels, function (viewModel) {
+                    if (viewModel.hasOwnProperty("onSettingsBeforeSave")) {
+                        viewModel.onSettingsBeforeSave();
+                    }
+                });
+            });
         };
 
         self.show = function() {
@@ -257,7 +264,9 @@ $(function() {
             self.terminalFilters(response.terminalFilters);
         };
 
-        self.saveData = function() {
+        self.saveData = function () {
+            self.settingsDialog.trigger("beforeSave");
+
             var data = ko.mapping.toJS(self.settings);
 
             data = _.extend(data, {

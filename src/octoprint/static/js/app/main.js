@@ -317,6 +317,7 @@ $(function() {
 
                     $(settings.menuSelector)
                         .data("invokedOn", $(e.target))
+                        .data("contextParent", $(this))
                         .show()
                         .css({
                             position: "absolute",
@@ -330,10 +331,7 @@ $(function() {
 
                             $(this).hide();
 
-                            var $invokedOn = $(this).data("invokedOn");
-                            var $selectedMenu = $(e.target);
-
-                            settings.menuSelected.call(this, $invokedOn, $selectedMenu);
+                            settings.menuSelected.call(this, $(this).data('invokedOn'), $(this).data('contextParent'), $(e.target));
                         });
 
                     return false;
@@ -460,7 +458,7 @@ $(function() {
                             ko.applyBindings(viewModel, element);
                             log.debug("View model", viewModel.constructor.name, "bound to", target);
                         } catch (exc) {
-                            log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", exc.stack);
+                            log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
                         }
                     });
                 }

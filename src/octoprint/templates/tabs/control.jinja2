@@ -105,21 +105,28 @@
 <div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
 
 <!-- Templates for custom controls -->
+<script type="text/html" id="customControls_containerTemplate_nameless">
+    <div class="custom_section">
+        <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customControls_containerTemplate_collapsable">
+    <div class="custom_section">
+        <h1 onclick="$(this).children().first().toggleClass('icon-caret-down icon-caret-right').parent().next().slideToggle('fast')"><i data-bind="css: {'icon-caret-down': !collapsed, 'icon-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
+        <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
+    </div>
+</script>
 <script type="text/html" id="customControls_containerTemplate">
-    <!-- ko if: name -->
-    <h1 data-bind="text: name"></h1>
-    <!-- /ko -->
-
     <!-- ko if: layout == 'vertical' -->
-    <div class="custom_section custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+    <div class="custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }, css: {hide: collapsed && name}"></div>
     <!-- /ko -->
 
     <!-- ko if: layout == 'horizontal' -->
-    <div class="custom_section custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+    <div class="custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }, css: {hide: collapsed && name}"></div>
     <!-- /ko -->
 
     <!-- ko if: layout == 'horizontal_grid' -->
-    <div class="row-fluid custom_section custom_section_horizontal_grid">
+    <div class="row-fluid custom_section_horizontal_grid" data-bind="css: {hide: collapsed && name}">
         <!-- ko foreach: children -->
         <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
         <!-- /ko -->
@@ -135,7 +142,7 @@
 </script>
 <script type="text/html" id="customControls_controlTemplate_input">
     <!-- ko foreach: input -->
-        <label data-bind="text: name"></label>
+        <label style="cursor: default" data-bind="text: name"></label>
         <!-- ko if: slider -->
             <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}">
         <!-- /ko -->
@@ -145,7 +152,7 @@
     <!-- /ko -->
 </script>
 <script type="text/html" id="customControls_controlTemplate_output">
-    <label data-bind="text: output"></label>
+    <label style="cursor: default" data-bind="text: output"></label>
 </script>
 <script type="text/html" id="customControls_controlTemplate_command">
     <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
