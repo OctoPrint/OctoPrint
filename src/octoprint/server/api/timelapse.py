@@ -27,6 +27,9 @@ def getTimelapseData():
 	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
 		config["type"] = "zchange"
 		config["postRoll"] = timelapse.postRoll()
+	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.BeepTimelapse):
+		config["type"] = "onbeep"
+		config["postRoll"] = timelapse.postRoll()
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		config["type"] = "timed"
 		config["postRoll"] = timelapse.postRoll()
