@@ -16,9 +16,9 @@ events or progress reports or to add support for additional slicers. More plugin
 Finding Plugins
 ===============
 
-Currently there's no such thing as a centralized plugin repository for available plugins.
+The official OctoPrint Plugin Repository can be found at `plugins.octoprint.org <http://plugins.octoprint.org>`_.
 
-Plugins may be found in the lists provided in `the OctoPrint wiki <https://github.com/foosel/OctoPrint/wiki#plugins>`_
+Some plugins may also be found in the list provided in `the OctoPrint wiki <https://github.com/foosel/OctoPrint/wiki#plugins>`_
 and on the `OctoPrint organization Github page <https://github.com/OctoPrint>`_.
 
 .. _sec-features-plugins-installing:
