@@ -3,6 +3,9 @@
 Concepts
 ========
 
+.. contents::
+   :local:
+
 OctoPrint's plugins are `Python Packages <https://docs.python.org/2/tutorial/modules.html#packages>`_ which in their
 top-level module define a bunch of :ref:`control properties <sec-plugin-concepts-controlproperties>` defining
 metadata (like name, version etc of the plugin) as well as information on how to initialize the plugin and into what

@@ -3,6 +3,9 @@
 Getting Started
 ===============
 
+.. contents::
+   :local:
+
 Over the course of this little tutorial we'll build a full fledged, installable OctoPrint plugin that displays "Hello World!"
 at some locations throughout OctoPrint and also offers some other basic functionality to give you an idea of what
 you can achieve with OctoPrint's plugin system.

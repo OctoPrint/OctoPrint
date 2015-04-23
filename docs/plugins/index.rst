@@ -12,3 +12,4 @@ Developing Plugins
    distributing.rst
    mixins.rst
    hooks.rst
+   viewmodels.rst
