@@ -121,6 +121,7 @@
 * Added support for rectangular printer beds with the origin in the center ([#682](https://github.com/foosel/OctoPrint/issues/682) 
   and [#852](https://github.com/foosel/OctoPrint/pull/852)). Printer profiles now contain a new settings ``volume.origin``
   which can either be ``lowerleft`` or ``center``. For circular beds only ``center`` is supported.
+* Made baudrate detection a bit more solid, still can't perform wonders.
 
 ### Bug Fixes
 

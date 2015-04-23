@@ -1013,7 +1013,6 @@ class MachineCom(object):
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
 							self._sendCommand("M105")
 							self._clear_to_send.set()
-							self._testingBaudrate = True
 						else:
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
@@ -1021,25 +1020,15 @@ class MachineCom(object):
 								self._serial.timeout = settings().getFloat(["serial", "timeout", "detection"])
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
-								self._baudrateDetectTestOk = 0
 								self._timeout = get_new_timeout("communication")
 								self._serial.write('\n')
 								self._sendCommand("M105")
 								self._clear_to_send.set()
-								self._testingBaudrate = True
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
-					elif 'ok' in line and 'T:' in line:
-						self._baudrateDetectTestOk += 1
-						if self._baudrateDetectTestOk < 10:
-							self._log("Baudrate test ok: %d" % (self._baudrateDetectTestOk))
-							self._sendCommand("M105")
-						else:
-							self._sendCommand("M999")
-							self._serial.timeout = settings().getFloat(["serial", "timeout", "connection"])
-							self._onConnected()
-					else:
-						self._testingBaudrate = False
+					elif 'start' in line or ('ok' in line and 'T:' in line):
+						self._onConnected()
+						self._clear_to_send.set()
 
 				### Connection attempt
 				elif self._state == self.STATE_CONNECTING:
@@ -1158,6 +1147,7 @@ class MachineCom(object):
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
 	def _onConnected(self):
+		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
 		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature"), self._poll_temperature, run_first=True)
 		self._temperature_timer.start()
 
