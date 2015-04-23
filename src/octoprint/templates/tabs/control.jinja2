@@ -106,12 +106,12 @@
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate_nameless">
-    <div class="custom_section" data-bind="attr: { 'id': id }">
+    <div class="custom_section">
         <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
     </div>
 </script>
 <script type="text/html" id="customControls_containerTemplate_collapsable">
-    <div class="custom_section" data-bind="attr: { 'id': id }">
+    <div class="custom_section">
         <h1><a onclick="$(this).children().first().toggleClass('icon-caret-down icon-caret-right').parent().parent().next().slideToggle('fast')"><i data-bind="css: {'icon-caret-down': !collapsed, 'icon-caret-right': collapsed}"></i> <span data-bind="text: name"></span></a></h1>
         <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
     </div>
