@@ -12,7 +12,7 @@ Open Source software, released under the terms of [the AGPLv3](http://www.gnu.or
 ## Usage
 
 1. Download in your browser and copy to a folder on your Pi, for example via SSH **or** 
-   download on your Pi: `wget http://octoprint.org/files/cura_engine_14.12/cura_engine` 
+   download on your Pi: `wget http://octoprint.org/files/octopi/cura_engine_14.12/cura_engine` 
 2. Make executable: `chmod +x /path/to/cura_engine`
 3. Test if it runs: `/path/to/cura_engine --help`
 4. Configure `/path/to/cura_engine` as the path to CuraEngine in [OctoPrint's Cura Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura)
