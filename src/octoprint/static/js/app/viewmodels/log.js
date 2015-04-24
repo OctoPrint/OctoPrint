@@ -22,8 +22,8 @@ $(function() {
                 },
                 "size": function(a, b) {
                     // sorts descending
-                    if (a["bytes"] > b["bytes"]) return -1;
-                    if (a["bytes"] < b["bytes"]) return 1;
+                    if (a["size"] > b["size"]) return -1;
+                    if (a["size"] < b["size"]) return 1;
                     return 0;
                 }
             },
@@ -61,12 +61,10 @@ $(function() {
             });
         };
 
-        self.onDataUpdaterReconnect = function() {
-            self.requestData();
-        };
-
-        self.onStartup = function() {
-            self.requestData();
+        self.onUserLoggedIn = function(user) {
+            if (user.admin) {
+                self.requestData();
+            }
         };
     }
 

@@ -50,7 +50,7 @@ class TestSlicingManager(unittest.TestCase):
 		def get_implementations(*types):
 			import octoprint.plugin
 			if octoprint.plugin.SlicerPlugin in types:
-				return dict(("slicer_" + plugin.get_slicer_properties()["type"], plugin) for plugin in plugins)
+				return plugins
 			return dict()
 		self.plugin_manager.return_value.get_implementations.side_effect = get_implementations
 

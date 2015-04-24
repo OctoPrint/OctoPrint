@@ -79,6 +79,7 @@ $(function() {
         self.feature_sdAlwaysAvailable = ko.observable(undefined);
         self.feature_swallowOkAfterResend = ko.observable(undefined);
         self.feature_repetierTargetTemp = ko.observable(undefined);
+        self.feature_disableExternalHeatupDetection = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);
 
         self.serial_port = ko.observable();
@@ -156,15 +157,23 @@ $(function() {
                     }
                 });
             });
+            self.settingsDialog.on('beforeSave', function () {
+                _.each(allViewModels, function (viewModel) {
+                    if (viewModel.hasOwnProperty("onSettingsBeforeSave")) {
+                        viewModel.onSettingsBeforeSave();
+                    }
+                });
+            });
         };
 
         self.show = function() {
             // show settings, ensure centered position
-            self.settingsDialog.modal()
-                .css({
-                    width: 'auto',
-                    'margin-left': function() { return -($(this).width() /2); }
-                });
+            self.settingsDialog.modal({
+                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+            }).css({
+                width: 'auto',
+                'margin-left': function() { return -($(this).width() /2); }
+            });
 
             return false;
         };
@@ -219,6 +228,7 @@ $(function() {
             self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
             self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
             self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
+            self.feature_disableExternalHeatupDetection(!response.feature.externalHeatupDetection);
             self.feature_keyboardControl(response.feature.keyboardControl);
 
             self.serial_port(response.serial.port);
@@ -256,7 +266,9 @@ $(function() {
             self.terminalFilters(response.terminalFilters);
         };
 
-        self.saveData = function() {
+        self.saveData = function () {
+            self.settingsDialog.trigger("beforeSave");
+
             var data = ko.mapping.toJS(self.settings);
 
             data = _.extend(data, {
@@ -293,6 +305,7 @@ $(function() {
                     "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
                     "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
                     "repetierTargetTemp": self.feature_repetierTargetTemp(),
+                    "externalHeatupDetection": !self.feature_disableExternalHeatupDetection(),
                     "keyboardControl": self.feature_keyboardControl()
                 },
                 "serial": {

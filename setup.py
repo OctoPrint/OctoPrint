@@ -9,7 +9,7 @@ import versioneer
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-# Requirements for out application
+# Requirements for our application
 INSTALL_REQUIRES = [
 	"flask==0.9",
 	"werkzeug==0.8.3",
@@ -344,10 +344,6 @@ def params():
 		# it a bit here by explicitly adding the development dependencies, which include our
 		# documentation dependencies
 		install_requires = install_requires + extras_require['develop']
-
-	import sys
-	if sys.platform in ("linux2", "darwin"):
-		install_requires += ["monotime"]
 
 	entry_points = {
 		"console_scripts": [

@@ -305,7 +305,7 @@ class CommandTrigger(GenericEventListener):
 			else:
 				commandExecutioner(command)
 		except subprocess.CalledProcessError, e:
-			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
+			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
 		except Exception, ex:
 			self._logger.exception("Command failed")
 

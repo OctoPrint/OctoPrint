@@ -175,7 +175,8 @@ def index():
 		assets["stylesheets"].append(("css", url_for('static', filename='css/octoprint.css')))
 
 	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
-	for name, implementation in asset_plugins.items():
+	for implementation in asset_plugins:
+		name = implementation._identifier
 		all_assets = implementation.get_assets()
 
 		if "js" in all_assets:
@@ -221,7 +222,7 @@ def index():
 	templates["sidebar"]["entries"]= dict(
 		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isAdmin")),
 		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign")),
-		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], header_addon="sidebar/files_header.jinja2"))
+		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2"))
 	)
 
 	# tabs
@@ -285,8 +286,11 @@ def index():
 	)
 
 	plugin_vars = dict()
-	plugin_names = template_plugins.keys()
-	for name, implementation in template_plugins.items():
+	plugin_names = set()
+	for implementation in template_plugins:
+		name = implementation._identifier
+		plugin_names.add(name)
+
 		vars = implementation.get_template_vars()
 		if not isinstance(vars, dict):
 			vars = dict()
@@ -307,8 +311,7 @@ def index():
 				else:
 					data = include[1]
 
-				suffix = data["suffix"] if "suffix" in data else ""
-				key = "plugin_" + name + suffix
+				key = data["_key"]
 				if "replaces" in data:
 					key = data["replaces"]
 				templates[t]["entries"][key] = include
@@ -320,25 +323,38 @@ def index():
 	# 2) we have all entries located somewhere within the order
 
 	for t in template_types:
+		default_order = settings().get(["appearance", "components", "order", t], merged=True, config=dict())
 		configured_order = settings().get(["appearance", "components", "order", t], merged=True)
 		configured_disabled = settings().get(["appearance", "components", "disabled", t])
+
+		# first create the ordered list of all component ids according to the configured order
 		templates[t]["order"] = [x for x in configured_order if x in templates[t]["entries"] and not x in configured_disabled]
+
+		# now append the entries from the default order that are not already in there
+		templates[t]["order"] += [x for x in default_order if not x in templates[t]["order"] and x in templates[t]["entries"] and not x in configured_disabled]
 
 		all_ordered = set(templates[t]["order"])
 		all_disabled = set(configured_disabled)
 
+		# check if anything is missing, if not we are done here
 		missing_in_order = set(templates[t]["entries"].keys()).difference(all_ordered).difference(all_disabled)
 		if len(missing_in_order) == 0:
 			continue
 
+		# finally add anything that's not included in our order yet
 		sorted_missing = list(missing_in_order)
 		if not t == "navbar" and not t == "generic":
+			# anything but navbar and generic components get sorted by their name
 			sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+
 		if t == "navbar":
+			# additional navbar components are prepended
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
 		elif t == "sidebar" or t == "tab" or t == "generic" or t == "usersettings":
+			# additional sidebar, generic or usersettings components are appended
 			templates[t]["order"] += sorted_missing
 		elif t == "settings":
+			# additional settings items are added to the plugin section
 			templates[t]["entries"]["section_plugins"] = (gettext("Plugins"), None)
 			templates[t]["order"] += ["section_plugins"] + sorted_missing
 
@@ -428,26 +444,31 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		config = dict()
 	data = dict(config)
 
+	if not "suffix" in data and counter > 1:
+		data["suffix"] = "_%d" % counter
+
 	if "div" in data:
 		data["_div"] = data["div"]
 	elif "div" in rule:
 		data["_div"] = rule["div"](name)
 		if "suffix" in data:
-			data["_div"] += "_" + data["suffix"]
-		elif counter > 1:
-			data["_div"] += "_%d" % counter
-			data["suffix"] = "_%d" % counter
-		else:
-			data["suffix"] = ""
+			data["_div"] = data["_div"] + data["suffix"]
+
 	if not "template" in data:
 		data["template"] = rule["template"](name)
+
 	if not "name" in data:
 		data["name"] = implementation._plugin_name
+
 	if not "custom_bindings" in data or data["custom_bindings"]:
 		data_bind = "allowBindings: true"
 		if "data_bind" in data:
 			data_bind = data_bind + ", " + data["data_bind"]
 		data["data_bind"] = data_bind
+
+	data["_key"] = "plugin_" + name
+	if "suffix" in data:
+		data["_key"] += data["suffix"]
 
 	return data
 
@@ -458,11 +479,15 @@ def robotsTxt():
 
 @app.route("/plugin_assets/<string:name>/<path:filename>")
 def plugin_assets(name, filename):
-	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
+	asset_plugins = pluginManager.get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.AssetPlugin)
 
-	if not name in asset_plugins:
+	if not asset_plugins:
 		return make_response("Asset not found", 404)
-	asset_plugin = asset_plugins[name]
+
+	if len(asset_plugins) > 1:
+		return make_response("More than one asset provider for {name}, can't proceed".format(name=name), 500)
+
+	asset_plugin = asset_plugins[0]
 	asset_folder = asset_plugin.get_asset_folder()
 	if asset_folder is None:
 		return make_response("Asset not found", 404)
@@ -514,9 +539,15 @@ class Server():
 		self._logConf = logConf
 		self._server = None
 
+		self._logger = None
+
+		self._lifecycle_callbacks = defaultdict(list)
+
+		self._template_searchpaths = []
+
 	def run(self):
 		if not self._allowRoot:
-			self._checkForRoot()
+			self._check_for_root()
 
 		global printer
 		global printerProfileManager
@@ -541,12 +572,12 @@ class Server():
 		settings(init=True, basedir=self._basedir, configfile=self._configfile)
 
 		# then initialize logging
-		self._initLogging(self._debug, self._logConf)
-		logger = logging.getLogger(__name__)
+		self._setup_logging(self._debug, self._logConf)
+		self._logger = logging.getLogger(__name__)
 		def exception_logger(exc_type, exc_value, exc_tb):
-			logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
+			self._logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
 		sys.excepthook = exception_logger
-		logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
+		self._logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
 
 		# then initialize the plugin manager
 		pluginManager = octoprint.plugin.plugin_manager(init=True)
@@ -560,6 +591,7 @@ class Server():
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
+		pluginLifecycleManager = LifecycleManager(pluginManager)
 
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
@@ -572,7 +604,8 @@ class Server():
 				slicing_manager=slicingManager,
 				file_manager=fileManager,
 				printer=printer,
-				app_session_manager=appSessionManager
+				app_session_manager=appSessionManager,
+				plugin_lifecycle_manager=pluginLifecycleManager
 			)
 
 		def settings_plugin_inject_factory(name, implementation):
@@ -586,31 +619,31 @@ class Server():
 			                                                   set_preprocessors=set_preprocessors)
 			return dict(settings=plugin_settings)
 
-		pluginManager.initialize_implementations(
-			additional_inject_factories=[
-				octoprint_plugin_inject_factory,
-				settings_plugin_inject_factory
-			]
-		)
+		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
+		pluginManager.initialize_implementations()
+
 		pluginManager.log_all_plugins()
+
+		# initialize file manager and register it for changes in the registered plugins
+		fileManager.initialize()
+		pluginLifecycleManager.add_callback(["enabled", "disabled"], lambda name, plugin: fileManager.reload_plugins())
+
+		# initialize slicing manager and register it for changes in the registered plugins
 		slicingManager.initialize()
+		pluginLifecycleManager.add_callback(["enabled", "disabled"], lambda name, plugin: slicingManager.reload_slicers())
 
-		# configure additional template folders for jinja2
-		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
-		additional_template_folders = []
-		for plugin in template_plugins.values():
-			folder = plugin.get_template_folder()
-			if folder is not None:
-				additional_template_folders.append(plugin.get_template_folder())
-
-		import jinja2
-		jinja_loader = jinja2.ChoiceLoader([
-			app.jinja_loader,
-			jinja2.FileSystemLoader(additional_template_folders)
-		])
-		app.jinja_loader = jinja_loader
-		del jinja2
-		app.jinja_env.add_extension("jinja2.ext.do")
+		# setup jinja2
+		self._setup_jinja2()
+		def template_enabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._register_additional_template_plugin(plugin.implementation)
+		def template_disabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
+				return
+			self._unregister_additional_template_plugin(plugin.implementation)
+		pluginLifecycleManager.add_callback("enabled", template_enabled)
+		pluginLifecycleManager.add_callback("disabled", template_disabled)
 
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
@@ -626,7 +659,7 @@ class Server():
 				clazz = octoprint.util.get_class(userManagerName)
 				userManager = clazz()
 			except AttributeError, e:
-				logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
+				self._logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
 
 		app.wsgi_app = util.ReverseProxied(
 			app.wsgi_app,
@@ -662,35 +695,20 @@ class Server():
 
 		app.debug = self._debug
 
-		from octoprint.server.api import api
-		from octoprint.server.apps import apps
-
 		# register API blueprint
-		app.register_blueprint(api, url_prefix="/api")
-		app.register_blueprint(apps, url_prefix="/apps")
-
-		# also register any blueprints defined in BlueprintPlugins
-		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
-		for name, plugin in blueprint_plugins.items():
-			blueprint = plugin.get_blueprint()
-			if blueprint is None:
-				continue
-
-			if plugin.is_blueprint_protected():
-				from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
-				blueprint.before_request(apiKeyRequestHandler)
-				blueprint.after_request(corsResponseHandler)
-
-			url_prefix = "/plugin/{name}".format(name=name)
-			app.register_blueprint(blueprint, url_prefix=url_prefix)
-			logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+		self._setup_blueprints()
+		def blueprint_enabled(name, plugin):
+			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.BlueprintPlugin):
+				return
+			self._register_blueprint_plugin(plugin.implementation)
+		pluginLifecycleManager.add_callback(["enabled"], blueprint_enabled)
 
 		## Tornado initialization starts here
 
 		ioloop = IOLoop()
 		ioloop.install()
 
-		self._router = SockJSRouter(self._createSocketConnection, "/sockjs")
+		self._router = SockJSRouter(self._create_socket_connection, "/sockjs")
 
 		upload_suffixes = dict(name=settings().get(["server", "uploads", "nameSuffix"]), path=settings().get(["server", "uploads", "pathSuffix"]))
 		self._tornado_app = Application(self._router.urls + [
@@ -724,9 +742,16 @@ class Server():
 		                             "on_startup",
 		                             args=(self._host, self._port))
 
+		def call_on_startup(name, plugin):
+			implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
+			if implementation is None:
+				return
+			implementation.on_startup(self._host, self._port)
+		pluginLifecycleManager.add_callback("enabled", call_on_startup)
+
 		# prepare our after startup function
 		def on_after_startup():
-			logger.info("Listening on http://%s:%d" % (self._host, self._port))
+			self._logger.info("Listening on http://%s:%d" % (self._host, self._port))
 
 			# now this is somewhat ugly, but the issue is the following: startup plugins might want to do things for
 			# which they need the server to be already alive (e.g. for being able to resolve urls, such as favicons
@@ -736,13 +761,21 @@ class Server():
 			def work():
 				octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
 				                             "on_after_startup")
+
+				def call_on_after_startup(name, plugin):
+					implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
+					if implementation is None:
+						return
+					implementation.on_after_startup()
+				pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
+
 			import threading
 			threading.Thread(target=work).start()
 		ioloop.add_callback(on_after_startup)
 
 		# prepare our shutdown function
 		def on_shutdown():
-			logger.info("Goodbye!")
+			self._logger.info("Goodbye!")
 			observer.stop()
 			observer.join()
 			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
@@ -754,18 +787,18 @@ class Server():
 		except KeyboardInterrupt:
 			pass
 		except:
-			logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
-			logger.exception("Stacktrace follows:")
+			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
+			self._logger.exception("Stacktrace follows:")
 
-	def _createSocketConnection(self, session):
+	def _create_socket_connection(self, session):
 		global printer, fileManager, analysisQueue, userManager, eventManager
 		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session)
 
-	def _checkForRoot(self):
+	def _check_for_root(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
 			exit("You should not run OctoPrint as root!")
 
-	def _initLogging(self, debug, logConf=None):
+	def _setup_logging(self, debug, logConf=None):
 		defaultConfig = {
 			"version": 1,
 			"formatters": {
@@ -835,6 +868,113 @@ class Server():
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
+
+	def _setup_jinja2(self):
+		app.jinja_env.add_extension("jinja2.ext.do")
+
+		# configure additional template folders for jinja2
+		import jinja2
+		filesystem_loader = jinja2.FileSystemLoader([])
+		filesystem_loader.searchpath = self._template_searchpaths
+
+		jinja_loader = jinja2.ChoiceLoader([
+			app.jinja_loader,
+			filesystem_loader
+		])
+		app.jinja_loader = jinja_loader
+		del jinja2
+
+		self._register_template_plugins()
+
+	def _register_template_plugins(self):
+		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
+		for plugin in template_plugins:
+			self._register_additional_template_plugin(plugin)
+
+	def _register_additional_template_plugin(self, plugin):
+		folder = plugin.get_template_folder()
+		if folder is not None and not folder in self._template_searchpaths:
+			self._template_searchpaths.append(folder)
+
+	def _unregister_additional_template_plugin(self, plugin):
+		folder = plugin.get_template_folder()
+		if folder is not None and folder in self._template_searchpaths:
+			self._template_searchpaths.remove(folder)
+
+	def _setup_blueprints(self):
+		from octoprint.server.api import api
+		from octoprint.server.apps import apps
+
+		app.register_blueprint(api, url_prefix="/api")
+		app.register_blueprint(apps, url_prefix="/apps")
+
+		# also register any blueprints defined in BlueprintPlugins
+		self._register_blueprint_plugins()
+
+	def _register_blueprint_plugins(self):
+		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
+		for plugin in blueprint_plugins:
+			self._register_blueprint_plugin(plugin)
+
+	def _register_blueprint_plugin(self, plugin):
+		name = plugin._identifier
+		blueprint = plugin.get_blueprint()
+		if blueprint is None:
+			return
+
+		if plugin.is_blueprint_protected():
+			from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
+			blueprint.before_request(apiKeyRequestHandler)
+			blueprint.after_request(corsResponseHandler)
+
+		url_prefix = "/plugin/{name}".format(name=name)
+		app.register_blueprint(blueprint, url_prefix=url_prefix)
+
+		if self._logger:
+			self._logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+
+class LifecycleManager(object):
+	def __init__(self, plugin_manager):
+		self._plugin_manager = plugin_manager
+
+		self._plugin_lifecycle_callbacks = defaultdict(list)
+		self._logger = logging.getLogger(__name__)
+
+		def on_plugin_event_factory(lifecycle_event):
+			def on_plugin_event(name, plugin):
+				self.on_plugin_event(lifecycle_event, name, plugin)
+			return on_plugin_event
+
+		self._plugin_manager.on_plugin_loaded = on_plugin_event_factory("loaded")
+		self._plugin_manager.on_plugin_unloaded = on_plugin_event_factory("unloaded")
+		self._plugin_manager.on_plugin_activated = on_plugin_event_factory("activated")
+		self._plugin_manager.on_plugin_deactivated = on_plugin_event_factory("deactivated")
+		self._plugin_manager.on_plugin_enabled = on_plugin_event_factory("enabled")
+		self._plugin_manager.on_plugin_disabled = on_plugin_event_factory("disabled")
+
+	def on_plugin_event(self, event, name, plugin):
+		for lifecycle_callback in self._plugin_lifecycle_callbacks[event]:
+			lifecycle_callback(name, plugin)
+
+	def add_callback(self, events, callback):
+		if isinstance(events, (str, unicode)):
+			events = [events]
+
+		for event in events:
+			self._plugin_lifecycle_callbacks[event].append(callback)
+
+	def remove_callback(self, callback, events=None):
+		if events is None:
+			for event in self._plugin_lifecycle_callbacks:
+				if callback in self._plugin_lifecycle_callbacks[event]:
+					self._plugin_lifecycle_callbacks[event].remove(callback)
+		else:
+			if isinstance(events, (str, unicode)):
+				events = [events]
+
+			for event in events:
+				if callback in self._plugin_lifecycle_callbacks[event]:
+					self._plugin_lifecycle_callbacks[event].remove(callback)
 
 if __name__ == "__main__":
 	server = Server()

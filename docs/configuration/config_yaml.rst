@@ -11,6 +11,523 @@ settings.
 
 Note that many of these settings are available from the "Settings" menu in OctoPrint itself.
 
+.. contents::
+
+.. _sec-configuration-config_yaml-accesscontrol:
+
+Access Control
+--------------
+
+Use the following settings to enable access control:
+
+.. code-block:: yaml
+
+   accessControl:
+     # whether to enable access control or not. Defaults to true
+     enabled: true
+
+     # The user manager implementation to use for accessing user information. Currently only a filebased
+     # user manager is implemented which stores configured accounts in a YAML file (Default: users.yaml
+     # in the default configuration folder, see below)
+     userManager: octoprint.users.FilebasedUserManager
+
+     # The YAML user file to use. If left out defaults to users.yaml in the default configuration folder.
+     userFile: /path/to/users.yaml
+
+     # If set to true, will automatically log on clients originating from any of the networks defined in
+     # "localNetworks" as the user defined in "autologinAs". Defaults to false.
+     autologinLocal: true
+
+     # The name of the user to automatically log on clients originating from "localNetworks" as. Must
+     # be the name of one of your configured users.
+     autologinAs: someUser
+
+     # A list of networks or IPs for which an automatic logon as the user defined in "autologinAs" will
+     # take place. If available OctoPrint will evaluate the "X-Forwarded-For" HTTP header for determining
+     # the client's IP address (see https://code.google.com/p/haproxy-docs/wiki/forwardfor on how to
+     # configure the sending of this header in HAProxy). Defaults to 127.0.0.0/8 (so basically anything
+     # originating from localhost).
+     localNetworks:
+     - 127.0.0.0/8
+     - 192.168.1.0/24
+
+.. _sec-configuration-config_yaml-api:
+
+API
+---
+
+Settings for the REST API:
+
+.. code-block:: yaml
+
+   api:
+     # Whether to enable the API
+     enabled: True
+
+     # Current API key needed for accessing the API
+     key: ...
+
+     # Whether to allow cross origin access to the API or not
+     allowCrossOrigin: false
+
+     # Additional app api keys, see REST API > Apps in the docs
+     apps:
+       "some.app.identifier:some_version":
+         pubkey: <RSA pubkey>
+         enabled: true
+
+.. _sec-configuration-config_yaml-appearance:
+
+Appearance
+----------
+
+Use the following settings to tweak OctoPrint's appearance a bit to better distinguish multiple instances/printers
+appearance or to modify the order and presence of the various UI components:
+
+.. code-block:: yaml
+
+   appearance:
+     # Use this to give your printer a name. It will be displayed in the title bar
+     # (as "<Name> [OctoPrint]") and in the navigation bar (as "OctoPrint: <Name>")
+     name: My Printer
+
+     # Use this to color the navigation bar. Supported colors are red, orange,
+     # yellow, green, blue, violet and default.
+     color: default
+
+     # Makes the color of the navigation bar "transparent". In case your printer uses
+     # acrylic for its frame ;)
+     colorTransparent: false
+
+     # Configures the order and availability of the UI components
+     components:
+
+       # Defines the order of the components within their respective containers.
+       #
+       # If overridden by the user the resulting order for display will be calculated as
+       # follows:
+       #
+       # - first all components as defined by the user
+       # - then all enabled core components as define in the default order (see below)
+       #
+       # Components not contained within the default order (e.g. from plugins) will be either
+       # prepended or appended to that result, depending on component type.
+       #
+       # Note that a component is not included in the order as defined by the user will still
+       # be put into the container, according to the default order. To fully disable a
+       # component, you'll need to add it to the container's disabled list further below.
+       order:
+
+         # order of navbar items
+         navbar:
+         - settings
+         - systemmenu
+         - login
+
+         # order of sidebar items
+         sidebar:
+         - connection
+         - state
+         - files
+
+         # order of tab items
+         tab:
+         - temperature
+         - control
+         - gcodeviewer
+         - terminal
+         - timelapse
+
+         # order of settings, if settings plugins are registered gets extended internally by
+         # section_plugins and all settings plugins
+         settings
+         - section_printer
+         - serial
+         - printerprofiles
+         - temperatures
+         - terminalfilters
+         - gcodescripts
+         - section_features
+         - features
+         - webcam
+         - accesscontrol
+         - api
+         - section_octoprint
+         - folders
+         - appearance
+         - logs
+
+         # order of user settings
+         usersettings:
+         - access
+         - interface
+
+         # order of generic templates
+         generic: []
+
+     # Disabled components per container. If a component is included here it will not
+     # be included in OctoPrint's UI at all. Note that this might mean that critical
+     # functionality will not be available if no replacement is registered.
+     disabled:
+       navbar: [],
+       sidebar: [],
+       tab: [],
+       settings: [],
+       usersettings: [],
+       generic: []
+
+     # Default language of OctoPrint. If left unset OctoPrint will try to match up available
+     # languages with the user's browser settings.
+     defaultLanguage: null
+
+.. note::
+
+   By modifying the ``components`` > ``order`` lists you may reorder OctoPrint's UI components as you like. You can also
+   inject Plugins at another than their default location in their respective container by adding the entry
+   ``plugin_<plugin identifier>`` where you want them to appear.
+
+   Example: If you want the tab of the :ref:`Hello World Plugin <sec-plugins-gettingstarted>` to appear as the first tab
+   in OctoPrint, you'd need to redefine ``components`` > ``order`` > ``tab`` by including something like this in your
+   ``config.yaml``:
+
+   .. code-block:: yaml
+
+      appearance:
+        components:
+          order:
+            tab:
+            - plugin_helloworld
+
+   OctoPrint will then turn this into the order ``plugin_helloworld``, ``temperature``, ``control``, ``gcodeviewer``,
+   ``terminal``, ``timelapse`` plus any other plugins.
+
+
+.. _sec-configuration-config_yaml-controls:
+
+Controls
+--------
+
+Use the ``controls`` section to add :ref:`custom controls <sec-features-custom_controls>` to the "Controls" tab within
+OctoPrint.
+
+.. code-block:: yaml
+
+   controls:
+     - name: Fan
+       layout: horizontal
+       children:
+         - name: Enable Fan
+           type: parametric_command
+           command: M106 S%(speed)s
+           input:
+             - name: Speed (0-255)
+               parameter: speed
+               default: 255
+         - name: Disable Fan
+           type: command
+           command: M107
+
+.. _sec-configuration-config_yaml-devel:
+
+Development settings
+--------------------
+
+The following settings are only relevant to you if you want to do OctoPrint development:
+
+.. code-block:: yaml
+
+   # Settings only relevant for development
+   devel:
+     # Settings for OctoPrint's internal caching
+     cache:
+       # Whether to enable caching. Defaults to true. Setting it to false will cause the UI to always
+       # be fully rerendered on request to / on the server.
+       enabled: true
+
+     # Settings for stylesheet preference. OctoPrint will prefer to use the stylesheet type
+     # specified here. Usually (on a production install) that will be the compiled css (default).
+     # Developers may specify less here too.
+     stylesheet: css
+
+     # Settings for the virtual printer
+     virtualPrinter:
+
+       # Whether to enable the virtual printer and include it in the list of available serial connections.
+       # Defaults to false.
+       enabled: true
+
+       # Whether to send an additional "ok" after a resend request (like Repetier)
+       okAfterResend: false
+
+       # Whether to force checksums and line number in the communication (like Repetier), if set to true
+       # printer will only accept commands that come with linenumber and checksum and throw an error for
+       # lines that don't. Defaults to false
+       forceChecksum: false
+
+       # Whether to send "ok" responses with the line number that gets acknowledged by the "ok". Defaults
+       # to false.
+       okWithLinenumber: false
+
+       # Number of extruders to simulate on the virtual printer.
+       numExtruders: 1
+
+       # Whether to include the current tool temperature in the M105 output as separate T segment or not.
+       #
+       # True:  > M105
+       #        < ok T:23.5/0.0 T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
+       # False: > M105
+       #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
+       includeCurrentToolInTemps: true
+
+       # The maximum movement speeds of the simulated printer's axes, in mm/s
+       movementSpeed:
+         x: 6000
+         y: 6000
+         z: 200
+         e: 300
+
+       # Whether the simulated printer should also simulate a heated bed or not
+       hasBed: true
+
+       # If enabled, reports the set target temperatures as separate messages from the firmware
+       #
+       # True:  > M109 S220.0
+       #        < TargetExtr0:220.0
+       #        < ok
+       #        > M105
+       #        < ok T0:34.3 T1:23.5 B:43.2
+       # False: > M109 S220.0
+       #        < ok
+       #        > M105
+       #        < ok T0:34.3/220.0 T1:23.5/0.0 B:43.2/0.0
+       repetierStyleTargetTemperature: false
+
+       # If enabled, reports the first extruder in M105 responses as T instead of T0
+       #
+       # True:  > M105
+       #        < ok T:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
+       # False: > M105
+       #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
+       smoothieTemperatureReporting: false
+
+       # Whether M20 responses will include filesize or not
+       #
+       # True:  <filename> <filesize in bytes>
+       # False: <filename>
+       extendedSdFileList: false
+
+       # Forced pause for retrieving from the outgoing buffer
+       throttle: 0.01
+
+       # Whether to send "wait" responses while waiting for long moves to finish
+       # or not
+       waitOnLongMoves: false
+
+       # Size of the simulated RX buffer in bytes, when it's full a send from OctoPrint's
+       # side will block
+       rxBuffer: 64
+
+       # Size of
+       commandBuffer: 4
+
+.. _sec-configuration-config_yaml-events:
+
+Events
+------
+
+Use the following settings to add shell/gcode commands to be executed on certain :ref:`events <sec-events>`:
+
+.. code-block:: yaml
+
+   events:
+     subscriptions:
+       # example event consumer that prints a message to the system log if the printer is disconnected
+       - event: Disconnected
+         command: "logger 'Printer got disconnected'"
+         type: system
+
+       # example event consumer that queries printer information from the firmware, prints a "Connected"
+       # message to the LCD and homes the print head upon established printer connection, disabled though
+       - event: Connected
+         command: M115,M117 printer connected!,G28
+         type: gcode
+         enabled: False
+
+.. _sec-configuration-config_yaml-feature:
+
+Feature
+-------
+
+Use the following settings to enable or disable OctoPrint features:
+
+.. code-block:: yaml
+
+   feature:
+     # Whether to enable the gcode viewer in the UI or not
+     gCodeVisualizer: true
+
+     # Whether to enable the temperature graph in the UI or not
+     temperatureGraph: true
+
+     # Specifies whether OctoPrint should wait for the start response from the printer before trying to send commands
+     # during connect.
+     waitForStartOnConnect: false
+
+     # Specifies whether OctoPrint should send linenumber + checksum with every command. Needed for
+     # successful communication with Repetier firmware
+     alwaysSendChecksum: false
+
+     # Whether to ignore the first ok after a resend response. Needed for successful communication with
+     # Repetier firmware
+     swallowOkAfterResend: false
+
+     # Specifies whether support for SD printing and file management should be enabled
+     sdSupport: true
+
+     # Whether to always assume that an SD card is present in the printer.
+     # Needed by some firmwares which don't report the SD card status properly.
+     sdAlwaysAvailable: false
+
+     # Whether the printer sends repetier style target temperatures in the format
+     #   TargetExtr0:<temperature>
+     # instead of attaching that information to the regular M105 responses
+     repetierTargetTemp: false
+
+     # Whether to enable external heatup detection (to detect heatup triggered e.g. through the printer's LCD panel or
+     # while printing from SD) or not. Causes issues with Repetier's "first ok then response" approach to
+     # communication, so disable for printers running Repetier firmware.
+     externalHeatupDetection: true
+
+     # Whether to enable the keyboard control feature in the control tab
+     keyboardControl: true
+
+.. _sec-configuration-config_yaml-folder:
+
+Folder
+------
+
+Use the following settings to set custom paths for folders used by OctoPrint:
+
+.. code-block:: yaml
+
+   folder:
+     # Absolute path where to store gcode uploads. Defaults to the uploads folder in the OctoPrint settings folder
+     uploads: /path/to/upload/folder
+
+     # Absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the OctoPrint
+     # settings dir
+     timelapse: /path/to/timelapse/folder
+
+     # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the OctoPrint
+     # settings dir
+     timelapse_tmp: /path/to/timelapse/tmp/folder
+
+     # Absolute path where to store log files. Defaults to the logs folder in the OctoPrint settings dir
+     logs: /path/to/logs/folder
+
+     # Absolute path to the virtual printer's simulated SD card. Only useful for development, just ignore
+     # it otherwise
+     virtualSd: /path/to/virtualSd/folder
+
+     # Absolute path to a folder being watched for new files which then get automatically
+     # added to OctoPrint (and deleted from that folder). Can e.g. be used to define a folder which
+     # can then be mounted from remote machines and used as local folder for quickly adding downloaded
+     # and/or sliced objects to print in the future.
+     watched: /path/to/watched/folder
+
+     # Absolute path to a folder where manually installed plugins may reside
+     plugins: /path/to/plugins/folder
+
+     # Absolute path where to store slicing profiles
+     slicingProfiles: /path/to/slicingProfiles/folder
+
+     # Absolute path where to store printer profiles
+     printerProfiles: /path/to/printerProfiles/folder
+
+     # Absolute path where to store (GCODE) scripts
+     scripts: /path/to/scripts/folder
+
+.. _sec-configuration-config_yaml-plugins:
+
+Plugin settings
+---------------
+
+The ``plugins`` section is where plugins can store their specific settings. It is also where the installed but disabled
+plugins are tracked:
+
+.. code-block:: yaml
+
+   # Settings for plugins
+   plugins:
+
+     # Identifiers of installed but disabled plugins
+     _disabled:
+     - ...
+
+     # The rest are individual plugin settings, each tracked by their identifier, e.g.:
+     some_plugin:
+       some_setting: true
+       some_other_setting: false
+
+.. _sec-configuration-config_yaml-printerprofiles:
+
+Printer Profiles
+----------------
+
+Defaults settings for printer profiles.
+
+.. code-block:: yaml
+
+   # Settings for printer profiles
+   printerProfiles:
+
+     # Name of the printer profile to default to
+     default: _default
+
+     # Default printer profile
+     defaultProfile:
+       ...
+
+.. _sec-configuration-config_yaml-scripts:
+
+Scripts
+-------
+
+Default scripts and snippets. You'd usually not edit the ``config.yaml`` file to adjust those but instead create the
+corresponding files in ``~/.octoprint/scripts/``. See :ref:`GCODE Script <sec-features-gcode_scripts>`.
+
+.. code-block:: yaml
+
+   # Configured scripts
+   scripts:
+
+     # GCODE scripts and snippets
+     gcode:
+
+       # Script called after OctoPrint connected to the printer.
+       afterPrinterConnected:
+
+       # Script called before a print was started.
+       beforePrintStarted:
+
+       # Script called after a print was cancelled.
+       afterPrintCancelled: "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\nM140 S0\n\n;disable fan\nM106 S0"
+
+       # Script called after a print was successfully completed.
+       afterPrintDone:
+
+       # Script called after a print was paused.
+       afterPrintPaused:
+
+       # Script called before a print was resumed.
+       beforePrintResumed:
+
+       # Snippets that may be used in scripts
+       snippets:
+         disable_hotends: "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}"
+
+.. _sec-configuration-config_yaml-serial:
+
 Serial
 ------
 
@@ -52,6 +569,8 @@ Use the following settings to configure the serial connection to the printer:
      additionalPorts:
      - /dev/myPrinterSymlink
 
+.. _sec-configuration-config_yaml-server:
+
 Server
 ------
 
@@ -66,19 +585,70 @@ Use the following settings to configure the server:
      # Use this option to define the port to which to bind the server, defaults to 5000
      port: 5000
 
-     # Use this option to define an optional baseUrl (with a leading /, so absolute to your
-     # server's root) under which to run OctoPrint. This should only be needed if you want to run
-     # OctoPrint behind a reverse proxy under a different root endpoint than `/` and can't configure
-     # said reverse proxy to send `X-Script-Name` and `X-Scheme` HTTP headers with
-     # forwarded requests (see below). Defaults to an empty string and therefore the server root.
-     baseUrl: /octoprint
+     # If this option is true, OctoPrint will show the First Run dialog and set it to false after that
+     # completes
+     firstRun: false
 
-     # Use this option to define an optional URL scheme under which to run OctoPrint.
-     # Should only be needed for use with reverse proxies, see above.
-     scheme: http
+     # Secret key for encrypting cookies and such, randomly generated on first run
+     secretKey: someSecretKey
 
-     # will be automatically set to false once the first-run-wizard has been completed
-     firstRun: true
+     # Settings if OctoPrint is running behind a reverse proxy (haproxy, nginx, apache, ...).
+     # These are necessary in order to make OctoPrint generate correct external URLs so
+     # that AJAX requests and download URLs work.
+     reverseProxy:
+
+       # The request header from which to determine the url prefix under which OctoPrint
+       # is served by the reverse proxy
+       prefixHeader: X-Script-Name
+
+       # The request header from which to determine the scheme (http or https) under which
+       # a specific request to OctoPrint was made to the reverse proxy
+       schemeHeader: X-Scheme
+
+       # The request header from which to determine the host under which OctoPrint
+       # is served by the reverse proxy
+       hostHeader: X-Forwarded-Host
+
+       # Use this option to define an optional url prefix (with a leading /, so absolute to your
+       # server's root) under which to run OctoPrint. This should only be needed if you want to run
+       # OctoPrint behind a reverse proxy under a different root endpoint than `/` and can't configure
+       # said reverse proxy to send a prefix HTTP header (X-Script-Name by default, see above) with
+       # forwarded requests.
+       prefixFallback:
+
+       # Use this option to define an optional forced scheme (http or https) under which to run
+       # OctoPrint. This should only be needed if you want to run OctoPrint behind a reverse
+       # proxy that also does HTTPS determination but can't configure said reverse proxy to
+       # send a scheme HTTP header (X-Scheme by default, see above) with forwarded requests.
+       schemeFallback:
+
+       # Use this option to define an optional forced host under which to run OctoPrint. This should
+       # only be needed if you want to run OctoPrint behind a reverse proxy with a different hostname
+       # than OctoPrint itself but can't configure said reverse proxy to send a host HTTP header
+       # (X-Forwarded-Host by default, see above) with forwarded requests.
+       hostFallback:
+
+     # Settings for file uploads to OctoPrint, such as maximum allowed file size and
+     # header suffixes to use for streaming uploads. OctoPrint does some nifty things internally in
+     # order to allow streaming of large file uploads to the application rather than just storing
+     # them in memory. For that it needs to do some rewriting of the incoming upload HTTP requests,
+     # storing the uploaded file to a temporary location on disk and then sending an internal request
+     # to the application containing the original filename and the location of the temporary file.
+     uploads:
+
+       # Maximum size of uploaded files in bytes, defaults to 1GB.
+       maxSize: 1073741824
+
+       # Suffix used for storing the filename in the file upload headers when streaming uploads.
+       nameSuffix: name
+
+       # Suffix used for storing the path to the temporary file in the file upload headers when
+       # streaming uploads.
+       pathSuffix: path
+
+     # Maximum size of requests other than file uploads in bytes, defaults to 100KB.
+     maxSize: 102400
+
 
 .. note::
 
@@ -95,159 +665,29 @@ Use the following settings to configure the server:
    `into OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples>`_ for a couple
    of examples on how to configure this.
 
-Webcam
-------
+.. _sec-configuration-config_yaml-slicing:
 
-Use the following settings to configure webcam support:
-
-.. code-block:: yaml
-
-   webcam:
-     # Use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer.
-     # Webcam support will be disabled if not set
-     stream: http://<stream host>:<stream port>/?action=stream
-
-     # Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer.
-     # Timelapse support will be disabled if not set
-     snapshot: http://<stream host>:<stream port>/?action=snapshot
-
-     # Path to ffmpeg binary to use for creating timelapse recordings.
-     # Timelapse support will be disabled if not set
-     ffmpeg: /path/to/ffmpeg
-
-     # The bitrate to use for rendering the timelapse video. This gets directly passed to ffmpeg.
-     bitrate: 5000k
-
-     # Whether to include a "created with OctoPrint" watermark in the generated timelapse movies
-     watermark: true
-
-     # The default timelapse settings.
-     timelapse:
-
-       # The timelapse type. Can be either "off", "zchange" or "timed". Defaults to "off"
-       type: timed
-
-       # Additional options depending on the timelapse type. Currently only the "timed" timelapse takes
-       # the interval which to leave between images as option "interval", given in seconds. This example
-       # therefore configures a "Timed" timelapse with an interval of 2s. Defaults to empty.
-       options:
-         interval: 2
-
-Feature
+Slicing
 -------
 
-Use the following settings to enable or disable OctoPrint features:
+Settings for the built-in slicing support:
 
 .. code-block:: yaml
 
-   feature:
-     # Whether to enable the gcode viewer in the UI or not
-     gCodeVisualizer: true
+   # Slicing settings
+   slicing:
 
-     # Whether to enable the temperature graph in the UI or not
-     temperatureGraph: true
+     # Whether to enable slicing support or not
+     enabled:
 
-     # Specifies whether OctoPrint should wait for the start response from the printer before trying to send commands
-     # during connect.
-     waitForStartOnConnect: false
+     # Default slicer to use
+     defaultSlicer: cura
 
-     # Specifies whether OctoPrint should send linenumber + checksum with every command. Needed for
-     # successful communication with Repetier firmware
-     alwaysSendChecksum: false
+     # Default slicing profiles per slicer
+     defaultProfiles:
+       cura: ...
 
-     # Whether to ignore the first ok after a resend response. Needed for successful communication with
-     # Repetier firmware
-     swallowOkAfterResend: false
-
-     # Specifies whether support for SD printing and file management should be enabled
-     sdSupport: true
-
-Folder
-------
-
-Use the following settings to set custom paths for folders used by OctoPrint:
-
-.. code-block:: yaml
-
-   folder:
-     # Absolute path where to store gcode uploads. Defaults to the uploads folder in the OctoPrint settings folder
-     uploads: /path/to/upload/folder
-
-     # Absolute path where to store finished timelapse recordings. Defaults to the timelapse folder in the OctoPrint
-     # settings dir
-     timelapse: /path/to/timelapse/folder
-
-     # Absolute path where to store temporary timelapse files. Defaults to the timelapse/tmp folder in the OctoPrint
-     # settings dir
-     timelapse_tmp: /path/to/timelapse/tmp/folder
-
-     # Absolute path where to store log files. Defaults to the logs folder in the OctoPrint settings dir
-     logs: /path/to/logs/folder
-
-     # Absolute path to the virtual printer's simulated SD card. Only useful for development, just ignore
-     # it otherwise
-     virtualSd: /path/to/virtualSd/folder
-
-     # Absolute path to a folder being watched for new files which then get automatically
-     # added to OctoPrint (and deleted from that folder). Can e.g. be used to define a folder which
-     # can then be mounted from remote machines and used as local folder for quickly adding downloaded
-     # and/or sliced objects to print in the future.
-     watched: /path/to/watched/folder
-
-Temperature
------------
-
-Use the following settings to configure temperature profiles which will be displayed in the temperature tab:
-
-.. code-block:: yaml
-
-   temperature:
-     profiles:
-     - name: ABS
-       extruder: 210
-       bed: 100
-     - name: PLA
-       extruder: 180
-       bed: 60
-
-Appearance
-----------
-
-Use the following settings to tweak OctoPrint's appearance a bit to better distinguish multiple instances/printers
-appearance:
-
-.. code-block:: yaml
-
-   appearance:
-     # Use this to give your printer a name. It will be displayed in the title bar (as "<Name> [OctoPrint]") and in the
-     # navigation bar (as "OctoPrint: <Name>")
-     name: My Printer Model
-
-     # Use this to color the navigation bar. Supported colors are red, orange, yellow, green, blue, violet and default.
-     color: blue
-
-Controls
---------
-
-Use the ``controls`` section to add :ref:`custom controls <sec-features-custom_controls>` to the "Controls" tab within
-OctoPrint.
-
-.. code-block:: yaml
-
-   controls:
-     - name: Fan
-       layout: horizontal
-       children:
-         - name: Enable Fan
-           type: parametric_command
-           command: M106 S%(speed)s
-           input:
-             - name: Speed (0-255)
-               parameter: speed
-               default: 255
-         - name: Disable Fan
-           type: command
-           command: M107
+.. _sec-configuration-config_yaml-system:
 
 System
 ------
@@ -269,62 +709,25 @@ OctoPrint is running is allowed to do this without password entry:
        command: sudo shutdown -h now
        confirm: You are about to shutdown the system.
 
-Access Control
---------------
+.. _sec-configuration-config_yaml-temperature:
 
-Use the following settings to enable access control:
+Temperature
+-----------
 
-.. code-block:: yaml
-
-   accessControl:
-     # whether to enable access control or not. Defaults to true
-     enabled: true
-
-     # The user manager implementation to use for accessing user information. Currently only a filebased
-     # user manager is implemented which stores configured accounts in a YAML file (Default: users.yaml
-     # in the default configuration folder, see below)
-     userManager: octoprint.users.FilebasedUserManager
-
-     # The YAML user file to use. If left out defaults to users.yaml in the default configuration folder.
-     userFile: /path/to/users.yaml
-
-     # If set to true, will automatically log on clients originating from any of the networks defined in
-     # "localNetworks" as the user defined in "autologinAs". Defaults to false.
-     autologinLocal: true
-
-     # The name of the user to automatically log on clients originating from "localNetworks" as. Must
-     # be the name of one of your configured users.
-     autologinAs: someUser
-
-     # A list of networks or IPs for which an automatic logon as the user defined in "autologinAs" will
-     # take place. If available OctoPrint will evaluate the "X-Forwarded-For" HTTP header for determining
-     # the client's IP address (see https://code.google.com/p/haproxy-docs/wiki/forwardfor on how to
-     # configure the sending of this header in HAProxy). Defaults to 127.0.0.0/8 (so basically anything
-     # originating from localhost).
-     localNetworks:
-     - 127.0.0.0/8
-     - 192.168.1.0/24
-
-Events
-------
-
-Use the following settings to add shell/gcode commands to be executed on certain :ref:`events <sec-events>`:
+Use the following settings to configure temperature profiles which will be displayed in the temperature tab:
 
 .. code-block:: yaml
 
-   events:
-     subscriptions:
-       # example event consumer that prints a message to the system log if the printer is disconnected
-       - event: Disconnected
-         command: "logger 'Printer got disconnected'"
-         type: system
+   temperature:
+     profiles:
+     - name: ABS
+       extruder: 210
+       bed: 100
+     - name: PLA
+       extruder: 180
+       bed: 60
 
-       # example event consumer that queries printer information from the firmware, prints a "Connected"
-       # message to the LCD and homes the print head upon established printer connection, disabled though
-       - event: Connected
-         command: M115,M117 printer connected!,G28
-         type: gcode
-         enabled: False
+.. _sec-configuration-config_yaml-terminalfilters:
 
 Terminal Filters
 ----------------
@@ -343,46 +746,54 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
    - name: Suppress M27 requests/responses
      regex: '(Send: M27)|(Recv: SD printing byte)'
 
-API
----
+.. _sec-configuration-config_yaml-webcam:
 
-Settings for the REST API:
+Webcam
+------
 
-.. code-block:: yaml
-
-   api:
-     # whether to enable the API
-     enabled: True
-
-     # current API key needed for accessing the API
-     apikey: ...
-
-Development settings
---------------------
-
-The following settings are only relevant to you if you want to do OctoPrint development:
+Use the following settings to configure webcam support:
 
 .. code-block:: yaml
 
-   # Settings only relevant for development
-   devel:
+   webcam:
+     # Use this option to enable display of a webcam stream in the UI, e.g. via MJPG-Streamer.
+     # Webcam support will be disabled if not set
+     stream: http://<stream host>:<stream port>/?action=stream
 
-     # Settings for the virtual printer
-     virtualPrinter:
+     # Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer.
+     # Timelapse support will be disabled if not set
+     snapshot: http://<stream host>:<stream port>/?action=snapshot
 
-       # Whether to enable the virtual printer and include it in the list of available serial connections.
-       # Defaults to false.
-       enabled: true
+     # Path to ffmpeg binary to use for creating timelapse recordings.
+     # Timelapse support will be disabled if not set
+     ffmpeg: /path/to/ffmpeg
 
-       # Whether to send an additional "ok" after a resend request (like Repetier)
-       okAfterResend: false
+     # Number of how many threads to instruct ffmpeg to use for encoding. Defaults to 1.
+     # Should be left at 1 for RPi1.
+     ffmpegThreads: 1
 
-       # Whether to force checksums and line number in the communication (like Repetier), if set to true
-       # printer will only accept commands that come with linenumber and checksum and throw an error for
-       # lines that don't. Defaults to false
-       forceChecksum: false
+     # The bitrate to use for rendering the timelapse video. This gets directly passed to ffmpeg.
+     bitrate: 5000k
 
-       # Whether to send "ok" responses with the line number that gets acknowledged by the "ok". Defaults
-       # to false.
-       okWithLinenumber: false
+     # Whether to include a "created with OctoPrint" watermark in the generated timelapse movies
+     watermark: true
 
+     # The default timelapse settings.
+     timelapse:
+
+       # The timelapse type. Can be either "off", "zchange" or "timed". Defaults to "off"
+       type: timed
+
+       # Additional options depending on the timelapse type. All timelapses take a postRoll and an fps setting.
+       options:
+         # The number of seconds in the rendered video to add after a finished print. The exact way how the
+         # additional images will be recorded depends on timelapse type. Timed timelapses continue to
+         # record just like at the beginning, so the recording will continue another
+         # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
+         postRoll: 0
+
+         # The framerate at which to render the movie
+         fps: 25
+
+         # Timed timelapses only: The interval which to leave between images in seconds
+         interval: 2

@@ -59,6 +59,8 @@ class VirtualPrinter():
 		self._newSdFilePos = None
 		self._heatupThread = None
 
+		self._okBeforeCommandOutput = settings().getBoolean(["devel", "virtualPrinter", "okBeforeCommandOutput"])
+
 		self.currentLine = 0
 		self.lastN = 0
 
@@ -147,14 +149,15 @@ class VirtualPrinter():
 				self._sendOk()
 				continue
 
+			if len(data.strip()) > 0 and self._okBeforeCommandOutput:
+				self._sendOk()
+
 			#print "Send: %s" % (data.rstrip())
 			if 'M104' in data or 'M109' in data:
 				self._parseHotendCommand(data)
-				continue
 
 			if 'M140' in data or 'M190' in data:
 				self._parseBedCommand(data)
-				continue
 
 			if 'M105' in data:
 				self._processTemperatureQuery()
@@ -197,7 +200,10 @@ class VirtualPrinter():
 					self._deleteSdFile(filename)
 			elif "M114" in data:
 				# send dummy position report
-				self.outgoing.put("ok C: X:10.00 Y:3.20 Z:5.20 E:1.24")
+				output = "C: X:10.00 Y:3.20 Z:5.20 E:1.24"
+				if not self._okBeforeCommandOutput:
+					output = "ok " + output
+				self.outgoing.put(output)
 				continue
 			elif "M117" in data:
 				# we'll just use this to echo a message, to allow playing around with pause triggers
@@ -259,7 +265,7 @@ class VirtualPrinter():
 						self.outgoing.put("// sleeping for {interval} seconds".format(interval=interval))
 						time.sleep(interval)
 
-			if len(data.strip()) > 0:
+			if len(data.strip()) > 0 and not self._okBeforeCommandOutput:
 				self._sendOk()
 
 	def _debugTrigger(self, data):
@@ -313,7 +319,7 @@ class VirtualPrinter():
 	def _selectSdFile(self, filename):
 		if filename.startswith("/"):
 			filename = filename[1:]
-		file = os.path.join(self._virtualSd, filename).lower()
+		file = os.path.join(self._virtualSd, filename.lower())
 		if not os.path.exists(file) or not os.path.isfile(file):
 			self.outgoing.put("open failed, File: %s." % filename)
 		else:
@@ -343,6 +349,7 @@ class VirtualPrinter():
 
 	def _processTemperatureQuery(self):
 		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
+		includeOk = not self._okBeforeCommandOutput
 
 		# send simulated temperature data
 		if settings().getInt(["devel", "virtualPrinter", "numExtruders"]) > 1:
@@ -362,16 +369,20 @@ class VirtualPrinter():
 
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
-					self.outgoing.put("ok T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString))
+					output = "T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
 				else:
-					self.outgoing.put("ok T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString))
+					output = "T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString)
 			else:
-				self.outgoing.put("ok %s @:64\n" % allTempsString)
+				output = "%s @:64\n" % allTempsString
 		else:
 			if includeTarget:
-				self.outgoing.put("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp))
+				output = "T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp)
 			else:
-				self.outgoing.put("ok T:%.2f B:%.2f @:64\n" % (self.temp[0], self.bedTemp))
+				output = "T:%.2f B:%.2f @:64\n" % (self.temp[0], self.bedTemp)
+
+		if includeOk:
+			output = "ok " + output
+		self.outgoing.put(output)
 
 	def _parseHotendCommand(self, line):
 		tool = 0

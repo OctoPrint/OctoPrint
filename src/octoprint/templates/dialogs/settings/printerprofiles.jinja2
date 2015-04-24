@@ -77,6 +77,15 @@
                 </div>
             </div>
             <div class="control-group">
+                <div class="control-group">
+                    <label class="control-label">{{ _('Origin') }}</label>
+                    <div class="controls">
+                        <select data-bind="value: printerProfiles.editorVolumeOrigin, options: printerProfiles.availableOrigins, optionsText: 'name', optionsValue: 'key'">
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
                 <label class="control-label">{{ _('Volume') }}</label>
                 <div class="controls form-inline">
                     <label>{{ _('X') }}</label>

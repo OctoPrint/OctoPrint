@@ -531,7 +531,7 @@ class Profile(object):
 			elif key == "machine_height":
 				return self._printer_profile["volume"]["height"]
 			elif key == "machine_center_is_zero":
-				return self._printer_profile["volume"]["formFactor"] == "circular"
+				return self._printer_profile["volume"]["formFactor"] == "circular" or self._printer_profile["volume"]["origin"] == "center"
 			else:
 				return None
 

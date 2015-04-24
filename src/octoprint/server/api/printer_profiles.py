@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 
 from flask import jsonify, make_response, request, url_for
-from flask.exceptions import JSONBadRequest
+from flask.exceptions import BadRequest
 
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.server.util.flask import restricted_access
@@ -32,7 +32,7 @@ def printerProfilesAdd():
 
 	try:
 		json_data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -65,7 +65,7 @@ def printerProfilesAdd():
 	except CouldNotOverwriteError:
 		return make_response("Profile already exists and overwriting was not allowed", 400)
 	except Exception as e:
-		return make_response("Could not save profile: %s" % e.message, 500)
+		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
@@ -80,6 +80,8 @@ def printerProfilesGet(identifier):
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
 @restricted_access
 def printerProfilesDelete(identifier):
+	if printerProfileManager.get_current_or_default()["id"] == identifier:
+		return make_response("Cannot delete currently selected profile: %s" % identifier, 409)
 	printerProfileManager.remove(identifier)
 	return NO_CONTENT
 
@@ -91,7 +93,7 @@ def printerProfilesUpdate(identifier):
 
 	try:
 		json_data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -118,7 +120,7 @@ def printerProfilesUpdate(identifier):
 	except CouldNotOverwriteError:
 		return make_response("Profile already exists and overwriting was not allowed", 400)
 	except Exception as e:
-		return make_response("Could not save profile: %s" % e.message, 500)
+		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 

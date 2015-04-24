@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, abort, make_response
-from flask.exceptions import JSONBadRequest
+from flask.exceptions import BadRequest
 from flask.ext.login import current_user
 
 import octoprint.users as users
@@ -41,7 +41,7 @@ def addUser():
 
 	try:
 		data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	name = data["name"]
@@ -89,7 +89,7 @@ def updateUser(username):
 
 		try:
 			data = request.json
-		except JSONBadRequest:
+		except BadRequest:
 			return make_response("Malformed JSON body in request", 400)
 
 		# change roles
@@ -132,7 +132,7 @@ def changePasswordForUser(username):
 
 		try:
 			data = request.json
-		except JSONBadRequest:
+		except BadRequest:
 			return make_response("Malformed JSON body in request", 400)
 
 		if not "password" in data.keys() or not data["password"]:
@@ -173,7 +173,7 @@ def changeSettingsForUser(username):
 
 	try:
 		data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	try:

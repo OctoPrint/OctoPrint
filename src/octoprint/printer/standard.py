@@ -172,11 +172,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		filename = self._selectedFile["filename"]
 
 		def call_plugins(storage, filename, progress):
-			for name, plugin in self._progressPlugins.items():
+			for plugin in self._progressPlugins:
 				try:
 					plugin.on_print_progress(storage, filename, progress)
 				except:
-					self._logger.exception("Exception while sending print progress to plugin %s" % name)
+					self._logger.exception("Exception while sending print progress to plugin %s" % plugin._identifier)
 
 		thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
 		thread.daemon = False
@@ -762,6 +762,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif self._comm is not None and state == self._comm.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
+		elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_CLOSED_WITH_ERROR:
+			if self._comm is not None:
+				self._comm = None
+
+			self._setProgressData(0, None, None, None)
+			self._setCurrentZ(None)
+			self._setJobData(None, None, None)
 
 		self._setState(state)
 

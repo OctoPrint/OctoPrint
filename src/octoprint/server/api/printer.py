@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, make_response, Response
-from flask.exceptions import JSONBadRequest
+from flask.exceptions import BadRequest
 import re
 
 from octoprint.settings import settings, valid_boolean_trues
@@ -135,7 +135,7 @@ def printerToolCommand():
 		try:
 			printer.flow_rate(factor)
 		except ValueError as e:
-			return make_response("Invalid value for flow rate: %s" % e.message, 400)
+			return make_response("Invalid value for flow rate: %s" % str(e), 400)
 
 	return NO_CONTENT
 
@@ -273,7 +273,7 @@ def printerPrintheadCommand():
 		try:
 			printer.feed_rate(factor)
 		except ValueError as e:
-			return make_response("Invalid value for feed rate: %s" % e.message, 400)
+			return make_response("Invalid value for feed rate: %s" % str(e), 400)
 
 	return NO_CONTENT
 
@@ -331,7 +331,7 @@ def printerCommand():
 
 	try:
 		data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	if "command" in data and "commands" in data:

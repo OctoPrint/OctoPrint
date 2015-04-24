@@ -57,6 +57,16 @@ $(function() {
         // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {};
 
+        // Fix Function#name on browsers that do not support it (IE):
+        // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie 
+        if (!(function f() {}).name) {
+            Object.defineProperty(Function.prototype, 'name', {
+                get: function() {
+                    return this.toString().match(/^\s*function\s*(\S*)\s*\(/)[1];
+                }
+            });
+        }
+
         // helper to create a view model instance with injected constructor parameters from the view model map
         var _createViewModelInstance = function(viewModel, viewModelMap){
             var viewModelClass = viewModel[0];
@@ -252,6 +262,19 @@ $(function() {
             }
         };
 
+        ko.bindingHandlers.contextMenu = {
+            init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+                var val = ko.utils.unwrapObservable(valueAccessor());
+
+                $(element).contextMenu(val);
+            },
+            update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+                var val = ko.utils.unwrapObservable(valueAccessor());
+
+                $(element).contextMenu(val);
+            }
+        };
+
         //~~ some additional hooks and initializations
 
         // make sure modals max out at the window height
@@ -277,6 +300,60 @@ $(function() {
                 range.selectNodeContents(element);
                 selection.removeAllRanges();
                 selection.addRange(range);
+            }
+        };
+
+        $.fn.isChildOf = function (element) {
+            return $(element).has(this).length > 0;
+        };
+
+        // from http://jsfiddle.net/KyleMit/X9tgY/
+        $.fn.contextMenu = function (settings) {
+            return this.each(function () {
+                // Open context menu
+                $(this).on("contextmenu", function (e) {
+                    // return native menu if pressing control
+                    if (e.ctrlKey) return;
+
+                    $(settings.menuSelector)
+                        .data("invokedOn", $(e.target))
+                        .data("contextParent", $(this))
+                        .show()
+                        .css({
+                            position: "absolute",
+                            left: getMenuPosition(e.clientX, 'width', 'scrollLeft'),
+                            top: getMenuPosition(e.clientY, 'height', 'scrollTop'),
+                            "z-index": 9999
+                        }).off('click')
+                        .on('click', function (e) {
+                            if (e.target.tagName.toLowerCase() == "input")
+                                return;
+
+                            $(this).hide();
+
+                            settings.menuSelected.call(this, $(this).data('invokedOn'), $(this).data('contextParent'), $(e.target));
+                        });
+
+                    return false;
+                });
+
+                //make sure menu closes on any click
+                $(document).click(function () {
+                    $(settings.menuSelector).hide();
+                });
+            });
+
+            function getMenuPosition(mouse, direction, scrollDir) {
+                var win = $(window)[direction](),
+                    scroll = $(window)[scrollDir](),
+                    menu = $(settings.menuSelector)[direction](),
+                    position = mouse + scroll;
+
+                // opening menu would pass the side of the page
+                if (mouse + menu > win && menu < mouse)
+                    position -= menu;
+
+                return position;
             }
         };
 
@@ -381,7 +458,7 @@ $(function() {
                             ko.applyBindings(viewModel, element);
                             log.debug("View model", viewModel.constructor.name, "bound to", target);
                         } catch (exc) {
-                            log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", exc.stack);
+                            log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
                         }
                     });
                 }
@@ -397,6 +474,12 @@ $(function() {
                 }
             });
             log.info("... binding done");
+
+            _.each(allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onStartupComplete")) {
+                    viewModel.onStartupComplete();
+                }
+            });
         };
 
         if (!_.has(viewModelMap, "settingsViewModel")) {

@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import unittest
 import os
+import mock
 
 from ddt import ddt, unpack, data
 
@@ -43,9 +44,26 @@ class LocalStorageTest(unittest.TestCase):
 		self.basefolder = tempfile.mkdtemp()
 		self.storage = octoprint.filemanager.storage.LocalFileStorage(self.basefolder)
 
+		# mock file manager module
+		self.filemanager_patcher = mock.patch("octoprint.filemanager")
+		self.filemanager = self.filemanager_patcher.start()
+
+		self.filemanager.valid_file_type.return_value = True
+
+		def get_file_type(name):
+			if name.lower().endswith(".stl"):
+				return ["model", "stl"]
+			elif name.lower().endswith(".gco") or name.lower().endswith(".gcode") or name.lower.endswith(".g"):
+				return ["machinecode", "gcode"]
+			else:
+				return None
+		self.filemanager.get_file_type.side_effect = get_file_type
+
 	def tearDown(self):
 		import shutil
 		shutil.rmtree(self.basefolder)
+
+		self.filemanager_patcher.stop()
 
 	def test_add_file(self):
 		self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)

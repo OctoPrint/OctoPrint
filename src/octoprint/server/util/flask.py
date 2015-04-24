@@ -58,6 +58,8 @@ def passive_login():
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
+	return ("", 204)
+
 
 #~~ cache decorator for cacheable views
 
@@ -72,6 +74,11 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 			# bypass the cache if "unless" condition is true
 			if callable(unless) and unless():
 				logger.debug("Cache bypassed, calling wrapped function")
+				return f(*args, **kwargs)
+
+			# also bypass the cache if it's disabled completely
+			if not settings().getBoolean(["devel", "cache", "enabled"]):
+				logger.debug("Cache disabled, calling wrapped function")
 				return f(*args, **kwargs)
 
 			cache_key = key()

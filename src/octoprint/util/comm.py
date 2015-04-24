@@ -25,7 +25,6 @@ from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer
-from octoprint.util.virtual import VirtualPrinter
 
 try:
 	import _winreg
@@ -115,7 +114,7 @@ class MachineCom(object):
 	STATE_ERROR = 9
 	STATE_CLOSED_WITH_ERROR = 10
 	STATE_TRANSFERING_FILE = 11
-	
+
 	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
@@ -162,6 +161,7 @@ class MachineCom(object):
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
+		self._resendSwallowNextOk = False
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
@@ -173,6 +173,7 @@ class MachineCom(object):
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
+		self._serial_factory_hooks = self._pluginManager.get_hooks("octoprint.comm.transport.serial.factory")
 
 		# SD status data
 		self._sdAvailable = False
@@ -255,7 +256,7 @@ class MachineCom(object):
 
 	def getState(self):
 		return self._state
-	
+
 	def getStateString(self):
 		if self._state == self.STATE_NONE:
 			return "Offline"
@@ -287,19 +288,19 @@ class MachineCom(object):
 		if self._state == self.STATE_TRANSFERING_FILE:
 			return "Transfering file to SD"
 		return "?%d?" % (self._state)
-	
+
 	def getErrorString(self):
 		return self._errorValue
-	
+
 	def isClosedOrError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED
 
 	def isError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR
-	
+
 	def isOperational(self):
 		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED or self._state == self.STATE_TRANSFERING_FILE
-	
+
 	def isPrinting(self):
 		return self._state == self.STATE_PRINTING
 
@@ -349,7 +350,7 @@ class MachineCom(object):
 
 	def getTemp(self):
 		return self._temp
-	
+
 	def getBedTemp(self):
 		return self._bedTemp
 
@@ -552,6 +553,7 @@ class MachineCom(object):
 			self._currentFile = PrintingGcodeFileInformation(filename, offsets_callback=self.getOffsets, current_tool_callback=self.getCurrentTool)
 			eventManager().fire(Events.FILE_SELECTED, {
 				"file": self._currentFile.getFilename(),
+				"filename": os.path.basename(self._currentFile.getFilename()),
 				"origin": self._currentFile.getFileLocation()
 			})
 			self._callback.on_comm_file_selected(filename, self._currentFile.getFilesize(), False)
@@ -768,6 +770,8 @@ class MachineCom(object):
 		feedback_errors = []
 		pause_triggers = convert_pause_triggers(settings().get(["printerParameters", "pauseTriggers"]))
 
+		disable_external_heatup_detection = not settings().getBoolean(["feature", "externalHeatupDetection"])
+
 		#Open the serial port.
 		if not self._openSerial():
 			return
@@ -784,6 +788,11 @@ class MachineCom(object):
 
 		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
+
+		# enqueue an M105 first thing
+		self._sendCommand("M105")
+		if startSeen:
+			self._clear_to_send.set()
 
 		while self._monitoring_active:
 			try:
@@ -836,7 +845,7 @@ class MachineCom(object):
 						filename = preprocessed_line
 						size = None
 
-					if valid_file_type(filename, "gcode"):
+					if valid_file_type(filename, "machinecode"):
 						if filter_non_ascii(filename):
 							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
@@ -853,7 +862,7 @@ class MachineCom(object):
 
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
-					if not line.strip().startswith("ok") and not self._heating:
+					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating:
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
@@ -1005,7 +1014,7 @@ class MachineCom(object):
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
 							self._sendCommand("M105")
-							self._testingBaudrate = True
+							self._clear_to_send.set()
 						else:
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
@@ -1013,31 +1022,21 @@ class MachineCom(object):
 								self._serial.timeout = settings().getFloat(["serial", "timeout", "detection"])
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
-								self._baudrateDetectTestOk = 0
 								self._timeout = get_new_timeout("communication")
 								self._serial.write('\n')
 								self._sendCommand("M105")
-								self._testingBaudrate = True
+								self._clear_to_send.set()
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
-					elif 'ok' in line and 'T:' in line:
-						self._baudrateDetectTestOk += 1
-						if self._baudrateDetectTestOk < 10:
-							self._log("Baudrate test ok: %d" % (self._baudrateDetectTestOk))
-							self._sendCommand("M105")
-						else:
-							self._sendCommand("M999")
-							self._serial.timeout = settings().getFloat(["serial", "timeout", "connection"])
-							self._onConnected()
-					else:
-						self._testingBaudrate = False
+					elif 'start' in line or ('ok' in line and 'T:' in line):
+						self._onConnected()
+						self._clear_to_send.set()
 
 				### Connection attempt
 				elif self._state == self.STATE_CONNECTING:
-					if (line == "" or "wait" in line) and startSeen:
-						self._sendCommand("M105")
-					elif "start" in line:
+					if "start" in line and not startSeen:
 						startSeen = True
+						self._clear_to_send.set()
 					elif "ok" in line and startSeen:
 						self._onConnected()
 					elif time.time() > self._timeout:
@@ -1047,7 +1046,9 @@ class MachineCom(object):
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 					if "ok" in line:
 						# if we still have commands to process, process them
-						if self._resendDelta is not None:
+						if self._resendSwallowNextOk:
+							self._resendSwallowNextOk = False
+						elif self._resendDelta is not None:
 							self._resendNextCommand()
 						elif self._sendFromQueue():
 							pass
@@ -1066,8 +1067,12 @@ class MachineCom(object):
 							self._logger.debug("Ran into a communication timeout, but a blocking command is currently active")
 
 					if "ok" in line:
-						if self._resendDelta is not None:
+						if self._resendSwallowNextOk:
+							self._resendSwallowNextOk = False
+
+						elif self._resendDelta is not None:
 							self._resendNextCommand()
+
 						else:
 							if self._sendFromQueue(sendChecksum=True):
 								pass
@@ -1144,6 +1149,7 @@ class MachineCom(object):
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
 	def _onConnected(self):
+		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
 		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature"), self._poll_temperature, run_first=True)
 		self._temperature_timer.start()
 
@@ -1165,51 +1171,75 @@ class MachineCom(object):
 		else:
 			return False
 
-	def _openSerial(self):
-		if self._port == 'AUTO':
-			self._changeState(self.STATE_DETECT_SERIAL)
-			programmer = stk500v2.Stk500v2()
-			self._log("Serial port list: %s" % (str(serialList())))
-			for p in serialList():
-				try:
-					self._log("Connecting to: %s" % (p))
-					programmer.connect(p)
-					self._serial = programmer.leaveISP()
-					break
-				except ispBase.IspError as (e):
-					self._log("Error while connecting to %s: %s" % (p, str(e)))
-					pass
-				except:
-					self._log("Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string()))
-				programmer.close()
-			if self._serial is None:
-				self._log("Failed to autodetect serial port")
-				self._errorValue = 'Failed to autodetect serial port.'
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
-				return False
-		elif self._port == 'VIRTUAL':
-			self._changeState(self.STATE_OPEN_SERIAL)
-			self._serial = VirtualPrinter()
-		else:
-			self._changeState(self.STATE_OPEN_SERIAL)
+	def _detectPort(self, close):
+		programmer = stk500v2.Stk500v2()
+		self._log("Serial port list: %s" % (str(serialList())))
+		for p in serialList():
+			serial_obj = None
+
 			try:
-				self._log("Connecting to: %s" % self._port)
-				if self._baudrate == 0:
-					self._serial = serial.Serial(str(self._port), 115200, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000, parity=serial.PARITY_ODD)
-				else:
-					self._serial = serial.Serial(str(self._port), self._baudrate, timeout=settings().getFloat(["serial", "timeout", "connection"]), writeTimeout=10000, parity=serial.PARITY_ODD)
-				self._serial.close()
-				self._serial.parity = serial.PARITY_NONE
-				self._serial.open()
+				self._log("Connecting to: %s" % (p))
+				programmer.connect(p)
+				serial_obj = programmer.leaveISP()
+				break
+			except ispBase.IspError as (e):
+				self._log("Error while connecting to %s: %s" % (p, str(e)))
 			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, get_exception_string()))
+				self._log("Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string()))
+
+			if serial_obj is not None:
+				if (close):
+					serial_obj.close()
+				return serial_obj
+
+			programmer.close()
+		return None
+
+	def _openSerial(self):
+		def default(_, port, baudrate, read_timeout):
+			if port is None or port == 'AUTO':
+				# no known port, try auto detection
+				self._changeState(self.STATE_DETECT_SERIAL)
+				serial_obj = self._detectPort(False)
+				if serial_obj is None:
+					self._log("Failed to autodetect serial port")
+					self._errorValue = 'Failed to autodetect serial port.'
+					self._changeState(self.STATE_ERROR)
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+					return None
+
+			else:
+				# connect to regular serial port
+				self._log("Connecting to: %s" % port)
+				if baudrate == 0:
+					serial_obj = serial.Serial(str(port), 115200, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+				else:
+					serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+				serial_obj.close()
+				serial_obj.parity = serial.PARITY_NONE
+				serial_obj.open()
+
+			return serial_obj
+
+		serial_factories = self._serial_factory_hooks.items() + [("default", default)]
+		for name, factory in serial_factories:
+			try:
+				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
+			except Exception:
+				self._log("Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, get_exception_string(), name))
 				self._errorValue = "Failed to open serial port, permissions correct?"
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 				return False
-		self._clear_to_send.set()
-		return True
+
+			if serial_obj is not None:
+				# first hook to succeed wins, but any can pass on to the next
+				self._changeState(self.STATE_OPEN_SERIAL)
+				self._serial = serial_obj
+				self._clear_to_send.clear()
+				return True
+
+		return False
 
 	def _handleErrors(self, line):
 		# No matter the state, if we see an error, goto the error state and store the error for reference.
@@ -1250,7 +1280,13 @@ class MachineCom(object):
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
 			return ''
-		self._log("Recv: %s" % sanitize_ascii(ret))
+
+		try:
+			self._log("Recv: %s" % sanitize_ascii(ret))
+		except ValueError as e:
+			self._log("WARN: While reading last line: %s" % e)
+			self._log("Recv: %r" % ret)
+
 		return ret
 
 	def _getNext(self):
@@ -1301,6 +1337,8 @@ class MachineCom(object):
 				lineToResend = int(line.split()[1])
 
 		if lineToResend is not None:
+			self._resendSwallowNextOk = True
+
 			lastCommError = self._lastCommError
 			self._lastCommError = None
 
@@ -1332,7 +1370,6 @@ class MachineCom(object):
 				self._resendNextCommand()
 
 	def _resendNextCommand(self):
-		lastCommError = self._lastCommError
 		self._lastCommError = None
 
 		# Make sure we are only handling one sending job at a time
@@ -1448,6 +1485,8 @@ class MachineCom(object):
 		The send loop is reponsible of sending commands in ``self._send_queue`` over the line, if it is cleared for
 		sending (through received ``ok`` responses from the printer's firmware.
 		"""
+
+		self._clear_to_send.wait()
 
 		while self._send_queue_active:
 			try:

@@ -30,14 +30,14 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_sdAlwaysAvailable" id="settings-featureSdAlwaysAvailable"> {{ _('Always assume SD card is present') }} <span class="label">{{ _('Repetier') }}</span>
+                <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> {{ _('Wait for <code>start</code> on connect') }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_waitForStart" id="settings-featureWaitForStart"> {{ _('Wait for <code>start</code> on connect') }}
+                <input type="checkbox" data-bind="checked: feature_sdAlwaysAvailable" id="settings-featureSdAlwaysAvailable"> {{ _('Always assume SD card is present') }} <span class="label">{{ _('Repetier') }}</span>
             </label>
         </div>
     </div>
@@ -52,6 +52,13 @@
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_repetierTargetTemp" id="settings-featureRepetierTargetTemp"> {{ _('Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature format') }} <span class="label">{{ _('Repetier') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_disableExternalHeatupDetection" id="settings-featureExternalHeatupDetection"> {{ _('Disable detection of external heatups') }} <span class="label">{{ _('Repetier') }}</span>
             </label>
         </div>
     </div>

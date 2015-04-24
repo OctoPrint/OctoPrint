@@ -35,17 +35,9 @@ $(function() {
                 })
             };
             if (action.confirm) {
-                var confirmationDialog = $("#confirmation_dialog");
-                var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
-
-                $(".confirmation_dialog_message", confirmationDialog).text(action.confirm);
-                confirmationDialogAck.unbind("click");
-                confirmationDialogAck.bind("click", function(e) {
-                    e.preventDefault();
-                    $("#confirmation_dialog").modal("hide");
+                showConfirmationDialog(action.confirm, function (e) {
                     callback();
                 });
-                confirmationDialog.modal("show");
             } else {
                 callback();
             }

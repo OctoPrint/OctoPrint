@@ -12,7 +12,8 @@ $(function() {
                     formFactor: "rectangular",
                     width: 200,
                     depth: 200,
-                    height: 200
+                    height: 200,
+                    origin: "lowerleft"
                 },
                 heatedBed: false,
                 axes: {
@@ -66,6 +67,13 @@ $(function() {
         self.editorVolumeDepth = ko.observable();
         self.editorVolumeHeight = ko.observable();
         self.editorVolumeFormFactor = ko.observable();
+        self.editorVolumeOrigin = ko.observable();
+
+        self.editorVolumeFormFactor.subscribe(function(oldVal, newVal) {
+            if (oldVal != newVal && newVal == "circular") {
+                self.editorVolumeOrigin("center");
+            }
+        });
 
         self.editorHeatedBed = ko.observable();
 
@@ -92,6 +100,28 @@ $(function() {
             {key: "blue", name: gettext("blue")},
             {key: "black", name: gettext("black")}
         ]);
+
+        self.availableOrigins = ko.computed(function() {
+            var formFactor = self.editorVolumeFormFactor();
+
+            var possibleOrigins = {
+                "lowerleft": gettext("Lower Left"),
+                "center": gettext("Center")
+            };
+
+            var keys = [];
+            if (formFactor == "rectangular") {
+                keys = ["lowerleft", "center"];
+            } else if (formFactor == "circular") {
+                keys = ["center"];
+            }
+
+            var result = [];
+            _.each(keys, function(key) {
+               result.push({key: key, name: possibleOrigins[key]});
+            });
+            return result;
+        });
 
         self.koEditorExtruderOffsets = ko.computed(function() {
             var extruderOffsets = self.editorExtruderOffsets();
@@ -282,6 +312,7 @@ $(function() {
             self.editorVolumeDepth(data.volume.depth);
             self.editorVolumeHeight(data.volume.height);
             self.editorVolumeFormFactor(data.volume.formFactor);
+            self.editorVolumeOrigin(data.volume.origin);
 
             self.editorHeatedBed(data.heatedBed);
 
@@ -346,7 +377,8 @@ $(function() {
                     width: parseFloat(self.editorVolumeWidth()),
                     depth: parseFloat(self.editorVolumeDepth()),
                     height: parseFloat(self.editorVolumeHeight()),
-                    formFactor: self.editorVolumeFormFactor()
+                    formFactor: self.editorVolumeFormFactor(),
+                    origin: self.editorVolumeOrigin()
                 },
                 heatedBed: self.editorHeatedBed(),
                 extruder: {

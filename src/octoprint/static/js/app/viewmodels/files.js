@@ -323,6 +323,14 @@ $(function() {
             self.requestData();
         };
 
+        self.onUserLoggedIn = function(user) {
+            self.uploadButton.fileupload("enable");
+        };
+
+        self.onUserLoggedOut = function() {
+            self.uploadButton.fileupload("disable");
+        };
+
         self.onStartup = function() {
             $(".accordion-toggle[data-target='#files']").click(function() {
                 var files = $("#files");
@@ -347,14 +355,6 @@ $(function() {
             //~~ Gcode upload
 
             self.uploadButton = $("#gcode_upload");
-            self.loginState.subscribe(function(change, data) {
-                if ("login" == change) {
-                    self.uploadButton.fileupload("enable");
-                } else {
-                    self.uploadButton.fileupload("disable");
-                }
-            });
-
             function gcode_upload_done(e, data) {
                 var filename = undefined;
                 var location = undefined;

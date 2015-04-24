@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 
 from flask import request, jsonify, make_response
-from flask.exceptions import JSONBadRequest
+from flask.exceptions import BadRequest
 
 from octoprint.events import eventManager, Events
 from octoprint.settings import settings
@@ -64,6 +64,7 @@ def getSettings():
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
 			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
+			"externalHeatupDetection": s.getBoolean(["feature", "externalHeatupDetection"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"])
 		},
 		"serial": {
@@ -138,7 +139,7 @@ def setSettings():
 
 	try:
 		data = request.json
-	except JSONBadRequest:
+	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 	s = settings()
 
@@ -175,6 +176,7 @@ def setSettings():
 		if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 		if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 		if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
+		if "externalHeatupDetection" in data["feature"].keys(): s.setBoolean(["feature", "externalHeatupDetection"], data["feature"]["externalHeatupDetection"])
 		if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 
 	if "serial" in data.keys():
@@ -224,9 +226,10 @@ def setSettings():
 				s.saveScript("gcode", name, script.replace("\r\n", "\n").replace("\r", "\n"))
 
 	if "plugins" in data:
-		for name, plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin).items():
-			if name in data["plugins"]:
-				plugin.on_settings_save(data["plugins"][name])
+		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):
+			plugin_id = plugin._identifier
+			if plugin_id in data["plugins"]:
+				plugin.on_settings_save(data["plugins"][plugin_id])
 
 
 	if s.save():

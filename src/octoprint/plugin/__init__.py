@@ -88,11 +88,7 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 			if plugin_entry_points is None:
 				plugin_entry_points = "octoprint.plugin"
 			if plugin_disabled_list is None:
-				all_plugin_settings = settings().get(["plugins"])
-				plugin_disabled_list = []
-				for key in all_plugin_settings:
-					if "enabled" in all_plugin_settings[key] and not all_plugin_settings[key]:
-						plugin_disabled_list.append(key)
+				plugin_disabled_list = settings().get(["plugins", "_disabled"])
 
 			_instance = PluginManager(plugin_folders, plugin_types, plugin_entry_points, logging_prefix="octoprint.plugins.", plugin_disabled_list=plugin_disabled_list)
 		else:
@@ -164,16 +160,16 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 		kwargs = dict()
 
 	plugins = plugin_manager().get_implementations(*types)
-	for name, plugin in plugins.items():
+	for plugin in plugins:
 		if hasattr(plugin, method):
 			try:
 				result = getattr(plugin, method)(*args, **kwargs)
 				if callback:
-					callback(name, plugin, result)
+					callback(plugin._identifier, plugin, result)
 			except Exception as exc:
-				logging.getLogger(__name__).exception("Error while calling plugin %s" % name)
+				logging.getLogger(__name__).exception("Error while calling plugin %s" % plugin._identifier)
 				if error_callback:
-					error_callback(name, plugin, exc)
+					error_callback(plugin._identifier, plugin, exc)
 
 
 class PluginSettings(object):
@@ -188,7 +184,7 @@ class PluginSettings(object):
 
 	Arguments:
 	    settings (Settings): The :class:`~octoprint.settings.Settings` instance on which to operate.
-	    plugin_key (str): The plugin identifer of the plugin for which to create this instance.
+	    plugin_key (str): The plugin identifier of the plugin for which to create this instance.
 	    defaults (dict): The plugin's defaults settings, will be used to determine valid paths within the plugin's
 	        settings structure
 
