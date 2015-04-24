@@ -80,6 +80,8 @@ def printerProfilesGet(identifier):
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
 @restricted_access
 def printerProfilesDelete(identifier):
+	if printerProfileManager.get_current_or_default()["id"] == identifier:
+		return make_response("Cannot delete currently selected profile: %s" % identifier, 409)
 	printerProfileManager.remove(identifier)
 	return NO_CONTENT
 

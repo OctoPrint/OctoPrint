@@ -200,6 +200,8 @@ class PrinterProfileManager(object):
 	def remove(self, identifier):
 		if identifier == "_default":
 			return False
+		if self._current is not None and self._current["id"] == identifier:
+			return False
 		return self._remove_from_path(self._get_profile_path(identifier))
 
 	def save(self, profile, allow_overwrite=False, make_default=False):
@@ -227,6 +229,8 @@ class PrinterProfileManager(object):
 			if make_default:
 				settings().set(["printerProfiles", "default"], identifier)
 
+		if self._current is not None and self._current["id"] == identifier:
+			self.select(identifier)
 		return self.get(identifier)
 
 	def get_default(self):
