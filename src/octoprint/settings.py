@@ -136,6 +136,7 @@ default_settings = {
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
+		"externalHeatupDetection": True,
 		"keyboardControl": True
 	},
 	"folder": {
@@ -255,6 +256,7 @@ default_settings = {
 			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
+			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
@@ -501,7 +503,7 @@ class Settings(object):
 
 			elif "children" in result:
 				# if it has children we need to process them recursively
-				result["children"] = map(process_control, result["children"])
+				result["children"] = map(process_control, [child for child in result["children"] if child is not None])
 
 			return result
 

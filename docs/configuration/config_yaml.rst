@@ -393,6 +393,11 @@ Use the following settings to enable or disable OctoPrint features:
      # instead of attaching that information to the regular M105 responses
      repetierTargetTemp: false
 
+     # Whether to enable external heatup detection (to detect heatup triggered e.g. through the printer's LCD panel or
+     # while printing from SD) or not. Causes issues with Repetier's "first ok then response" approach to
+     # communication, so disable for printers running Repetier firmware.
+     externalHeatupDetection: true
+
      # Whether to enable the keyboard control feature in the control tab
      keyboardControl: true
 

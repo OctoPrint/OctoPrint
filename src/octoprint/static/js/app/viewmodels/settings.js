@@ -79,6 +79,7 @@ $(function() {
         self.feature_sdAlwaysAvailable = ko.observable(undefined);
         self.feature_swallowOkAfterResend = ko.observable(undefined);
         self.feature_repetierTargetTemp = ko.observable(undefined);
+        self.feature_disableExternalHeatupDetection = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);
 
         self.serial_port = ko.observable();
@@ -227,6 +228,7 @@ $(function() {
             self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
             self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
             self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
+            self.feature_disableExternalHeatupDetection(!response.feature.externalHeatupDetection);
             self.feature_keyboardControl(response.feature.keyboardControl);
 
             self.serial_port(response.serial.port);
@@ -303,6 +305,7 @@ $(function() {
                     "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
                     "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
                     "repetierTargetTemp": self.feature_repetierTargetTemp(),
+                    "externalHeatupDetection": !self.feature_disableExternalHeatupDetection(),
                     "keyboardControl": self.feature_keyboardControl()
                 },
                 "serial": {

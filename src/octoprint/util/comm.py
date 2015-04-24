@@ -770,6 +770,8 @@ class MachineCom(object):
 		feedback_errors = []
 		pause_triggers = convert_pause_triggers(settings().get(["printerParameters", "pauseTriggers"]))
 
+		disable_external_heatup_detection = not settings().getBoolean(["feature", "externalHeatupDetection"])
+
 		#Open the serial port.
 		if not self._openSerial():
 			return
@@ -860,7 +862,7 @@ class MachineCom(object):
 
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
-					if not line.strip().startswith("ok") and not self._heating:
+					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating:
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
