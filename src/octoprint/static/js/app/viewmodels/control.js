@@ -157,7 +157,10 @@ $(function() {
             if (control.hasOwnProperty("input")) {
                 for (var i = 0; i < control.input.length; i++) {
                     if (control.input[i].hasOwnProperty("slider") && typeof control.input[i].slider == "object") {
-                        var param = control.input[i].hasOwnProperty("defaultValue") ? control.input[i].defaultValue : (control.input[i].slider.hasOwnProperty("min") ? control.input[i].slider.min : 0);
+                        var param = control.input[i].hasOwnProperty("defaultValue") && !isNaN(control.input[i].defaultValue) && control.input[i].defaultValue != undefined && control.input[i].defaultValue != "" ?
+                                    control.input[i].defaultValue : (control.input[i].slider.hasOwnProperty("min") && !isNaN(control.input[i].slider.min) && control.input[i].slider.min != undefined && control.input[i].slider.min != "" ?
+                                    control.input[i].slider.min : 0);
+
                         if (typeof param == "string")
                             param = parseInt(param);
 
