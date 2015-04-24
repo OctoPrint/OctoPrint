@@ -156,9 +156,24 @@ $(function() {
 
             if (control.hasOwnProperty("input")) {
                 for (var i = 0; i < control.input.length; i++) {
-                    control.input[i].value = ko.observable(control.input[i].defaultValue || "0");
-                    if (!control.input[i].hasOwnProperty("slider")) {
+                    if (control.input[i].hasOwnProperty("slider") && typeof control.input[i].slider == "object") {
+                        var param = control.input[i].hasOwnProperty("defaultValue") ? control.input[i].defaultValue : (control.input[i].slider.hasOwnProperty("min") ? control.input[i].slider.min : 0);
+                        if (typeof param == "string")
+                            param = parseInt(param);
+
+                        if (control.input[i].slider.hasOwnProperty("min") && param < control.input[i].slider.min)
+                            param = control.input[i].slider.min;
+
+                        if (control.input[i].slider.hasOwnProperty("max") && param > control.input[i].slider.max)
+                            param = control.input[i].slider.max;
+
+                        if (typeof param == "string")
+                            param = parseInt(param);
+
+                        control.input[i].value = ko.observable(param);
+                    } else  {
                         control.input[i].slider = false;
+                        control.input[i].value = ko.observable(control.input[i].hasOwnProperty("defaultValue") ? control.input[i].defaultValue : "");
                     }
                 }
             }
