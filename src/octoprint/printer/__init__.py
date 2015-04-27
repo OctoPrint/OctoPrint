@@ -97,6 +97,14 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def fake_ack(self):
+		"""
+		Fakes an acknowledgement for the communication layer. If the communication between OctoPrint and the printer
+		gets stuck due to lost "ok" responses from the server due to communication issues, this can be used to get
+		things going again.
+		"""
+		raise NotImplementedError()
+
 	def commands(self, commands):
 		"""
 		Sends the provided ``commands`` to the printer.

@@ -212,6 +212,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		return self._comm.getTransport()
 	getTransport = util.deprecated("getTransport has been renamed to get_transport", since="1.2.0-dev-590", includedoc="Replaced by :func:`get_transport`")
 
+	def fake_ack(self):
+		if self._comm is None:
+			return
+
+		self._comm.fakeOk()
+
 	def commands(self, commands):
 		"""
 		Sends one or more gcode commands to the printer.

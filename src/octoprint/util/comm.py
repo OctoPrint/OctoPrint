@@ -412,6 +412,9 @@ class MachineCom(object):
 	def setTemperatureOffset(self, offsets):
 		self._tempOffsets.update(offsets)
 
+	def fakeOk(self):
+		self._clear_to_send.set()
+
 	def sendCommand(self, cmd, cmd_type=None, processed=False):
 		cmd = cmd.encode('ascii', 'replace')
 		if not processed:

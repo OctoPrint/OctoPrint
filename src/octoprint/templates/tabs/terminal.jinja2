@@ -20,3 +20,12 @@
         <small class="muted">{{ _('Hint: Use the arrow up/down keys to recall commands sent previously') }}</small>
     </div>
 </div>
+
+<div>
+    <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div class="hide">
+        <button class="btn btn-block" type="button" data-bind="click: fakeAck, enable: isOperational() && loginState.isUser()">{{ _("Fake Acknowledgement") }}</button>
+        <small class="muted">{{ _("If acknowledgements (\"ok\"s) sent by the firmware get lost due to issues with the serial communication to your printer, OctoPrint's communication with it can become stuck. If that happens, this can help. Please be advised that such occurences hint at general communication issues with your printer which will probably negatively influence your printing results and which you should therefore try to resolve!") }}</small>
+    </div>
+</div>
+

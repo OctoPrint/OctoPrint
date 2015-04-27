@@ -75,6 +75,12 @@ Issue a connection command
    disconnect
      Instructs OctoPrint to disconnect from the printer.
 
+   fake_ack
+     Fakes an acknowledgement message for OctoPrint in case one got lost on the serial line and the communication
+     with the printer since stalled. This should only be used in "emergencies" (e.g. to save prints), the reason
+     for the lost acknowledgement should always be properly investigated and removed instead of depending on this
+     "symptom solver".
+
    **Example Connect Request**
 
    .. sourcecode:: http
@@ -114,7 +120,24 @@ Issue a connection command
 
       HTTP/1.1 204 No Content
 
-   :json string command:      The command to issue, either ``connect`` or ``disconnect``
+   **Example FakeAck Request**
+
+   .. sourcecode:: http
+
+      POST /api/connection HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "fake_ack"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   :json string command:      The command to issue, either ``connect``, ``disconnect`` or ``fake_ack``.
    :json string port:         ``connect`` command: The port to connect to. If left out either the existing ``portPreference``
                               will be used, or if that is not available OctoPrint will attempt auto detection. Must be part
                               of the available ports.
