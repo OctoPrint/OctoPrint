@@ -791,12 +791,12 @@ class MachineCom(object):
 		#Start monitoring the serial port.
 		self._timeout = get_new_timeout("communication")
 
-		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
 
 		# enqueue an M105 first thing
-		self._sendCommand("M105")
-		if startSeen:
+		if not settings().getBoolean(["feature", "waitForStartOnConnect"]):
+			self._sendCommand("M110")
 			self._clear_to_send.set()
 
 		while self._monitoring_active:
@@ -1018,7 +1018,7 @@ class MachineCom(object):
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
-							self._sendCommand("M105")
+							self._sendCommand("M110")
 							self._clear_to_send.set()
 						else:
 							baudrate = self._baudrateDetectList.pop(0)
@@ -1029,11 +1029,11 @@ class MachineCom(object):
 								self._baudrateDetectRetry = 5
 								self._timeout = get_new_timeout("communication")
 								self._serial.write('\n')
-								self._sendCommand("M105")
+								self._sendCommand("M110")
 								self._clear_to_send.set()
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
-					elif 'start' in line or ('ok' in line and 'T:' in line):
+					elif 'start' in line or 'ok' in line:
 						self._onConnected()
 						self._clear_to_send.set()
 
@@ -1041,8 +1041,9 @@ class MachineCom(object):
 				elif self._state == self.STATE_CONNECTING:
 					if "start" in line and not startSeen:
 						startSeen = True
+						self._sendCommand("M110")
 						self._clear_to_send.set()
-					elif "ok" in line and startSeen:
+					elif "ok" in line:
 						self._onConnected()
 					elif time.time() > self._timeout:
 						self.close()
