@@ -181,7 +181,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   The right part of the navigation bar located at the top of the UI can be enriched with additional links. Note that
 	   with the current implementation, plugins will always be located *to the left* of the existing links.
 
-	   The included template must be called ``<pluginname>_navbar.jinja2`` (e.g. ``myplugin_navbar.jinja2``) unless
+	   The included template must be called ``<plugin identifier>_navbar.jinja2`` (e.g. ``myplugin_navbar.jinja2``) unless
 	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
@@ -192,7 +192,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   The left side bar containing Connection, State and Files sections can be enriched with additional sections. Note
 	   that with the current implementations, plugins will always be located *beneath* the existing sections.
 
-	   The included template must be called ``<pluginname>_sidebar.jinja2`` (e.g. ``myplugin_sidebar.jinja2``) unless
+	   The included template must be called ``<plugin identifier>_sidebar.jinja2`` (e.g. ``myplugin_sidebar.jinja2``) unless
 	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
@@ -204,7 +204,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   plugins. Note that with the current implementation, plugins will always be located *to the right* of the existing
 	   tabs.
 
-	   The included template must be called ``<pluginname>_tab.jinja2`` (e.g. ``myplugin_tab.jinja2``) unless
+	   The included template must be called ``<plugin identifier>_tab.jinja2`` (e.g. ``myplugin_tab.jinja2``) unless
 	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
@@ -216,7 +216,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   will always be listed beneath the "Plugins" header in the settings link list, ordered alphabetically after
 	   their displayed name.
 
-	   The included template must be called ``<pluginname>_settings.jinja2`` (e.g. ``myplugin_settings.jinja2``) unless
+	   The included template must be called ``<plugin identifier>_settings.jinja2`` (e.g. ``myplugin_settings.jinja2``) unless
 	   overridden by the configuration supplied through :func:`get_template_configs`.
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
@@ -272,11 +272,11 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		   * - template
 		     - Name of the template to inject, default value depends on the ``type``:
 
-		         * ``navbar``: ``<pluginname>_navbar.jinja2``
-		         * ``sidebar``: ``<pluginname>_sidebar.jinja2``
-		         * ``tab``: ``<pluginname>_tab.jinja2``
-		         * ``settings``: ``<pluginname>_settings.jinja2``
-		         * ``generic``: ``<pluginname>.jinja2``
+		         * ``navbar``: ``<plugin identifier>_navbar.jinja2``
+		         * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
+		         * ``tab``: ``<plugin identifier>_tab.jinja2``
+		         * ``settings``: ``<plugin identifier>_settings.jinja2``
+		         * ``generic``: ``<plugin identifier>.jinja2``
 
 		   * - suffix
 		     - Suffix to attach to the component identifier and the div identifier of the injected template. Will be
@@ -311,7 +311,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		       (and the divs will be ``tab_plugin_myplugin_1st`` and ``tab_plugin_myplugin_2nd``).
 
 		   * - div
-		     - Id for the div containing the component. If not provided, defaults to ``<type>_plugin_<pluginname>`` plus
+		     - Id for the div containing the component. If not provided, defaults to ``<type>_plugin_<plugin identifier>`` plus
 		       the ``suffix`` if provided or required.
 		   * - replaces
 		     - Id of the component this one replaces, might be either one of the core components or a component
@@ -370,7 +370,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		.. note::
 
 		   As already outlined above, each template type has a default template name (i.e. the default navbar template
-		   of a plugin is called ``<pluginname>_navbar.jinja2``), which may be overridden using the template configuration.
+		   of a plugin is called ``<plugin identifier>_navbar.jinja2``), which may be overridden using the template configuration.
 		   If a plugin needs to include more than one template of a given type, it needs to provide an entry for each of
 		   those, since the implicit default template will only be included automatically if no other templates of that
 		   type are defined.
