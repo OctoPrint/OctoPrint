@@ -155,6 +155,8 @@ class MachineCom(object):
 		self._timeout = None
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
+		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
+		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
 		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
@@ -1498,6 +1500,9 @@ class MachineCom(object):
 				# fetch command and optional linenumber from queue
 				command, linenumber, _ = entry
 
+				# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
+				# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
+				# at hand here and only clear our clear_to_send flag later if that's the case
 				gcode_match = self._regex_command.search(command)
 				is_gcode = gcode_match is not None
 
@@ -1509,7 +1514,7 @@ class MachineCom(object):
 					# line number predetermined, use that
 					self._doSendWithChecksum(command, linenumber)
 				else:
-					if self.isPrinting() or self._alwaysSendChecksum:
+					if (is_gcode or self._sendChecksumWithUnknownCommands) and (self.isPrinting() or self._alwaysSendChecksum):
 						linenumber = self._currentLine
 						self._addToLastLines(command)
 						self._currentLine += 1
@@ -1517,12 +1522,17 @@ class MachineCom(object):
 					else:
 						self._doSendWithoutChecksum(command)
 
+				use_up_clear = not self._unknownCommandsNeedAck
 				if is_gcode:
-					# trigger "sent" phase
+					# trigger "sent" phase and use up one "ok"
 					self._process_command_phase("sent", command, gcode=gcode_match.group(1))
+					use_up_clear = True
+
+				# if we need to use up a clear, do that now
+				if use_up_clear:
+					self._clear_to_send.clear()
 
 				# wait for the next clear
-				self._clear_to_send.clear()
 				self._clear_to_send.wait()
 			except:
 				self._logger.exception("Caught an exception in the send loop")
