@@ -173,6 +173,16 @@ $(function() {
             }
         };
 
+        self.fakeAck = function() {
+            $.ajax({
+                url: API_BASEURL + "connection",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify({"command": "fake_ack"})
+            });
+        };
+
         self.handleKeyDown = function(event) {
             var keyCode = event.keyCode;
 

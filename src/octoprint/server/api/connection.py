@@ -33,7 +33,8 @@ def connectionState():
 def connectionCommand():
 	valid_commands = {
 		"connect": [],
-		"disconnect": []
+		"disconnect": [],
+		"fake_ack": []
 	}
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -68,6 +69,8 @@ def connectionCommand():
 		printer.connect(port=port, baudrate=baudrate, profile=printerProfile)
 	elif command == "disconnect":
 		printer.disconnect()
+	elif command == "fake_ack":
+		printer.fake_ack()
 
 	return NO_CONTENT
 

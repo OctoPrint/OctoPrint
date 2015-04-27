@@ -149,6 +149,11 @@ class VirtualPrinter():
 				self._sendOk()
 				continue
 
+			if data.strip() == "version":
+				from octoprint._version import get_versions
+				self.outgoing.put("OctoPrint VirtualPrinter v" + get_versions()["version"])
+				continue
+
 			if len(data.strip()) > 0 and self._okBeforeCommandOutput:
 				self._sendOk()
 
@@ -394,7 +399,6 @@ class VirtualPrinter():
 				pass
 
 		if tool >= settings().getInt(["devel", "virtualPrinter", "numExtruders"]):
-			self._sendOk()
 			return
 
 		try:
@@ -406,7 +410,6 @@ class VirtualPrinter():
 			self._waitForHeatup("tool%d" % tool)
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self.outgoing.put("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
-		self._sendOk()
 
 	def _parseBedCommand(self, line):
 		try:
@@ -418,7 +421,6 @@ class VirtualPrinter():
 			self._waitForHeatup("bed")
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self.outgoing.put("TargetBed:%d" % self.bedTargetTemp)
-		self._sendOk()
 
 	def _performMove(self, line):
 		matchX = re.search("X([0-9.]+)", line)

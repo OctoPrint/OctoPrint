@@ -542,10 +542,11 @@ class PluginManager(object):
 						url=module_pkginfo.home_page,
 						license=module_pkginfo.license
 					))
+					package_name = module_pkginfo.name
 
 				plugin = self._import_plugin_from_module(key, **kwargs)
 				if plugin:
-					plugin.origin = ("entry_point", group, module_name)
+					plugin.origin = ("entry_point", group, module_name, package_name)
 					plugin.enabled = False
 					result[key] = plugin
 

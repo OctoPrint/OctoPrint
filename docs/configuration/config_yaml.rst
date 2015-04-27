@@ -373,9 +373,17 @@ Use the following settings to enable or disable OctoPrint features:
      # during connect.
      waitForStartOnConnect: false
 
-     # Specifies whether OctoPrint should send linenumber + checksum with every command. Needed for
+     # Specifies whether OctoPrint should send linenumber + checksum with every printer command. Needed for
      # successful communication with Repetier firmware
      alwaysSendChecksum: false
+
+     # Specifies whether OctoPrint should also send linenumber + checksum with commands that are *not*
+     # detected as valid GCODE (as in, they do not match the regular expression "^\s*([GM]\d+|T)").
+     sendChecksumWithUnknownCommands: false
+
+     # Specifies whether OctoPrint should also use up acknowledgments ("ok") for commands that are *not*
+     # detected as valid GCODE (as in, they do not match the regular expression "^\s*([GM]\d+|T)").
+     unknownCommandsNeedAck: false
 
      # Whether to ignore the first ok after a resend response. Needed for successful communication with
      # Repetier firmware

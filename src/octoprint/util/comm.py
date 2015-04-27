@@ -155,6 +155,8 @@ class MachineCom(object):
 		self._timeout = None
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
+		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
+		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
 		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
@@ -410,6 +412,9 @@ class MachineCom(object):
 	def setTemperatureOffset(self, offsets):
 		self._tempOffsets.update(offsets)
 
+	def fakeOk(self):
+		self._clear_to_send.set()
+
 	def sendCommand(self, cmd, cmd_type=None, processed=False):
 		cmd = cmd.encode('ascii', 'replace')
 		if not processed:
@@ -420,7 +425,7 @@ class MachineCom(object):
 		if self.isPrinting() and not self.isSdFileSelected():
 			self._commandQueue.put((cmd, cmd_type))
 		elif self.isOperational():
-			self._sendCommand((cmd, cmd_type))
+			self._sendCommand(cmd, cmd_type=cmd_type)
 
 	def sendGcodeScript(self, scriptName, replacements=None):
 		context = dict()
@@ -520,7 +525,7 @@ class MachineCom(object):
 					self.sendCommand(line)
 
 			# now make sure we actually do something, up until now we only filled up the queue
-			self._sendFromQueue(sendChecksum=True)
+			self._sendFromQueue()
 		except:
 			self._logger.exception("Error while trying to start printing")
 			self._errorValue = get_exception_string()
@@ -621,7 +626,7 @@ class MachineCom(object):
 					self.sendCommand(line)
 
 			# now make sure we actually do something, up until now we only filled up the queue
-			self._sendFromQueue(sendChecksum=True)
+			self._sendFromQueue()
 
 			eventManager().fire(Events.PRINT_RESUMED, payload)
 		elif pause and self.isPrinting():
@@ -786,12 +791,12 @@ class MachineCom(object):
 		#Start monitoring the serial port.
 		self._timeout = get_new_timeout("communication")
 
-		startSeen = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
 
 		# enqueue an M105 first thing
-		self._sendCommand("M105")
-		if startSeen:
+		if not settings().getBoolean(["feature", "waitForStartOnConnect"]):
+			self._sendCommand("M110")
 			self._clear_to_send.set()
 
 		while self._monitoring_active:
@@ -1013,7 +1018,7 @@ class MachineCom(object):
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
-							self._sendCommand("M105")
+							self._sendCommand("M110")
 							self._clear_to_send.set()
 						else:
 							baudrate = self._baudrateDetectList.pop(0)
@@ -1024,11 +1029,11 @@ class MachineCom(object):
 								self._baudrateDetectRetry = 5
 								self._timeout = get_new_timeout("communication")
 								self._serial.write('\n')
-								self._sendCommand("M105")
+								self._sendCommand("M110")
 								self._clear_to_send.set()
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
-					elif 'start' in line or ('ok' in line and 'T:' in line):
+					elif 'start' in line or 'ok' in line:
 						self._onConnected()
 						self._clear_to_send.set()
 
@@ -1036,8 +1041,9 @@ class MachineCom(object):
 				elif self._state == self.STATE_CONNECTING:
 					if "start" in line and not startSeen:
 						startSeen = True
+						self._sendCommand("M110")
 						self._clear_to_send.set()
-					elif "ok" in line and startSeen:
+					elif "ok" in line:
 						self._onConnected()
 					elif time.time() > self._timeout:
 						self.close()
@@ -1074,7 +1080,7 @@ class MachineCom(object):
 							self._resendNextCommand()
 
 						else:
-							if self._sendFromQueue(sendChecksum=True):
+							if self._sendFromQueue():
 								pass
 							elif not self.isSdPrinting():
 								self._sendNext()
@@ -1164,9 +1170,18 @@ class MachineCom(object):
 		eventManager().fire(Events.CONNECTED, payload)
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
 
-	def _sendFromQueue(self, sendChecksum=False):
+	def _sendFromQueue(self):
 		if not self._commandQueue.empty() and not self.isStreaming():
-			self._sendCommand(self._commandQueue.get(), sendChecksum)
+			entry = self._commandQueue.get()
+			if isinstance(entry, tuple):
+				if not len(entry) == 2:
+					return False
+				cmd, cmd_type = entry
+			else:
+				cmd = entry
+				cmd_type = None
+
+			self._sendCommand(cmd, cmd_type=cmd_type)
 			return True
 		else:
 			return False
@@ -1325,7 +1340,7 @@ class MachineCom(object):
 		with self._sendNextLock:
 			line = self._getNext()
 			if line is not None:
-				self._sendCommand(line, True)
+				self._sendCommand(line)
 				self._callback.on_comm_progress()
 
 	def _handleResendRequest(self, line):
@@ -1385,64 +1400,53 @@ class MachineCom(object):
 				self._lastResendNumber = None
 				self._currentResendCount = 0
 
-	def _sendCommand(self, cmd_tuple, sendChecksum=False):
-		if isinstance(cmd_tuple, tuple):
-			cmd, cmd_type = cmd_tuple
-		else:
-			cmd = cmd_tuple
-			cmd_type = None
-
+	def _sendCommand(self, cmd, cmd_type=None):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			if self._serial is None:
 				return
 
 			if not self.isStreaming():
-				for hook in self._gcode_hooks:
-					hook_cmd = self._gcode_hooks[hook](self, cmd, cmd_type=cmd_type, send_checksum=sendChecksum)
+				for name, hook in self._gcode_hooks.items():
+					hook_cmd = hook(self, cmd, cmd_type=cmd_type)
+
+					if hook_cmd is None:
+						cmd = None
 
 					# hook might have returned (cmd, sendChecksum) or (cmd, sendChecksum, cmd_type), split that
-					if isinstance(hook_cmd, tuple):
+					elif isinstance(hook_cmd, tuple):
 						if len(hook_cmd) == 2:
 							hook_cmd, cmd_type = hook_cmd
 						elif len(hook_cmd) == 3:
-							hook_cmd, cmd_type, sendChecksum = hook_cmd
-
-					# hook might have returned None for cmd, if so stop processing, we won't send this command
-					# to the printer
-					if hook_cmd is None:
-						cmd = None
-						break
+							# legacy hook handler, ignore returned send_checksum
+							hook_cmd, cmd_type, _ = hook_cmd
 
 					# if hook_cmd is a string, we'll replace cmd with it (it's been rewritten by the hook handler
-					elif isinstance(hook_cmd, basestring):
+					if isinstance(hook_cmd, basestring):
 						cmd = hook_cmd
 
+					else:
+						self._logger.warn("Hook {name} returned unintelligible result, ignoring it: {hook_cmd!r}".format(**locals()))
+						continue
+
+					if cmd is None:
+						break
+
 				# try to parse the cmd and extract the gcode type
-				gcode = self._regex_command.search(cmd)
-				if gcode:
-					gcode = gcode.group(1)
+				if cmd is not None:
+					gcode = self._regex_command.search(cmd)
+					if gcode:
+						gcode = gcode.group(1)
 
-					# fire events if necessary
-					if gcode in gcodeToEvent:
-						eventManager().fire(gcodeToEvent[gcode])
+						# fire events if necessary
+						if gcode in gcodeToEvent:
+							eventManager().fire(gcodeToEvent[gcode])
 
-					# send it through the specific handler if it exists
-					gcodeHandler = "_gcode_" + gcode
-					if hasattr(self, gcodeHandler):
-						cmd = getattr(self, gcodeHandler)(cmd)
+						# send it through the specific handler if it exists
+						cmd = self._process_command_phase("queue", cmd, gcode=gcode)
 
 			if cmd is not None:
-				self._doSend(cmd, send_checksum=sendChecksum, cmd_type=cmd_type)
-
-	def _doSend(self, cmd, send_checksum=False, cmd_type=None):
-		if send_checksum or self._alwaysSendChecksum:
-			lineNumber = self._currentLine
-			self._addToLastLines(cmd)
-			self._currentLine += 1
-			self._enqueue_for_sending(cmd, linenumber=lineNumber, command_type=cmd_type)
-		else:
-			self._enqueue_for_sending(cmd, command_type=cmd_type)
+				self._enqueue_for_sending(cmd, command_type=cmd_type)
 
 	def gcode_command_for_cmd(self, cmd):
 		"""
@@ -1497,19 +1501,61 @@ class MachineCom(object):
 				if not self._send_queue_active:
 					break
 
-				# fetch command and optional linenumber from queue, send it
+				# fetch command and optional linenumber from queue
 				command, linenumber, _ = entry
+
+				# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
+				# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
+				# at hand here and only clear our clear_to_send flag later if that's the case
+				gcode_match = self._regex_command.search(command)
+				is_gcode = gcode_match is not None
+
+				if is_gcode:
+					# trigger "sending" phase
+					command = self._process_command_phase("sending", command, gcode=gcode_match.group(1))
+
 				if linenumber is not None:
+					# line number predetermined, use that
 					self._doSendWithChecksum(command, linenumber)
 				else:
-					self._doSendWithoutChecksum(command)
+					if (is_gcode or self._sendChecksumWithUnknownCommands) and (self.isPrinting() or self._alwaysSendChecksum):
+						linenumber = self._currentLine
+						self._addToLastLines(command)
+						self._currentLine += 1
+						self._doSendWithChecksum(command, linenumber)
+					else:
+						self._doSendWithoutChecksum(command)
 
-				# we just used up one ok, clear it, wait for the next clear
-				self._clear_to_send.clear()
+				use_up_clear = not self._unknownCommandsNeedAck
+				if is_gcode:
+					# trigger "sent" phase and use up one "ok"
+					self._process_command_phase("sent", command, gcode=gcode_match.group(1))
+					use_up_clear = True
+
+				# if we need to use up a clear, do that now
+				if use_up_clear:
+					self._clear_to_send.clear()
+
+				# wait for the next clear
 				self._clear_to_send.wait()
 			except:
 				self._logger.exception("Caught an exception in the send loop")
 		self._log("Closing down send loop")
+
+	def _process_command_phase(self, phase, command, gcode=None):
+		if gcode is None:
+			gcode_match = self._regex_command.search(command)
+			if gcode_match is None:
+				return command
+
+			gcode = gcode.group(1)
+
+		# send it through the specific handler if it exists
+		gcodeHandler = "_gcode_" + gcode + "_" + phase
+		if hasattr(self, gcodeHandler):
+			command = getattr(self, gcodeHandler)(command)
+
+		return command
 
 	##~~ actual sending via serial
 
@@ -1538,13 +1584,13 @@ class MachineCom(object):
 
 	##~~ command handlers
 
-	def _gcode_T(self, cmd):
+	def _gcode_T_sent(self, cmd):
 		toolMatch = self._regex_paramTInt.search(cmd)
 		if toolMatch:
 			self._currentTool = int(toolMatch.group(1))
 		return cmd
 
-	def _gcode_G0(self, cmd):
+	def _gcode_G0_sent(self, cmd):
 		if 'Z' in cmd:
 			match = self._regex_paramZFloat.search(cmd)
 			if match:
@@ -1556,14 +1602,14 @@ class MachineCom(object):
 				except ValueError:
 					pass
 		return cmd
-	_gcode_G1 = _gcode_G0
+	_gcode_G0_sent = _gcode_G0_sent
 
-	def _gcode_M0(self, cmd):
+	def _gcode_M0_queue(self, cmd):
 		self.setPause(True)
-		return "M105" # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
-	_gcode_M1 = _gcode_M0
+		return None # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+	_gcode_M1_queued = _gcode_M0_queue
 
-	def _gcode_M104(self, cmd):
+	def _gcode_M104_sent(self, cmd):
 		toolNum = self._currentTool
 		toolMatch = self._regex_paramTInt.search(cmd)
 		if toolMatch:
@@ -1581,7 +1627,7 @@ class MachineCom(object):
 				pass
 		return cmd
 
-	def _gcode_M140(self, cmd):
+	def _gcode_M140_sent(self, cmd):
 		match = self._regex_paramSInt.search(cmd)
 		if match:
 			try:
@@ -1595,19 +1641,19 @@ class MachineCom(object):
 				pass
 		return cmd
 
-	def _gcode_M109(self, cmd):
+	def _gcode_M109_sent(self, cmd):
 		self._heatupWaitStartTime = time.time()
 		self._blocking_command = True
 		self._heating = True
-		return self._gcode_M104(cmd)
+		return self._gcode_M104_sent(cmd)
 
-	def _gcode_M190(self, cmd):
+	def _gcode_M190_sent(self, cmd):
 		self._heatupWaitStartTime = time.time()
 		self._blocking_command = True
 		self._heating = True
-		return self._gcode_M140(cmd)
+		return self._gcode_M140_sent(cmd)
 
-	def _gcode_M110(self, cmd):
+	def _gcode_M110_sending(self, cmd):
 		newLineNumber = None
 		match = self._regex_paramNInt.search(cmd)
 		if match:
@@ -1619,20 +1665,19 @@ class MachineCom(object):
 			newLineNumber = 0
 
 		# send M110 command with new line number
-		self._enqueue_for_sending(cmd, linenumber=newLineNumber)
-		self._currentLine = newLineNumber + 1
+		self._currentLine = newLineNumber
 
 		# after a reset of the line number we have no way to determine what line exactly the printer now wants
 		self._lastLines.clear()
 		self._resendDelta = None
 
-		return None
+		return cmd
 
-	def _gcode_M112(self, cmd): # It's an emergency what todo? Canceling the print should be the minimum
+	def _gcode_M112_queue(self, cmd): # It's an emergency what todo? Canceling the print should be the minimum
 		self.cancelPrint()
 		return cmd
 
-	def _gcode_G4(self, cmd):
+	def _gcode_G4_sent(self, cmd):
 		# we are intending to dwell for a period of time, increase the timeout to match
 		cmd = cmd.upper()
 		p_idx = cmd.find('P')
@@ -1648,12 +1693,12 @@ class MachineCom(object):
 		self._blocking_command = True
 		return cmd
 
-	def _gcode_G28(self, cmd):
+	def _gcode_G28_sending(self, cmd):
 		self._blocking_command = True
 		return cmd
-	_gcode_G29 = _gcode_G28
-	_gcode_G30 = _gcode_G28
-	_gcode_G32 = _gcode_G28
+	_gcode_G29_sending = _gcode_G28_sending
+	_gcode_G30_sending = _gcode_G28_sending
+	_gcode_G32_sending = _gcode_G28_sending
 
 ### MachineCom callback ################################################################################################
 
