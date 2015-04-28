@@ -155,38 +155,39 @@ $(function() {
             }
 
             if (control.hasOwnProperty("input")) {
-                correctlyDefined = function (e, key) {
-                    return e.hasOwnProperty(key) && !isNaN(e[key]) && e[key] != undefined && e[key] != "";
+                var attributeToInt = function(obj, key, def) {
+                    if (obj.hasOwnProperty(key)) {
+                        var val = obj[key];
+                        if (_.isNumber(val)) {
+                            return val;
+                        }
+
+                        var parsedVal = parseInt(val);
+                        if (!isNaN(parsedVal)) {
+                            return parsedVal;
+                        }
+                    }
+                    return def;
                 };
 
-                _.each(control.input, function (element, index, list) {
-                    if (element.hasOwnProperty("slider") && typeof element.slider == "object") {
-                        var correctMin = correctlyDefined(element.slider, "min");
-                        var correctMax = correctlyDefined(element.slider, "max");
+                _.each(control.input, function (element) {
+                    if (element.hasOwnProperty("slider") && _.isObject(element.slider)) {
+                        element.slider["min"] = attributeToInt(element.slider, "min", 0);
+                        element.slider["max"] = attributeToInt(element.slider, "max", 255);
 
-                        var param = 0;
-                        if (correctlyDefined(element, "defaultValue")) {
-                            param = element.defaultValue;
+                        // try defaultValue, default to min
+                        var defaultValue = attributeToInt(element, "default", element.slider.min);
+
+                        // if default value is not within range of min and max, correct that
+                        if (!_.inRange(defaultValue, element.slider.min, element.slider.max)) {
+                            // use bound closer to configured default value
+                            defaultValue = (Math.abs(element.slider.min - defaultValue) < Math.abs(element.slider.max - defaultValue)) ? element.slider.min : element.slider.max;
                         }
-                        else if (correctMin)
-                            param = element.slider.min;
 
-                        if (typeof param == "string")
-                            param = parseInt(param);
-
-                        if (correctMin && param < element.slider.min)
-                            param = element.slider.min;
-
-                        if (correctMax && param > element.slider.max)
-                            param = element.slider.max;
-
-                        if (typeof param == "string")
-                            param = parseInt(param);
-
-                        element.value = ko.observable(param);
+                        element.value = ko.observable(defaultValue);
                     } else {
                         element.slider = false;
-                        element.value = ko.observable(correctlyDefined(element, "defaultValue") ? element.defaultValue : undefined);
+                        element.value = ko.observable((element.hasOwnProperty("default")) ? element["default"] : undefined);
                     }
                 });
             }
