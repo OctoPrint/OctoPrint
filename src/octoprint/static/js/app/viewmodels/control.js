@@ -181,7 +181,7 @@ $(function() {
                         // if default value is not within range of min and max, correct that
                         if (!_.inRange(defaultValue, element.slider.min, element.slider.max)) {
                             // use bound closer to configured default value
-                            defaultValue = (Math.abs(element.slider.min - defaultValue) < Math.abs(element.slider.max - defaultValue)) ? element.slider.min : element.slider.max;
+                            defaultValue = defaultValue < element.slider.min ? element.slider.min : element.slider.max;
                         }
 
                         element.value = ko.observable(defaultValue);
