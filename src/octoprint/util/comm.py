@@ -1068,6 +1068,7 @@ class MachineCom(object):
 					if line == "" and time.time() > self._timeout:
 						if not self._blocking_command:
 							self._log("Communication timeout during printing, forcing a line")
+							self._sendCommand("M105")
 							self._clear_to_send.set()
 						else:
 							self._logger.debug("Ran into a communication timeout, but a blocking command is currently active")
