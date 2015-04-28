@@ -169,6 +169,26 @@ onAfterTabChange
    Called after the main tab view switches to a new tab, so `after` the new tab becomes visible. Called with the
    current and previous tab's hash (e.g. ``#control``).
 
+getAdditionalControls
+   Your viewmodel may return additional custom control definitions for inclusion on the "Control" tab of OctoPrint's
+   interface. See :ref:`the custom control feature<sec-features-custom_controls>`. 
+
+onSettingsShown
+   Called when the settings dialog is shown.
+
+onSettingsHidden
+   Called when the settings dialog is hidden.
+
+onSettingsBeforeSave
+   Called just before the settings viewmodel is sent to the server. This is useful, for example, if your plugin
+   needs to compute persisted settings from a custom viewmodel.
+
+onUserSettingsShown
+   Called when the user settings dialog is shown.
+
+onUserSettingsHidden
+   Called when the user settings dialog is hidden.
+
 In order to hook into any of those callbacks, just have your viewmodel define a function named accordingly, e.g.
 to get called after all viewmodels have been bound during application startup, implement a function ``onAllBound``
 on your viewmodel, taking a list of all bound viewmodels:
