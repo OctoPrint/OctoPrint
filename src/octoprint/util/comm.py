@@ -866,7 +866,7 @@ class MachineCom(object):
 					self._blocking_command = False
 
 				##~~ Temperature processing
-				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:'):
+				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ' B:' in line or line.startswith('B:'):
 					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating:
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
