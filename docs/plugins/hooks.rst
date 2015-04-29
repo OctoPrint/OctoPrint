@@ -3,6 +3,12 @@
 Available plugin hooks
 ======================
 
+.. note::
+
+   All of the hooks below take at least two parameters, ``*args`` and ``**kwargs``. Please make sure those are present.
+   They will act as placeholders if additional parameters are added to the hooks in the future and will allow
+   your plugin to stay compatible to OctoPrint without any necessary adjustments from you in these cases.
+
 .. contents::
    :local:
 
@@ -39,13 +45,13 @@ octoprint.comm.protocol.action
 octoprint.comm.protocol.gcode
 -----------------------------
 
-.. py:function:: hook(comm_instance, cmd, cmd_type=None, with_checksum=None)
+.. py:function:: hook(comm_instance, cmd, cmd_type=None, *args, **kwargs)
 
    Preprocess and optionally suppress a GCODE command before it is being sent to the printer.
 
    Hook handlers may use this to rewrite or completely suppress certain commands before they enter the send queue of
    the communication layer. The hook handler will be called with the ``cmd`` to be sent to the printer as well as
-   the parameters for sending like ``cmd_type`` and ``with_checksum``.
+   the ``cmd_type`` parameter.
 
    If the handler does not wish to handle the command, it should simply perform a ``return cmd`` as early as possible,
    that will ensure that no changes are applied to the command.
@@ -54,10 +60,8 @@ octoprint.comm.protocol.gcode
    OctoPrint that the ``cmd`` has been scraped altogether and not send anything.
 
    More granular manipulation of the sending logic is possible by not just returning ``cmd`` (be it the original, a
-   rewritten variant or a None value) but a 2-tuple (cmd, cmd_type) or a 3-tuple (cmd, cmd_type, with_checksum). This
-   allows to also rewrite the ``cmd_type`` and the ``with_checksum`` parameter used for sending. Note that the latter
-   should only be necessary in very rare circumstances, since usually plugins should not need to have to decide whether
-   a command should be sent with a checksum or not.
+   rewritten variant or a None value) but also a 2-tuple ``(cmd, cmd_type)``. This
+   allows to also rewrite the ``cmd_type`` parameter used for sending.
 
    Defining a ``cmd_type`` other than None will make sure OctoPrint takes care of only having one command of that type
    in its sending queue. Predefined types are ``temperature_poll`` for temperature polling via ``M105`` and
@@ -78,8 +82,7 @@ octoprint.comm.protocol.gcode
        from the currently streamed GCODE file or via other means (e.g. user input our status polling).
    :param str cmd_type: Type of command, ``temperature_poll`` for temperature polling or ``sd_status_poll`` for SD
        printing status polling.
-   :param boolean with_checksum: Whether the ``cmd`` was to be sent with a checksum (True) or not (False)
-   :return: A rewritten ``cmd``, a tuple of ``cmd`` and ``cmd_type`` or ``cmd``, ``cmd_type`` and ``with_checksum``
+   :return: A rewritten ``cmd``, a tuple of ``cmd`` and ``cmd_type``
        or None to suppress sending of the ``cmd`` to the printer. See above for details.
 
 .. _sec-plugins-hook-comm-protocol-scripts:
@@ -197,7 +200,7 @@ octoprint.comm.transport.serial.factory
 octoprint.filemanager.extension_tree
 ------------------------------------
 
-.. py:function:: hook()
+.. py:function:: hook(*args, **kwargs)
 
    Return additional entries for the tree of accepted file extensions for uploading/handling by the file manager.
 
@@ -212,7 +215,7 @@ octoprint.filemanager.extension_tree
    .. code-block:: python
       :linenos:
 
-      def support_x3g_machinecode():
+      def support_x3g_machinecode(*args, **kwargs):
           return dict(
               machinecode=dict(
                   x3g=["x3g", "s3g"]
@@ -233,7 +236,7 @@ octoprint.filemanager.extension_tree
 octoprint.filemanager.preprocessor
 ----------------------------------
 
-.. py:function:: hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False)
+.. py:function:: hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False, *args, **kwargs)
 
    Replace the ``file_object`` used for saving added files to storage by calling :func:`~octoprint.filemanager.util.AbstractFileWrapper.save`.
 
