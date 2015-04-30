@@ -136,7 +136,7 @@ $(function() {
             }
 
             if (control.hasOwnProperty("template") && control.hasOwnProperty("key") && control.hasOwnProperty("template_key") && !control.hasOwnProperty("output")) {
-                control.output = ko.observable(control.defaultValue || "");
+                control.output = ko.observable(control.default || "");
                 if (!self.feedbackControlLookup.hasOwnProperty(control.key)) {
                     self.feedbackControlLookup[control.key] = {};
                 }
