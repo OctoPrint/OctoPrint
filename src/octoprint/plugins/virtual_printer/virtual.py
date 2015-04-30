@@ -69,6 +69,8 @@ class VirtualPrinter():
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
 
+		self._dont_answer = False
+
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
 
@@ -101,6 +103,10 @@ class VirtualPrinter():
 			if data is None:
 				continue
 
+			if self._dont_answer:
+				self._dont_answer = False
+				continue
+
 			data = data.strip()
 
 			# strip checksum
@@ -122,19 +128,11 @@ class VirtualPrinter():
 				linenumber = int(re.search("N([0-9]+)", data).group(1))
 				expected = self.lastN + 1
 				if linenumber != expected:
-					with self._incoming_lock:
-						self._clearQueue(self.incoming)
-						self.outgoing.put("Error: expected line %d got %d" % (expected, linenumber))
-						self.outgoing.put("Resend:%d" % expected)
-						self.outgoing.put("ok")
+					self._triggerResend(actual=linenumber)
 					continue
 				elif self.currentLine == 100:
 					# simulate a resend at line 100
-					with self._incoming_lock:
-						self._clearQueue(self.incoming)
-						self.outgoing.put("Error: Line Number is not Last Line Number\n")
-						self.outgoing.put("rs 100\n")
-						self.outgoing.put("ok")
+					self._triggerResend(expected=100)
 					continue
 				else:
 					self.lastN = linenumber
@@ -152,6 +150,9 @@ class VirtualPrinter():
 			if data.strip() == "version":
 				from octoprint._version import get_versions
 				self.outgoing.put("OctoPrint VirtualPrinter v" + get_versions()["version"])
+				continue
+			elif data.startswith("!!DEBUG:"):
+				self._debugTrigger(data[len("!!DEBUG:"):].strip())
 				continue
 
 			if len(data.strip()) > 0 and self._okBeforeCommandOutput:
@@ -245,8 +246,6 @@ class VirtualPrinter():
 				self._relative = True
 			elif "G92" in data:
 				self._setPosition(data)
-			elif data.startswith("!!DEBUG:"):
-				self._debugTrigger(data[len("!!DEBUG:"):].strip())
 
 			elif data.startswith("G0") or data.startswith("G1") or data.startswith("G2") or data.startswith("G3") \
 					or data.startswith("G28") or data.startswith("G29") or data.startswith("G30") \
@@ -273,6 +272,21 @@ class VirtualPrinter():
 			if len(data.strip()) > 0 and not self._okBeforeCommandOutput:
 				self._sendOk()
 
+	def _triggerResend(self, expected=None, actual=None):
+		with self._incoming_lock:
+			if expected is None:
+				expected = self.lastN + 1
+			else:
+				self.lastN = expected - 1
+
+			if actual is None:
+				self.outgoing.put("Error: Wrong checksum")
+			else:
+				self.outgoing.put("Error: expected line %d got %d" % (expected, actual))
+
+			self.outgoing.put("Resend:%d" % expected)
+			self.outgoing.put("ok")
+
 	def _debugTrigger(self, data):
 		if data == "action_pause":
 			self.outgoing.put("// action:pause")
@@ -282,6 +296,10 @@ class VirtualPrinter():
 			self.outgoing.put("// action:disconnect")
 		elif data == "action_custom":
 			self.outgoing.put("// action:custom")
+		elif data == "dont_answer":
+			self._dont_answer = True
+		elif data == "trigger_resend":
+			self._triggerResend()
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
