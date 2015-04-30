@@ -143,19 +143,23 @@ $(function() {
         };
 
         self.onAllBound = function(allViewModels) {
-            self.settingsDialog.on('show', function() {
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onSettingsShown")) {
-                        viewModel.onSettingsShown();
-                    }
-                });
+            self.settingsDialog.on('show', function(event) {
+                if (event.target.id == "settings_dialog") {
+                    _.each(allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onSettingsShown")) {
+                            viewModel.onSettingsShown();
+                        }
+                    });
+                }
             });
             self.settingsDialog.on('hidden', function() {
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onSettingsHidden")) {
-                        viewModel.onSettingsHidden();
-                    }
-                });
+                if (event.target.id == "settings_dialog") {
+                    _.each(allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onSettingsHidden")) {
+                            viewModel.onSettingsHidden();
+                        }
+                    });
+                }
             });
             self.settingsDialog.on('beforeSave', function () {
                 _.each(allViewModels, function (viewModel) {
