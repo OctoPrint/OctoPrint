@@ -781,8 +781,12 @@ class MachineCom(object):
 		if not self._openSerial():
 			return
 
+		try_hello = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+
 		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
+			self._serial.timeout = 0.01
+			try_hello = False
 			self._log("Starting baud rate detection")
 			self._changeState(self.STATE_DETECT_BAUDRATE)
 		else:
@@ -794,8 +798,11 @@ class MachineCom(object):
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
 
+		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
+		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
+
 		# enqueue an M105 first thing
-		if not settings().getBoolean(["feature", "waitForStartOnConnect"]):
+		if try_hello:
 			self._sendCommand("M110")
 			self._clear_to_send.set()
 
@@ -1009,22 +1016,19 @@ class MachineCom(object):
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
 					if line == '' or time.time() > self._timeout:
-						if len(self._baudrateDetectList) < 1:
-							self.close()
-							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
-							self._changeState(self.STATE_ERROR)
-							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
-						elif self._baudrateDetectRetry > 0:
+						if self._baudrateDetectRetry > 0:
+							self._serial.timeout = detection_timeout
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
 							self._sendCommand("M110")
 							self._clear_to_send.set()
-						else:
+						elif len(self._baudrateDetectList) > 0:
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
 								self._serial.baudrate = baudrate
-								self._serial.timeout = settings().getFloat(["serial", "timeout", "detection"])
+								if self._serial.timeout != connection_timeout:
+									self._serial.timeout = connection_timeout
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
 								self._timeout = get_new_timeout("communication")
@@ -1033,6 +1037,11 @@ class MachineCom(object):
 								self._clear_to_send.set()
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
+						else:
+							self.close()
+							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
+							self._changeState(self.STATE_ERROR)
+							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 					elif 'start' in line or 'ok' in line:
 						self._onConnected()
 						self._clear_to_send.set()
@@ -1197,7 +1206,6 @@ class MachineCom(object):
 				self._log("Connecting to: %s" % (p))
 				programmer.connect(p)
 				serial_obj = programmer.leaveISP()
-				break
 			except ispBase.IspError as (e):
 				self._log("Error while connecting to %s: %s" % (p, str(e)))
 			except:
@@ -1228,7 +1236,8 @@ class MachineCom(object):
 				# connect to regular serial port
 				self._log("Connecting to: %s" % port)
 				if baudrate == 0:
-					serial_obj = serial.Serial(str(port), 115200, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+					baudrates = baudrateList()
+					serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 				else:
 					serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 				serial_obj.close()

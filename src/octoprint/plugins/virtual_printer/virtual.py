@@ -29,7 +29,7 @@ class VirtualPrinter():
 		self.outgoing = Queue.Queue()
 		self.buffered = Queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
-		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']: # no sd card as default startup scenario
+		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
 			self.outgoing.put(item)
 
 		self.currentExtruder = 0

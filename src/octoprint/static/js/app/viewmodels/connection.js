@@ -113,8 +113,8 @@ $(function() {
             if (self.isErrorOrClosed()) {
                 var data = {
                     "command": "connect",
-                    "port": self.selectedPort(),
-                    "baudrate": self.selectedBaudrate(),
+                    "port": self.selectedPort() || "AUTO",
+                    "baudrate": self.selectedBaudrate() || 0,
                     "printerProfile": self.selectedPrinter(),
                     "autoconnect": self.settings.serial_autoconnect()
                 };
