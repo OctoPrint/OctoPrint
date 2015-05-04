@@ -298,8 +298,10 @@ class VirtualPrinter():
 			self.outgoing.put("// action:custom")
 		elif data == "dont_answer":
 			self._dont_answer = True
-		elif data == "trigger_resend":
-			self._triggerResend()
+		elif data == "trigger_resend_lineno":
+			self._triggerResend(expected=self.lastN, actual=self.lastN+1)
+		elif data == "trigger_resend_checksum":
+			self._triggerResend(expected=self.lastN)
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
