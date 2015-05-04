@@ -69,8 +69,8 @@ $(function() {
         self.editorVolumeFormFactor = ko.observable();
         self.editorVolumeOrigin = ko.observable();
 
-        self.editorVolumeFormFactor.subscribe(function(oldVal, newVal) {
-            if (oldVal != newVal && newVal == "circular") {
+        self.editorVolumeFormFactor.subscribe(function(value) {
+            if (value == "circular") {
                 self.editorVolumeOrigin("center");
             }
         });

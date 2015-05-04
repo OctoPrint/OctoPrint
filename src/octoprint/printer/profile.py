@@ -378,6 +378,7 @@ class PrinterProfileManager(object):
 	def _ensure_valid_profile(self, profile):
 		# ensure all keys are present
 		if not dict_contains_keys(self.default, profile):
+			self._logger.warn("Profile invalid, missing keys. Expected: {expected!r}. Actual: {actual!r}".format(expected=self.default.keys(), actual=profile.keys()))
 			return False
 
 		# conversion helper
@@ -397,7 +398,8 @@ class PrinterProfileManager(object):
 		for path in (("extruder", "count"), ("axes", "x", "speed"), ("axes", "y", "speed"), ("axes", "z", "speed")):
 			try:
 				convert_value(profile, path, int)
-			except:
+			except Exception as e:
+				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
 		# convert floats
@@ -405,6 +407,7 @@ class PrinterProfileManager(object):
 			try:
 				convert_value(profile, path, float)
 			except:
+				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
 		# convert booleans
@@ -412,30 +415,34 @@ class PrinterProfileManager(object):
 			try:
 				convert_value(profile, path, bool)
 			except:
+				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
 		# validate form factor
 		if not profile["volume"]["formFactor"] in BedTypes.values():
+			self._logger.warn("Profile has invalid value volume.formFactor: {formFactor}".format(formFactor=profile["volume"]["formFactor"]))
 			return False
 
 		# validate origin type
 		if not profile["volume"]["origin"] in BedOrigin.values():
+			self._logger.warn("Profile has invalid value in volume.origin: {origin}".format(origin=profile["volume"]["origin"]))
 			return False
 
 		# ensure origin and form factor combination is legal
 		if profile["volume"]["formFactor"] == BedTypes.CIRCULAR and not profile["volume"]["origin"] == BedOrigin.CENTER:
-			# we do not support circular beds with anything other than a centered origin
-			return False
+			profile["volume"]["origin"] = BedOrigin.CENTER
 
 		# validate offsets
 		offsets = []
 		for offset in profile["extruder"]["offsets"]:
 			if not len(offset) == 2:
+				self._logger.warn("Profile has an invalid extruder.offsets entry: {entry!r}".format(entry=offset))
 				return False
 			x_offset, y_offset = offset
 			try:
 				offsets.append((float(x_offset), float(y_offset)))
 			except:
+				self._logger.warn("Profile has an extruder.offsets entry with non-float values: {entry!r}".format(entry=offset))
 				return False
 		profile["extruder"]["offsets"] = offsets
 
