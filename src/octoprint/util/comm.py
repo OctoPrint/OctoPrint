@@ -1277,13 +1277,7 @@ class MachineCom(object):
 				line = line.rstrip() + self._readline()
 
 			#Skip the communication errors, as those get corrected.
-			if 'checksum mismatch' in line \
-					or 'Wrong checksum' in line \
-					or 'Line Number is not Last Line Number' in line \
-					or 'expected line' in line \
-					or 'No Line Number with checksum' in line \
-					or 'No Checksum with line number' in line \
-					or 'Missing checksum' in line:
+			if 'line number' in line.lower() or 'checksum' in line.lower() or 'expected line' in line.lower():
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
 			elif not self.isError():
@@ -1370,7 +1364,7 @@ class MachineCom(object):
 			resendDelta = self._currentLine - lineToResend
 
 			if lastCommError is not None \
-					and ("line number is not line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
+					and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
 					and lineToResend == self._lastResendNumber \
 					and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
 				self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
