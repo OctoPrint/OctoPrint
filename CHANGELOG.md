@@ -152,6 +152,8 @@
   * [#664](https://github.com/foosel/OctoPrint/issues/664) - Fixed jog controls again
   * [#677](https://github.com/foosel/OctoPrint/issues/677) - Fixed extruder offsets not being properly editable in
     printer profiles
+  * [#678](https://github.com/foosel/OctoPrint/issues/678) - SockJS endpoints is now referenced by relative URL
+    using ``url_for``, should solve any issues with IE11.
   * [#683](https://github.com/foosel/OctoPrint/issues/683) - Fixed heated bed option not being properly displayed in
     printer profiles
   * [#685](https://github.com/foosel/OctoPrint/issues/685) - Quoted file name for Timelapse creation to not make
