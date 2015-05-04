@@ -6,7 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask import request, jsonify, abort, make_response
-from flask.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest
 from flask.ext.login import current_user
 
 import octoprint.users as users

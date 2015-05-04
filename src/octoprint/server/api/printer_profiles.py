@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 
 from flask import jsonify, make_response, request, url_for
-from flask.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest
 
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.server.util.flask import restricted_access

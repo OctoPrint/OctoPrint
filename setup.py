@@ -11,7 +11,7 @@ import versioneer
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	"flask==0.9",
+	"flask>=0.9,<0.11",
 	"werkzeug==0.8.3",
 	"tornado==4.0.1",
 	"sockjs-tornado>=1.0.0",
