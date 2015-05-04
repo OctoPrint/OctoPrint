@@ -486,6 +486,5 @@ $(function() {
             throw new Error("settingsViewModel is missing, can't run UI")
         }
         viewModelMap["settingsViewModel"].requestData(bindViewModels);
-    }
-);
+});
 

@@ -1370,7 +1370,7 @@ class MachineCom(object):
 			resendDelta = self._currentLine - lineToResend
 
 			if lastCommError is not None \
-					and ("line number is not line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
+					and ("line number is not last line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
 					and lineToResend == self._lastResendNumber \
 					and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
 				self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
