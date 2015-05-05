@@ -122,6 +122,8 @@
   and [#852](https://github.com/foosel/OctoPrint/pull/852)). Printer profiles now contain a new settings ``volume.origin``
   which can either be ``lowerleft`` or ``center``. For circular beds only ``center`` is supported.
 * Made baudrate detection a bit more solid, still can't perform wonders.
+* Only show configuration options for additional extruders if more than one is available, and don't include offset
+  configuration for first nozzle which acts as reference for the other offsets ([#677](https://github.com/foosel/OctoPrint/issues/677)).
 
 ### Bug Fixes
 

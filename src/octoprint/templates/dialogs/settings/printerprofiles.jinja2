@@ -167,19 +167,20 @@
             <div class="control-group">
                 <label class="control-label">{{ _('Number of Extruders') }}</label>
                 <div class="controls">
-                    <input type="number" class="input-mini text-right" min="1" max="5" data-bind="value: printerProfiles.editorExtruders">
+                    <input type="number" class="input-mini text-right" min="1" max="10" data-bind="value: printerProfiles.editorExtruders">
                 </div>
             </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('Extruder Offsets') }}</label>
+            <div class="control-group" data-bind="visible: printerProfiles.editorExtruders() > 1">
+                <label class="control-label">{{ _('Nozzle Offsets (relative to first nozzle T0)') }}</label>
                 <!-- ko foreach: printerProfiles.koEditorExtruderOffsets -->
                 <div class="controls form-inline">
-                    <label>X:</label>
+                    <label>T<span data-bind="text: idx"></span>:</label>
+                    <label>X</label>
                     <div class="input-append">
                         <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x">
                         <span class="add-on">mm</span>
                     </div>
-                    <label>Y:</label>
+                    <label>Y</label>
                     <div class="input-append">
                         <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y">
                         <span class="add-on">mm</span>

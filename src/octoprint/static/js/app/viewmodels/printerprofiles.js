@@ -130,9 +130,10 @@ $(function() {
                 numExtruders = 1;
             }
 
-            if (numExtruders > extruderOffsets.length) {
+            if (numExtruders - 1 > extruderOffsets.length) {
                 for (var i = extruderOffsets.length; i < numExtruders; i++) {
                     extruderOffsets[i] = {
+                        idx: i + 1,
                         x: ko.observable(0),
                         y: ko.observable(0)
                     }
@@ -140,7 +141,7 @@ $(function() {
                 self.editorExtruderOffsets(extruderOffsets);
             }
 
-            return extruderOffsets.slice(0, numExtruders);
+            return extruderOffsets.slice(0, numExtruders - 1);
         });
 
         self.editorNameInvalid = ko.computed(function() {
@@ -319,12 +320,15 @@ $(function() {
             self.editorNozzleDiameter(data.extruder.nozzleDiameter);
             self.editorExtruders(data.extruder.count);
             var offsets = [];
-            _.each(data.extruder.offsets, function(offset) {
-                offsets.push({
-                    x: ko.observable(offset[0]),
-                    y: ko.observable(offset[1])
+            if (data.extruder.count > 1) {
+                _.each(_.slice(data.extruder.offsets, 1), function(offset, index) {
+                    offsets.push({
+                        idx: index + 1,
+                        x: ko.observable(offset[0]),
+                        y: ko.observable(offset[1])
+                    });
                 });
-            });
+            }
             self.editorExtruderOffsets(offsets);
 
             self.editorAxisXSpeed(data.axes.x.speed);
@@ -409,10 +413,14 @@ $(function() {
             };
 
             if (self.editorExtruders() > 1) {
-                for (var i = 1; i < self.editorExtruders(); i++) {
+                for (var i = 0; i < self.editorExtruders() - 1; i++) {
                     var offset = [0.0, 0.0];
                     if (i < self.editorExtruderOffsets().length) {
-                        offset = [parseFloat(self.editorExtruderOffsets()[i]["x"]()), parseFloat(self.editorExtruderOffsets()[i]["y"]())];
+                        try {
+                            offset = [parseFloat(self.editorExtruderOffsets()[i]["x"]()), parseFloat(self.editorExtruderOffsets()[i]["y"]())];
+                        } catch (exc) {
+                            log.error("Invalid offset in profile", identifier, "for extruder", i+1, ":", self.editorExtruderOffsets()[i]["x"], ",", self.editorExtruderOffsets()[i]["y"]);
+                        }
                     }
                     profile.extruder.offsets.push(offset);
                 }
