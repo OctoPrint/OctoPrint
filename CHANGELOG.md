@@ -124,6 +124,9 @@
 * Made baudrate detection a bit more solid, still can't perform wonders.
 * Only show configuration options for additional extruders if more than one is available, and don't include offset
   configuration for first nozzle which acts as reference for the other offsets ([#677](https://github.com/foosel/OctoPrint/issues/677)).
+* Cut off of the temperature graph is now not based on the number of data points any more but on the actual time of the
+  data points. Anything older than ``n`` minutes will be cut off, with ``n`` defaulting to 30min. This value can be
+  changed under "Temperatures" in the Settings ([#343](https://github.com/foosel/OctoPrint/issues/343)).
 
 ### Bug Fixes
 

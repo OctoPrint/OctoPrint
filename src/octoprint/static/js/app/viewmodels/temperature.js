@@ -32,6 +32,7 @@ $(function() {
         self.isLoading = ko.observable(undefined);
 
         self.temperature_profiles = self.settingsViewModel.temperature_profiles;
+        self.temperature_cutoff = self.settingsViewModel.temperature_cutoff;
 
         self.heaterOptions = ko.observable({});
 
@@ -161,11 +162,6 @@ $(function() {
             if (!CONFIG_TEMPERATURE_GRAPH) return;
 
             self.temperatures = self._processTemperatureData(data, self.temperatures);
-            _.each(_.keys(self.heaterOptions()), function(d) {
-                self.temperatures[d].actual = self.temperatures[d].actual.slice(-300);
-                self.temperatures[d].target = self.temperatures[d].target.slice(-300);
-            });
-
             self.updatePlot();
         };
 
@@ -213,6 +209,16 @@ $(function() {
 
                     self.hasBed(self.hasBed() || (type == "bed"));
                 })
+            });
+
+            var now = Date.now();
+            var filterOld = function(item) {
+                return item[0] >= now - self.temperature_cutoff() * 60 * 1000;
+            };
+
+            _.each(_.keys(self.heaterOptions()), function(d) {
+                result[d].actual = _.filter(result[d].actual, filterOld);
+                result[d].target = _.filter(result[d].target, filterOld);
             });
 
             return result;
