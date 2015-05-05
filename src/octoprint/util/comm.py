@@ -236,10 +236,10 @@ class MachineCom(object):
 		if self._state == newState:
 			return
 
-		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
-			if self._currentFile is not None:
-				self._currentFile.close()
+		if self._currentFile is not None and (newState == self.STATE_ERROR or newState == self.STATE_CLOSED_WITH_ERROR):
+			self._currentFile.close()
 
+		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
 			if settings().get(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
