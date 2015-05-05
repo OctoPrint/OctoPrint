@@ -73,7 +73,10 @@ class VirtualPrinter():
 
 		self._dont_answer = False
 
+		self._debug_drop_connection = False
+
 		self._action_hooks = plugin_manager().get_hooks("octoprint.plugin.virtual_printer.custom_action")
+
 
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
@@ -304,6 +307,8 @@ class VirtualPrinter():
 			self._triggerResend(expected=self.lastN, actual=self.lastN+1)
 		elif data == "trigger_resend_checksum":
 			self._triggerResend(expected=self.lastN)
+		elif data == "drop_connection":
+			self._debug_drop_connection = True
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
@@ -638,6 +643,10 @@ class VirtualPrinter():
 			self._performMove(line)
 
 	def write(self, data):
+		if self._debug_drop_connection:
+			raise SerialTimeoutException()
+			return
+
 		with self._incoming_lock:
 			if self.incoming is None or self.outgoing is None:
 				return
@@ -647,6 +656,9 @@ class VirtualPrinter():
 				raise SerialTimeoutException()
 
 	def readline(self):
+		if self._debug_drop_connection:
+			raise SerialTimeoutException()
+
 		try:
 			line = self.outgoing.get(timeout=self._read_timeout)
 			time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
