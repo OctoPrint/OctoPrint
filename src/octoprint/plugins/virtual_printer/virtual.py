@@ -14,12 +14,14 @@ import Queue
 from serial import SerialTimeoutException
 
 from octoprint.settings import settings
+from octoprint.plugin import plugin_manager
 
 class VirtualPrinter():
 	command_regex = re.compile("[GM]\d+")
 	sleep_regex = re.compile("sleep (\d+)")
 	sleep_after_regex = re.compile("sleep_after ([GM]\d+) (\d+)")
 	sleep_after_next_regex = re.compile("sleep_after_next ([GM]\d+) (\d+)")
+	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 
 	def __init__(self, read_timeout=5.0, write_timeout=10.0):
 		self._read_timeout = read_timeout
@@ -70,6 +72,8 @@ class VirtualPrinter():
 		self._sleepAfter = dict()
 
 		self._dont_answer = False
+
+		self._action_hooks = plugin_manager().get_hooks("octoprint.plugin.virtual_printer.custom_action")
 
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
@@ -294,8 +298,6 @@ class VirtualPrinter():
 			self.outgoing.put("// action:resume")
 		elif data == "action_disconnect":
 			self.outgoing.put("// action:disconnect")
-		elif data == "action_custom":
-			self.outgoing.put("// action:custom")
 		elif data == "dont_answer":
 			self._dont_answer = True
 		elif data == "trigger_resend_lineno":
@@ -307,6 +309,7 @@ class VirtualPrinter():
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
 				sleep_after_match = VirtualPrinter.sleep_after_regex.match(data)
 				sleep_after_next_match = VirtualPrinter.sleep_after_next_regex.match(data)
+				custom_action_match = VirtualPrinter.custom_action_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -322,6 +325,11 @@ class VirtualPrinter():
 					interval = int(sleep_after_next_match.group(2))
 					self._sleepAfterNext[command] = interval
 					self.outgoing.put("// going to sleep {interval} seconds after next {command}".format(**locals()))
+				elif custom_action_match is not None:
+					action = custom_action_match.group(1)
+					params = custom_action_match.group(2)
+					params = params.strip() if params is not None else ""
+					self.outgoing.put("// action:{action} {params}".format(**locals()).strip())
 			except:
 				pass
 

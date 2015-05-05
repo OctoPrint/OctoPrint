@@ -649,3 +649,36 @@ class CountedEvent(object):
 				self._counter = self._max
 			self._event.set()
 			self._logger.debug("Set event")
+
+
+class InvariantContainer(object):
+	def __init__(self, initial_data=None, guarantee_invariant=None):
+		from collections import Iterable
+		from threading import RLock
+
+		if guarantee_invariant is None:
+			guarantee_invariant = lambda data: data
+
+		self._data = []
+		self._mutex = RLock()
+		self._invariant = guarantee_invariant
+
+		if initial_data is not None and isinstance(initial_data, Iterable):
+			for item in initial_data:
+				self.append(item)
+
+	def append(self, item):
+		with self._mutex:
+			self._data.append(item)
+			self._data = self._invariant(self._data)
+
+	def remove(self, item):
+		with self._mutex:
+			self._data.remove(item)
+			self._data = self._invariant(self._data)
+
+	def __len__(self):
+		return len(self._data)
+
+	def __iter__(self):
+		return self._data.__iter__()

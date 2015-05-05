@@ -109,8 +109,7 @@ $(function() {
         self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
     
         self.temperature_profiles = ko.observableArray(undefined);
-
-        self.temperature_profiles = ko.observableArray(undefined);
+        self.temperature_cutoff = ko.observable(undefined);
 
         self.system_actions = ko.observableArray([]);
 
@@ -260,6 +259,7 @@ $(function() {
             self.scripts_gcode_afterPrinterConnected(response.scripts.gcode.afterPrinterConnected);
     
             self.temperature_profiles(response.temperature.profiles);
+            self.temperature_cutoff(response.temperature.cutoff);
 
             self.system_actions(response.system.actions);
 
@@ -334,7 +334,8 @@ $(function() {
                     "watched": self.folder_watched()
                 },
                 "temperature": {
-                    "profiles": self.temperature_profiles()
+                    "profiles": self.temperature_profiles(),
+                    "cutoff": self.temperature_cutoff()
                 },
                 "system": {
                     "actions": self.system_actions()

@@ -376,7 +376,8 @@ $(function() {
             } else {
                 self.clear();
                 if (data.job.file.name && data.job.file.origin != "sdcard"
-                        && (!self.waitForApproval() || (self.selectedFile.name() != data.job.file.name || self.selectedFile.date() != data.job.file.date))) {
+                        && self.status != "request"
+                        && (!self.waitForApproval() || self.selectedFile.name() != data.job.file.name || self.selectedFile.date() != data.job.file.date)) {
                     self.selectedFile.name(data.job.file.name);
                     self.selectedFile.date(data.job.file.date);
                     self.selectedFile.size(data.job.file.size);

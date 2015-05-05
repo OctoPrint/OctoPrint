@@ -1,4 +1,16 @@
 <form class="form-horizontal">
+    <h3>{{ _('Temperature Graph') }}</h3>
+    <div class="control-group">
+        <label class="control-label">{{ _('Graph cutoff') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" data-bind="value: temperature_cutoff">
+                <span class="add-on">min</span>
+            </div>
+            <span class="help-block">{{ _('Needs a restart of OctoPrint to become active.') }}</span>
+        </div>
+    </div>
+    <h3>{{ _('Temperature Presets') }}</h3>
     <div class="row-fluid">
         <div class="offset4 span3"><h4>{{ _('Extruder') }}</h4></div>
         <div class="span3"><h4>{{ _('Bed') }}</h4></div>
