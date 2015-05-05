@@ -127,6 +127,7 @@
 * Cut off of the temperature graph is now not based on the number of data points any more but on the actual time of the
   data points. Anything older than ``n`` minutes will be cut off, with ``n`` defaulting to 30min. This value can be
   changed under "Temperatures" in the Settings ([#343](https://github.com/foosel/OctoPrint/issues/343)).
+* High-DPI support for the GCode viewer ([#837](https://github.com/foosel/OctoPrint/issues/837))
 
 ### Bug Fixes
 

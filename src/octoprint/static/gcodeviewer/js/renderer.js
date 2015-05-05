@@ -14,6 +14,7 @@ GCODE.renderer = (function(){
     var gridStep=10;
     var ctxHeight, ctxWidth;
     var prevX=0, prevY=0;
+    var pixelRatio = window.devicePixelRatio || 1;
 
     var layerNumStore, progressStore={from: 0, to: -1};
     var lastX, lastY;
@@ -32,9 +33,9 @@ GCODE.renderer = (function(){
 
         showMoves: true,
         showRetracts: true,
-        extrusionWidth: 1,
+        extrusionWidth: 1 * pixelRatio,
         // #000000", "#45c7ba",  "#a9533a", "#ff44cc", "#dd1177", "#eeee22", "#ffbb55", "#ff5511", "#777788"
-        sizeRetractSpot: 2,
+        sizeRetractSpot: 2 * pixelRatio,
         modelCenter: {x: 0, y: 0},
         differentiateColors: true,
         showNextLayer: false,
@@ -136,6 +137,10 @@ GCODE.renderer = (function(){
         canvas = jqueryCanvas[0];
 
         ctx = canvas.getContext('2d');
+        canvas.style.height = canvas.height + "px";
+        canvas.style.width = canvas.width + "px";
+        canvas.height = canvas.height * pixelRatio;
+        canvas.width = canvas.width * pixelRatio;
         ctxHeight = canvas.height;
         ctxWidth = canvas.width;
         lastX = ctxWidth/2;
@@ -149,8 +154,8 @@ GCODE.renderer = (function(){
             document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
 
             // remember starting point of dragging gesture
-            lastX = event.offsetX || (event.pageX - canvas.offsetLeft);
-            lastY = event.offsetY || (event.pageY - canvas.offsetTop);
+            lastX = (event.offsetX || (event.pageX - canvas.offsetLeft)) * pixelRatio;
+            lastY = (event.offsetY || (event.pageY - canvas.offsetTop)) * pixelRatio;
             dragStart = ctx.transformedPoint(lastX, lastY);
 
             // not yet dragged anything
@@ -159,8 +164,8 @@ GCODE.renderer = (function(){
 
         canvas.addEventListener('mousemove', function(event){
             // save current mouse coordinates
-            lastX = event.offsetX || (event.pageX - canvas.offsetLeft);
-            lastY = event.offsetY || (event.pageY - canvas.offsetTop);
+            lastX = (event.offsetX || (event.pageX - canvas.offsetLeft)) * pixelRatio;
+            lastY = (event.offsetY || (event.pageY - canvas.offsetTop)) * pixelRatio;
 
             // mouse movement => dragged
             dragged = true;
