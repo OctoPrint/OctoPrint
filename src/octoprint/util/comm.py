@@ -237,6 +237,9 @@ class MachineCom(object):
 			return
 
 		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
+			if self._currentFile is not None:
+				self._currentFile.close()
+
 			if settings().get(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
@@ -1778,6 +1781,9 @@ class PrintingFileInformation(object):
 	def getFileLocation(self):
 		return FileDestinations.LOCAL
 
+	def close(self):
+		pass
+
 	def getProgress(self):
 		"""
 		The current progress of the file, calculated as relation between file position and absolute size. Returns -1
@@ -1837,8 +1843,6 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			raise IOError("File %s does not exist" % self._filename)
 		self._size = os.stat(self._filename).st_size
 		self._pos = 0
-		
-		eventManager().subscribe(Events.FILE_DESELECTED, self._closeHandle);
 
 	def start(self):
 		"""
@@ -1865,17 +1869,17 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					return None
 				line = self._handle.readline()
 				if not line:
-					self._closeHandle()
+					self.close()
 				processed = process_gcode_line(line, offsets=offsets, current_tool=current_tool)
 			self._pos = self._handle.tell()
 
 			return processed
 		except Exception as e:
-			self._closeHandle()
+			self.close()
 			self._logger.exception("Exception while processing line")
 			raise e
 
-	def _closeHandle(self, event=None, payload=None):
+	def close(self):
 		if self._handle is not None:
 			self._handle.close()
 			self._handle = None
