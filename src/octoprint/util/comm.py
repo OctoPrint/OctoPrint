@@ -1837,6 +1837,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			raise IOError("File %s does not exist" % self._filename)
 		self._size = os.stat(self._filename).st_size
 		self._pos = 0
+		
+		eventManager().subscribe(Events.FILE_DESELECTED, self._closeHandle);
 
 	def start(self):
 		"""
@@ -1863,18 +1865,20 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					return None
 				line = self._handle.readline()
 				if not line:
-					self._handle.close()
-					self._handle = None
+					self._closeHandle()
 				processed = process_gcode_line(line, offsets=offsets, current_tool=current_tool)
 			self._pos = self._handle.tell()
 
 			return processed
 		except Exception as e:
-			if self._handle is not None:
-				self._handle.close()
-				self._handle = None
+			self._closeHandle()
 			self._logger.exception("Exception while processing line")
 			raise e
+
+	def _closeHandle(self, event=None, payload=None):
+		if self._handle is not None:
+			self._handle.close()
+			self._handle = None
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 	def __init__(self, path, localFilename, remoteFilename):
