@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import threading
 import sockjs.tornado
+import time
 
 import octoprint.timelapse
 import octoprint.server
@@ -98,6 +99,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			busy_files.append(dict(origin=data["job"]["file"]["origin"], name=data["job"]["file"]["name"]))
 
 		data.update({
+			"serverTime": time.time(),
 			"temps": temperatures,
 			"logs": logs,
 			"messages": messages,
@@ -106,7 +108,9 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self._emit("current", data)
 
 	def on_printer_send_initial_data(self, data):
-		self._emit("history", data)
+		data_to_send = dict(data)
+		data_to_send["serverTime"] = time.time()
+		self._emit("history", data_to_send)
 
 	def sendEvent(self, type, payload=None):
 		self._emit("event", {"type": type, "payload": payload})
