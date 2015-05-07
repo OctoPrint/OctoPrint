@@ -151,7 +151,7 @@ $(function() {
                     });
                 }
             });
-            self.settingsDialog.on('hidden', function() {
+            self.settingsDialog.on('hidden', function(event) {
                 if (event.target.id == "settings_dialog") {
                     _.each(allViewModels, function(viewModel) {
                         if (viewModel.hasOwnProperty("onSettingsHidden")) {
