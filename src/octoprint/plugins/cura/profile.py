@@ -346,8 +346,12 @@ class Profile(object):
 
 	@classmethod
 	def from_cura_ini(cls, path):
+		import logging
+		logger = logging.getLogger("octoprint.plugin.cura.profile")
+
 		import os
 		if not os.path.exists(path) or not os.path.isfile(path):
+			logger.warn("Path {path} does not exist or is not a file, cannot import".format(**locals()))
 			return None
 
 		import ConfigParser
@@ -355,6 +359,7 @@ class Profile(object):
 		try:
 			config.read(path)
 		except:
+			logger.exception("Error while reading profile INI file from {path}".format(**locals()))
 			return None
 
 		arrayified_options = ["print_temperature", "filament_diameter", "start.gcode", "end.gcode"]
