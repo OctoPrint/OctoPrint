@@ -311,8 +311,10 @@ GCODE.renderer = (function(){
             ctx.moveTo(x * zoomFactor, -1 * minY * zoomFactor);
             ctx.lineTo(x * zoomFactor, -1 * maxY * zoomFactor);
 
-            ctx.moveTo(-1 * x * zoomFactor, -1 * minY * zoomFactor);
-            ctx.lineTo(-1 * x * zoomFactor, -1 * maxY * zoomFactor);
+            if (renderOptions["bed"]["centeredOrigin"]) {
+                ctx.moveTo(-1 * x * zoomFactor, -1 * minY * zoomFactor);
+                ctx.lineTo(-1 * x * zoomFactor, -1 * maxY * zoomFactor);
+            }
         }
         ctx.stroke();
 
@@ -321,8 +323,10 @@ GCODE.renderer = (function(){
             ctx.moveTo(minX * zoomFactor, -1 * y * zoomFactor);
             ctx.lineTo(maxX * zoomFactor, -1 * y * zoomFactor);
 
-            ctx.moveTo(minX * zoomFactor, y * zoomFactor);
-            ctx.lineTo(maxX * zoomFactor, y * zoomFactor);
+            if (renderOptions["bed"]["centeredOrigin"]) {
+                ctx.moveTo(minX * zoomFactor, y * zoomFactor);
+                ctx.lineTo(maxX * zoomFactor, y * zoomFactor);
+            }
         }
         ctx.stroke();
     };
