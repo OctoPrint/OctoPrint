@@ -93,7 +93,8 @@
 * Improved behaviour of terminal:
   * Disabling autoscrolling now also stops cutting of the log while it's enabled, effectively preventing log lines from
     being modified at all ([#735](https://github.com/foosel/OctoPrint/issues/735))
-  * Applying filters displays ``[...]`` where lines where removed
+  * Applying filters displays ``[...]`` where lines where removed and doesn't cause scrolling on filtered lines
+    anymore ([#286](https://github.com/foosel/OctoPrint/issues/286))
   * Added a link to scroll to the end of the terminal log (useful for when autoscroll is disabled)
   * Added a link to select all current contents of the terminal log for easy copy-pasting
   * Added a display of how many lines are displayed, how many are filtered and how many are available in total
@@ -152,6 +153,7 @@
 * [#330](https://github.com/foosel/OctoPrint/issues/330) - Ping pong sending to fix potential acknowledgement errors.
   Also affects [#166](https://github.com/foosel/OctoPrint/issues/166), [#470](https://github.com/foosel/OctoPrint/issues/470)
   and [#490](https://github.com/foosel/OctoPrint/issues/490).
+* [#825](https://github.com/foosel/OctoPrint/issues/825) - Fixed "please visualize" button of large GCODE files
 * Various fixes of bugs in newly introduced features and improvements:
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
     queue
@@ -178,6 +180,8 @@
     of the objects
   * [#795](https://github.com/foosel/OctoPrint/issues/795) - Allow adding slicing profiles for unconfigured slicers
   * [#809](https://github.com/foosel/OctoPrint/issues/809) - Added proper form validation to printer profile editor
+  * [#824](https://github.com/foosel/OctoPrint/issues/824) - Settings getting lost when switching between panes in
+    the settings dialog (fix provided by [#879](https://github.com/foosel/OctoPrint/pull/879))
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
