@@ -135,8 +135,6 @@ def uploadGcodeFile(target):
 	input_upload_path = input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
 	if input_upload_name in request.values and input_upload_path in request.values:
 		upload = octoprint.filemanager.util.DiskFileWrapper(request.values[input_upload_name], request.values[input_upload_path])
-	elif input_name in request.files:
-		upload = WerkzeugFileWrapper(request.files[input_name])
 	else:
 		return make_response("No file included", 400)
 
